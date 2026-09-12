@@ -1,6 +1,6 @@
 # Aster architecture specification
 
-Status: Phase 3 baseline, 2026-09-11
+Status: Phase 4 baseline, 2026-09-11
 
 This document is the executable contract for the first bring-up slice. It
 separates decisions that are fixed for the minimal system from features that
@@ -29,11 +29,12 @@ same SoC, a global MMCM/BUFG clock path (31.25 MHz core clock from the board's
 asynchronous memory model for fast bring-up tests; the native bus contract is
 unchanged apart from the explicit one-cycle memory response in BRAM mode.
 
-The planned v1 target remains two RV32IM cores, private L1 caches, a shared L2,
-coherence, DMA, custom packed INT8 instructions, an INT8 matrix accelerator,
-interrupts and timers. Phase 3 implements the performance-counter MMIO block
-and the first AsterBench workload; cache, DMA and accelerator event sources
-remain disconnected until their roadmap phases.
+The planned v1 target remains two RV32IM cores, a shared L2, coherence, DMA,
+custom packed INT8 instructions, an INT8 matrix accelerator, interrupts and
+timers. Phase 3 implements the performance-counter MMIO block and first
+AsterBench workload. Phase 4 now adds the first private I/D L1 pair; L2,
+coherence, DMA and accelerator event sources remain disconnected until their
+roadmap phases.
 
 ## Current block diagram
 
@@ -41,26 +42,34 @@ remain disconnected until their roadmap phases.
                   +--------------------+
                   |   picorv32 RV32IM  |
                   |  reset PC = 0x0000 |
-                  +-----+---------+----+
-                        |         |
-                  instr|         |data
-                        v         v
-                 +----------+  +------------------+
-                 | ROM      |  | address decoder  |
-                 | 64 KiB   |  +--+-------+-------+
-                 +----------+     |       |
-                                  v       v
-                              +------+ +------+
-                              | RAM  | | UART |
-                              |64 KiB | | MMIO |
-                              +------+ +------+
+                  +---------+----------+
+                            |
+                     native valid/ready
+                            v
+                 +------------------------+
+                 | private L1 front end   |
+                 | direct-mapped I$ / D$  |
+                 +-----------+------------+
+                             |
+                    refill / bypass traffic
+                             v
+                 +------------------------+
+                 | address decoder        |
+                 +---+-----------+--------+
+                     |           |
+                     v           v
+                 +------+     +----------+
+                 | ROM  |     | RAM/MMIO |
+                 |64 KiB|     |64 KiB +  |
+                 +------+     | UART/perf|
+                              +----------+
 ```
 
-The current bus is intentionally a direct core-to-peripheral connection. It
-uses PicoRV32's single-outstanding-transfer valid/ready protocol; the Phase 1
-decoder acknowledges every transfer without wait states. The future
-interconnect and caches will replace this wiring while preserving the address
-and transaction semantics where possible.
+The core still uses PicoRV32's single-outstanding-transfer valid/ready
+protocol. In the Phase 4 default configuration the front end selects the I$
+for instruction fetches and the D$ for RAM data requests. The decoder sees
+cache-line refills and uncached traffic, while UART and performance-counter
+MMIO always bypasses the caches.
 
 ## Architectural conventions
 
@@ -78,6 +87,29 @@ and transaction semantics where possible.
 | Unmapped reads | Return zero |
 | Unmapped/unsupported operations | PicoRV32 exposes `trap`; no Aster trap handler yet |
 | Firmware image | Flat binary converted to one little-endian 32-bit hex word per line |
+
+## Phase 4 L1 cache contract
+
+The default `aster_minimal` configuration has one private instruction cache and
+one private data cache in front of the decoder. Each cache is direct mapped
+with 16 lines of 4 words (16 bytes per line, 256 bytes of data capacity). For
+this geometry, address bits `[3:0]` select the byte within a line, `[7:4]`
+select the line, and `[31:8]` form the tag.
+
+- The I$ caches instruction requests in the ROM address space.
+- The D$ caches data requests in the main RAM window only.
+- UART, performance-counter and all other MMIO requests bypass the caches.
+- Cacheable loads are read-allocate and refill one 32-bit word at a time.
+- Stores are write-through and no-write-allocate; byte strobes are preserved
+  at the lower level and update a resident line on a hit.
+- Reset invalidates every line. There is no flush instruction, coherence
+  protocol or write-back state in this phase.
+
+The cache controller has no queue because PicoRV32 holds a single request
+until completion. Its lower-level request remains asserted until the decoder
+acknowledges it, so the same contract works with asynchronous simulation
+memory and one-cycle synchronous FPGA BRAM memory. `ENABLE_L1=0` is retained as
+an uncached comparison configuration.
 
 ## Memory map
 
@@ -119,10 +151,10 @@ all counters; byte lane 0 must be enabled. The register contract is:
 | `0x00/0x04` | `CYCLES_LO/HI` | enabled clock cycles |
 | `0x08/0x0c` | `RETIRED_LO/HI` | accepted instruction-fetch transactions (current PicoRV32 proxy) |
 | `0x10/0x14` | `MEM_TXN_LO/HI` | accepted native core memory transactions |
-| `0x18/0x1c` | `CACHE_ACCESS_LO/HI` | cache access events; zero in Phase 3 |
-| `0x20/0x24` | `CACHE_MISS_LO/HI` | cache miss events; zero in Phase 3 |
-| `0x28/0x2c` | `DMA_BYTES_LO/HI` | DMA byte events; zero in Phase 3 |
-| `0x30/0x34` | `ACCEL_CYCLES_LO/HI` | accelerator-active cycles; zero in Phase 3 |
+| `0x18/0x1c` | `CACHE_ACCESS_LO/HI` | accepted cacheable CPU transactions |
+| `0x20/0x24` | `CACHE_MISS_LO/HI` | cache-line lookup misses |
+| `0x28/0x2c` | `DMA_BYTES_LO/HI` | DMA byte events; zero until Phase 7 |
+| `0x30/0x34` | `ACCEL_CYCLES_LO/HI` | accelerator-active cycles; zero until Phase 9 |
 | `0x38` | `CONTROL` | write bit 0 to clear |
 
 The current core has no architectural retire output, so `RETIRED` is defined
@@ -130,7 +162,9 @@ as an instruction fetch accepted by the PicoRV32 native bus. This is an
 explicit Phase 3 proxy, not a claim of precise retirement accounting. The
 runtime reads each 64-bit value high/low/high to avoid a torn sample. The
 snapshot itself is taken through MMIO, so its readout overhead is included in
-the reported cycle and transaction counts.
+the reported cycle and transaction counts. Cache access and miss events are
+generated by the Phase 4 L1 pair; DMA and accelerator counters remain zero
+until those subsystems are connected.
 
 ## Core interface contract
 
@@ -154,13 +188,12 @@ ignores writes to reserved windows.
 These items must be resolved before the corresponding roadmap phase, not
 silently assumed by Phase 0:
 
-- exact L1/L2 organization and refill protocol;
+- shared L2 organization and refill protocol;
 - coherence protocol and atomic-memory implementation;
 - system interconnect transaction format and arbitration;
 - custom instruction encoding and toolchain support;
 - NPU register/DMA interface, tiling format and saturation rules;
 - interrupt priority and timer semantics;
-- FPGA clock/reset and UART pin implementation;
 - SKY130 macro strategy and SRAM availability.
 
 ## Phase 2 FPGA contract
@@ -200,3 +233,16 @@ Phase 3 is complete when:
 2. the RAM-backed AsterBench firmware builds through the bare-metal runtime;
 3. the benchmark emits a complete deterministic machine-readable record; and
 4. `make bench` and the full `make check` regression pass.
+
+## Phase 4 exit criteria
+
+Phase 4 is complete when:
+
+1. separate L1 I/D caches are integrated behind the PicoRV32 native bus;
+2. cacheable RAM/ROM traffic, write-through stores and uncached MMIO are
+   explicitly defined;
+3. unit verification covers refill, hits, byte writes, eviction,
+   no-write-allocate stores and bypass traffic;
+4. Hello and AsterBench pass with caches enabled and report non-zero cache
+   access/miss counters; and
+5. `make check` remains green with the Phase 4 cache regression included.

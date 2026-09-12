@@ -10,14 +10,16 @@ The goal is **not to reproduce an Apple A-series processor**. Modern Apple silic
 
 ## Current status
 
-Phase 0 through Phase 3 are runnable: the repository has an explicit
+Phase 0 through Phase 4 are runnable: the repository has an explicit
 architecture specification and memory map, a command-line toolchain check, a
 Make build, Verilator smoke and SoC tests, and a PicoRV32 RV32IM/ROM/RAM/UART
 path. The bare-metal C image boots through a RAM stack, clears `.bss`, verifies
 RAM persistence, and prints `Hello from Aster`. Directed RV32IM tests cover
 the memory path, branches, jumps, `MUL`, `DIV`, and `REM`. AsterBench emits a
 deterministic RAM `memcpy` record with cycle, instruction, memory-transaction,
-cache, DMA and accelerator counters. The PYNQ-Z1 target uses synchronous BRAM-backed memories,
+L1 cache, DMA and accelerator counters. Phase 4 adds separate direct-mapped
+instruction and data L1 caches with refill, write-through and MMIO bypass
+verification. The PYNQ-Z1 target uses synchronous BRAM-backed memories,
 an MMCM/BUFG clock path and a real 115200-baud UART transmitter; its Vivado
 flow reaches a routed, timing-clean bitstream.
 

@@ -15,6 +15,7 @@ VERILATOR_VENDOR_LINT_FLAGS := --Wno-DECLFILENAME --Wno-GENUNNAMED \
 	--Wno-UNUSEDSIGNAL --Wno-BLKSEQ
 
 RTL_CORE := rtl/core/aster_picorv32.sv vendor/picorv32/picorv32.v
+RTL_CACHE := rtl/cache/aster_l1_cache.sv
 RTL_MEMORY := rtl/memory/aster_rom.sv rtl/memory/aster_ram.sv
 RTL_PERIPHERALS := rtl/peripherals/aster_uart.sv rtl/peripherals/aster_perf_counters.sv
 RTL_SOC := rtl/soc/aster_minimal.sv
@@ -35,6 +36,7 @@ BENCH_BIN := $(HELLO_DIR)/memcpy_bench.bin
 BENCH_HEX := $(HELLO_DIR)/memcpy_bench.hex
 BENCH_OBJECTS := $(HELLO_DIR)/start.o $(HELLO_DIR)/memcpy_bench.o
 BENCH_SIM := $(BUILD_DIR)/asterbench_sim
+CACHE_SIM := $(BUILD_DIR)/aster_l1_cache_sim
 SMOKE_SIM := $(BUILD_DIR)/aster_smoke_sim
 PYNQ_SIM := $(BUILD_DIR)/aster_pynq_z1_sim
 FPGA_BUILD_DIR := $(BUILD_DIR)/fpga/pynq_z1
@@ -49,7 +51,7 @@ DIRECTED_ASFLAGS := -march=$(RISCV_MARCH) -mabi=$(RISCV_MABI) -nostdlib -ffreest
 BENCH_CFLAGS := $(HELLO_CFLAGS)
 BENCH_LDFLAGS := -T software/boot/link.ld -Wl,--gc-sections -Wl,-Map,$(HELLO_DIR)/memcpy_bench.map
 
-.PHONY: all tools structure firmware smoke test directed hello bench fpga fpga-sim check clean help
+.PHONY: all tools structure firmware smoke test directed hello bench cache fpga fpga-sim check clean help
 
 all: check
 
@@ -62,6 +64,7 @@ help:
 	@echo "  make directed   Run directed RV32IM instruction tests"
 	@echo "  make hello      Build and run Hello from Aster on the RTL CPU"
 	@echo "  make bench      Run the deterministic AsterBench RAM memcpy"
+	@echo "  make cache      Run directed L1 hit/miss/eviction tests"
 	@echo "  make fpga       Build the PYNQ-Z1 bitstream with Vivado"
 	@echo "  make fpga-sim   Decode the board-facing UART in simulation"
 	@echo "  make check      Run tool checks, directed tests and simulations"
@@ -134,7 +137,7 @@ $(SMOKE_SIM): rtl/verification/aster_smoke.sv verification/unit/tb_aster_smoke.c
 smoke: $(SMOKE_SIM)
 	@$(SMOKE_SIM)
 
-$(HELLO_SIM): $(RTL_CORE) $(RTL_MEMORY) $(RTL_PERIPHERALS) $(RTL_SOC) \
+$(HELLO_SIM): $(RTL_CORE) $(RTL_CACHE) $(RTL_MEMORY) $(RTL_PERIPHERALS) $(RTL_SOC) \
 		verification/soc/tb_aster_hello.cpp $(HELLO_HEX) | $(BUILD_DIR)
 	$(VERILATOR) --cc --exe --build --timing --Wall --Wno-fatal \
 		$(VERILATOR_VENDOR_LINT_FLAGS) \
@@ -142,11 +145,12 @@ $(HELLO_SIM): $(RTL_CORE) $(RTL_MEMORY) $(RTL_PERIPHERALS) $(RTL_SOC) \
 		--Mdir $(BUILD_DIR)/obj_hello \
 		-o $(abspath $@) \
 		-GMEM_INIT_FILE=\"$(HELLO_HEX)\" \
-		$(addprefix $(ROOT)/,$(RTL_CORE)) $(addprefix $(ROOT)/,$(RTL_MEMORY)) \
+		$(addprefix $(ROOT)/,$(RTL_CORE)) $(addprefix $(ROOT)/,$(RTL_CACHE)) \
+		$(addprefix $(ROOT)/,$(RTL_MEMORY)) \
 		$(addprefix $(ROOT)/,$(RTL_PERIPHERALS)) $(ROOT)/$(RTL_SOC) \
 		$(ROOT)/verification/soc/tb_aster_hello.cpp
 
-$(DIRECTED_SIM): $(RTL_CORE) $(RTL_MEMORY) $(RTL_PERIPHERALS) $(RTL_SOC) \
+$(DIRECTED_SIM): $(RTL_CORE) $(RTL_CACHE) $(RTL_MEMORY) $(RTL_PERIPHERALS) $(RTL_SOC) \
 		verification/soc/tb_rv32im_directed.cpp $(DIRECTED_HEX) | $(BUILD_DIR)
 	$(VERILATOR) --cc --exe --build --timing --Wall --Wno-fatal \
 		$(VERILATOR_VENDOR_LINT_FLAGS) \
@@ -154,11 +158,12 @@ $(DIRECTED_SIM): $(RTL_CORE) $(RTL_MEMORY) $(RTL_PERIPHERALS) $(RTL_SOC) \
 		--Mdir $(BUILD_DIR)/obj_directed \
 		-o $(abspath $@) \
 		-GMEM_INIT_FILE=\"$(DIRECTED_HEX)\" \
-		$(addprefix $(ROOT)/,$(RTL_CORE)) $(addprefix $(ROOT)/,$(RTL_MEMORY)) \
+		$(addprefix $(ROOT)/,$(RTL_CORE)) $(addprefix $(ROOT)/,$(RTL_CACHE)) \
+		$(addprefix $(ROOT)/,$(RTL_MEMORY)) \
 		$(addprefix $(ROOT)/,$(RTL_PERIPHERALS)) $(ROOT)/$(RTL_SOC) \
 		$(ROOT)/verification/soc/tb_rv32im_directed.cpp
 
-$(BENCH_SIM): $(RTL_CORE) $(RTL_MEMORY) $(RTL_PERIPHERALS) $(RTL_SOC) \
+$(BENCH_SIM): $(RTL_CORE) $(RTL_CACHE) $(RTL_MEMORY) $(RTL_PERIPHERALS) $(RTL_SOC) \
 		verification/soc/tb_asterbench.cpp $(BENCH_HEX) | $(BUILD_DIR)
 	$(VERILATOR) --cc --exe --build --timing --Wall --Wno-fatal \
 		$(VERILATOR_VENDOR_LINT_FLAGS) \
@@ -166,11 +171,12 @@ $(BENCH_SIM): $(RTL_CORE) $(RTL_MEMORY) $(RTL_PERIPHERALS) $(RTL_SOC) \
 		--Mdir $(BUILD_DIR)/obj_bench \
 		-o $(abspath $@) \
 		-GMEM_INIT_FILE=\"$(BENCH_HEX)\" \
-		$(addprefix $(ROOT)/,$(RTL_CORE)) $(addprefix $(ROOT)/,$(RTL_MEMORY)) \
+		$(addprefix $(ROOT)/,$(RTL_CORE)) $(addprefix $(ROOT)/,$(RTL_CACHE)) \
+		$(addprefix $(ROOT)/,$(RTL_MEMORY)) \
 		$(addprefix $(ROOT)/,$(RTL_PERIPHERALS)) $(ROOT)/$(RTL_SOC) \
 		$(ROOT)/verification/soc/tb_asterbench.cpp
 
-$(PYNQ_SIM): $(RTL_CORE) $(RTL_MEMORY) $(RTL_PERIPHERALS) $(RTL_SOC) $(RTL_FPGA) \
+$(PYNQ_SIM): $(RTL_CORE) $(RTL_CACHE) $(RTL_MEMORY) $(RTL_PERIPHERALS) $(RTL_SOC) $(RTL_FPGA) \
 		verification/soc/tb_pynq_z1.cpp $(HELLO_HEX) | $(BUILD_DIR)
 	$(VERILATOR) --cc --exe --build --timing --Wall --Wno-fatal \
 		$(VERILATOR_VENDOR_LINT_FLAGS) \
@@ -178,7 +184,8 @@ $(PYNQ_SIM): $(RTL_CORE) $(RTL_MEMORY) $(RTL_PERIPHERALS) $(RTL_SOC) $(RTL_FPGA)
 		--Mdir $(BUILD_DIR)/obj_pynq_z1 \
 		-o $(abspath $@) \
 		-GMEM_INIT_FILE=\"$(HELLO_HEX)\" \
-		$(addprefix $(ROOT)/,$(RTL_CORE)) $(addprefix $(ROOT)/,$(RTL_MEMORY)) \
+		$(addprefix $(ROOT)/,$(RTL_CORE)) $(addprefix $(ROOT)/,$(RTL_CACHE)) \
+		$(addprefix $(ROOT)/,$(RTL_MEMORY)) \
 		$(addprefix $(ROOT)/,$(RTL_PERIPHERALS)) $(addprefix $(ROOT)/,$(RTL_FPGA)) \
 		$(ROOT)/$(RTL_SOC) $(ROOT)/verification/soc/tb_pynq_z1.cpp
 
@@ -198,9 +205,20 @@ hello: $(HELLO_SIM)
 bench: $(BENCH_ELF) $(BENCH_BIN) $(BENCH_HEX) $(BENCH_SIM)
 	@$(BENCH_SIM)
 
-test: smoke directed hello bench fpga-sim
+$(CACHE_SIM): $(RTL_CACHE) verification/unit/tb_aster_l1_cache.cpp | $(BUILD_DIR)
+	$(VERILATOR) --cc --exe --build --timing --Wall --Wno-fatal \
+		$(VERILATOR_VENDOR_LINT_FLAGS) \
+		--top-module aster_l1_cache \
+		--Mdir $(BUILD_DIR)/obj_cache \
+		-o $(abspath $@) \
+		$(ROOT)/$(RTL_CACHE) $(ROOT)/verification/unit/tb_aster_l1_cache.cpp
 
-check: tools smoke directed hello bench fpga-sim
+cache: $(CACHE_SIM)
+	@$(CACHE_SIM)
+
+test: smoke directed hello bench cache fpga-sim
+
+check: tools smoke directed hello bench cache fpga-sim
 
 clean:
 	rm -rf $(BUILD_DIR)

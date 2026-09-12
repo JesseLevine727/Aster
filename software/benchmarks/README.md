@@ -9,10 +9,10 @@ ASTERBENCH,version=1,name=memcpy,bytes=256,status=PASS,cycles=0x...,retired=0x..
 ```
 
 Counter values are fixed-width hexadecimal `key=value` fields so a later
-revision can be compared without depending on a libc formatter. Phase 3
-populates cycles, the current instruction-retire proxy and native memory
-transactions. Cache, DMA and accelerator fields are part of the stable output
-schema and remain zero until their subsystems are connected.
+revision can be compared without depending on a libc formatter. Phase 4
+populates cycles, the current instruction-retire proxy, native memory
+transactions and L1 cache accesses/misses. DMA and accelerator fields remain
+zero until their subsystems are connected.
 
 Run the benchmark regression with:
 
@@ -21,5 +21,5 @@ make bench
 ```
 
 The ELF, binary and ROM image are generated under `build/software/` and the
-Verilator system test checks the complete record and its non-zero baseline
-counters.
+Verilator system test checks the complete record and its non-zero baseline and
+cache counters.

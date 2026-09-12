@@ -43,6 +43,7 @@ make smoke       Build and run the first Verilator unit smoke test
 make directed    Run directed RV32IM instruction tests
 make hello       Build firmware, compile the minimal SoC and run its UART test
 make bench       Build and run the deterministic AsterBench RAM memcpy
+make cache       Run directed L1 hit/miss/eviction tests
 make fpga-sim    Decode the board-facing 115200-baud UART in simulation
 make fpga        Run the Vivado PYNQ-Z1 synthesis/place/route/bitstream flow
 make check       Run tool checks, directed tests and simulations

@@ -1,8 +1,9 @@
 # PYNQ-Z1 bring-up
 
-This target is the first FPGA implementation of Aster: one PicoRV32 RV32IM
-core, initialized ROM, byte-writeable RAM, the Aster UART register block and a
-board-facing UART transmitter. The 125 MHz board oscillator is divided through
+This target is the current FPGA implementation of Aster: one PicoRV32 RV32IM
+core, private Phase 4 L1 instruction/data caches, initialized ROM,
+byte-writeable RAM, the Aster UART register block and a board-facing UART
+transmitter. The 125 MHz board oscillator is divided through
 a global-clock MMCM/BUFG path to a 31.25 MHz core/fabric/UART clock; this gives
 the current unpipelined bring-up logic timing margin while preserving an
 accurate generated-clock constraint.

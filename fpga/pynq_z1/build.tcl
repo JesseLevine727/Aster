@@ -23,6 +23,7 @@ create_project aster_pynq_z1 $output_dir -part $part -force
 set rtl_files [list \
     rtl/core/aster_picorv32.sv \
     vendor/picorv32/picorv32.v \
+    rtl/cache/aster_l1_cache.sv \
     rtl/memory/aster_rom.sv \
     rtl/memory/aster_ram.sv \
     rtl/peripherals/aster_uart.sv \

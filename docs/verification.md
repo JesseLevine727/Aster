@@ -30,9 +30,9 @@ window rather than only reading constants from ROM.
 copies a deterministic 256-byte RAM buffer four times, validates every word,
 and emits one complete machine-readable record.
 `verification/soc/tb_asterbench.cpp` checks the record's non-zero cycle,
-instruction-fetch-acceptance and native memory-transaction counters, while
-requiring the reserved cache, DMA and accelerator fields to remain explicitly
-zero.
+instruction-fetch-acceptance, native memory-transaction and L1 cache
+counters, while requiring the not-yet-connected DMA and accelerator fields to
+remain explicitly zero.
 
 `verification/soc/tb_pynq_z1.cpp` drives the PYNQ-Z1 shell reset and board
 clock, samples the physical UART line at the 125 MHz shell-clock resolution,
@@ -71,5 +71,15 @@ make bench
 2. Add ROM/RAM byte-lane and alignment tests.
 3. Add UART status/read and MMIO decode tests.
 4. Add RISC-V architectural tests before integrating caches.
-5. Add cache hit/miss and eviction tests before enabling the L1s.
+5. Add lower-level memory backpressure and cache flush tests.
 6. Add a reference-model comparison for the future NPU.
+
+## Phase 4 cache tests
+
+`verification/unit/tb_aster_l1_cache.cpp` models an always-ready lower memory
+and checks the cache contract directly: a cold read fetches exactly one line,
+subsequent words hit locally, lower-level backpressure is tolerated, byte-masked
+stores update both the resident line and lower memory, conflicting lines evict
+and refill, store misses do not allocate, and uncached requests bypass the
+cache. The SoC regressions then exercise the two-cache integration with the
+real PicoRV32 firmware path.

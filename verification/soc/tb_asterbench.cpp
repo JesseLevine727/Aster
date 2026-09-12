@@ -42,16 +42,19 @@ int main(int argc, char** argv) {
                     record.find(",retired=0x0000000000000000") == std::string::npos;
                 const bool has_memory = record.find(
                     ",memory_transactions=0x0000000000000000") == std::string::npos;
+                const bool has_cache_accesses =
+                    record.find(",cache_accesses=0x0000000000000000") ==
+                        std::string::npos;
+                const bool has_cache_misses =
+                    record.find(",cache_misses=0x0000000000000000") ==
+                        std::string::npos;
                 const bool has_future_zeroes =
-                    record.find(",cache_accesses=0x0000000000000000") !=
-                        std::string::npos &&
-                    record.find(",cache_misses=0x0000000000000000") !=
-                        std::string::npos &&
                     record.find(",dma_bytes=0x0000000000000000") !=
                         std::string::npos &&
                     record.find(",accelerator_cycles=0x0000000000000000") !=
                         std::string::npos;
-                if (has_cycles && has_retired && has_memory && has_future_zeroes) {
+                if (has_cycles && has_retired && has_memory &&
+                    has_cache_accesses && has_cache_misses && has_future_zeroes) {
                     std::cout << "PASS: AsterBench emitted comparable counters\n";
                     return EXIT_SUCCESS;
                 }
