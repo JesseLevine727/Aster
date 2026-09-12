@@ -17,12 +17,19 @@ memory-map boundaries, RAM execution, initialized data, nonzero initial RAM,
 warm-reset startup, linker limits and 12 trap scenarios. It runs with caches
 off/on and asynchronous/synchronous memory using `make phase1-matrix`.
 
-Phase 2 has a PYNQ-Z1 FPGA target and an earlier timing-clean routed bitstream;
-physical Aster firmware execution is still pending. Phase 3 has an initial
-AsterBench/counter implementation, and Phase 4 has private I/D L1 caches and
-basic directed tests. Their remaining correctness, measurement and experiment
-work is tracked in [`docs/phase-closeout.md`](docs/phase-closeout.md). These
-implementation milestones do not yet mean Phases 2–4 meet the roadmap exits.
+Phase 3 measurement closeout is verified: non-trapping RVFI retirement, a
+common frozen counter window, separate CPU/backing-memory traffic, strict
+AsterBench v2 records and reproducible capture/comparison with source and
+toolchain provenance. [Saved clean-revision results](docs/results/phase3/README.md)
+include all cached/uncached and async/sync baseline combinations.
+
+Phase 2's standalone/Linux FPGA builds and UART/AXI simulations pass, but
+physical Aster execution is still pending: the board became unresponsive
+during the first Linux-overlay attempt and needs recovery. Phase 4 has private
+I/D L1 caches and basic directed tests; randomized verification and the full
+experiment suite remain open. [`docs/phase-closeout.md`](docs/phase-closeout.md)
+tracks those remaining exits. No physical execution or Phase 4 completion is
+claimed by the measurement milestone.
 
 Start here:
 

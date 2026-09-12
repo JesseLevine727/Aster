@@ -11,8 +11,8 @@ The Phase 0 build is intentionally based on command-line tools:
 
 The simulator targets do not require a vendor FPGA/ASIC installation. Vivado
 2025.1 (or a compatible release) is required only for the PYNQ-Z1 bitstream
-target; Yosys, OpenROAD and PYNQ programming tooling remain later-phase
-dependencies.
+targets. PYNQ Python/XRT is needed on the board for Linux loading. Yosys and
+OpenROAD remain later ASIC-phase dependencies.
 
 Run the repository check with:
 

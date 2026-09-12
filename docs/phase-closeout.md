@@ -8,7 +8,7 @@ The earlier Phase 4 completion claim was premature. Phase 5 is out of scope.
 | --- | --- | --- |
 | 1 | Verified in simulation | `make phase1-matrix`, `make check`; [verification details](verification.md) |
 | 2 | UART/AXI simulation and FPGA builds pass; physical closeout pending | First Linux overlay attempt made the board unresponsive; recover board and isolate the failing stage before retrying firmware execution |
-| 3 | Measurement implementation and regressions verified; evidence checkpoint in progress | RVFI retirement, common freeze, strict v2 records, provenance and comparison workflow; clean-revision captures being retained |
+| 3 | Verified measurement closeout | RVFI retirement, common freeze, strict v2 records, provenance and comparison workflow; [clean-revision captures](results/phase3/README.md) |
 | 4 | Basic I/D caches; closeout pending | Randomized reference/invariant tests, stalled/reset cases, geometry matrix and all four README experiments |
 
 ## Phase 1 evidence (2026-09-12)
@@ -93,3 +93,10 @@ Vivado 2025.1 also synthesizes the unchanged vendor core with RVFI exposed and
 completes both FPGA builds: standalone setup/hold slack 15.327/0.037 ns; Linux
 overlay 13.378/0.044 ns. These new images have **not** run on the unresponsive
 board. Phase 2 physical validation remains outstanding.
+
+Implementation checkpoint: `c2dfef7`. Five fresh captures from that clean
+revision are retained in `docs/results/phase3/`: all four cache/memory baseline
+combinations and an independent cached-repeat build. Every record has the same
+checksum (`0xc4be3200`), 1,553 retirements and 2,320 native transactions. The
+repeat produces an identical full record and firmware hash. These prove the
+Phase 3 comparison workflow, not the still-missing broader Phase 4 experiments.
