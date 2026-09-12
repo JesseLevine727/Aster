@@ -1,0 +1,418 @@
+# Aster
+
+**An open, Apple-Silicon-inspired heterogeneous RISC-V SoC — from simulation to FPGA to SKY130 ASIC.**
+
+Aster is a learning and research project to design a small heterogeneous system-on-chip around open RISC-V CPUs, a memory hierarchy, DMA, custom compute instructions, and an INT8 neural-network accelerator. The design will be developed incrementally in RTL, verified in simulation, validated on a PYNQ-Z1 FPGA, characterized with a purpose-built benchmark suite, and ultimately taken through an open-source SKY130 ASIC physical-design flow.
+
+The goal is **not to reproduce an Apple A-series processor**. Modern Apple silicon is the architectural inspiration: general-purpose CPUs coexist with specialized hardware, and workloads are placed on the compute engine best suited to them. Aster asks how much of that heterogeneous-computing philosophy can be explored in a small, understandable, open design.
+
+> **Core research question:** When should a workload execute on a scalar CPU, across multiple CPU cores, through an ISA-level accelerator, or on a dedicated hardware accelerator?
+
+---
+
+## Vision
+
+```text
+                    ASTER SoC
+
+       +-------------+   +-------------+
+       | RISC-V CPU 0|   | RISC-V CPU 1|
+       +------+------+   +------+------+
+              |                 |
+          L1 I$ / D$        L1 I$ / D$
+              |                 |
+              +--------+--------+
+                       |
+                 Shared L2
+                       |
+                System Fabric
+          +------------+------------+
+          |            |            |
+         DMA       INT8 NPU     Peripherals
+          |        / MAC array   UART/Timer
+          +------------+------------+
+                       |
+                     Memory
+```
+
+A reasonable frozen v1 target is:
+
+- 2 × RV32IM in-order RISC-V cores
+- Per-core L1 instruction and data caches
+- Shared L2 cache
+- Two-core cache coherence
+- DMA engine
+- Custom packed INT8 dot-product instruction(s)
+- Small INT8 matrix/NPU accelerator (initially 4×4, potentially 8×8)
+- Interrupt controller, timer, UART and performance counters
+- Bare-metal software stack
+- PYNQ-Z1 FPGA implementation
+- SKY130 synthesis and physical design
+- Reproducible performance/area/power experiments
+
+Linux, out-of-order execution, a GPU, a large NoC, RV64 and high core counts are deliberately **not v1 requirements**. Scope discipline is part of the project.
+
+---
+
+## The idea
+
+The interesting part of a modern SoC is not simply the number of CPU cores. It is the interaction between general-purpose compute, specialized compute, memory, data movement and software.
+
+Aster is intended to make those trade-offs measurable. The same operation — for example matrix multiplication — can eventually run in four ways:
+
+```text
+                         GEMM
+                          |
+          +---------------+---------------+
+          |               |               |
+     Scalar CPU       2 CPU cores      DOT8 ISA
+                                              |
+                                              +---- Dedicated NPU
+```
+
+Rather than assuming specialization is always better, Aster will measure **where each approach wins and where its overhead makes it lose**.
+
+## Questions Aster should answer
+
+- How well does performance scale from one to two cores?
+- When does memory bandwidth become the bottleneck?
+- How much do L1/L2 cache sizes affect real workloads?
+- What is the cost of coherence and false sharing?
+- At what transfer size does DMA become preferable to CPU copying?
+- When is a custom RISC-V instruction enough, and when is a separate accelerator justified?
+- At what problem size does NPU offload overcome setup and data-movement overhead?
+- How do accelerator dimensions affect utilization, area and performance?
+- Which architecture provides the best performance per area and estimated energy?
+- How different are the conclusions on FPGA versus SKY130?
+
+---
+
+## Workloads
+
+### CPU baseline
+
+CoreMark, Dhrystone, integer kernels, sorting/search and small general-purpose C programs establish CPU correctness and baseline performance.
+
+### Memory hierarchy
+
+`memcpy`, sequential and strided access, random access, pointer chasing and working-set sweeps characterize memory latency, bandwidth and cache behavior.
+
+### Multicore and coherence
+
+Parallel GEMM, reductions, producer/consumer queues, shared atomic counters, cache-line ping-pong, false sharing and synchronization tests measure scaling and deliberately torture coherence.
+
+### DSP
+
+Dot product, FIR filtering, FFT and convolution provide useful targets for scalar code, custom packed operations and streaming execution.
+
+### Machine learning
+
+INT8 GEMM, INT8 Conv2D, a tiny fully connected network, MNIST inference and eventually a small CIFAR-10 CNN exercise the dedicated accelerator.
+
+### Full-system streaming workload
+
+A final demonstration will combine multiple engines concurrently:
+
+```text
+ECG samples -> DMA -> memory -> FIR/DSP -> feature processing -> NPU -> result
+                         |                         |
+                       CPU 0                    CPU 1
+```
+
+This demonstrates the real objective: making a heterogeneous system cooperate on a useful workload.
+
+---
+
+## Datasets
+
+### MNIST
+
+The first end-to-end ML target. Its 28×28 grayscale inputs and simple models are ideal for validating quantized inference and accelerator/software correctness.
+
+### CIFAR-10
+
+A later, more demanding image-classification workload. A small quantized CNN can stress Conv2D, memory reuse and accelerator utilization more realistically than MNIST.
+
+### PhysioNet ECG
+
+An open ECG dataset can provide a real-world streaming signal-processing workload involving DMA, filtering/feature processing and inference.
+
+### Synthetic benchmark data
+
+GEMM, FIR, FFT, cache and coherence tests will use deterministic generated inputs, fixed seeds and known reference outputs for reproducible regression testing.
+
+---
+
+## Development philosophy
+
+> **Never add several major unverified subsystems at once.**
+
+Every stage must boot, execute its tests and pass regressions before the next architectural feature is introduced. A one-core system that is completely understood is more useful than a four-core/NPU system whose failures cannot be isolated.
+
+---
+
+# Roadmap: zero to silicon
+
+## Phase 0 — Specification and toolchain
+
+Define the memory map, ISA target, coding conventions, interfaces and v1 scope. Establish Verilator, waveform viewing, RISC-V GCC/binutils and automated builds/tests.
+
+**Exit:** RTL can be simulated and a bare-metal RISC-V binary can be built reproducibly.
+
+## Phase 1 — Minimal single-core computer
+
+Bring up one RV32I/RV32IM core with ROM/RAM and UART. A proven open core can initially be used so SoC infrastructure is developed independently of CPU microarchitecture.
+
+**Exit:** a compiled program executes and prints `Hello from Aster` in simulation.
+
+## Phase 2 — Early PYNQ-Z1 bring-up
+
+Put the minimal CPU + BRAM + UART system on the FPGA immediately.
+
+**Exit:** Aster executes real RISC-V firmware on PYNQ-Z1 and communicates with the outside world.
+
+## Phase 3 — AsterBench and performance counters
+
+Create the benchmark framework early. Add counters for cycles, retired instructions, cache accesses/misses, memory transactions, DMA bytes and accelerator cycles.
+
+**Exit:** results are emitted in a machine-readable format and can be compared across RTL revisions.
+
+## Phase 4 — L1 caches
+
+Add simple instruction and data caches and verify them thoroughly.
+
+**Experiments:** no-cache vs cache, working-set sweeps, sequential vs random access and cache-size sensitivity.
+
+## Phase 5 — Second RISC-V core
+
+Add hart IDs, startup/reset, synchronization and inter-core signaling.
+
+**Exit:** both cores execute independently and a parallel workload produces the correct result.
+
+## Phase 6 — Coherent memory
+
+Introduce a simple two-core snooping coherence protocol, such as MSI/MESI-like behavior, and eventually a shared L2 where appropriate.
+
+**Tests:** ping-pong, producer/consumer, atomics, false sharing and adversarial ownership transitions.
+
+## Phase 7 — DMA
+
+Build a memory-to-memory DMA engine with source, destination, length, start/status and completion signaling.
+
+**Experiment:** CPU `memcpy` vs DMA across increasing transfer sizes to identify the crossover point.
+
+## Phase 8 — Custom compute instruction
+
+Add a packed INT8 dot-product/MAC-style RISC-V extension with software support and a scalar reference implementation.
+
+**Experiment:** scalar dot product/FIR/GEMM vs custom instruction.
+
+## Phase 9 — Matrix accelerator / NPU
+
+Build from small verified pieces: processing element → array → 4×4 MAC array → memory/control interface → optional 8×8 configuration.
+
+Start with INT8 GEMM only. CNN support comes later.
+
+**Exit:** accelerator GEMM is bit-correct against a software reference over randomized test cases.
+
+## Phase 10 — CPU vs multicore vs ISA vs NPU
+
+Run identical kernels through all execution paths and measure cycles, latency, instructions, cache behavior, memory traffic, accelerator utilization, FPGA resources and maximum clock.
+
+This is one of Aster's central experiments.
+
+## Phase 11 — Quantized ML inference
+
+Deploy a small INT8 model beginning with MNIST. Map supported operations to the NPU while the CPU handles control and unsupported operations.
+
+**Experiment:** scalar CPU vs multicore vs custom ISA vs NPU inference, including offload overhead.
+
+## Phase 12 — Real-time heterogeneous demo
+
+Use a streaming dataset such as ECG and exercise CPU, DMA, DSP/custom instructions and NPU together.
+
+**Exit:** Aster sustains the target stream in real time while reporting utilization/performance counters.
+
+## Phase 13 — Freeze Aster v1
+
+Stop feature development and stabilize the architecture, software, documentation and tests.
+
+Likely freeze point: 2× RV32IM + L1s + shared L2/coherence + DMA + DOT8 + INT8 NPU + UART/timer/interrupts/performance counters.
+
+## Phase 14 — Design-space exploration
+
+Sweep parameters rather than adding features:
+
+- 1 vs 2 cores
+- cache capacities/organizations
+- 2×2 vs 4×4 vs 8×8 accelerator
+- scalar vs ISA extension vs NPU
+- different working-set/problem sizes
+
+The goal is to discover **crossovers and bottlenecks**, not simply build the largest configuration.
+
+## Phase 15 — Learn SKY130 on a minimal configuration
+
+Take a tiny Aster configuration through the complete open ASIC flow first:
+
+```text
+RTL -> Yosys -> SKY130 -> floorplan -> placement -> CTS -> routing -> STA -> DRC/LVS -> GDSII
+```
+
+**Exit:** a minimal configuration completes the physical-design flow.
+
+## Phase 16 — Full ASIC implementation and PPA
+
+Move the frozen architecture through SKY130/OpenROAD. Collect post-synthesis/post-layout area, timing and estimated power and analyze metrics such as performance/mm², energy/op and accelerator GOPS/W where meaningful.
+
+## Phase 17 — Tapeout (stretch goal)
+
+Fabrication is not required for project success. The primary ASIC finish line is a reproducible, timing-analyzed, DRC/LVS-clean GDSII. If an accessible shuttle is available, fabrication, packaging, board bring-up and first UART output become the final stretch goal.
+
+---
+
+## AsterBench
+
+AsterBench is a first-class project component:
+
+```text
+benchmarks/
+  coremark/
+  dhrystone/
+  memcpy/
+  pointer_chase/
+  fir/
+  fft/
+  gemm/
+  conv2d/
+  multicore_gemm/
+  cache_pingpong/
+  false_sharing/
+  npu_gemm/
+  mnist/
+  streaming_ecg/
+```
+
+Each benchmark should report reproducible metadata and measured counters. Placeholder performance claims are not results: numbers in reports should come from simulation, FPGA measurements or the documented ASIC flow.
+
+---
+
+## Verification strategy
+
+1. Unit-test ALUs, arbiters, FIFOs, cache controllers, DMA and accelerator PEs independently.
+2. Compare CPU behavior against known RISC-V tests/reference models where practical.
+3. Use deterministic software tests with known outputs.
+4. Add assertions around protocols and invariants.
+5. Add randomized tests for caches, coherence and the NPU.
+6. Maintain regression tests before architectural changes are accepted.
+7. Compare accelerator results against simple software golden models.
+8. Re-run AsterBench after major architecture revisions.
+
+**Correctness comes before optimization.**
+
+---
+
+## Proposed repository structure
+
+```text
+Aster/
+├── rtl/
+│   ├── core/
+│   ├── cache/
+│   ├── interconnect/
+│   ├── memory/
+│   ├── dma/
+│   ├── accelerator/
+│   └── peripherals/
+├── verification/
+│   ├── unit/
+│   └── soc/
+├── software/
+│   ├── boot/
+│   ├── drivers/
+│   ├── runtime/
+│   └── benchmarks/
+├── fpga/
+│   └── pynq_z1/
+├── asic/
+│   └── sky130/
+├── scripts/
+├── docs/
+└── README.md
+```
+
+---
+
+## What success looks like
+
+1. **Computer:** one RISC-V core executes bare-metal software.
+2. **FPGA SoC:** the system runs reproducibly on PYNQ-Z1.
+3. **Multicore SoC:** two cores execute parallel workloads correctly.
+4. **Heterogeneous SoC:** DMA, custom instructions and NPU cooperate with the CPUs.
+5. **Research platform:** AsterBench produces reproducible architectural comparisons.
+6. **ASIC implementation:** the frozen SoC completes the SKY130 physical-design flow.
+7. **Stretch:** fabricated Aster silicon boots and communicates with the outside world.
+
+---
+
+## Potential research direction
+
+> **Design and Evaluation of a Heterogeneous Multicore RISC-V System-on-Chip for Edge AI Acceleration**
+
+The contribution would not simply be “a RISC-V CPU was built.” It would be the architecture plus a reproducible methodology and experimental characterization of **compute placement** across scalar CPU, multicore CPU, ISA-level specialization and dedicated acceleration under realistic memory, area and energy constraints.
+
+---
+
+## Inspiration and related ecosystems
+
+Aster is inspired by the heterogeneous-compute philosophy of modern Apple silicon while remaining an independent open RISC-V project. Useful projects and ecosystems to study include RISC-V, Chipyard/Rocket/BOOM, BlackParrot, PULP/HERO, PicoRV32, Gemmini, PYNQ/Zynq, Verilator, Yosys, OpenROAD and SkyWater SKY130.
+
+These are references and tools, not a requirement that Aster simply assemble existing projects. Mature infrastructure should be reused where it saves time, while Aster focuses implementation effort on architectural components relevant to its research questions.
+
+---
+
+## The journey
+
+```text
+Specification
+     ↓
+Single RISC-V
+     ↓
+Hello World
+     ↓
+PYNQ-Z1
+     ↓
+AsterBench
+     ↓
+Caches
+     ↓
+2 cores
+     ↓
+Coherence
+     ↓
+DMA
+     ↓
+DOT8
+     ↓
+NPU
+     ↓
+GEMM comparison
+     ↓
+TinyML
+     ↓
+Real-time ECG pipeline
+     ↓
+Design-space experiments
+     ↓
+Freeze RTL
+     ↓
+SKY130 / OpenROAD
+     ↓
+Post-layout PPA
+     ↓
+DRC/LVS-clean GDSII
+     ↓
+[Optional tapeout]
+```
+
+Aster starts with one core printing a line of text. It ends, ideally, as a measured, verified heterogeneous computer with a physical chip layout.
