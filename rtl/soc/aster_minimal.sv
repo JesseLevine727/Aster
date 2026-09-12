@@ -1,6 +1,7 @@
 module aster_minimal #(
     parameter string MEM_INIT_FILE = "",
     parameter bit SYNC_MEMORY = 1'b0,
+    parameter int unsigned MEMORY_WAIT_CYCLES = SYNC_MEMORY ? 1 : 0,
     parameter bit ENABLE_L1 = 1'b1,
     parameter bit HOST_BOOT = 1'b0,
     parameter int unsigned CLOCK_HZ = 31_250_000,
@@ -51,11 +52,17 @@ module aster_minimal #(
     logic        uart_write_request;
     logic        perf_we;
     logic        memory_access;
-    logic        sync_memory_pending;
+    localparam int WAIT_BITS = MEMORY_WAIT_CYCLES < 2 ? 1 : $clog2(MEMORY_WAIT_CYCLES+1);
+    logic [WAIT_BITS-1:0] memory_wait_count;
     logic        instruction_retired;
     logic        memory_transaction;
     logic        cache_access_event;
     logic        cache_miss_event;
+
+    initial begin
+        if (MEMORY_WAIT_CYCLES < (SYNC_MEMORY ? 1 : 0) || MEMORY_WAIT_CYCLES > 1024)
+            $error("memory wait must be 0..1024, and >= 1 with synchronous BRAM");
+    end
 
     logic        icache_cpu_ready;
     logic [31:0] icache_cpu_rdata;
@@ -212,20 +219,14 @@ module aster_minimal #(
          ((lower_addr >= RAM_BASE) && (lower_addr < RAM_END)));
 
     always_ff @(posedge clk) begin
-        if (!rst_n) begin
-            sync_memory_pending <= 1'b0;
-        end else if (SYNC_MEMORY) begin
-            if (sync_memory_pending)
-                sync_memory_pending <= 1'b0;
-            else if (memory_access)
-                sync_memory_pending <= 1'b1;
-        end else begin
-            sync_memory_pending <= 1'b0;
-        end
+        if (!rst_n || !memory_access || lower_ready)
+            memory_wait_count <= '0;
+        else if (memory_access)
+            memory_wait_count <= memory_wait_count + 1'b1;
     end
 
-    assign lower_ready = (SYNC_MEMORY && memory_access)
-        ? sync_memory_pending
+    assign lower_ready = memory_access
+        ? lower_valid && (memory_wait_count == WAIT_BITS'(MEMORY_WAIT_CYCLES))
         : lower_valid && (!uart_write_request || uart_write_ready);
     assign uart_write_request = !lower_mem_instr && (lower_addr == UART_BASE)
         && lower_wstrb[0];
@@ -272,7 +273,7 @@ module aster_minimal #(
 
     aster_perf_counters #(
         .CLOCK_HZ(CLOCK_HZ), .ENABLE_L1(ENABLE_L1), .SYNC_MEMORY(SYNC_MEMORY),
-        .LINE_WORDS(L1_LINE_WORDS), .LINE_COUNT(L1_LINE_COUNT)
+        .LINE_WORDS(L1_LINE_WORDS), .LINE_COUNT(L1_LINE_COUNT), .MEMORY_WAIT_CYCLES(MEMORY_WAIT_CYCLES)
     ) perf (
         .clk(clk),
         .rst_n(rst_n),

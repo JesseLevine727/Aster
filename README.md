@@ -25,9 +25,10 @@ include all cached/uncached and async/sync baseline combinations.
 
 Phase 2's standalone/Linux FPGA builds and UART/AXI simulations pass, but
 physical Aster execution is still pending: the board became unresponsive
-during the first Linux-overlay attempt and needs recovery. Phase 4 has private
-I/D L1 caches and basic directed tests; randomized verification and the full
-experiment suite remain open. [`docs/phase-closeout.md`](docs/phase-closeout.md)
+during the first Linux-overlay attempt and needs recovery. Phase 4 now has
+seeded reference-model tests, geometry/latency matrices and a configurable
+sequential/random working-set study; its final retained evidence is pending.
+[`docs/phase-closeout.md`](docs/phase-closeout.md)
 tracks those remaining exits. No physical execution or Phase 4 completion is
 claimed by the measurement milestone.
 

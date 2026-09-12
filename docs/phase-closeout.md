@@ -9,7 +9,7 @@ The earlier Phase 4 completion claim was premature. Phase 5 is out of scope.
 | 1 | Verified in simulation | `make phase1-matrix`, `make check`; [verification details](verification.md) |
 | 2 | UART/AXI simulation and FPGA builds pass; physical closeout pending | First Linux overlay attempt made the board unresponsive; recover board and isolate the failing stage before retrying firmware execution |
 | 3 | Verified measurement closeout | RVFI retirement, common freeze, strict v2 records, provenance and comparison workflow; [clean-revision captures](results/phase3/README.md) |
-| 4 | Basic I/D caches; closeout pending | Randomized reference/invariant tests, stalled/reset cases, geometry matrix and all four README experiments |
+| 4 | Expanded verification and experiment implementation; closeout pending | Final matrix/FPGA regressions and clean-revision captures of all four README experiments |
 
 ## Phase 1 evidence (2026-09-12)
 

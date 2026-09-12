@@ -9,6 +9,11 @@
 int main(int argc, char** argv) {
     try {
         Verilated::commandArgs(argc, argv);
+        unsigned max_cycles = 50000000;
+        for (int i = 1; i < argc; ++i) {
+            if (std::string(argv[i]) == "--max-cycles" && i+1 < argc)
+                max_cycles = std::stoul(argv[++i]);
+        }
         Vaster_minimal dut;
         dut.uart_tx_ready = 1;
         dut.boot_we = dut.boot_addr = dut.boot_wdata = dut.boot_wstrb = 0;
@@ -20,7 +25,7 @@ int main(int argc, char** argv) {
         dut.rst_n = 1;
         std::string serial;
         unsigned completed = 0;
-        for (unsigned cycle = 0; cycle < 2000000; ++cycle) {
+        for (unsigned cycle = 0; cycle < max_cycles; ++cycle) {
             tick();
             if (dut.trap) throw std::runtime_error("PicoRV32 trapped during AsterBench");
             if (dut.uart_tx_valid) {

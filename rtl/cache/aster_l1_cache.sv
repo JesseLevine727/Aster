@@ -58,7 +58,9 @@ module aster_l1_cache #(
     state_t state;
     logic [31:0] data_mem [0:LINE_COUNT-1][0:LINE_WORDS-1];
     logic [TAG_BITS-1:0] tag_mem [0:LINE_COUNT-1];
-    logic                 valid_mem [0:LINE_COUNT-1];
+    // A packed valid bitmap resets in one assignment for every geometry;
+    // large unpacked-array NBA loops exceed older Verilator unroll limits.
+    logic [LINE_COUNT-1:0] valid_mem;
 
     logic [31:0] req_addr;
     logic [31:0] req_wdata;
@@ -170,8 +172,7 @@ module aster_l1_cache #(
             req_cacheable <= 1'b0;
             req_cache_hit <= 1'b0;
             cache_miss <= 1'b0;
-            for (int index = 0; index < LINE_COUNT; index++)
-                valid_mem[index] <= 1'b0;
+            valid_mem <= '0;
         end else begin
             // Registered for one cycle so a miss is counted once even when a
             // no-write-allocate store remains valid after its lower write.

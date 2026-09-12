@@ -142,3 +142,46 @@ stores update both the resident line and lower memory, conflicting lines evict
 and refill, store misses do not allocate, and uncached requests bypass the
 cache. The SoC regressions then exercise the two-cache integration with the
 real PicoRV32 firmware path.
+
+`tb_aster_l1_random.cpp` adds separate architectural and serviced backing-memory
+models plus an independent direct-mapped tag/valid model. Every lower beat is
+checked for exact address, byte strobes, write data and count. It checks
+request stability under 0–7-cycle seeded backpressure, poisons unaccepted
+read data, permits idle-ready and requires exact access/miss event totals.
+Directed preludes guarantee every nonzero byte mask, read/write hits/misses,
+conflict eviction, no-write-allocate without eviction, side-effecting MMIO
+reads and identical back-to-back requests with valid held high.
+
+Five resets interrupt a request: before refill, halfway through refill, after
+the last refill beat but before the CPU response, stalled write-through and
+stalled MMIO write. No request/event may leak during reset, every old/partial
+line becomes invalid, and already committed memory persists. Each seed then
+runs 5,000 randomized transfers plus periodic resets, for 5,092 completed
+and five explicitly aborted requests in total.
+
+```sh
+make cache                 # original directed tests + three scoreboard seeds
+make cache-matrix          # words 2/4/8/16 × lines 2/4/8/16/32/64
+make cache-boundaries      # remaining bit widths and extreme aspect ratios
+make phase4-soc-matrix
+```
+
+The cache matrix has 24 geometries; boundaries add 12 (words 32..1024 with
+16 lines, lines 128..1024 with four words, 2×1024 and 1024×1024). Three seeds
+(`1`, `0xa57e`, `0xc0ffee`) run each, totaling 108 scoreboard runs. This is
+representative width/boundary coverage, not an exhaustive Cartesian sweep or
+a claim that the largest geometry fits this FPGA.
+
+The 24-leg SoC matrix crosses L1 off/on, geometries 2×2/4×16/8×32 and memory
+timings async/0 waits, async/4, sync/1 and sync/4. Every leg runs the complete
+Phase 1 firmware/host regression and a strict benchmark record, exercising
+both private caches with the actual CPU and memory permissions. Generic
+model paths encode every hardware knob; the complete baseline `make check`
+also covers retirement/counter units and both physical-UART simulation paths.
+
+Host tests require the complete four-experiment study plan and reject altered
+configuration/checksum/retirement/provenance. Matching sequential/random
+kernels must have identical opcodes and PCs for each swept working set and
+the 2/4096-word boundaries, with the measured ring at the same RAM base.
+See [AsterBench](../software/benchmarks/README.md) for measurement windows,
+warm-up, independent correctness checks, seeds and experiment commands.

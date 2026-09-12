@@ -13,6 +13,17 @@ RISCV_MARCH ?= rv32im
 RISCV_MABI ?= ilp32
 ENABLE_L1 ?= 1
 SYNC_MEMORY ?= 0
+L1_LINE_WORDS ?= 4
+L1_LINE_COUNT ?= 16
+MEMORY_WAIT_CYCLES ?= $(SYNC_MEMORY)
+BENCH_WORKLOAD ?= memcpy
+BENCH_WORDS ?= 64
+BENCH_REPETITIONS ?= 4
+BENCH_SEED ?= 0x13570000
+ifeq ($(filter $(BENCH_WORKLOAD),memcpy walk_sequential walk_random),)
+$(error BENCH_WORKLOAD must be memcpy, walk_sequential or walk_random)
+endif
+CONFIG_TAG := l1$(ENABLE_L1)_sync$(SYNC_MEMORY)_wait$(MEMORY_WAIT_CYCLES)_w$(L1_LINE_WORDS)_n$(L1_LINE_COUNT)
 UART_FIFO_DEPTH ?= 3
 # Enable the pinned core's synthesizable RVFI ports, not FORMAL assumptions.
 VERILATOR_VENDOR_LINT_FLAGS := -DRISCV_FORMAL --Wno-DECLFILENAME --Wno-GENUNNAMED \
@@ -35,13 +46,17 @@ DIRECTED_ELF := $(HELLO_DIR)/rv32im_directed.elf
 DIRECTED_BIN := $(HELLO_DIR)/rv32im_directed.bin
 DIRECTED_HEX := $(HELLO_DIR)/rv32im_directed.hex
 DIRECTED_SIM := $(BUILD_DIR)/aster_rv32im_directed_sim
-BENCH_ELF := $(HELLO_DIR)/memcpy_bench.elf
-BENCH_BIN := $(HELLO_DIR)/memcpy_bench.bin
-BENCH_HEX := $(HELLO_DIR)/memcpy_bench.hex
-BENCH_OBJECTS := $(HELLO_DIR)/start.o $(HELLO_DIR)/memcpy_bench.o
-BENCH_MODEL_DIR := $(BUILD_DIR)/bench_l1$(ENABLE_L1)_sync$(SYNC_MEMORY)
+BENCH_FW_DIR := $(HELLO_DIR)/bench_$(BENCH_WORKLOAD)_w$(BENCH_WORDS)_r$(BENCH_REPETITIONS)_s$(BENCH_SEED)
+BENCH_ELF := $(BENCH_FW_DIR)/benchmark.elf
+BENCH_BIN := $(BENCH_FW_DIR)/benchmark.bin
+BENCH_HEX := $(BENCH_FW_DIR)/benchmark.hex
+BENCH_SOURCE := software/benchmarks/$(if $(filter memcpy,$(BENCH_WORKLOAD)),memcpy_bench.c,memory_walk.c)
+BENCH_OBJECTS := $(HELLO_DIR)/start.o $(BENCH_FW_DIR)/benchmark.o
+BENCH_MODEL_DIR := $(BUILD_DIR)/bench_$(CONFIG_TAG)
 BENCH_SIM := $(BENCH_MODEL_DIR)/asterbench_sim
 CACHE_SIM := $(BUILD_DIR)/aster_l1_cache_sim
+CACHE_RANDOM_DIR := $(BUILD_DIR)/cache_w$(L1_LINE_WORDS)_n$(L1_LINE_COUNT)
+CACHE_RANDOM_SIM := $(CACHE_RANDOM_DIR)/aster_cache_random_sim
 UART_SIM := $(BUILD_DIR)/aster_uart_tx_$(UART_FIFO_DEPTH)_sim
 UART_RX_SIM := $(BUILD_DIR)/aster_uart_rx_sim
 RETIRE_SIM := $(BUILD_DIR)/aster_retirement_sim
@@ -49,7 +64,7 @@ PERF_SIM := $(BUILD_DIR)/aster_perf_sim
 SMOKE_SIM := $(BUILD_DIR)/aster_smoke_sim
 PYNQ_SIM := $(BUILD_DIR)/aster_pynq_z1_sim
 LINUX_SIM := $(BUILD_DIR)/aster_pynq_linux_sim
-SOC_TEST_DIR := $(BUILD_DIR)/soc_l1$(ENABLE_L1)_sync$(SYNC_MEMORY)
+SOC_TEST_DIR := $(BUILD_DIR)/soc_$(CONFIG_TAG)
 SOC_SIM := $(SOC_TEST_DIR)/aster_soc_sim
 TRAP_CASES := 0 1 2 3 4 5 6 7 8 9 10 11
 TRAP_IMAGES := $(addprefix $(HELLO_DIR)/trap_,$(addsuffix .hex,$(TRAP_CASES)))
@@ -62,11 +77,13 @@ HELLO_CFLAGS := -march=$(RISCV_MARCH) -mabi=$(RISCV_MABI) \
 	-msmall-data-limit=0 -Isoftware/runtime
 HELLO_LDFLAGS := -T software/boot/link.ld -Wl,--gc-sections -Wl,-Map,$(HELLO_DIR)/hello.map
 DIRECTED_ASFLAGS := -march=$(RISCV_MARCH) -mabi=$(RISCV_MABI) -nostdlib -ffreestanding
-BENCH_CFLAGS := $(HELLO_CFLAGS)
-BENCH_LDFLAGS := -T software/boot/link.ld -Wl,--gc-sections -Wl,-Map,$(HELLO_DIR)/memcpy_bench.map
+BENCH_CFLAGS := $(HELLO_CFLAGS) -DBENCHMARK_WORDS=$(BENCH_WORDS) \
+	-DBENCHMARK_REPETITIONS=$(BENCH_REPETITIONS) -DBENCHMARK_SEED=$(BENCH_SEED) \
+	-DBENCH_RANDOM=$(if $(filter walk_random,$(BENCH_WORKLOAD)),1,0)
+BENCH_LDFLAGS := -T software/boot/link.ld -Wl,--gc-sections -Wl,-Map,$(BENCH_FW_DIR)/benchmark.map
 
 .PHONY: all tools structure firmware smoke test directed hello bench cache fpga fpga-sim check clean help \
-	runtime memory-map traps phase1 phase1-matrix host-tests uart fpga-linux linux-sim counters retirement bench-config
+	runtime memory-map traps phase1 phase1-matrix host-tests uart fpga-linux linux-sim counters retirement bench-config cache-random cache-matrix cache-boundaries phase4-soc-matrix
 .SECONDARY:
 
 all: check
@@ -81,8 +98,11 @@ help:
 	@echo "  make phase1     Run CPU, runtime, memory-map and trap regressions"
 	@echo "  make phase1-matrix  Test Phase 1 with L1 off/on, async/sync memory"
 	@echo "  make hello      Build and run Hello from Aster on the RTL CPU"
-	@echo "  make bench      Run the deterministic AsterBench RAM memcpy"
-	@echo "  make cache      Run directed L1 hit/miss/eviction tests"
+	@echo "  make bench      Run AsterBench (BENCH_WORKLOAD=memcpy|walk_sequential|walk_random)"
+	@echo "  make cache      Run directed and seeded reference-model L1 tests"
+	@echo "  make cache-matrix  Test 24 cache geometries, three seeds each"
+	@echo "  make cache-boundaries  Test larger index/line widths through 1024x1024"
+	@echo "  make phase4-soc-matrix  Cross caches, geometry and memory latency"
 	@echo "  make fpga       Build the PYNQ-Z1 bitstream with Vivado"
 	@echo "  make fpga-sim   Decode the board-facing UART in simulation"
 	@echo "  make fpga-linux Build the PCAP/AXI overlay for PYNQ Linux (no JTAG)"
@@ -108,7 +128,10 @@ $(HELLO_DIR)/start.o: software/runtime/start.S software/boot/link.ld | $(HELLO_D
 $(HELLO_DIR)/hello.o: software/boot/hello.c software/runtime/aster.h | $(HELLO_DIR)
 	$(CC) $(HELLO_CFLAGS) -c -o $@ $<
 
-$(HELLO_DIR)/memcpy_bench.o: software/benchmarks/memcpy_bench.c software/runtime/aster.h | $(HELLO_DIR)
+$(BENCH_FW_DIR):
+	mkdir -p $@
+
+$(BENCH_FW_DIR)/benchmark.o: $(BENCH_SOURCE) software/runtime/aster.h software/benchmarks/asterbench.h | $(BENCH_FW_DIR)
 	$(CC) $(BENCH_CFLAGS) -c -o $@ $<
 
 $(HELLO_ELF): $(HELLO_OBJECTS) software/boot/link.ld | $(HELLO_DIR)
@@ -120,7 +143,7 @@ $(HELLO_BIN): $(HELLO_ELF)
 $(HELLO_HEX): $(HELLO_ELF) scripts/elf_to_hex.py
 	$(PYTHON) scripts/elf_to_hex.py --rom-bytes 65536 $< $@
 
-$(BENCH_ELF): $(BENCH_OBJECTS) software/boot/link.ld | $(HELLO_DIR)
+$(BENCH_ELF): $(BENCH_OBJECTS) software/boot/link.ld | $(BENCH_FW_DIR)
 	$(CC) $(BENCH_CFLAGS) $(BENCH_LDFLAGS) -o $@ $(BENCH_OBJECTS)
 
 $(BENCH_BIN): $(BENCH_ELF)
@@ -169,6 +192,7 @@ $(SOC_SIM): $(RTL_CORE) $(RTL_CACHE) $(RTL_MEMORY) $(RTL_PERIPHERALS) $(RTL_SOC)
 	$(VERILATOR) --cc --exe --build --timing --Wall --Wno-fatal \
 		$(VERILATOR_VENDOR_LINT_FLAGS) --top-module aster_minimal \
 		"-GENABLE_L1=1'b$(ENABLE_L1)" "-GSYNC_MEMORY=1'b$(SYNC_MEMORY)" \
+		-GMEMORY_WAIT_CYCLES=$(MEMORY_WAIT_CYCLES) -GL1_LINE_WORDS=$(L1_LINE_WORDS) -GL1_LINE_COUNT=$(L1_LINE_COUNT) \
 		--Mdir $(SOC_TEST_DIR)/obj -o $(abspath $@) \
 		$(addprefix $(ROOT)/,$(RTL_CORE) $(RTL_CACHE) $(RTL_MEMORY) $(RTL_PERIPHERALS) $(RTL_SOC)) \
 		$(ROOT)/verification/soc/tb_aster_soc.cpp
@@ -233,15 +257,15 @@ $(DIRECTED_SIM): $(RTL_CORE) $(RTL_CACHE) $(RTL_MEMORY) $(RTL_PERIPHERALS) $(RTL
 		$(ROOT)/verification/soc/tb_rv32im_directed.cpp
 
 $(BENCH_SIM): $(RTL_CORE) $(RTL_CACHE) $(RTL_MEMORY) $(RTL_PERIPHERALS) $(RTL_SOC) \
-		verification/soc/tb_asterbench.cpp verification/common/bench_record.h $(BENCH_HEX) | $(BUILD_DIR)
+		verification/soc/tb_asterbench.cpp verification/common/bench_record.h | $(BUILD_DIR)
 	mkdir -p $(BENCH_MODEL_DIR)
 	$(VERILATOR) --cc --exe --build --timing --Wall --Wno-fatal \
 		$(VERILATOR_VENDOR_LINT_FLAGS) \
 		--top-module aster_minimal \
 		"-GENABLE_L1=1'b$(ENABLE_L1)" "-GSYNC_MEMORY=1'b$(SYNC_MEMORY)" \
+		-GMEMORY_WAIT_CYCLES=$(MEMORY_WAIT_CYCLES) -GL1_LINE_WORDS=$(L1_LINE_WORDS) -GL1_LINE_COUNT=$(L1_LINE_COUNT) \
 		--Mdir $(BENCH_MODEL_DIR)/obj \
 		-o $(abspath $@) \
-		-GMEM_INIT_FILE=\"$(BENCH_HEX)\" \
 		$(addprefix $(ROOT)/,$(RTL_CORE)) $(addprefix $(ROOT)/,$(RTL_CACHE)) \
 		$(addprefix $(ROOT)/,$(RTL_MEMORY)) \
 		$(addprefix $(ROOT)/,$(RTL_PERIPHERALS)) $(ROOT)/$(RTL_SOC) \
@@ -298,11 +322,11 @@ hello: $(HELLO_SIM)
 	@$(HELLO_SIM)
 
 bench: $(BENCH_ELF) $(BENCH_BIN) $(BENCH_HEX) $(BENCH_SIM)
-	@$(BENCH_SIM)
+	@$(BENCH_SIM) +rom=$(BENCH_HEX)
 
 bench-config:
-	@$(PYTHON) -c 'import json,sys; print(json.dumps(dict(zip(("compiler", "cflags", "ldflags", "verilator"), sys.argv[1:]))))' \
-		'$(CC)' '$(BENCH_CFLAGS)' '$(BENCH_LDFLAGS)' '$(VERILATOR)'
+	@$(PYTHON) -c 'import json,sys; print(json.dumps(dict(zip(("compiler", "cflags", "ldflags", "verilator", "simulator", "firmware", "elf"), sys.argv[1:]))))' \
+		'$(CC)' '$(BENCH_CFLAGS)' '$(BENCH_LDFLAGS)' '$(VERILATOR)' '$(BENCH_SIM)' '$(BENCH_HEX)' '$(BENCH_ELF)'
 
 $(CACHE_SIM): $(RTL_CACHE) verification/unit/tb_aster_l1_cache.cpp | $(BUILD_DIR)
 	$(VERILATOR) --cc --exe --build --timing --Wall --Wno-fatal \
@@ -312,8 +336,46 @@ $(CACHE_SIM): $(RTL_CACHE) verification/unit/tb_aster_l1_cache.cpp | $(BUILD_DIR
 		-o $(abspath $@) \
 		$(ROOT)/$(RTL_CACHE) $(ROOT)/verification/unit/tb_aster_l1_cache.cpp
 
-cache: $(CACHE_SIM)
+cache: $(CACHE_SIM) cache-random
 	@$(CACHE_SIM)
+
+$(CACHE_RANDOM_SIM): $(RTL_CACHE) verification/unit/tb_aster_l1_random.cpp | $(BUILD_DIR)
+	mkdir -p $(CACHE_RANDOM_DIR)
+	$(VERILATOR) --cc --exe --build --timing --Wall --Wno-fatal \
+		$(VERILATOR_VENDOR_LINT_FLAGS) --top-module aster_l1_cache \
+		-GLINE_WORDS=$(L1_LINE_WORDS) -GLINE_COUNT=$(L1_LINE_COUNT) \
+		-CFLAGS '-DASTER_LINE_WORDS=$(L1_LINE_WORDS) -DASTER_LINE_COUNT=$(L1_LINE_COUNT)' \
+		--Mdir $(CACHE_RANDOM_DIR)/obj -o $(abspath $@) \
+		$(ROOT)/$(RTL_CACHE) $(ROOT)/verification/unit/tb_aster_l1_random.cpp
+
+cache-random: $(CACHE_RANDOM_SIM)
+	@set -e; for seed in 1 0xa57e 0xc0ffee; do $(CACHE_RANDOM_SIM) $$seed; done
+
+cache-matrix:
+	@set -e; for words in 2 4 8 16; do for lines in 2 4 8 16 32 64; do \
+		$(MAKE) L1_LINE_WORDS=$$words L1_LINE_COUNT=$$lines cache-random; \
+	done; done
+
+cache-boundaries:
+	@set -e; for words in 32 64 128 256 512 1024; do \
+		$(MAKE) L1_LINE_WORDS=$$words L1_LINE_COUNT=16 cache-random; \
+	done; for lines in 128 256 512 1024; do \
+		$(MAKE) L1_LINE_WORDS=4 L1_LINE_COUNT=$$lines cache-random; \
+	done; for words in 2 1024; do \
+		$(MAKE) L1_LINE_WORDS=$$words L1_LINE_COUNT=1024 cache-random; \
+	done
+
+phase4-soc-matrix:
+	@set -e; for geometry in '2 2' '4 16' '8 32'; do \
+		read -r words lines <<< "$$geometry"; \
+		for timing in '0 0' '0 4' '1 1' '1 4'; do \
+			read -r sync wait_cycles <<< "$$timing"; \
+			for l1 in 0 1; do \
+				$(MAKE) ENABLE_L1=$$l1 SYNC_MEMORY=$$sync MEMORY_WAIT_CYCLES=$$wait_cycles \
+					L1_LINE_WORDS=$$words L1_LINE_COUNT=$$lines phase1 bench; \
+			done; \
+		done; \
+	done
 
 $(UART_SIM): rtl/peripherals/aster_uart_tx.sv verification/unit/tb_aster_uart_tx.cpp verification/common/uart_decoder.h | $(BUILD_DIR)
 	$(VERILATOR) --cc --exe --build --timing --Wall --Wno-fatal \

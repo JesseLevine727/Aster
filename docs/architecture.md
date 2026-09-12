@@ -1,6 +1,6 @@
 # Aster architecture specification
 
-Status: Phase 1 closeout; Phase 2–4 implementations under verification, 2026-09-12
+Status: Phases 1/3 verified; Phase 2 physical and Phase 4 evidence closeout pending, 2026-09-12
 
 This document is the executable contract for the first bring-up slice. It
 separates decisions that are fixed for the minimal system from features that
@@ -27,8 +27,11 @@ The Phase 2 PYNQ-Z1 target adds a synchronous-read BRAM configuration of the
 same SoC, a global MMCM/BUFG clock path (31.25 MHz core clock from the board's
 125 MHz oscillator), a core-domain reset synchronizer and a board-facing
 115200-baud UART transmitter on Pmod JA[0]. The simulator continues to use the
-asynchronous memory model for fast bring-up tests; the native bus contract is
-unchanged apart from the explicit one-cycle memory response in BRAM mode.
+asynchronous memory model by default. `MEMORY_WAIT_CYCLES` specifies total
+additional backing-memory wait cycles: default 0 for asynchronous reads and
+1 for synchronous BRAM. Values through 1024 are supported, with at least 1
+required for BRAM; UART/MMIO timing is unchanged. A held lower request is
+acknowledged once after that many wait cycles, then the delay counter resets.
 
 The planned v1 target remains two RV32IM cores, a shared L2, coherence, DMA,
 custom packed INT8 instructions, an INT8 matrix accelerator, interrupts and
@@ -83,7 +86,7 @@ MMIO always bypasses the caches.
 | Instruction width | 32-bit instructions; compressed instructions disabled in firmware |
 | Data width | 32-bit datapath; byte strobes for stores |
 | Alignment | Word instructions and naturally aligned half/word accesses are expected |
-| Memory reads | Combinational in simulation; one-cycle synchronous response in FPGA BRAM mode |
+| Memory reads | Async or synchronous BRAM; configurable total waits, default 0 / 1 respectively |
 | Memory writes | Sampled on the rising edge when `data_we` is asserted |
 | Unmapped reads | Return zero |
 | Unmapped/unsupported operations | PicoRV32 exposes `trap`; no Aster trap handler yet |
@@ -111,8 +114,20 @@ select the line, and `[31:8]` form the tag.
 The cache controller has no queue because PicoRV32 holds a single request
 until completion. Its lower-level request remains asserted until the decoder
 acknowledges it, so the same contract works with asynchronous simulation
-memory and one-cycle synchronous FPGA BRAM memory. `ENABLE_L1=0` is retained as
-an uncached comparison configuration.
+memory and delayed synchronous FPGA BRAM memory. `ENABLE_L1=0` is retained as
+an uncached comparison configuration. `L1_LINE_WORDS` and `L1_LINE_COUNT`
+control both private caches; each capacity is `4 * words * lines` bytes,
+excluding tag/valid storage. The capture tool accepts powers of two from 2
+through 1024 in each dimension. The unit matrix samples every index/offset
+width in that range, including 1024×1024; this does not imply every geometry
+fits the PYNQ-Z1. FPGA targets retain the default 4×16 geometry and one wait
+cycle; simulation Make overrides do not silently reconfigure those targets.
+
+Reset clears a packed valid bitmap, not the data arrays. A partially filled
+line cannot be used after reset. The request/response contract requires the
+CPU to hold valid/address/data/strobes until ready; back-to-back accepted
+transactions may have identical fields. A store miss neither allocates nor
+evicts an existing conflicting line. Unaccepted lower read data is ignored.
 
 ## Memory map
 
@@ -277,10 +292,11 @@ Phase 3 is complete when (in addition to the closeout requirements below):
 3. the benchmark emits a complete deterministic machine-readable record; and
 4. `make bench` and the full `make check` regression pass.
 
-The remaining closeout requires strict record validation, accurate event
+Measurement closeout requires strict record validation, accurate event
 semantics and a common snapshot interval, counter corner-case tests,
 revision/configuration provenance, reproducible comparisons and complete
-board-facing output. The initial benchmark alone does not satisfy these.
+board-facing output. These are verified by the Phase 3 closeout; the initial
+benchmark alone did not satisfy them. See the retained Phase 3 evidence.
 
 ## Phase 4 exit criteria
 

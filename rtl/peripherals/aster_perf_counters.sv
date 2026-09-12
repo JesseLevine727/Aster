@@ -6,6 +6,7 @@ module aster_perf_counters #(
     parameter int unsigned CLOCK_HZ = 31_250_000,
     parameter bit ENABLE_L1 = 1'b1,
     parameter bit SYNC_MEMORY = 1'b0,
+    parameter int unsigned MEMORY_WAIT_CYCLES = SYNC_MEMORY ? 1 : 0,
     parameter int unsigned LINE_WORDS = 4,
     parameter int unsigned LINE_COUNT = 16
 ) (
@@ -71,7 +72,7 @@ module aster_perf_counters #(
                 32'h50: rdata = {30'd0, SYNC_MEMORY, ENABLE_L1};
                 32'h54: rdata = LINE_WORDS;
                 32'h58: rdata = LINE_COUNT;
-                32'h5c: rdata = SYNC_MEMORY ? 1 : 0; // added backing wait cycles
+                32'h5c: rdata = MEMORY_WAIT_CYCLES;
                 default: begin end
             endcase
         end

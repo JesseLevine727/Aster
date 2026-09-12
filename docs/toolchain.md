@@ -44,8 +44,11 @@ make directed    Run directed RV32IM instruction tests
 make phase1      Run directed ISA, runtime, memory-map, trap and host tests
 make phase1-matrix  Cross ENABLE_L1=0/1 with SYNC_MEMORY=0/1
 make hello       Build firmware, compile the minimal SoC and run its UART test
-make bench       Build and run the deterministic AsterBench RAM memcpy
-make cache       Run directed L1 hit/miss/eviction tests
+make bench       Run AsterBench memcpy or a sequential/random pointer walk
+make cache       Run directed and seeded reference-model L1 tests
+make cache-matrix  Run 24 geometries, three seeds each
+make cache-boundaries  Run 12 larger/boundary geometries, three seeds each
+make phase4-soc-matrix  Run 24 cache/geometry/memory-latency configurations
 make fpga-sim    Decode the board-facing 115200-baud UART in simulation
 make fpga        Run the Vivado PYNQ-Z1 synthesis/place/route/bitstream flow
 make linux-sim   Test AXI boot loading, host pauses and FPGA UART serial capture
@@ -88,8 +91,26 @@ start.S + hello.c + link.ld
 
 AsterBench uses the same startup/runtime and linker contract as the Hello
 image, but emits a fixed-width CSV-like record containing comparable counter
-fields. Its image is `build/software/memcpy_bench.hex` and its SoC regression
-is run by `make bench`.
+fields. `make -s bench-config` prints the exact artifact paths. The default
+image is `build/software/bench_memcpy_w64_r4_s0x13570000/benchmark.hex`.
+Firmware paths encode workload/size/repetitions/seed, and generic model paths
+encode cache enable, synchronous memory, wait cycles and cache geometry.
+The generic model loads each firmware with `+rom=...`, allowing an isolated
+experiment batch to reuse a model without embedding the wrong ROM.
+
+```sh
+make ENABLE_L1=1 SYNC_MEMORY=1 MEMORY_WAIT_CYCLES=4 \
+  L1_LINE_WORDS=8 L1_LINE_COUNT=32 \
+  BENCH_WORKLOAD=walk_random BENCH_WORDS=1024 BENCH_REPETITIONS=8 BENCH_SEED=0 bench
+python3 scripts/cache_experiments.py --output-dir build/results/cache-study
+python3 scripts/cache_experiments.py --output-dir build/results/cache-study --audit-only
+```
+
+Wait cycles are **total added backing-memory waits**, not extra waits on top
+of the synchronous default. Defaults are 0 (async) and 1 (sync). These knobs
+configure the generic `bench`/`phase1` simulators; FPGA shells retain their
+documented default geometry and synchronous timing. Use fresh `BUILD_DIR`
+paths or the capture tool when changing compiler/toolchain flags.
 
 The generated hex contains no address directives: line `N` is the little-endian
 32-bit word at ROM address `4*N`. ELF load segments use their physical/load

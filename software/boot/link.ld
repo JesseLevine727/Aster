@@ -11,6 +11,10 @@ SECTIONS
     .text : ALIGN(4)
     {
         KEEP(*(.text.init))
+        /* Startup relaxation depends on ROM size. Keep measured kernels at
+           the same address across sequential/random initialization code. */
+        . = ALIGN(256);
+        *(.text.benchmark)
         *(.text*)
     } > ROM
 
@@ -33,6 +37,7 @@ SECTIONS
     .bss (NOLOAD) : ALIGN(4)
     {
         __bss_start = .;
+        *(.bss.benchmark)
         *(.bss*)
         *(.sbss*)
         *(COMMON)

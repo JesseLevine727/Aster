@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """Capture real AsterBench runs with provenance, or compare saved v2 results."""
 import argparse
+from contextlib import nullcontext
 import hashlib
 import json
 from pathlib import Path
@@ -71,17 +72,52 @@ def validate_result(result):
     return record
 
 
-def capture(args):
+def validate_options(args):
+    if args.memory_wait is None:
+        args.memory_wait = args.sync_memory
+    if args.l1 not in (0, 1) or args.sync_memory not in (0, 1) or not args.sync_memory <= args.memory_wait <= 1024:
+        raise ValueError("invalid cache/memory timing configuration")
+    for value in (args.line_words, args.line_count):
+        if not 2 <= value <= 1024 or value & (value-1):
+            raise ValueError("cache dimensions must be powers of two, 2..1024")
+    if args.workload not in ("memcpy", "walk_sequential", "walk_random"):
+        raise ValueError("unsupported workload")
+    if not 2 <= args.words <= 4096 or args.words & (args.words-1):
+        raise ValueError("workload words must be a power of two, 2..4096")
+    if not 1 <= args.repetitions <= 64 or not 0 <= args.seed <= 0xffffffff:
+        raise ValueError("invalid repetitions or seed")
+
+
+def expected_checksum(name, words, repetitions, seed):
+    if name in ("walk_sequential", "walk_random"):
+        return (words * (words-1) // 2 * repetitions) & 0xffffffff
+    if name != "memcpy":
+        raise ValueError("no workload reference available")
+    checksum = 0
+    for index in range(words):
+        checksum = ((checksum * 33) ^ (seed ^ (index * 0x1021))) & 0xffffffff
+    return checksum
+
+
+def capture(args, build_directory=None):
+    validate_options(args)
     if args.output.exists() or args.output.with_suffix(".log").exists():
         raise ValueError("output/log already exists; choose a new capture path")
     sources, fingerprint = source_state()
     revision = command(["git", "rev-parse", "HEAD"])
     dirty = bool(command(["git", "status", "--porcelain"]))
-    with tempfile.TemporaryDirectory(prefix="aster-bench-") as directory:
+    # An experiment batch may share a fresh isolated build root. Model paths
+    # encode all RTL knobs; firmware paths encode workload knobs. Compiler
+    # settings stay fixed within that isolated batch.
+    context = nullcontext(str(build_directory)) if build_directory else tempfile.TemporaryDirectory(prefix="aster-bench-")
+    with context as directory:
         build = Path(directory)
         settings = [f"BUILD_DIR={build}", f"ENABLE_L1={args.l1}", f"SYNC_MEMORY={args.sync_memory}",
-                    f"RISCV_PREFIX={args.riscv_prefix}"]
-        config = json.loads(command(["make", "-s", *settings, "bench-config"]))
+                    f"RISCV_PREFIX={args.riscv_prefix}", f"MEMORY_WAIT_CYCLES={args.memory_wait}",
+                    f"L1_LINE_WORDS={args.line_words}", f"L1_LINE_COUNT={args.line_count}",
+                    f"BENCH_WORKLOAD={args.workload}", f"BENCH_WORDS={args.words}",
+                    f"BENCH_REPETITIONS={args.repetitions}", f"BENCH_SEED=0x{args.seed:08x}"]
+        config = json.loads(command(["make", "--no-print-directory", "-s", *settings, "bench-config"]))
         invocation = ["make", "--output-sync=target", "-j2", *settings, "bench"]
         process = subprocess.run(invocation, cwd=ROOT, text=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
         args.output.parent.mkdir(parents=True, exist_ok=True)
@@ -92,8 +128,13 @@ def capture(args):
         if len(records) != 1:
             raise ValueError("expected exactly one captured benchmark record")
         record = parse_record(records[0])
-        if record["l1"] != args.l1 or record["sync_memory"] != args.sync_memory:
-            raise ValueError("RTL configuration disagrees with requested build")
+        requested = {"l1": args.l1, "sync_memory": args.sync_memory, "memory_wait": args.memory_wait,
+                     "line_words": args.line_words, "line_count": args.line_count, "name": args.workload,
+                     "bytes": args.words*4, "repetitions": args.repetitions, "seed": args.seed}
+        if any(record[key] != value for key, value in requested.items()):
+            raise ValueError("executing configuration disagrees with requested build")
+        if record["checksum"] != expected_checksum(args.workload, args.words, args.repetitions, args.seed):
+            raise ValueError("workload checksum disagrees with independent host reference")
         if source_state() != (sources, fingerprint) or command(["git", "rev-parse", "HEAD"]) != revision:
             raise ValueError("source changed during capture; repeat against a stable revision/worktree")
         compiler = shutil.which(config["compiler"])
@@ -104,14 +145,15 @@ def capture(args):
             "compiler": compiler, "compiler_version": command([compiler, "--version"]).splitlines()[0],
             "compiler_sha256": sha(compiler), "cflags": config["cflags"], "ldflags": config["ldflags"],
             "verilator_version": command([config["verilator"], "--version"]),
-            "firmware_sha256": sha(build / "software/memcpy_bench.hex"),
-            "elf_sha256": sha(build / "software/memcpy_bench.elf"),
-            "simulator_sha256": sha(build / f"bench_l1{args.l1}_sync{args.sync_memory}/asterbench_sim"),
+            "firmware_sha256": sha(config["firmware"]),
+            "elf_sha256": sha(config["elf"]),
+            "simulator_sha256": sha(config["simulator"]),
             "build_command": invocation, "platform": platform.platform(),
         }}
         validate_result(result)
         args.output.write_text(json.dumps(result, indent=2, sort_keys=True) + "\n")
     print(f"PASS: saved verified AsterBench capture to {args.output}")
+    return result
 
 
 def compare(baseline, candidate):
@@ -139,6 +181,13 @@ def main():
     run.add_argument("--output", type=Path, required=True)
     run.add_argument("--l1", type=int, choices=(0, 1), default=1)
     run.add_argument("--sync-memory", type=int, choices=(0, 1), default=0)
+    run.add_argument("--memory-wait", type=int, default=None)
+    run.add_argument("--line-words", type=int, default=4)
+    run.add_argument("--line-count", type=int, default=16)
+    run.add_argument("--workload", choices=("memcpy", "walk_sequential", "walk_random"), default="memcpy")
+    run.add_argument("--words", type=int, default=64)
+    run.add_argument("--repetitions", type=int, default=4)
+    run.add_argument("--seed", type=lambda value: int(value, 0), default=0x13570000)
     run.add_argument("--riscv-prefix", default="riscv32-unknown-elf-")
     diff = commands.add_parser("compare")
     diff.add_argument("baseline", type=Path)
