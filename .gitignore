@@ -17,3 +17,4 @@
 *.fst
 *.coverage
 coverage/
+__pycache__/

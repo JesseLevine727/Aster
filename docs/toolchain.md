@@ -41,6 +41,8 @@ make structure   Print the tracked project layout
 make firmware    Build software/boot/hello.c and runtime into build/software/
 make smoke       Build and run the first Verilator unit smoke test
 make directed    Run directed RV32IM instruction tests
+make phase1      Run directed ISA, runtime, memory-map, trap and host tests
+make phase1-matrix  Cross ENABLE_L1=0/1 with SYNC_MEMORY=0/1
 make hello       Build firmware, compile the minimal SoC and run its UART test
 make bench       Build and run the deterministic AsterBench RAM memcpy
 make cache       Run directed L1 hit/miss/eviction tests
@@ -76,7 +78,7 @@ without creating a 256 MiB sparse ROM image.
 
 The architecture target and current bring-up configuration are RV32IM. The
 PicoRV32 wrapper enables its internal multiply/divide implementations, and the
-first firmware image executes both `mul` and `div` before printing its message.
+directed ISA image tests all eight RV32M operations and integer corner cases.
 Compressed instructions remain disabled so the ROM format and fetch path stay
 32-bit word aligned.
 

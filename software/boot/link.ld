@@ -23,6 +23,8 @@ SECTIONS
     {
         __data_start = .;
         *(.data*)
+        *(.sdata*)
+        . = ALIGN(4);
         __data_end = .;
     } > RAM AT> ROM
 
@@ -32,13 +34,19 @@ SECTIONS
     {
         __bss_start = .;
         *(.bss*)
+        *(.sbss*)
         *(COMMON)
+        . = ALIGN(4);
         __bss_end = .;
     } > RAM
 
     __stack_top = ORIGIN(RAM) + LENGTH(RAM);
+    PROVIDE(__stack_size = 4096);
+    __stack_bottom = __stack_top - __stack_size;
 
-    ASSERT(__stack_top >= __bss_end, "Aster RAM overflow")
+    ASSERT(__stack_size >= 16 && (__stack_size % 16) == 0, "Aster stack must be 16-byte aligned")
+    ASSERT(__stack_bottom >= ORIGIN(RAM) && __stack_bottom >= __bss_end,
+           "Aster RAM overflow into reserved stack")
 
     /DISCARD/ :
     {

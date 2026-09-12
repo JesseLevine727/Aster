@@ -10,18 +10,19 @@ The goal is **not to reproduce an Apple A-series processor**. Modern Apple silic
 
 ## Current status
 
-Phase 0 through Phase 4 are runnable: the repository has an explicit
-architecture specification and memory map, a command-line toolchain check, a
-Make build, Verilator smoke and SoC tests, and a PicoRV32 RV32IM/ROM/RAM/UART
-path. The bare-metal C image boots through a RAM stack, clears `.bss`, verifies
-RAM persistence, and prints `Hello from Aster`. Directed RV32IM tests cover
-the memory path, branches, jumps, `MUL`, `DIV`, and `REM`. AsterBench emits a
-deterministic RAM `memcpy` record with cycle, instruction, memory-transaction,
-L1 cache, DMA and accelerator counters. Phase 4 adds separate direct-mapped
-instruction and data L1 caches with refill, write-through and MMIO bypass
-verification. The PYNQ-Z1 target uses synchronous BRAM-backed memories,
-an MMCM/BUFG clock path and a real 115200-baud UART transmitter; its Vivado
-flow reaches a routed, timing-clean bitstream.
+Phase 1 is implemented and verified: PicoRV32 RV32IM executes bare-metal C
+using 64 KiB ROM, 64 KiB RAM, a RAM stack and UART. The closeout regression
+checks 1,584 generated ISA vector groups, load/store lanes, control flow,
+memory-map boundaries, RAM execution, initialized data, nonzero initial RAM,
+warm-reset startup, linker limits and 12 trap scenarios. It runs with caches
+off/on and asynchronous/synchronous memory using `make phase1-matrix`.
+
+Phase 2 has a PYNQ-Z1 FPGA target and an earlier timing-clean routed bitstream;
+physical Aster firmware execution is still pending. Phase 3 has an initial
+AsterBench/counter implementation, and Phase 4 has private I/D L1 caches and
+basic directed tests. Their remaining correctness, measurement and experiment
+work is tracked in [`docs/phase-closeout.md`](docs/phase-closeout.md). These
+implementation milestones do not yet mean Phases 2–4 meet the roadmap exits.
 
 Start here:
 

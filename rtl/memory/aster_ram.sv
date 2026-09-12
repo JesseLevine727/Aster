@@ -15,10 +15,21 @@ module aster_ram #(
     logic [INDEX_WIDTH-1:0] word_index;
     localparam logic [31:0] DEPTH_BYTES = DEPTH_WORDS * 4;
     integer index;
+`ifndef SYNTHESIS
+    logic [31:0] simulation_fill;
+`endif
 
     initial begin
+`ifndef SYNTHESIS
+        simulation_fill = 32'd0;
+        if ($value$plusargs("ram_fill=%h", simulation_fill)) begin end
+`endif
         for (index = 0; index < DEPTH_WORDS; index = index + 1)
+`ifdef SYNTHESIS
             memory[index] = 32'd0;
+`else
+            memory[index] = simulation_fill;
+`endif
     end
 
     always_comb

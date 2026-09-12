@@ -23,7 +23,7 @@ int main(int argc, char** argv) {
         tick(dut);
 
     dut.rst_n = 1;
-    for (int cycle = 0; cycle < 12000; ++cycle) {
+    for (int cycle = 0; cycle < 500000; ++cycle) {
         tick(dut);
         if (dut.uart_tx_valid) {
             const char character = static_cast<char>(dut.uart_tx_data);

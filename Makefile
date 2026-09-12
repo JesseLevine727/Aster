@@ -11,6 +11,8 @@ OBJDUMP := $(RISCV_PREFIX)objdump
 
 RISCV_MARCH ?= rv32im
 RISCV_MABI ?= ilp32
+ENABLE_L1 ?= 1
+SYNC_MEMORY ?= 0
 VERILATOR_VENDOR_LINT_FLAGS := --Wno-DECLFILENAME --Wno-GENUNNAMED \
 	--Wno-UNUSEDSIGNAL --Wno-BLKSEQ
 
@@ -39,6 +41,10 @@ BENCH_SIM := $(BUILD_DIR)/asterbench_sim
 CACHE_SIM := $(BUILD_DIR)/aster_l1_cache_sim
 SMOKE_SIM := $(BUILD_DIR)/aster_smoke_sim
 PYNQ_SIM := $(BUILD_DIR)/aster_pynq_z1_sim
+SOC_TEST_DIR := $(BUILD_DIR)/soc_l1$(ENABLE_L1)_sync$(SYNC_MEMORY)
+SOC_SIM := $(SOC_TEST_DIR)/aster_soc_sim
+TRAP_CASES := 0 1 2 3 4 5 6 7 8 9 10 11
+TRAP_IMAGES := $(addprefix $(HELLO_DIR)/trap_,$(addsuffix .hex,$(TRAP_CASES)))
 FPGA_BUILD_DIR := $(BUILD_DIR)/fpga/pynq_z1
 VIVADO ?= vivado
 
@@ -51,7 +57,9 @@ DIRECTED_ASFLAGS := -march=$(RISCV_MARCH) -mabi=$(RISCV_MABI) -nostdlib -ffreest
 BENCH_CFLAGS := $(HELLO_CFLAGS)
 BENCH_LDFLAGS := -T software/boot/link.ld -Wl,--gc-sections -Wl,-Map,$(HELLO_DIR)/memcpy_bench.map
 
-.PHONY: all tools structure firmware smoke test directed hello bench cache fpga fpga-sim check clean help
+.PHONY: all tools structure firmware smoke test directed hello bench cache fpga fpga-sim check clean help \
+	runtime memory-map traps phase1 phase1-matrix host-tests
+.SECONDARY:
 
 all: check
 
@@ -62,6 +70,8 @@ help:
 	@echo "  make firmware   Build the bare-metal Hello from Aster image"
 	@echo "  make smoke      Build and run the first Verilator smoke test"
 	@echo "  make directed   Run directed RV32IM instruction tests"
+	@echo "  make phase1     Run CPU, runtime, memory-map and trap regressions"
+	@echo "  make phase1-matrix  Test Phase 1 with L1 off/on, async/sync memory"
 	@echo "  make hello      Build and run Hello from Aster on the RTL CPU"
 	@echo "  make bench      Run the deterministic AsterBench RAM memcpy"
 	@echo "  make cache      Run directed L1 hit/miss/eviction tests"
@@ -113,8 +123,11 @@ firmware: $(HELLO_ELF) $(HELLO_BIN) $(HELLO_HEX)
 	@echo "Built $<"
 	@$(OBJDUMP) -d $(HELLO_ELF) | sed -n '1,100p'
 
-$(DIRECTED_ELF): software/tests/rv32im_directed.S software/tests/link_directed.ld | $(HELLO_DIR)
-	$(CC) $(DIRECTED_ASFLAGS) -T software/tests/link_directed.ld \
+$(HELLO_DIR)/rv32im_vectors.inc: scripts/gen_rv32im_vectors.py | $(HELLO_DIR)
+	$(PYTHON) $< $@
+
+$(DIRECTED_ELF): software/tests/rv32im_directed.S software/tests/link_directed.ld $(HELLO_DIR)/rv32im_vectors.inc | $(HELLO_DIR)
+	$(CC) $(DIRECTED_ASFLAGS) -Wa,-I,$(HELLO_DIR) -T software/tests/link_directed.ld \
 		-Wl,--gc-sections -Wl,-Map,$(HELLO_DIR)/rv32im_directed.map -o $@ $<
 
 $(DIRECTED_BIN): $(DIRECTED_ELF)
@@ -123,8 +136,51 @@ $(DIRECTED_BIN): $(DIRECTED_ELF)
 $(DIRECTED_HEX): $(DIRECTED_ELF) scripts/elf_to_hex.py
 	$(PYTHON) scripts/elf_to_hex.py --rom-bytes 65536 $< $@
 
-directed: $(DIRECTED_ELF) $(DIRECTED_BIN) $(DIRECTED_HEX) $(DIRECTED_SIM)
-	@$(DIRECTED_SIM)
+directed: $(DIRECTED_ELF) $(DIRECTED_BIN) $(DIRECTED_HEX) $(SOC_SIM)
+	@$(SOC_SIM) +rom=$(DIRECTED_HEX) --expect "RV32IM PASS"
+
+$(HELLO_DIR)/runtime.elf: software/tests/runtime.c software/runtime/start.S software/runtime/aster.h software/boot/link.ld | $(HELLO_DIR)
+	$(CC) $(HELLO_CFLAGS) -T software/boot/link.ld -o $@ software/runtime/start.S $<
+
+$(HELLO_DIR)/memory_map.elf: software/tests/memory_map.c software/runtime/start.S software/runtime/aster.h software/boot/link.ld | $(HELLO_DIR)
+	$(CC) $(HELLO_CFLAGS) -T software/boot/link.ld -o $@ software/runtime/start.S $<
+
+$(HELLO_DIR)/trap_%.elf: software/tests/traps.S software/tests/link_directed.ld | $(HELLO_DIR)
+	$(CC) $(DIRECTED_ASFLAGS) -DTRAP_CASE=$* -T software/tests/link_directed.ld -o $@ $<
+
+$(HELLO_DIR)/%.hex: $(HELLO_DIR)/%.elf scripts/elf_to_hex.py
+	$(PYTHON) scripts/elf_to_hex.py --rom-bytes 65536 $< $@
+
+$(SOC_SIM): $(RTL_CORE) $(RTL_CACHE) $(RTL_MEMORY) $(RTL_PERIPHERALS) $(RTL_SOC) verification/soc/tb_aster_soc.cpp | $(BUILD_DIR)
+	mkdir -p $(SOC_TEST_DIR)
+	$(VERILATOR) --cc --exe --build --timing --Wall --Wno-fatal \
+		$(VERILATOR_VENDOR_LINT_FLAGS) --top-module aster_minimal \
+		"-GENABLE_L1=1'b$(ENABLE_L1)" "-GSYNC_MEMORY=1'b$(SYNC_MEMORY)" \
+		--Mdir $(SOC_TEST_DIR)/obj -o $(abspath $@) \
+		$(addprefix $(ROOT)/,$(RTL_CORE) $(RTL_CACHE) $(RTL_MEMORY) $(RTL_PERIPHERALS) $(RTL_SOC)) \
+		$(ROOT)/verification/soc/tb_aster_soc.cpp
+
+runtime: $(HELLO_DIR)/runtime.hex $(SOC_SIM)
+	@$(SOC_SIM) +rom=$(HELLO_DIR)/runtime.hex +ram_fill=a5a5a5a5 --expect "RUNTIME PASS" --boots 2
+
+memory-map: $(HELLO_DIR)/memory_map.hex $(SOC_SIM)
+	@$(SOC_SIM) +rom=$(HELLO_DIR)/memory_map.hex --expect "MEMORY MAP PASS"
+
+traps: $(TRAP_IMAGES) $(SOC_SIM)
+	@set -e; for case in $(TRAP_CASES); do \
+		echo "Trap case $$case"; \
+		$(SOC_SIM) +rom=$(HELLO_DIR)/trap_$$case.hex --expect "TRAP ARMED" --trap --boots 2; \
+	done
+
+host-tests:
+	@RISCV_PREFIX=$(RISCV_PREFIX) $(PYTHON) -m unittest discover -s verification/host -v
+
+phase1: directed runtime memory-map traps host-tests
+
+phase1-matrix:
+	@set -e; for l1 in 0 1; do for sync in 0 1; do \
+		$(MAKE) ENABLE_L1=$$l1 SYNC_MEMORY=$$sync phase1; \
+	done; done
 
 $(SMOKE_SIM): rtl/verification/aster_smoke.sv verification/unit/tb_aster_smoke.cpp | $(BUILD_DIR)
 	$(VERILATOR) --cc --exe --build --timing --Wall --Wno-fatal \
@@ -216,9 +272,9 @@ $(CACHE_SIM): $(RTL_CACHE) verification/unit/tb_aster_l1_cache.cpp | $(BUILD_DIR
 cache: $(CACHE_SIM)
 	@$(CACHE_SIM)
 
-test: smoke directed hello bench cache fpga-sim
+test: smoke phase1 hello bench cache fpga-sim
 
-check: tools smoke directed hello bench cache fpga-sim
+check: tools smoke phase1 hello bench cache fpga-sim
 
 clean:
 	rm -rf $(BUILD_DIR)

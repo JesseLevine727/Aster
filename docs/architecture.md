@@ -1,6 +1,6 @@
 # Aster architecture specification
 
-Status: Phase 4 baseline, 2026-09-11
+Status: Phase 1 closeout; Phase 2–4 implementations under verification, 2026-09-12
 
 This document is the executable contract for the first bring-up slice. It
 separates decisions that are fixed for the minimal system from features that
@@ -20,7 +20,8 @@ The Phase 0/1 baseline contains:
 - 64 KiB byte-writeable RAM;
 - a simulation UART;
 - combinational instruction and data reads with stores committed on `clk`;
-- a RISC-V assembly firmware image that prints `Hello from Aster`.
+- a freestanding C firmware image that prints `Hello from Aster`;
+- runtime copying initialized data, clearing BSS and reserving a 4 KiB stack.
 
 The Phase 2 PYNQ-Z1 target adds a synchronous-read BRAM configuration of the
 same SoC, a global MMCM/BUFG clock path (31.25 MHz core clock from the board's
@@ -97,6 +98,8 @@ this geometry, address bits `[3:0]` select the byte within a line, `[7:4]`
 select the line, and `[31:8]` form the tag.
 
 - The I$ caches instruction requests in the ROM address space.
+- RAM instruction fetches bypass the I$ and use RAM, including after a code
+  update. D$ stores are write-through; no stale RAM instruction copy exists.
 - The D$ caches data requests in the main RAM window only.
 - UART, performance-counter and all other MMIO requests bypass the caches.
 - Cacheable loads are read-allocate and refill one 32-bit word at a time.
@@ -114,13 +117,16 @@ an uncached comparison configuration.
 ## Memory map
 
 All ranges are inclusive at the start and exclusive at the end. The decoder
-uses the high-level windows below; individual peripherals own their register
-offsets.
+enforces the actual ROM/RAM bounds below; individual peripherals own their
+register offsets. ROM stores and unmapped stores are ignored; unmapped data
+reads return zero and bypass caches. Only ROM and RAM supply instruction data:
+an MMIO/unmapped instruction fetch returns zero and the core traps. RAM has a
+reserved 4 KiB stack at the top; the linker rejects data/BSS overlap with it.
 
 | Region | Start | End | Size | Access | Purpose |
 | --- | ---: | ---: | ---: | --- | --- |
 | Boot ROM | `0x0000_0000` | `0x0001_0000` | 64 KiB | RX | Firmware and read-only data |
-| Main RAM | `0x1000_0000` | `0x1001_0000` | 64 KiB | RWX | Scratch/data/stack in later firmware |
+| Main RAM | `0x1000_0000` | `0x1001_0000` | 64 KiB | RWX | Data, stack and uncached instruction execution |
 | UART | `0x2000_0000` | `0x2000_1000` | 4 KiB | RW | Console and bring-up status |
 | Timer | `0x2000_1000` | `0x2000_2000` | 4 KiB | RW | Reserved for Phase 1+ |
 | Interrupt controller | `0x2000_2000` | `0x2000_3000` | 4 KiB | RW | Reserved for Phase 5+ |
@@ -219,20 +225,30 @@ Phase 0 is complete when:
 
 ## Phase 1/2 exit criteria
 
-Phase 1 is complete when the PicoRV32 RV32IM image passes the directed test
-and C runtime simulation. Phase 2 is complete when the board-facing UART
-simulation passes, the Vivado flow generates a bitstream with no DRC errors or
-unrouted nets and timing reports no failing endpoints. Physical board
-observation remains a hardware-validation step and is recorded separately.
+Phase 1 requires the README's compiled Hello exit plus the closeout tests in
+`make phase1-matrix`: generated integer/M cases, memory permissions/bounds,
+RAM execution, cold and warm C startup, stack use and expected traps across
+cache and memory timing configurations. Host tests enforce the linker limits.
+
+Phase 2 requires real Aster firmware execution and communication on PYNQ-Z1,
+as stated in the README. Board-facing simulation and a timing/DRC-clean routed
+bitstream are prerequisites, not substitutes for physical evidence. Board
+loading and validation will use SSH/PYNQ Linux, per the user's board workflow.
+The earlier bitstream report does not validate subsequent RTL revisions.
 
 ## Phase 3 exit criteria
 
-Phase 3 is complete when:
+Phase 3 is complete when (in addition to the closeout requirements below):
 
 1. the performance-counter register map and event semantics are documented;
 2. the RAM-backed AsterBench firmware builds through the bare-metal runtime;
 3. the benchmark emits a complete deterministic machine-readable record; and
 4. `make bench` and the full `make check` regression pass.
+
+The remaining closeout requires strict record validation, accurate event
+semantics and a common snapshot interval, counter corner-case tests,
+revision/configuration provenance, reproducible comparisons and complete
+board-facing output. The initial benchmark alone does not satisfy these.
 
 ## Phase 4 exit criteria
 
@@ -246,3 +262,9 @@ Phase 4 is complete when:
 4. Hello and AsterBench pass with caches enabled and report non-zero cache
    access/miss counters; and
 5. `make check` remains green with the Phase 4 cache regression included.
+
+The README also requires no-cache/cache comparisons, working-set sweeps,
+sequential/random access and cache-size sensitivity. Closeout additionally
+requires randomized reference checks, protocol assertions, stalled/reset
+transactions and supported geometries. See `docs/phase-closeout.md` for the
+evidence and outstanding work; the basic unit regression is insufficient alone.

@@ -12,7 +12,9 @@ module aster_minimal #(
     output logic        trap
 );
     localparam logic [31:0] ROM_BASE = 32'h0000_0000;
+    localparam logic [31:0] ROM_END = ROM_BASE + 32'h0001_0000;
     localparam logic [31:0] RAM_BASE = 32'h1000_0000;
+    localparam logic [31:0] RAM_END = RAM_BASE + 32'h0001_0000;
     localparam logic [31:0] UART_BASE = 32'h2000_0000;
     localparam logic [31:0] UART_LAST = UART_BASE + 32'h0000_0fff;
     localparam logic [31:0] PERF_BASE = 32'h2000_3000;
@@ -106,8 +108,10 @@ module aster_minimal #(
     ) icache (
         .clk(clk),
         .rst_n(rst_n),
-        .cpu_valid(mem_valid && mem_instr),
-        .cpu_cacheable(mem_addr < RAM_BASE),
+        .cpu_valid(ENABLE_L1 && mem_valid && mem_instr),
+        // RAM code bypasses I$: write-through D$ stores are immediately
+        // visible without an instruction-cache maintenance operation.
+        .cpu_cacheable(mem_addr < ROM_END),
         .cpu_addr(mem_addr),
         .cpu_wdata(mem_wdata),
         .cpu_wstrb(mem_wstrb),
@@ -129,8 +133,8 @@ module aster_minimal #(
     ) dcache (
         .clk(clk),
         .rst_n(rst_n),
-        .cpu_valid(mem_valid && !mem_instr),
-        .cpu_cacheable((mem_addr >= RAM_BASE) && (mem_addr < UART_BASE)),
+        .cpu_valid(ENABLE_L1 && mem_valid && !mem_instr),
+        .cpu_cacheable((mem_addr >= RAM_BASE) && (mem_addr < RAM_END)),
         .cpu_addr(mem_addr),
         .cpu_wdata(mem_wdata),
         .cpu_wstrb(mem_wstrb),
@@ -192,7 +196,8 @@ module aster_minimal #(
     end
 
     assign memory_access = lower_valid &&
-        (lower_mem_instr || (lower_addr < UART_BASE));
+        ((lower_addr < ROM_END) ||
+         ((lower_addr >= RAM_BASE) && (lower_addr < RAM_END)));
 
     always_ff @(posedge clk) begin
         if (!rst_n) begin
@@ -264,20 +269,21 @@ module aster_minimal #(
 
     always_comb begin
         lower_rdata = 32'd0;
-        if (lower_mem_instr || (lower_addr < RAM_BASE))
+        if (lower_addr < ROM_END)
             lower_rdata = rom_rdata;
-        else if ((lower_addr >= RAM_BASE) && (lower_addr < UART_BASE))
+        else if ((lower_addr >= RAM_BASE) && (lower_addr < RAM_END))
             lower_rdata = ram_rdata;
-        else if ((lower_addr >= UART_BASE) && (lower_addr <= UART_LAST))
+        else if (!lower_mem_instr && (lower_addr >= UART_BASE) && (lower_addr <= UART_LAST))
             lower_rdata = uart_rdata;
-        else if ((lower_addr >= PERF_BASE) && (lower_addr <= PERF_LAST))
+        else if (!lower_mem_instr && (lower_addr >= PERF_BASE) && (lower_addr <= PERF_LAST))
             lower_rdata = perf_rdata;
 
-        ram_we = lower_valid && lower_ready && (lower_wstrb != 4'b0000)
-            && (lower_addr >= RAM_BASE) && (lower_addr < UART_BASE);
-        uart_we = lower_valid && lower_ready && (lower_wstrb != 4'b0000)
+        ram_we = rst_n && lower_valid && lower_ready && !lower_mem_instr
+            && (lower_wstrb != 4'b0000)
+            && (lower_addr >= RAM_BASE) && (lower_addr < RAM_END);
+        uart_we = rst_n && lower_valid && lower_ready && !lower_mem_instr && lower_wstrb[0]
             && (lower_addr >= UART_BASE) && (lower_addr <= UART_LAST);
-        perf_we = lower_valid && lower_ready && (lower_wstrb != 4'b0000)
+        perf_we = rst_n && lower_valid && lower_ready && !lower_mem_instr && (lower_wstrb != 4'b0000)
             && (lower_addr >= PERF_BASE) && (lower_addr <= PERF_LAST);
     end
 endmodule

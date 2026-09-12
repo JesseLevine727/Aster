@@ -13,10 +13,18 @@ module aster_rom #(
     logic [INDEX_WIDTH-1:0] word_index;
     localparam logic [31:0] DEPTH_BYTES = DEPTH_WORDS * 4;
     integer index;
+`ifndef SYNTHESIS
+    string simulation_image;
+`endif
 
     initial begin
         for (index = 0; index < DEPTH_WORDS; index = index + 1)
             memory[index] = 32'd0;
+`ifndef SYNTHESIS
+        if ($value$plusargs("rom=%s", simulation_image))
+            $readmemh(simulation_image, memory);
+        else
+`endif
         if (MEM_INIT_FILE != "")
             $readmemh(MEM_INIT_FILE, memory);
     end
