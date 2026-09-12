@@ -1,0 +1,1140 @@
+Aster Phase 4 regression evidence, 2026-09-12
+Implementation checkpoint: 966ddea297f97b867a5a97e72497423826269152
+Successful result excerpts; compilation chatter omitted. All listed commands exited 0.
+This is simulation/build evidence, not physical-board execution.
+
+Fresh-directory full baseline: make BUILD_DIR=build/phase4-check check (then confirmation run)
+PASS: Aster Verilator smoke test (16 cycles)
+PASS: RV32IM PASS (1 boot(s))
+PASS: RUNTIME PASS (2 boot(s))
+PASS: MEMORY MAP PASS (1 boot(s))
+PASS: TRAP ARMED (2 boot(s))
+PASS: TRAP ARMED (2 boot(s))
+PASS: TRAP ARMED (2 boot(s))
+PASS: TRAP ARMED (2 boot(s))
+PASS: TRAP ARMED (2 boot(s))
+PASS: TRAP ARMED (2 boot(s))
+PASS: TRAP ARMED (2 boot(s))
+PASS: TRAP ARMED (2 boot(s))
+PASS: TRAP ARMED (2 boot(s))
+PASS: TRAP ARMED (2 boot(s))
+PASS: TRAP ARMED (2 boot(s))
+PASS: TRAP ARMED (2 boot(s))
+test_board_output_validation_uses_strict_parser (test_asterbench.ResultProvenance.test_board_output_validation_uses_strict_parser) ... ok
+test_comparison_contract (test_asterbench.ResultProvenance.test_comparison_contract) ... ok
+test_required_provenance (test_asterbench.ResultProvenance.test_required_provenance) ... ok
+test_serial_and_typed_record_must_agree (test_asterbench.ResultProvenance.test_serial_and_typed_record_must_agree) ... ok
+test_common_corpus (test_asterbench.StrictRecords.test_common_corpus) ... ok
+test_bad_options_and_known_references (test_cache_experiments.CacheExperiments.test_bad_options_and_known_references) ... ok
+test_missing_experiment_rejected (test_cache_experiments.CacheExperiments.test_missing_experiment_rejected) ... ok
+test_pattern_kernels_and_data_addresses_match (test_cache_experiments.CacheExperiments.test_pattern_kernels_and_data_addresses_match) ... ok
+test_plan_covers_all_readme_experiments (test_cache_experiments.CacheExperiments.test_plan_covers_all_readme_experiments) ... ok
+test_study_audit_rejects_corruption (test_cache_experiments.CacheExperiments.test_study_audit_rejects_corruption) ... ok
+test_known_corners (test_phase1.ArithmeticReference.test_known_corners) ... ok
+test_seed_reproducibility (test_phase1.ArithmeticReference.test_seed_reproducibility) ... ok
+test_initialized_byte_segment (test_phase1.FirmwareLayout.test_initialized_byte_segment) ... ok
+test_rom_overflow (test_phase1.FirmwareLayout.test_rom_overflow) ... ok
+test_stack_reservation (test_phase1.FirmwareLayout.test_stack_reservation) ... ok
+Ran 15 tests in 3.118s
+OK
+PASS: Hello from Aster reached the simulated UART
+ASTERBENCH,version=2,name=memcpy,bytes=256,repetitions=4,seed=0x13570000,status=PASS,checksum=0xc4be3200,clock_hz=31250000,l1=1,sync_memory=0,line_words=4,line_count=16,memory_wait=0,cycles=0x0000000000001c92,retired=0x0000000000000611,memory_transactions=0x0000000000000910,backing_transactions=0x000000000000014c,cache_accesses=0x0000000000000910,cache_misses=0x0000000000000113,dma_bytes=0x0000000000000000,accelerator_cycles=0x0000000000000000
+PASS: strict AsterBench v2 record
+PASS: cache scoreboard words=4 lines=16 seed=1 completed=5092 aborted=5 stalls=35198 reads=8537 writes=1642
+PASS: cache scoreboard words=4 lines=16 seed=42366 completed=5092 aborted=5 stalls=34509 reads=8100 writes=1740
+PASS: cache scoreboard words=4 lines=16 seed=12648430 completed=5092 aborted=5 stalls=35790 reads=8549 writes=1672
+PASS: L1 cache refill, hit, byte-write, eviction and bypass tests
+PASS: UART FIFO backpressure, wraparound, all byte values and mid-frame reset
+PASS: UART RX false starts, framing errors, reset and all 256 bytes
+PASS: PYNQ-Z1 UART serial decode (17 bytes)
+PASS: PYNQ-Z1 UART serial decode (17 bytes)
+PASS: PYNQ-Z1 UART serial decode (1060 bytes)
+PASS: PYNQ-Z1 UART serial decode (1060 bytes)
+PASS: PYNQ-Z1 UART serial decode (448 bytes)
+PASS: PYNQ-Z1 UART serial decode (448 bytes)
+PASS: Linux AXI boot + UART serial capture (17 bytes)
+PASS: Linux AXI boot + UART serial capture (17 bytes)
+PASS: Linux AXI boot + UART serial capture (1060 bytes)
+PASS: Linux AXI boot + UART serial capture (1060 bytes)
+PASS: Linux AXI boot + UART serial capture (443 bytes)
+PASS: Linux AXI boot + UART serial capture (443 bytes)
+PASS: counters/events, command strobes, freeze/resume, reset and 64-bit rollover
+PASS: exact RVFI retirement sequence, stalled memory, six trap types and warm reset
+
+36 cache geometries / 108 seeded runs: make cache-matrix cache-boundaries
+PASS: cache scoreboard words=2 lines=2 seed=1 completed=5092 aborted=5 stalls=21341 reads=4578 writes=1642
+PASS: cache scoreboard words=2 lines=2 seed=42366 completed=5092 aborted=5 stalls=21242 reads=4381 writes=1740
+PASS: cache scoreboard words=2 lines=2 seed=12648430 completed=5092 aborted=5 stalls=21450 reads=4496 writes=1672
+PASS: cache scoreboard words=2 lines=4 seed=1 completed=5092 aborted=5 stalls=20987 reads=4350 writes=1642
+PASS: cache scoreboard words=2 lines=4 seed=42366 completed=5092 aborted=5 stalls=20882 reads=4273 writes=1740
+PASS: cache scoreboard words=2 lines=4 seed=12648430 completed=5092 aborted=5 stalls=20963 reads=4362 writes=1672
+PASS: cache scoreboard words=2 lines=8 seed=1 completed=5092 aborted=5 stalls=21065 reads=4424 writes=1642
+PASS: cache scoreboard words=2 lines=8 seed=42366 completed=5092 aborted=5 stalls=21332 reads=4281 writes=1740
+PASS: cache scoreboard words=2 lines=8 seed=12648430 completed=5092 aborted=5 stalls=21116 reads=4352 writes=1672
+PASS: cache scoreboard words=2 lines=16 seed=1 completed=5092 aborted=5 stalls=21561 reads=4480 writes=1642
+PASS: cache scoreboard words=2 lines=16 seed=42366 completed=5092 aborted=5 stalls=20908 reads=4313 writes=1740
+PASS: cache scoreboard words=2 lines=16 seed=12648430 completed=5092 aborted=5 stalls=21385 reads=4372 writes=1672
+PASS: cache scoreboard words=2 lines=32 seed=1 completed=5092 aborted=5 stalls=21647 reads=4538 writes=1642
+PASS: cache scoreboard words=2 lines=32 seed=42366 completed=5092 aborted=5 stalls=21513 reads=4381 writes=1740
+PASS: cache scoreboard words=2 lines=32 seed=12648430 completed=5092 aborted=5 stalls=21662 reads=4566 writes=1672
+PASS: cache scoreboard words=2 lines=64 seed=1 completed=5092 aborted=5 stalls=22690 reads=4810 writes=1642
+PASS: cache scoreboard words=2 lines=64 seed=42366 completed=5092 aborted=5 stalls=22174 reads=4565 writes=1740
+PASS: cache scoreboard words=2 lines=64 seed=12648430 completed=5092 aborted=5 stalls=22556 reads=4758 writes=1672
+PASS: cache scoreboard words=4 lines=2 seed=1 completed=5092 aborted=5 stalls=35460 reads=8477 writes=1642
+PASS: cache scoreboard words=4 lines=2 seed=42366 completed=5092 aborted=5 stalls=34838 reads=8316 writes=1740
+PASS: cache scoreboard words=4 lines=2 seed=12648430 completed=5092 aborted=5 stalls=35872 reads=8593 writes=1672
+PASS: cache scoreboard words=4 lines=4 seed=1 completed=5092 aborted=5 stalls=35197 reads=8509 writes=1642
+PASS: cache scoreboard words=4 lines=4 seed=42366 completed=5092 aborted=5 stalls=34664 reads=8184 writes=1740
+PASS: cache scoreboard words=4 lines=4 seed=12648430 completed=5092 aborted=5 stalls=34563 reads=8261 writes=1672
+PASS: cache scoreboard words=4 lines=8 seed=1 completed=5092 aborted=5 stalls=35320 reads=8517 writes=1642
+PASS: cache scoreboard words=4 lines=8 seed=42366 completed=5092 aborted=5 stalls=34295 reads=8088 writes=1740
+PASS: cache scoreboard words=4 lines=8 seed=12648430 completed=5092 aborted=5 stalls=35201 reads=8309 writes=1672
+PASS: cache scoreboard words=4 lines=16 seed=1 completed=5092 aborted=5 stalls=35198 reads=8537 writes=1642
+PASS: cache scoreboard words=4 lines=16 seed=42366 completed=5092 aborted=5 stalls=34509 reads=8100 writes=1740
+PASS: cache scoreboard words=4 lines=16 seed=12648430 completed=5092 aborted=5 stalls=35790 reads=8549 writes=1672
+PASS: cache scoreboard words=4 lines=32 seed=1 completed=5092 aborted=5 stalls=36017 reads=8709 writes=1642
+PASS: cache scoreboard words=4 lines=32 seed=42366 completed=5092 aborted=5 stalls=34577 reads=8252 writes=1740
+PASS: cache scoreboard words=4 lines=32 seed=12648430 completed=5092 aborted=5 stalls=36402 reads=8741 writes=1672
+PASS: cache scoreboard words=4 lines=64 seed=1 completed=5092 aborted=5 stalls=37296 reads=9117 writes=1642
+PASS: cache scoreboard words=4 lines=64 seed=42366 completed=5092 aborted=5 stalls=36948 reads=8708 writes=1740
+PASS: cache scoreboard words=4 lines=64 seed=12648430 completed=5092 aborted=5 stalls=37720 reads=9113 writes=1672
+PASS: cache scoreboard words=8 lines=2 seed=1 completed=5092 aborted=5 stalls=64403 reads=16975 writes=1642
+PASS: cache scoreboard words=8 lines=2 seed=42366 completed=5092 aborted=5 stalls=63268 reads=16258 writes=1740
+PASS: cache scoreboard words=8 lines=2 seed=12648430 completed=5092 aborted=5 stalls=63736 reads=16611 writes=1672
+PASS: cache scoreboard words=8 lines=4 seed=1 completed=5092 aborted=5 stalls=63592 reads=16735 writes=1642
+PASS: cache scoreboard words=8 lines=4 seed=42366 completed=5092 aborted=5 stalls=62093 reads=15818 writes=1740
+PASS: cache scoreboard words=8 lines=4 seed=12648430 completed=5092 aborted=5 stalls=63156 reads=16323 writes=1672
+PASS: cache scoreboard words=8 lines=8 seed=1 completed=5092 aborted=5 stalls=63213 reads=16591 writes=1642
+PASS: cache scoreboard words=8 lines=8 seed=42366 completed=5092 aborted=5 stalls=61362 reads=15754 writes=1740
+PASS: cache scoreboard words=8 lines=8 seed=12648430 completed=5092 aborted=5 stalls=63192 reads=16563 writes=1672
+PASS: cache scoreboard words=8 lines=16 seed=1 completed=5092 aborted=5 stalls=63137 reads=16631 writes=1642
+PASS: cache scoreboard words=8 lines=16 seed=42366 completed=5092 aborted=5 stalls=61910 reads=15906 writes=1740
+PASS: cache scoreboard words=8 lines=16 seed=12648430 completed=5092 aborted=5 stalls=64804 reads=16779 writes=1672
+PASS: cache scoreboard words=8 lines=32 seed=1 completed=5092 aborted=5 stalls=64271 reads=16927 writes=1642
+PASS: cache scoreboard words=8 lines=32 seed=42366 completed=5092 aborted=5 stalls=63058 reads=16266 writes=1740
+PASS: cache scoreboard words=8 lines=32 seed=12648430 completed=5092 aborted=5 stalls=65527 reads=17043 writes=1672
+PASS: cache scoreboard words=8 lines=64 seed=1 completed=5092 aborted=5 stalls=67472 reads=17703 writes=1642
+PASS: cache scoreboard words=8 lines=64 seed=42366 completed=5092 aborted=5 stalls=67163 reads=17410 writes=1740
+PASS: cache scoreboard words=8 lines=64 seed=12648430 completed=5092 aborted=5 stalls=67786 reads=17683 writes=1672
+PASS: cache scoreboard words=16 lines=2 seed=1 completed=5092 aborted=5 stalls=122964 reads=33683 writes=1642
+PASS: cache scoreboard words=16 lines=2 seed=42366 completed=5092 aborted=5 stalls=117894 reads=31878 writes=1740
+PASS: cache scoreboard words=16 lines=2 seed=12648430 completed=5092 aborted=5 stalls=122871 reads=33391 writes=1672
+PASS: cache scoreboard words=16 lines=4 seed=1 completed=5092 aborted=5 stalls=119626 reads=32771 writes=1642
+PASS: cache scoreboard words=16 lines=4 seed=42366 completed=5092 aborted=5 stalls=114941 reads=30902 writes=1740
+PASS: cache scoreboard words=16 lines=4 seed=12648430 completed=5092 aborted=5 stalls=120775 reads=32703 writes=1672
+PASS: cache scoreboard words=16 lines=8 seed=1 completed=5092 aborted=5 stalls=118629 reads=32467 writes=1642
+PASS: cache scoreboard words=16 lines=8 seed=42366 completed=5092 aborted=5 stalls=113539 reads=30582 writes=1740
+PASS: cache scoreboard words=16 lines=8 seed=12648430 completed=5092 aborted=5 stalls=119987 reads=32687 writes=1672
+PASS: cache scoreboard words=16 lines=16 seed=1 completed=5092 aborted=5 stalls=117633 reads=31939 writes=1642
+PASS: cache scoreboard words=16 lines=16 seed=42366 completed=5092 aborted=5 stalls=115206 reads=31110 writes=1740
+PASS: cache scoreboard words=16 lines=16 seed=12648430 completed=5092 aborted=5 stalls=120817 reads=32847 writes=1672
+PASS: cache scoreboard words=16 lines=32 seed=1 completed=5092 aborted=5 stalls=120979 reads=33235 writes=1642
+PASS: cache scoreboard words=16 lines=32 seed=42366 completed=5092 aborted=5 stalls=118915 reads=32150 writes=1740
+PASS: cache scoreboard words=16 lines=32 seed=12648430 completed=5092 aborted=5 stalls=121888 reads=33087 writes=1672
+PASS: cache scoreboard words=16 lines=64 seed=1 completed=5092 aborted=5 stalls=128285 reads=35187 writes=1642
+PASS: cache scoreboard words=16 lines=64 seed=42366 completed=5092 aborted=5 stalls=125653 reads=34038 writes=1740
+PASS: cache scoreboard words=16 lines=64 seed=12648430 completed=5092 aborted=5 stalls=126850 reads=34463 writes=1672
+PASS: cache scoreboard words=32 lines=16 seed=1 completed=5092 aborted=5 stalls=227936 reads=63755 writes=1642
+PASS: cache scoreboard words=32 lines=16 seed=42366 completed=5092 aborted=5 stalls=224522 reads=62222 writes=1740
+PASS: cache scoreboard words=32 lines=16 seed=12648430 completed=5092 aborted=5 stalls=231377 reads=64583 writes=1672
+PASS: cache scoreboard words=64 lines=16 seed=1 completed=5092 aborted=5 stalls=454332 reads=128283 writes=1642
+PASS: cache scoreboard words=64 lines=16 seed=42366 completed=5092 aborted=5 stalls=445332 reads=125374 writes=1740
+PASS: cache scoreboard words=64 lines=16 seed=12648430 completed=5092 aborted=5 stalls=451539 reads=127319 writes=1672
+PASS: cache scoreboard words=128 lines=16 seed=1 completed=5092 aborted=5 stalls=921169 reads=261499 writes=1642
+PASS: cache scoreboard words=128 lines=16 seed=42366 completed=5092 aborted=5 stalls=856767 reads=242910 writes=1740
+PASS: cache scoreboard words=128 lines=16 seed=12648430 completed=5092 aborted=5 stalls=904692 reads=257015 writes=1672
+PASS: cache scoreboard words=256 lines=16 seed=1 completed=5092 aborted=5 stalls=1796252 reads=512571 writes=1642
+PASS: cache scoreboard words=256 lines=16 seed=42366 completed=5092 aborted=5 stalls=1739441 reads=494878 writes=1740
+PASS: cache scoreboard words=256 lines=16 seed=12648430 completed=5092 aborted=5 stalls=1812734 reads=517175 writes=1672
+PASS: cache scoreboard words=512 lines=16 seed=1 completed=5092 aborted=5 stalls=3655644 reads=1044155 writes=1642
+PASS: cache scoreboard words=512 lines=16 seed=42366 completed=5092 aborted=5 stalls=3476824 reads=990878 writes=1740
+PASS: cache scoreboard words=512 lines=16 seed=12648430 completed=5092 aborted=5 stalls=3649398 reads=1042103 writes=1672
+PASS: cache scoreboard words=1024 lines=16 seed=1 completed=5092 aborted=5 stalls=7193697 reads=2054075 writes=1642
+PASS: cache scoreboard words=1024 lines=16 seed=42366 completed=5092 aborted=5 stalls=7012199 reads=2000798 writes=1740
+PASS: cache scoreboard words=1024 lines=16 seed=12648430 completed=5092 aborted=5 stalls=7206860 reads=2057143 writes=1672
+PASS: cache scoreboard words=4 lines=128 seed=1 completed=5092 aborted=5 stalls=39856 reads=9805 writes=1642
+PASS: cache scoreboard words=4 lines=128 seed=42366 completed=5092 aborted=5 stalls=39671 reads=9580 writes=1740
+PASS: cache scoreboard words=4 lines=128 seed=12648430 completed=5092 aborted=5 stalls=40305 reads=9669 writes=1672
+PASS: cache scoreboard words=4 lines=256 seed=1 completed=5092 aborted=5 stalls=42955 reads=10717 writes=1642
+PASS: cache scoreboard words=4 lines=256 seed=42366 completed=5092 aborted=5 stalls=42796 reads=10416 writes=1740
+PASS: cache scoreboard words=4 lines=256 seed=12648430 completed=5092 aborted=5 stalls=42777 reads=10549 writes=1672
+PASS: cache scoreboard words=4 lines=512 seed=1 completed=5092 aborted=5 stalls=45533 reads=11409 writes=1642
+PASS: cache scoreboard words=4 lines=512 seed=42366 completed=5092 aborted=5 stalls=44436 reads=10936 writes=1740
+PASS: cache scoreboard words=4 lines=512 seed=12648430 completed=5092 aborted=5 stalls=45122 reads=11245 writes=1672
+PASS: cache scoreboard words=4 lines=1024 seed=1 completed=5092 aborted=5 stalls=46376 reads=11757 writes=1642
+PASS: cache scoreboard words=4 lines=1024 seed=42366 completed=5092 aborted=5 stalls=46159 reads=11428 writes=1740
+PASS: cache scoreboard words=4 lines=1024 seed=12648430 completed=5092 aborted=5 stalls=47187 reads=11721 writes=1672
+PASS: cache scoreboard words=2 lines=1024 seed=1 completed=5092 aborted=5 stalls=27359 reads=6148 writes=1642
+PASS: cache scoreboard words=2 lines=1024 seed=42366 completed=5092 aborted=5 stalls=26852 reads=5897 writes=1740
+PASS: cache scoreboard words=2 lines=1024 seed=12648430 completed=5092 aborted=5 stalls=27046 reads=6060 writes=1672
+PASS: cache scoreboard words=1024 lines=1024 seed=1 completed=5092 aborted=5 stalls=10157824 reads=2900923 writes=1642
+PASS: cache scoreboard words=1024 lines=1024 seed=42366 completed=5092 aborted=5 stalls=9899509 reads=2827166 writes=1740
+PASS: cache scoreboard words=1024 lines=1024 seed=12648430 completed=5092 aborted=5 stalls=10102070 reads=2884535 writes=1672
+
+24 SoC legs: make BUILD_DIR=build/phase4-matrix phase4-soc-matrix
+PASS: RV32IM PASS (1 boot(s))
+PASS: RUNTIME PASS (2 boot(s))
+PASS: MEMORY MAP PASS (1 boot(s))
+PASS: TRAP ARMED (2 boot(s))
+PASS: TRAP ARMED (2 boot(s))
+PASS: TRAP ARMED (2 boot(s))
+PASS: TRAP ARMED (2 boot(s))
+PASS: TRAP ARMED (2 boot(s))
+PASS: TRAP ARMED (2 boot(s))
+PASS: TRAP ARMED (2 boot(s))
+PASS: TRAP ARMED (2 boot(s))
+PASS: TRAP ARMED (2 boot(s))
+PASS: TRAP ARMED (2 boot(s))
+PASS: TRAP ARMED (2 boot(s))
+PASS: TRAP ARMED (2 boot(s))
+test_board_output_validation_uses_strict_parser (test_asterbench.ResultProvenance.test_board_output_validation_uses_strict_parser) ... ok
+test_comparison_contract (test_asterbench.ResultProvenance.test_comparison_contract) ... ok
+test_required_provenance (test_asterbench.ResultProvenance.test_required_provenance) ... ok
+test_serial_and_typed_record_must_agree (test_asterbench.ResultProvenance.test_serial_and_typed_record_must_agree) ... ok
+test_common_corpus (test_asterbench.StrictRecords.test_common_corpus) ... ok
+test_bad_options_and_known_references (test_cache_experiments.CacheExperiments.test_bad_options_and_known_references) ... ok
+test_missing_experiment_rejected (test_cache_experiments.CacheExperiments.test_missing_experiment_rejected) ... ok
+test_pattern_kernels_and_data_addresses_match (test_cache_experiments.CacheExperiments.test_pattern_kernels_and_data_addresses_match) ... ok
+test_plan_covers_all_readme_experiments (test_cache_experiments.CacheExperiments.test_plan_covers_all_readme_experiments) ... ok
+test_study_audit_rejects_corruption (test_cache_experiments.CacheExperiments.test_study_audit_rejects_corruption) ... ok
+test_known_corners (test_phase1.ArithmeticReference.test_known_corners) ... ok
+test_seed_reproducibility (test_phase1.ArithmeticReference.test_seed_reproducibility) ... ok
+test_initialized_byte_segment (test_phase1.FirmwareLayout.test_initialized_byte_segment) ... ok
+test_rom_overflow (test_phase1.FirmwareLayout.test_rom_overflow) ... ok
+test_stack_reservation (test_phase1.FirmwareLayout.test_stack_reservation) ... ok
+Ran 15 tests in 3.257s
+OK
+ASTERBENCH,version=2,name=memcpy,bytes=256,repetitions=4,seed=0x13570000,status=PASS,checksum=0xc4be3200,clock_hz=31250000,l1=0,sync_memory=0,line_words=2,line_count=2,memory_wait=0,cycles=0x0000000000001b32,retired=0x0000000000000611,memory_transactions=0x0000000000000910,backing_transactions=0x0000000000000910,cache_accesses=0x0000000000000000,cache_misses=0x0000000000000000,dma_bytes=0x0000000000000000,accelerator_cycles=0x0000000000000000
+PASS: strict AsterBench v2 record
+PASS: RV32IM PASS (1 boot(s))
+PASS: RUNTIME PASS (2 boot(s))
+PASS: MEMORY MAP PASS (1 boot(s))
+PASS: TRAP ARMED (2 boot(s))
+PASS: TRAP ARMED (2 boot(s))
+PASS: TRAP ARMED (2 boot(s))
+PASS: TRAP ARMED (2 boot(s))
+PASS: TRAP ARMED (2 boot(s))
+PASS: TRAP ARMED (2 boot(s))
+PASS: TRAP ARMED (2 boot(s))
+PASS: TRAP ARMED (2 boot(s))
+PASS: TRAP ARMED (2 boot(s))
+PASS: TRAP ARMED (2 boot(s))
+PASS: TRAP ARMED (2 boot(s))
+PASS: TRAP ARMED (2 boot(s))
+test_board_output_validation_uses_strict_parser (test_asterbench.ResultProvenance.test_board_output_validation_uses_strict_parser) ... ok
+test_comparison_contract (test_asterbench.ResultProvenance.test_comparison_contract) ... ok
+test_required_provenance (test_asterbench.ResultProvenance.test_required_provenance) ... ok
+test_serial_and_typed_record_must_agree (test_asterbench.ResultProvenance.test_serial_and_typed_record_must_agree) ... ok
+test_common_corpus (test_asterbench.StrictRecords.test_common_corpus) ... ok
+test_bad_options_and_known_references (test_cache_experiments.CacheExperiments.test_bad_options_and_known_references) ... ok
+test_missing_experiment_rejected (test_cache_experiments.CacheExperiments.test_missing_experiment_rejected) ... ok
+test_pattern_kernels_and_data_addresses_match (test_cache_experiments.CacheExperiments.test_pattern_kernels_and_data_addresses_match) ... ok
+test_plan_covers_all_readme_experiments (test_cache_experiments.CacheExperiments.test_plan_covers_all_readme_experiments) ... ok
+test_study_audit_rejects_corruption (test_cache_experiments.CacheExperiments.test_study_audit_rejects_corruption) ... ok
+test_known_corners (test_phase1.ArithmeticReference.test_known_corners) ... ok
+test_seed_reproducibility (test_phase1.ArithmeticReference.test_seed_reproducibility) ... ok
+test_initialized_byte_segment (test_phase1.FirmwareLayout.test_initialized_byte_segment) ... ok
+test_rom_overflow (test_phase1.FirmwareLayout.test_rom_overflow) ... ok
+test_stack_reservation (test_phase1.FirmwareLayout.test_stack_reservation) ... ok
+Ran 15 tests in 3.122s
+OK
+ASTERBENCH,version=2,name=memcpy,bytes=256,repetitions=4,seed=0x13570000,status=PASS,checksum=0xc4be3200,clock_hz=31250000,l1=1,sync_memory=0,line_words=2,line_count=2,memory_wait=0,cycles=0x00000000000029ce,retired=0x0000000000000611,memory_transactions=0x0000000000000910,backing_transactions=0x0000000000000a12,cache_accesses=0x0000000000000910,cache_misses=0x0000000000000589,dma_bytes=0x0000000000000000,accelerator_cycles=0x0000000000000000
+PASS: strict AsterBench v2 record
+PASS: RV32IM PASS (1 boot(s))
+PASS: RUNTIME PASS (2 boot(s))
+PASS: MEMORY MAP PASS (1 boot(s))
+PASS: TRAP ARMED (2 boot(s))
+PASS: TRAP ARMED (2 boot(s))
+PASS: TRAP ARMED (2 boot(s))
+PASS: TRAP ARMED (2 boot(s))
+PASS: TRAP ARMED (2 boot(s))
+PASS: TRAP ARMED (2 boot(s))
+PASS: TRAP ARMED (2 boot(s))
+PASS: TRAP ARMED (2 boot(s))
+PASS: TRAP ARMED (2 boot(s))
+PASS: TRAP ARMED (2 boot(s))
+PASS: TRAP ARMED (2 boot(s))
+PASS: TRAP ARMED (2 boot(s))
+test_board_output_validation_uses_strict_parser (test_asterbench.ResultProvenance.test_board_output_validation_uses_strict_parser) ... ok
+test_comparison_contract (test_asterbench.ResultProvenance.test_comparison_contract) ... ok
+test_required_provenance (test_asterbench.ResultProvenance.test_required_provenance) ... ok
+test_serial_and_typed_record_must_agree (test_asterbench.ResultProvenance.test_serial_and_typed_record_must_agree) ... ok
+test_common_corpus (test_asterbench.StrictRecords.test_common_corpus) ... ok
+test_bad_options_and_known_references (test_cache_experiments.CacheExperiments.test_bad_options_and_known_references) ... ok
+test_missing_experiment_rejected (test_cache_experiments.CacheExperiments.test_missing_experiment_rejected) ... ok
+test_pattern_kernels_and_data_addresses_match (test_cache_experiments.CacheExperiments.test_pattern_kernels_and_data_addresses_match) ... ok
+test_plan_covers_all_readme_experiments (test_cache_experiments.CacheExperiments.test_plan_covers_all_readme_experiments) ... ok
+test_study_audit_rejects_corruption (test_cache_experiments.CacheExperiments.test_study_audit_rejects_corruption) ... ok
+test_known_corners (test_phase1.ArithmeticReference.test_known_corners) ... ok
+test_seed_reproducibility (test_phase1.ArithmeticReference.test_seed_reproducibility) ... ok
+test_initialized_byte_segment (test_phase1.FirmwareLayout.test_initialized_byte_segment) ... ok
+test_rom_overflow (test_phase1.FirmwareLayout.test_rom_overflow) ... ok
+test_stack_reservation (test_phase1.FirmwareLayout.test_stack_reservation) ... ok
+Ran 15 tests in 3.055s
+OK
+ASTERBENCH,version=2,name=memcpy,bytes=256,repetitions=4,seed=0x13570000,status=PASS,checksum=0xc4be3200,clock_hz=31250000,l1=0,sync_memory=0,line_words=2,line_count=2,memory_wait=4,cycles=0x0000000000003c72,retired=0x0000000000000611,memory_transactions=0x0000000000000910,backing_transactions=0x0000000000000910,cache_accesses=0x0000000000000000,cache_misses=0x0000000000000000,dma_bytes=0x0000000000000000,accelerator_cycles=0x0000000000000000
+PASS: strict AsterBench v2 record
+PASS: RV32IM PASS (1 boot(s))
+PASS: RUNTIME PASS (2 boot(s))
+PASS: MEMORY MAP PASS (1 boot(s))
+PASS: TRAP ARMED (2 boot(s))
+PASS: TRAP ARMED (2 boot(s))
+PASS: TRAP ARMED (2 boot(s))
+PASS: TRAP ARMED (2 boot(s))
+PASS: TRAP ARMED (2 boot(s))
+PASS: TRAP ARMED (2 boot(s))
+PASS: TRAP ARMED (2 boot(s))
+PASS: TRAP ARMED (2 boot(s))
+PASS: TRAP ARMED (2 boot(s))
+PASS: TRAP ARMED (2 boot(s))
+PASS: TRAP ARMED (2 boot(s))
+PASS: TRAP ARMED (2 boot(s))
+test_board_output_validation_uses_strict_parser (test_asterbench.ResultProvenance.test_board_output_validation_uses_strict_parser) ... ok
+test_comparison_contract (test_asterbench.ResultProvenance.test_comparison_contract) ... ok
+test_required_provenance (test_asterbench.ResultProvenance.test_required_provenance) ... ok
+test_serial_and_typed_record_must_agree (test_asterbench.ResultProvenance.test_serial_and_typed_record_must_agree) ... ok
+test_common_corpus (test_asterbench.StrictRecords.test_common_corpus) ... ok
+test_bad_options_and_known_references (test_cache_experiments.CacheExperiments.test_bad_options_and_known_references) ... ok
+test_missing_experiment_rejected (test_cache_experiments.CacheExperiments.test_missing_experiment_rejected) ... ok
+test_pattern_kernels_and_data_addresses_match (test_cache_experiments.CacheExperiments.test_pattern_kernels_and_data_addresses_match) ... ok
+test_plan_covers_all_readme_experiments (test_cache_experiments.CacheExperiments.test_plan_covers_all_readme_experiments) ... ok
+test_study_audit_rejects_corruption (test_cache_experiments.CacheExperiments.test_study_audit_rejects_corruption) ... ok
+test_known_corners (test_phase1.ArithmeticReference.test_known_corners) ... ok
+test_seed_reproducibility (test_phase1.ArithmeticReference.test_seed_reproducibility) ... ok
+test_initialized_byte_segment (test_phase1.FirmwareLayout.test_initialized_byte_segment) ... ok
+test_rom_overflow (test_phase1.FirmwareLayout.test_rom_overflow) ... ok
+test_stack_reservation (test_phase1.FirmwareLayout.test_stack_reservation) ... ok
+Ran 15 tests in 2.999s
+OK
+ASTERBENCH,version=2,name=memcpy,bytes=256,repetitions=4,seed=0x13570000,status=PASS,checksum=0xc4be3200,clock_hz=31250000,l1=1,sync_memory=0,line_words=2,line_count=2,memory_wait=4,cycles=0x0000000000005216,retired=0x0000000000000611,memory_transactions=0x0000000000000910,backing_transactions=0x0000000000000a12,cache_accesses=0x0000000000000910,cache_misses=0x0000000000000589,dma_bytes=0x0000000000000000,accelerator_cycles=0x0000000000000000
+PASS: strict AsterBench v2 record
+PASS: RV32IM PASS (1 boot(s))
+PASS: RUNTIME PASS (2 boot(s))
+PASS: MEMORY MAP PASS (1 boot(s))
+PASS: TRAP ARMED (2 boot(s))
+PASS: TRAP ARMED (2 boot(s))
+PASS: TRAP ARMED (2 boot(s))
+PASS: TRAP ARMED (2 boot(s))
+PASS: TRAP ARMED (2 boot(s))
+PASS: TRAP ARMED (2 boot(s))
+PASS: TRAP ARMED (2 boot(s))
+PASS: TRAP ARMED (2 boot(s))
+PASS: TRAP ARMED (2 boot(s))
+PASS: TRAP ARMED (2 boot(s))
+PASS: TRAP ARMED (2 boot(s))
+PASS: TRAP ARMED (2 boot(s))
+test_board_output_validation_uses_strict_parser (test_asterbench.ResultProvenance.test_board_output_validation_uses_strict_parser) ... ok
+test_comparison_contract (test_asterbench.ResultProvenance.test_comparison_contract) ... ok
+test_required_provenance (test_asterbench.ResultProvenance.test_required_provenance) ... ok
+test_serial_and_typed_record_must_agree (test_asterbench.ResultProvenance.test_serial_and_typed_record_must_agree) ... ok
+test_common_corpus (test_asterbench.StrictRecords.test_common_corpus) ... ok
+test_bad_options_and_known_references (test_cache_experiments.CacheExperiments.test_bad_options_and_known_references) ... ok
+test_missing_experiment_rejected (test_cache_experiments.CacheExperiments.test_missing_experiment_rejected) ... ok
+test_pattern_kernels_and_data_addresses_match (test_cache_experiments.CacheExperiments.test_pattern_kernels_and_data_addresses_match) ... ok
+test_plan_covers_all_readme_experiments (test_cache_experiments.CacheExperiments.test_plan_covers_all_readme_experiments) ... ok
+test_study_audit_rejects_corruption (test_cache_experiments.CacheExperiments.test_study_audit_rejects_corruption) ... ok
+test_known_corners (test_phase1.ArithmeticReference.test_known_corners) ... ok
+test_seed_reproducibility (test_phase1.ArithmeticReference.test_seed_reproducibility) ... ok
+test_initialized_byte_segment (test_phase1.FirmwareLayout.test_initialized_byte_segment) ... ok
+test_rom_overflow (test_phase1.FirmwareLayout.test_rom_overflow) ... ok
+test_stack_reservation (test_phase1.FirmwareLayout.test_stack_reservation) ... ok
+Ran 15 tests in 3.111s
+OK
+ASTERBENCH,version=2,name=memcpy,bytes=256,repetitions=4,seed=0x13570000,status=PASS,checksum=0xc4be3200,clock_hz=31250000,l1=0,sync_memory=1,line_words=2,line_count=2,memory_wait=1,cycles=0x0000000000002342,retired=0x0000000000000611,memory_transactions=0x0000000000000910,backing_transactions=0x0000000000000910,cache_accesses=0x0000000000000000,cache_misses=0x0000000000000000,dma_bytes=0x0000000000000000,accelerator_cycles=0x0000000000000000
+PASS: strict AsterBench v2 record
+PASS: RV32IM PASS (1 boot(s))
+PASS: RUNTIME PASS (2 boot(s))
+PASS: MEMORY MAP PASS (1 boot(s))
+PASS: TRAP ARMED (2 boot(s))
+PASS: TRAP ARMED (2 boot(s))
+PASS: TRAP ARMED (2 boot(s))
+PASS: TRAP ARMED (2 boot(s))
+PASS: TRAP ARMED (2 boot(s))
+PASS: TRAP ARMED (2 boot(s))
+PASS: TRAP ARMED (2 boot(s))
+PASS: TRAP ARMED (2 boot(s))
+PASS: TRAP ARMED (2 boot(s))
+PASS: TRAP ARMED (2 boot(s))
+PASS: TRAP ARMED (2 boot(s))
+PASS: TRAP ARMED (2 boot(s))
+test_board_output_validation_uses_strict_parser (test_asterbench.ResultProvenance.test_board_output_validation_uses_strict_parser) ... ok
+test_comparison_contract (test_asterbench.ResultProvenance.test_comparison_contract) ... ok
+test_required_provenance (test_asterbench.ResultProvenance.test_required_provenance) ... ok
+test_serial_and_typed_record_must_agree (test_asterbench.ResultProvenance.test_serial_and_typed_record_must_agree) ... ok
+test_common_corpus (test_asterbench.StrictRecords.test_common_corpus) ... ok
+test_bad_options_and_known_references (test_cache_experiments.CacheExperiments.test_bad_options_and_known_references) ... ok
+test_missing_experiment_rejected (test_cache_experiments.CacheExperiments.test_missing_experiment_rejected) ... ok
+test_pattern_kernels_and_data_addresses_match (test_cache_experiments.CacheExperiments.test_pattern_kernels_and_data_addresses_match) ... ok
+test_plan_covers_all_readme_experiments (test_cache_experiments.CacheExperiments.test_plan_covers_all_readme_experiments) ... ok
+test_study_audit_rejects_corruption (test_cache_experiments.CacheExperiments.test_study_audit_rejects_corruption) ... ok
+test_known_corners (test_phase1.ArithmeticReference.test_known_corners) ... ok
+test_seed_reproducibility (test_phase1.ArithmeticReference.test_seed_reproducibility) ... ok
+test_initialized_byte_segment (test_phase1.FirmwareLayout.test_initialized_byte_segment) ... ok
+test_rom_overflow (test_phase1.FirmwareLayout.test_rom_overflow) ... ok
+test_stack_reservation (test_phase1.FirmwareLayout.test_stack_reservation) ... ok
+Ran 15 tests in 3.011s
+OK
+ASTERBENCH,version=2,name=memcpy,bytes=256,repetitions=4,seed=0x13570000,status=PASS,checksum=0xc4be3200,clock_hz=31250000,l1=1,sync_memory=1,line_words=2,line_count=2,memory_wait=1,cycles=0x00000000000033e0,retired=0x0000000000000611,memory_transactions=0x0000000000000910,backing_transactions=0x0000000000000a12,cache_accesses=0x0000000000000910,cache_misses=0x0000000000000589,dma_bytes=0x0000000000000000,accelerator_cycles=0x0000000000000000
+PASS: strict AsterBench v2 record
+PASS: RV32IM PASS (1 boot(s))
+PASS: RUNTIME PASS (2 boot(s))
+PASS: MEMORY MAP PASS (1 boot(s))
+PASS: TRAP ARMED (2 boot(s))
+PASS: TRAP ARMED (2 boot(s))
+PASS: TRAP ARMED (2 boot(s))
+PASS: TRAP ARMED (2 boot(s))
+PASS: TRAP ARMED (2 boot(s))
+PASS: TRAP ARMED (2 boot(s))
+PASS: TRAP ARMED (2 boot(s))
+PASS: TRAP ARMED (2 boot(s))
+PASS: TRAP ARMED (2 boot(s))
+PASS: TRAP ARMED (2 boot(s))
+PASS: TRAP ARMED (2 boot(s))
+PASS: TRAP ARMED (2 boot(s))
+test_board_output_validation_uses_strict_parser (test_asterbench.ResultProvenance.test_board_output_validation_uses_strict_parser) ... ok
+test_comparison_contract (test_asterbench.ResultProvenance.test_comparison_contract) ... ok
+test_required_provenance (test_asterbench.ResultProvenance.test_required_provenance) ... ok
+test_serial_and_typed_record_must_agree (test_asterbench.ResultProvenance.test_serial_and_typed_record_must_agree) ... ok
+test_common_corpus (test_asterbench.StrictRecords.test_common_corpus) ... ok
+test_bad_options_and_known_references (test_cache_experiments.CacheExperiments.test_bad_options_and_known_references) ... ok
+test_missing_experiment_rejected (test_cache_experiments.CacheExperiments.test_missing_experiment_rejected) ... ok
+test_pattern_kernels_and_data_addresses_match (test_cache_experiments.CacheExperiments.test_pattern_kernels_and_data_addresses_match) ... ok
+test_plan_covers_all_readme_experiments (test_cache_experiments.CacheExperiments.test_plan_covers_all_readme_experiments) ... ok
+test_study_audit_rejects_corruption (test_cache_experiments.CacheExperiments.test_study_audit_rejects_corruption) ... ok
+test_known_corners (test_phase1.ArithmeticReference.test_known_corners) ... ok
+test_seed_reproducibility (test_phase1.ArithmeticReference.test_seed_reproducibility) ... ok
+test_initialized_byte_segment (test_phase1.FirmwareLayout.test_initialized_byte_segment) ... ok
+test_rom_overflow (test_phase1.FirmwareLayout.test_rom_overflow) ... ok
+test_stack_reservation (test_phase1.FirmwareLayout.test_stack_reservation) ... ok
+Ran 15 tests in 3.025s
+OK
+ASTERBENCH,version=2,name=memcpy,bytes=256,repetitions=4,seed=0x13570000,status=PASS,checksum=0xc4be3200,clock_hz=31250000,l1=0,sync_memory=1,line_words=2,line_count=2,memory_wait=4,cycles=0x0000000000003c72,retired=0x0000000000000611,memory_transactions=0x0000000000000910,backing_transactions=0x0000000000000910,cache_accesses=0x0000000000000000,cache_misses=0x0000000000000000,dma_bytes=0x0000000000000000,accelerator_cycles=0x0000000000000000
+PASS: strict AsterBench v2 record
+PASS: RV32IM PASS (1 boot(s))
+PASS: RUNTIME PASS (2 boot(s))
+PASS: MEMORY MAP PASS (1 boot(s))
+PASS: TRAP ARMED (2 boot(s))
+PASS: TRAP ARMED (2 boot(s))
+PASS: TRAP ARMED (2 boot(s))
+PASS: TRAP ARMED (2 boot(s))
+PASS: TRAP ARMED (2 boot(s))
+PASS: TRAP ARMED (2 boot(s))
+PASS: TRAP ARMED (2 boot(s))
+PASS: TRAP ARMED (2 boot(s))
+PASS: TRAP ARMED (2 boot(s))
+PASS: TRAP ARMED (2 boot(s))
+PASS: TRAP ARMED (2 boot(s))
+PASS: TRAP ARMED (2 boot(s))
+test_board_output_validation_uses_strict_parser (test_asterbench.ResultProvenance.test_board_output_validation_uses_strict_parser) ... ok
+test_comparison_contract (test_asterbench.ResultProvenance.test_comparison_contract) ... ok
+test_required_provenance (test_asterbench.ResultProvenance.test_required_provenance) ... ok
+test_serial_and_typed_record_must_agree (test_asterbench.ResultProvenance.test_serial_and_typed_record_must_agree) ... ok
+test_common_corpus (test_asterbench.StrictRecords.test_common_corpus) ... ok
+test_bad_options_and_known_references (test_cache_experiments.CacheExperiments.test_bad_options_and_known_references) ... ok
+test_missing_experiment_rejected (test_cache_experiments.CacheExperiments.test_missing_experiment_rejected) ... ok
+test_pattern_kernels_and_data_addresses_match (test_cache_experiments.CacheExperiments.test_pattern_kernels_and_data_addresses_match) ... ok
+test_plan_covers_all_readme_experiments (test_cache_experiments.CacheExperiments.test_plan_covers_all_readme_experiments) ... ok
+test_study_audit_rejects_corruption (test_cache_experiments.CacheExperiments.test_study_audit_rejects_corruption) ... ok
+test_known_corners (test_phase1.ArithmeticReference.test_known_corners) ... ok
+test_seed_reproducibility (test_phase1.ArithmeticReference.test_seed_reproducibility) ... ok
+test_initialized_byte_segment (test_phase1.FirmwareLayout.test_initialized_byte_segment) ... ok
+test_rom_overflow (test_phase1.FirmwareLayout.test_rom_overflow) ... ok
+test_stack_reservation (test_phase1.FirmwareLayout.test_stack_reservation) ... ok
+Ran 15 tests in 3.024s
+OK
+ASTERBENCH,version=2,name=memcpy,bytes=256,repetitions=4,seed=0x13570000,status=PASS,checksum=0xc4be3200,clock_hz=31250000,l1=1,sync_memory=1,line_words=2,line_count=2,memory_wait=4,cycles=0x0000000000005216,retired=0x0000000000000611,memory_transactions=0x0000000000000910,backing_transactions=0x0000000000000a12,cache_accesses=0x0000000000000910,cache_misses=0x0000000000000589,dma_bytes=0x0000000000000000,accelerator_cycles=0x0000000000000000
+PASS: strict AsterBench v2 record
+PASS: RV32IM PASS (1 boot(s))
+PASS: RUNTIME PASS (2 boot(s))
+PASS: MEMORY MAP PASS (1 boot(s))
+PASS: TRAP ARMED (2 boot(s))
+PASS: TRAP ARMED (2 boot(s))
+PASS: TRAP ARMED (2 boot(s))
+PASS: TRAP ARMED (2 boot(s))
+PASS: TRAP ARMED (2 boot(s))
+PASS: TRAP ARMED (2 boot(s))
+PASS: TRAP ARMED (2 boot(s))
+PASS: TRAP ARMED (2 boot(s))
+PASS: TRAP ARMED (2 boot(s))
+PASS: TRAP ARMED (2 boot(s))
+PASS: TRAP ARMED (2 boot(s))
+PASS: TRAP ARMED (2 boot(s))
+test_board_output_validation_uses_strict_parser (test_asterbench.ResultProvenance.test_board_output_validation_uses_strict_parser) ... ok
+test_comparison_contract (test_asterbench.ResultProvenance.test_comparison_contract) ... ok
+test_required_provenance (test_asterbench.ResultProvenance.test_required_provenance) ... ok
+test_serial_and_typed_record_must_agree (test_asterbench.ResultProvenance.test_serial_and_typed_record_must_agree) ... ok
+test_common_corpus (test_asterbench.StrictRecords.test_common_corpus) ... ok
+test_bad_options_and_known_references (test_cache_experiments.CacheExperiments.test_bad_options_and_known_references) ... ok
+test_missing_experiment_rejected (test_cache_experiments.CacheExperiments.test_missing_experiment_rejected) ... ok
+test_pattern_kernels_and_data_addresses_match (test_cache_experiments.CacheExperiments.test_pattern_kernels_and_data_addresses_match) ... ok
+test_plan_covers_all_readme_experiments (test_cache_experiments.CacheExperiments.test_plan_covers_all_readme_experiments) ... ok
+test_study_audit_rejects_corruption (test_cache_experiments.CacheExperiments.test_study_audit_rejects_corruption) ... ok
+test_known_corners (test_phase1.ArithmeticReference.test_known_corners) ... ok
+test_seed_reproducibility (test_phase1.ArithmeticReference.test_seed_reproducibility) ... ok
+test_initialized_byte_segment (test_phase1.FirmwareLayout.test_initialized_byte_segment) ... ok
+test_rom_overflow (test_phase1.FirmwareLayout.test_rom_overflow) ... ok
+test_stack_reservation (test_phase1.FirmwareLayout.test_stack_reservation) ... ok
+Ran 15 tests in 3.015s
+OK
+ASTERBENCH,version=2,name=memcpy,bytes=256,repetitions=4,seed=0x13570000,status=PASS,checksum=0xc4be3200,clock_hz=31250000,l1=0,sync_memory=0,line_words=4,line_count=16,memory_wait=0,cycles=0x0000000000001b32,retired=0x0000000000000611,memory_transactions=0x0000000000000910,backing_transactions=0x0000000000000910,cache_accesses=0x0000000000000000,cache_misses=0x0000000000000000,dma_bytes=0x0000000000000000,accelerator_cycles=0x0000000000000000
+PASS: strict AsterBench v2 record
+PASS: RV32IM PASS (1 boot(s))
+PASS: RUNTIME PASS (2 boot(s))
+PASS: MEMORY MAP PASS (1 boot(s))
+PASS: TRAP ARMED (2 boot(s))
+PASS: TRAP ARMED (2 boot(s))
+PASS: TRAP ARMED (2 boot(s))
+PASS: TRAP ARMED (2 boot(s))
+PASS: TRAP ARMED (2 boot(s))
+PASS: TRAP ARMED (2 boot(s))
+PASS: TRAP ARMED (2 boot(s))
+PASS: TRAP ARMED (2 boot(s))
+PASS: TRAP ARMED (2 boot(s))
+PASS: TRAP ARMED (2 boot(s))
+PASS: TRAP ARMED (2 boot(s))
+PASS: TRAP ARMED (2 boot(s))
+test_board_output_validation_uses_strict_parser (test_asterbench.ResultProvenance.test_board_output_validation_uses_strict_parser) ... ok
+test_comparison_contract (test_asterbench.ResultProvenance.test_comparison_contract) ... ok
+test_required_provenance (test_asterbench.ResultProvenance.test_required_provenance) ... ok
+test_serial_and_typed_record_must_agree (test_asterbench.ResultProvenance.test_serial_and_typed_record_must_agree) ... ok
+test_common_corpus (test_asterbench.StrictRecords.test_common_corpus) ... ok
+test_bad_options_and_known_references (test_cache_experiments.CacheExperiments.test_bad_options_and_known_references) ... ok
+test_missing_experiment_rejected (test_cache_experiments.CacheExperiments.test_missing_experiment_rejected) ... ok
+test_pattern_kernels_and_data_addresses_match (test_cache_experiments.CacheExperiments.test_pattern_kernels_and_data_addresses_match) ... ok
+test_plan_covers_all_readme_experiments (test_cache_experiments.CacheExperiments.test_plan_covers_all_readme_experiments) ... ok
+test_study_audit_rejects_corruption (test_cache_experiments.CacheExperiments.test_study_audit_rejects_corruption) ... ok
+test_known_corners (test_phase1.ArithmeticReference.test_known_corners) ... ok
+test_seed_reproducibility (test_phase1.ArithmeticReference.test_seed_reproducibility) ... ok
+test_initialized_byte_segment (test_phase1.FirmwareLayout.test_initialized_byte_segment) ... ok
+test_rom_overflow (test_phase1.FirmwareLayout.test_rom_overflow) ... ok
+test_stack_reservation (test_phase1.FirmwareLayout.test_stack_reservation) ... ok
+Ran 15 tests in 3.030s
+OK
+ASTERBENCH,version=2,name=memcpy,bytes=256,repetitions=4,seed=0x13570000,status=PASS,checksum=0xc4be3200,clock_hz=31250000,l1=1,sync_memory=0,line_words=4,line_count=16,memory_wait=0,cycles=0x0000000000001c92,retired=0x0000000000000611,memory_transactions=0x0000000000000910,backing_transactions=0x000000000000014c,cache_accesses=0x0000000000000910,cache_misses=0x0000000000000113,dma_bytes=0x0000000000000000,accelerator_cycles=0x0000000000000000
+PASS: strict AsterBench v2 record
+PASS: RV32IM PASS (1 boot(s))
+PASS: RUNTIME PASS (2 boot(s))
+PASS: MEMORY MAP PASS (1 boot(s))
+PASS: TRAP ARMED (2 boot(s))
+PASS: TRAP ARMED (2 boot(s))
+PASS: TRAP ARMED (2 boot(s))
+PASS: TRAP ARMED (2 boot(s))
+PASS: TRAP ARMED (2 boot(s))
+PASS: TRAP ARMED (2 boot(s))
+PASS: TRAP ARMED (2 boot(s))
+PASS: TRAP ARMED (2 boot(s))
+PASS: TRAP ARMED (2 boot(s))
+PASS: TRAP ARMED (2 boot(s))
+PASS: TRAP ARMED (2 boot(s))
+PASS: TRAP ARMED (2 boot(s))
+test_board_output_validation_uses_strict_parser (test_asterbench.ResultProvenance.test_board_output_validation_uses_strict_parser) ... ok
+test_comparison_contract (test_asterbench.ResultProvenance.test_comparison_contract) ... ok
+test_required_provenance (test_asterbench.ResultProvenance.test_required_provenance) ... ok
+test_serial_and_typed_record_must_agree (test_asterbench.ResultProvenance.test_serial_and_typed_record_must_agree) ... ok
+test_common_corpus (test_asterbench.StrictRecords.test_common_corpus) ... ok
+test_bad_options_and_known_references (test_cache_experiments.CacheExperiments.test_bad_options_and_known_references) ... ok
+test_missing_experiment_rejected (test_cache_experiments.CacheExperiments.test_missing_experiment_rejected) ... ok
+test_pattern_kernels_and_data_addresses_match (test_cache_experiments.CacheExperiments.test_pattern_kernels_and_data_addresses_match) ... ok
+test_plan_covers_all_readme_experiments (test_cache_experiments.CacheExperiments.test_plan_covers_all_readme_experiments) ... ok
+test_study_audit_rejects_corruption (test_cache_experiments.CacheExperiments.test_study_audit_rejects_corruption) ... ok
+test_known_corners (test_phase1.ArithmeticReference.test_known_corners) ... ok
+test_seed_reproducibility (test_phase1.ArithmeticReference.test_seed_reproducibility) ... ok
+test_initialized_byte_segment (test_phase1.FirmwareLayout.test_initialized_byte_segment) ... ok
+test_rom_overflow (test_phase1.FirmwareLayout.test_rom_overflow) ... ok
+test_stack_reservation (test_phase1.FirmwareLayout.test_stack_reservation) ... ok
+Ran 15 tests in 3.033s
+OK
+ASTERBENCH,version=2,name=memcpy,bytes=256,repetitions=4,seed=0x13570000,status=PASS,checksum=0xc4be3200,clock_hz=31250000,l1=0,sync_memory=0,line_words=4,line_count=16,memory_wait=4,cycles=0x0000000000003c72,retired=0x0000000000000611,memory_transactions=0x0000000000000910,backing_transactions=0x0000000000000910,cache_accesses=0x0000000000000000,cache_misses=0x0000000000000000,dma_bytes=0x0000000000000000,accelerator_cycles=0x0000000000000000
+PASS: strict AsterBench v2 record
+PASS: RV32IM PASS (1 boot(s))
+PASS: RUNTIME PASS (2 boot(s))
+PASS: MEMORY MAP PASS (1 boot(s))
+PASS: TRAP ARMED (2 boot(s))
+PASS: TRAP ARMED (2 boot(s))
+PASS: TRAP ARMED (2 boot(s))
+PASS: TRAP ARMED (2 boot(s))
+PASS: TRAP ARMED (2 boot(s))
+PASS: TRAP ARMED (2 boot(s))
+PASS: TRAP ARMED (2 boot(s))
+PASS: TRAP ARMED (2 boot(s))
+PASS: TRAP ARMED (2 boot(s))
+PASS: TRAP ARMED (2 boot(s))
+PASS: TRAP ARMED (2 boot(s))
+PASS: TRAP ARMED (2 boot(s))
+test_board_output_validation_uses_strict_parser (test_asterbench.ResultProvenance.test_board_output_validation_uses_strict_parser) ... ok
+test_comparison_contract (test_asterbench.ResultProvenance.test_comparison_contract) ... ok
+test_required_provenance (test_asterbench.ResultProvenance.test_required_provenance) ... ok
+test_serial_and_typed_record_must_agree (test_asterbench.ResultProvenance.test_serial_and_typed_record_must_agree) ... ok
+test_common_corpus (test_asterbench.StrictRecords.test_common_corpus) ... ok
+test_bad_options_and_known_references (test_cache_experiments.CacheExperiments.test_bad_options_and_known_references) ... ok
+test_missing_experiment_rejected (test_cache_experiments.CacheExperiments.test_missing_experiment_rejected) ... ok
+test_pattern_kernels_and_data_addresses_match (test_cache_experiments.CacheExperiments.test_pattern_kernels_and_data_addresses_match) ... ok
+test_plan_covers_all_readme_experiments (test_cache_experiments.CacheExperiments.test_plan_covers_all_readme_experiments) ... ok
+test_study_audit_rejects_corruption (test_cache_experiments.CacheExperiments.test_study_audit_rejects_corruption) ... ok
+test_known_corners (test_phase1.ArithmeticReference.test_known_corners) ... ok
+test_seed_reproducibility (test_phase1.ArithmeticReference.test_seed_reproducibility) ... ok
+test_initialized_byte_segment (test_phase1.FirmwareLayout.test_initialized_byte_segment) ... ok
+test_rom_overflow (test_phase1.FirmwareLayout.test_rom_overflow) ... ok
+test_stack_reservation (test_phase1.FirmwareLayout.test_stack_reservation) ... ok
+Ran 15 tests in 3.045s
+OK
+ASTERBENCH,version=2,name=memcpy,bytes=256,repetitions=4,seed=0x13570000,status=PASS,checksum=0xc4be3200,clock_hz=31250000,l1=1,sync_memory=0,line_words=4,line_count=16,memory_wait=4,cycles=0x00000000000021c2,retired=0x0000000000000611,memory_transactions=0x0000000000000910,backing_transactions=0x000000000000014c,cache_accesses=0x0000000000000910,cache_misses=0x0000000000000113,dma_bytes=0x0000000000000000,accelerator_cycles=0x0000000000000000
+PASS: strict AsterBench v2 record
+PASS: RV32IM PASS (1 boot(s))
+PASS: RUNTIME PASS (2 boot(s))
+PASS: MEMORY MAP PASS (1 boot(s))
+PASS: TRAP ARMED (2 boot(s))
+PASS: TRAP ARMED (2 boot(s))
+PASS: TRAP ARMED (2 boot(s))
+PASS: TRAP ARMED (2 boot(s))
+PASS: TRAP ARMED (2 boot(s))
+PASS: TRAP ARMED (2 boot(s))
+PASS: TRAP ARMED (2 boot(s))
+PASS: TRAP ARMED (2 boot(s))
+PASS: TRAP ARMED (2 boot(s))
+PASS: TRAP ARMED (2 boot(s))
+PASS: TRAP ARMED (2 boot(s))
+PASS: TRAP ARMED (2 boot(s))
+test_board_output_validation_uses_strict_parser (test_asterbench.ResultProvenance.test_board_output_validation_uses_strict_parser) ... ok
+test_comparison_contract (test_asterbench.ResultProvenance.test_comparison_contract) ... ok
+test_required_provenance (test_asterbench.ResultProvenance.test_required_provenance) ... ok
+test_serial_and_typed_record_must_agree (test_asterbench.ResultProvenance.test_serial_and_typed_record_must_agree) ... ok
+test_common_corpus (test_asterbench.StrictRecords.test_common_corpus) ... ok
+test_bad_options_and_known_references (test_cache_experiments.CacheExperiments.test_bad_options_and_known_references) ... ok
+test_missing_experiment_rejected (test_cache_experiments.CacheExperiments.test_missing_experiment_rejected) ... ok
+test_pattern_kernels_and_data_addresses_match (test_cache_experiments.CacheExperiments.test_pattern_kernels_and_data_addresses_match) ... ok
+test_plan_covers_all_readme_experiments (test_cache_experiments.CacheExperiments.test_plan_covers_all_readme_experiments) ... ok
+test_study_audit_rejects_corruption (test_cache_experiments.CacheExperiments.test_study_audit_rejects_corruption) ... ok
+test_known_corners (test_phase1.ArithmeticReference.test_known_corners) ... ok
+test_seed_reproducibility (test_phase1.ArithmeticReference.test_seed_reproducibility) ... ok
+test_initialized_byte_segment (test_phase1.FirmwareLayout.test_initialized_byte_segment) ... ok
+test_rom_overflow (test_phase1.FirmwareLayout.test_rom_overflow) ... ok
+test_stack_reservation (test_phase1.FirmwareLayout.test_stack_reservation) ... ok
+Ran 15 tests in 3.040s
+OK
+ASTERBENCH,version=2,name=memcpy,bytes=256,repetitions=4,seed=0x13570000,status=PASS,checksum=0xc4be3200,clock_hz=31250000,l1=0,sync_memory=1,line_words=4,line_count=16,memory_wait=1,cycles=0x0000000000002342,retired=0x0000000000000611,memory_transactions=0x0000000000000910,backing_transactions=0x0000000000000910,cache_accesses=0x0000000000000000,cache_misses=0x0000000000000000,dma_bytes=0x0000000000000000,accelerator_cycles=0x0000000000000000
+PASS: strict AsterBench v2 record
+PASS: RV32IM PASS (1 boot(s))
+PASS: RUNTIME PASS (2 boot(s))
+PASS: MEMORY MAP PASS (1 boot(s))
+PASS: TRAP ARMED (2 boot(s))
+PASS: TRAP ARMED (2 boot(s))
+PASS: TRAP ARMED (2 boot(s))
+PASS: TRAP ARMED (2 boot(s))
+PASS: TRAP ARMED (2 boot(s))
+PASS: TRAP ARMED (2 boot(s))
+PASS: TRAP ARMED (2 boot(s))
+PASS: TRAP ARMED (2 boot(s))
+PASS: TRAP ARMED (2 boot(s))
+PASS: TRAP ARMED (2 boot(s))
+PASS: TRAP ARMED (2 boot(s))
+PASS: TRAP ARMED (2 boot(s))
+test_board_output_validation_uses_strict_parser (test_asterbench.ResultProvenance.test_board_output_validation_uses_strict_parser) ... ok
+test_comparison_contract (test_asterbench.ResultProvenance.test_comparison_contract) ... ok
+test_required_provenance (test_asterbench.ResultProvenance.test_required_provenance) ... ok
+test_serial_and_typed_record_must_agree (test_asterbench.ResultProvenance.test_serial_and_typed_record_must_agree) ... ok
+test_common_corpus (test_asterbench.StrictRecords.test_common_corpus) ... ok
+test_bad_options_and_known_references (test_cache_experiments.CacheExperiments.test_bad_options_and_known_references) ... ok
+test_missing_experiment_rejected (test_cache_experiments.CacheExperiments.test_missing_experiment_rejected) ... ok
+test_pattern_kernels_and_data_addresses_match (test_cache_experiments.CacheExperiments.test_pattern_kernels_and_data_addresses_match) ... ok
+test_plan_covers_all_readme_experiments (test_cache_experiments.CacheExperiments.test_plan_covers_all_readme_experiments) ... ok
+test_study_audit_rejects_corruption (test_cache_experiments.CacheExperiments.test_study_audit_rejects_corruption) ... ok
+test_known_corners (test_phase1.ArithmeticReference.test_known_corners) ... ok
+test_seed_reproducibility (test_phase1.ArithmeticReference.test_seed_reproducibility) ... ok
+test_initialized_byte_segment (test_phase1.FirmwareLayout.test_initialized_byte_segment) ... ok
+test_rom_overflow (test_phase1.FirmwareLayout.test_rom_overflow) ... ok
+test_stack_reservation (test_phase1.FirmwareLayout.test_stack_reservation) ... ok
+Ran 15 tests in 3.016s
+OK
+ASTERBENCH,version=2,name=memcpy,bytes=256,repetitions=4,seed=0x13570000,status=PASS,checksum=0xc4be3200,clock_hz=31250000,l1=1,sync_memory=1,line_words=4,line_count=16,memory_wait=1,cycles=0x0000000000001dde,retired=0x0000000000000611,memory_transactions=0x0000000000000910,backing_transactions=0x000000000000014c,cache_accesses=0x0000000000000910,cache_misses=0x0000000000000113,dma_bytes=0x0000000000000000,accelerator_cycles=0x0000000000000000
+PASS: strict AsterBench v2 record
+PASS: RV32IM PASS (1 boot(s))
+PASS: RUNTIME PASS (2 boot(s))
+PASS: MEMORY MAP PASS (1 boot(s))
+PASS: TRAP ARMED (2 boot(s))
+PASS: TRAP ARMED (2 boot(s))
+PASS: TRAP ARMED (2 boot(s))
+PASS: TRAP ARMED (2 boot(s))
+PASS: TRAP ARMED (2 boot(s))
+PASS: TRAP ARMED (2 boot(s))
+PASS: TRAP ARMED (2 boot(s))
+PASS: TRAP ARMED (2 boot(s))
+PASS: TRAP ARMED (2 boot(s))
+PASS: TRAP ARMED (2 boot(s))
+PASS: TRAP ARMED (2 boot(s))
+PASS: TRAP ARMED (2 boot(s))
+test_board_output_validation_uses_strict_parser (test_asterbench.ResultProvenance.test_board_output_validation_uses_strict_parser) ... ok
+test_comparison_contract (test_asterbench.ResultProvenance.test_comparison_contract) ... ok
+test_required_provenance (test_asterbench.ResultProvenance.test_required_provenance) ... ok
+test_serial_and_typed_record_must_agree (test_asterbench.ResultProvenance.test_serial_and_typed_record_must_agree) ... ok
+test_common_corpus (test_asterbench.StrictRecords.test_common_corpus) ... ok
+test_bad_options_and_known_references (test_cache_experiments.CacheExperiments.test_bad_options_and_known_references) ... ok
+test_missing_experiment_rejected (test_cache_experiments.CacheExperiments.test_missing_experiment_rejected) ... ok
+test_pattern_kernels_and_data_addresses_match (test_cache_experiments.CacheExperiments.test_pattern_kernels_and_data_addresses_match) ... ok
+test_plan_covers_all_readme_experiments (test_cache_experiments.CacheExperiments.test_plan_covers_all_readme_experiments) ... ok
+test_study_audit_rejects_corruption (test_cache_experiments.CacheExperiments.test_study_audit_rejects_corruption) ... ok
+test_known_corners (test_phase1.ArithmeticReference.test_known_corners) ... ok
+test_seed_reproducibility (test_phase1.ArithmeticReference.test_seed_reproducibility) ... ok
+test_initialized_byte_segment (test_phase1.FirmwareLayout.test_initialized_byte_segment) ... ok
+test_rom_overflow (test_phase1.FirmwareLayout.test_rom_overflow) ... ok
+test_stack_reservation (test_phase1.FirmwareLayout.test_stack_reservation) ... ok
+Ran 15 tests in 3.035s
+OK
+ASTERBENCH,version=2,name=memcpy,bytes=256,repetitions=4,seed=0x13570000,status=PASS,checksum=0xc4be3200,clock_hz=31250000,l1=0,sync_memory=1,line_words=4,line_count=16,memory_wait=4,cycles=0x0000000000003c72,retired=0x0000000000000611,memory_transactions=0x0000000000000910,backing_transactions=0x0000000000000910,cache_accesses=0x0000000000000000,cache_misses=0x0000000000000000,dma_bytes=0x0000000000000000,accelerator_cycles=0x0000000000000000
+PASS: strict AsterBench v2 record
+PASS: RV32IM PASS (1 boot(s))
+PASS: RUNTIME PASS (2 boot(s))
+PASS: MEMORY MAP PASS (1 boot(s))
+PASS: TRAP ARMED (2 boot(s))
+PASS: TRAP ARMED (2 boot(s))
+PASS: TRAP ARMED (2 boot(s))
+PASS: TRAP ARMED (2 boot(s))
+PASS: TRAP ARMED (2 boot(s))
+PASS: TRAP ARMED (2 boot(s))
+PASS: TRAP ARMED (2 boot(s))
+PASS: TRAP ARMED (2 boot(s))
+PASS: TRAP ARMED (2 boot(s))
+PASS: TRAP ARMED (2 boot(s))
+PASS: TRAP ARMED (2 boot(s))
+PASS: TRAP ARMED (2 boot(s))
+test_board_output_validation_uses_strict_parser (test_asterbench.ResultProvenance.test_board_output_validation_uses_strict_parser) ... ok
+test_comparison_contract (test_asterbench.ResultProvenance.test_comparison_contract) ... ok
+test_required_provenance (test_asterbench.ResultProvenance.test_required_provenance) ... ok
+test_serial_and_typed_record_must_agree (test_asterbench.ResultProvenance.test_serial_and_typed_record_must_agree) ... ok
+test_common_corpus (test_asterbench.StrictRecords.test_common_corpus) ... ok
+test_bad_options_and_known_references (test_cache_experiments.CacheExperiments.test_bad_options_and_known_references) ... ok
+test_missing_experiment_rejected (test_cache_experiments.CacheExperiments.test_missing_experiment_rejected) ... ok
+test_pattern_kernels_and_data_addresses_match (test_cache_experiments.CacheExperiments.test_pattern_kernels_and_data_addresses_match) ... ok
+test_plan_covers_all_readme_experiments (test_cache_experiments.CacheExperiments.test_plan_covers_all_readme_experiments) ... ok
+test_study_audit_rejects_corruption (test_cache_experiments.CacheExperiments.test_study_audit_rejects_corruption) ... ok
+test_known_corners (test_phase1.ArithmeticReference.test_known_corners) ... ok
+test_seed_reproducibility (test_phase1.ArithmeticReference.test_seed_reproducibility) ... ok
+test_initialized_byte_segment (test_phase1.FirmwareLayout.test_initialized_byte_segment) ... ok
+test_rom_overflow (test_phase1.FirmwareLayout.test_rom_overflow) ... ok
+test_stack_reservation (test_phase1.FirmwareLayout.test_stack_reservation) ... ok
+Ran 15 tests in 3.028s
+OK
+ASTERBENCH,version=2,name=memcpy,bytes=256,repetitions=4,seed=0x13570000,status=PASS,checksum=0xc4be3200,clock_hz=31250000,l1=1,sync_memory=1,line_words=4,line_count=16,memory_wait=4,cycles=0x00000000000021c2,retired=0x0000000000000611,memory_transactions=0x0000000000000910,backing_transactions=0x000000000000014c,cache_accesses=0x0000000000000910,cache_misses=0x0000000000000113,dma_bytes=0x0000000000000000,accelerator_cycles=0x0000000000000000
+PASS: strict AsterBench v2 record
+PASS: RV32IM PASS (1 boot(s))
+PASS: RUNTIME PASS (2 boot(s))
+PASS: MEMORY MAP PASS (1 boot(s))
+PASS: TRAP ARMED (2 boot(s))
+PASS: TRAP ARMED (2 boot(s))
+PASS: TRAP ARMED (2 boot(s))
+PASS: TRAP ARMED (2 boot(s))
+PASS: TRAP ARMED (2 boot(s))
+PASS: TRAP ARMED (2 boot(s))
+PASS: TRAP ARMED (2 boot(s))
+PASS: TRAP ARMED (2 boot(s))
+PASS: TRAP ARMED (2 boot(s))
+PASS: TRAP ARMED (2 boot(s))
+PASS: TRAP ARMED (2 boot(s))
+PASS: TRAP ARMED (2 boot(s))
+test_board_output_validation_uses_strict_parser (test_asterbench.ResultProvenance.test_board_output_validation_uses_strict_parser) ... ok
+test_comparison_contract (test_asterbench.ResultProvenance.test_comparison_contract) ... ok
+test_required_provenance (test_asterbench.ResultProvenance.test_required_provenance) ... ok
+test_serial_and_typed_record_must_agree (test_asterbench.ResultProvenance.test_serial_and_typed_record_must_agree) ... ok
+test_common_corpus (test_asterbench.StrictRecords.test_common_corpus) ... ok
+test_bad_options_and_known_references (test_cache_experiments.CacheExperiments.test_bad_options_and_known_references) ... ok
+test_missing_experiment_rejected (test_cache_experiments.CacheExperiments.test_missing_experiment_rejected) ... ok
+test_pattern_kernels_and_data_addresses_match (test_cache_experiments.CacheExperiments.test_pattern_kernels_and_data_addresses_match) ... ok
+test_plan_covers_all_readme_experiments (test_cache_experiments.CacheExperiments.test_plan_covers_all_readme_experiments) ... ok
+test_study_audit_rejects_corruption (test_cache_experiments.CacheExperiments.test_study_audit_rejects_corruption) ... ok
+test_known_corners (test_phase1.ArithmeticReference.test_known_corners) ... ok
+test_seed_reproducibility (test_phase1.ArithmeticReference.test_seed_reproducibility) ... ok
+test_initialized_byte_segment (test_phase1.FirmwareLayout.test_initialized_byte_segment) ... ok
+test_rom_overflow (test_phase1.FirmwareLayout.test_rom_overflow) ... ok
+test_stack_reservation (test_phase1.FirmwareLayout.test_stack_reservation) ... ok
+Ran 15 tests in 3.008s
+OK
+ASTERBENCH,version=2,name=memcpy,bytes=256,repetitions=4,seed=0x13570000,status=PASS,checksum=0xc4be3200,clock_hz=31250000,l1=0,sync_memory=0,line_words=8,line_count=32,memory_wait=0,cycles=0x0000000000001b32,retired=0x0000000000000611,memory_transactions=0x0000000000000910,backing_transactions=0x0000000000000910,cache_accesses=0x0000000000000000,cache_misses=0x0000000000000000,dma_bytes=0x0000000000000000,accelerator_cycles=0x0000000000000000
+PASS: strict AsterBench v2 record
+PASS: RV32IM PASS (1 boot(s))
+PASS: RUNTIME PASS (2 boot(s))
+PASS: MEMORY MAP PASS (1 boot(s))
+PASS: TRAP ARMED (2 boot(s))
+PASS: TRAP ARMED (2 boot(s))
+PASS: TRAP ARMED (2 boot(s))
+PASS: TRAP ARMED (2 boot(s))
+PASS: TRAP ARMED (2 boot(s))
+PASS: TRAP ARMED (2 boot(s))
+PASS: TRAP ARMED (2 boot(s))
+PASS: TRAP ARMED (2 boot(s))
+PASS: TRAP ARMED (2 boot(s))
+PASS: TRAP ARMED (2 boot(s))
+PASS: TRAP ARMED (2 boot(s))
+PASS: TRAP ARMED (2 boot(s))
+test_board_output_validation_uses_strict_parser (test_asterbench.ResultProvenance.test_board_output_validation_uses_strict_parser) ... ok
+test_comparison_contract (test_asterbench.ResultProvenance.test_comparison_contract) ... ok
+test_required_provenance (test_asterbench.ResultProvenance.test_required_provenance) ... ok
+test_serial_and_typed_record_must_agree (test_asterbench.ResultProvenance.test_serial_and_typed_record_must_agree) ... ok
+test_common_corpus (test_asterbench.StrictRecords.test_common_corpus) ... ok
+test_bad_options_and_known_references (test_cache_experiments.CacheExperiments.test_bad_options_and_known_references) ... ok
+test_missing_experiment_rejected (test_cache_experiments.CacheExperiments.test_missing_experiment_rejected) ... ok
+test_pattern_kernels_and_data_addresses_match (test_cache_experiments.CacheExperiments.test_pattern_kernels_and_data_addresses_match) ... ok
+test_plan_covers_all_readme_experiments (test_cache_experiments.CacheExperiments.test_plan_covers_all_readme_experiments) ... ok
+test_study_audit_rejects_corruption (test_cache_experiments.CacheExperiments.test_study_audit_rejects_corruption) ... ok
+test_known_corners (test_phase1.ArithmeticReference.test_known_corners) ... ok
+test_seed_reproducibility (test_phase1.ArithmeticReference.test_seed_reproducibility) ... ok
+test_initialized_byte_segment (test_phase1.FirmwareLayout.test_initialized_byte_segment) ... ok
+test_rom_overflow (test_phase1.FirmwareLayout.test_rom_overflow) ... ok
+test_stack_reservation (test_phase1.FirmwareLayout.test_stack_reservation) ... ok
+Ran 15 tests in 3.021s
+OK
+ASTERBENCH,version=2,name=memcpy,bytes=256,repetitions=4,seed=0x13570000,status=PASS,checksum=0xc4be3200,clock_hz=31250000,l1=1,sync_memory=0,line_words=8,line_count=32,memory_wait=0,cycles=0x0000000000001c84,retired=0x0000000000000611,memory_transactions=0x0000000000000910,backing_transactions=0x0000000000000148,cache_accesses=0x0000000000000910,cache_misses=0x0000000000000109,dma_bytes=0x0000000000000000,accelerator_cycles=0x0000000000000000
+PASS: strict AsterBench v2 record
+PASS: RV32IM PASS (1 boot(s))
+PASS: RUNTIME PASS (2 boot(s))
+PASS: MEMORY MAP PASS (1 boot(s))
+PASS: TRAP ARMED (2 boot(s))
+PASS: TRAP ARMED (2 boot(s))
+PASS: TRAP ARMED (2 boot(s))
+PASS: TRAP ARMED (2 boot(s))
+PASS: TRAP ARMED (2 boot(s))
+PASS: TRAP ARMED (2 boot(s))
+PASS: TRAP ARMED (2 boot(s))
+PASS: TRAP ARMED (2 boot(s))
+PASS: TRAP ARMED (2 boot(s))
+PASS: TRAP ARMED (2 boot(s))
+PASS: TRAP ARMED (2 boot(s))
+PASS: TRAP ARMED (2 boot(s))
+test_board_output_validation_uses_strict_parser (test_asterbench.ResultProvenance.test_board_output_validation_uses_strict_parser) ... ok
+test_comparison_contract (test_asterbench.ResultProvenance.test_comparison_contract) ... ok
+test_required_provenance (test_asterbench.ResultProvenance.test_required_provenance) ... ok
+test_serial_and_typed_record_must_agree (test_asterbench.ResultProvenance.test_serial_and_typed_record_must_agree) ... ok
+test_common_corpus (test_asterbench.StrictRecords.test_common_corpus) ... ok
+test_bad_options_and_known_references (test_cache_experiments.CacheExperiments.test_bad_options_and_known_references) ... ok
+test_missing_experiment_rejected (test_cache_experiments.CacheExperiments.test_missing_experiment_rejected) ... ok
+test_pattern_kernels_and_data_addresses_match (test_cache_experiments.CacheExperiments.test_pattern_kernels_and_data_addresses_match) ... ok
+test_plan_covers_all_readme_experiments (test_cache_experiments.CacheExperiments.test_plan_covers_all_readme_experiments) ... ok
+test_study_audit_rejects_corruption (test_cache_experiments.CacheExperiments.test_study_audit_rejects_corruption) ... ok
+test_known_corners (test_phase1.ArithmeticReference.test_known_corners) ... ok
+test_seed_reproducibility (test_phase1.ArithmeticReference.test_seed_reproducibility) ... ok
+test_initialized_byte_segment (test_phase1.FirmwareLayout.test_initialized_byte_segment) ... ok
+test_rom_overflow (test_phase1.FirmwareLayout.test_rom_overflow) ... ok
+test_stack_reservation (test_phase1.FirmwareLayout.test_stack_reservation) ... ok
+Ran 15 tests in 3.027s
+OK
+ASTERBENCH,version=2,name=memcpy,bytes=256,repetitions=4,seed=0x13570000,status=PASS,checksum=0xc4be3200,clock_hz=31250000,l1=0,sync_memory=0,line_words=8,line_count=32,memory_wait=4,cycles=0x0000000000003c72,retired=0x0000000000000611,memory_transactions=0x0000000000000910,backing_transactions=0x0000000000000910,cache_accesses=0x0000000000000000,cache_misses=0x0000000000000000,dma_bytes=0x0000000000000000,accelerator_cycles=0x0000000000000000
+PASS: strict AsterBench v2 record
+PASS: RV32IM PASS (1 boot(s))
+PASS: RUNTIME PASS (2 boot(s))
+PASS: MEMORY MAP PASS (1 boot(s))
+PASS: TRAP ARMED (2 boot(s))
+PASS: TRAP ARMED (2 boot(s))
+PASS: TRAP ARMED (2 boot(s))
+PASS: TRAP ARMED (2 boot(s))
+PASS: TRAP ARMED (2 boot(s))
+PASS: TRAP ARMED (2 boot(s))
+PASS: TRAP ARMED (2 boot(s))
+PASS: TRAP ARMED (2 boot(s))
+PASS: TRAP ARMED (2 boot(s))
+PASS: TRAP ARMED (2 boot(s))
+PASS: TRAP ARMED (2 boot(s))
+PASS: TRAP ARMED (2 boot(s))
+test_board_output_validation_uses_strict_parser (test_asterbench.ResultProvenance.test_board_output_validation_uses_strict_parser) ... ok
+test_comparison_contract (test_asterbench.ResultProvenance.test_comparison_contract) ... ok
+test_required_provenance (test_asterbench.ResultProvenance.test_required_provenance) ... ok
+test_serial_and_typed_record_must_agree (test_asterbench.ResultProvenance.test_serial_and_typed_record_must_agree) ... ok
+test_common_corpus (test_asterbench.StrictRecords.test_common_corpus) ... ok
+test_bad_options_and_known_references (test_cache_experiments.CacheExperiments.test_bad_options_and_known_references) ... ok
+test_missing_experiment_rejected (test_cache_experiments.CacheExperiments.test_missing_experiment_rejected) ... ok
+test_pattern_kernels_and_data_addresses_match (test_cache_experiments.CacheExperiments.test_pattern_kernels_and_data_addresses_match) ... ok
+test_plan_covers_all_readme_experiments (test_cache_experiments.CacheExperiments.test_plan_covers_all_readme_experiments) ... ok
+test_study_audit_rejects_corruption (test_cache_experiments.CacheExperiments.test_study_audit_rejects_corruption) ... ok
+test_known_corners (test_phase1.ArithmeticReference.test_known_corners) ... ok
+test_seed_reproducibility (test_phase1.ArithmeticReference.test_seed_reproducibility) ... ok
+test_initialized_byte_segment (test_phase1.FirmwareLayout.test_initialized_byte_segment) ... ok
+test_rom_overflow (test_phase1.FirmwareLayout.test_rom_overflow) ... ok
+test_stack_reservation (test_phase1.FirmwareLayout.test_stack_reservation) ... ok
+Ran 15 tests in 3.109s
+OK
+ASTERBENCH,version=2,name=memcpy,bytes=256,repetitions=4,seed=0x13570000,status=PASS,checksum=0xc4be3200,clock_hz=31250000,l1=1,sync_memory=0,line_words=8,line_count=32,memory_wait=4,cycles=0x00000000000021a4,retired=0x0000000000000611,memory_transactions=0x0000000000000910,backing_transactions=0x0000000000000148,cache_accesses=0x0000000000000910,cache_misses=0x0000000000000109,dma_bytes=0x0000000000000000,accelerator_cycles=0x0000000000000000
+PASS: strict AsterBench v2 record
+PASS: RV32IM PASS (1 boot(s))
+PASS: RUNTIME PASS (2 boot(s))
+PASS: MEMORY MAP PASS (1 boot(s))
+PASS: TRAP ARMED (2 boot(s))
+PASS: TRAP ARMED (2 boot(s))
+PASS: TRAP ARMED (2 boot(s))
+PASS: TRAP ARMED (2 boot(s))
+PASS: TRAP ARMED (2 boot(s))
+PASS: TRAP ARMED (2 boot(s))
+PASS: TRAP ARMED (2 boot(s))
+PASS: TRAP ARMED (2 boot(s))
+PASS: TRAP ARMED (2 boot(s))
+PASS: TRAP ARMED (2 boot(s))
+PASS: TRAP ARMED (2 boot(s))
+PASS: TRAP ARMED (2 boot(s))
+test_board_output_validation_uses_strict_parser (test_asterbench.ResultProvenance.test_board_output_validation_uses_strict_parser) ... ok
+test_comparison_contract (test_asterbench.ResultProvenance.test_comparison_contract) ... ok
+test_required_provenance (test_asterbench.ResultProvenance.test_required_provenance) ... ok
+test_serial_and_typed_record_must_agree (test_asterbench.ResultProvenance.test_serial_and_typed_record_must_agree) ... ok
+test_common_corpus (test_asterbench.StrictRecords.test_common_corpus) ... ok
+test_bad_options_and_known_references (test_cache_experiments.CacheExperiments.test_bad_options_and_known_references) ... ok
+test_missing_experiment_rejected (test_cache_experiments.CacheExperiments.test_missing_experiment_rejected) ... ok
+test_pattern_kernels_and_data_addresses_match (test_cache_experiments.CacheExperiments.test_pattern_kernels_and_data_addresses_match) ... ok
+test_plan_covers_all_readme_experiments (test_cache_experiments.CacheExperiments.test_plan_covers_all_readme_experiments) ... ok
+test_study_audit_rejects_corruption (test_cache_experiments.CacheExperiments.test_study_audit_rejects_corruption) ... ok
+test_known_corners (test_phase1.ArithmeticReference.test_known_corners) ... ok
+test_seed_reproducibility (test_phase1.ArithmeticReference.test_seed_reproducibility) ... ok
+test_initialized_byte_segment (test_phase1.FirmwareLayout.test_initialized_byte_segment) ... ok
+test_rom_overflow (test_phase1.FirmwareLayout.test_rom_overflow) ... ok
+test_stack_reservation (test_phase1.FirmwareLayout.test_stack_reservation) ... ok
+Ran 15 tests in 3.173s
+OK
+ASTERBENCH,version=2,name=memcpy,bytes=256,repetitions=4,seed=0x13570000,status=PASS,checksum=0xc4be3200,clock_hz=31250000,l1=0,sync_memory=1,line_words=8,line_count=32,memory_wait=1,cycles=0x0000000000002342,retired=0x0000000000000611,memory_transactions=0x0000000000000910,backing_transactions=0x0000000000000910,cache_accesses=0x0000000000000000,cache_misses=0x0000000000000000,dma_bytes=0x0000000000000000,accelerator_cycles=0x0000000000000000
+PASS: strict AsterBench v2 record
+PASS: RV32IM PASS (1 boot(s))
+PASS: RUNTIME PASS (2 boot(s))
+PASS: MEMORY MAP PASS (1 boot(s))
+PASS: TRAP ARMED (2 boot(s))
+PASS: TRAP ARMED (2 boot(s))
+PASS: TRAP ARMED (2 boot(s))
+PASS: TRAP ARMED (2 boot(s))
+PASS: TRAP ARMED (2 boot(s))
+PASS: TRAP ARMED (2 boot(s))
+PASS: TRAP ARMED (2 boot(s))
+PASS: TRAP ARMED (2 boot(s))
+PASS: TRAP ARMED (2 boot(s))
+PASS: TRAP ARMED (2 boot(s))
+PASS: TRAP ARMED (2 boot(s))
+PASS: TRAP ARMED (2 boot(s))
+test_board_output_validation_uses_strict_parser (test_asterbench.ResultProvenance.test_board_output_validation_uses_strict_parser) ... ok
+test_comparison_contract (test_asterbench.ResultProvenance.test_comparison_contract) ... ok
+test_required_provenance (test_asterbench.ResultProvenance.test_required_provenance) ... ok
+test_serial_and_typed_record_must_agree (test_asterbench.ResultProvenance.test_serial_and_typed_record_must_agree) ... ok
+test_common_corpus (test_asterbench.StrictRecords.test_common_corpus) ... ok
+test_bad_options_and_known_references (test_cache_experiments.CacheExperiments.test_bad_options_and_known_references) ... ok
+test_missing_experiment_rejected (test_cache_experiments.CacheExperiments.test_missing_experiment_rejected) ... ok
+test_pattern_kernels_and_data_addresses_match (test_cache_experiments.CacheExperiments.test_pattern_kernels_and_data_addresses_match) ... ok
+test_plan_covers_all_readme_experiments (test_cache_experiments.CacheExperiments.test_plan_covers_all_readme_experiments) ... ok
+test_study_audit_rejects_corruption (test_cache_experiments.CacheExperiments.test_study_audit_rejects_corruption) ... ok
+test_known_corners (test_phase1.ArithmeticReference.test_known_corners) ... ok
+test_seed_reproducibility (test_phase1.ArithmeticReference.test_seed_reproducibility) ... ok
+test_initialized_byte_segment (test_phase1.FirmwareLayout.test_initialized_byte_segment) ... ok
+test_rom_overflow (test_phase1.FirmwareLayout.test_rom_overflow) ... ok
+test_stack_reservation (test_phase1.FirmwareLayout.test_stack_reservation) ... ok
+Ran 15 tests in 3.145s
+OK
+ASTERBENCH,version=2,name=memcpy,bytes=256,repetitions=4,seed=0x13570000,status=PASS,checksum=0xc4be3200,clock_hz=31250000,l1=1,sync_memory=1,line_words=8,line_count=32,memory_wait=1,cycles=0x0000000000001dcc,retired=0x0000000000000611,memory_transactions=0x0000000000000910,backing_transactions=0x0000000000000148,cache_accesses=0x0000000000000910,cache_misses=0x0000000000000109,dma_bytes=0x0000000000000000,accelerator_cycles=0x0000000000000000
+PASS: strict AsterBench v2 record
+PASS: RV32IM PASS (1 boot(s))
+PASS: RUNTIME PASS (2 boot(s))
+PASS: MEMORY MAP PASS (1 boot(s))
+PASS: TRAP ARMED (2 boot(s))
+PASS: TRAP ARMED (2 boot(s))
+PASS: TRAP ARMED (2 boot(s))
+PASS: TRAP ARMED (2 boot(s))
+PASS: TRAP ARMED (2 boot(s))
+PASS: TRAP ARMED (2 boot(s))
+PASS: TRAP ARMED (2 boot(s))
+PASS: TRAP ARMED (2 boot(s))
+PASS: TRAP ARMED (2 boot(s))
+PASS: TRAP ARMED (2 boot(s))
+PASS: TRAP ARMED (2 boot(s))
+PASS: TRAP ARMED (2 boot(s))
+test_board_output_validation_uses_strict_parser (test_asterbench.ResultProvenance.test_board_output_validation_uses_strict_parser) ... ok
+test_comparison_contract (test_asterbench.ResultProvenance.test_comparison_contract) ... ok
+test_required_provenance (test_asterbench.ResultProvenance.test_required_provenance) ... ok
+test_serial_and_typed_record_must_agree (test_asterbench.ResultProvenance.test_serial_and_typed_record_must_agree) ... ok
+test_common_corpus (test_asterbench.StrictRecords.test_common_corpus) ... ok
+test_bad_options_and_known_references (test_cache_experiments.CacheExperiments.test_bad_options_and_known_references) ... ok
+test_missing_experiment_rejected (test_cache_experiments.CacheExperiments.test_missing_experiment_rejected) ... ok
+test_pattern_kernels_and_data_addresses_match (test_cache_experiments.CacheExperiments.test_pattern_kernels_and_data_addresses_match) ... ok
+test_plan_covers_all_readme_experiments (test_cache_experiments.CacheExperiments.test_plan_covers_all_readme_experiments) ... ok
+test_study_audit_rejects_corruption (test_cache_experiments.CacheExperiments.test_study_audit_rejects_corruption) ... ok
+test_known_corners (test_phase1.ArithmeticReference.test_known_corners) ... ok
+test_seed_reproducibility (test_phase1.ArithmeticReference.test_seed_reproducibility) ... ok
+test_initialized_byte_segment (test_phase1.FirmwareLayout.test_initialized_byte_segment) ... ok
+test_rom_overflow (test_phase1.FirmwareLayout.test_rom_overflow) ... ok
+test_stack_reservation (test_phase1.FirmwareLayout.test_stack_reservation) ... ok
+Ran 15 tests in 3.157s
+OK
+ASTERBENCH,version=2,name=memcpy,bytes=256,repetitions=4,seed=0x13570000,status=PASS,checksum=0xc4be3200,clock_hz=31250000,l1=0,sync_memory=1,line_words=8,line_count=32,memory_wait=4,cycles=0x0000000000003c72,retired=0x0000000000000611,memory_transactions=0x0000000000000910,backing_transactions=0x0000000000000910,cache_accesses=0x0000000000000000,cache_misses=0x0000000000000000,dma_bytes=0x0000000000000000,accelerator_cycles=0x0000000000000000
+PASS: strict AsterBench v2 record
+PASS: RV32IM PASS (1 boot(s))
+PASS: RUNTIME PASS (2 boot(s))
+PASS: MEMORY MAP PASS (1 boot(s))
+PASS: TRAP ARMED (2 boot(s))
+PASS: TRAP ARMED (2 boot(s))
+PASS: TRAP ARMED (2 boot(s))
+PASS: TRAP ARMED (2 boot(s))
+PASS: TRAP ARMED (2 boot(s))
+PASS: TRAP ARMED (2 boot(s))
+PASS: TRAP ARMED (2 boot(s))
+PASS: TRAP ARMED (2 boot(s))
+PASS: TRAP ARMED (2 boot(s))
+PASS: TRAP ARMED (2 boot(s))
+PASS: TRAP ARMED (2 boot(s))
+PASS: TRAP ARMED (2 boot(s))
+test_board_output_validation_uses_strict_parser (test_asterbench.ResultProvenance.test_board_output_validation_uses_strict_parser) ... ok
+test_comparison_contract (test_asterbench.ResultProvenance.test_comparison_contract) ... ok
+test_required_provenance (test_asterbench.ResultProvenance.test_required_provenance) ... ok
+test_serial_and_typed_record_must_agree (test_asterbench.ResultProvenance.test_serial_and_typed_record_must_agree) ... ok
+test_common_corpus (test_asterbench.StrictRecords.test_common_corpus) ... ok
+test_bad_options_and_known_references (test_cache_experiments.CacheExperiments.test_bad_options_and_known_references) ... ok
+test_missing_experiment_rejected (test_cache_experiments.CacheExperiments.test_missing_experiment_rejected) ... ok
+test_pattern_kernels_and_data_addresses_match (test_cache_experiments.CacheExperiments.test_pattern_kernels_and_data_addresses_match) ... ok
+test_plan_covers_all_readme_experiments (test_cache_experiments.CacheExperiments.test_plan_covers_all_readme_experiments) ... ok
+test_study_audit_rejects_corruption (test_cache_experiments.CacheExperiments.test_study_audit_rejects_corruption) ... ok
+test_known_corners (test_phase1.ArithmeticReference.test_known_corners) ... ok
+test_seed_reproducibility (test_phase1.ArithmeticReference.test_seed_reproducibility) ... ok
+test_initialized_byte_segment (test_phase1.FirmwareLayout.test_initialized_byte_segment) ... ok
+test_rom_overflow (test_phase1.FirmwareLayout.test_rom_overflow) ... ok
+test_stack_reservation (test_phase1.FirmwareLayout.test_stack_reservation) ... ok
+Ran 15 tests in 3.101s
+OK
+ASTERBENCH,version=2,name=memcpy,bytes=256,repetitions=4,seed=0x13570000,status=PASS,checksum=0xc4be3200,clock_hz=31250000,l1=1,sync_memory=1,line_words=8,line_count=32,memory_wait=4,cycles=0x00000000000021a4,retired=0x0000000000000611,memory_transactions=0x0000000000000910,backing_transactions=0x0000000000000148,cache_accesses=0x0000000000000910,cache_misses=0x0000000000000109,dma_bytes=0x0000000000000000,accelerator_cycles=0x0000000000000000
+PASS: strict AsterBench v2 record
+
+Random-walk UART paths: make BUILD_DIR=build/phase4-check BENCH_WORKLOAD=walk_random BENCH_WORDS=128 fpga-sim linux-sim
+PASS: PYNQ-Z1 UART serial decode (17 bytes)
+PASS: PYNQ-Z1 UART serial decode (17 bytes)
+PASS: PYNQ-Z1 UART serial decode (1060 bytes)
+PASS: PYNQ-Z1 UART serial decode (1060 bytes)
+PASS: PYNQ-Z1 UART serial decode (453 bytes)
+PASS: PYNQ-Z1 UART serial decode (453 bytes)
+PASS: Linux AXI boot + UART serial capture (17 bytes)
+PASS: Linux AXI boot + UART serial capture (17 bytes)
+PASS: Linux AXI boot + UART serial capture (1060 bytes)
+PASS: Linux AXI boot + UART serial capture (1060 bytes)
+PASS: Linux AXI boot + UART serial capture (448 bytes)
+PASS: Linux AXI boot + UART serial capture (448 bytes)
+
+Maximum backing wait: make BUILD_DIR=build/phase4-check MEMORY_WAIT_CYCLES=1024 SYNC_MEMORY=1 BENCH_WORKLOAD=walk_random BENCH_WORDS=2 bench
+ASTERBENCH,version=2,name=walk_random,bytes=8,repetitions=4,seed=0x13570000,status=PASS,checksum=0x00000004,clock_hz=31250000,l1=1,sync_memory=1,line_words=4,line_count=16,memory_wait=1024,cycles=0x0000000000001900,retired=0x000000000000003e,memory_transactions=0x000000000000004f,backing_transactions=0x0000000000000006,cache_accesses=0x000000000000004f,cache_misses=0x0000000000000001,dma_bytes=0x0000000000000000,accelerator_cycles=0x0000000000000000
+PASS: strict AsterBench v2 record
+
+Clean-revision experiment suite: python3 scripts/cache_experiments.py --output-dir build/results/phase4-clean-966ddea
+EXPERIMENT 1/60 memcpy-b256-r8-s13570000-l10-sync0-wait0-w4-n16
+PASS: saved verified AsterBench capture to build/results/phase4-clean-966ddea/memcpy-b256-r8-s13570000-l10-sync0-wait0-w4-n16.json
+EXPERIMENT 2/60 memcpy-b256-r8-s13570000-l10-sync1-wait1-w4-n16
+PASS: saved verified AsterBench capture to build/results/phase4-clean-966ddea/memcpy-b256-r8-s13570000-l10-sync1-wait1-w4-n16.json
+EXPERIMENT 3/60 memcpy-b256-r8-s13570000-l10-sync1-wait4-w4-n16
+PASS: saved verified AsterBench capture to build/results/phase4-clean-966ddea/memcpy-b256-r8-s13570000-l10-sync1-wait4-w4-n16.json
+EXPERIMENT 4/60 memcpy-b256-r8-s13570000-l11-sync0-wait0-w4-n16
+PASS: saved verified AsterBench capture to build/results/phase4-clean-966ddea/memcpy-b256-r8-s13570000-l11-sync0-wait0-w4-n16.json
+EXPERIMENT 5/60 memcpy-b256-r8-s13570000-l11-sync1-wait1-w4-n16
+PASS: saved verified AsterBench capture to build/results/phase4-clean-966ddea/memcpy-b256-r8-s13570000-l11-sync1-wait1-w4-n16.json
+EXPERIMENT 6/60 memcpy-b256-r8-s13570000-l11-sync1-wait4-w4-n16
+PASS: saved verified AsterBench capture to build/results/phase4-clean-966ddea/memcpy-b256-r8-s13570000-l11-sync1-wait4-w4-n16.json
+EXPERIMENT 7/60 walk_sequential-b512-r8-s13570000-l10-sync0-wait0-w4-n16
+PASS: saved verified AsterBench capture to build/results/phase4-clean-966ddea/walk_sequential-b512-r8-s13570000-l10-sync0-wait0-w4-n16.json
+EXPERIMENT 8/60 walk_sequential-b512-r8-s13570000-l10-sync1-wait1-w4-n16
+PASS: saved verified AsterBench capture to build/results/phase4-clean-966ddea/walk_sequential-b512-r8-s13570000-l10-sync1-wait1-w4-n16.json
+EXPERIMENT 9/60 walk_sequential-b512-r8-s13570000-l10-sync1-wait4-w4-n16
+PASS: saved verified AsterBench capture to build/results/phase4-clean-966ddea/walk_sequential-b512-r8-s13570000-l10-sync1-wait4-w4-n16.json
+EXPERIMENT 10/60 walk_sequential-b512-r8-s13570000-l11-sync0-wait0-w4-n16
+PASS: saved verified AsterBench capture to build/results/phase4-clean-966ddea/walk_sequential-b512-r8-s13570000-l11-sync0-wait0-w4-n16.json
+EXPERIMENT 11/60 walk_sequential-b512-r8-s13570000-l11-sync1-wait1-w4-n16
+PASS: saved verified AsterBench capture to build/results/phase4-clean-966ddea/walk_sequential-b512-r8-s13570000-l11-sync1-wait1-w4-n16.json
+EXPERIMENT 12/60 walk_sequential-b512-r8-s13570000-l11-sync1-wait4-w4-n16
+PASS: saved verified AsterBench capture to build/results/phase4-clean-966ddea/walk_sequential-b512-r8-s13570000-l11-sync1-wait4-w4-n16.json
+EXPERIMENT 13/60 walk_random-b512-r8-s13570000-l10-sync0-wait0-w4-n16
+PASS: saved verified AsterBench capture to build/results/phase4-clean-966ddea/walk_random-b512-r8-s13570000-l10-sync0-wait0-w4-n16.json
+EXPERIMENT 14/60 walk_random-b512-r8-s13570000-l10-sync1-wait1-w4-n16
+PASS: saved verified AsterBench capture to build/results/phase4-clean-966ddea/walk_random-b512-r8-s13570000-l10-sync1-wait1-w4-n16.json
+EXPERIMENT 15/60 walk_random-b512-r8-s13570000-l10-sync1-wait4-w4-n16
+PASS: saved verified AsterBench capture to build/results/phase4-clean-966ddea/walk_random-b512-r8-s13570000-l10-sync1-wait4-w4-n16.json
+EXPERIMENT 16/60 walk_random-b512-r8-s13570000-l11-sync0-wait0-w4-n16
+PASS: saved verified AsterBench capture to build/results/phase4-clean-966ddea/walk_random-b512-r8-s13570000-l11-sync0-wait0-w4-n16.json
+EXPERIMENT 17/60 walk_random-b512-r8-s13570000-l11-sync1-wait1-w4-n16
+PASS: saved verified AsterBench capture to build/results/phase4-clean-966ddea/walk_random-b512-r8-s13570000-l11-sync1-wait1-w4-n16.json
+EXPERIMENT 18/60 walk_random-b512-r8-s13570000-l11-sync1-wait4-w4-n16
+PASS: saved verified AsterBench capture to build/results/phase4-clean-966ddea/walk_random-b512-r8-s13570000-l11-sync1-wait4-w4-n16.json
+EXPERIMENT 19/60 walk_sequential-b64-r8-s13570000-l10-sync1-wait1-w4-n16
+PASS: saved verified AsterBench capture to build/results/phase4-clean-966ddea/walk_sequential-b64-r8-s13570000-l10-sync1-wait1-w4-n16.json
+EXPERIMENT 20/60 walk_sequential-b64-r8-s13570000-l11-sync1-wait1-w4-n16
+PASS: saved verified AsterBench capture to build/results/phase4-clean-966ddea/walk_sequential-b64-r8-s13570000-l11-sync1-wait1-w4-n16.json
+EXPERIMENT 21/60 walk_sequential-b128-r8-s13570000-l10-sync1-wait1-w4-n16
+PASS: saved verified AsterBench capture to build/results/phase4-clean-966ddea/walk_sequential-b128-r8-s13570000-l10-sync1-wait1-w4-n16.json
+EXPERIMENT 22/60 walk_sequential-b128-r8-s13570000-l11-sync1-wait1-w4-n16
+PASS: saved verified AsterBench capture to build/results/phase4-clean-966ddea/walk_sequential-b128-r8-s13570000-l11-sync1-wait1-w4-n16.json
+EXPERIMENT 23/60 walk_sequential-b256-r8-s13570000-l10-sync1-wait1-w4-n16
+PASS: saved verified AsterBench capture to build/results/phase4-clean-966ddea/walk_sequential-b256-r8-s13570000-l10-sync1-wait1-w4-n16.json
+EXPERIMENT 24/60 walk_sequential-b256-r8-s13570000-l11-sync1-wait1-w4-n16
+PASS: saved verified AsterBench capture to build/results/phase4-clean-966ddea/walk_sequential-b256-r8-s13570000-l11-sync1-wait1-w4-n16.json
+EXPERIMENT 25/60 walk_sequential-b1024-r8-s13570000-l10-sync1-wait1-w4-n16
+PASS: saved verified AsterBench capture to build/results/phase4-clean-966ddea/walk_sequential-b1024-r8-s13570000-l10-sync1-wait1-w4-n16.json
+EXPERIMENT 26/60 walk_sequential-b1024-r8-s13570000-l11-sync1-wait1-w4-n16
+PASS: saved verified AsterBench capture to build/results/phase4-clean-966ddea/walk_sequential-b1024-r8-s13570000-l11-sync1-wait1-w4-n16.json
+EXPERIMENT 27/60 walk_sequential-b2048-r8-s13570000-l10-sync1-wait1-w4-n16
+PASS: saved verified AsterBench capture to build/results/phase4-clean-966ddea/walk_sequential-b2048-r8-s13570000-l10-sync1-wait1-w4-n16.json
+EXPERIMENT 28/60 walk_sequential-b2048-r8-s13570000-l11-sync1-wait1-w4-n16
+PASS: saved verified AsterBench capture to build/results/phase4-clean-966ddea/walk_sequential-b2048-r8-s13570000-l11-sync1-wait1-w4-n16.json
+EXPERIMENT 29/60 walk_sequential-b4096-r8-s13570000-l10-sync1-wait1-w4-n16
+PASS: saved verified AsterBench capture to build/results/phase4-clean-966ddea/walk_sequential-b4096-r8-s13570000-l10-sync1-wait1-w4-n16.json
+EXPERIMENT 30/60 walk_sequential-b4096-r8-s13570000-l11-sync1-wait1-w4-n16
+PASS: saved verified AsterBench capture to build/results/phase4-clean-966ddea/walk_sequential-b4096-r8-s13570000-l11-sync1-wait1-w4-n16.json
+EXPERIMENT 31/60 walk_sequential-b8192-r8-s13570000-l10-sync1-wait1-w4-n16
+PASS: saved verified AsterBench capture to build/results/phase4-clean-966ddea/walk_sequential-b8192-r8-s13570000-l10-sync1-wait1-w4-n16.json
+EXPERIMENT 32/60 walk_sequential-b8192-r8-s13570000-l11-sync1-wait1-w4-n16
+PASS: saved verified AsterBench capture to build/results/phase4-clean-966ddea/walk_sequential-b8192-r8-s13570000-l11-sync1-wait1-w4-n16.json
+EXPERIMENT 33/60 walk_sequential-b512-r8-s13570000-l11-sync1-wait1-w4-n4
+PASS: saved verified AsterBench capture to build/results/phase4-clean-966ddea/walk_sequential-b512-r8-s13570000-l11-sync1-wait1-w4-n4.json
+EXPERIMENT 34/60 walk_sequential-b512-r8-s13570000-l11-sync1-wait1-w4-n8
+PASS: saved verified AsterBench capture to build/results/phase4-clean-966ddea/walk_sequential-b512-r8-s13570000-l11-sync1-wait1-w4-n8.json
+EXPERIMENT 35/60 walk_sequential-b512-r8-s13570000-l11-sync1-wait1-w4-n32
+PASS: saved verified AsterBench capture to build/results/phase4-clean-966ddea/walk_sequential-b512-r8-s13570000-l11-sync1-wait1-w4-n32.json
+EXPERIMENT 36/60 walk_sequential-b512-r8-s13570000-l11-sync1-wait1-w4-n64
+PASS: saved verified AsterBench capture to build/results/phase4-clean-966ddea/walk_sequential-b512-r8-s13570000-l11-sync1-wait1-w4-n64.json
+EXPERIMENT 37/60 walk_random-b64-r8-s13570000-l10-sync1-wait1-w4-n16
+PASS: saved verified AsterBench capture to build/results/phase4-clean-966ddea/walk_random-b64-r8-s13570000-l10-sync1-wait1-w4-n16.json
+EXPERIMENT 38/60 walk_random-b64-r8-s13570000-l11-sync1-wait1-w4-n16
+PASS: saved verified AsterBench capture to build/results/phase4-clean-966ddea/walk_random-b64-r8-s13570000-l11-sync1-wait1-w4-n16.json
+EXPERIMENT 39/60 walk_random-b128-r8-s13570000-l10-sync1-wait1-w4-n16
+PASS: saved verified AsterBench capture to build/results/phase4-clean-966ddea/walk_random-b128-r8-s13570000-l10-sync1-wait1-w4-n16.json
+EXPERIMENT 40/60 walk_random-b128-r8-s13570000-l11-sync1-wait1-w4-n16
+PASS: saved verified AsterBench capture to build/results/phase4-clean-966ddea/walk_random-b128-r8-s13570000-l11-sync1-wait1-w4-n16.json
+EXPERIMENT 41/60 walk_random-b256-r8-s13570000-l10-sync1-wait1-w4-n16
+PASS: saved verified AsterBench capture to build/results/phase4-clean-966ddea/walk_random-b256-r8-s13570000-l10-sync1-wait1-w4-n16.json
+EXPERIMENT 42/60 walk_random-b256-r8-s13570000-l11-sync1-wait1-w4-n16
+PASS: saved verified AsterBench capture to build/results/phase4-clean-966ddea/walk_random-b256-r8-s13570000-l11-sync1-wait1-w4-n16.json
+EXPERIMENT 43/60 walk_random-b1024-r8-s13570000-l10-sync1-wait1-w4-n16
+PASS: saved verified AsterBench capture to build/results/phase4-clean-966ddea/walk_random-b1024-r8-s13570000-l10-sync1-wait1-w4-n16.json
+EXPERIMENT 44/60 walk_random-b1024-r8-s13570000-l11-sync1-wait1-w4-n16
+PASS: saved verified AsterBench capture to build/results/phase4-clean-966ddea/walk_random-b1024-r8-s13570000-l11-sync1-wait1-w4-n16.json
+EXPERIMENT 45/60 walk_random-b2048-r8-s13570000-l10-sync1-wait1-w4-n16
+PASS: saved verified AsterBench capture to build/results/phase4-clean-966ddea/walk_random-b2048-r8-s13570000-l10-sync1-wait1-w4-n16.json
+EXPERIMENT 46/60 walk_random-b2048-r8-s13570000-l11-sync1-wait1-w4-n16
+PASS: saved verified AsterBench capture to build/results/phase4-clean-966ddea/walk_random-b2048-r8-s13570000-l11-sync1-wait1-w4-n16.json
+EXPERIMENT 47/60 walk_random-b4096-r8-s13570000-l10-sync1-wait1-w4-n16
+PASS: saved verified AsterBench capture to build/results/phase4-clean-966ddea/walk_random-b4096-r8-s13570000-l10-sync1-wait1-w4-n16.json
+EXPERIMENT 48/60 walk_random-b4096-r8-s13570000-l11-sync1-wait1-w4-n16
+PASS: saved verified AsterBench capture to build/results/phase4-clean-966ddea/walk_random-b4096-r8-s13570000-l11-sync1-wait1-w4-n16.json
+EXPERIMENT 49/60 walk_random-b8192-r8-s13570000-l10-sync1-wait1-w4-n16
+PASS: saved verified AsterBench capture to build/results/phase4-clean-966ddea/walk_random-b8192-r8-s13570000-l10-sync1-wait1-w4-n16.json
+EXPERIMENT 50/60 walk_random-b8192-r8-s13570000-l11-sync1-wait1-w4-n16
+PASS: saved verified AsterBench capture to build/results/phase4-clean-966ddea/walk_random-b8192-r8-s13570000-l11-sync1-wait1-w4-n16.json
+EXPERIMENT 51/60 walk_random-b512-r8-s13570000-l11-sync1-wait1-w4-n4
+PASS: saved verified AsterBench capture to build/results/phase4-clean-966ddea/walk_random-b512-r8-s13570000-l11-sync1-wait1-w4-n4.json
+EXPERIMENT 52/60 walk_random-b512-r8-s13570000-l11-sync1-wait1-w4-n8
+PASS: saved verified AsterBench capture to build/results/phase4-clean-966ddea/walk_random-b512-r8-s13570000-l11-sync1-wait1-w4-n8.json
+EXPERIMENT 53/60 walk_random-b512-r8-s13570000-l11-sync1-wait1-w4-n32
+PASS: saved verified AsterBench capture to build/results/phase4-clean-966ddea/walk_random-b512-r8-s13570000-l11-sync1-wait1-w4-n32.json
+EXPERIMENT 54/60 walk_random-b512-r8-s13570000-l11-sync1-wait1-w4-n64
+PASS: saved verified AsterBench capture to build/results/phase4-clean-966ddea/walk_random-b512-r8-s13570000-l11-sync1-wait1-w4-n64.json
+EXPERIMENT 55/60 walk_random-b512-r8-s00000000-l11-sync1-wait1-w4-n16
+PASS: saved verified AsterBench capture to build/results/phase4-clean-966ddea/walk_random-b512-r8-s00000000-l11-sync1-wait1-w4-n16.json
+EXPERIMENT 56/60 walk_random-b4096-r8-s00000000-l11-sync1-wait1-w4-n16
+PASS: saved verified AsterBench capture to build/results/phase4-clean-966ddea/walk_random-b4096-r8-s00000000-l11-sync1-wait1-w4-n16.json
+EXPERIMENT 57/60 walk_random-b512-r8-s00000001-l11-sync1-wait1-w4-n16
+PASS: saved verified AsterBench capture to build/results/phase4-clean-966ddea/walk_random-b512-r8-s00000001-l11-sync1-wait1-w4-n16.json
+EXPERIMENT 58/60 walk_random-b4096-r8-s00000001-l11-sync1-wait1-w4-n16
+PASS: saved verified AsterBench capture to build/results/phase4-clean-966ddea/walk_random-b4096-r8-s00000001-l11-sync1-wait1-w4-n16.json
+EXPERIMENT 59/60 walk_random-b512-r8-s0000a57e-l11-sync1-wait1-w4-n16
+PASS: saved verified AsterBench capture to build/results/phase4-clean-966ddea/walk_random-b512-r8-s0000a57e-l11-sync1-wait1-w4-n16.json
+EXPERIMENT 60/60 walk_random-b4096-r8-s0000a57e-l11-sync1-wait1-w4-n16
+PASS: saved verified AsterBench capture to build/results/phase4-clean-966ddea/walk_random-b4096-r8-s0000a57e-l11-sync1-wait1-w4-n16.json
+PASS: saved verified AsterBench capture to build/results/phase4-clean-966ddea/repeat.json
+PASS: 60 configurations + repeat; all four README experiments covered
+
+UART depth 1: make BUILD_DIR=build/phase4-check UART_FIFO_DEPTH=1 uart
+PASS: UART FIFO backpressure, wraparound, all byte values and mid-frame reset
+PASS: UART RX false starts, framing errors, reset and all 256 bytes
+
+UART depth 64: make BUILD_DIR=build/phase4-check UART_FIFO_DEPTH=64 uart
+PASS: UART FIFO backpressure, wraparound, all byte values and mid-frame reset
+PASS: UART RX false starts, framing errors, reset and all 256 bytes

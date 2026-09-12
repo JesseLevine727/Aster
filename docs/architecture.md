@@ -1,6 +1,6 @@
 # Aster architecture specification
 
-Status: Phases 1/3 verified; Phase 2 physical and Phase 4 evidence closeout pending, 2026-09-12
+Status: Phases 1/3/4 verified; Phase 2 physical closeout pending, 2026-09-12
 
 This document is the executable contract for the first bring-up slice. It
 separates decisions that are fixed for the minimal system from features that

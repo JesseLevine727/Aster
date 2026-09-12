@@ -1,0 +1,286 @@
+Copyright 1986-2022 Xilinx, Inc. All Rights Reserved. Copyright 2022-2025 Advanced Micro Devices, Inc. All Rights Reserved.
+---------------------------------------------------------------------------------------------------------------------------------------------
+| Tool Version : Vivado v.2025.1 (lin64) Build 6140274 Wed May 21 22:58:25 MDT 2025
+| Date         : Sat Sep 12 14:59:24 2026
+| Host         : gondor running 64-bit Ubuntu 24.04.3 LTS
+| Command      : report_methodology -file /home/elfo/Documents/Aster/build/fpga/phase4-final/methodology.rpt
+| Design       : aster_pynq_z1
+| Device       : xc7z020clg400-1
+| Speed File   : -1
+| Design State : Fully Routed
+---------------------------------------------------------------------------------------------------------------------------------------------
+
+Report Methodology
+
+Table of Contents
+-----------------
+1. REPORT SUMMARY
+2. REPORT DETAILS
+
+1. REPORT SUMMARY
+-----------------
+            Netlist: aster_pynq_z1
+          Floorplan: design_1
+      Design limits: <entire design considered>
+             Max checks: <unlimited>
+             Checks found: 50
++-----------+----------+-------------------------------------------------------------+--------+
+| Rule      | Severity | Description                                                 | Checks |
++-----------+----------+-------------------------------------------------------------+--------+
+| LUTAR-1   | Warning  | LUT drives async reset alert                                | 1      |
+| SYNTH-6   | Warning  | Timing of a RAM block might be sub-optimal                  | 32     |
+| SYNTH-15  | Warning  | Byte wide write enable not inferred                         | 16     |
+| TIMING-30 | Warning  | Sub-optimal master source pin selection for generated clock | 1      |
++-----------+----------+-------------------------------------------------------------+--------+
+
+2. REPORT DETAILS
+-----------------
+LUTAR-1#1 Warning
+LUT drives async reset alert
+LUT cell core_reset_meta_i_1, with 2 or more inputs, drives asynchronous preset/clear pin(s) core_reset_meta_reg/CLR, core_reset_n_reg/CLR. The LUT may glitch and trigger an unexpected reset, even if it is a properly timed path.
+Related violations: <none>
+
+SYNTH-6#1 Warning
+Timing of a RAM block might be sub-optimal
+The timing for the instance soc/ram/g_sync_read.memory_reg_0_0, implemented as a RAM block, might be sub-optimal as no output register was merged into the block.
+Related violations: <none>
+
+SYNTH-6#2 Warning
+Timing of a RAM block might be sub-optimal
+The timing for the instance soc/ram/g_sync_read.memory_reg_0_1, implemented as a RAM block, might be sub-optimal as no output register was merged into the block.
+Related violations: <none>
+
+SYNTH-6#3 Warning
+Timing of a RAM block might be sub-optimal
+The timing for the instance soc/ram/g_sync_read.memory_reg_0_2, implemented as a RAM block, might be sub-optimal as no output register was merged into the block.
+Related violations: <none>
+
+SYNTH-6#4 Warning
+Timing of a RAM block might be sub-optimal
+The timing for the instance soc/ram/g_sync_read.memory_reg_0_3, implemented as a RAM block, might be sub-optimal as no output register was merged into the block.
+Related violations: <none>
+
+SYNTH-6#5 Warning
+Timing of a RAM block might be sub-optimal
+The timing for the instance soc/ram/g_sync_read.memory_reg_1_0, implemented as a RAM block, might be sub-optimal as no output register was merged into the block.
+Related violations: <none>
+
+SYNTH-6#6 Warning
+Timing of a RAM block might be sub-optimal
+The timing for the instance soc/ram/g_sync_read.memory_reg_1_1, implemented as a RAM block, might be sub-optimal as no output register was merged into the block.
+Related violations: <none>
+
+SYNTH-6#7 Warning
+Timing of a RAM block might be sub-optimal
+The timing for the instance soc/ram/g_sync_read.memory_reg_1_2, implemented as a RAM block, might be sub-optimal as no output register was merged into the block.
+Related violations: <none>
+
+SYNTH-6#8 Warning
+Timing of a RAM block might be sub-optimal
+The timing for the instance soc/ram/g_sync_read.memory_reg_1_3, implemented as a RAM block, might be sub-optimal as no output register was merged into the block.
+Related violations: <none>
+
+SYNTH-6#9 Warning
+Timing of a RAM block might be sub-optimal
+The timing for the instance soc/ram/g_sync_read.memory_reg_2_0, implemented as a RAM block, might be sub-optimal as no output register was merged into the block.
+Related violations: <none>
+
+SYNTH-6#10 Warning
+Timing of a RAM block might be sub-optimal
+The timing for the instance soc/ram/g_sync_read.memory_reg_2_1, implemented as a RAM block, might be sub-optimal as no output register was merged into the block.
+Related violations: <none>
+
+SYNTH-6#11 Warning
+Timing of a RAM block might be sub-optimal
+The timing for the instance soc/ram/g_sync_read.memory_reg_2_2, implemented as a RAM block, might be sub-optimal as no output register was merged into the block.
+Related violations: <none>
+
+SYNTH-6#12 Warning
+Timing of a RAM block might be sub-optimal
+The timing for the instance soc/ram/g_sync_read.memory_reg_2_3, implemented as a RAM block, might be sub-optimal as no output register was merged into the block.
+Related violations: <none>
+
+SYNTH-6#13 Warning
+Timing of a RAM block might be sub-optimal
+The timing for the instance soc/ram/g_sync_read.memory_reg_3_0, implemented as a RAM block, might be sub-optimal as no output register was merged into the block.
+Related violations: <none>
+
+SYNTH-6#14 Warning
+Timing of a RAM block might be sub-optimal
+The timing for the instance soc/ram/g_sync_read.memory_reg_3_1, implemented as a RAM block, might be sub-optimal as no output register was merged into the block.
+Related violations: <none>
+
+SYNTH-6#15 Warning
+Timing of a RAM block might be sub-optimal
+The timing for the instance soc/ram/g_sync_read.memory_reg_3_2, implemented as a RAM block, might be sub-optimal as no output register was merged into the block.
+Related violations: <none>
+
+SYNTH-6#16 Warning
+Timing of a RAM block might be sub-optimal
+The timing for the instance soc/ram/g_sync_read.memory_reg_3_3, implemented as a RAM block, might be sub-optimal as no output register was merged into the block.
+Related violations: <none>
+
+SYNTH-6#17 Warning
+Timing of a RAM block might be sub-optimal
+The timing for the instance soc/rom/g_sync_read.rdata_reg_0, implemented as a RAM block, might be sub-optimal as no output register was merged into the block.
+Related violations: <none>
+
+SYNTH-6#18 Warning
+Timing of a RAM block might be sub-optimal
+The timing for the instance soc/rom/g_sync_read.rdata_reg_1, implemented as a RAM block, might be sub-optimal as no output register was merged into the block.
+Related violations: <none>
+
+SYNTH-6#19 Warning
+Timing of a RAM block might be sub-optimal
+The timing for the instance soc/rom/g_sync_read.rdata_reg_10, implemented as a RAM block, might be sub-optimal as no output register was merged into the block.
+Related violations: <none>
+
+SYNTH-6#20 Warning
+Timing of a RAM block might be sub-optimal
+The timing for the instance soc/rom/g_sync_read.rdata_reg_11, implemented as a RAM block, might be sub-optimal as no output register was merged into the block.
+Related violations: <none>
+
+SYNTH-6#21 Warning
+Timing of a RAM block might be sub-optimal
+The timing for the instance soc/rom/g_sync_read.rdata_reg_12, implemented as a RAM block, might be sub-optimal as no output register was merged into the block.
+Related violations: <none>
+
+SYNTH-6#22 Warning
+Timing of a RAM block might be sub-optimal
+The timing for the instance soc/rom/g_sync_read.rdata_reg_13, implemented as a RAM block, might be sub-optimal as no output register was merged into the block.
+Related violations: <none>
+
+SYNTH-6#23 Warning
+Timing of a RAM block might be sub-optimal
+The timing for the instance soc/rom/g_sync_read.rdata_reg_14, implemented as a RAM block, might be sub-optimal as no output register was merged into the block.
+Related violations: <none>
+
+SYNTH-6#24 Warning
+Timing of a RAM block might be sub-optimal
+The timing for the instance soc/rom/g_sync_read.rdata_reg_15, implemented as a RAM block, might be sub-optimal as no output register was merged into the block.
+Related violations: <none>
+
+SYNTH-6#25 Warning
+Timing of a RAM block might be sub-optimal
+The timing for the instance soc/rom/g_sync_read.rdata_reg_2, implemented as a RAM block, might be sub-optimal as no output register was merged into the block.
+Related violations: <none>
+
+SYNTH-6#26 Warning
+Timing of a RAM block might be sub-optimal
+The timing for the instance soc/rom/g_sync_read.rdata_reg_3, implemented as a RAM block, might be sub-optimal as no output register was merged into the block.
+Related violations: <none>
+
+SYNTH-6#27 Warning
+Timing of a RAM block might be sub-optimal
+The timing for the instance soc/rom/g_sync_read.rdata_reg_4, implemented as a RAM block, might be sub-optimal as no output register was merged into the block.
+Related violations: <none>
+
+SYNTH-6#28 Warning
+Timing of a RAM block might be sub-optimal
+The timing for the instance soc/rom/g_sync_read.rdata_reg_5, implemented as a RAM block, might be sub-optimal as no output register was merged into the block.
+Related violations: <none>
+
+SYNTH-6#29 Warning
+Timing of a RAM block might be sub-optimal
+The timing for the instance soc/rom/g_sync_read.rdata_reg_6, implemented as a RAM block, might be sub-optimal as no output register was merged into the block.
+Related violations: <none>
+
+SYNTH-6#30 Warning
+Timing of a RAM block might be sub-optimal
+The timing for the instance soc/rom/g_sync_read.rdata_reg_7, implemented as a RAM block, might be sub-optimal as no output register was merged into the block.
+Related violations: <none>
+
+SYNTH-6#31 Warning
+Timing of a RAM block might be sub-optimal
+The timing for the instance soc/rom/g_sync_read.rdata_reg_8, implemented as a RAM block, might be sub-optimal as no output register was merged into the block.
+Related violations: <none>
+
+SYNTH-6#32 Warning
+Timing of a RAM block might be sub-optimal
+The timing for the instance soc/rom/g_sync_read.rdata_reg_9, implemented as a RAM block, might be sub-optimal as no output register was merged into the block.
+Related violations: <none>
+
+SYNTH-15#1 Warning
+Byte wide write enable not inferred
+Byte wide write enable (BWWE) is not inferred for Block RAM soc/ram/g_sync_read.memory_reg_0_0 because address width (14) is more than optimal threshold of 12. Implementing using BWWE will require more logic and timing would be suboptimal. Please use attribute ram_decomp = power if BWWE is desired..
+Related violations: <none>
+
+SYNTH-15#2 Warning
+Byte wide write enable not inferred
+Byte wide write enable (BWWE) is not inferred for Block RAM soc/ram/g_sync_read.memory_reg_0_1 because address width (14) is more than optimal threshold of 12. Implementing using BWWE will require more logic and timing would be suboptimal. Please use attribute ram_decomp = power if BWWE is desired..
+Related violations: <none>
+
+SYNTH-15#3 Warning
+Byte wide write enable not inferred
+Byte wide write enable (BWWE) is not inferred for Block RAM soc/ram/g_sync_read.memory_reg_0_2 because address width (14) is more than optimal threshold of 12. Implementing using BWWE will require more logic and timing would be suboptimal. Please use attribute ram_decomp = power if BWWE is desired..
+Related violations: <none>
+
+SYNTH-15#4 Warning
+Byte wide write enable not inferred
+Byte wide write enable (BWWE) is not inferred for Block RAM soc/ram/g_sync_read.memory_reg_0_3 because address width (14) is more than optimal threshold of 12. Implementing using BWWE will require more logic and timing would be suboptimal. Please use attribute ram_decomp = power if BWWE is desired..
+Related violations: <none>
+
+SYNTH-15#5 Warning
+Byte wide write enable not inferred
+Byte wide write enable (BWWE) is not inferred for Block RAM soc/ram/g_sync_read.memory_reg_1_0 because address width (14) is more than optimal threshold of 12. Implementing using BWWE will require more logic and timing would be suboptimal. Please use attribute ram_decomp = power if BWWE is desired..
+Related violations: <none>
+
+SYNTH-15#6 Warning
+Byte wide write enable not inferred
+Byte wide write enable (BWWE) is not inferred for Block RAM soc/ram/g_sync_read.memory_reg_1_1 because address width (14) is more than optimal threshold of 12. Implementing using BWWE will require more logic and timing would be suboptimal. Please use attribute ram_decomp = power if BWWE is desired..
+Related violations: <none>
+
+SYNTH-15#7 Warning
+Byte wide write enable not inferred
+Byte wide write enable (BWWE) is not inferred for Block RAM soc/ram/g_sync_read.memory_reg_1_2 because address width (14) is more than optimal threshold of 12. Implementing using BWWE will require more logic and timing would be suboptimal. Please use attribute ram_decomp = power if BWWE is desired..
+Related violations: <none>
+
+SYNTH-15#8 Warning
+Byte wide write enable not inferred
+Byte wide write enable (BWWE) is not inferred for Block RAM soc/ram/g_sync_read.memory_reg_1_3 because address width (14) is more than optimal threshold of 12. Implementing using BWWE will require more logic and timing would be suboptimal. Please use attribute ram_decomp = power if BWWE is desired..
+Related violations: <none>
+
+SYNTH-15#9 Warning
+Byte wide write enable not inferred
+Byte wide write enable (BWWE) is not inferred for Block RAM soc/ram/g_sync_read.memory_reg_2_0 because address width (14) is more than optimal threshold of 12. Implementing using BWWE will require more logic and timing would be suboptimal. Please use attribute ram_decomp = power if BWWE is desired..
+Related violations: <none>
+
+SYNTH-15#10 Warning
+Byte wide write enable not inferred
+Byte wide write enable (BWWE) is not inferred for Block RAM soc/ram/g_sync_read.memory_reg_2_1 because address width (14) is more than optimal threshold of 12. Implementing using BWWE will require more logic and timing would be suboptimal. Please use attribute ram_decomp = power if BWWE is desired..
+Related violations: <none>
+
+SYNTH-15#11 Warning
+Byte wide write enable not inferred
+Byte wide write enable (BWWE) is not inferred for Block RAM soc/ram/g_sync_read.memory_reg_2_2 because address width (14) is more than optimal threshold of 12. Implementing using BWWE will require more logic and timing would be suboptimal. Please use attribute ram_decomp = power if BWWE is desired..
+Related violations: <none>
+
+SYNTH-15#12 Warning
+Byte wide write enable not inferred
+Byte wide write enable (BWWE) is not inferred for Block RAM soc/ram/g_sync_read.memory_reg_2_3 because address width (14) is more than optimal threshold of 12. Implementing using BWWE will require more logic and timing would be suboptimal. Please use attribute ram_decomp = power if BWWE is desired..
+Related violations: <none>
+
+SYNTH-15#13 Warning
+Byte wide write enable not inferred
+Byte wide write enable (BWWE) is not inferred for Block RAM soc/ram/g_sync_read.memory_reg_3_0 because address width (14) is more than optimal threshold of 12. Implementing using BWWE will require more logic and timing would be suboptimal. Please use attribute ram_decomp = power if BWWE is desired..
+Related violations: <none>
+
+SYNTH-15#14 Warning
+Byte wide write enable not inferred
+Byte wide write enable (BWWE) is not inferred for Block RAM soc/ram/g_sync_read.memory_reg_3_1 because address width (14) is more than optimal threshold of 12. Implementing using BWWE will require more logic and timing would be suboptimal. Please use attribute ram_decomp = power if BWWE is desired..
+Related violations: <none>
+
+SYNTH-15#15 Warning
+Byte wide write enable not inferred
+Byte wide write enable (BWWE) is not inferred for Block RAM soc/ram/g_sync_read.memory_reg_3_2 because address width (14) is more than optimal threshold of 12. Implementing using BWWE will require more logic and timing would be suboptimal. Please use attribute ram_decomp = power if BWWE is desired..
+Related violations: <none>
+
+SYNTH-15#16 Warning
+Byte wide write enable not inferred
+Byte wide write enable (BWWE) is not inferred for Block RAM soc/ram/g_sync_read.memory_reg_3_3 because address width (14) is more than optimal threshold of 12. Implementing using BWWE will require more logic and timing would be suboptimal. Please use attribute ram_decomp = power if BWWE is desired..
+Related violations: <none>
+
+TIMING-30#1 Warning
+Sub-optimal master source pin selection for generated clock
+The generated clock core_clk has a sub-optimal master source pin selection, timing can be pessimistic
+Related violations: <none>

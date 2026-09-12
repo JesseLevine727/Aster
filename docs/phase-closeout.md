@@ -9,7 +9,7 @@ The earlier Phase 4 completion claim was premature. Phase 5 is out of scope.
 | 1 | Verified in simulation | `make phase1-matrix`, `make check`; [verification details](verification.md) |
 | 2 | UART/AXI simulation and FPGA builds pass; physical closeout pending | First Linux overlay attempt made the board unresponsive; recover board and isolate the failing stage before retrying firmware execution |
 | 3 | Verified measurement closeout | RVFI retirement, common freeze, strict v2 records, provenance and comparison workflow; [clean-revision captures](results/phase3/README.md) |
-| 4 | Expanded verification and experiment implementation; closeout pending | Final matrix/FPGA regressions and clean-revision captures of all four README experiments |
+| 4 | Verified cache and experiment closeout | 108 seeded scoreboard runs, 24-leg SoC/latency matrix, all four README experiments with 60 clean-revision configurations plus repeat; [retained evidence](results/phase4/README.md) |
 
 ## Phase 1 evidence (2026-09-12)
 
@@ -99,4 +99,36 @@ revision are retained in `docs/results/phase3/`: all four cache/memory baseline
 combinations and an independent cached-repeat build. Every record has the same
 checksum (`0xc4be3200`), 1,553 retirements and 2,320 native transactions. The
 repeat produces an identical full record and firmware hash. These prove the
-Phase 3 comparison workflow, not the still-missing broader Phase 4 experiments.
+Phase 3 comparison workflow, not the broader Phase 4 experiments, which are
+retained separately below.
+
+## Phase 4 closeout evidence (2026-09-12)
+
+Implementation checkpoint `966ddea297f97b867a5a97e72497423826269152` is committed
+and pushed. Its [complete experiment evidence](results/phase4/README.md)
+includes 61 real clean-revision captures, the full manifest, derived CSV,
+regression excerpts and routed FPGA reports. All four README experiments
+are covered: cache off/on, working-set sweeps, sequential/random access and
+cache-size sensitivity. Comparisons preserve workload correctness and report
+slowdowns as well as benefits; no cache speedup is assumed.
+
+Verification includes 36 cache geometries with three seeds each, all masks,
+random stalls, exact lower beats, back-to-back requests, MMIO side effects,
+five in-flight reset scenarios, and 24 cache/memory/geometry SoC configurations.
+Fresh-directory `make check` and the extended UART/maximum-wait checks pass.
+Benchmark kernels are aligned and their exact instruction addresses/bytes
+are compared between sequential and random firmware at every sweep point.
+
+Both FPGA images were rebuilt. Linux setup/hold slack is 13.446/0.034 ns,
+with zero DRC/methodology findings and routing errors. Standalone slack is
+15.348/0.064 ns with zero routing errors, but it retains reset/BRAM and other
+warnings detailed in the retained report; it is not described as warning-free.
+Only default FPGA geometry is implemented; simulated large geometries do not
+imply FPGA fit. These builds still do not prove physical execution.
+
+The latest board checks found no SSH response at the previously working
+`10.0.0.223`, no alternate SSH listener in the local subnet, and no Linux
+console response over the detected Digilent USB UART. Authentication is not
+being reached. User-assisted board power cycling/recovery is required before
+staged PYNQ Linux loading and real Hello/stress/benchmark capture. No JTAG was
+used. Phase 2 remains open, so the complete Phase 1–4 goal is not achieved.

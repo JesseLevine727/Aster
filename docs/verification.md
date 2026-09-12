@@ -75,7 +75,7 @@ make bench
 
 1. Recover the board and complete Phase 2 physical Linux/firmware validation.
 2. Maintain the Phase 3 parser/counter/snapshot/provenance regression contract.
-3. Complete the Phase 4 randomized/stall/reset/configuration verification.
+3. Maintain the Phase 4 randomized/stall/reset/configuration and experiment regressions.
 4. Integrate a full external architectural reference suite where practical.
 5. Add coherence/cache-maintenance tests when those protocols are introduced.
 6. Add a reference-model comparison for the future NPU.
