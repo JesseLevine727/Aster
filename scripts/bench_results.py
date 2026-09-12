@@ -47,7 +47,12 @@ def validate_result(result):
     if (result["record"] != record or not isinstance(result["record"], dict) or
             any(type(result["record"][key]) is not type(value) for key, value in record.items())):
         raise ValueError("parsed result disagrees with captured serial bytes")
-    metadata = result["metadata"]
+    validate_metadata(result["metadata"])
+    return record
+
+
+def validate_metadata(metadata):
+    """Shared source/toolchain manifest contract for v2 and v3 captures."""
     if not isinstance(metadata, dict) or set(metadata) != METADATA_FIELDS:
         raise ValueError("missing/unknown provenance fields")
     if (not isinstance(metadata["dirty"], bool) or not isinstance(metadata["revision"], str) or
@@ -69,7 +74,6 @@ def validate_result(result):
         raise ValueError("invalid source manifest")
     if hashlib.sha256(json.dumps(sources, sort_keys=True).encode()).hexdigest() != metadata["source_sha256"]:
         raise ValueError("source manifest fingerprint mismatch")
-    return record
 
 
 def validate_options(args):

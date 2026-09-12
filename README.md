@@ -45,9 +45,11 @@ defines hardware-protected private cached regions, uncached shared RAM,
 round-robin arbitration and polling mailboxes. The new `aster_multicore`
 simulation runs a separate-stack C runtime on two real PicoRV32 instances;
 `make multicore-runtime` checks per-hart retirement, repeated jobs/secondary
-restarts and warm boots. Parallel AsterBench v3, full Phase 5 verification and
-the dual-core PYNQ Linux overlay/physical validation remain unfinished. The
-existing FPGA targets still build the verified single-core shell.
+restarts and warm boots. `make parallel` now runs a deterministic split-array
+workload with strict AsterBench v3 records, independent references, observed
+kernel overlap and an exact per-hart RTL counter scoreboard. Full Phase 5
+verification and the dual-core PYNQ Linux overlay/physical validation remain
+unfinished. The existing FPGA targets still build the verified single-core shell.
 
 Start here:
 

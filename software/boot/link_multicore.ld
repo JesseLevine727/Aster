@@ -14,7 +14,9 @@ SECTIONS
     {
         KEEP(*(.text.init))
         . = ALIGN(256);
+        __benchmark_start = .;
         *(.text.benchmark)
+        __benchmark_end = .;
         *(.text*)
     } > ROM
     .rodata : ALIGN(4) { *(.rodata*) } > ROM

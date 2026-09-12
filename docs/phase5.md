@@ -162,6 +162,25 @@ reset. These development results are not a clean-revision physical closeout;
 the final Phase 5 evidence must be captured with provenance at a stable source
 revision. See [verification scope](verification.md#phase-5-development-tests-not-closeout).
 
+### Parallel workload development checkpoint
+
+`software/benchmarks/parallel_mix.c` implements the measured parallel slice;
+it is distinct from the startup/producer-consumer test. Jobs use an arm/ready
+barrier, a common hardware measurement start, GO publication, disjoint private
+working sets, shared result publication and a completion barrier before freeze.
+One-worker mode leaves hart 1 reset, even in the same two-core hardware image.
+Both cores execute the same non-cloned kernel function; ELF-bounded RVFI
+observations and a per-cycle counter scoreboard verify actual hardware work.
+The [benchmark contract](../software/benchmarks/README.md#phase-5-parallel-mix-v3)
+defines every transformation, boundary and measurement inclusion.
+
+Strict v3 C++/Python parsers coexist with the unchanged v2 record contract.
+`scripts/parallel_results.py` captures every job and both warm boots, checks
+independent result references, retains raw logs and full source/compiler/
+firmware/model provenance, and compares the measured cycle counts. The core/
+worker/cache/memory matrix and workload-boundary tests are separate Make
+targets. This software/simulation checkpoint does not close FPGA validation.
+
 The full-phase boxes stay open until the final requirement audit. Evidence
 paths and source revisions will be recorded as work lands; old Phase 1–4
 evidence keeps its original meaning.

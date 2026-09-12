@@ -26,6 +26,10 @@ module aster_shared_fabric #(
     input logic [1:0] cache_access,
     input logic [1:0] cache_miss,
     output logic [1:0] hart_run,
+    output logic perf_start,
+    output logic perf_freeze,
+    output logic perf_resume,
+    output logic [1:0] backing_events,
     input logic uart_tx_ready,
     output logic uart_tx_valid,
     output logic [7:0] uart_tx_data,
@@ -57,6 +61,11 @@ module aster_shared_fabric #(
     wire secondary_reset = control_write && !owner && addr[11:0] == 12'h004
         && wstrb[0] && !wdata[0];
     wire perf_command = accepted && !instr && !owner && addr == 32'h2000_3038 && wstrb[0];
+    assign perf_start = perf_command && wdata[7:0] == 1;
+    assign perf_freeze = perf_command && wdata[7:0] == 2;
+    assign perf_resume = perf_command && wdata[7:0] == 4;
+    assign backing_events = {accepted && memory_access && owner,
+                             accepted && memory_access && !owner};
     localparam int WAIT_BITS = MEMORY_WAIT_CYCLES < 2 ? 1 : $clog2(MEMORY_WAIT_CYCLES+1);
     logic [WAIT_BITS-1:0] wait_count;
 
@@ -147,7 +156,7 @@ module aster_shared_fabric #(
             .mem_transaction(memory_transaction[h] && hart_run[h]),
             .cache_access(cache_access[h] && hart_run[h]),
             .cache_miss(cache_miss[h] && hart_run[h]),
-            .backing_transaction(accepted && memory_access && owner == 1'(h)),
+            .backing_transaction(backing_events[h]),
             .dma_bytes(32'd0), .accelerator_active(1'b0)
         );
     end

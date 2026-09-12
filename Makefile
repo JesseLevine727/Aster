@@ -21,6 +21,11 @@ BENCH_WORKLOAD ?= memcpy
 BENCH_WORDS ?= 64
 BENCH_REPETITIONS ?= 4
 BENCH_SEED ?= 0x13570000
+PARALLEL_WORDS ?= 64
+PARALLEL_ROUNDS ?= 4
+PARALLEL_JOBS ?= 3
+PARALLEL_WORKERS ?= $(HART_COUNT)
+PARALLEL_SEED ?= 0x13570000
 ifeq ($(filter $(BENCH_WORKLOAD),memcpy walk_sequential walk_random),)
 $(error BENCH_WORKLOAD must be memcpy, walk_sequential or walk_random)
 endif
@@ -69,6 +74,13 @@ FABRIC_DIR := $(BUILD_DIR)/fabric_h$(HART_COUNT)_$(CONFIG_TAG)
 FABRIC_SIM := $(FABRIC_DIR)/aster_fabric_sim
 MULTICORE_DIR := $(BUILD_DIR)/multicore_h$(HART_COUNT)_$(CONFIG_TAG)
 MULTICORE_SIM := $(MULTICORE_DIR)/aster_multicore_sim
+PARALLEL_SIM := $(MULTICORE_DIR)/aster_parallel_sim
+PARALLEL_FW_DIR := $(HELLO_DIR)/parallel_w$(PARALLEL_WORDS)_r$(PARALLEL_ROUNDS)_j$(PARALLEL_JOBS)_p$(PARALLEL_WORKERS)_s$(PARALLEL_SEED)
+PARALLEL_ELF := $(PARALLEL_FW_DIR)/parallel.elf
+PARALLEL_HEX := $(PARALLEL_FW_DIR)/parallel.hex
+PARALLEL_CFLAGS = $(HELLO_CFLAGS) -DPARALLEL_WORDS=$(PARALLEL_WORDS) -DPARALLEL_ROUNDS=$(PARALLEL_ROUNDS) \
+	-DPARALLEL_JOBS=$(PARALLEL_JOBS) -DPARALLEL_WORKERS=$(PARALLEL_WORKERS) -DPARALLEL_SEED=$(PARALLEL_SEED)
+PARALLEL_LDFLAGS = -T software/boot/link_multicore.ld -Wl,-Map,$(PARALLEL_FW_DIR)/parallel.map
 SMOKE_SIM := $(BUILD_DIR)/aster_smoke_sim
 PYNQ_SIM := $(BUILD_DIR)/aster_pynq_z1_sim
 LINUX_SIM := $(BUILD_DIR)/aster_pynq_linux_sim
@@ -114,6 +126,9 @@ help:
 	@echo "  make arbiter    Test two-requester fairness, backpressure and ownership"
 	@echo "  make fabric-matrix  Test Phase 5 shared memory/control across harts and latency"
 	@echo "  make multicore-runtime-matrix  Test dual-hart startup, isolation and warm boots"
+	@echo "  make parallel   Run parallel AsterBench v3 with independent RTL event/retirement checks"
+	@echo "  make parallel-matrix  Cross 1/2 workers/cores, caches and memory latency"
+	@echo "  make parallel-workloads  Test boundary/odd sizes, seeds and round counts"
 	@echo "  make fpga       Build the PYNQ-Z1 bitstream with Vivado"
 	@echo "  make fpga-sim   Decode the board-facing UART in simulation"
 	@echo "  make fpga-linux Build the PCAP/AXI overlay for PYNQ Linux (no JTAG)"
@@ -476,9 +491,61 @@ multicore-runtime-matrix:
 		$(MAKE) HART_COUNT=$$harts ENABLE_L1=$$l1 SYNC_MEMORY=$$sync MEMORY_WAIT_CYCLES=$$wait_cycles multicore-runtime; \
 	done; done; done
 
-test: smoke phase1 hello bench cache uart fpga-sim linux-sim counters retirement arbiter shared-fabric multicore-runtime
+.PHONY: parallel parallel-config parallel-firmware
+$(PARALLEL_ELF): software/benchmarks/parallel_mix.c software/runtime/start_multicore.S \
+		software/runtime/aster_multicore.h software/runtime/aster.h software/boot/link_multicore.ld Makefile
+	mkdir -p $(PARALLEL_FW_DIR)
+	$(CC) $(PARALLEL_CFLAGS) $(PARALLEL_LDFLAGS) -o $@ software/runtime/start_multicore.S $<
 
-check: tools smoke phase1 hello bench cache uart fpga-sim linux-sim counters retirement arbiter shared-fabric multicore-runtime
+$(PARALLEL_HEX): $(PARALLEL_ELF) scripts/elf_to_hex.py
+	$(PYTHON) scripts/elf_to_hex.py --rom-bytes 65536 $< $@
+
+parallel-firmware: $(PARALLEL_ELF) $(PARALLEL_HEX)
+
+$(PARALLEL_SIM): $(RTL_CORE) $(RTL_CACHE) $(RTL_MEMORY) $(RTL_PERIPHERALS) $(RTL_MULTICORE) \
+		verification/soc/tb_aster_parallel.cpp verification/common/parallel_record.h Makefile | $(BUILD_DIR)
+	mkdir -p $(MULTICORE_DIR)
+	$(VERILATOR) --cc --exe --build --timing --Wall $(VERILATOR_VENDOR_LINT_FLAGS) \
+		--top-module aster_multicore --Mdir $(MULTICORE_DIR)/parallel_obj -o $(abspath $@) \
+		-GHART_COUNT=$(HART_COUNT) "-GSYNC_MEMORY=1'b$(SYNC_MEMORY)" "-GENABLE_L1=1'b$(ENABLE_L1)" \
+		-GMEMORY_WAIT_CYCLES=$(MEMORY_WAIT_CYCLES) -GL1_LINE_WORDS=$(L1_LINE_WORDS) -GL1_LINE_COUNT=$(L1_LINE_COUNT) \
+		$(addprefix $(ROOT)/,$(RTL_CORE) $(RTL_CACHE) $(RTL_MEMORY) $(RTL_PERIPHERALS) $(RTL_MULTICORE)) \
+		$(ROOT)/verification/soc/tb_aster_parallel.cpp
+
+parallel: $(PARALLEL_HEX) $(PARALLEL_SIM)
+	@$(PYTHON) scripts/run_parallel_sim.py --simulator $(PARALLEL_SIM) --elf $(PARALLEL_ELF) \
+		--firmware $(PARALLEL_HEX) --nm $(RISCV_PREFIX)nm --jobs $(PARALLEL_JOBS) --words $(PARALLEL_WORDS) \
+		--rounds $(PARALLEL_ROUNDS) --workers $(PARALLEL_WORKERS) --harts $(HART_COUNT) --seed $(PARALLEL_SEED) \
+		--l1 $(ENABLE_L1) --sync-memory $(SYNC_MEMORY) --memory-wait $(MEMORY_WAIT_CYCLES) \
+		--line-words $(L1_LINE_WORDS) --line-count $(L1_LINE_COUNT)
+
+parallel-config:
+	@$(PYTHON) -c 'import json,sys; print(json.dumps(dict(zip(("compiler", "cflags", "ldflags", "verilator", "simulator", "firmware", "elf", "nm"), sys.argv[1:]))))' \
+		'$(CC)' '$(PARALLEL_CFLAGS)' '$(PARALLEL_LDFLAGS)' '$(VERILATOR)' '$(PARALLEL_SIM)' '$(PARALLEL_HEX)' '$(PARALLEL_ELF)' '$(RISCV_PREFIX)nm'
+
+.PHONY: parallel-matrix parallel-workloads
+parallel-matrix:
+	@set -e; for topology in '1 1' '2 1' '2 2'; do \
+		read -r harts workers <<< "$$topology"; \
+		for l1 in 0 1; do for timing in '0 0' '0 4' '1 1' '1 4'; do \
+			read -r sync wait_cycles <<< "$$timing"; \
+			$(MAKE) HART_COUNT=$$harts PARALLEL_WORKERS=$$workers ENABLE_L1=$$l1 \
+				SYNC_MEMORY=$$sync MEMORY_WAIT_CYCLES=$$wait_cycles parallel; \
+		done; done; \
+	done
+
+parallel-workloads:
+	@set -e; for work in '2 1 0' '7 4 0xffffffff' '129 16 1' '1024 4 0xa57e' '64 64 0xc0ffee'; do \
+		read -r words rounds seed <<< "$$work"; \
+		for workers in 1 2; do \
+			$(MAKE) HART_COUNT=2 PARALLEL_WORKERS=$$workers PARALLEL_WORDS=$$words \
+				PARALLEL_ROUNDS=$$rounds PARALLEL_SEED=$$seed parallel; \
+		done; \
+	done
+
+test: smoke phase1 hello bench cache uart fpga-sim linux-sim counters retirement arbiter shared-fabric multicore-runtime parallel
+
+check: tools smoke phase1 hello bench cache uart fpga-sim linux-sim counters retirement arbiter shared-fabric multicore-runtime parallel
 
 clean:
 	rm -rf $(BUILD_DIR)

@@ -62,6 +62,9 @@ make arbiter     Run directed/seeded two-requester arbitration scoreboards
 make fabric-matrix  Test shared decode/control for 1/2 harts and four memory timings
 make multicore-runtime  Run the Phase 5 C runtime with real per-hart retirement
 make multicore-runtime-matrix  Cross 1/2 harts, caches off/on and four memory timings
+make parallel    Run split-array AsterBench v3 and independent RTL scoreboards
+make parallel-matrix  Cross 1/2 cores/workers, caches and four memory timings
+make parallel-workloads  Test odd/boundary sizes, seeds and round counts
 make check       Run tool checks, directed tests and simulations
 make clean       Remove generated files under build/
 ```
@@ -74,6 +77,26 @@ Phase 5 simulation uses `HART_COUNT=1|2` (default 2) and the existing cache and
 memory knobs. Legacy single-core targets ignore `HART_COUNT`; they retain their
 original map. The multicore linker/runtime and simulation top are separate,
 and no dual-core FPGA target or physical closeout is claimed yet.
+
+`PARALLEL_WORDS=2..1024`, `PARALLEL_ROUNDS=1..64`, `PARALLEL_JOBS=1..16`,
+`PARALLEL_WORKERS=1|2` and `PARALLEL_SEED` configure the new workload. The default
+is 64 words, four rounds, three jobs and one worker per instantiated hart.
+For an apples-to-apples same-hardware comparison use `HART_COUNT=2` in both
+runs and vary `PARALLEL_WORKERS` only. One-worker firmware holds hart 1 reset.
+Legacy `BENCH_*` flags continue to apply only to v2 workloads.
+
+```sh
+python3 scripts/parallel_results.py capture --workers 1 --output build/parallel/one.json
+python3 scripts/parallel_results.py capture --workers 2 --output build/parallel/two.json
+python3 scripts/parallel_results.py compare build/parallel/one.json build/parallel/two.json
+python3 scripts/parallel_results.py audit build/parallel/two.json
+```
+
+Captures contain both warm boots, every raw job record, independent per-hart
+kernel observations, the hash-bound raw build/run log and source/toolchain/
+firmware/model provenance. Default capture builds are fresh temporary roots;
+existing outputs/logs are rejected. `parallel-config` exposes actual build
+paths and flags. `parallel-firmware` builds only the ELF/hex for deployment.
 
 Save and compare real benchmark runs with complete source/toolchain hashes:
 

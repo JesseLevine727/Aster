@@ -22,11 +22,23 @@ module aster_multicore #(
     output logic [1:0] hart_trap,
     output logic [1:0] hart_run,
     output logic [1:0] retired,
-    output logic [31:0] retired_pc [0:1]
+    output logic [31:0] retired_pc [0:1],
+    // Observation ports expose actual accepted commands/events, not inferred
+    // software markers. Unused ports synthesize away in the board shell.
+    output logic perf_start,
+    output logic perf_freeze,
+    output logic perf_resume,
+    output logic [1:0] memory_events,
+    output logic [1:0] cache_access_events,
+    output logic [1:0] cache_miss_events,
+    output logic [1:0] backing_events
 );
     logic [1:0] valid, instr, ready, memory_transaction, cache_access, cache_miss;
     logic [31:0] addr [0:1], wdata [0:1], rdata [0:1];
     logic [3:0] wstrb [0:1];
+    assign memory_events = memory_transaction & hart_run;
+    assign cache_access_events = cache_access & hart_run;
+    assign cache_miss_events = cache_miss & hart_run;
 
     for (genvar h = 0; h < 2; h++) begin : g_hart
         if (h < HART_COUNT) begin : g_present
@@ -69,6 +81,8 @@ module aster_multicore #(
         .s_addr(addr), .s_wdata(wdata), .s_wstrb(wstrb), .s_ready(ready), .s_rdata(rdata),
         .hart_trap(hart_trap), .retired(retired), .memory_transaction(memory_transaction),
         .cache_access(cache_access), .cache_miss(cache_miss), .hart_run(hart_run),
+        .perf_start(perf_start), .perf_freeze(perf_freeze), .perf_resume(perf_resume),
+        .backing_events(backing_events),
         .uart_tx_ready(uart_tx_ready), .uart_tx_valid(uart_tx_valid), .uart_tx_data(uart_tx_data),
         .boot_we(boot_we), .boot_addr(boot_addr), .boot_wdata(boot_wdata), .boot_wstrb(boot_wstrb)
     );

@@ -38,10 +38,28 @@ multicore-runtime tests as well as all existing targets.
   region, checks stack alignment/limits, rejects ROM overflow, and verifies a
   word-padded odd-byte shared-data segment with its ROM load address.
 
-The runtime producer/consumer test is not yet the independently checked
-**parallel** AsterBench workload. Further adversarial core-level trap/reset and
-measurement tests, v3 records/provenance, regression closeout and actual FPGA
-validation remain tracked in [the Phase 5 contract](phase5.md).
+`make parallel` tests a separate, genuinely parallel array kernel. ELF symbol
+bounds identify its instructions; actual RVFI PC/retirement signals prove each
+participating core executes it. For substantial jobs (at least 64 words and
+four rounds), kernel retirement intervals must overlap. Tiny jobs may finish
+one slice before the other starts; their overhead is still measured honestly.
+An external C++ scoreboard starts/freezes on accepted hardware control writes,
+counts every per-hart event and compares all 16 emitted bank values exactly.
+It checks each slice checksum using a separate host oracle; firmware separately
+checks every output word against its word-major scalar reference.
+
+`parallel-matrix` tests 24 configurations: hardware/worker counts 1/1, 2/1,
+2/2 × L1 off/on × four memory timings. `parallel-workloads` adds ten cases
+covering 2/7/129/1024-word boundary/odd sizes, 1/4/16/64 rounds and diverse seeds.
+Each run executes three fresh jobs per boot and two full warm boots by default.
+Strict Python/C++ v3 parser mutation tests cover missing/duplicate fields,
+malformed numeric encodings, unknown fields, partition/seed/counter invariants
+and inactive workers. The host stream checker rejects missing, reordered or
+extra jobs and independently verifies their checksums. Capture mutation tests
+bind serial records and per-hart observations to the actual hashed run log.
+
+Further adversarial core-level trap/reset tests, full regression closeout and
+actual FPGA validation remain tracked in [the Phase 5 contract](phase5.md).
 
 ## Phase 0 tests
 
