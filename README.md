@@ -10,10 +10,13 @@ The goal is **not to reproduce an Apple A-series processor**. Modern Apple silic
 
 ## Current status
 
-Phase 0 is now a runnable baseline: the repository has an explicit architecture
-specification and memory map, a command-line toolchain check, a Make build, a
-Verilator smoke test, and a minimal RV32I CPU/ROM/RAM/UART path. The first
-bare-metal image prints `Hello from Aster` through the simulated UART.
+Phase 0 and the first Phase 1 bring-up slice are runnable: the repository has
+an explicit architecture specification and memory map, a command-line
+toolchain check, a Make build, a Verilator smoke test, and a PicoRV32
+RV32IM/ROM/RAM/UART path. The first bare-metal C image boots through a RAM
+stack, clears `.bss`, verifies RAM persistence, and prints `Hello from Aster`
+through the simulated UART. Directed RV32IM tests cover the memory path,
+branches, jumps, `MUL`, `DIV`, and `REM`.
 
 Start here:
 
@@ -24,8 +27,8 @@ make check
 See [`docs/architecture.md`](docs/architecture.md) for the current contract,
 [`docs/toolchain.md`](docs/toolchain.md) for setup and build targets, and
 [`docs/verification.md`](docs/verification.md) for the test strategy. The
-bring-up core is intentionally smaller than the planned RV32IM Aster v1 core;
-its role is to make each later subsystem observable and testable.
+PicoRV32 is pinned under `vendor/` and integrated through an Aster-owned
+wrapper, so the CPU can be replaced later without rewriting the SoC fabric.
 
 ---
 

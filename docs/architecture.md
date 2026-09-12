@@ -1,6 +1,6 @@
 # Aster architecture specification
 
-Status: Phase 0 baseline, 2026-09-11
+Status: Phase 1 baseline, 2026-09-11
 
 This document is the executable contract for the first bring-up slice. It
 separates decisions that are fixed for the minimal system from features that
@@ -15,7 +15,7 @@ computer that lets the rest of the platform be developed incrementally.
 
 The Phase 0/1 baseline contains:
 
-- one in-order, single-issue RV32I core;
+- one in-order RV32IM core supplied by the pinned PicoRV32 implementation;
 - 64 KiB instruction/data ROM image space;
 - 64 KiB byte-writeable RAM;
 - a simulation UART;
@@ -31,7 +31,7 @@ implemented by this baseline.
 
 ```text
                   +--------------------+
-                  |   rv32i_core       |
+                  |   picorv32 RV32IM  |
                   |  reset PC = 0x0000 |
                   +-----+---------+----+
                         |         |
@@ -48,15 +48,17 @@ implemented by this baseline.
                               +------+ +------+
 ```
 
-The current bus is intentionally a direct core-to-peripheral interface. The
-future interconnect will replace this wiring while preserving the address and
-transaction semantics where possible.
+The current bus is intentionally a direct core-to-peripheral connection. It
+uses PicoRV32's single-outstanding-transfer valid/ready protocol; the Phase 1
+decoder acknowledges every transfer without wait states. The future
+interconnect and caches will replace this wiring while preserving the address
+and transaction semantics where possible.
 
 ## Architectural conventions
 
 | Property | Phase 0/1 decision |
 | --- | --- |
-| ISA | RV32I, little-endian; M extension is a v1 target, not yet implemented |
+| ISA | RV32IM, little-endian; compressed instructions are disabled |
 | ABI | `ilp32` bare-metal ABI |
 | Privilege | Machine-mode-style bare-metal execution; no privilege transitions yet |
 | Reset | Active-low synchronous reset; PC resets to `0x0000_0000` |
@@ -66,7 +68,7 @@ transaction semantics where possible.
 | Memory reads | Combinational in this bring-up model |
 | Memory writes | Sampled on the rising edge when `data_we` is asserted |
 | Unmapped reads | Return zero |
-| Unmapped/unsupported operations | Expose `illegal_instruction`; no trap handler yet |
+| Unmapped/unsupported operations | PicoRV32 exposes `trap`; no Aster trap handler yet |
 | Firmware image | Flat binary converted to one little-endian 32-bit hex word per line |
 
 ## Memory map
@@ -100,24 +102,26 @@ one-cycle `tx_valid` pulse and prints `tx_data`.
 
 ## Core interface contract
 
-The core exposes a Harvard-style pair of simple interfaces:
+The core exposes one unified native memory interface. `mem_instr` identifies
+instruction fetches, allowing a future cache front end to split instruction and
+data traffic even though this single-issue core has only one outstanding
+request:
 
 ```text
-instruction: instr_addr -> instr_rdata
-data read:   data_addr  -> data_rdata
-data write:  data_addr, data_wdata, data_wstrb, data_we
+request: mem_valid, mem_instr, mem_addr, mem_wdata, mem_wstrb
+response: mem_ready, mem_rdata
 ```
 
-`data_wstrb[n]` controls byte `n` of the addressed 32-bit word. The core
-shifts byte and halfword stores into their addressed byte lanes. The decoder
-routes writes to RAM or UART and ignores writes to reserved windows.
+The core holds `mem_valid` and all request fields until `mem_ready` is high.
+Reads have `mem_wstrb == 0`; stores use `mem_wstrb[n]` to control byte `n` of
+the addressed 32-bit word. The decoder routes writes to RAM or UART and
+ignores writes to reserved windows.
 
 ## Decisions still open
 
 These items must be resolved before the corresponding roadmap phase, not
 silently assumed by Phase 0:
 
-- whether to retain this core or integrate a proven RV32IM core;
 - exact L1/L2 organization and refill protocol;
 - coherence protocol and atomic-memory implementation;
 - system interconnect transaction format and arbitration;

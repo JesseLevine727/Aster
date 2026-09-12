@@ -1,0 +1,81 @@
+// Aster's integration boundary for the pinned PicoRV32 core.
+// Keep the upstream core unmodified; project-specific behavior belongs here.
+`timescale 1 ns / 1 ps
+
+module aster_picorv32 #(
+    parameter logic [31:0] PROGADDR_RESET = 32'h0000_0000,
+    parameter logic [31:0] STACKADDR = 32'h1001_0000
+) (
+    input  logic        clk,
+    input  logic        resetn,
+    output logic        trap,
+
+    output logic        mem_valid,
+    output logic        mem_instr,
+    input  logic        mem_ready,
+    output logic [31:0] mem_addr,
+    output logic [31:0] mem_wdata,
+    output logic [3:0]  mem_wstrb,
+    input  logic [31:0] mem_rdata,
+
+    output logic        pcpi_valid,
+    output logic [31:0] pcpi_insn,
+    output logic [31:0] pcpi_rs1,
+    output logic [31:0] pcpi_rs2,
+    input  logic        pcpi_wr,
+    input  logic [31:0] pcpi_rd,
+    input  logic        pcpi_wait,
+    input  logic        pcpi_ready,
+
+    input  logic [31:0] irq,
+    output logic [31:0] eoi
+);
+    /* verilator lint_off PINMISSING */
+    picorv32 #(
+        .ENABLE_COUNTERS(1),
+        .ENABLE_COUNTERS64(1),
+        .ENABLE_REGS_16_31(1),
+        .ENABLE_REGS_DUALPORT(1),
+        .LATCHED_MEM_RDATA(0),
+        .TWO_STAGE_SHIFT(1),
+        .BARREL_SHIFTER(0),
+        .TWO_CYCLE_COMPARE(0),
+        .TWO_CYCLE_ALU(0),
+        .COMPRESSED_ISA(0),
+        .CATCH_MISALIGN(1),
+        .CATCH_ILLINSN(1),
+        .ENABLE_PCPI(1),
+        .ENABLE_MUL(1),
+        .ENABLE_FAST_MUL(0),
+        .ENABLE_DIV(1),
+        .ENABLE_IRQ(0),
+        .ENABLE_IRQ_QREGS(0),
+        .ENABLE_IRQ_TIMER(0),
+        .ENABLE_TRACE(0),
+        .REGS_INIT_ZERO(1),
+        .PROGADDR_RESET(PROGADDR_RESET),
+        .STACKADDR(STACKADDR)
+    ) upstream_core (
+        .clk(clk),
+        .resetn(resetn),
+        .trap(trap),
+        .mem_valid(mem_valid),
+        .mem_instr(mem_instr),
+        .mem_ready(mem_ready),
+        .mem_addr(mem_addr),
+        .mem_wdata(mem_wdata),
+        .mem_wstrb(mem_wstrb),
+        .mem_rdata(mem_rdata),
+        .pcpi_valid(pcpi_valid),
+        .pcpi_insn(pcpi_insn),
+        .pcpi_rs1(pcpi_rs1),
+        .pcpi_rs2(pcpi_rs2),
+        .pcpi_wr(pcpi_wr),
+        .pcpi_rd(pcpi_rd),
+        .pcpi_wait(pcpi_wait),
+        .pcpi_ready(pcpi_ready),
+        .irq(irq),
+        .eoi(eoi)
+    );
+    /* verilator lint_on PINMISSING */
+endmodule

@@ -36,38 +36,41 @@ running the build. Do not commit generated toolchains or build output.
 ```text
 make tools       Verify host and RISC-V tools
 make structure   Print the tracked project layout
-make firmware    Build software/boot/hello.S into build/software/
+make firmware    Build software/boot/hello.c and runtime into build/software/
 make smoke       Build and run the first Verilator unit smoke test
+make directed    Run directed RV32IM instruction tests
 make hello       Build firmware, compile the minimal SoC and run its UART test
-make check       Run all Phase 0 checks
+make check       Run tool checks, directed tests and simulations
 make clean       Remove generated files under build/
 ```
 
 The firmware pipeline is:
 
 ```text
-hello.S + link.ld
+start.S + hello.c + link.ld
         ↓ riscv32-unknown-elf-gcc
       hello.elf
-        ↓ objcopy -O binary
-      hello.bin
-        ↓ scripts/elf_to_hex.py
+        ↓ scripts/elf_to_hex.py (ELF load segments)
       hello.hex
         ↓ $readmemh
       aster_rom
 ```
 
 The generated hex contains no address directives: line `N` is the little-endian
-32-bit word at ROM address `4*N`. This makes it unambiguous in both Verilator
-and future ROM initialization flows.
+32-bit word at ROM address `4*N`. ELF load segments use their physical/load
+address, so initialized `.data` can be copied from ROM into RAM by startup code
+without creating a 256 MiB sparse ROM image.
 
 ## Toolchain policy
 
-The architecture target is RV32IM, but the first checked-in bring-up core and
-firmware use RV32I. The M extension is a planned implementation milestone and
-must not be enabled in firmware until the core and its tests support it.
+The architecture target and current bring-up configuration are RV32IM. The
+PicoRV32 wrapper enables its internal multiply/divide implementations, and the
+first firmware image executes both `mul` and `div` before printing its message.
+Compressed instructions remain disabled so the ROM format and fetch path stay
+32-bit word aligned.
 
 Firmware uses `-nostdlib -nostartfiles -nodefaultlibs -ffreestanding`; every
-runtime service is therefore explicit and reviewable. The first image writes
-directly to the UART MMIO register so the CPU/ROM/bus/peripheral path is
-verified without depending on libc.
+runtime service is therefore explicit and reviewable. `start.S` establishes a
+RAM stack, copies initialized data, clears `.bss`, and calls `main`. The first C
+image writes directly to the UART MMIO register so the CPU/ROM/bus/RAM/
+peripheral path is verified without depending on libc.

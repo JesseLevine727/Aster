@@ -14,8 +14,17 @@ that the repository can compile SystemVerilog, build a C++ harness, drive a
 clock/reset and observe a deterministic result.
 
 `verification/soc/tb_aster_hello.cpp` is the first system test. It observes the
-UART pins while the RV32I core fetches firmware from ROM, loads the message,
-branches over each character and stores bytes to the UART MMIO address.
+UART pins while the PicoRV32 RV32IM core fetches firmware from ROM, executes
+the M-extension check, loads the message, branches over each character and
+stores bytes to the UART MMIO address.
+
+`software/tests/rv32im_directed.S` is a focused instruction image. It checks
+RAM word and byte accesses, branches, jumps, and the multiply/divide/remainder
+operations enabled in the PicoRV32 wrapper.
+
+`software/boot/hello.c` runs through `software/runtime/start.S`; its `.bss`
+array and stack operations verify that C execution is backed by the Aster RAM
+window rather than only reading constants from ROM.
 
 Run both with:
 
@@ -34,7 +43,7 @@ make check
 
 ## Next verification increments
 
-1. Add directed instruction tests for every implemented RV32I operation.
+1. Add directed instruction tests for every implemented RV32I and RV32M operation.
 2. Add ROM/RAM byte-lane and alignment tests.
 3. Add UART status/read and MMIO decode tests.
 4. Add a C firmware test that exercises RAM and a stack.
