@@ -20,6 +20,14 @@
 #define ASTER_PERF_ACCEL_CYCLES_LO (ASTER_PERF_BASE + 12u)
 #define ASTER_PERF_ACCEL_CYCLES_HI (ASTER_PERF_BASE + 13u)
 #define ASTER_PERF_CONTROL (ASTER_PERF_BASE + 14u)
+#define ASTER_PERF_BACKING_LO (ASTER_PERF_BASE + 16u)
+#define ASTER_PERF_BACKING_HI (ASTER_PERF_BASE + 17u)
+#define ASTER_PERF_ABI (ASTER_PERF_BASE + 18u)
+#define ASTER_PERF_CLOCK_HZ (ASTER_PERF_BASE + 19u)
+#define ASTER_PERF_FLAGS (ASTER_PERF_BASE + 20u)
+#define ASTER_PERF_LINE_WORDS (ASTER_PERF_BASE + 21u)
+#define ASTER_PERF_LINE_COUNT (ASTER_PERF_BASE + 22u)
+#define ASTER_PERF_MEMORY_WAIT (ASTER_PERF_BASE + 23u)
 
 struct aster_perf_counter {
     uint32_t lo;
@@ -34,6 +42,7 @@ struct aster_perf_snapshot {
     struct aster_perf_counter cache_misses;
     struct aster_perf_counter dma_bytes;
     struct aster_perf_counter accelerator_cycles;
+    struct aster_perf_counter backing_transactions;
 };
 
 static inline void aster_putc(char character) {
@@ -56,6 +65,13 @@ static inline void aster_put_hex64(struct aster_perf_counter value) {
     aster_put_hex32(value.lo);
 }
 
+static inline void aster_put_u32(uint32_t value) {
+    char digits[10];
+    unsigned count = 0;
+    do { digits[count++] = (char)('0' + value % 10u); value /= 10u; } while (value);
+    while (count) aster_putc(digits[--count]);
+}
+
 static inline struct aster_perf_counter aster_perf_read_counter(
     volatile uint32_t *lo_register, volatile uint32_t *hi_register) {
     struct aster_perf_counter value;
@@ -71,10 +87,16 @@ static inline struct aster_perf_counter aster_perf_read_counter(
 }
 
 static inline void aster_perf_clear(void) {
+    __asm__ volatile ("" ::: "memory");
     *ASTER_PERF_CONTROL = 1u;
+    __asm__ volatile ("" ::: "memory");
 }
 
 static inline void aster_perf_snapshot(struct aster_perf_snapshot *snapshot) {
+    // Freeze all event sources on the same clock before reading any field.
+    __asm__ volatile ("" ::: "memory");
+    *ASTER_PERF_CONTROL = 2u;
+    __asm__ volatile ("" ::: "memory");
     snapshot->cycles = aster_perf_read_counter(ASTER_PERF_CYCLE_LO,
                                                 ASTER_PERF_CYCLE_HI);
     snapshot->retired = aster_perf_read_counter(ASTER_PERF_RETIRED_LO,
@@ -89,6 +111,8 @@ static inline void aster_perf_snapshot(struct aster_perf_snapshot *snapshot) {
                                                    ASTER_PERF_DMA_BYTES_HI);
     snapshot->accelerator_cycles = aster_perf_read_counter(
         ASTER_PERF_ACCEL_CYCLES_LO, ASTER_PERF_ACCEL_CYCLES_HI);
+    snapshot->backing_transactions = aster_perf_read_counter(
+        ASTER_PERF_BACKING_LO, ASTER_PERF_BACKING_HI);
 }
 
 #endif

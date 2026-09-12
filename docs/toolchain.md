@@ -51,9 +51,28 @@ make fpga        Run the Vivado PYNQ-Z1 synthesis/place/route/bitstream flow
 make linux-sim   Test AXI boot loading, host pauses and FPGA UART serial capture
 make fpga-linux  Build the PYNQ Linux PCAP/AXI overlay (no JTAG)
 make uart        Test TX backpressure/reset and RX framing/glitch handling
+make retirement  Check an exact RVFI retirement sequence and trap exclusion
+make counters    Test common counter windows, event semantics and rollover
 make check       Run tool checks, directed tests and simulations
 make clean       Remove generated files under build/
 ```
+
+Both Verilator and Vivado define `RISCV_FORMAL` to expose the pinned core's
+synthesizable RVFI observation ports. They do not define `FORMAL`. Firmware is
+still RV32IM/ILP32; the extra interface changes measurement, not the ISA.
+
+Save and compare real benchmark runs with complete source/toolchain hashes:
+
+```sh
+python3 scripts/bench_results.py capture --l1 0 --output build/results/no-cache.json
+python3 scripts/bench_results.py capture --l1 1 --output build/results/cache.json
+python3 scripts/bench_results.py compare build/results/no-cache.json build/results/cache.json
+```
+
+Each capture uses a fresh temporary build directory to avoid stale flags or
+images, validates the record and requested RTL settings, and retains a build
+log alongside the JSON. Existing output paths are never silently overwritten.
+See [`software/benchmarks/README.md`](../software/benchmarks/README.md).
 
 The firmware pipeline is:
 

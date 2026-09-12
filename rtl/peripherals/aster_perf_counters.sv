@@ -1,110 +1,79 @@
-// Machine-readable performance counter block.
-//
-// Counters are deliberately event-driven: the SoC supplies the events that
-// exist in the current configuration, while cache/DMA/accelerator events stay
-// zero until those subsystems are connected in their roadmap phases.
+// One common measurement interval for every event source. Reads observe a
+// stable bank after FREEZE, so neither UART formatting nor MMIO readout changes
+// a sample. Commands are recognized only on byte lane 0 of an accepted write.
 module aster_perf_counters #(
-    parameter logic [31:0] BASE_ADDR = 32'h2000_3000
+    parameter logic [31:0] BASE_ADDR = 32'h2000_3000,
+    parameter int unsigned CLOCK_HZ = 31_250_000,
+    parameter bit ENABLE_L1 = 1'b1,
+    parameter bit SYNC_MEMORY = 1'b0,
+    parameter int unsigned LINE_WORDS = 4,
+    parameter int unsigned LINE_COUNT = 16
 ) (
-    input  logic        clk,
-    input  logic        rst_n,
-    input  logic [31:0] addr,
-    input  logic [31:0] wdata,
-    input  logic [3:0]  wstrb,
-    input  logic        we,
+    input logic clk,
+    input logic rst_n,
+    input logic [31:0] addr,
+    input logic [31:0] wdata,
+    input logic [3:0] wstrb,
+    input logic we,
     output logic [31:0] rdata,
-    input  logic        cycle_en,
-    input  logic        instr_retired,
-    input  logic        mem_transaction,
-    input  logic        cache_access,
-    input  logic        cache_miss,
-    input  logic [31:0] dma_bytes,
-    input  logic        accelerator_active
+    input logic cycle_en,
+    input logic instr_retired,
+    input logic mem_transaction,
+    input logic cache_access,
+    input logic cache_miss,
+    input logic [31:0] dma_bytes,
+    input logic accelerator_active,
+    input logic backing_transaction
 );
-    localparam logic [31:0] CYCLE_LO_OFFSET = 32'h00;
-    localparam logic [31:0] CYCLE_HI_OFFSET = 32'h04;
-    localparam logic [31:0] RETIRED_LO_OFFSET = 32'h08;
-    localparam logic [31:0] RETIRED_HI_OFFSET = 32'h0c;
-    localparam logic [31:0] MEM_TXN_LO_OFFSET = 32'h10;
-    localparam logic [31:0] MEM_TXN_HI_OFFSET = 32'h14;
-    localparam logic [31:0] CACHE_ACCESS_LO_OFFSET = 32'h18;
-    localparam logic [31:0] CACHE_ACCESS_HI_OFFSET = 32'h1c;
-    localparam logic [31:0] CACHE_MISS_LO_OFFSET = 32'h20;
-    localparam logic [31:0] CACHE_MISS_HI_OFFSET = 32'h24;
-    localparam logic [31:0] DMA_BYTES_LO_OFFSET = 32'h28;
-    localparam logic [31:0] DMA_BYTES_HI_OFFSET = 32'h2c;
-    localparam logic [31:0] ACCEL_CYCLES_LO_OFFSET = 32'h30;
-    localparam logic [31:0] ACCEL_CYCLES_HI_OFFSET = 32'h34;
-    localparam logic [31:0] CONTROL_OFFSET = 32'h38;
+    logic [63:0] counters [0:7];
+    logic [63:0] increment [0:7];
+    logic running;
+    wire [31:0] offset = addr - BASE_ADDR;
+    wire command = we && wstrb[0] && offset == 32'h38;
+    wire start = command && wdata[7:0] == 8'd1;
+    wire freeze = command && wdata[7:0] == 8'd2;
+    wire resume_counting = command && wdata[7:0] == 8'd4;
 
-    logic [63:0] cycle_count;
-    logic [63:0] retired_count;
-    logic [63:0] mem_transaction_count;
-    logic [63:0] cache_access_count;
-    logic [63:0] cache_miss_count;
-    logic [63:0] dma_byte_count;
-    logic [63:0] accelerator_cycle_count;
-    logic [31:0] offset;
-    logic clear_counters;
-
-    assign offset = addr - BASE_ADDR;
-    assign clear_counters = we && (offset == CONTROL_OFFSET)
-        && wstrb[0] && wdata[0];
+    assign increment[0] = {63'd0, cycle_en};
+    assign increment[1] = {63'd0, instr_retired};
+    assign increment[2] = {63'd0, mem_transaction};
+    assign increment[3] = {63'd0, cache_access};
+    assign increment[4] = {63'd0, cache_miss};
+    assign increment[5] = {32'd0, dma_bytes};
+    assign increment[6] = {63'd0, accelerator_active};
+    assign increment[7] = {63'd0, backing_transaction};
 
     always_ff @(posedge clk) begin
-        if (!rst_n) begin
-            cycle_count <= 64'd0;
-            retired_count <= 64'd0;
-            mem_transaction_count <= 64'd0;
-            cache_access_count <= 64'd0;
-            cache_miss_count <= 64'd0;
-            dma_byte_count <= 64'd0;
-            accelerator_cycle_count <= 64'd0;
-        end else if (clear_counters) begin
-            cycle_count <= 64'd0;
-            retired_count <= 64'd0;
-            mem_transaction_count <= 64'd0;
-            cache_access_count <= 64'd0;
-            cache_miss_count <= 64'd0;
-            dma_byte_count <= 64'd0;
-            accelerator_cycle_count <= 64'd0;
-        end else begin
-            if (cycle_en)
-                cycle_count <= cycle_count + 64'd1;
-            if (instr_retired)
-                retired_count <= retired_count + 64'd1;
-            if (mem_transaction)
-                mem_transaction_count <= mem_transaction_count + 64'd1;
-            if (cache_access)
-                cache_access_count <= cache_access_count + 64'd1;
-            if (cache_miss)
-                cache_miss_count <= cache_miss_count + 64'd1;
-            if (dma_bytes != 0)
-                dma_byte_count <= dma_byte_count + {32'd0, dma_bytes};
-            if (accelerator_active)
-                accelerator_cycle_count <= accelerator_cycle_count + 64'd1;
+        if (!rst_n || start) begin
+            for (int i = 0; i < 8; i++) counters[i] <= 64'd0;
+            running <= rst_n && start;
+        end else if (freeze) begin
+            running <= 1'b0;
+        end else if (resume_counting) begin
+            running <= 1'b1;
+        end else if (running) begin
+            for (int i = 0; i < 8; i++) counters[i] <= counters[i] + increment[i];
         end
     end
 
     always_comb begin
-        rdata = 32'd0;
-        case (offset)
-            CYCLE_LO_OFFSET: rdata = cycle_count[31:0];
-            CYCLE_HI_OFFSET: rdata = cycle_count[63:32];
-            RETIRED_LO_OFFSET: rdata = retired_count[31:0];
-            RETIRED_HI_OFFSET: rdata = retired_count[63:32];
-            MEM_TXN_LO_OFFSET: rdata = mem_transaction_count[31:0];
-            MEM_TXN_HI_OFFSET: rdata = mem_transaction_count[63:32];
-            CACHE_ACCESS_LO_OFFSET: rdata = cache_access_count[31:0];
-            CACHE_ACCESS_HI_OFFSET: rdata = cache_access_count[63:32];
-            CACHE_MISS_LO_OFFSET: rdata = cache_miss_count[31:0];
-            CACHE_MISS_HI_OFFSET: rdata = cache_miss_count[63:32];
-            DMA_BYTES_LO_OFFSET: rdata = dma_byte_count[31:0];
-            DMA_BYTES_HI_OFFSET: rdata = dma_byte_count[63:32];
-            ACCEL_CYCLES_LO_OFFSET: rdata = accelerator_cycle_count[31:0];
-            ACCEL_CYCLES_HI_OFFSET: rdata = accelerator_cycle_count[63:32];
-            CONTROL_OFFSET: rdata = 32'd0;
-            default: rdata = 32'd0;
-        endcase
+        rdata = 0;
+        if (offset <= 32'h34 && offset[1:0] == 0) begin
+            if (offset[2]) rdata = counters[offset[5:3]][63:32];
+            else rdata = counters[offset[5:3]][31:0];
+        end else begin
+            case (offset)
+                32'h38: rdata = {31'd0, running};
+                32'h40: rdata = counters[7][31:0];
+                32'h44: rdata = counters[7][63:32];
+                32'h48: rdata = 2; // measurement/record ABI
+                32'h4c: rdata = CLOCK_HZ;
+                32'h50: rdata = {30'd0, SYNC_MEMORY, ENABLE_L1};
+                32'h54: rdata = LINE_WORDS;
+                32'h58: rdata = LINE_COUNT;
+                32'h5c: rdata = SYNC_MEMORY ? 1 : 0; // added backing wait cycles
+                default: begin end
+            endcase
+        end
     end
 endmodule

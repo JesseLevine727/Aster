@@ -14,7 +14,8 @@ RISCV_MABI ?= ilp32
 ENABLE_L1 ?= 1
 SYNC_MEMORY ?= 0
 UART_FIFO_DEPTH ?= 3
-VERILATOR_VENDOR_LINT_FLAGS := --Wno-DECLFILENAME --Wno-GENUNNAMED \
+# Enable the pinned core's synthesizable RVFI ports, not FORMAL assumptions.
+VERILATOR_VENDOR_LINT_FLAGS := -DRISCV_FORMAL --Wno-DECLFILENAME --Wno-GENUNNAMED \
 	--Wno-UNUSEDSIGNAL --Wno-BLKSEQ
 
 RTL_CORE := rtl/core/aster_picorv32.sv vendor/picorv32/picorv32.v
@@ -38,10 +39,13 @@ BENCH_ELF := $(HELLO_DIR)/memcpy_bench.elf
 BENCH_BIN := $(HELLO_DIR)/memcpy_bench.bin
 BENCH_HEX := $(HELLO_DIR)/memcpy_bench.hex
 BENCH_OBJECTS := $(HELLO_DIR)/start.o $(HELLO_DIR)/memcpy_bench.o
-BENCH_SIM := $(BUILD_DIR)/asterbench_sim
+BENCH_MODEL_DIR := $(BUILD_DIR)/bench_l1$(ENABLE_L1)_sync$(SYNC_MEMORY)
+BENCH_SIM := $(BENCH_MODEL_DIR)/asterbench_sim
 CACHE_SIM := $(BUILD_DIR)/aster_l1_cache_sim
 UART_SIM := $(BUILD_DIR)/aster_uart_tx_$(UART_FIFO_DEPTH)_sim
 UART_RX_SIM := $(BUILD_DIR)/aster_uart_rx_sim
+RETIRE_SIM := $(BUILD_DIR)/aster_retirement_sim
+PERF_SIM := $(BUILD_DIR)/aster_perf_sim
 SMOKE_SIM := $(BUILD_DIR)/aster_smoke_sim
 PYNQ_SIM := $(BUILD_DIR)/aster_pynq_z1_sim
 LINUX_SIM := $(BUILD_DIR)/aster_pynq_linux_sim
@@ -62,7 +66,7 @@ BENCH_CFLAGS := $(HELLO_CFLAGS)
 BENCH_LDFLAGS := -T software/boot/link.ld -Wl,--gc-sections -Wl,-Map,$(HELLO_DIR)/memcpy_bench.map
 
 .PHONY: all tools structure firmware smoke test directed hello bench cache fpga fpga-sim check clean help \
-	runtime memory-map traps phase1 phase1-matrix host-tests uart fpga-linux linux-sim
+	runtime memory-map traps phase1 phase1-matrix host-tests uart fpga-linux linux-sim counters retirement bench-config
 .SECONDARY:
 
 all: check
@@ -229,11 +233,13 @@ $(DIRECTED_SIM): $(RTL_CORE) $(RTL_CACHE) $(RTL_MEMORY) $(RTL_PERIPHERALS) $(RTL
 		$(ROOT)/verification/soc/tb_rv32im_directed.cpp
 
 $(BENCH_SIM): $(RTL_CORE) $(RTL_CACHE) $(RTL_MEMORY) $(RTL_PERIPHERALS) $(RTL_SOC) \
-		verification/soc/tb_asterbench.cpp $(BENCH_HEX) | $(BUILD_DIR)
+		verification/soc/tb_asterbench.cpp verification/common/bench_record.h $(BENCH_HEX) | $(BUILD_DIR)
+	mkdir -p $(BENCH_MODEL_DIR)
 	$(VERILATOR) --cc --exe --build --timing --Wall --Wno-fatal \
 		$(VERILATOR_VENDOR_LINT_FLAGS) \
 		--top-module aster_minimal \
-		--Mdir $(BUILD_DIR)/obj_bench \
+		"-GENABLE_L1=1'b$(ENABLE_L1)" "-GSYNC_MEMORY=1'b$(SYNC_MEMORY)" \
+		--Mdir $(BENCH_MODEL_DIR)/obj \
 		-o $(abspath $@) \
 		-GMEM_INIT_FILE=\"$(BENCH_HEX)\" \
 		$(addprefix $(ROOT)/,$(RTL_CORE)) $(addprefix $(ROOT)/,$(RTL_CACHE)) \
@@ -242,7 +248,7 @@ $(BENCH_SIM): $(RTL_CORE) $(RTL_CACHE) $(RTL_MEMORY) $(RTL_PERIPHERALS) $(RTL_SO
 		$(ROOT)/verification/soc/tb_asterbench.cpp
 
 $(PYNQ_SIM): $(RTL_CORE) $(RTL_CACHE) $(RTL_MEMORY) $(RTL_PERIPHERALS) $(RTL_SOC) $(RTL_FPGA) \
-		verification/soc/tb_pynq_z1.cpp verification/common/uart_decoder.h $(HELLO_HEX) | $(BUILD_DIR)
+		verification/soc/tb_pynq_z1.cpp verification/common/uart_decoder.h verification/common/bench_record.h $(HELLO_HEX) | $(BUILD_DIR)
 	$(VERILATOR) --cc --exe --build --timing --Wall --Wno-fatal \
 		$(VERILATOR_VENDOR_LINT_FLAGS) \
 		--top-module aster_pynq_z1 \
@@ -274,7 +280,7 @@ fpga-linux:
 
 $(LINUX_SIM): $(RTL_CORE) $(RTL_CACHE) $(RTL_MEMORY) $(RTL_PERIPHERALS) $(RTL_SOC) \
 		rtl/peripherals/aster_uart_tx.sv rtl/peripherals/aster_uart_rx.sv \
-		rtl/soc/aster_pynq_linux.sv verification/soc/tb_pynq_linux.cpp | $(BUILD_DIR)
+		rtl/soc/aster_pynq_linux.sv verification/soc/tb_pynq_linux.cpp verification/common/bench_record.h | $(BUILD_DIR)
 	$(VERILATOR) --cc --exe --build --timing --Wall --Wno-fatal \
 		$(VERILATOR_VENDOR_LINT_FLAGS) --top-module aster_pynq_linux \
 		-GCLK_HZ=400 -GBAUD=10 -GRX_DEPTH=128 \
@@ -293,6 +299,10 @@ hello: $(HELLO_SIM)
 
 bench: $(BENCH_ELF) $(BENCH_BIN) $(BENCH_HEX) $(BENCH_SIM)
 	@$(BENCH_SIM)
+
+bench-config:
+	@$(PYTHON) -c 'import json,sys; print(json.dumps(dict(zip(("compiler", "cflags", "ldflags", "verilator"), sys.argv[1:]))))' \
+		'$(CC)' '$(BENCH_CFLAGS)' '$(BENCH_LDFLAGS)' '$(VERILATOR)'
 
 $(CACHE_SIM): $(RTL_CACHE) verification/unit/tb_aster_l1_cache.cpp | $(BUILD_DIR)
 	$(VERILATOR) --cc --exe --build --timing --Wall --Wno-fatal \
@@ -321,9 +331,26 @@ uart: $(UART_SIM) $(UART_RX_SIM)
 	@$(UART_SIM)
 	@$(UART_RX_SIM)
 
-test: smoke phase1 hello bench cache uart fpga-sim linux-sim
+$(RETIRE_SIM): $(RTL_CORE) verification/unit/tb_aster_retirement.cpp | $(BUILD_DIR)
+	$(VERILATOR) --cc --exe --build --timing --Wall --Wno-fatal \
+		$(VERILATOR_VENDOR_LINT_FLAGS) --top-module aster_picorv32 \
+		--Mdir $(BUILD_DIR)/obj_retirement -o $(abspath $@) \
+		$(addprefix $(ROOT)/,$(RTL_CORE)) $(ROOT)/verification/unit/tb_aster_retirement.cpp
 
-check: tools smoke phase1 hello bench cache uart fpga-sim linux-sim
+$(PERF_SIM): rtl/peripherals/aster_perf_counters.sv verification/unit/tb_aster_perf_counters.cpp | $(BUILD_DIR)
+	$(VERILATOR) --cc --exe --build --timing --Wall --Wno-fatal --public-flat-rw \
+		--top-module aster_perf_counters --Mdir $(BUILD_DIR)/obj_perf -o $(abspath $@) \
+		$(ROOT)/rtl/peripherals/aster_perf_counters.sv $(ROOT)/verification/unit/tb_aster_perf_counters.cpp
+
+retirement: $(RETIRE_SIM)
+	@$(RETIRE_SIM)
+
+counters: $(PERF_SIM)
+	@$(PERF_SIM)
+
+test: smoke phase1 hello bench cache uart fpga-sim linux-sim counters retirement
+
+check: tools smoke phase1 hello bench cache uart fpga-sim linux-sim counters retirement
 
 clean:
 	rm -rf $(BUILD_DIR)

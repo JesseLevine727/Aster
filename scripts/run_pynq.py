@@ -10,6 +10,8 @@ import json
 from pathlib import Path
 import platform
 import time
+from asterbench import parse_record
+from bench_results import validate_result
 
 
 def digest(path):
@@ -23,11 +25,7 @@ def validate_output(payload, kind):
         expected = (b"UART STRESS BEGIN\n" + bytes(33 + i % 90 for i in range(1024))
                     + b"\nUART STRESS PASS\n")
     else:
-        text = payload.decode("ascii")
-        if (not text.startswith("ASTERBENCH,") or ",status=PASS," not in text
-                or not text.endswith(",accelerator_cycles=0x0000000000000000\n")):
-            raise RuntimeError("invalid/incomplete AsterBench serial record")
-        return
+        return parse_record(payload.decode("ascii"))
     if payload != expected:
         raise RuntimeError(f"serial mismatch: got {len(payload)} bytes, expected {len(expected)}")
 
@@ -39,12 +37,26 @@ def main():
     parser.add_argument("--kind", choices=("hello", "stress", "bench"), required=True)
     parser.add_argument("--revision", required=True, help="source revision, including dirty marker if applicable")
     parser.add_argument("--output", type=Path, required=True)
+    parser.add_argument("--provenance", type=Path,
+                        help="host bench_results.py capture for this firmware (required for bench)")
     parser.add_argument("--no-download", action="store_true")
     parser.add_argument("--boots", type=int, default=2)
     parser.add_argument("--host-pause", type=float, default=0.2)
     args = parser.parse_args()
     if args.boots < 1 or args.host_pause < 0:
         parser.error("boots must be positive; host-pause cannot be negative")
+    if args.kind == "bench" and not args.provenance:
+        parser.error("bench requires --provenance with compiler/source/firmware metadata")
+    provenance = None
+    if args.provenance:
+        reference = json.loads(args.provenance.read_text())
+        validate_result(reference)
+        provenance = reference["metadata"]
+        if provenance["firmware_sha256"] != digest(args.firmware):
+            raise RuntimeError("provenance firmware hash does not match the image to load")
+        expected_revision = provenance["revision"] + ("-dirty" if provenance["dirty"] else "")
+        if args.revision != expected_revision:
+            raise RuntimeError(f"revision must match provenance: {expected_revision}")
 
     import pynq
     from pynq import Clocks, MMIO, Overlay, PL
@@ -77,6 +89,7 @@ def main():
         "schema": 1, "board": pynq.Device.active_device.name,
         "pynq_version": pynq.__version__, "kernel": platform.release(),
         "source_revision": args.revision, "kind": args.kind,
+        "host_build_provenance": provenance,
         "transport": "PYNQ Linux PCAP/AXI, FPGA UART TX-to-RX serial loopback",
         "external_pmod_loopback": False, "previous_bitstream": previous,
         "bitstream_sha256": digest(bitstream), "hwh_sha256": digest(hwh),
@@ -109,7 +122,9 @@ def main():
                     raise RuntimeError("Aster trap, receive overflow or framing error")
                 if count == 0:
                     time.sleep(0.0001)
-            validate_output(bytes(payload), args.kind)
+            counter_record = validate_output(bytes(payload), args.kind)
+            if counter_record and counter_record["clock_hz"] != mmio.read(0x20):
+                raise RuntimeError("firmware/host bridge clock metadata disagreement")
             time.sleep(0.02)
             status = mmio.read(4)
             tx_bytes, rx_bytes = mmio.read(0x10), mmio.read(0x14)
@@ -119,6 +134,7 @@ def main():
                 "boot": boot, "status": "PASS", "bridge_status": status,
                 "tx_bytes": tx_bytes, "rx_bytes": rx_bytes,
                 "uart_output": payload.decode("ascii"),
+                "counter_record": counter_record,
                 "elapsed_seconds": time.monotonic() - start,
             })
             print(f"PASS: physical Pynq-Z1 {args.kind}, boot={boot}, serial_bytes={len(payload)}", flush=True)

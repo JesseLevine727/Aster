@@ -164,7 +164,7 @@ module aster_pynq_linux #(
         end
     end
 
-    aster_minimal #(.SYNC_MEMORY(1'b1), .HOST_BOOT(1'b1)) soc (
+    aster_minimal #(.SYNC_MEMORY(1'b1), .HOST_BOOT(1'b1), .CLOCK_HZ(CLK_HZ)) soc (
         .clk(aclk), .rst_n(cpu_reset_n),
         .uart_tx_valid(core_tx_valid), .uart_tx_data(core_tx_data),
         .uart_tx_ready(core_tx_ready), .trap(trap),

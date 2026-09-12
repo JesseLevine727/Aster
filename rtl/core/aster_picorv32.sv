@@ -9,6 +9,9 @@ module aster_picorv32 #(
     input  logic        clk,
     input  logic        resetn,
     output logic        trap,
+    output logic        instr_retired,
+    output logic [31:0] retired_pc,
+    output logic [31:0] retired_insn,
 
     output logic        mem_valid,
     output logic        mem_instr,
@@ -30,6 +33,11 @@ module aster_picorv32 #(
     input  logic [31:0] irq,
     output logic [31:0] eoi
 );
+    logic rvfi_valid, rvfi_trap;
+    // RISCV_FORMAL exposes upstream's synthesizable RVFI observation ports.
+    // It does not enable the separate FORMAL assumptions/assertions. Trapping
+    // instructions do not retire; upstream may repeat trap records while halted.
+    assign instr_retired = resetn && rvfi_valid && !rvfi_trap;
     /* verilator lint_off PINMISSING */
     picorv32 #(
         .ENABLE_COUNTERS(1),
@@ -59,6 +67,10 @@ module aster_picorv32 #(
         .clk(clk),
         .resetn(resetn),
         .trap(trap),
+        .rvfi_valid(rvfi_valid),
+        .rvfi_trap(rvfi_trap),
+        .rvfi_pc_rdata(retired_pc),
+        .rvfi_insn(retired_insn),
         .mem_valid(mem_valid),
         .mem_instr(mem_instr),
         .mem_ready(mem_ready),

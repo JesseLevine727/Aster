@@ -1,5 +1,6 @@
 #include "Vaster_pynq_linux.h"
 #include "verilated.h"
+#include "../common/bench_record.h"
 
 #include <cstdint>
 #include <fstream>
@@ -142,10 +143,7 @@ int main(int argc, char** argv) {
             }
             require(done, "firmware output timeout");
             if (kind == "bench") {
-                require(output.rfind("ASTERBENCH,", 0) == 0 &&
-                        output.find(",status=PASS,") != std::string::npos &&
-                        output.find(",accelerator_cycles=0x0000000000000000\n") != std::string::npos,
-                        "incomplete benchmark serial record");
+                validate_bench_record(output);
             } else require(output == expected, "serial output mismatch");
             bus.idle(1000);
             require(bus.read(12) == 0, "duplicate serial output");

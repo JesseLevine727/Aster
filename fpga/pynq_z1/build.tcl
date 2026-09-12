@@ -19,6 +19,7 @@ if {![file exists $firmware_hex]} {
 file mkdir $output_dir
 cd $repo_root
 create_project aster_pynq_z1 $output_dir -part $part -force
+set_property verilog_define {RISCV_FORMAL} [current_fileset]
 
 set rtl_files [list \
     rtl/core/aster_picorv32.sv \

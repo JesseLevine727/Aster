@@ -5,6 +5,7 @@ set output_dir [file normalize [lindex $argv 1]]
 set part xc7z020clg400-1
 file mkdir $output_dir
 create_project aster_linux $output_dir -part $part -force
+set_property verilog_define {RISCV_FORMAL} [current_fileset]
 set rtl_files [list rtl/core/aster_picorv32.sv vendor/picorv32/picorv32.v \
     rtl/cache/aster_l1_cache.sv rtl/memory/aster_rom.sv rtl/memory/aster_ram.sv \
     rtl/peripherals/aster_uart.sv rtl/peripherals/aster_uart_tx.sv \

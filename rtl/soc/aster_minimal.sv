@@ -3,6 +3,7 @@ module aster_minimal #(
     parameter bit SYNC_MEMORY = 1'b0,
     parameter bit ENABLE_L1 = 1'b1,
     parameter bit HOST_BOOT = 1'b0,
+    parameter int unsigned CLOCK_HZ = 31_250_000,
     parameter int unsigned L1_LINE_WORDS = 4,
     parameter int unsigned L1_LINE_COUNT = 16
 ) (
@@ -86,6 +87,9 @@ module aster_minimal #(
         .clk(clk),
         .resetn(rst_n),
         .trap(trap),
+        .instr_retired(instruction_retired),
+        .retired_pc(),
+        .retired_insn(),
         .mem_valid(mem_valid),
         .mem_instr(mem_instr),
         .mem_ready(mem_ready),
@@ -225,7 +229,6 @@ module aster_minimal #(
         : lower_valid && (!uart_write_request || uart_write_ready);
     assign uart_write_request = !lower_mem_instr && (lower_addr == UART_BASE)
         && lower_wstrb[0];
-    assign instruction_retired = mem_valid && mem_ready && mem_instr;
     assign memory_transaction = mem_valid && mem_ready;
 
     aster_rom #(
@@ -267,7 +270,10 @@ module aster_minimal #(
         .tx_data(uart_tx_data)
     );
 
-    aster_perf_counters perf (
+    aster_perf_counters #(
+        .CLOCK_HZ(CLOCK_HZ), .ENABLE_L1(ENABLE_L1), .SYNC_MEMORY(SYNC_MEMORY),
+        .LINE_WORDS(L1_LINE_WORDS), .LINE_COUNT(L1_LINE_COUNT)
+    ) perf (
         .clk(clk),
         .rst_n(rst_n),
         .addr(lower_addr),
@@ -278,6 +284,7 @@ module aster_minimal #(
         .cycle_en(1'b1),
         .instr_retired(instruction_retired),
         .mem_transaction(memory_transaction),
+        .backing_transaction(lower_valid && lower_ready && memory_access),
         .cache_access(cache_access_event),
         .cache_miss(cache_miss_event),
         .dma_bytes(32'd0),

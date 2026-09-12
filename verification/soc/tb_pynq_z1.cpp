@@ -1,5 +1,6 @@
 #include "Vaster_pynq_z1.h"
 #include "../common/uart_decoder.h"
+#include "../common/bench_record.h"
 
 #include <cstdint>
 #include <iostream>
@@ -61,11 +62,11 @@ int main(int argc, char **argv) {
         if (completed_cycle && cycle > completed_cycle + kBaudDivisor * 12) break;
     }
 
-    const bool match = benchmark
-        ? decoder.text().rfind("ASTERBENCH,", 0) == 0 &&
-          decoder.text().find(",status=PASS,") != std::string::npos &&
-          decoder.text().find(",accelerator_cycles=0x0000000000000000\n") != std::string::npos
-        : decoder.text() == expected;
+    bool match = decoder.text() == expected;
+    if (benchmark) {
+        try { validate_bench_record(decoder.text()); match = true; }
+        catch (const std::exception&) { match = false; }
+    }
     if (decoder.failed() || !match) {
         std::cerr << "UART decode mismatch: '" << decoder.text() << "'\n";
         return 1;
