@@ -58,6 +58,10 @@ make fpga-linux  Build the PYNQ Linux PCAP/AXI overlay (no JTAG)
 make uart        Test TX backpressure/reset and RX framing/glitch handling
 make retirement  Check an exact RVFI retirement sequence and trap exclusion
 make counters    Test common counter windows, event semantics and rollover
+make arbiter     Run directed/seeded two-requester arbitration scoreboards
+make fabric-matrix  Test shared decode/control for 1/2 harts and four memory timings
+make multicore-runtime  Run the Phase 5 C runtime with real per-hart retirement
+make multicore-runtime-matrix  Cross 1/2 harts, caches off/on and four memory timings
 make check       Run tool checks, directed tests and simulations
 make clean       Remove generated files under build/
 ```
@@ -65,6 +69,11 @@ make clean       Remove generated files under build/
 Both Verilator and Vivado define `RISCV_FORMAL` to expose the pinned core's
 synthesizable RVFI observation ports. They do not define `FORMAL`. Firmware is
 still RV32IM/ILP32; the extra interface changes measurement, not the ISA.
+
+Phase 5 simulation uses `HART_COUNT=1|2` (default 2) and the existing cache and
+memory knobs. Legacy single-core targets ignore `HART_COUNT`; they retain their
+original map. The multicore linker/runtime and simulation top are separate,
+and no dual-core FPGA target or physical closeout is claimed yet.
 
 Save and compare real benchmark runs with complete source/toolchain hashes:
 

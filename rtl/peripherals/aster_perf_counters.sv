@@ -3,6 +3,7 @@
 // a sample. Commands are recognized only on byte lane 0 of an accepted write.
 module aster_perf_counters #(
     parameter logic [31:0] BASE_ADDR = 32'h2000_3000,
+    parameter int unsigned ABI_VERSION = 2,
     parameter int unsigned CLOCK_HZ = 31_250_000,
     parameter bit ENABLE_L1 = 1'b1,
     parameter bit SYNC_MEMORY = 1'b0,
@@ -67,7 +68,7 @@ module aster_perf_counters #(
                 32'h38: rdata = {31'd0, running};
                 32'h40: rdata = counters[7][31:0];
                 32'h44: rdata = counters[7][63:32];
-                32'h48: rdata = 2; // measurement/record ABI
+                32'h48: rdata = ABI_VERSION;
                 32'h4c: rdata = CLOCK_HZ;
                 32'h50: rdata = {30'd0, SYNC_MEMORY, ENABLE_L1};
                 32'h54: rdata = LINE_WORDS;

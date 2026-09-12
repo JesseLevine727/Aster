@@ -10,7 +10,7 @@ set rtl_files [list rtl/core/aster_picorv32.sv vendor/picorv32/picorv32.v \
     rtl/cache/aster_l1_cache.sv rtl/memory/aster_rom.sv rtl/memory/aster_ram.sv \
     rtl/peripherals/aster_uart.sv rtl/peripherals/aster_uart_tx.sv \
     rtl/peripherals/aster_uart_rx.sv rtl/peripherals/aster_perf_counters.sv \
-    rtl/soc/aster_minimal.sv rtl/soc/aster_pynq_linux.sv]
+    rtl/core/aster_hart.sv rtl/soc/aster_minimal.sv rtl/soc/aster_pynq_linux.sv]
 foreach relative $rtl_files { read_verilog -sv [file join $repo_root $relative] }
 read_verilog [file join $repo_root rtl/soc/aster_linux_ip.v]
 

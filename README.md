@@ -38,7 +38,16 @@ experiments. [Retained clean-revision results](docs/results/phase4/README.md)
 cover 60 configurations plus a repeat, with correctness/provenance checks and
 analysis of both cache benefits and slowdowns. Phases 1–4 are complete;
 [`docs/phase-closeout.md`](docs/phase-closeout.md) maps the acceptance contract
-to retained evidence. Phase 5 has not started.
+to retained evidence.
+
+Phase 5 is in progress, not closed. The [dual-hart contract](docs/phase5.md)
+defines hardware-protected private cached regions, uncached shared RAM,
+round-robin arbitration and polling mailboxes. The new `aster_multicore`
+simulation runs a separate-stack C runtime on two real PicoRV32 instances;
+`make multicore-runtime` checks per-hart retirement, repeated jobs/secondary
+restarts and warm boots. Parallel AsterBench v3, full Phase 5 verification and
+the dual-core PYNQ Linux overlay/physical validation remain unfinished. The
+existing FPGA targets still build the verified single-core shell.
 
 Start here:
 

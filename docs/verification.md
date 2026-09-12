@@ -7,6 +7,42 @@ unit RTL checks → core instruction tests → SoC bare-metal tests
                  → subsystem randomized tests → AsterBench regressions
 ```
 
+## Phase 5 development tests (not closeout)
+
+The new tests are additive; Phase 1–4 tests still target the legacy map and
+measurement ABI. `make check` includes the default arbiter, shared-fabric and
+multicore-runtime tests as well as all existing targets.
+
+- `make arbiter`: an independent two-requester reference scoreboard checks
+  round-robin fairness, a late arrival behind a locked grant, all 16 strobe
+  masks, identical back-to-back requests, response isolation, target side
+  effects and reset cancellation. Three seeds each run 100,000 random cycles.
+- `make fabric-matrix`: one/two enabled requester ports × async/0-wait,
+  async/4-wait, synchronous/1-wait and synchronous/4-wait × three seeds. The
+  actual fabric, ROM/RAM, UART, hart control and counter blocks are instantiated.
+  Checks cover IDs, owner-restricted registers, private-memory permissions,
+  actual bounds, instruction permissions, masked stores, mailbox lanes,
+  global counter commands, UART stall/ownership, secondary reset behind an
+  in-flight store, global reset, random contention and final RAM readback.
+  These requesters are **test drivers**, not evidence of CPU execution.
+- `make multicore-runtime-matrix`: one/two actual PicoRV32 instances × L1 off/on
+  × the same four timings. Each configuration boots twice from poisoned RAM;
+  each dual-hart boot releases/restarts the secondary twice and runs eight
+  producer/consumer jobs per release. Firmware tests separate aligned stacks,
+  recursion, initialized odd bytes, shared/private BSS, non-reinitialization of
+  primary state, denied cross-private stores and visible uncached results.
+  The harness counts RVFI retirement and distinct PCs separately for both
+  physical instances; a one-hart elaboration must report no hart-1 retirement.
+- `verification/host/test_multicore_layout.py`: accepts exact shared/private
+  capacity boundaries, rejects one-byte overflow into each stack and shared
+  region, checks stack alignment/limits, rejects ROM overflow, and verifies a
+  word-padded odd-byte shared-data segment with its ROM load address.
+
+The runtime producer/consumer test is not yet the independently checked
+**parallel** AsterBench workload. Further adversarial core-level trap/reset and
+measurement tests, v3 records/provenance, regression closeout and actual FPGA
+validation remain tracked in [the Phase 5 contract](phase5.md).
+
 ## Phase 0 tests
 
 `verification/unit/tb_aster_smoke.cpp` is the first Verilator test. It proves

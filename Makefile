@@ -12,6 +12,7 @@ OBJDUMP := $(RISCV_PREFIX)objdump
 RISCV_MARCH ?= rv32im
 RISCV_MABI ?= ilp32
 ENABLE_L1 ?= 1
+HART_COUNT ?= 2
 SYNC_MEMORY ?= 0
 L1_LINE_WORDS ?= 4
 L1_LINE_COUNT ?= 16
@@ -33,7 +34,9 @@ RTL_CORE := rtl/core/aster_picorv32.sv vendor/picorv32/picorv32.v
 RTL_CACHE := rtl/cache/aster_l1_cache.sv
 RTL_MEMORY := rtl/memory/aster_rom.sv rtl/memory/aster_ram.sv
 RTL_PERIPHERALS := rtl/peripherals/aster_uart.sv rtl/peripherals/aster_perf_counters.sv
-RTL_SOC := rtl/soc/aster_minimal.sv
+RTL_SOC := rtl/core/aster_hart.sv rtl/soc/aster_minimal.sv
+RTL_FABRIC := rtl/interconnect/aster_arbiter2.sv rtl/soc/aster_shared_fabric.sv
+RTL_MULTICORE := $(RTL_FABRIC) rtl/core/aster_hart.sv rtl/soc/aster_multicore.sv
 RTL_FPGA := rtl/peripherals/aster_uart_tx.sv rtl/soc/aster_pynq_z1.sv
 
 HELLO_DIR := $(BUILD_DIR)/software
@@ -61,6 +64,11 @@ UART_SIM := $(BUILD_DIR)/aster_uart_tx_$(UART_FIFO_DEPTH)_sim
 UART_RX_SIM := $(BUILD_DIR)/aster_uart_rx_sim
 RETIRE_SIM := $(BUILD_DIR)/aster_retirement_sim
 PERF_SIM := $(BUILD_DIR)/aster_perf_sim
+ARBITER_SIM := $(BUILD_DIR)/aster_arbiter2_sim
+FABRIC_DIR := $(BUILD_DIR)/fabric_h$(HART_COUNT)_$(CONFIG_TAG)
+FABRIC_SIM := $(FABRIC_DIR)/aster_fabric_sim
+MULTICORE_DIR := $(BUILD_DIR)/multicore_h$(HART_COUNT)_$(CONFIG_TAG)
+MULTICORE_SIM := $(MULTICORE_DIR)/aster_multicore_sim
 SMOKE_SIM := $(BUILD_DIR)/aster_smoke_sim
 PYNQ_SIM := $(BUILD_DIR)/aster_pynq_z1_sim
 LINUX_SIM := $(BUILD_DIR)/aster_pynq_linux_sim
@@ -103,6 +111,9 @@ help:
 	@echo "  make cache-matrix  Test 24 cache geometries, three seeds each"
 	@echo "  make cache-boundaries  Test larger index/line widths through 1024x1024"
 	@echo "  make phase4-soc-matrix  Cross caches, geometry and memory latency"
+	@echo "  make arbiter    Test two-requester fairness, backpressure and ownership"
+	@echo "  make fabric-matrix  Test Phase 5 shared memory/control across harts and latency"
+	@echo "  make multicore-runtime-matrix  Test dual-hart startup, isolation and warm boots"
 	@echo "  make fpga       Build the PYNQ-Z1 bitstream with Vivado"
 	@echo "  make fpga-sim   Decode the board-facing UART in simulation"
 	@echo "  make fpga-linux Build the PCAP/AXI overlay for PYNQ Linux (no JTAG)"
@@ -240,7 +251,7 @@ $(HELLO_SIM): $(RTL_CORE) $(RTL_CACHE) $(RTL_MEMORY) $(RTL_PERIPHERALS) $(RTL_SO
 		-GMEM_INIT_FILE=\"$(HELLO_HEX)\" \
 		$(addprefix $(ROOT)/,$(RTL_CORE)) $(addprefix $(ROOT)/,$(RTL_CACHE)) \
 		$(addprefix $(ROOT)/,$(RTL_MEMORY)) \
-		$(addprefix $(ROOT)/,$(RTL_PERIPHERALS)) $(ROOT)/$(RTL_SOC) \
+		$(addprefix $(ROOT)/,$(RTL_PERIPHERALS)) $(addprefix $(ROOT)/,$(RTL_SOC)) \
 		$(ROOT)/verification/soc/tb_aster_hello.cpp
 
 $(DIRECTED_SIM): $(RTL_CORE) $(RTL_CACHE) $(RTL_MEMORY) $(RTL_PERIPHERALS) $(RTL_SOC) \
@@ -253,7 +264,7 @@ $(DIRECTED_SIM): $(RTL_CORE) $(RTL_CACHE) $(RTL_MEMORY) $(RTL_PERIPHERALS) $(RTL
 		-GMEM_INIT_FILE=\"$(DIRECTED_HEX)\" \
 		$(addprefix $(ROOT)/,$(RTL_CORE)) $(addprefix $(ROOT)/,$(RTL_CACHE)) \
 		$(addprefix $(ROOT)/,$(RTL_MEMORY)) \
-		$(addprefix $(ROOT)/,$(RTL_PERIPHERALS)) $(ROOT)/$(RTL_SOC) \
+		$(addprefix $(ROOT)/,$(RTL_PERIPHERALS)) $(addprefix $(ROOT)/,$(RTL_SOC)) \
 		$(ROOT)/verification/soc/tb_rv32im_directed.cpp
 
 $(BENCH_SIM): $(RTL_CORE) $(RTL_CACHE) $(RTL_MEMORY) $(RTL_PERIPHERALS) $(RTL_SOC) \
@@ -268,7 +279,7 @@ $(BENCH_SIM): $(RTL_CORE) $(RTL_CACHE) $(RTL_MEMORY) $(RTL_PERIPHERALS) $(RTL_SO
 		-o $(abspath $@) \
 		$(addprefix $(ROOT)/,$(RTL_CORE)) $(addprefix $(ROOT)/,$(RTL_CACHE)) \
 		$(addprefix $(ROOT)/,$(RTL_MEMORY)) \
-		$(addprefix $(ROOT)/,$(RTL_PERIPHERALS)) $(ROOT)/$(RTL_SOC) \
+		$(addprefix $(ROOT)/,$(RTL_PERIPHERALS)) $(addprefix $(ROOT)/,$(RTL_SOC)) \
 		$(ROOT)/verification/soc/tb_asterbench.cpp
 
 $(PYNQ_SIM): $(RTL_CORE) $(RTL_CACHE) $(RTL_MEMORY) $(RTL_PERIPHERALS) $(RTL_SOC) $(RTL_FPGA) \
@@ -282,7 +293,7 @@ $(PYNQ_SIM): $(RTL_CORE) $(RTL_CACHE) $(RTL_MEMORY) $(RTL_PERIPHERALS) $(RTL_SOC
 		$(addprefix $(ROOT)/,$(RTL_CORE)) $(addprefix $(ROOT)/,$(RTL_CACHE)) \
 		$(addprefix $(ROOT)/,$(RTL_MEMORY)) \
 		$(addprefix $(ROOT)/,$(RTL_PERIPHERALS)) $(addprefix $(ROOT)/,$(RTL_FPGA)) \
-		$(ROOT)/$(RTL_SOC) $(ROOT)/verification/soc/tb_pynq_z1.cpp
+		$(addprefix $(ROOT)/,$(RTL_SOC)) $(ROOT)/verification/soc/tb_pynq_z1.cpp
 
 fpga-sim: $(PYNQ_SIM) $(HELLO_DIR)/uart_stress.hex $(BENCH_HEX)
 	@$(PYNQ_SIM)
@@ -410,9 +421,64 @@ retirement: $(RETIRE_SIM)
 counters: $(PERF_SIM)
 	@$(PERF_SIM)
 
-test: smoke phase1 hello bench cache uart fpga-sim linux-sim counters retirement
+.PHONY: arbiter
+$(ARBITER_SIM): rtl/interconnect/aster_arbiter2.sv verification/unit/tb_aster_arbiter2.cpp Makefile | $(BUILD_DIR)
+	$(VERILATOR) --cc --exe --build --timing --Wall \
+		--top-module aster_arbiter2 --Mdir $(BUILD_DIR)/obj_arbiter -o $(abspath $@) \
+		$(ROOT)/rtl/interconnect/aster_arbiter2.sv $(ROOT)/verification/unit/tb_aster_arbiter2.cpp
 
-check: tools smoke phase1 hello bench cache uart fpga-sim linux-sim counters retirement
+arbiter: $(ARBITER_SIM)
+	@set -e; for seed in 1 0xa57e 0xc0ffee; do $(ARBITER_SIM) $$seed; done
+
+.PHONY: shared-fabric fabric-matrix
+$(FABRIC_SIM): $(RTL_FABRIC) $(RTL_MEMORY) $(RTL_PERIPHERALS) verification/soc/tb_aster_shared_fabric.cpp Makefile | $(BUILD_DIR)
+	mkdir -p $(FABRIC_DIR)
+	$(VERILATOR) --cc --exe --build --timing --Wall --Wno-UNUSEDSIGNAL \
+		--top-module aster_shared_fabric --Mdir $(FABRIC_DIR)/obj -o $(abspath $@) \
+		-GHART_COUNT=$(HART_COUNT) "-GSYNC_MEMORY=1'b$(SYNC_MEMORY)" \
+		"-GENABLE_L1=1'b$(ENABLE_L1)" -GL1_LINE_WORDS=$(L1_LINE_WORDS) -GL1_LINE_COUNT=$(L1_LINE_COUNT) \
+		-GMEMORY_WAIT_CYCLES=$(MEMORY_WAIT_CYCLES) "-GHOST_BOOT=1'b1" \
+		-CFLAGS '-DASTER_HART_COUNT=$(HART_COUNT) -DASTER_MEMORY_WAIT=$(MEMORY_WAIT_CYCLES) -DASTER_SYNC_MEMORY=$(SYNC_MEMORY) -DASTER_ENABLE_L1=$(ENABLE_L1) -DASTER_LINE_WORDS=$(L1_LINE_WORDS) -DASTER_LINE_COUNT=$(L1_LINE_COUNT)' \
+		$(addprefix $(ROOT)/,$(RTL_FABRIC) $(RTL_MEMORY) $(RTL_PERIPHERALS)) \
+		$(ROOT)/verification/soc/tb_aster_shared_fabric.cpp
+
+shared-fabric: $(FABRIC_SIM)
+	@set -e; for seed in 1 0xa57e 0xc0ffee; do $(FABRIC_SIM) $$seed; done
+
+fabric-matrix:
+	@set -e; for harts in 1 2; do for timing in '0 0' '0 4' '1 1' '1 4'; do \
+		read -r sync wait_cycles <<< "$$timing"; \
+		$(MAKE) HART_COUNT=$$harts SYNC_MEMORY=$$sync MEMORY_WAIT_CYCLES=$$wait_cycles shared-fabric; \
+	done; done
+
+.PHONY: multicore-runtime multicore-runtime-matrix
+$(HELLO_DIR)/multicore_runtime.elf: software/tests/multicore_runtime.c software/runtime/start_multicore.S \
+		software/runtime/aster_multicore.h software/runtime/aster.h software/boot/link_multicore.ld Makefile | $(HELLO_DIR)
+	$(CC) $(HELLO_CFLAGS) -T software/boot/link_multicore.ld -Wl,-Map,$(@:.elf=.map) \
+		-o $@ software/runtime/start_multicore.S $<
+
+$(MULTICORE_SIM): $(RTL_CORE) $(RTL_CACHE) $(RTL_MEMORY) $(RTL_PERIPHERALS) $(RTL_MULTICORE) verification/soc/tb_aster_multicore.cpp Makefile | $(BUILD_DIR)
+	mkdir -p $(MULTICORE_DIR)
+	$(VERILATOR) --cc --exe --build --timing --Wall $(VERILATOR_VENDOR_LINT_FLAGS) \
+		--top-module aster_multicore --Mdir $(MULTICORE_DIR)/obj -o $(abspath $@) \
+		-GHART_COUNT=$(HART_COUNT) "-GSYNC_MEMORY=1'b$(SYNC_MEMORY)" "-GENABLE_L1=1'b$(ENABLE_L1)" \
+		-GMEMORY_WAIT_CYCLES=$(MEMORY_WAIT_CYCLES) -GL1_LINE_WORDS=$(L1_LINE_WORDS) -GL1_LINE_COUNT=$(L1_LINE_COUNT) \
+		-CFLAGS '-DASTER_HART_COUNT=$(HART_COUNT)' \
+		$(addprefix $(ROOT)/,$(RTL_CORE) $(RTL_CACHE) $(RTL_MEMORY) $(RTL_PERIPHERALS) $(RTL_MULTICORE)) \
+		$(ROOT)/verification/soc/tb_aster_multicore.cpp
+
+multicore-runtime: $(HELLO_DIR)/multicore_runtime.hex $(MULTICORE_SIM)
+	@$(MULTICORE_SIM) +rom=$(HELLO_DIR)/multicore_runtime.hex +ram_fill=a5a5a5a5
+
+multicore-runtime-matrix:
+	@set -e; for harts in 1 2; do for l1 in 0 1; do for timing in '0 0' '0 4' '1 1' '1 4'; do \
+		read -r sync wait_cycles <<< "$$timing"; \
+		$(MAKE) HART_COUNT=$$harts ENABLE_L1=$$l1 SYNC_MEMORY=$$sync MEMORY_WAIT_CYCLES=$$wait_cycles multicore-runtime; \
+	done; done; done
+
+test: smoke phase1 hello bench cache uart fpga-sim linux-sim counters retirement arbiter shared-fabric multicore-runtime
+
+check: tools smoke phase1 hello bench cache uart fpga-sim linux-sim counters retirement arbiter shared-fabric multicore-runtime
 
 clean:
 	rm -rf $(BUILD_DIR)

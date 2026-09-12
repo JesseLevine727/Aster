@@ -30,7 +30,7 @@ set rtl_files [list \
     rtl/peripherals/aster_uart.sv \
     rtl/peripherals/aster_perf_counters.sv \
     rtl/peripherals/aster_uart_tx.sv \
-    rtl/soc/aster_minimal.sv \
+    rtl/core/aster_hart.sv rtl/soc/aster_minimal.sv \
     rtl/soc/aster_pynq_z1.sv \
 ]
 

@@ -28,13 +28,6 @@ module aster_minimal #(
     localparam logic [31:0] PERF_BASE = 32'h2000_3000;
     localparam logic [31:0] PERF_LAST = PERF_BASE + 32'h0000_0fff;
 
-    logic        mem_valid;
-    logic        mem_instr;
-    logic        mem_ready;
-    logic [31:0] mem_addr;
-    logic [31:0] mem_wdata;
-    logic [3:0]  mem_wstrb;
-    logic [31:0] mem_rdata;
     logic [31:0] rom_rdata;
     logic [31:0] ram_rdata;
     logic [31:0] uart_rdata;
@@ -64,155 +57,21 @@ module aster_minimal #(
             $error("memory wait must be 0..1024, and >= 1 with synchronous BRAM");
     end
 
-    logic        icache_cpu_ready;
-    logic [31:0] icache_cpu_rdata;
-    logic        icache_lower_valid;
-    logic [31:0] icache_lower_addr;
-    logic [31:0] icache_lower_wdata;
-    logic [3:0]  icache_lower_wstrb;
-    logic        icache_lower_ready;
-    logic [31:0] icache_lower_rdata;
-    logic        icache_access;
-    logic        icache_miss;
-
-    logic        dcache_cpu_ready;
-    logic [31:0] dcache_cpu_rdata;
-    logic        dcache_lower_valid;
-    logic [31:0] dcache_lower_addr;
-    logic [31:0] dcache_lower_wdata;
-    logic [3:0]  dcache_lower_wstrb;
-    logic        dcache_lower_ready;
-    logic [31:0] dcache_lower_rdata;
-    logic        dcache_access;
-    logic        dcache_miss;
-
-    // Phase 1 keeps interrupts and external PCPI operations disabled. The
-    // wrapper still exposes both ports so later subsystems do not touch the
-    // vendored core directly.
     /* verilator lint_off PINCONNECTEMPTY */
-    aster_picorv32 core (
-        .clk(clk),
-        .resetn(rst_n),
-        .trap(trap),
-        .instr_retired(instruction_retired),
-        .retired_pc(),
-        .retired_insn(),
-        .mem_valid(mem_valid),
-        .mem_instr(mem_instr),
-        .mem_ready(mem_ready),
-        .mem_addr(mem_addr),
-        .mem_wdata(mem_wdata),
-        .mem_wstrb(mem_wstrb),
-        .mem_rdata(mem_rdata),
-        .pcpi_valid(),
-        .pcpi_insn(),
-        .pcpi_rs1(),
-        .pcpi_rs2(),
-        .pcpi_wr(1'b0),
-        .pcpi_rd(32'd0),
-        .pcpi_wait(1'b0),
-        .pcpi_ready(1'b0),
-        .irq(32'd0),
-        .eoi()
+    aster_hart #(
+        .ENABLE_L1(ENABLE_L1),
+        .L1_LINE_WORDS(L1_LINE_WORDS), .L1_LINE_COUNT(L1_LINE_COUNT),
+        .DATA_CACHE_BASE(RAM_BASE), .DATA_CACHE_END(RAM_END)
+    ) hart (
+        .clk(clk), .rst_n(rst_n), .trap(trap),
+        .instruction_retired(instruction_retired), .retired_pc(), .retired_insn(),
+        .memory_transaction(memory_transaction),
+        .cache_access_event(cache_access_event), .cache_miss_event(cache_miss_event),
+        .lower_valid(lower_valid), .lower_mem_instr(lower_mem_instr),
+        .lower_addr(lower_addr), .lower_wdata(lower_wdata), .lower_wstrb(lower_wstrb),
+        .lower_ready(lower_ready), .lower_rdata(lower_rdata)
     );
     /* verilator lint_on PINCONNECTEMPTY */
-
-    // Aster keeps the upstream native bus behind the optional L1 front end
-    // and this address-decoder boundary. The simulator is zero-wait-state;
-    // FPGA BRAM mode adds one response cycle for synchronous ROM/RAM reads and
-    // stores. MMIO is always bypassed by the caches.
-    aster_l1_cache #(
-        .LINE_WORDS(L1_LINE_WORDS),
-        .LINE_COUNT(L1_LINE_COUNT)
-    ) icache (
-        .clk(clk),
-        .rst_n(rst_n),
-        .cpu_valid(ENABLE_L1 && mem_valid && mem_instr),
-        // RAM code bypasses I$: write-through D$ stores are immediately
-        // visible without an instruction-cache maintenance operation.
-        .cpu_cacheable(mem_addr < ROM_END),
-        .cpu_addr(mem_addr),
-        .cpu_wdata(mem_wdata),
-        .cpu_wstrb(mem_wstrb),
-        .cpu_ready(icache_cpu_ready),
-        .cpu_rdata(icache_cpu_rdata),
-        .lower_valid(icache_lower_valid),
-        .lower_addr(icache_lower_addr),
-        .lower_wdata(icache_lower_wdata),
-        .lower_wstrb(icache_lower_wstrb),
-        .lower_ready(icache_lower_ready),
-        .lower_rdata(icache_lower_rdata),
-        .cache_access(icache_access),
-        .cache_miss(icache_miss)
-    );
-
-    aster_l1_cache #(
-        .LINE_WORDS(L1_LINE_WORDS),
-        .LINE_COUNT(L1_LINE_COUNT)
-    ) dcache (
-        .clk(clk),
-        .rst_n(rst_n),
-        .cpu_valid(ENABLE_L1 && mem_valid && !mem_instr),
-        .cpu_cacheable((mem_addr >= RAM_BASE) && (mem_addr < RAM_END)),
-        .cpu_addr(mem_addr),
-        .cpu_wdata(mem_wdata),
-        .cpu_wstrb(mem_wstrb),
-        .cpu_ready(dcache_cpu_ready),
-        .cpu_rdata(dcache_cpu_rdata),
-        .lower_valid(dcache_lower_valid),
-        .lower_addr(dcache_lower_addr),
-        .lower_wdata(dcache_lower_wdata),
-        .lower_wstrb(dcache_lower_wstrb),
-        .lower_ready(dcache_lower_ready),
-        .lower_rdata(dcache_lower_rdata),
-        .cache_access(dcache_access),
-        .cache_miss(dcache_miss)
-    );
-
-    always_comb begin
-        lower_valid = 1'b0;
-        lower_addr = 32'd0;
-        lower_wdata = 32'd0;
-        lower_wstrb = 4'b0000;
-        lower_mem_instr = 1'b0;
-        icache_lower_ready = 1'b0;
-        dcache_lower_ready = 1'b0;
-        icache_lower_rdata = lower_rdata;
-        dcache_lower_rdata = lower_rdata;
-        mem_ready = 1'b0;
-        mem_rdata = 32'd0;
-        cache_access_event = 1'b0;
-        cache_miss_event = 1'b0;
-
-        if (ENABLE_L1) begin
-            if (icache_lower_valid) begin
-                lower_valid = 1'b1;
-                lower_addr = icache_lower_addr;
-                lower_wdata = icache_lower_wdata;
-                lower_wstrb = icache_lower_wstrb;
-                lower_mem_instr = 1'b1;
-                icache_lower_ready = lower_ready;
-            end else if (dcache_lower_valid) begin
-                lower_valid = 1'b1;
-                lower_addr = dcache_lower_addr;
-                lower_wdata = dcache_lower_wdata;
-                lower_wstrb = dcache_lower_wstrb;
-                dcache_lower_ready = lower_ready;
-            end
-            mem_ready = mem_instr ? icache_cpu_ready : dcache_cpu_ready;
-            mem_rdata = mem_instr ? icache_cpu_rdata : dcache_cpu_rdata;
-            cache_access_event = icache_access || dcache_access;
-            cache_miss_event = icache_miss || dcache_miss;
-        end else begin
-            lower_valid = mem_valid;
-            lower_addr = mem_addr;
-            lower_wdata = mem_wdata;
-            lower_wstrb = mem_wstrb;
-            lower_mem_instr = mem_instr;
-            mem_ready = lower_ready;
-            mem_rdata = lower_rdata;
-        end
-    end
 
     assign memory_access = lower_valid &&
         ((lower_addr < ROM_END) ||
@@ -230,7 +89,6 @@ module aster_minimal #(
         : lower_valid && (!uart_write_request || uart_write_ready);
     assign uart_write_request = !lower_mem_instr && (lower_addr == UART_BASE)
         && lower_wstrb[0];
-    assign memory_transaction = mem_valid && mem_ready;
 
     aster_rom #(
         .BASE_ADDR(ROM_BASE),
