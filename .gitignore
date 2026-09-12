@@ -1,0 +1,15 @@
+# Generated simulation, firmware and ASIC/FPGA output.
+/build/
+/obj_dir/
+/verilator_*.log
+
+# Editor and operating-system files.
+.DS_Store
+*.swp
+*~
+
+# Waveforms and coverage databases.
+*.vcd
+*.fst
+*.coverage
+coverage/

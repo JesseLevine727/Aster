@@ -8,6 +8,25 @@ The goal is **not to reproduce an Apple A-series processor**. Modern Apple silic
 
 > **Core research question:** When should a workload execute on a scalar CPU, across multiple CPU cores, through an ISA-level accelerator, or on a dedicated hardware accelerator?
 
+## Current status
+
+Phase 0 is now a runnable baseline: the repository has an explicit architecture
+specification and memory map, a command-line toolchain check, a Make build, a
+Verilator smoke test, and a minimal RV32I CPU/ROM/RAM/UART path. The first
+bare-metal image prints `Hello from Aster` through the simulated UART.
+
+Start here:
+
+```sh
+make check
+```
+
+See [`docs/architecture.md`](docs/architecture.md) for the current contract,
+[`docs/toolchain.md`](docs/toolchain.md) for setup and build targets, and
+[`docs/verification.md`](docs/verification.md) for the test strategy. The
+bring-up core is intentionally smaller than the planned RV32IM Aster v1 core;
+its role is to make each later subsystem observable and testable.
+
 ---
 
 ## Vision
