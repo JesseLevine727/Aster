@@ -181,6 +181,13 @@ firmware/model provenance, and compares the measured cycle counts. The core/
 worker/cache/memory matrix and workload-boundary tests are separate Make
 targets. This software/simulation checkpoint does not close FPGA validation.
 
+[Retained clean-revision captures](results/phase5/README.md) from `4188064`
+compare one/two active workers in otherwise identical two-core, cached,
+synchronous-memory simulation. Three-job totals are 121,515 and 61,569 cycles
+(1.974×), with two reproducible warm boots, exact counter-event checks and
+overlapping kernel retirement on the two active harts. These are simulation
+results, not measured FPGA performance or a general 2× speedup promise.
+
 The full-phase boxes stay open until the final requirement audit. Evidence
 paths and source revisions will be recorded as work lands; old Phase 1–4
 evidence keeps its original meaning.
