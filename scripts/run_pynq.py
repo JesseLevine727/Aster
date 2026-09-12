@@ -12,6 +12,7 @@ import platform
 import time
 from asterbench import parse_record
 from bench_results import validate_result
+from pynq_handoff import validate_handoff
 
 
 def digest(path):
@@ -45,6 +46,8 @@ def main():
     args = parser.parse_args()
     if args.boots < 1 or args.host_pause < 0:
         parser.error("boots must be positive; host-pause cannot be negative")
+    if args.output.exists():
+        parser.error("output already exists; choose a new evidence file")
     if args.kind == "bench" and not args.provenance:
         parser.error("bench requires --provenance with compiler/source/firmware metadata")
     provenance = None
@@ -58,19 +61,25 @@ def main():
         if args.revision != expected_revision:
             raise RuntimeError(f"revision must match provenance: {expected_revision}")
 
-    import pynq
-    from pynq import Clocks, MMIO, Overlay, PL
-
     bitstream = args.bitstream.resolve()
     hwh = bitstream.with_suffix(".hwh")
+    handoff = validate_handoff(hwh)
+    print("PYNQ: hardware handoff preflight passed", flush=True)
     image = [int(line, 16) for line in args.firmware.read_text().splitlines()]
     if len(image) != 16384 or any(word < 0 or word > 0xffffffff for word in image):
         raise RuntimeError("firmware must contain exactly 16384 32-bit ROM words")
+    import pynq
+    from pynq import Clocks, MMIO, Overlay, PL
+
     previous = PL.bitfile_name
     if args.no_download and str(bitstream) != previous:
         raise RuntimeError(f"requested image is not loaded: {previous}")
     print(f"PYNQ: opening {bitstream}, download={not args.no_download}", flush=True)
-    overlay = Overlay(str(bitstream), download=not args.no_download)
+    overlay = Overlay(str(bitstream), download=False)
+    print("PYNQ: metadata ready", flush=True)
+    if not args.no_download:
+        print("PYNQ: downloading through PCAP", flush=True)
+        overlay.download()
     print("PYNQ: overlay ready; configuring FCLK0", flush=True)
     # The PS remains under Linux control. Configure the exact FCLK expected by
     # the RTL and record the observed frequency rather than assuming a preset.
@@ -89,6 +98,7 @@ def main():
         "schema": 1, "board": pynq.Device.active_device.name,
         "pynq_version": pynq.__version__, "kernel": platform.release(),
         "source_revision": args.revision, "kind": args.kind,
+        "handoff_preflight": handoff,
         "host_build_provenance": provenance,
         "transport": "PYNQ Linux PCAP/AXI, FPGA UART TX-to-RX serial loopback",
         "external_pmod_loopback": False, "previous_bitstream": previous,

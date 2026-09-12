@@ -26,7 +26,10 @@ create_bd_cell -type module -reference aster_linux_ip aster
 create_bd_cell -type ip -vlnv xilinx.com:ip:axi_interconnect:2.1 fabric
 set_property CONFIG.NUM_MI 1 [get_bd_cells fabric]
 create_bd_cell -type ip -vlnv xilinx.com:ip:proc_sys_reset:5.0 reset
-# Reset polarity is propagated from the connected PS FCLK_RESET0_N interface.
+# PS reset polarity is propagated from FCLK_RESET0_N (read-only in Vivado).
+# The unused auxiliary input is tied low and must be active-high. Leaving
+# its default active-low holds the entire AXI bus reset.
+set_property CONFIG.C_AUX_RESET_HIGH {1} [get_bd_cells reset]
 create_bd_cell -type ip -vlnv xilinx.com:ip:xlconstant:1.1 one
 set_property CONFIG.CONST_VAL 1 [get_bd_cells one]
 create_bd_cell -type ip -vlnv xilinx.com:ip:xlconstant:1.1 zero
@@ -54,6 +57,8 @@ save_bd_design
 
 set bd [get_files */aster_linux.bd]
 generate_target all $bd
+set handoff [file join $output_dir aster_linux.gen sources_1 bd aster_linux hw_handoff aster_linux.hwh]
+puts [exec python3 [file join $repo_root scripts/pynq_handoff.py] $handoff]
 add_files [make_wrapper -files $bd -top]
 set_property top aster_linux_wrapper [current_fileset]
 read_xdc [file join $repo_root fpga/pynq_z1/aster_linux.xdc]
@@ -66,6 +71,12 @@ if {[get_property PROGRESS [get_runs synth_1]] ne "100%"} {
     error "Linux overlay synthesis failed: [get_property STATUS [get_runs synth_1]]"
 }
 open_run synth_1
+# Test the real generated vendor reset netlist, including startup, warm reset,
+# loss of lock and auxiliary/debug polarity. No substitute reset model.
+set reset_netlist [file join $output_dir aster_linux.gen sources_1 bd aster_linux \
+    ip aster_linux_reset_0 aster_linux_reset_0_sim_netlist.v]
+puts [exec python3 [file join $repo_root scripts/check_pynq_reset.py] \
+    --netlist $reset_netlist --output-dir [file join $output_dir reset_sim]]
 write_checkpoint -force [file join $output_dir aster_linux_synth.dcp]
 opt_design
 place_design
@@ -74,6 +85,5 @@ source [file join $repo_root fpga/pynq_z1/signoff.tcl]
 aster_signoff $output_dir
 write_checkpoint -force [file join $output_dir aster_linux_routed.dcp]
 write_bitstream -force [file join $output_dir aster_linux.bit]
-file copy -force [file join $output_dir aster_linux.gen sources_1 bd aster_linux hw_handoff aster_linux.hwh] \
-    [file join $output_dir aster_linux.hwh]
+file copy -force $handoff [file join $output_dir aster_linux.hwh]
 puts "ASTER_LINUX_BUILD complete: [file join $output_dir aster_linux.bit]"

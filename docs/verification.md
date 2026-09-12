@@ -50,6 +50,16 @@ the memory implementation must infer BRAM, report zero DRC errors and
 unrouted nets, and contain no failing setup/hold endpoints in
 `timing_summary.rpt`.
 
+The Linux build also checks the exported HWH clock/reset/address contract
+and simulates its actual generated `proc_sys_reset` netlist using Vivado XSim.
+`verification/fpga/tb_linux_reset.sv` checks power-on release, warm reset,
+clock-lock loss/recovery and auxiliary/debug polarity. This catches a shell
+integration defect that the standalone AXI RTL test cannot see: active-low
+auxiliary reset tied to zero holds the real interconnect and peripheral in
+reset. The original netlist fails release; the corrected netlist passes.
+Host mutation tests reject wrong/missing/duplicate HWH parameters, drivers,
+ports, clocks and address maps, and prove rejection before any PYNQ import.
+
 Run both with:
 
 ```sh

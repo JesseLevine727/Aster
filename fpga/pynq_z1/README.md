@@ -55,8 +55,9 @@ The complete current memory map and CPU contract remain in
 ## PYNQ Linux workflow (physical validation pending)
 
 The selected board workflow is SSH/Linux, without JTAG. Connectivity was
-verified on 2026-09-12 using `ssh xilinx@10.0.0.223`; DHCP may change this
-address. Use `sudo -i` on the board so `/etc/profile.d/` initializes the PYNQ
+recovered on 2026-09-12 using `ssh xilinx@10.0.0.145` after one explicitly
+authorized JTAG system reset; loading still uses Linux, not JTAG. DHCP changed
+the former `10.0.0.223` address. Use `sudo -i` so `/etc/profile.d/` initializes the PYNQ
 virtual environment, `BOARD` and XRT. A plain root Python outside this login
 environment may incorrectly report no device.
 
@@ -69,14 +70,14 @@ make VIVADO=/path/to/vivado fpga-linux
 
 The Linux `.bit` and matching `.hwh` are generated together under
 `build/fpga/pynq_z1/linux/`. Transfer both, `scripts/run_pynq.py`,
-`scripts/asterbench.py`, `scripts/bench_results.py` and the chosen
+`scripts/asterbench.py`, `scripts/bench_results.py`, `scripts/pynq_handoff.py` and the chosen
 full 64 KiB firmware `.hex` to a dedicated directory on the board. The host
 script loads through PYNQ/PCAP, sets FCLK0 to 31.25 MHz, holds the RV32IM CPU
 in reset while programming its boot memory, then captures real serialized
 UART bytes through the AXI bridge. No external USB-UART adapter is needed for
 this internal FPGA TX-to-RX path; it does not validate external Pmod wiring.
 
-After the first-load hang below is resolved, the intended board command is:
+The board command is (physical confirmation of the reset fix is still pending):
 
 ```sh
 python3 run_pynq.py --bitstream aster_linux.bit --firmware hello.hex \
@@ -97,6 +98,27 @@ actual serial output, byte counts, errors, image hashes and board environment.
 The CPU is stopped after a completed run. Loading replaces the active PL
 design; ensure another application is not using it. Existing board projects
 must be preserved.
+
+### Reset and deployment gates
+
+`fpga-linux` explicitly makes the unused, low-tied auxiliary reset active-high.
+The PS external reset remains active-low, propagated from `FCLK_RESET0_N`.
+The previous exported design made the auxiliary reset active-low while tying
+it to zero; simulation of its **generated vendor netlist** proves both AXI
+reset outputs remain asserted. A CPU access to such a reset-held bus is unsafe.
+No physical retry is made with that image.
+
+The build now runs `scripts/pynq_handoff.py` on the exported HWH and
+`scripts/check_pynq_reset.py` on the generated reset netlist using Vivado's
+`xvlog`, `xelab`, and `xsim`. It checks initial/warm reset, clock-lock loss,
+auxiliary reset and debug reset. Missing PASS or a tool failure fails the
+build. These vendor-tool checks are additional to the portable `make check`.
+The HWH validator checks actual clock/reset drivers, polarity, constants and
+the ARM address map. `run_pynq.py` repeats it **before importing PYNQ or
+accessing hardware**, rejects pre-existing output files and flushes progress
+between metadata parsing, PCAP download, clock configuration and AXI access.
+Keep the matching bit/HWH pair together: metadata validation cannot establish
+the contents of an arbitrary replacement bitstream.
 
 ### ARM AXI bridge map
 
@@ -127,8 +149,9 @@ standalone serial decode and AXI/serial host tests, with long records and warm
 resets. These are prerequisites, not physical execution evidence.
 
 The first Linux overlay attempt made SSH and the USB Linux console
-unresponsive before any PASS result. Its exact failing stage is not known.
-Board recovery and staged loading/AXI diagnosis are required before retrying;
-do not treat the command above as a physically validated procedure yet. See
+unresponsive before any PASS result. Its exact failing stage was not logged.
+The board is recovered, and the reset-held-bus defect is reproduced and fixed
+in generated-netlist simulation. Staged Linux loading and real firmware
+capture remain required; do not claim physical validation from this fix. See
 [`../../docs/phase-closeout.md`](../../docs/phase-closeout.md) for the evidence
 and remaining Phase 2 acceptance.

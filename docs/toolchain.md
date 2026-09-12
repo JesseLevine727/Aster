@@ -13,6 +13,8 @@ The simulator targets do not require a vendor FPGA/ASIC installation. Vivado
 2025.1 (or a compatible release) is required only for the PYNQ-Z1 bitstream
 targets. PYNQ Python/XRT is needed on the board for Linux loading. Yosys and
 OpenROAD remain later ASIC-phase dependencies.
+The Linux FPGA build also uses Vivado's `xvlog`, `xelab` and `xsim` to test the
+generated reset netlist; it finds them through `XILINX_VIVADO` or `PATH`.
 
 Run the repository check with:
 
