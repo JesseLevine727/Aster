@@ -2,6 +2,10 @@
 /build/
 /obj_dir/
 /verilator_*.log
+/fpga/*/build/
+/.Xil/
+/clockInfo.txt
+/tight_setup_hold_pins.txt
 
 # Editor and operating-system files.
 .DS_Store

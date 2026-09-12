@@ -1,8 +1,10 @@
 module aster_rom #(
     parameter logic [31:0] BASE_ADDR = 32'h0000_0000,
     parameter int unsigned DEPTH_WORDS = 16_384,
-    parameter string MEM_INIT_FILE = ""
+    parameter string MEM_INIT_FILE = "",
+    parameter bit SYNC_READ = 1'b0
 ) (
+    input  logic        clk,
     input  logic [31:0] addr,
     output logic [31:0] rdata
 );
@@ -19,11 +21,24 @@ module aster_rom #(
             $readmemh(MEM_INIT_FILE, memory);
     end
 
-    always_comb begin
+    always_comb
         word_index = addr[INDEX_WIDTH+1:2] - BASE_ADDR[INDEX_WIDTH+1:2];
-        if ((addr - BASE_ADDR) < DEPTH_BYTES)
-            rdata = memory[word_index];
-        else
-            rdata = 32'd0;
-    end
+
+    generate
+        if (SYNC_READ) begin : g_sync_read
+            always_ff @(posedge clk) begin
+                if ((addr - BASE_ADDR) < DEPTH_BYTES)
+                    rdata <= memory[word_index];
+                else
+                    rdata <= 32'd0;
+            end
+        end else begin : g_async_read
+            always_comb begin
+                if ((addr - BASE_ADDR) < DEPTH_BYTES)
+                    rdata = memory[word_index];
+                else
+                    rdata = 32'd0;
+            end
+        end
+    endgenerate
 endmodule

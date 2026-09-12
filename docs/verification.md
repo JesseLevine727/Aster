@@ -26,6 +26,16 @@ operations enabled in the PicoRV32 wrapper.
 array and stack operations verify that C execution is backed by the Aster RAM
 window rather than only reading constants from ROM.
 
+`verification/soc/tb_pynq_z1.cpp` drives the PYNQ-Z1 shell reset and board
+clock, samples the physical UART line at the 125 MHz shell-clock resolution,
+and decodes the complete 8-N-1 stream. This catches clock-divider, reset-domain,
+FIFO and baud-timing errors that a one-cycle simulation UART cannot see.
+
+The FPGA build is checked by the Vivado reports under `build/fpga/pynq_z1/`:
+the Phase 2 baseline must infer 32 RAMB36 blocks, report zero DRC errors and
+unrouted nets, and contain no failing setup/hold endpoints in
+`timing_summary.rpt`.
+
 Run both with:
 
 ```sh

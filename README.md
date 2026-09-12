@@ -10,13 +10,15 @@ The goal is **not to reproduce an Apple A-series processor**. Modern Apple silic
 
 ## Current status
 
-Phase 0 and the first Phase 1 bring-up slice are runnable: the repository has
-an explicit architecture specification and memory map, a command-line
-toolchain check, a Make build, a Verilator smoke test, and a PicoRV32
-RV32IM/ROM/RAM/UART path. The first bare-metal C image boots through a RAM
-stack, clears `.bss`, verifies RAM persistence, and prints `Hello from Aster`
-through the simulated UART. Directed RV32IM tests cover the memory path,
-branches, jumps, `MUL`, `DIV`, and `REM`.
+Phase 0, Phase 1 and the Phase 2 FPGA implementation slice are runnable: the
+repository has an explicit architecture specification and memory map, a
+command-line toolchain check, a Make build, Verilator smoke and SoC tests, and
+a PicoRV32 RV32IM/ROM/RAM/UART path. The bare-metal C image boots through a
+RAM stack, clears `.bss`, verifies RAM persistence, and prints `Hello from
+Aster`. Directed RV32IM tests cover the memory path, branches, jumps, `MUL`,
+`DIV`, and `REM`. The PYNQ-Z1 target uses synchronous BRAM-backed memories,
+an MMCM/BUFG clock path and a real 115200-baud UART transmitter; its Vivado
+flow reaches a routed, timing-clean bitstream.
 
 Start here:
 

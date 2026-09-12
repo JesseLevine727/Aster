@@ -1,6 +1,6 @@
 # Aster architecture specification
 
-Status: Phase 1 baseline, 2026-09-11
+Status: Phase 2 baseline, 2026-09-11
 
 This document is the executable contract for the first bring-up slice. It
 separates decisions that are fixed for the minimal system from features that
@@ -21,6 +21,13 @@ The Phase 0/1 baseline contains:
 - a simulation UART;
 - combinational instruction and data reads with stores committed on `clk`;
 - a RISC-V assembly firmware image that prints `Hello from Aster`.
+
+The Phase 2 PYNQ-Z1 target adds a synchronous-read BRAM configuration of the
+same SoC, a global MMCM/BUFG clock path (31.25 MHz core clock from the board's
+125 MHz oscillator), a core-domain reset synchronizer and a board-facing
+115200-baud UART transmitter on Pmod JA[0]. The simulator continues to use the
+asynchronous memory model for fast bring-up tests; the native bus contract is
+unchanged apart from the explicit one-cycle memory response in BRAM mode.
 
 The planned v1 target remains two RV32IM cores, private L1 caches, a shared L2,
 coherence, DMA, custom packed INT8 instructions, an INT8 matrix accelerator,
@@ -65,7 +72,7 @@ and transaction semantics where possible.
 | Instruction width | 32-bit instructions; compressed instructions disabled in firmware |
 | Data width | 32-bit datapath; byte strobes for stores |
 | Alignment | Word instructions and naturally aligned half/word accesses are expected |
-| Memory reads | Combinational in this bring-up model |
+| Memory reads | Combinational in simulation; one-cycle synchronous response in FPGA BRAM mode |
 | Memory writes | Sampled on the rising edge when `data_we` is asserted |
 | Unmapped reads | Return zero |
 | Unmapped/unsupported operations | PicoRV32 exposes `trap`; no Aster trap handler yet |
@@ -131,6 +138,16 @@ silently assumed by Phase 0:
 - FPGA clock/reset and UART pin implementation;
 - SKY130 macro strategy and SRAM availability.
 
+## Phase 2 FPGA contract
+
+The PYNQ-Z1 implementation is intentionally programmable-logic-only. The
+onboard USB-UART is attached to Zynq PS MIO, so this baseline exposes PL TX on
+Pmod JA[0] and requires a 3.3 V USB-UART adapter. The target is constrained
+for the `xc7z020clg400-1` device and must pass Vivado DRC, placement, routing,
+and post-route timing before a bitstream is considered valid. See
+[`fpga/pynq_z1/README.md`](../fpga/pynq_z1/README.md) for the pinout and
+programming procedure.
+
 ## Phase 0 exit criteria
 
 Phase 0 is complete when:
@@ -141,3 +158,11 @@ Phase 0 is complete when:
 4. `make smoke` passes a Verilator test;
 5. `make firmware` builds and disassembles the bare-metal RISC-V image; and
 6. `make hello` observes `Hello from Aster` through the simulated UART.
+
+## Phase 1/2 exit criteria
+
+Phase 1 is complete when the PicoRV32 RV32IM image passes the directed test
+and C runtime simulation. Phase 2 is complete when the board-facing UART
+simulation passes, the Vivado flow generates a bitstream with no DRC errors or
+unrouted nets and timing reports no failing endpoints. Physical board
+observation remains a hardware-validation step and is recorded separately.

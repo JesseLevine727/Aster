@@ -9,9 +9,10 @@ The Phase 0 build is intentionally based on command-line tools:
 - Python 3;
 - `riscv32-unknown-elf-gcc`, `objcopy` and `objdump`.
 
-The checked-in scripts do not require a Python package or a vendor FPGA/ASIC
-installation. Yosys, OpenROAD, Vivado and PYNQ tooling are later-phase
-dependencies and are not required for the first simulator milestone.
+The simulator targets do not require a vendor FPGA/ASIC installation. Vivado
+2025.1 (or a compatible release) is required only for the PYNQ-Z1 bitstream
+target; Yosys, OpenROAD and PYNQ programming tooling remain later-phase
+dependencies.
 
 Run the repository check with:
 
@@ -26,6 +27,7 @@ non-standard location:
 ```sh
 make RISCV_PREFIX=/path/to/riscv32-unknown-elf- hello
 make VERILATOR=/path/to/verilator smoke
+make VIVADO=/path/to/vivado fpga
 ```
 
 If the RISC-V toolchain is not on `PATH`, prepend its `bin` directory before
@@ -40,6 +42,8 @@ make firmware    Build software/boot/hello.c and runtime into build/software/
 make smoke       Build and run the first Verilator unit smoke test
 make directed    Run directed RV32IM instruction tests
 make hello       Build firmware, compile the minimal SoC and run its UART test
+make fpga-sim    Decode the board-facing 115200-baud UART in simulation
+make fpga        Run the Vivado PYNQ-Z1 synthesis/place/route/bitstream flow
 make check       Run tool checks, directed tests and simulations
 make clean       Remove generated files under build/
 ```

@@ -18,6 +18,7 @@ RTL_CORE := rtl/core/aster_picorv32.sv vendor/picorv32/picorv32.v
 RTL_MEMORY := rtl/memory/aster_rom.sv rtl/memory/aster_ram.sv
 RTL_PERIPHERALS := rtl/peripherals/aster_uart.sv
 RTL_SOC := rtl/soc/aster_minimal.sv
+RTL_FPGA := rtl/peripherals/aster_uart_tx.sv rtl/soc/aster_pynq_z1.sv
 
 HELLO_DIR := $(BUILD_DIR)/software
 HELLO_ELF := $(HELLO_DIR)/hello.elf
@@ -30,6 +31,9 @@ DIRECTED_BIN := $(HELLO_DIR)/rv32im_directed.bin
 DIRECTED_HEX := $(HELLO_DIR)/rv32im_directed.hex
 DIRECTED_SIM := $(BUILD_DIR)/aster_rv32im_directed_sim
 SMOKE_SIM := $(BUILD_DIR)/aster_smoke_sim
+PYNQ_SIM := $(BUILD_DIR)/aster_pynq_z1_sim
+FPGA_BUILD_DIR := $(BUILD_DIR)/fpga/pynq_z1
+VIVADO ?= vivado
 
 HELLO_CFLAGS := -march=$(RISCV_MARCH) -mabi=$(RISCV_MABI) \
 	-nostdlib -nostartfiles -nodefaultlibs -ffreestanding \
@@ -38,7 +42,7 @@ HELLO_CFLAGS := -march=$(RISCV_MARCH) -mabi=$(RISCV_MABI) \
 HELLO_LDFLAGS := -T software/boot/link.ld -Wl,--gc-sections -Wl,-Map,$(HELLO_DIR)/hello.map
 DIRECTED_ASFLAGS := -march=$(RISCV_MARCH) -mabi=$(RISCV_MABI) -nostdlib -ffreestanding
 
-.PHONY: all tools structure firmware smoke test directed hello check clean help
+.PHONY: all tools structure firmware smoke test directed hello fpga fpga-sim check clean help
 
 all: check
 
@@ -50,6 +54,8 @@ help:
 	@echo "  make smoke      Build and run the first Verilator smoke test"
 	@echo "  make directed   Run directed RV32IM instruction tests"
 	@echo "  make hello      Build and run Hello from Aster on the RTL CPU"
+	@echo "  make fpga       Build the PYNQ-Z1 bitstream with Vivado"
+	@echo "  make fpga-sim   Decode the board-facing UART in simulation"
 	@echo "  make check      Run tool checks, directed tests and simulations"
 	@echo "  make clean      Remove generated files under build/"
 
@@ -132,12 +138,34 @@ $(DIRECTED_SIM): $(RTL_CORE) $(RTL_MEMORY) $(RTL_PERIPHERALS) $(RTL_SOC) \
 		$(addprefix $(ROOT)/,$(RTL_PERIPHERALS)) $(ROOT)/$(RTL_SOC) \
 		$(ROOT)/verification/soc/tb_rv32im_directed.cpp
 
+$(PYNQ_SIM): $(RTL_CORE) $(RTL_MEMORY) $(RTL_PERIPHERALS) $(RTL_SOC) $(RTL_FPGA) \
+		verification/soc/tb_pynq_z1.cpp $(HELLO_HEX) | $(BUILD_DIR)
+	$(VERILATOR) --cc --exe --build --timing --Wall --Wno-fatal \
+		$(VERILATOR_VENDOR_LINT_FLAGS) \
+		--top-module aster_pynq_z1 \
+		--Mdir $(BUILD_DIR)/obj_pynq_z1 \
+		-o $(abspath $@) \
+		-GMEM_INIT_FILE=\"$(HELLO_HEX)\" \
+		$(addprefix $(ROOT)/,$(RTL_CORE)) $(addprefix $(ROOT)/,$(RTL_MEMORY)) \
+		$(addprefix $(ROOT)/,$(RTL_PERIPHERALS)) $(addprefix $(ROOT)/,$(RTL_FPGA)) \
+		$(ROOT)/$(RTL_SOC) $(ROOT)/verification/soc/tb_pynq_z1.cpp
+
+fpga-sim: $(PYNQ_SIM)
+	@$(PYNQ_SIM)
+
+fpga: firmware
+	@command -v $(VIVADO) >/dev/null || { echo "ERROR: Vivado not found (set VIVADO=/path/to/vivado)" >&2; exit 1; }
+	@mkdir -p $(FPGA_BUILD_DIR)
+	@$(VIVADO) -mode batch -nojournal -nolog -notrace \
+		-source $(ROOT)/fpga/pynq_z1/build.tcl \
+		-tclargs $(ROOT) $(FPGA_BUILD_DIR) $(HELLO_HEX)
+
 hello: $(HELLO_SIM)
 	@$(HELLO_SIM)
 
-test: smoke directed hello
+test: smoke directed hello fpga-sim
 
-check: tools smoke directed hello
+check: tools smoke directed hello fpga-sim
 
 clean:
 	rm -rf $(BUILD_DIR)

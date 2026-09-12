@@ -1,5 +1,6 @@
 module aster_minimal #(
-    parameter string MEM_INIT_FILE = ""
+    parameter string MEM_INIT_FILE = "",
+    parameter bit SYNC_MEMORY = 1'b0
 ) (
     input  logic        clk,
     input  logic        rst_n,
@@ -24,6 +25,8 @@ module aster_minimal #(
     logic [31:0] uart_rdata;
     logic        ram_we;
     logic        uart_we;
+    logic        memory_access;
+    logic        sync_memory_pending;
 
     // Phase 1 keeps interrupts and external PCPI operations disabled. The
     // wrapper still exposes both ports so later subsystems do not touch the
@@ -54,19 +57,40 @@ module aster_minimal #(
     /* verilator lint_on PINCONNECTEMPTY */
 
     // Aster keeps the upstream native bus behind this address-decoder
-    // boundary. All Phase 1 memory is zero-wait-state; future caches/fabric
-    // logic will replace mem_ready and the decode below.
-    assign mem_ready = mem_valid;
+    // boundary. The baseline is zero-wait-state; FPGA BRAM mode adds one
+    // response cycle for synchronous ROM/RAM reads and stores.
+    assign memory_access = mem_valid && (mem_instr || (mem_addr < UART_BASE));
+
+    always_ff @(posedge clk) begin
+        if (!rst_n) begin
+            sync_memory_pending <= 1'b0;
+        end else if (SYNC_MEMORY) begin
+            if (sync_memory_pending)
+                sync_memory_pending <= 1'b0;
+            else if (memory_access)
+                sync_memory_pending <= 1'b1;
+        end else begin
+            sync_memory_pending <= 1'b0;
+        end
+    end
+
+    assign mem_ready = (SYNC_MEMORY && memory_access)
+        ? sync_memory_pending
+        : mem_valid;
 
     aster_rom #(
         .BASE_ADDR(ROM_BASE),
-        .MEM_INIT_FILE(MEM_INIT_FILE)
+        .MEM_INIT_FILE(MEM_INIT_FILE),
+        .SYNC_READ(SYNC_MEMORY)
     ) rom (
+        .clk(clk),
         .addr(mem_addr),
         .rdata(rom_rdata)
     );
 
-    aster_ram ram (
+    aster_ram #(
+        .SYNC_READ(SYNC_MEMORY)
+    ) ram (
         .clk(clk),
         .addr(mem_addr),
         .wdata(mem_wdata),
