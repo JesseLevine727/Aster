@@ -12,6 +12,8 @@ module aster_minimal #(
     localparam logic [31:0] RAM_BASE = 32'h1000_0000;
     localparam logic [31:0] UART_BASE = 32'h2000_0000;
     localparam logic [31:0] UART_LAST = UART_BASE + 32'h0000_0fff;
+    localparam logic [31:0] PERF_BASE = 32'h2000_3000;
+    localparam logic [31:0] PERF_LAST = PERF_BASE + 32'h0000_0fff;
 
     logic        mem_valid;
     logic        mem_instr;
@@ -23,10 +25,14 @@ module aster_minimal #(
     logic [31:0] rom_rdata;
     logic [31:0] ram_rdata;
     logic [31:0] uart_rdata;
+    logic [31:0] perf_rdata;
     logic        ram_we;
     logic        uart_we;
+    logic        perf_we;
     logic        memory_access;
     logic        sync_memory_pending;
+    logic        instruction_retired;
+    logic        memory_transaction;
 
     // Phase 1 keeps interrupts and external PCPI operations disabled. The
     // wrapper still exposes both ports so later subsystems do not touch the
@@ -77,6 +83,8 @@ module aster_minimal #(
     assign mem_ready = (SYNC_MEMORY && memory_access)
         ? sync_memory_pending
         : mem_valid;
+    assign instruction_retired = mem_valid && mem_ready && mem_instr;
+    assign memory_transaction = mem_valid && mem_ready;
 
     aster_rom #(
         .BASE_ADDR(ROM_BASE),
@@ -110,6 +118,23 @@ module aster_minimal #(
         .tx_data(uart_tx_data)
     );
 
+    aster_perf_counters perf (
+        .clk(clk),
+        .rst_n(rst_n),
+        .addr(mem_addr),
+        .wdata(mem_wdata),
+        .wstrb(mem_wstrb),
+        .we(perf_we),
+        .rdata(perf_rdata),
+        .cycle_en(1'b1),
+        .instr_retired(instruction_retired),
+        .mem_transaction(memory_transaction),
+        .cache_access(1'b0),
+        .cache_miss(1'b0),
+        .dma_bytes(32'd0),
+        .accelerator_active(1'b0)
+    );
+
     always_comb begin
         mem_rdata = 32'd0;
         if (mem_instr || (mem_addr < RAM_BASE))
@@ -118,10 +143,14 @@ module aster_minimal #(
             mem_rdata = ram_rdata;
         else if ((mem_addr >= UART_BASE) && (mem_addr <= UART_LAST))
             mem_rdata = uart_rdata;
+        else if ((mem_addr >= PERF_BASE) && (mem_addr <= PERF_LAST))
+            mem_rdata = perf_rdata;
 
         ram_we = mem_valid && mem_ready && (mem_wstrb != 4'b0000)
             && (mem_addr >= RAM_BASE) && (mem_addr < UART_BASE);
         uart_we = mem_valid && mem_ready && (mem_wstrb != 4'b0000)
             && (mem_addr >= UART_BASE) && (mem_addr <= UART_LAST);
+        perf_we = mem_valid && mem_ready && (mem_wstrb != 4'b0000)
+            && (mem_addr >= PERF_BASE) && (mem_addr <= PERF_LAST);
     end
 endmodule

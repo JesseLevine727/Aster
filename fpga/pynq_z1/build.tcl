@@ -26,6 +26,7 @@ set rtl_files [list \
     rtl/memory/aster_rom.sv \
     rtl/memory/aster_ram.sv \
     rtl/peripherals/aster_uart.sv \
+    rtl/peripherals/aster_perf_counters.sv \
     rtl/peripherals/aster_uart_tx.sv \
     rtl/soc/aster_minimal.sv \
     rtl/soc/aster_pynq_z1.sv \

@@ -26,6 +26,14 @@ operations enabled in the PicoRV32 wrapper.
 array and stack operations verify that C execution is backed by the Aster RAM
 window rather than only reading constants from ROM.
 
+`software/benchmarks/memcpy_bench.c` is the first AsterBench workload. It
+copies a deterministic 256-byte RAM buffer four times, validates every word,
+and emits one complete machine-readable record.
+`verification/soc/tb_asterbench.cpp` checks the record's non-zero cycle,
+instruction-fetch-acceptance and native memory-transaction counters, while
+requiring the reserved cache, DMA and accelerator fields to remain explicitly
+zero.
+
 `verification/soc/tb_pynq_z1.cpp` drives the PYNQ-Z1 shell reset and board
 clock, samples the physical UART line at the 125 MHz shell-clock resolution,
 and decodes the complete 8-N-1 stream. This catches clock-divider, reset-domain,
@@ -42,6 +50,12 @@ Run both with:
 make check
 ```
 
+Run only the benchmark regression with:
+
+```sh
+make bench
+```
+
 ## Test conventions
 
 - Tests fail fast with a non-zero exit code.
@@ -56,6 +70,6 @@ make check
 1. Add directed instruction tests for every implemented RV32I and RV32M operation.
 2. Add ROM/RAM byte-lane and alignment tests.
 3. Add UART status/read and MMIO decode tests.
-4. Add a C firmware test that exercises RAM and a stack.
-5. Add RISC-V architectural tests before integrating caches.
+4. Add RISC-V architectural tests before integrating caches.
+5. Add cache hit/miss and eviction tests before enabling the L1s.
 6. Add a reference-model comparison for the future NPU.

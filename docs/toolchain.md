@@ -42,6 +42,7 @@ make firmware    Build software/boot/hello.c and runtime into build/software/
 make smoke       Build and run the first Verilator unit smoke test
 make directed    Run directed RV32IM instruction tests
 make hello       Build firmware, compile the minimal SoC and run its UART test
+make bench       Build and run the deterministic AsterBench RAM memcpy
 make fpga-sim    Decode the board-facing 115200-baud UART in simulation
 make fpga        Run the Vivado PYNQ-Z1 synthesis/place/route/bitstream flow
 make check       Run tool checks, directed tests and simulations
@@ -59,6 +60,11 @@ start.S + hello.c + link.ld
         ↓ $readmemh
       aster_rom
 ```
+
+AsterBench uses the same startup/runtime and linker contract as the Hello
+image, but emits a fixed-width CSV-like record containing comparable counter
+fields. Its image is `build/software/memcpy_bench.hex` and its SoC regression
+is run by `make bench`.
 
 The generated hex contains no address directives: line `N` is the little-endian
 32-bit word at ROM address `4*N`. ELF load segments use their physical/load

@@ -16,7 +16,7 @@ VERILATOR_VENDOR_LINT_FLAGS := --Wno-DECLFILENAME --Wno-GENUNNAMED \
 
 RTL_CORE := rtl/core/aster_picorv32.sv vendor/picorv32/picorv32.v
 RTL_MEMORY := rtl/memory/aster_rom.sv rtl/memory/aster_ram.sv
-RTL_PERIPHERALS := rtl/peripherals/aster_uart.sv
+RTL_PERIPHERALS := rtl/peripherals/aster_uart.sv rtl/peripherals/aster_perf_counters.sv
 RTL_SOC := rtl/soc/aster_minimal.sv
 RTL_FPGA := rtl/peripherals/aster_uart_tx.sv rtl/soc/aster_pynq_z1.sv
 
@@ -30,6 +30,11 @@ DIRECTED_ELF := $(HELLO_DIR)/rv32im_directed.elf
 DIRECTED_BIN := $(HELLO_DIR)/rv32im_directed.bin
 DIRECTED_HEX := $(HELLO_DIR)/rv32im_directed.hex
 DIRECTED_SIM := $(BUILD_DIR)/aster_rv32im_directed_sim
+BENCH_ELF := $(HELLO_DIR)/memcpy_bench.elf
+BENCH_BIN := $(HELLO_DIR)/memcpy_bench.bin
+BENCH_HEX := $(HELLO_DIR)/memcpy_bench.hex
+BENCH_OBJECTS := $(HELLO_DIR)/start.o $(HELLO_DIR)/memcpy_bench.o
+BENCH_SIM := $(BUILD_DIR)/asterbench_sim
 SMOKE_SIM := $(BUILD_DIR)/aster_smoke_sim
 PYNQ_SIM := $(BUILD_DIR)/aster_pynq_z1_sim
 FPGA_BUILD_DIR := $(BUILD_DIR)/fpga/pynq_z1
@@ -41,8 +46,10 @@ HELLO_CFLAGS := -march=$(RISCV_MARCH) -mabi=$(RISCV_MABI) \
 	-msmall-data-limit=0 -Isoftware/runtime
 HELLO_LDFLAGS := -T software/boot/link.ld -Wl,--gc-sections -Wl,-Map,$(HELLO_DIR)/hello.map
 DIRECTED_ASFLAGS := -march=$(RISCV_MARCH) -mabi=$(RISCV_MABI) -nostdlib -ffreestanding
+BENCH_CFLAGS := $(HELLO_CFLAGS)
+BENCH_LDFLAGS := -T software/boot/link.ld -Wl,--gc-sections -Wl,-Map,$(HELLO_DIR)/memcpy_bench.map
 
-.PHONY: all tools structure firmware smoke test directed hello fpga fpga-sim check clean help
+.PHONY: all tools structure firmware smoke test directed hello bench fpga fpga-sim check clean help
 
 all: check
 
@@ -54,6 +61,7 @@ help:
 	@echo "  make smoke      Build and run the first Verilator smoke test"
 	@echo "  make directed   Run directed RV32IM instruction tests"
 	@echo "  make hello      Build and run Hello from Aster on the RTL CPU"
+	@echo "  make bench      Run the deterministic AsterBench RAM memcpy"
 	@echo "  make fpga       Build the PYNQ-Z1 bitstream with Vivado"
 	@echo "  make fpga-sim   Decode the board-facing UART in simulation"
 	@echo "  make check      Run tool checks, directed tests and simulations"
@@ -77,6 +85,9 @@ $(HELLO_DIR)/start.o: software/runtime/start.S software/boot/link.ld | $(HELLO_D
 $(HELLO_DIR)/hello.o: software/boot/hello.c software/runtime/aster.h | $(HELLO_DIR)
 	$(CC) $(HELLO_CFLAGS) -c -o $@ $<
 
+$(HELLO_DIR)/memcpy_bench.o: software/benchmarks/memcpy_bench.c software/runtime/aster.h | $(HELLO_DIR)
+	$(CC) $(BENCH_CFLAGS) -c -o $@ $<
+
 $(HELLO_ELF): $(HELLO_OBJECTS) software/boot/link.ld | $(HELLO_DIR)
 	$(CC) $(HELLO_CFLAGS) $(HELLO_LDFLAGS) -o $@ $(HELLO_OBJECTS)
 
@@ -84,6 +95,15 @@ $(HELLO_BIN): $(HELLO_ELF)
 	$(OBJCOPY) -O binary $< $@
 
 $(HELLO_HEX): $(HELLO_ELF) scripts/elf_to_hex.py
+	$(PYTHON) scripts/elf_to_hex.py --rom-bytes 65536 $< $@
+
+$(BENCH_ELF): $(BENCH_OBJECTS) software/boot/link.ld | $(HELLO_DIR)
+	$(CC) $(BENCH_CFLAGS) $(BENCH_LDFLAGS) -o $@ $(BENCH_OBJECTS)
+
+$(BENCH_BIN): $(BENCH_ELF)
+	$(OBJCOPY) -O binary $< $@
+
+$(BENCH_HEX): $(BENCH_ELF) scripts/elf_to_hex.py
 	$(PYTHON) scripts/elf_to_hex.py --rom-bytes 65536 $< $@
 
 firmware: $(HELLO_ELF) $(HELLO_BIN) $(HELLO_HEX)
@@ -138,6 +158,18 @@ $(DIRECTED_SIM): $(RTL_CORE) $(RTL_MEMORY) $(RTL_PERIPHERALS) $(RTL_SOC) \
 		$(addprefix $(ROOT)/,$(RTL_PERIPHERALS)) $(ROOT)/$(RTL_SOC) \
 		$(ROOT)/verification/soc/tb_rv32im_directed.cpp
 
+$(BENCH_SIM): $(RTL_CORE) $(RTL_MEMORY) $(RTL_PERIPHERALS) $(RTL_SOC) \
+		verification/soc/tb_asterbench.cpp $(BENCH_HEX) | $(BUILD_DIR)
+	$(VERILATOR) --cc --exe --build --timing --Wall --Wno-fatal \
+		$(VERILATOR_VENDOR_LINT_FLAGS) \
+		--top-module aster_minimal \
+		--Mdir $(BUILD_DIR)/obj_bench \
+		-o $(abspath $@) \
+		-GMEM_INIT_FILE=\"$(BENCH_HEX)\" \
+		$(addprefix $(ROOT)/,$(RTL_CORE)) $(addprefix $(ROOT)/,$(RTL_MEMORY)) \
+		$(addprefix $(ROOT)/,$(RTL_PERIPHERALS)) $(ROOT)/$(RTL_SOC) \
+		$(ROOT)/verification/soc/tb_asterbench.cpp
+
 $(PYNQ_SIM): $(RTL_CORE) $(RTL_MEMORY) $(RTL_PERIPHERALS) $(RTL_SOC) $(RTL_FPGA) \
 		verification/soc/tb_pynq_z1.cpp $(HELLO_HEX) | $(BUILD_DIR)
 	$(VERILATOR) --cc --exe --build --timing --Wall --Wno-fatal \
@@ -163,9 +195,12 @@ fpga: firmware
 hello: $(HELLO_SIM)
 	@$(HELLO_SIM)
 
-test: smoke directed hello fpga-sim
+bench: $(BENCH_ELF) $(BENCH_BIN) $(BENCH_HEX) $(BENCH_SIM)
+	@$(BENCH_SIM)
 
-check: tools smoke directed hello fpga-sim
+test: smoke directed hello bench fpga-sim
+
+check: tools smoke directed hello bench fpga-sim
 
 clean:
 	rm -rf $(BUILD_DIR)

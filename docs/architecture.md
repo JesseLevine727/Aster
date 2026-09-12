@@ -1,6 +1,6 @@
 # Aster architecture specification
 
-Status: Phase 2 baseline, 2026-09-11
+Status: Phase 3 baseline, 2026-09-11
 
 This document is the executable contract for the first bring-up slice. It
 separates decisions that are fixed for the minimal system from features that
@@ -31,8 +31,9 @@ unchanged apart from the explicit one-cycle memory response in BRAM mode.
 
 The planned v1 target remains two RV32IM cores, private L1 caches, a shared L2,
 coherence, DMA, custom packed INT8 instructions, an INT8 matrix accelerator,
-interrupts, timers and performance counters. None of those are implied to be
-implemented by this baseline.
+interrupts and timers. Phase 3 implements the performance-counter MMIO block
+and the first AsterBench workload; cache, DMA and accelerator event sources
+remain disconnected until their roadmap phases.
 
 ## Current block diagram
 
@@ -91,7 +92,7 @@ offsets.
 | UART | `0x2000_0000` | `0x2000_1000` | 4 KiB | RW | Console and bring-up status |
 | Timer | `0x2000_1000` | `0x2000_2000` | 4 KiB | RW | Reserved for Phase 1+ |
 | Interrupt controller | `0x2000_2000` | `0x2000_3000` | 4 KiB | RW | Reserved for Phase 5+ |
-| Performance counters | `0x2000_3000` | `0x2000_4000` | 4 KiB | RW | Reserved for Phase 3+ |
+| Performance counters | `0x2000_3000` | `0x2000_4000` | 4 KiB | RW | Cycles, instruction proxy and traffic counters |
 | DMA | `0x3000_0000` | `0x3000_1000` | 4 KiB | RW | Reserved for Phase 7 |
 | INT8 NPU | `0x4000_0000` | `0x4000_1000` | 4 KiB | RW | Reserved for Phase 9 |
 
@@ -106,6 +107,30 @@ The simulation UART is intentionally minimal.
 
 There is no baud-rate generator in simulation. The UART testbench observes a
 one-cycle `tx_valid` pulse and prints `tx_data`.
+
+### Performance-counter registers
+
+The performance block exposes 64-bit little-endian counters as adjacent
+32-bit low/high registers. A write of `1` to `CONTROL` offset `0x38` clears
+all counters; byte lane 0 must be enabled. The register contract is:
+
+| Offset | Name | Meaning |
+| ---: | --- | --- |
+| `0x00/0x04` | `CYCLES_LO/HI` | enabled clock cycles |
+| `0x08/0x0c` | `RETIRED_LO/HI` | accepted instruction-fetch transactions (current PicoRV32 proxy) |
+| `0x10/0x14` | `MEM_TXN_LO/HI` | accepted native core memory transactions |
+| `0x18/0x1c` | `CACHE_ACCESS_LO/HI` | cache access events; zero in Phase 3 |
+| `0x20/0x24` | `CACHE_MISS_LO/HI` | cache miss events; zero in Phase 3 |
+| `0x28/0x2c` | `DMA_BYTES_LO/HI` | DMA byte events; zero in Phase 3 |
+| `0x30/0x34` | `ACCEL_CYCLES_LO/HI` | accelerator-active cycles; zero in Phase 3 |
+| `0x38` | `CONTROL` | write bit 0 to clear |
+
+The current core has no architectural retire output, so `RETIRED` is defined
+as an instruction fetch accepted by the PicoRV32 native bus. This is an
+explicit Phase 3 proxy, not a claim of precise retirement accounting. The
+runtime reads each 64-bit value high/low/high to avoid a torn sample. The
+snapshot itself is taken through MMIO, so its readout overhead is included in
+the reported cycle and transaction counts.
 
 ## Core interface contract
 
@@ -166,3 +191,12 @@ and C runtime simulation. Phase 2 is complete when the board-facing UART
 simulation passes, the Vivado flow generates a bitstream with no DRC errors or
 unrouted nets and timing reports no failing endpoints. Physical board
 observation remains a hardware-validation step and is recorded separately.
+
+## Phase 3 exit criteria
+
+Phase 3 is complete when:
+
+1. the performance-counter register map and event semantics are documented;
+2. the RAM-backed AsterBench firmware builds through the bare-metal runtime;
+3. the benchmark emits a complete deterministic machine-readable record; and
+4. `make bench` and the full `make check` regression pass.
