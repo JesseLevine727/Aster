@@ -1,0 +1,5 @@
+STAGE clock
+HANDOFF {'clock_hz': 31250000, 'axi_base': 1073741824, 'axi_span': 262144, 'external_reset_active_high': False, 'auxiliary_reset_active_high': True}
+CLOCK_BEFORE 31.25
+CLOCK_VERIFIED 31.25
+STAGE_PASS clock

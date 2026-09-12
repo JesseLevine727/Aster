@@ -3,10 +3,11 @@
 These targets implement Aster with one PicoRV32 RV32IM
 core, private Phase 4 L1 instruction/data caches, initialized ROM,
 byte-writeable RAM, the Aster UART register block and a board-facing UART
-transmitter. The 125 MHz board oscillator is divided through
+transmitter. In the standalone shell, the 125 MHz board oscillator is divided through
 a global-clock MMCM/BUFG path to a 31.25 MHz core/fabric/UART clock; this gives
 the current unpipelined bring-up logic timing margin while preserving an
 accurate generated-clock constraint.
+The Linux shell instead uses PS FCLK0, configured to the same 31.25 MHz.
 
 ## Standalone build
 
@@ -52,7 +53,7 @@ BTN0/reset is D19, LEDs 0–3 are R14/P14/N16/M14, and Pmod JA[0] is Y18.
 The complete current memory map and CPU contract remain in
 [`../../docs/architecture.md`](../../docs/architecture.md).
 
-## PYNQ Linux workflow (physical validation pending)
+## PYNQ Linux workflow (physically verified)
 
 The selected board workflow is SSH/Linux, without JTAG. Connectivity was
 recovered on 2026-09-12 using `ssh xilinx@10.0.0.145` after one explicitly
@@ -77,7 +78,7 @@ in reset while programming its boot memory, then captures real serialized
 UART bytes through the AXI bridge. No external USB-UART adapter is needed for
 this internal FPGA TX-to-RX path; it does not validate external Pmod wiring.
 
-The board command is (physical confirmation of the reset fix is still pending):
+The physically verified board command is:
 
 ```sh
 python3 run_pynq.py --bitstream aster_linux.bit --firmware hello.hex \
@@ -148,10 +149,16 @@ methodology and resource evidence. `make check` includes UART unit tests,
 standalone serial decode and AXI/serial host tests, with long records and warm
 resets. These are prerequisites, not physical execution evidence.
 
-The first Linux overlay attempt made SSH and the USB Linux console
-unresponsive before any PASS result. Its exact failing stage was not logged.
-The board is recovered, and the reset-held-bus defect is reproduced and fixed
-in generated-netlist simulation. Staged Linux loading and real firmware
-capture remain required; do not claim physical validation from this fix. See
-[`../../docs/phase-closeout.md`](../../docs/phase-closeout.md) for the evidence
-and remaining Phase 2 acceptance.
+On 2026-09-12, clean revision `ebea984` passed real PCAP loading, FCLK/AXI
+checks and ten physical warm boots: Hello, UART stress, memcpy, sequential walk
+and random walk twice each. The three benchmark records match their host
+references in every field. Aster was held in reset after the final run and
+Linux remained responsive. [Retained records, hashes and exact reproduction
+commands](../../docs/results/phase2/README.md) close Phase 2.
+
+The earlier uninstrumented attempt had hung the board. Its generated reset
+netlist reproduces the active-low auxiliary-reset defect described above;
+the corrected netlist passes. Do not reuse the old bit/HWH pair merely
+because its timing/DRC reports were clean. No JTAG programming or SD/QSPI
+flashing was used for the successful tests; JTAG was used only for the one
+user-authorized system reset that recovered Linux.

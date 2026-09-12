@@ -1,0 +1,18 @@
+
+****** xsim v2025.1 (64-bit)
+  **** SW Build 6140274 on Wed May 21 22:58:25 MDT 2025
+  **** IP Build 6138677 on Thu May 22 03:10:11 MDT 2025
+  **** SharedData Build 6139179 on Tue May 20 17:58:58 MDT 2025
+  **** Start of session at: Sat Sep 12 17:26:14 2026
+    ** Copyright 1986-2022 Xilinx, Inc. All Rights Reserved.
+    ** Copyright 2022-2025 Advanced Micro Devices, Inc. All Rights Reserved.
+
+source xsim.dir/aster_reset_test/xsim_script.tcl
+# xsim {aster_reset_test} -autoloadwcfg -runall
+Time resolution is 1 ps
+run -all
+Fatal: initial release with auxiliary tied low: reset release expected=1 interconnect=0 peripheral=0
+Time: 10240 ns  Iteration: 0  Process: /tb_linux_reset/check  Scope: tb_linux_reset.check  File: /home/elfo/Documents/Aster/verification/fpga/tb_linux_reset.sv Line: 23
+$finish called at time : 10240 ns
+exit
+INFO: [Common 17-206] Exiting xsim at Sat Sep 12 17:26:16 2026...

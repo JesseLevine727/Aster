@@ -1,6 +1,6 @@
 # Aster architecture specification
 
-Status: Phases 1/3/4 verified; Phase 2 physical closeout pending, 2026-09-12
+Status: Phases 1–4 verified, including physical PYNQ-Z1 execution, 2026-09-12
 
 This document is the executable contract for the first bring-up slice. It
 separates decisions that are fixed for the minimal system from features that
@@ -32,6 +32,15 @@ additional backing-memory wait cycles: default 0 for asynchronous reads and
 1 for synchronous BRAM. Values through 1024 are supported, with at least 1
 required for BRAM; UART/MMIO timing is unchanged. A held lower request is
 acknowledged once after that many wait cycles, then the delay counter resets.
+
+The physically validated Linux shell instead uses PS FCLK0 at 31.25 MHz.
+ARM Linux loads through PCAP, programs ROM through an AXI bridge while the
+RISC-V CPU is reset, then reads actual FPGA UART TX-to-RX serial bytes. Its
+`proc_sys_reset` external input is active-low; the unused auxiliary input is
+explicitly active-high and tied low. The exported HWH and generated vendor
+reset netlist are checked before deployment. This is internal FPGA serial
+loopback, not an external Pmod electrical test. See the
+[physical evidence](results/phase2/README.md) and [board workflow](../fpga/pynq_z1/README.md).
 
 The planned v1 target remains two RV32IM cores, a shared L2, coherence, DMA,
 custom packed INT8 instructions, an INT8 matrix accelerator, interrupts and
@@ -280,8 +289,9 @@ cache and memory timing configurations. Host tests enforce the linker limits.
 Phase 2 requires real Aster firmware execution and communication on PYNQ-Z1,
 as stated in the README. Board-facing simulation and a timing/DRC-clean routed
 bitstream are prerequisites, not substitutes for physical evidence. Board
-loading and validation will use SSH/PYNQ Linux, per the user's board workflow.
-The earlier bitstream report does not validate subsequent RTL revisions.
+loading and validation use SSH/PYNQ Linux, per the user's board workflow.
+The retained Phase 2 records prove this exit for the identified image/firmware;
+earlier bitstream reports do not validate subsequent RTL revisions.
 
 ## Phase 3 exit criteria
 
@@ -315,4 +325,4 @@ The README also requires no-cache/cache comparisons, working-set sweeps,
 sequential/random access and cache-size sensitivity. Closeout additionally
 requires randomized reference checks, protocol assertions, stalled/reset
 transactions and supported geometries. See `docs/phase-closeout.md` for the
-evidence and outstanding work; the basic unit regression is insufficient alone.
+evidence and documented limitations; the basic unit regression is insufficient alone.

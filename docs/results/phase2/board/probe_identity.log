@@ -1,0 +1,5 @@
+STAGE identity
+HANDOFF {'clock_hz': 31250000, 'axi_base': 1073741824, 'axi_span': 262144, 'external_reset_active_high': False, 'auxiliary_reset_active_high': True}
+FIRST_AXI_READ_START
+AXI_VERIFIED 0x41535452 0x20001 31250000 status 0x0
+STAGE_PASS identity

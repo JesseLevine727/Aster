@@ -1,0 +1,70 @@
+{
+  "bitstream_sha256": "0cd7ab513b6e0f90bf9b1f50988fd699a90bec10c4c641b910b61a62af0178bd",
+  "board_directory": "/home/xilinx/aster_phase2_ebea984",
+  "board_ip_at_capture": "10.0.0.145",
+  "board_ssh_hostkey_sha256": "SHA256:TB0FfGjfMzgZUv/reJgTpeq/AM68sMCpGC5xm6Pit7o",
+  "board_usb_serial": "003017B846AB",
+  "build_command": [
+    "make",
+    "FPGA_BUILD_DIR=build/phase2-clean/fpga",
+    "fpga-linux"
+  ],
+  "captured_utc": "2026-09-12T21:35:00Z/2026-09-12T21:40:09Z",
+  "check_command": [
+    "make",
+    "-j2",
+    "BUILD_DIR=build/phase2-clean/check",
+    "check"
+  ],
+  "closeout_check_note": "closeout-check.log additionally tests the evidence auditor and mutation tests added after the clean hardware/firmware capture; those working-tree additions do not change the tested FPGA or firmware",
+  "files": {
+    "board/final_state.log": "f4fd45d859da4e7e99c83e212d47b2936ecd6ab950a2a665619a0b92dd530014",
+    "board/probe_clock.log": "af955e5e5f37738803f2605ae0a4e02b623f959b45429eb1e3cfc2d256bfb4f6",
+    "board/probe_download.log": "b17ee1b7355fdde215e963b4c7b3811153f2d2cded5f0231115043aa34ae6b4f",
+    "board/probe_identity.log": "9c2736430cd32a23dbd06458ff249a0460a8bcbfc32df6452e57a56476cd2958",
+    "board/probe_metadata.log": "ab8335d5839b0e99a14b4ef2ae2f96d89bb66a67ce7b6d49d2e25c458e142501",
+    "board/probe_overlay.py": "63918a712718d26da34976d870e6bd79abe97e272bec388cd0c13006b121c301",
+    "board/run_hello.log": "73fcac0354d64dfc8ab0994b33b60c6ebef34f79a94758bf5e8566da8f6f9199",
+    "board/run_memcpy.log": "a0a820f88f1f696e92e23553c348550a172f71fb69d6aedc54be006453642ac1",
+    "board/run_stress.log": "fdae3056362b84ea8a3b22b7debacd42ee1444824a9213b58f9e0351d76fd739",
+    "board/run_walk_random.log": "4751d19b0517ad7a10fc810dbcb3cb3c6b53105cce6e9ae2127265730e4c92ef",
+    "board/run_walk_sequential.log": "f0e81042378e71933b709958f0139c7168b030da20f0e386e09a1cc290fab312",
+    "check.log": "7a44f1b73dc8ed9998d31bcfe4f5105ba064ca99899b7344030dba32e9cacdeb",
+    "closeout-check.log": "22bba2e5e99ecd5d9e62cd2b29fd08bda3ec9f1dbb04d2bdedea10311be2cfd3",
+    "fpga/aster_linux.hwh": "7aaea967bdbfea8e50595705abe30d63e064f7cc8eb6c0be968dea0458d204ab",
+    "fpga/build.log": "b4a7ef23ee1bbe7a20d091532781b4e7b14060f959faebba435670094b075398",
+    "fpga/drc.rpt": "2aa220ad9eec9eea06ea0c2237c8aaf6d1e933eb8d80065d7411c51f90f95f5a",
+    "fpga/methodology.rpt": "2e7c400f6410b7262a53091e6e481f20eeae0de1f2c8799e1d4ba696bdbca374",
+    "fpga/route_status.rpt": "f4ac9a7d5b9b363bd44b2f734b1d6b1d9057d98e06428543e5900363becbc455",
+    "fpga/timing_summary.rpt": "d5c70bd4c5dbc954df3f5b81d1e9796e1dbc762b5bf19a196ebc160264230e31",
+    "fpga/utilization_routed.rpt": "5bbcd82cfc0c803f2ce290c1ad0194892e9c926729382ce1213393c5d57331a2",
+    "hello.json": "8a4f990792174dfa99d789d1b8494e4b5b3f77c99264659089698de60918b8a3",
+    "memcpy.json": "de08805b4de8d22913d9919a2a77df29a88d9663241c245db09a63e510740a17",
+    "reference_memcpy.json": "93ae1418464075952716cdbd92bfcf4d9b4c4d7cbadf98a6cefdd6c737da23bd",
+    "reference_walk_random.json": "39dae35be8723a58e75d8db69a3dc62a30d76a8f5e59579d2563b25457f76c1f",
+    "reference_walk_sequential.json": "417a43e967e028619426bac7f51445431d30994912fc20819f602b734474a246",
+    "reset-after.log": "fb1c8b0660635b4dd7e2d23de06e428dade30af6f225ab5076d73b9ea00dda72",
+    "reset-before.log": "b45efad42559b9289094b04ea91c3f072f46e5fd039577f600ca8111e62d432d",
+    "stress.json": "0165b41f2a286dd55d3892979247bd077906ae05a87c30b60cb413e78c974faa",
+    "walk_random.json": "3d46f2c58593f6dc387cdb45c391a27ca2becd73fa035583b41f4a7a7f5c21bd",
+    "walk_sequential.json": "387dca9b92d73ff8fe867b800c1fed8d60f9f4079163cbb3382218994395d186"
+  },
+  "firmware_sha256": {
+    "hello": "1e8496321af24b609f850fd7187dc9fda8e283e968d06c72c47888e676cd8f09",
+    "memcpy": "7930f12137d8b2c555f13f1aaeabeeb44a458daae69fca1635afd18677149680",
+    "stress": "e4462ac6b3f88da0326fc9cd43e5aa1f506294564f88bbfb96a23611918dca0c",
+    "walk_random": "b34fdbd7ebe49dfe88c93ecd903a2864677366655f7c62cead2031472d5bf5b8",
+    "walk_sequential": "a1fd7298fc007701a6c6ea513922cf1753a4641216d061b6f953363caffd92fa"
+  },
+  "handoff_preflight": {
+    "auxiliary_reset_active_high": true,
+    "axi_base": 1073741824,
+    "axi_span": 262144,
+    "clock_hz": 31250000,
+    "external_reset_active_high": false
+  },
+  "hwh_sha256": "7aaea967bdbfea8e50595705abe30d63e064f7cc8eb6c0be968dea0458d204ab",
+  "schema": 1,
+  "source_dirty": false,
+  "source_revision": "ebea9848f2923b1d0ce3b07c011c26d1f88c73e6"
+}

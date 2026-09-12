@@ -59,6 +59,10 @@ auxiliary reset tied to zero holds the real interconnect and peripheral in
 reset. The original netlist fails release; the corrected netlist passes.
 Host mutation tests reject wrong/missing/duplicate HWH parameters, drivers,
 ports, clocks and address maps, and prove rejection before any PYNQ import.
+`scripts/audit_pynq_results.py` independently validates the retained physical
+records, image hashes and exact benchmark/reference agreement. Host mutation
+tests reject missing boots, corrupted output/counts/status, mistyped counters,
+missing provenance and mismatched image/configuration fields.
 
 Run both with:
 
@@ -83,7 +87,7 @@ make bench
 
 ## Next verification increments
 
-1. Recover the board and complete Phase 2 physical Linux/firmware validation.
+1. Maintain Phase 2 physical Linux/firmware validation and reset/handoff gates.
 2. Maintain the Phase 3 parser/counter/snapshot/provenance regression contract.
 3. Maintain the Phase 4 randomized/stall/reset/configuration and experiment regressions.
 4. Integrate a full external architectural reference suite where practical.

@@ -175,7 +175,10 @@ Generated artifact SHA-256 values (binaries intentionally untracked):
 
 The hashes identify these artifacts, not a claim that Vivado bitstreams are
 byte-reproducible across builds. Phase 4's simulation/experiment exit is met.
-Phase 2's physical exit is **not**: SSH still returned `No route to host`
-after these runs, and no successful Aster board execution has been recorded.
-The overall Phase 1–4 goal remains incomplete until board recovery and staged
-Linux loading/firmware validation succeed. No Phase 5 work was started.
+At this capture checkpoint Phase 2 was still open. Subsequent recovery found
+an auxiliary-reset polarity defect in the Linux shell: clean timing/DRC did
+not prove that its AXI bus could leave reset. Do not deploy the old Linux
+bit/HWH pair above. The corrected, physically tested replacement is retained
+in the [Phase 2 closeout](../phase2/README.md). Its change is in the FPGA shell,
+not the CPU/cache/firmware RTL underlying these experiments. Phases 1–4 are
+now closed; no Phase 5 work was started.

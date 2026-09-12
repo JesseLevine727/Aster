@@ -1,0 +1,8 @@
+PYNQ: hardware handoff preflight passed
+PYNQ: opening /home/xilinx/aster_phase2_ebea984/aster_linux.bit, download=False
+PYNQ: metadata ready
+PYNQ: overlay ready; configuring FCLK0
+PYNQ: FCLK0 verified; probing AXI bridge identity
+PYNQ: AXI identity verified; loading boot ROM
+PASS: physical Pynq-Z1 bench, boot=0, serial_bytes=448
+PASS: physical Pynq-Z1 bench, boot=1, serial_bytes=448

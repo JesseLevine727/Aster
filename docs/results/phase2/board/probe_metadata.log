@@ -1,0 +1,4 @@
+STAGE metadata
+HANDOFF {'clock_hz': 31250000, 'axi_base': 1073741824, 'axi_span': 262144, 'external_reset_active_high': False, 'auxiliary_reset_active_high': True}
+METADATA_READY ['aster', 'ps7']
+STAGE_PASS metadata

@@ -1,0 +1,47 @@
+{
+  "schema": 1,
+  "board": "Pynq-Z1",
+  "pynq_version": "3.1.1",
+  "kernel": "6.6.10-xilinx-v2024.1-g916a1f7c7222",
+  "source_revision": "ebea9848f2923b1d0ce3b07c011c26d1f88c73e6",
+  "kind": "stress",
+  "handoff_preflight": {
+    "clock_hz": 31250000,
+    "axi_base": 1073741824,
+    "axi_span": 262144,
+    "external_reset_active_high": false,
+    "auxiliary_reset_active_high": true
+  },
+  "host_build_provenance": null,
+  "transport": "PYNQ Linux PCAP/AXI, FPGA UART TX-to-RX serial loopback",
+  "external_pmod_loopback": false,
+  "previous_bitstream": "/home/xilinx/aster_phase2_ebea984/aster_linux.bit",
+  "bitstream_sha256": "0cd7ab513b6e0f90bf9b1f50988fd699a90bec10c4c641b910b61a62af0178bd",
+  "hwh_sha256": "7aaea967bdbfea8e50595705abe30d63e064f7cc8eb6c0be968dea0458d204ab",
+  "firmware_sha256": "e4462ac6b3f88da0326fc9cd43e5aa1f506294564f88bbfb96a23611918dca0c",
+  "clock_mhz": 31.25,
+  "baud": 115200,
+  "host_pause_seconds": 0.2,
+  "boots": [
+    {
+      "boot": 0,
+      "status": "PASS",
+      "bridge_status": 1,
+      "tx_bytes": 1060,
+      "rx_bytes": 1060,
+      "uart_output": "UART STRESS BEGIN\n!\"#$%&'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_`abcdefghijklmnopqrstuvwxyz!\"#$%&'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_`abcdefghijklmnopqrstuvwxyz!\"#$%&'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_`abcdefghijklmnopqrstuvwxyz!\"#$%&'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_`abcdefghijklmnopqrstuvwxyz!\"#$%&'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_`abcdefghijklmnopqrstuvwxyz!\"#$%&'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_`abcdefghijklmnopqrstuvwxyz!\"#$%&'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_`abcdefghijklmnopqrstuvwxyz!\"#$%&'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_`abcdefghijklmnopqrstuvwxyz!\"#$%&'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_`abcdefghijklmnopqrstuvwxyz!\"#$%&'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_`abcdefghijklmnopqrstuvwxyz!\"#$%&'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_`abcdefghijklmnopqrstuvwxyz!\"#$%&'()*+,-./0123456789:;<=>?@AB\nUART STRESS PASS\n",
+      "counter_record": null,
+      "elapsed_seconds": 0.2712570470000628
+    },
+    {
+      "boot": 1,
+      "status": "PASS",
+      "bridge_status": 1,
+      "tx_bytes": 1060,
+      "rx_bytes": 1060,
+      "uart_output": "UART STRESS BEGIN\n!\"#$%&'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_`abcdefghijklmnopqrstuvwxyz!\"#$%&'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_`abcdefghijklmnopqrstuvwxyz!\"#$%&'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_`abcdefghijklmnopqrstuvwxyz!\"#$%&'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_`abcdefghijklmnopqrstuvwxyz!\"#$%&'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_`abcdefghijklmnopqrstuvwxyz!\"#$%&'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_`abcdefghijklmnopqrstuvwxyz!\"#$%&'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_`abcdefghijklmnopqrstuvwxyz!\"#$%&'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_`abcdefghijklmnopqrstuvwxyz!\"#$%&'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_`abcdefghijklmnopqrstuvwxyz!\"#$%&'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_`abcdefghijklmnopqrstuvwxyz!\"#$%&'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_`abcdefghijklmnopqrstuvwxyz!\"#$%&'()*+,-./0123456789:;<=>?@AB\nUART STRESS PASS\n",
+      "counter_record": null,
+      "elapsed_seconds": 0.27120713499994054
+    }
+  ]
+}

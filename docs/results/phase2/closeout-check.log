@@ -1,0 +1,132 @@
+OK   verilator                      /home/elfo/tools/verilator/usr/bin/verilator
+OK   python3                        /usr/bin/python3
+OK   make                           /usr/bin/make
+PASS: Aster Verilator smoke test (16 cycles)
+OK   riscv32-unknown-elf-gcc        /home/elfo/tools/riscv/bin/riscv32-unknown-elf-gcc
+OK   riscv32-unknown-elf-objcopy    /home/elfo/tools/riscv/bin/riscv32-unknown-elf-objcopy
+OK   riscv32-unknown-elf-objdump    /home/elfo/tools/riscv/bin/riscv32-unknown-elf-objdump
+Aster Phase 0 toolchain is available.
+RUNTIME PASS
+RUNTIME PASS
+PASS: RUNTIME PASS (2 boot(s))
+MEMORY MAP PASS
+PASS: MEMORY MAP PASS (1 boot(s))
+Trap case 0
+TRAP ARMED
+TRAP ARMED
+PASS: TRAP ARMED (2 boot(s))
+Trap case 1
+TRAP ARMED
+TRAP ARMED
+PASS: TRAP ARMED (2 boot(s))
+Trap case 2
+TRAP ARMED
+TRAP ARMED
+PASS: TRAP ARMED (2 boot(s))
+Trap case 3
+TRAP ARMED
+TRAP ARMED
+PASS: TRAP ARMED (2 boot(s))
+Trap case 4
+RV32IM PASS
+PASS: RV32IM PASS (1 boot(s))
+TRAP ARMED
+TRAP ARMED
+PASS: TRAP ARMED (2 boot(s))
+Trap case 5
+TRAP ARMED
+TRAP ARMED
+PASS: TRAP ARMED (2 boot(s))
+Trap case 6
+TRAP ARMED
+TRAP ARMED
+PASS: TRAP ARMED (2 boot(s))
+Trap case 7
+TRAP ARMED
+TRAP ARMED
+PASS: TRAP ARMED (2 boot(s))
+Trap case 8
+TRAP ARMED
+TRAP ARMED
+PASS: TRAP ARMED (2 boot(s))
+Trap case 9
+TRAP ARMED
+TRAP ARMED
+PASS: TRAP ARMED (2 boot(s))
+Trap case 10
+TRAP ARMED
+TRAP ARMED
+PASS: TRAP ARMED (2 boot(s))
+Trap case 11
+TRAP ARMED
+TRAP ARMED
+PASS: TRAP ARMED (2 boot(s))
+test_board_output_validation_uses_strict_parser (test_asterbench.ResultProvenance.test_board_output_validation_uses_strict_parser) ... ok
+test_comparison_contract (test_asterbench.ResultProvenance.test_comparison_contract) ... ok
+test_required_provenance (test_asterbench.ResultProvenance.test_required_provenance) ... Hello from Aster
+PASS: Hello from Aster reached the simulated UART
+ok
+test_serial_and_typed_record_must_agree (test_asterbench.ResultProvenance.test_serial_and_typed_record_must_agree) ... ok
+test_common_corpus (test_asterbench.StrictRecords.test_common_corpus) ... ASTERBENCH,version=2,name=memcpy,bytes=256,repetitions=4,seed=0x13570000,status=PASS,checksum=0xc4be3200,clock_hz=31250000,l1=1,sync_memory=0,line_words=4,line_count=16,memory_wait=0,cycles=0x0000000000001c92,retired=0x0000000000000611,memory_transactions=0x0000000000000910,backing_transactions=0x000000000000014c,cache_accesses=0x0000000000000910,cache_misses=0x0000000000000113,dma_bytes=0x0000000000000000,accelerator_cycles=0x0000000000000000
+PASS: strict AsterBench v2 record
+PASS: cache scoreboard words=4 lines=16 seed=1 completed=5092 aborted=5 stalls=35198 reads=8537 writes=1642
+PASS: cache scoreboard words=4 lines=16 seed=42366 completed=5092 aborted=5 stalls=34509 reads=8100 writes=1740
+PASS: cache scoreboard words=4 lines=16 seed=12648430 completed=5092 aborted=5 stalls=35790 reads=8549 writes=1672
+PASS: UART FIFO backpressure, wraparound, all byte values and mid-frame reset
+PASS: UART RX false starts, framing errors, reset and all 256 bytes
+PASS: PYNQ-Z1 UART serial decode (17 bytes)
+PASS: PYNQ-Z1 UART serial decode (17 bytes)
+PASS: PYNQ-Z1 UART serial decode (1060 bytes)
+PASS: PYNQ-Z1 UART serial decode (1060 bytes)
+ok
+test_bad_options_and_known_references (test_cache_experiments.CacheExperiments.test_bad_options_and_known_references) ... ok
+test_missing_experiment_rejected (test_cache_experiments.CacheExperiments.test_missing_experiment_rejected) ... ok
+test_pattern_kernels_and_data_addresses_match (test_cache_experiments.CacheExperiments.test_pattern_kernels_and_data_addresses_match) ... make[1]: warning: jobserver unavailable: using -j1.  Add '+' to parent make rule.
+make[1]: warning: jobserver unavailable: using -j1.  Add '+' to parent make rule.
+make[1]: warning: jobserver unavailable: using -j1.  Add '+' to parent make rule.
+make[1]: warning: jobserver unavailable: using -j1.  Add '+' to parent make rule.
+make[1]: warning: jobserver unavailable: using -j1.  Add '+' to parent make rule.
+make[1]: warning: jobserver unavailable: using -j1.  Add '+' to parent make rule.
+make[1]: warning: jobserver unavailable: using -j1.  Add '+' to parent make rule.
+make[1]: warning: jobserver unavailable: using -j1.  Add '+' to parent make rule.
+PASS: PYNQ-Z1 UART serial decode (448 bytes)
+PASS: PYNQ-Z1 UART serial decode (448 bytes)
+make[1]: warning: jobserver unavailable: using -j1.  Add '+' to parent make rule.
+PASS: Linux AXI boot + UART serial capture (17 bytes)
+PASS: Linux AXI boot + UART serial capture (17 bytes)
+make[1]: warning: jobserver unavailable: using -j1.  Add '+' to parent make rule.
+make[1]: warning: jobserver unavailable: using -j1.  Add '+' to parent make rule.
+make[1]: warning: jobserver unavailable: using -j1.  Add '+' to parent make rule.
+make[1]: warning: jobserver unavailable: using -j1.  Add '+' to parent make rule.
+PASS: Linux AXI boot + UART serial capture (1060 bytes)
+PASS: Linux AXI boot + UART serial capture (1060 bytes)
+make[1]: warning: jobserver unavailable: using -j1.  Add '+' to parent make rule.
+make[1]: warning: jobserver unavailable: using -j1.  Add '+' to parent make rule.
+PASS: Linux AXI boot + UART serial capture (443 bytes)
+PASS: Linux AXI boot + UART serial capture (443 bytes)
+PASS: counters/events, command strobes, freeze/resume, reset and 64-bit rollover
+PASS: exact RVFI retirement sequence, stalled memory, six trap types and warm reset
+PASS: L1 cache refill, hit, byte-write, eviction and bypass tests
+make[1]: warning: jobserver unavailable: using -j1.  Add '+' to parent make rule.
+make[1]: warning: jobserver unavailable: using -j1.  Add '+' to parent make rule.
+make[1]: warning: jobserver unavailable: using -j1.  Add '+' to parent make rule.
+make[1]: warning: jobserver unavailable: using -j1.  Add '+' to parent make rule.
+make[1]: warning: jobserver unavailable: using -j1.  Add '+' to parent make rule.
+ok
+test_plan_covers_all_readme_experiments (test_cache_experiments.CacheExperiments.test_plan_covers_all_readme_experiments) ... ok
+test_study_audit_rejects_corruption (test_cache_experiments.CacheExperiments.test_study_audit_rejects_corruption) ... ok
+test_known_corners (test_phase1.ArithmeticReference.test_known_corners) ... ok
+test_seed_reproducibility (test_phase1.ArithmeticReference.test_seed_reproducibility) ... ok
+test_initialized_byte_segment (test_phase1.FirmwareLayout.test_initialized_byte_segment) ... ok
+test_rom_overflow (test_phase1.FirmwareLayout.test_rom_overflow) ... ok
+test_stack_reservation (test_phase1.FirmwareLayout.test_stack_reservation) ... ok
+test_missing_and_duplicate_modules_parameters_ports (test_pynq_handoff.HandoffSafety.test_missing_and_duplicate_modules_parameters_ports) ... ok
+test_mutated_exports_fail_closed (test_pynq_handoff.HandoffSafety.test_mutated_exports_fail_closed) ... ok
+test_original_active_low_auxiliary_tied_zero_is_rejected (test_pynq_handoff.HandoffSafety.test_original_active_low_auxiliary_tied_zero_is_rejected) ... ok
+test_valid_export (test_pynq_handoff.HandoffSafety.test_valid_export) ... ok
+test_captured_reports_and_rejected_mutations (test_pynq_results.PhysicalResults.test_captured_reports_and_rejected_mutations) ... ok
+
+----------------------------------------------------------------------
+Ran 20 tests in 3.167s
+
+OK

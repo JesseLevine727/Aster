@@ -53,5 +53,8 @@ Vivado 2025.1 routed the corresponding RTL on `xc7z020clg400-1`:
 
 Both complete bitstream generation without DRC errors. Linux methodology has
 zero violations and no unconstrained internal endpoints. Asynchronous UART/LED
-outputs have explicit false paths. The physical board remains unvalidated
-after its first-load hang; see [Phase 2 status](../../phase-closeout.md).
+outputs have explicit false paths. These historical images were not physically
+validated and contain the subsequently diagnosed Linux-shell reset defect.
+The corrected current shell and firmware are physically validated in the
+[Phase 2 closeout](../phase2/README.md); that later evidence does not retroactively
+validate these old bitstreams.

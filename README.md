@@ -23,18 +23,22 @@ AsterBench v2 records and reproducible capture/comparison with source and
 toolchain provenance. [Saved clean-revision results](docs/results/phase3/README.md)
 include all cached/uncached and async/sync baseline combinations.
 
-Phase 2's standalone/Linux FPGA builds and UART/AXI simulations pass, but
-physical Aster execution is still pending: the board became unresponsive
-during the first Linux-overlay attempt and needs recovery. No physical Aster
-execution is claimed.
+Phase 2 is physically verified on PYNQ-Z1 through PYNQ Linux: Hello, a
+1,060-byte UART stress stream and three AsterBench workloads each pass two
+warm boots. Every benchmark field matches its Verilator reference. The first
+attempt exposed a reset-polarity defect in the FPGA shell; it is fixed and
+guarded by generated-netlist simulation and pre-download handoff checks.
+[Physical records and routed reports](docs/results/phase2/README.md) distinguish
+real FPGA serial TX/RX captured over AXI/SSH from external Pmod wiring, which
+was not tested.
 
 Phase 4 closeout is verified: 108 seeded cache scoreboard runs across 36
 geometries, a 24-configuration SoC/latency matrix, and all four README cache
 experiments. [Retained clean-revision results](docs/results/phase4/README.md)
 cover 60 configurations plus a repeat, with correctness/provenance checks and
-analysis of both cache benefits and slowdowns. Phases 1/3/4 are complete;
-[`docs/phase-closeout.md`](docs/phase-closeout.md) tracks the remaining physical
-Phase 2 exit. Phase 5 has not started.
+analysis of both cache benefits and slowdowns. Phases 1–4 are complete;
+[`docs/phase-closeout.md`](docs/phase-closeout.md) maps the acceptance contract
+to retained evidence. Phase 5 has not started.
 
 Start here:
 

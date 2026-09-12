@@ -1,0 +1,6 @@
+STAGE download
+HANDOFF {'clock_hz': 31250000, 'axi_base': 1073741824, 'axi_span': 262144, 'external_reset_active_high': False, 'auxiliary_reset_active_high': True}
+METADATA_READY ['aster', 'ps7']
+PCAP_START
+PCAP_DONE /home/xilinx/aster_phase2_ebea984/aster_linux.bit
+STAGE_PASS download
