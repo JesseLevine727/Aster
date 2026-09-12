@@ -46,7 +46,7 @@ and decodes the complete 8-N-1 stream. This catches clock-divider, reset-domain,
 FIFO and baud-timing errors that a one-cycle simulation UART cannot see.
 
 The FPGA build is checked by the Vivado reports under `build/fpga/pynq_z1/`:
-the Phase 2 baseline must infer 32 RAMB36 blocks, report zero DRC errors and
+the memory implementation must infer BRAM, report zero DRC errors and
 unrouted nets, and contain no failing setup/hold endpoints in
 `timing_summary.rpt`.
 
@@ -73,7 +73,7 @@ make bench
 
 ## Next verification increments
 
-1. Complete the Phase 2 UART flow-control and long-stream tests.
+1. Recover the board and complete Phase 2 physical Linux/firmware validation.
 2. Complete the Phase 3 parser/counter/snapshot tests.
 3. Complete the Phase 4 randomized/stall/reset/configuration verification.
 4. Integrate a full external architectural reference suite where practical.

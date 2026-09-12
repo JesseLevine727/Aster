@@ -48,6 +48,9 @@ make bench       Build and run the deterministic AsterBench RAM memcpy
 make cache       Run directed L1 hit/miss/eviction tests
 make fpga-sim    Decode the board-facing 115200-baud UART in simulation
 make fpga        Run the Vivado PYNQ-Z1 synthesis/place/route/bitstream flow
+make linux-sim   Test AXI boot loading, host pauses and FPGA UART serial capture
+make fpga-linux  Build the PYNQ Linux PCAP/AXI overlay (no JTAG)
+make uart        Test TX backpressure/reset and RX framing/glitch handling
 make check       Run tool checks, directed tests and simulations
 make clean       Remove generated files under build/
 ```

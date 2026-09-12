@@ -141,10 +141,13 @@ The simulation UART is intentionally minimal.
 | Offset | Name | Access | Meaning |
 | ---: | --- | --- | --- |
 | `0x00` | `TXDATA` | W | Low byte is emitted when written |
-| `0x04` | `STATUS` | R | Bit 0 is always `1` (`TX ready`) |
+| `0x04` | `STATUS` | R | Bit 0 indicates available TX capacity |
 
-There is no baud-rate generator in simulation. The UART testbench observes a
-one-cycle `tx_valid` pulse and prints `tx_data`.
+The register block has a one-byte ready/valid output slot. A byte-lane-0
+TXDATA write stalls until capacity exists; upper-byte-only writes have no
+effect. Data/valid remain stable under backpressure. Event-level simulation
+drains the slot immediately; board-facing tests exercise the real 8-N-1 PHY
+and its FIFO. A full FIFO never silently drops a CPU write.
 
 ### Performance-counter registers
 
@@ -204,9 +207,15 @@ silently assumed by Phase 0:
 
 ## Phase 2 FPGA contract
 
-The PYNQ-Z1 implementation is intentionally programmable-logic-only. The
-onboard USB-UART is attached to Zynq PS MIO, so this baseline exposes PL TX on
-Pmod JA[0] and requires a 3.3 V USB-UART adapter. The target is constrained
+The standalone PYNQ-Z1 implementation is programmable-logic-only. The onboard
+USB-UART is attached to Zynq PS MIO, so this variant exposes PL TX on Pmod JA[0]
+for a 3.3 V USB-UART adapter. The additional Linux overlay connects the Zynq
+ARM host to an AXI-Lite loader/capture bridge. Firmware is loaded into a
+dedicated boot-ROM programming port only while Aster is reset; CPU ROM writes
+remain forbidden. UART TX is decoded by an FPGA serial receiver and drained
+by Linux over AXI/SSH, with receive credits preventing loss during host pauses.
+It is an internal serial loopback, not an external-pin loopback. Both variants
+are constrained
 for the `xc7z020clg400-1` device and must pass Vivado DRC, placement, routing,
 and post-route timing before a bitstream is considered valid. See
 [`fpga/pynq_z1/README.md`](../fpga/pynq_z1/README.md) for the pinout and

@@ -51,8 +51,8 @@ report_utilization -file [file join $output_dir utilization.rpt]
 opt_design
 place_design
 route_design
-report_timing_summary -file [file join $output_dir timing_summary.rpt] -warn_on_violation
-report_utilization -file [file join $output_dir utilization_routed.rpt]
+source [file join $repo_root fpga/pynq_z1/signoff.tcl]
+aster_signoff $output_dir
 write_checkpoint -force [file join $output_dir aster_pynq_z1_routed.dcp]
 write_bitstream -force [file join $output_dir aster_pynq_z1.bit]
 

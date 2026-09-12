@@ -2,11 +2,17 @@ module aster_minimal #(
     parameter string MEM_INIT_FILE = "",
     parameter bit SYNC_MEMORY = 1'b0,
     parameter bit ENABLE_L1 = 1'b1,
+    parameter bit HOST_BOOT = 1'b0,
     parameter int unsigned L1_LINE_WORDS = 4,
     parameter int unsigned L1_LINE_COUNT = 16
 ) (
     input  logic        clk,
     input  logic        rst_n,
+    input  logic        uart_tx_ready,
+    input  logic        boot_we,
+    input  logic [15:0] boot_addr,
+    input  logic [31:0] boot_wdata,
+    input  logic [3:0]  boot_wstrb,
     output logic        uart_tx_valid,
     output logic [7:0]  uart_tx_data,
     output logic        trap
@@ -40,6 +46,8 @@ module aster_minimal #(
     logic        lower_ready;
     logic        ram_we;
     logic        uart_we;
+    logic        uart_write_ready;
+    logic        uart_write_request;
     logic        perf_we;
     logic        memory_access;
     logic        sync_memory_pending;
@@ -214,17 +222,24 @@ module aster_minimal #(
 
     assign lower_ready = (SYNC_MEMORY && memory_access)
         ? sync_memory_pending
-        : lower_valid;
+        : lower_valid && (!uart_write_request || uart_write_ready);
+    assign uart_write_request = !lower_mem_instr && (lower_addr == UART_BASE)
+        && lower_wstrb[0];
     assign instruction_retired = mem_valid && mem_ready && mem_instr;
     assign memory_transaction = mem_valid && mem_ready;
 
     aster_rom #(
         .BASE_ADDR(ROM_BASE),
         .MEM_INIT_FILE(MEM_INIT_FILE),
-        .SYNC_READ(SYNC_MEMORY)
+        .SYNC_READ(SYNC_MEMORY),
+        .ENABLE_PROGRAM(HOST_BOOT)
     ) rom (
         .clk(clk),
         .addr(lower_addr),
+        .program_we(HOST_BOOT && !rst_n && boot_we),
+        .program_addr(boot_addr),
+        .program_wdata(boot_wdata),
+        .program_wstrb(boot_wstrb),
         .rdata(rom_rdata)
     );
 
@@ -245,6 +260,8 @@ module aster_minimal #(
         .addr(lower_addr),
         .wdata(lower_wdata),
         .we(uart_we),
+        .tx_ready_i(uart_tx_ready),
+        .write_ready_o(uart_write_ready),
         .rdata(uart_rdata),
         .tx_valid(uart_tx_valid),
         .tx_data(uart_tx_data)

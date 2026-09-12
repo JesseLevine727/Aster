@@ -1,8 +1,6 @@
 // Board-facing, 8-N-1 UART transmitter.
 //
-// The SoC UART deliberately exposes a one-cycle TX event for simulation. This
-// module turns those events into a real asynchronous serial stream and keeps a
-// small FIFO so the boot banner can be emitted while the CPU continues to run.
+// Ready/valid input; a full FIFO applies backpressure without dropping bytes.
 module aster_uart_tx #(
     parameter int unsigned CLK_HZ = 125_000_000,
     parameter int unsigned BAUD = 115_200,
@@ -12,6 +10,7 @@ module aster_uart_tx #(
     input  logic       rst_n,
     input  logic       tx_valid_i,
     input  logic [7:0] tx_data_i,
+    output logic       ready_o,
     output logic       tx_o,
     output logic       busy_o
 );
@@ -31,7 +30,13 @@ module aster_uart_tx #(
     logic push;
     logic pop;
 
-    assign push = tx_valid_i && (fifo_count != COUNT_WIDTH'(FIFO_DEPTH));
+    initial begin
+        if (FIFO_DEPTH < 1 || BAUD < 1 || DIVISOR < 2)
+            $error("UART requires FIFO_DEPTH >= 1 and CLK_HZ/BAUD >= 2");
+    end
+
+    assign ready_o = rst_n && ((fifo_count < COUNT_WIDTH'(FIFO_DEPTH)) || pop);
+    assign push = tx_valid_i && ready_o;
     assign pop = !active && (fifo_count != 0);
     assign busy_o = active || (fifo_count != 0);
 

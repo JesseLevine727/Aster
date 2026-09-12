@@ -2,10 +2,15 @@ module aster_rom #(
     parameter logic [31:0] BASE_ADDR = 32'h0000_0000,
     parameter int unsigned DEPTH_WORDS = 16_384,
     parameter string MEM_INIT_FILE = "",
-    parameter bit SYNC_READ = 1'b0
+    parameter bit SYNC_READ = 1'b0,
+    parameter bit ENABLE_PROGRAM = 1'b0
 ) (
     input  logic        clk,
     input  logic [31:0] addr,
+    input  logic        program_we,
+    input  logic [15:0] program_addr,
+    input  logic [31:0] program_wdata,
+    input  logic [3:0]  program_wstrb,
     output logic [31:0] rdata
 );
     logic [31:0] memory [0:DEPTH_WORDS-1];
@@ -31,6 +36,20 @@ module aster_rom #(
 
     always_comb
         word_index = addr[INDEX_WIDTH+1:2] - BASE_ADDR[INDEX_WIDTH+1:2];
+
+    // The Linux host may load the boot store only while the CPU is reset.
+    // CPU stores never reach this programming port; the SoC enforces reset.
+    generate if (ENABLE_PROGRAM) begin : g_program
+        always_ff @(posedge clk) begin
+            if (program_we && {16'd0, program_addr} < DEPTH_BYTES) begin
+                for (int lane = 0; lane < 4; lane++) begin
+                    if (program_wstrb[lane])
+                        memory[program_addr[INDEX_WIDTH+1:2]][lane*8 +: 8]
+                            <= program_wdata[lane*8 +: 8];
+                end
+            end
+        end
+    end endgenerate
 
     generate
         if (SYNC_READ) begin : g_sync_read

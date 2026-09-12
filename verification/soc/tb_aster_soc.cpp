@@ -35,6 +35,8 @@ int main(int argc, char** argv) {
         return EXIT_FAILURE;
     }
     Vaster_minimal dut;
+    dut.uart_tx_ready = 1;
+    dut.boot_we = dut.boot_addr = dut.boot_wdata = dut.boot_wstrb = 0;
     for (unsigned boot = 0; boot < boots; ++boot) {
         dut.rst_n = 0;
         for (unsigned i = 0; i < 8; ++i) tick(dut);

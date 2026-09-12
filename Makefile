@@ -13,6 +13,7 @@ RISCV_MARCH ?= rv32im
 RISCV_MABI ?= ilp32
 ENABLE_L1 ?= 1
 SYNC_MEMORY ?= 0
+UART_FIFO_DEPTH ?= 3
 VERILATOR_VENDOR_LINT_FLAGS := --Wno-DECLFILENAME --Wno-GENUNNAMED \
 	--Wno-UNUSEDSIGNAL --Wno-BLKSEQ
 
@@ -39,8 +40,11 @@ BENCH_HEX := $(HELLO_DIR)/memcpy_bench.hex
 BENCH_OBJECTS := $(HELLO_DIR)/start.o $(HELLO_DIR)/memcpy_bench.o
 BENCH_SIM := $(BUILD_DIR)/asterbench_sim
 CACHE_SIM := $(BUILD_DIR)/aster_l1_cache_sim
+UART_SIM := $(BUILD_DIR)/aster_uart_tx_$(UART_FIFO_DEPTH)_sim
+UART_RX_SIM := $(BUILD_DIR)/aster_uart_rx_sim
 SMOKE_SIM := $(BUILD_DIR)/aster_smoke_sim
 PYNQ_SIM := $(BUILD_DIR)/aster_pynq_z1_sim
+LINUX_SIM := $(BUILD_DIR)/aster_pynq_linux_sim
 SOC_TEST_DIR := $(BUILD_DIR)/soc_l1$(ENABLE_L1)_sync$(SYNC_MEMORY)
 SOC_SIM := $(SOC_TEST_DIR)/aster_soc_sim
 TRAP_CASES := 0 1 2 3 4 5 6 7 8 9 10 11
@@ -58,7 +62,7 @@ BENCH_CFLAGS := $(HELLO_CFLAGS)
 BENCH_LDFLAGS := -T software/boot/link.ld -Wl,--gc-sections -Wl,-Map,$(HELLO_DIR)/memcpy_bench.map
 
 .PHONY: all tools structure firmware smoke test directed hello bench cache fpga fpga-sim check clean help \
-	runtime memory-map traps phase1 phase1-matrix host-tests
+	runtime memory-map traps phase1 phase1-matrix host-tests uart fpga-linux linux-sim
 .SECONDARY:
 
 all: check
@@ -77,6 +81,8 @@ help:
 	@echo "  make cache      Run directed L1 hit/miss/eviction tests"
 	@echo "  make fpga       Build the PYNQ-Z1 bitstream with Vivado"
 	@echo "  make fpga-sim   Decode the board-facing UART in simulation"
+	@echo "  make fpga-linux Build the PCAP/AXI overlay for PYNQ Linux (no JTAG)"
+	@echo "  make linux-sim  Test AXI firmware loading and serial capture"
 	@echo "  make check      Run tool checks, directed tests and simulations"
 	@echo "  make clean      Remove generated files under build/"
 
@@ -143,6 +149,9 @@ $(HELLO_DIR)/runtime.elf: software/tests/runtime.c software/runtime/start.S soft
 	$(CC) $(HELLO_CFLAGS) -T software/boot/link.ld -o $@ software/runtime/start.S $<
 
 $(HELLO_DIR)/memory_map.elf: software/tests/memory_map.c software/runtime/start.S software/runtime/aster.h software/boot/link.ld | $(HELLO_DIR)
+	$(CC) $(HELLO_CFLAGS) -T software/boot/link.ld -o $@ software/runtime/start.S $<
+
+$(HELLO_DIR)/uart_stress.elf: software/tests/uart_stress.c software/runtime/start.S software/runtime/aster.h software/boot/link.ld | $(HELLO_DIR)
 	$(CC) $(HELLO_CFLAGS) -T software/boot/link.ld -o $@ software/runtime/start.S $<
 
 $(HELLO_DIR)/trap_%.elf: software/tests/traps.S software/tests/link_directed.ld | $(HELLO_DIR)
@@ -233,7 +242,7 @@ $(BENCH_SIM): $(RTL_CORE) $(RTL_CACHE) $(RTL_MEMORY) $(RTL_PERIPHERALS) $(RTL_SO
 		$(ROOT)/verification/soc/tb_asterbench.cpp
 
 $(PYNQ_SIM): $(RTL_CORE) $(RTL_CACHE) $(RTL_MEMORY) $(RTL_PERIPHERALS) $(RTL_SOC) $(RTL_FPGA) \
-		verification/soc/tb_pynq_z1.cpp $(HELLO_HEX) | $(BUILD_DIR)
+		verification/soc/tb_pynq_z1.cpp verification/common/uart_decoder.h $(HELLO_HEX) | $(BUILD_DIR)
 	$(VERILATOR) --cc --exe --build --timing --Wall --Wno-fatal \
 		$(VERILATOR_VENDOR_LINT_FLAGS) \
 		--top-module aster_pynq_z1 \
@@ -245,8 +254,10 @@ $(PYNQ_SIM): $(RTL_CORE) $(RTL_CACHE) $(RTL_MEMORY) $(RTL_PERIPHERALS) $(RTL_SOC
 		$(addprefix $(ROOT)/,$(RTL_PERIPHERALS)) $(addprefix $(ROOT)/,$(RTL_FPGA)) \
 		$(ROOT)/$(RTL_SOC) $(ROOT)/verification/soc/tb_pynq_z1.cpp
 
-fpga-sim: $(PYNQ_SIM)
+fpga-sim: $(PYNQ_SIM) $(HELLO_DIR)/uart_stress.hex $(BENCH_HEX)
 	@$(PYNQ_SIM)
+	@$(PYNQ_SIM) +rom=$(HELLO_DIR)/uart_stress.hex --stress
+	@$(PYNQ_SIM) +rom=$(BENCH_HEX) --bench
 
 fpga: firmware
 	@command -v $(VIVADO) >/dev/null || { echo "ERROR: Vivado not found (set VIVADO=/path/to/vivado)" >&2; exit 1; }
@@ -254,6 +265,28 @@ fpga: firmware
 	@$(VIVADO) -mode batch -nojournal -nolog -notrace \
 		-source $(ROOT)/fpga/pynq_z1/build.tcl \
 		-tclargs $(ROOT) $(FPGA_BUILD_DIR) $(HELLO_HEX)
+
+fpga-linux:
+	@mkdir -p $(FPGA_BUILD_DIR)/linux
+	$(VIVADO) -mode batch -nojournal -nolog -notrace \
+		-source $(ROOT)/fpga/pynq_z1/build_linux.tcl \
+		-tclargs $(ROOT) $(FPGA_BUILD_DIR)/linux
+
+$(LINUX_SIM): $(RTL_CORE) $(RTL_CACHE) $(RTL_MEMORY) $(RTL_PERIPHERALS) $(RTL_SOC) \
+		rtl/peripherals/aster_uart_tx.sv rtl/peripherals/aster_uart_rx.sv \
+		rtl/soc/aster_pynq_linux.sv verification/soc/tb_pynq_linux.cpp | $(BUILD_DIR)
+	$(VERILATOR) --cc --exe --build --timing --Wall --Wno-fatal \
+		$(VERILATOR_VENDOR_LINT_FLAGS) --top-module aster_pynq_linux \
+		-GCLK_HZ=400 -GBAUD=10 -GRX_DEPTH=128 \
+		--Mdir $(BUILD_DIR)/obj_linux -o $(abspath $@) \
+		$(addprefix $(ROOT)/,$(RTL_CORE) $(RTL_CACHE) $(RTL_MEMORY) $(RTL_PERIPHERALS) $(RTL_SOC)) \
+		$(ROOT)/rtl/peripherals/aster_uart_tx.sv $(ROOT)/rtl/peripherals/aster_uart_rx.sv \
+		$(ROOT)/rtl/soc/aster_pynq_linux.sv $(ROOT)/verification/soc/tb_pynq_linux.cpp
+
+linux-sim: $(LINUX_SIM) $(HELLO_HEX) $(BENCH_HEX) $(HELLO_DIR)/uart_stress.hex
+	@$(LINUX_SIM) $(HELLO_HEX) hello
+	@$(LINUX_SIM) $(HELLO_DIR)/uart_stress.hex stress
+	@$(LINUX_SIM) $(BENCH_HEX) bench
 
 hello: $(HELLO_SIM)
 	@$(HELLO_SIM)
@@ -272,9 +305,25 @@ $(CACHE_SIM): $(RTL_CACHE) verification/unit/tb_aster_l1_cache.cpp | $(BUILD_DIR
 cache: $(CACHE_SIM)
 	@$(CACHE_SIM)
 
-test: smoke phase1 hello bench cache fpga-sim
+$(UART_SIM): rtl/peripherals/aster_uart_tx.sv verification/unit/tb_aster_uart_tx.cpp verification/common/uart_decoder.h | $(BUILD_DIR)
+	$(VERILATOR) --cc --exe --build --timing --Wall --Wno-fatal \
+		--top-module aster_uart_tx -GCLK_HZ=40 -GBAUD=10 -GFIFO_DEPTH=$(UART_FIFO_DEPTH) \
+		--Mdir $(BUILD_DIR)/obj_uart_$(UART_FIFO_DEPTH) -o $(abspath $@) \
+		$(ROOT)/rtl/peripherals/aster_uart_tx.sv $(ROOT)/verification/unit/tb_aster_uart_tx.cpp
 
-check: tools smoke phase1 hello bench cache fpga-sim
+$(UART_RX_SIM): rtl/peripherals/aster_uart_rx.sv verification/unit/tb_aster_uart_rx.cpp | $(BUILD_DIR)
+	$(VERILATOR) --cc --exe --build --timing --Wall --Wno-fatal \
+		--top-module aster_uart_rx -GCLK_HZ=400 -GBAUD=10 \
+		--Mdir $(BUILD_DIR)/obj_uart_rx -o $(abspath $@) \
+		$(ROOT)/rtl/peripherals/aster_uart_rx.sv $(ROOT)/verification/unit/tb_aster_uart_rx.cpp
+
+uart: $(UART_SIM) $(UART_RX_SIM)
+	@$(UART_SIM)
+	@$(UART_RX_SIM)
+
+test: smoke phase1 hello bench cache uart fpga-sim linux-sim
+
+check: tools smoke phase1 hello bench cache uart fpga-sim linux-sim
 
 clean:
 	rm -rf $(BUILD_DIR)

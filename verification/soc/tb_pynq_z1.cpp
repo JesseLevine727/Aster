@@ -1,4 +1,5 @@
 #include "Vaster_pynq_z1.h"
+#include "../common/uart_decoder.h"
 
 #include <cstdint>
 #include <iostream>
@@ -11,65 +12,29 @@ namespace {
 // 125 MHz board clock. Four board-clock cycles correspond to one core-clock
 // cycle, so each serial bit spans 271 * 4 board-clock samples.
 constexpr unsigned kBaudDivisor = 271 * 4;
-constexpr unsigned kMaxCycles = 300000;
+constexpr unsigned kMaxCycles = 20000000;
 
-class UartDecoder {
-public:
-    void sample(bool level) {
-        switch (state_) {
-        case State::Idle:
-            if (!level) {
-                state_ = State::Data;
-                countdown_ = kBaudDivisor + kBaudDivisor / 2;
-                bit_index_ = 0;
-                byte_ = 0;
-            }
-            break;
-        case State::Data:
-            if (countdown_ != 0) {
-                --countdown_;
-            } else {
-                if (level)
-                    byte_ |= static_cast<std::uint8_t>(1u << bit_index_);
-                if (bit_index_ == 7) {
-                    state_ = State::Stop;
-                } else {
-                    ++bit_index_;
-                }
-                countdown_ = kBaudDivisor - 1;
-            }
-            break;
-        case State::Stop:
-            if (countdown_ != 0) {
-                --countdown_;
-            } else {
-                if (!level)
-                    failed_ = true;
-                text_.push_back(static_cast<char>(byte_));
-                state_ = State::Idle;
-            }
-            break;
-        }
-    }
-
-    bool failed() const { return failed_; }
-    const std::string &text() const { return text_; }
-
-private:
-    enum class State { Idle, Data, Stop };
-    State state_ = State::Idle;
-    unsigned countdown_ = 0;
-    unsigned bit_index_ = 0;
-    std::uint8_t byte_ = 0;
-    bool failed_ = false;
-    std::string text_;
-};
 } // namespace
 
 int main(int argc, char **argv) {
     Verilated::commandArgs(argc, argv);
+    std::string expected = "Hello from Aster\n";
+    bool benchmark = false;
+    for (int i = 1; i < argc; ++i) {
+        if (std::string(argv[i]) == "--stress") {
+            expected = "UART STRESS BEGIN\n";
+            for (unsigned index = 0; index < 1024; ++index)
+                expected += static_cast<char>('!' + index % 90);
+            expected += "\nUART STRESS PASS\n";
+        } else if (std::string(argv[i]) == "--bench") {
+            benchmark = true;
+            expected.clear();
+        }
+    }
     auto top = std::make_unique<Vaster_pynq_z1>();
-    UartDecoder decoder;
+
+    for (unsigned boot = 0; boot < 2; ++boot) {
+    SerialDecoder decoder(kBaudDivisor);
 
     top->sysclk = 0;
     top->reset_btn = 1;
@@ -82,19 +47,31 @@ int main(int argc, char **argv) {
     }
     top->reset_btn = 0;
 
-    for (unsigned cycle = 0; cycle < kMaxCycles && decoder.text().size() < 17; ++cycle) {
+    unsigned completed_cycle = 0;
+    for (unsigned cycle = 0; cycle < kMaxCycles; ++cycle) {
         top->sysclk = 1;
         top->eval();
         top->sysclk = 0;
         top->eval();
         decoder.sample(top->uart_tx);
+        const bool complete = benchmark ? decoder.text().find('\n') != std::string::npos
+                                        : decoder.text().size() >= expected.size();
+        if (complete && completed_cycle == 0) completed_cycle = cycle;
+        // Drain a full extra frame to catch duplicated/trailing output.
+        if (completed_cycle && cycle > completed_cycle + kBaudDivisor * 12) break;
     }
 
-    if (decoder.failed() || decoder.text() != "Hello from Aster\n") {
+    const bool match = benchmark
+        ? decoder.text().rfind("ASTERBENCH,", 0) == 0 &&
+          decoder.text().find(",status=PASS,") != std::string::npos &&
+          decoder.text().find(",accelerator_cycles=0x0000000000000000\n") != std::string::npos
+        : decoder.text() == expected;
+    if (decoder.failed() || !match) {
         std::cerr << "UART decode mismatch: '" << decoder.text() << "'\n";
         return 1;
     }
 
-    std::cout << "PASS: PYNQ-Z1 UART loopback simulation\n";
+    std::cout << "PASS: PYNQ-Z1 UART serial decode (" << decoder.text().size() << " bytes)\n";
+    }
     return 0;
 }

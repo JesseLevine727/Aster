@@ -1,6 +1,6 @@
 # PYNQ-Z1 bring-up
 
-This target is the current FPGA implementation of Aster: one PicoRV32 RV32IM
+These targets implement Aster with one PicoRV32 RV32IM
 core, private Phase 4 L1 instruction/data caches, initialized ROM,
 byte-writeable RAM, the Aster UART register block and a board-facing UART
 transmitter. The 125 MHz board oscillator is divided through
@@ -8,7 +8,7 @@ a global-clock MMCM/BUFG path to a 31.25 MHz core/fabric/UART clock; this gives
 the current unpipelined bring-up logic timing margin while preserving an
 accurate generated-clock constraint.
 
-## Build
+## Standalone build
 
 From the repository root:
 
@@ -52,9 +52,75 @@ BTN0/reset is D19, LEDs 0–3 are R14/P14/N16/M14, and Pmod JA[0] is Y18.
 The complete current memory map and CPU contract remain in
 [`../../docs/architecture.md`](../../docs/architecture.md).
 
+## PYNQ Linux workflow (physical validation pending)
+
+The selected board workflow is SSH/Linux, without JTAG. Connectivity was
+verified on 2026-09-12 using `ssh xilinx@10.0.0.223`; DHCP may change this
+address. Use `sudo -i` on the board so `/etc/profile.d/` initializes the PYNQ
+virtual environment, `BOARD` and XRT. A plain root Python outside this login
+environment may incorrectly report no device.
+
+Build and test from the host repository:
+
+```sh
+make linux-sim
+make VIVADO=/path/to/vivado fpga-linux
+```
+
+The Linux `.bit` and matching `.hwh` are generated together under
+`build/fpga/pynq_z1/linux/`. Transfer both, `scripts/run_pynq.py` and the chosen
+full 64 KiB firmware `.hex` to a dedicated directory on the board. The host
+script loads through PYNQ/PCAP, sets FCLK0 to 31.25 MHz, holds the RV32IM CPU
+in reset while programming its boot memory, then captures real serialized
+UART bytes through the AXI bridge. No external USB-UART adapter is needed for
+this internal FPGA TX-to-RX path; it does not validate external Pmod wiring.
+
+After the first-load hang below is resolved, the intended board command is:
+
+```sh
+python3 run_pynq.py --bitstream aster_linux.bit --firmware hello.hex \
+  --kind hello --revision YOUR_SOURCE_REVISION --output hello.json
+```
+
+`--kind stress` uses `uart_stress.hex`; `--kind bench` uses `memcpy_bench.hex`.
+The default runs two warm boots and deliberately pauses host reads for 0.2 s.
+`--no-download` reuses the already-loaded matching overlay. JSON records the
+actual serial output, byte counts, errors, image hashes and board environment.
+The CPU is stopped after a completed run. Loading replaces the active PL
+design; ensure another application is not using it. Existing board projects
+must be preserved.
+
+### ARM AXI bridge map
+
+This map is in the ARM physical address space, not the RV32IM memory map.
+Base `0x40000000`, span 256 KiB:
+
+| Offset | Meaning |
+| --- | --- |
+| `0x00` | CONTROL: bit 0 runs Aster; clearing resets CPU and serial state |
+| `0x04` | STATUS: bits 0..4 running, trap, TX busy, RX overflow, framing error |
+| `0x08` | RX FIFO pop: bit 31 valid, low byte data; zero if empty |
+| `0x0c` | RX queued byte count |
+| `0x10/0x14` | Bytes accepted by TX PHY / decoded by RX |
+| `0x18/0x1c` | Bridge ID `0x41535452` / version `0x00020001` |
+| `0x20` | RTL clock frequency in Hz |
+| `0x10000..0x1ffff` | Boot ROM programming, word aligned, byte strobes honored |
+
+Invalid accesses and programming while running return AXI SLVERR. Read data
+and write responses are held under backpressure; AW/W arrival order is
+independent. Receive credits reserve enough space for all in-flight TX bytes.
+
 ## Validation status
 
-`make fpga` is the reproducible synthesis/place/route/bitstream check. Board
-execution still requires a physically connected PYNQ-Z1 and USB-UART adapter;
-the repository does not claim that observation until that hardware test is
-run.
+Both builds pass Vivado implementation and bitstream generation. Shared
+`signoff.tcl` enforces setup/hold slack and DRC errors; reports retain routing,
+methodology and resource evidence. `make check` includes UART unit tests,
+standalone serial decode and AXI/serial host tests, with long records and warm
+resets. These are prerequisites, not physical execution evidence.
+
+The first Linux overlay attempt made SSH and the USB Linux console
+unresponsive before any PASS result. Its exact failing stage is not known.
+Board recovery and staged loading/AXI diagnosis are required before retrying;
+do not treat the command above as a physically validated procedure yet. See
+[`../../docs/phase-closeout.md`](../../docs/phase-closeout.md) for the evidence
+and remaining Phase 2 acceptance.

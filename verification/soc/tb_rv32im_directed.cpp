@@ -15,6 +15,8 @@ static void tick(Vaster_minimal& dut) {
 int main(int argc, char** argv) {
     Verilated::commandArgs(argc, argv);
     Vaster_minimal dut;
+    dut.uart_tx_ready = 1;
+    dut.boot_we = dut.boot_addr = dut.boot_wdata = dut.boot_wstrb = 0;
     constexpr const char* expected = "RV32IM PASS\n";
     std::string serial_output;
 

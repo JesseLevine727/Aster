@@ -13,9 +13,9 @@ module aster_pynq_z1 #(
     output logic       uart_tx,
     output logic [3:0] led
 );
-    logic reset_meta;
-    logic reset_n;
+    (* ASYNC_REG = "TRUE" *)
     logic core_reset_meta;
+    (* ASYNC_REG = "TRUE" *)
     logic core_reset_n;
     logic core_clk;
     logic clock_locked;
@@ -26,6 +26,7 @@ module aster_pynq_z1 #(
     logic uart_tx_valid;
     logic [7:0] uart_tx_data;
     logic uart_tx_busy;
+    logic uart_tx_ready;
     logic uart_activity;
     logic trap;
 
@@ -77,23 +78,11 @@ module aster_pynq_z1 #(
     assign core_clk = simulation_clock_div[1];
 `endif
 
-    // The pushbutton is active high. Hold the SoC in reset while pressed and
-    // release it only after two clean 125 MHz clock edges.
-    always_ff @(posedge sysclk) begin
-        if (reset_btn) begin
-            reset_meta <= 1'b0;
-            reset_n <= 1'b0;
-        end else begin
-            reset_meta <= 1'b1;
-            reset_n <= reset_meta;
-        end
-    end
-
-    // Reset deassertion crosses from the 125 MHz shell clock into the divided
-    // core clock. Keep the core reset asserted for two core-clock edges after
-    // the shell reset is released so no stateful block can miss reset.
-    always_ff @(posedge core_clk) begin
-        if (!reset_n || !clock_locked) begin
+    // Assert even when MMCM reset has stopped the core clock. Deassert only
+    // after two running core clocks once the button is released and locked.
+    wire async_reset = reset_btn || !clock_locked;
+    always_ff @(posedge core_clk or posedge async_reset) begin
+        if (async_reset) begin
             core_reset_meta <= 1'b0;
             core_reset_n <= 1'b0;
         end else begin
@@ -108,7 +97,7 @@ module aster_pynq_z1 #(
             uart_activity <= 1'b0;
         end else begin
             heartbeat <= heartbeat + 1'b1;
-            if (uart_tx_valid)
+            if (uart_tx_valid && uart_tx_ready)
                 uart_activity <= ~uart_activity;
         end
     end
@@ -119,6 +108,11 @@ module aster_pynq_z1 #(
     ) soc (
         .clk(core_clk),
         .rst_n(core_reset_n),
+        .uart_tx_ready(uart_tx_ready),
+        .boot_we(1'b0),
+        .boot_addr(16'd0),
+        .boot_wdata(32'd0),
+        .boot_wstrb(4'd0),
         .uart_tx_valid(uart_tx_valid),
         .uart_tx_data(uart_tx_data),
         .trap(trap)
@@ -133,6 +127,7 @@ module aster_pynq_z1 #(
         .rst_n(core_reset_n),
         .tx_valid_i(uart_tx_valid),
         .tx_data_i(uart_tx_data),
+        .ready_o(uart_tx_ready),
         .tx_o(uart_tx),
         .busy_o(uart_tx_busy)
     );
