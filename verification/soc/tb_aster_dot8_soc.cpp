@@ -3,11 +3,13 @@
 #include <array>
 #include <cstdint>
 #include <fstream>
+#include <fcntl.h>
 #include <iostream>
 #include <random>
 #include <stdexcept>
 #include <string>
 #include <vector>
+#include <unistd.h>
 
 #ifndef ASTER_HART_COUNT
 #define ASTER_HART_COUNT 2
@@ -15,6 +17,17 @@
 #define ASTER_MEMORY_WAIT 0
 #endif
 static void require(bool ok,const char* why) { if (!ok) throw std::runtime_error(why); }
+static void exclusive(const std::string& path,const std::vector<std::uint8_t>& bytes) {
+    int fd=::open(path.c_str(),O_WRONLY|O_CREAT|O_EXCL,0600);
+    require(fd>=0,"functional evidence path already exists or cannot be created");
+    std::size_t offset=0;
+    while(offset<bytes.size()) {
+        auto n=::write(fd,bytes.data()+offset,bytes.size()-offset);
+        if(n<=0) {::close(fd);throw std::runtime_error("functional evidence write failed; partial file retained");}
+        offset+=std::size_t(n);
+    }
+    require(::close(fd)==0,"functional evidence close failed");
+}
 static std::uint32_t merge(std::uint32_t old,std::uint32_t data,unsigned mask) {
     for (unsigned b=0;b<4;++b) if (mask&(1u<<b)) old=(old&~(255u<<(8*b)))|(data&(255u<<(8*b)));
     return old;
@@ -200,15 +213,18 @@ public:
         require((d.dot8_busy&accept)==accept,"admitted dot8 failed to become busy");
     }
     void step() {low();rise();}
-    void snapshot() {
+    void snapshot(const std::string& path="") {
         require(d.stopped && !d.hart_run && !d.fabric_busy && !d.dot8_busy && !d.dma_busy && !d.reservations,"STOPPED without complete drain");
         d.boot_we=0;
+        std::vector<std::uint8_t> actual;
         for (unsigned i=0;i<ram.size();++i) {
             d.host_ram_addr=4*i;step();step();
             require(!d.backing_valid && d.host_ram_rdata==ram[i],"complete 64 KiB stopped RAM differs from architectural oracle");
+            if(!path.empty())for(unsigned b=0;b<4;++b)actual.push_back(d.host_ram_rdata>>(8*b));
         }
+        if(!path.empty())exclusive(path,actual);
     }
-    void full() {
+    void full(const std::string& evidence="",unsigned boot=0) {
         require(d.stopped,"start without stopped");
         checking=true;phase={};finished={};methods={};seen={};phase_dots={};scalar_job={};publication={};bases={};
         dot_total={};previous_accept=0;starts=overlap=0;received=false;uart.clear();descriptor={};
@@ -232,11 +248,19 @@ public:
         }
         d.host_run=0;
         for (unsigned cycle=0;cycle<2000000 && !d.stopped;++cycle) step();
-        require(d.stopped,"warm global stop deadlocked");++stops;snapshot();
+        require(d.stopped,"warm global stop deadlocked");++stops;
+        snapshot(evidence.empty()?"":evidence+".boot"+std::to_string(boot)+".ram");
         std::cout<<"PASS: dot8 C runtime harts="<<ASTER_HART_COUNT<<" cache="<<ASTER_L1<<" wait="<<ASTER_MEMORY_WAIT
             <<" cycles="<<cycles<<" pairs="<<finished[0]+finished[1]<<" output_methods="<<methods[0]+methods[1]
             <<" dots="<<dot_total[0]<<','<<dot_total[1]<<" DMA-overlap="<<overlap
             <<"; all 16 byte alignments, tails, dot/FIR/GEMM, actual output stores, full guards/RAM, LRSC, dirty DMA publication, ABI 6\n";
+        if(!evidence.empty()) {
+            exclusive(evidence+".boot"+std::to_string(boot)+".uart",std::vector<std::uint8_t>(uart.begin(),uart.end()));
+            std::cout<<"DOT8_FUNCTIONAL_OBS {\"boot\":"<<boot<<",\"counts\":[";
+            for(unsigned i=0;i<50;++i)std::cout<<(i?",":"")<<frozen[i];
+            std::cout<<"],\"pairs\":["<<finished[0]<<','<<finished[1]<<"],\"methods\":["<<methods[0]<<','<<methods[1]
+                <<"],\"dots\":["<<dot_total[0]<<','<<dot_total[1]<<"],\"dma_overlap\":"<<overlap<<"}\n";
+        }
     }
     void load(const std::string& path) {
         require(d.stopped && !d.host_run,"ROM reload requires safe STOPPED");
@@ -287,16 +311,17 @@ public:
 int main(int argc,char** argv) {
     try {
         Verilated::commandArgs(argc,argv);std::cout.setf(std::ios::unitbuf);
-        std::string stop_rom;
+        std::string stop_rom,evidence;
         bool stops_only=false;
         for(int n=1;n<argc;++n) {
             std::string arg=argv[n];
             if(arg.rfind("--stop-rom=",0)==0)stop_rom=arg.substr(11);
+            if(arg.rfind("--evidence-prefix=",0)==0) {require(evidence.empty(),"duplicate functional evidence prefix");evidence=arg.substr(18);require(!evidence.empty(),"empty functional evidence prefix");}
             if(arg=="--stops-only")stops_only=true;
         }
         require(!stop_rom.empty(),"missing real compute stop fixture ROM");Bench b;
         if(!stops_only) {
-        b.full();b.full();
+        b.full(evidence,1);b.full(evidence,2);
         }
         b.load(stop_rom);
         for(unsigned h=0;h<ASTER_HART_COUNT;++h)for(unsigned point=0;point<4;++point)b.adversarial(h,point,false);

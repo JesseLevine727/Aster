@@ -372,6 +372,25 @@ evidence. Commit and push each verified milestone; complete only after all gates
 
 ## Primary references
 
+### Functional evidence capture milestone
+
+`scripts/dot8_functional_results.py capture OUTPUT --l1 {0,1}` builds a fresh
+two-hart synchronous, one-wait-cycle, 4-word/16-line model and the actual runtime
+and stop-fixture ELF/ROMs. The optional `--evidence-prefix` scoreboard output
+retains two complete 64 KiB RAM images, actual UART bytes and 50 independently
+counted frozen events, without removing the 13 admitted-compute stop boundaries.
+The default regression invocation and its output remain unchanged.
+
+The read-only auditor independently reconstructs both final signed GEMM jobs,
+all input/output guards, the four acknowledged DMA copies, cross-hart publication,
+16 LR-dot-SC successes per hart, private metadata/padding, and DOT8 counts
+25,393/25,689. It binds executable ELF/ROM, kernel disassembly, public linker-map
+symbols, exact build/model/compiler arguments and complete source/tool identity.
+File-local BSS symbols are bound through ELF sections/symbols; GNU linker maps
+do not emit those local names. Synthetic validator fixtures are not measurements.
+The expanded host suite passes 198 tests. Clean accepted captures and physical
+functional comparisons remain acceptance work; this milestone is not closeout.
+
 The implemented v6 record/layout/observation contract is detailed in
 [Phase 8 AsterBench](phase8-bench.md).
 
