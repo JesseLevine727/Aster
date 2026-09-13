@@ -144,3 +144,22 @@ reference. Physical acceptance still requires the same independent RAM/count
 outcomes, frozen host DMA bank agreement, active execution of both harts,
 fault-free serial and acknowledged final CPU/DMA STOPPED. The separate physical
 functional collection and clean-reference acceptance remain pending.
+
+`scripts/run_pynq_dma_functional.py` collects either `--kind runtime` or
+`--kind publication`, always with two boots and the exact cache-matched
+functional reference. It uses the same read-only previous-image path/hash,
+HWH, address-map, 31.25 MHz and idle-state guard as the paired collector,
+including a second check immediately before PCAP. Required arguments are
+`--reference`, `--overlay`, `--output`, `--collector-revision`,
+`--expected-loaded` and `--expected-loaded-sha256`; replacement also requires
+explicit `--download`. Run only after checking no other board work is active.
+
+The collector saves actual serial, full stopped RAM, parsed functional results,
+pre-stop frozen host DMA diagnostics, both harts' lifetime/fault observations
+and final all-zero DMA/CPU STOPPED state. A known bridge is safely stopped on
+failure as well. `scripts/dma_functional_physical.py REPORT --reference REF
+--overlay OVERLAY` audits those bytes and all 19 shipped collector dependencies
+against their Git revision without importing PYNQ or executing saved commands.
+Host fixtures exercise both programs/cache modes, warm reuse, no-overwrite,
+identity/input races and failure cleanup; synthetic fixtures are not physical
+evidence. Deployment of this separate functional proof remains pending.
