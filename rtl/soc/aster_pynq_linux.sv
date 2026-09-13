@@ -1,8 +1,11 @@
 // PYNQ Linux host bridge. ARM loads boot ROM while Aster is held in reset,
-// then starts the real RV32IM CPU and reads decoded serial output via AXI.
+// then starts RV32IM or the explicitly selected coherent RV32IMA SoC and reads
+// decoded serial output via AXI. Phase 6 separates safe host stop from POR.
 module aster_pynq_linux #(
     // 0 preserves the legacy Phase 2 map/ABI; 1/2 select the Phase 5 map.
     parameter int unsigned HART_COUNT = 0,
+    parameter bit ENABLE_COHERENCE = 1'b0,
+    parameter bit COHERENT_L1 = 1'b1,
     parameter int unsigned CLK_HZ = 31_250_000,
     parameter int unsigned BAUD = 115_200,
     parameter int unsigned RX_DEPTH = 512
@@ -56,20 +59,35 @@ module aster_pynq_linux #(
     localparam int COUNT_BITS = $clog2(RX_DEPTH + 1);
     logic run;
     logic [1:0] run_pipe;
-    wire cpu_reset_n = aresetn && run && run_pipe[1];
+    logic coherent_stopped, coherent_stop_busy, coherent_flush;
+    logic [1:0] atomic_fault_valid;
+    logic [3:0] atomic_fault_cause [0:1];
+    logic [31:0] atomic_fault_addr [0:1], atomic_fault_insn [0:1], hart_pc [0:1];
+    logic [31:0] host_ram_rdata;
+    // Simulation observation points; unused in the packaged physical shell.
+    logic coherent_store_commit, coherent_store_owner;
+    logic [31:0] coherent_store_addr, coherent_store_data;
+    logic [3:0] coherent_store_mask;
+    logic coherent_perf_start, coherent_perf_freeze, coherent_perf_resume;
+    logic [13:0] coherent_perf_events [0:1];
+    logic ram_read_pending;
+    logic [15:0] ram_read_addr;
+    wire [15:0] host_ram_addr = ram_read_pending ? ram_read_addr : s_axi_araddr[15:0];
+    wire cpu_reset_n = aresetn && (ENABLE_COHERENCE ? !coherent_stopped : run && run_pipe[1]);
     logic aw_held, w_held;
     logic [17:0] awaddr;
     logic [31:0] wdata;
     logic [3:0] wstrb;
     wire write_fire = aw_held && w_held && !s_axi_bvalid;
     wire boot_address = awaddr >= 18'h10000 && awaddr < 18'h20000;
-    wire boot_we = aresetn && write_fire && boot_address && !run && awaddr[1:0] == 0;
+    wire boot_allowed = !run && (!ENABLE_COHERENCE || coherent_stopped);
+    wire boot_we = aresetn && write_fire && boot_address && boot_allowed && awaddr[1:0] == 0;
     wire read_fire = s_axi_arvalid && s_axi_arready;
 
     logic core_tx_valid, core_tx_ready, phy_ready, phy_busy, trap;
     logic [1:0] hart_run, hart_trap, hart_retired;
     logic [63:0] retirement [0:1];
-    assign trap = |hart_trap;
+    assign trap = ENABLE_COHERENCE ? |(hart_trap & hart_run) : |hart_trap;
     logic [7:0] core_tx_data;
     logic rx_valid, rx_framing_error;
     logic [7:0] rx_data;
@@ -87,13 +105,14 @@ module aster_pynq_linux #(
 
     initial begin
         if (HART_COUNT > 2) $error("Linux HART_COUNT must be 0 (legacy), 1 or 2");
+        if (ENABLE_COHERENCE && HART_COUNT == 0) $error("coherent Linux requires one or two harts");
         if (RX_DEPTH < 128 || (RX_DEPTH & (RX_DEPTH-1)) != 0)
             $error("RX_DEPTH must be a power of two >= 128");
     end
 
     assign s_axi_awready = aresetn && !aw_held && !s_axi_bvalid;
     assign s_axi_wready = aresetn && !w_held && !s_axi_bvalid;
-    assign s_axi_arready = aresetn && !s_axi_rvalid;
+    assign s_axi_arready = aresetn && !s_axi_rvalid && !ram_read_pending;
 
     always_ff @(posedge aclk) begin
         if (!aresetn) begin
@@ -109,6 +128,8 @@ module aster_pynq_linux #(
             s_axi_rvalid <= 0;
             s_axi_rresp <= 0;
             s_axi_rdata <= 0;
+            ram_read_pending <= 0;
+            ram_read_addr <= 0;
         end else begin
             run_pipe <= {run_pipe[0], run};
             if (s_axi_awvalid && s_axi_awready) begin awaddr <= s_axi_awaddr; aw_held <= 1; end
@@ -122,16 +143,33 @@ module aster_pynq_linux #(
                 s_axi_bvalid <= 1;
                 s_axi_bresp <= 2'b00;
                 if (awaddr == 0) begin
-                    if (wstrb[0]) run <= wdata[0];
-                end else if (!boot_address || run || awaddr[1:0] != 0) begin
+                    if (wstrb[0]) begin
+                        if (ENABLE_COHERENCE && wdata[0] && !run && !coherent_stopped)
+                            s_axi_bresp <= 2'b10; // Cannot cancel a mandatory drain/flush.
+                        else run <= wdata[0];
+                    end
+                end else if (!boot_address || !boot_allowed || awaddr[1:0] != 0) begin
                     s_axi_bresp <= 2'b10;
                 end
             end
             if (s_axi_rvalid && s_axi_rready) s_axi_rvalid <= 0;
-            if (read_fire) begin
+            if (ram_read_pending) begin
+                ram_read_pending <= 0;
                 s_axi_rvalid <= 1;
+                s_axi_rresp <= coherent_stopped && !run ? 2'b00 : 2'b10;
+                s_axi_rdata <= coherent_stopped && !run ? host_ram_rdata : 32'b0;
+            end
+            if (read_fire) begin
                 s_axi_rresp <= 0;
-                case (s_axi_araddr)
+                if (ENABLE_COHERENCE && s_axi_araddr >= 18'h20000 && s_axi_araddr < 18'h30000 &&
+                    coherent_stopped && !run && s_axi_araddr[1:0] == 0) begin
+                    // One additional edge captures the actual synchronous RAM
+                    // output; response remains stable under AXI backpressure.
+                    ram_read_pending <= 1;
+                    ram_read_addr <= s_axi_araddr[15:0];
+                end else begin
+                    s_axi_rvalid <= 1;
+                    case (s_axi_araddr)
                     18'h00: s_axi_rdata <= {31'd0, run};
                     18'h04: s_axi_rdata <= {27'd0, framing_error, overflow, phy_busy, trap, cpu_reset_n};
                     18'h08: s_axi_rdata <= count != 0 ? {1'b1, 23'd0, fifo[read_ptr]} : 32'd0;
@@ -139,7 +177,8 @@ module aster_pynq_linux #(
                     18'h10: s_axi_rdata <= transmitted;
                     18'h14: s_axi_rdata <= received;
                     18'h18: s_axi_rdata <= 32'h41535452; // ASTR
-                    18'h1c: s_axi_rdata <= HART_COUNT == 0 ? 32'h00020001 : 32'h00050001;
+                    18'h1c: s_axi_rdata <= ENABLE_COHERENCE ? 32'h00060001 :
+                        HART_COUNT == 0 ? 32'h00020001 : 32'h00050001;
                     18'h20: s_axi_rdata <= CLK_HZ;
                     18'h24, 18'h28, 18'h30, 18'h34, 18'h38, 18'h3c: begin
                         if (HART_COUNT == 0) begin s_axi_rdata <= 0; s_axi_rresp <= 2'b10; end
@@ -153,8 +192,22 @@ module aster_pynq_linux #(
                             default: s_axi_rdata <= 0;
                         endcase
                     end
+                    18'h40, 18'h44, 18'h50, 18'h54, 18'h58, 18'h5c,
+                    18'h60, 18'h64, 18'h68, 18'h6c: begin
+                        if (!ENABLE_COHERENCE) begin s_axi_rdata <= 0; s_axi_rresp <= 2'b10; end
+                        else case (s_axi_araddr)
+                            18'h40: s_axi_rdata <= {29'b0, coherent_flush, coherent_stop_busy, coherent_stopped};
+                            18'h44: s_axi_rdata <= {30'b0, COHERENT_L1, 1'b1};
+                            18'h50, 18'h60: s_axi_rdata <= {27'b0, atomic_fault_valid[s_axi_araddr[5]], atomic_fault_cause[s_axi_araddr[5]]};
+                            18'h54, 18'h64: s_axi_rdata <= atomic_fault_addr[s_axi_araddr[5]];
+                            18'h58, 18'h68: s_axi_rdata <= atomic_fault_insn[s_axi_araddr[5]];
+                            18'h5c, 18'h6c: s_axi_rdata <= hart_pc[s_axi_araddr[5]];
+                            default: s_axi_rdata <= 0;
+                        endcase
+                    end
                     default: begin s_axi_rdata <= 0; s_axi_rresp <= 2'b10; end
-                endcase
+                    endcase
+                end
             end
         end
     end
@@ -188,6 +241,28 @@ module aster_pynq_linux #(
             else if (hart_retired[h]) retirement[h] <= retirement[h] + 1'b1;
         end
     end
+    generate if (!ENABLE_COHERENCE) begin : g_no_coherent_status
+        assign coherent_stopped = 0;
+        assign coherent_stop_busy = 0;
+        assign coherent_flush = 0;
+        assign atomic_fault_valid = 0;
+        assign host_ram_rdata = 0;
+        assign coherent_store_commit = 0;
+        assign coherent_store_owner = 0;
+        assign coherent_store_addr = 0;
+        assign coherent_store_data = 0;
+        assign coherent_store_mask = 0;
+        assign coherent_perf_start = 0;
+        assign coherent_perf_freeze = 0;
+        assign coherent_perf_resume = 0;
+        for (genvar h = 0; h < 2; h++) begin : g_hart_status
+            assign atomic_fault_cause[h] = 0;
+            assign atomic_fault_addr[h] = 0;
+            assign atomic_fault_insn[h] = 0;
+            assign hart_pc[h] = 0;
+            assign coherent_perf_events[h] = 0;
+        end
+    end endgenerate
     generate if (HART_COUNT == 0) begin : g_legacy
         assign hart_run = {1'b0, cpu_reset_n};
         assign hart_trap[1] = 0;
@@ -198,6 +273,27 @@ module aster_pynq_linux #(
             .uart_tx_ready(core_tx_ready), .trap(hart_trap[0]),
             .boot_we(boot_we), .boot_addr(awaddr[15:0]), .boot_wdata(wdata), .boot_wstrb(wstrb)
         );
+    end else if (ENABLE_COHERENCE) begin : g_coherent
+        /* verilator lint_off PINCONNECTEMPTY */
+        aster_coherent_soc #(.HART_COUNT(HART_COUNT), .SYNC_MEMORY(1'b1), .HOST_BOOT(1'b1),
+                            .ENABLE_L1(COHERENT_L1), .CLOCK_HZ(CLK_HZ)) soc (
+            .clk(aclk), .resetn(aresetn), .host_run(run && run_pipe[1]),
+            .stopped(coherent_stopped), .stop_busy(coherent_stop_busy), .flush_active(coherent_flush),
+            .uart_tx_valid(core_tx_valid), .uart_tx_data(core_tx_data), .uart_tx_ready(core_tx_ready),
+            .hart_trap(hart_trap), .hart_run(hart_run), .retired(hart_retired), .retired_pc(hart_pc), .retired_insn(),
+            .fault_valid(atomic_fault_valid), .fault_cause(atomic_fault_cause),
+            .fault_addr(atomic_fault_addr), .fault_insn(atomic_fault_insn),
+            .perf_start(coherent_perf_start), .perf_freeze(coherent_perf_freeze), .perf_resume(coherent_perf_resume),
+            .perf_events(coherent_perf_events),
+            .store_commit(coherent_store_commit), .store_owner(coherent_store_owner),
+            .store_addr(coherent_store_addr), .store_data(coherent_store_data), .store_mask(coherent_store_mask),
+            .fabric_busy(), .stop_commit(), .reservations(),
+            .backing_valid(), .backing_ready(), .backing_addr(), .backing_mask(),
+            .atomic_active(), .atomic_read_commit(), .atomic_write_pending(),
+            .boot_we(boot_we), .boot_addr(awaddr[15:0]), .boot_wdata(wdata), .boot_wstrb(wstrb),
+            .host_ram_addr(host_ram_addr), .host_ram_rdata(host_ram_rdata)
+        );
+        /* verilator lint_on PINCONNECTEMPTY */
     end else begin : g_multicore
         /* verilator lint_off PINCONNECTEMPTY */
         aster_multicore #(.HART_COUNT(HART_COUNT), .SYNC_MEMORY(1'b1), .HOST_BOOT(1'b1), .CLOCK_HZ(CLK_HZ)) soc (

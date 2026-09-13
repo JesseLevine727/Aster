@@ -404,6 +404,60 @@ requesting hart; backing/writeback words belong to their physical port owner
 instruction reads, which still consult coherent data. The benchmark schema
 must spell out these boundaries and retain raw per-hart values.
 
+### Linux bridge ABI `0x00060001`
+
+`aster_pynq_linux` adds an explicit `ENABLE_COHERENCE=1` configuration, requiring
+one/two harts. Default configurations retain legacy ABI `0x00020001` or Phase 5
+ABI `0x00050001`. `COHERENT_L1` selects caches for the new configuration only.
+Vivado's module-reference shim exports both parameters; HWH preflight requires
+the requested hart/coherence/cache settings as well as the unchanged clock,
+reset polarity/driver and AXI-window safety checks. Old host tools reject the
+new coherence/ISA/warm-stop configuration before importing PYNQ or downloading.
+
+Offsets within the unchanged `0x40000000` / 256 KiB AXI aperture:
+
+| Offset | Phase 6 meaning |
+| --- | --- |
+| `0x00` | Requested RUN; zero requests drain/flush, not immediate core reset |
+| `0x04–0x3c` | Existing serial, identity, clock, hart-status and lifetime counters |
+| `0x40` | STOPPED bit 0, stop-busy bit 1, flush-active bit 2 |
+| `0x44` | RV32A bit 0 (set), caches enabled bit 1 |
+| `0x50–0x5c` | Hart 0 atomic cause/valid, fault address, opcode, PC |
+| `0x60–0x6c` | Hart 1 corresponding diagnostics |
+| `0x10000–0x1ffff` | Write-only boot ROM, aligned words, only RUN=0 and STOPPED |
+| `0x20000–0x2ffff` | Read-only retained RAM snapshot, aligned words, only RUN=0 and STOPPED |
+
+Fault cause uses bits 3:0 and valid bit 4; PC is meaningful as a fault PC only
+after the corresponding hart TRAP bit is asserted. Diagnostics clear on the
+selected warm reset. Host RAM reads have an additional synchronous read edge;
+once captured, replies remain fixed under RREADY backpressure. A concurrent RUN
+that invalidates stopped state before capture produces SLVERR, not a live/stale
+RAM snapshot. Snapshot writes, unaligned requests and unknown offsets fail.
+RUN=1 cannot cancel a stop still in progress. Completed global stop resets the
+serial path and lifetime counters; collect execution evidence before stopping.
+
+`scripts/coherent_bridge.py` verifies actual AXI identity/configuration before
+any write, validates complete firmware before requesting STOP, polls STOPPED
+before loading, and provides stopped-only full-RAM reads and fault/retirement
+diagnostics. It neither imports PYNQ nor selects/downloads an overlay. Physical
+deployment still requires paired bit/HWH validation, signoff and board-use
+inspection. `make fpga-linux-coherent` selects a separate coherent output
+directory and keeps the generated reset-netlist and routed signoff gates.
+
+The four-configuration `make linux-coherent-matrix` (one/two cores, caches
+off/on) passes both firmware kinds, with two full serial boots each: 16 boots
+and 48 complete RAM snapshot comparisons including the negative/race fixtures.
+Tests cover split AXI channels, early restart/boot rejection, full-UART stop,
+fatal atomic diagnostics, a RUN write coincident with snapshot admission, and
+a held valid RAM reply while resumed firmware changes that same RAM word.
+The host suite passes 42 tests including mutated HWH hart/coherence/cache
+fields and protocol helpers that cannot program before acknowledged STOPPED.
+These are simulation/host-unit results, not physical FPGA acceptance or a
+completed board-side benchmark capture application.
+The expanded default `make -j2 check` passes with the coherent Linux bridge
+regression included; the legacy Linux/parallel/serial tests retain their prior
+results. No board was reconfigured to establish this checkpoint.
+
 ## Verification and closeout requirements
 
 1. Real-core PCPI probe, adapter unit tests and independent full-A reference:

@@ -1,7 +1,9 @@
 // Vivado module-reference shim: BD requires a Verilog top file. All behavior
 // remains in the independently simulated SystemVerilog implementation.
 module aster_linux_ip #(
-    parameter integer HART_COUNT = 0
+    parameter integer HART_COUNT = 0,
+    parameter integer ENABLE_COHERENCE = 0,
+    parameter integer COHERENT_L1 = 1
 ) (
     (* X_INTERFACE_INFO = "xilinx.com:signal:clock:1.0 aclk CLK",
        X_INTERFACE_PARAMETER = "ASSOCIATED_BUSIF s_axi, ASSOCIATED_RESET aresetn, FREQ_HZ 31250000" *)
@@ -47,7 +49,8 @@ module aster_linux_ip #(
     output wire uart_tx,
     output wire [3:0] led
 );
-    aster_pynq_linux #(.HART_COUNT(HART_COUNT)) implementation (
+    aster_pynq_linux #(.HART_COUNT(HART_COUNT), .ENABLE_COHERENCE(ENABLE_COHERENCE),
+                     .COHERENT_L1(COHERENT_L1)) implementation (
         .aclk(aclk), .aresetn(aresetn),
         .s_axi_awaddr(s_axi_awaddr), .s_axi_awvalid(s_axi_awvalid), .s_axi_awready(s_axi_awready),
         .s_axi_wdata(s_axi_wdata), .s_axi_wstrb(s_axi_wstrb),

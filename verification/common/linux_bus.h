@@ -1,6 +1,7 @@
 #pragma once
 #include "Vaster_pynq_linux.h"
 #include <cstdint>
+#include <functional>
 #include <stdexcept>
 
 static void require(bool condition, const char* message) {
@@ -9,6 +10,8 @@ static void require(bool condition, const char* message) {
 
 struct Bus {
     Vaster_pynq_linux dut;
+    // Optional non-mutating observation hooks for independent SoC scoreboards.
+    std::function<void()> before_edge, after_edge;
     struct Edge {
         bool aw, w, b, ar, r;
         unsigned bresp, rresp;
@@ -19,7 +22,9 @@ struct Bus {
         Edge e{bool(dut.s_axi_awready), bool(dut.s_axi_wready), bool(dut.s_axi_bvalid),
                bool(dut.s_axi_arready), bool(dut.s_axi_rvalid), dut.s_axi_bresp,
                dut.s_axi_rresp, dut.s_axi_rdata};
+        if (before_edge) before_edge();
         dut.aclk = 1; dut.eval();
+        if (after_edge) after_edge();
         return e;
     }
     void idle(unsigned cycles) {

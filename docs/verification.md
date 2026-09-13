@@ -299,6 +299,7 @@ make coherent-runtime-matrix # One/two real cores, private I$ + coherent D$
 make atomic-faults-matrix    # Actual-core fatal fault isolation, cache off/on
 make coherent-soc-matrix     # Real memories, warm-stop/RAM snapshots, secondary reset
 make coherent-counters       # ABI 4 fourteen-event scoreboard and 32/64-bit carry
+make linux-coherent-matrix   # New AXI ABI, actual serial, stopped-only boot/RAM gates
 ```
 
 The RV32IMA fixture uses the protected-stack runtime, all word AMOs, LR/SC and
@@ -317,3 +318,10 @@ implementation. The newer `coherent-soc` tests exercise the actual warm-stop
 controller, full 64 KiB RAM retention and repeated selective resets across
 16 hart/cache/async/sync timing configurations. AXI loader/board integration
 and physical acceptance are still separate, unfinished gates.
+
+The coherent Linux bridge test uses real serial TX/RX and complete host RAM
+snapshots in one/two-core, cache-off/on configurations. It exercises split
+AW/W channels, held B/R responses, RAM-read/RUN races, early restart/boot
+rejection, atomic fault diagnostics and a saturated UART producer. Host tests
+separately mutate HWH configuration and mock the AXI transport to verify that
+wrong ABI/configuration or incomplete flush cannot reach firmware programming.

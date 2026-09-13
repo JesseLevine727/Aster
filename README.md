@@ -61,7 +61,8 @@ Production/board builds remain RV32IM. The new uncached RV32IMA bring-up passes
 independent atomic-fabric tests and compiled one-/two-core C runtime tests.
 The new MSI-like D-cache controller also passes geometry, dirty-data, flush and
 real-core atomic tests. The new SoC passes RAM-preserving warm-stop and repeated
-secondary-reset tests; AXI loader integration, AsterBench extensions and Phase 6
+secondary-reset tests. The Phase 6 AXI bridge and stopped-only host helpers pass
+serial, RAM-retention and protocol tests. AsterBench extensions and Phase 6
 hardware acceptance are still pending.
 
 Start here:

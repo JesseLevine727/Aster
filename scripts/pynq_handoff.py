@@ -1,7 +1,8 @@
 #!/usr/bin/env python3
 """Fail closed on an unsafe/mismatched Aster Linux hardware handoff.
 
-This validates the fixed Phase 2 shell, not arbitrary PYNQ overlays. HWH is
+This validates Aster's fixed Linux shell and requested ISA/cache/lifecycle
+configuration, not arbitrary PYNQ overlays. HWH is
 metadata, not proof that a different bitstream is safe; keep the generated
 bit/HWH pair together and retain both hashes plus build/reset-test evidence.
 """
@@ -10,9 +11,13 @@ from pathlib import Path
 import xml.etree.ElementTree as ET
 
 
-def validate_handoff(path, expected_harts=0):
-    if expected_harts not in (0, 1, 2):
+def validate_handoff(path, expected_harts=0, *, expected_coherent=False, expected_cache=True):
+    if type(expected_harts) is not int or expected_harts not in (0, 1, 2):
         raise ValueError("invalid expected Linux hart configuration")
+    if type(expected_coherent) is not bool or type(expected_cache) is not bool:
+        raise ValueError("coherence/cache expectations must be boolean")
+    if expected_coherent and not expected_harts:
+        raise ValueError("coherent Linux needs one or two harts")
     root = ET.parse(path).getroot()
 
     def require(condition, message):
@@ -47,6 +52,18 @@ def validate_handoff(path, expected_harts=0):
         require(hart_parameters[0].get("VALUE") is not None, "missing hart configuration value")
     harts = int(hart_parameters[0].get("VALUE"), 0) if hart_parameters else 0
     require(harts == expected_harts, "wrong hart configuration / memory map")
+    coherence_parameters = modules["aster"].findall("./PARAMETERS/PARAMETER[@NAME='ENABLE_COHERENCE']")
+    require(len(coherence_parameters) <= 1, "duplicate coherence configuration")
+    coherent = int(coherence_parameters[0].get("VALUE", "-1"), 0) if coherence_parameters else 0
+    require(coherent in (0, 1) and bool(coherent) == expected_coherent,
+            "wrong coherence / ISA / warm-stop ABI")
+    cache_parameters = modules["aster"].findall("./PARAMETERS/PARAMETER[@NAME='COHERENT_L1']")
+    require(len(cache_parameters) <= 1, "duplicate coherent cache configuration")
+    cached = int(cache_parameters[0].get("VALUE", "-1"), 0) if cache_parameters else 1
+    require(cached in (0, 1), "invalid coherent cache configuration")
+    if coherent:
+        require(len(cache_parameters) == 1, "missing coherent cache configuration")
+        require(bool(cached) == expected_cache, "wrong coherent cache configuration")
 
     def driven(module, name, driver, output):
         sink, source = port(module, name), port(driver, output)
@@ -98,7 +115,9 @@ def validate_handoff(path, expected_harts=0):
     result = {"clock_hz": 31250000, "axi_base": 0x40000000, "axi_span": 0x40000,
             "external_reset_active_high": False, "auxiliary_reset_active_high": True}
     if harts:
-        result.update(hart_count=harts, bridge_version=0x00050001)
+        result.update(hart_count=harts, bridge_version=0x00060001 if coherent else 0x00050001)
+    if coherent:
+        result.update(coherent=True, caches=bool(cached), isa="rv32ima", safe_warm_stop=True)
     return result
 
 
@@ -106,5 +125,10 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("handoff", type=Path)
     parser.add_argument("--harts", type=int, choices=(0, 1, 2), default=0)
+    parser.add_argument("--coherent", action="store_true")
+    parser.add_argument("--no-cache", action="store_true")
     args = parser.parse_args()
-    print("PASS: Aster Linux clock/reset/address handoff", validate_handoff(args.handoff, args.harts))
+    if args.no_cache and not args.coherent:
+        parser.error("--no-cache requires --coherent")
+    print("PASS: Aster Linux clock/reset/address handoff", validate_handoff(
+        args.handoff, args.harts, expected_coherent=args.coherent, expected_cache=not args.no_cache))

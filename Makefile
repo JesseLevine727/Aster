@@ -106,8 +106,12 @@ SMOKE_SIM := $(BUILD_DIR)/aster_smoke_sim
 PYNQ_SIM := $(BUILD_DIR)/aster_pynq_z1_sim
 LINUX_SIM := $(BUILD_DIR)/aster_pynq_linux_sim
 LINUX_DUAL_SIM := $(BUILD_DIR)/aster_pynq_linux_dual_sim
+LINUX_COHERENT_DIR := $(BUILD_DIR)/linux_coherent_h$(HART_COUNT)_l1$(ENABLE_L1)
+LINUX_COHERENT_SIM := $(LINUX_COHERENT_DIR)/aster_linux_coherent_sim
 LINUX_HART_COUNT ?= 0
-LINUX_BUILD_DIR = $(FPGA_BUILD_DIR)/linux$(if $(filter 0,$(LINUX_HART_COUNT)),,-h$(LINUX_HART_COUNT))
+LINUX_COHERENCE ?= 0
+LINUX_CACHE ?= 1
+LINUX_BUILD_DIR = $(FPGA_BUILD_DIR)/linux$(if $(filter 0,$(LINUX_HART_COUNT)),,-h$(LINUX_HART_COUNT))$(if $(filter 1,$(LINUX_COHERENCE)),-coherent-c$(LINUX_CACHE),)
 SOC_TEST_DIR := $(BUILD_DIR)/soc_$(CONFIG_TAG)
 SOC_SIM := $(SOC_TEST_DIR)/aster_soc_sim
 TRAP_CASES := 0 1 2 3 4 5 6 7 8 9 10 11
@@ -147,6 +151,8 @@ help:
 	@echo "  make coherent-runtime-matrix  Run RV32IMA C with private I$/coherent D$"
 	@echo "  make coherent-soc-matrix  Test safe warm-stop, full RAM retention and secondary resets"
 	@echo "  make coherent-counters   Check ABI 4 counter windows and 64-bit carry"
+	@echo "  make linux-coherent-matrix  Test Phase 6 AXI/serial/RAM/stop protocol"
+	@echo "  make fpga-linux-coherent   Build the dual-core RV32IMA coherent PYNQ overlay"
 	@echo "  make phase1     Run CPU, runtime, memory-map and trap regressions"
 	@echo "  make phase1-matrix  Test Phase 1 with L1 off/on, async/sync memory"
 	@echo "  make hello      Build and run Hello from Aster on the RTL CPU"
@@ -361,20 +367,24 @@ fpga-linux:
 	@mkdir -p $(LINUX_BUILD_DIR)
 	$(VIVADO) -mode batch -nojournal -nolog -notrace \
 		-source $(ROOT)/fpga/pynq_z1/build_linux.tcl \
-		-tclargs $(ROOT) $(LINUX_BUILD_DIR) $(LINUX_HART_COUNT)
+		-tclargs $(ROOT) $(LINUX_BUILD_DIR) $(LINUX_HART_COUNT) $(LINUX_COHERENCE) $(LINUX_CACHE)
 
 .PHONY: fpga-linux-dual
 fpga-linux-dual:
 	$(MAKE) LINUX_HART_COUNT=2 fpga-linux
 
-$(LINUX_SIM): $(RTL_CORE) $(RTL_CACHE) $(RTL_MEMORY) $(RTL_PERIPHERALS) $(RTL_SOC) $(RTL_MULTICORE) \
+.PHONY: fpga-linux-coherent
+fpga-linux-coherent:
+	$(MAKE) LINUX_HART_COUNT=2 LINUX_COHERENCE=1 fpga-linux
+
+$(LINUX_SIM): $(RTL_CORE) $(RTL_CACHE) $(RTL_MEMORY) $(RTL_PERIPHERALS) $(RTL_SOC) $(RTL_MULTICORE) $(RTL_COHERENT) \
 		rtl/peripherals/aster_uart_tx.sv rtl/peripherals/aster_uart_rx.sv \
 		rtl/soc/aster_pynq_linux.sv verification/soc/tb_pynq_linux.cpp verification/common/bench_record.h verification/common/linux_bus.h Makefile | $(BUILD_DIR)
 	$(VERILATOR) --cc --exe --build --timing --Wall --Wno-fatal \
 		$(VERILATOR_VENDOR_LINT_FLAGS) --top-module aster_pynq_linux \
 		-GCLK_HZ=400 -GBAUD=10 -GRX_DEPTH=128 \
 		--Mdir $(BUILD_DIR)/obj_linux -o $(abspath $@) \
-		$(addprefix $(ROOT)/,$(RTL_CORE) $(sort $(RTL_CACHE) $(RTL_MEMORY) $(RTL_PERIPHERALS) $(RTL_SOC) $(RTL_MULTICORE))) \
+		$(addprefix $(ROOT)/,$(sort $(RTL_CORE) $(RTL_CACHE) $(RTL_MEMORY) $(RTL_PERIPHERALS) $(RTL_SOC) $(RTL_MULTICORE) $(RTL_COHERENT))) \
 		$(ROOT)/rtl/peripherals/aster_uart_tx.sv $(ROOT)/rtl/peripherals/aster_uart_rx.sv \
 		$(ROOT)/rtl/soc/aster_pynq_linux.sv $(ROOT)/verification/soc/tb_pynq_linux.cpp
 
@@ -384,15 +394,37 @@ linux-sim: $(LINUX_SIM) $(HELLO_HEX) $(BENCH_HEX) $(HELLO_DIR)/uart_stress.hex
 	@$(LINUX_SIM) $(BENCH_HEX) bench
 
 .PHONY: linux-dual-sim linux-dual-parallel
-$(LINUX_DUAL_SIM): $(RTL_CORE) $(RTL_CACHE) $(RTL_MEMORY) $(RTL_PERIPHERALS) $(RTL_SOC) $(RTL_MULTICORE) \
+$(LINUX_DUAL_SIM): $(RTL_CORE) $(RTL_CACHE) $(RTL_MEMORY) $(RTL_PERIPHERALS) $(RTL_SOC) $(RTL_MULTICORE) $(RTL_COHERENT) \
 		rtl/peripherals/aster_uart_tx.sv rtl/peripherals/aster_uart_rx.sv rtl/soc/aster_pynq_linux.sv \
 		verification/common/linux_bus.h verification/common/parallel_record.h verification/soc/tb_pynq_linux_dual.cpp Makefile | $(BUILD_DIR)
 	$(VERILATOR) --cc --exe --build --timing --Wall $(VERILATOR_VENDOR_LINT_FLAGS) \
 		--top-module aster_pynq_linux -GHART_COUNT=2 -GCLK_HZ=400 -GBAUD=10 -GRX_DEPTH=128 \
 		--Mdir $(BUILD_DIR)/obj_linux_dual -o $(abspath $@) \
-		$(addprefix $(ROOT)/,$(RTL_CORE) $(sort $(RTL_CACHE) $(RTL_MEMORY) $(RTL_PERIPHERALS) $(RTL_SOC) $(RTL_MULTICORE))) \
+		$(addprefix $(ROOT)/,$(sort $(RTL_CORE) $(RTL_CACHE) $(RTL_MEMORY) $(RTL_PERIPHERALS) $(RTL_SOC) $(RTL_MULTICORE) $(RTL_COHERENT))) \
 		$(ROOT)/rtl/peripherals/aster_uart_tx.sv $(ROOT)/rtl/peripherals/aster_uart_rx.sv \
 		$(ROOT)/rtl/soc/aster_pynq_linux.sv $(ROOT)/verification/soc/tb_pynq_linux_dual.cpp
+
+.PHONY: linux-coherent-sim linux-coherent-matrix
+$(LINUX_COHERENT_SIM): $(RTL_CORE) $(RTL_CACHE) $(RTL_MEMORY) $(RTL_PERIPHERALS) $(RTL_SOC) $(RTL_MULTICORE) $(RTL_COHERENT) \
+		rtl/peripherals/aster_uart_tx.sv rtl/peripherals/aster_uart_rx.sv rtl/soc/aster_pynq_linux.sv \
+		verification/common/linux_bus.h verification/soc/tb_pynq_linux_coherent.cpp Makefile
+	mkdir -p $(LINUX_COHERENT_DIR)
+	$(VERILATOR) --cc --exe --build --timing --Wall $(VERILATOR_VENDOR_LINT_FLAGS) --assert -DASTER_COHERENCE_ASSERT --public-flat-rw \
+		--top-module aster_pynq_linux -GHART_COUNT=$(HART_COUNT) "-GENABLE_COHERENCE=1'b1" "-GCOHERENT_L1=1'b$(ENABLE_L1)" \
+		-GCLK_HZ=400 -GBAUD=10 -GRX_DEPTH=128 -CFLAGS '-DASTER_HART_COUNT=$(HART_COUNT) -DASTER_L1=$(ENABLE_L1)' \
+		--Mdir $(LINUX_COHERENT_DIR)/obj -o $(abspath $@) \
+		$(addprefix $(ROOT)/,$(sort $(RTL_CORE) $(RTL_CACHE) $(RTL_MEMORY) $(RTL_PERIPHERALS) $(RTL_SOC) $(RTL_MULTICORE) $(RTL_COHERENT))) \
+		$(ROOT)/rtl/peripherals/aster_uart_tx.sv $(ROOT)/rtl/peripherals/aster_uart_rx.sv \
+		$(ROOT)/rtl/soc/aster_pynq_linux.sv $(ROOT)/verification/soc/tb_pynq_linux_coherent.cpp
+
+linux-coherent-sim: $(LINUX_COHERENT_SIM) $(HELLO_DIR)/atomic_runtime.hex $(HELLO_DIR)/coherent_lifecycle.hex
+	@$(LINUX_COHERENT_SIM) $(HELLO_DIR)/atomic_runtime.hex runtime
+	@$(LINUX_COHERENT_SIM) $(HELLO_DIR)/coherent_lifecycle.hex lifecycle
+
+linux-coherent-matrix:
+	@set -e; for harts in 1 2; do for cache in 0 1; do \
+		$(MAKE) --no-print-directory linux-coherent-sim HART_COUNT=$$harts ENABLE_L1=$$cache; \
+	done; done
 
 linux-dual-parallel: $(LINUX_DUAL_SIM) $(PARALLEL_HEX)
 	@$(LINUX_DUAL_SIM) $(PARALLEL_HEX) parallel $(PARALLEL_JOBS) $(PARALLEL_WORKERS)
@@ -770,7 +802,7 @@ parallel-workloads:
 
 test: smoke phase1 hello bench cache uart fpga-sim linux-sim counters retirement arbiter shared-fabric multicore-runtime parallel
 
-check: tools smoke phase1 hello bench cache uart fpga-sim linux-sim linux-dual-sim counters retirement pcpi-probe atomic-fabric atomic-runtime atomic-faults coherent-cache warm-stop coherent-counters coherent-soc arbiter shared-fabric multicore-runtime multicore-adversarial parallel
+check: tools smoke phase1 hello bench cache uart fpga-sim linux-sim linux-dual-sim linux-coherent-sim counters retirement pcpi-probe atomic-fabric atomic-runtime atomic-faults coherent-cache warm-stop coherent-counters coherent-soc arbiter shared-fabric multicore-runtime multicore-adversarial parallel
 
 clean:
 	rm -rf $(BUILD_DIR)

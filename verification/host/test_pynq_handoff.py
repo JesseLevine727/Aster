@@ -134,6 +134,36 @@ class HandoffSafety(unittest.TestCase):
                 with self.subTest(node=node.attrib, attribute=attribute), self.assertRaises(ValueError):
                     validate_handoff(self.save(changed))
 
+    def test_coherent_isa_cache_and_reset_abi_must_match(self):
+        for harts in (1, 2):
+            for caches in (False, True):
+                root = fixture()
+                parent = root.find(".//MODULE[@INSTANCE='aster']/PARAMETERS")
+                for name, value in (("HART_COUNT", harts), ("ENABLE_COHERENCE", 1), ("COHERENT_L1", int(caches))):
+                    ET.SubElement(parent, "PARAMETER", NAME=name, VALUE=str(value))
+                result = validate_handoff(self.save(root), harts, expected_coherent=True, expected_cache=caches)
+                self.assertEqual(result["bridge_version"], 0x00060001)
+                self.assertEqual(result["isa"], "rv32ima")
+                self.assertEqual(result["caches"], caches)
+                self.assertTrue(result["safe_warm_stop"])
+                with self.assertRaisesRegex(ValueError, "warm-stop ABI"):
+                    validate_handoff(self.path, harts) # Old loaders must fail before importing PYNQ.
+                with self.assertRaises(ValueError):
+                    validate_handoff(self.path, harts, expected_coherent=True, expected_cache=not caches)
+                for name in ("HART_COUNT", "ENABLE_COHERENCE", "COHERENT_L1"):
+                    for mutation in ("missing", "duplicate", "wrong", "invalid"):
+                        changed = deepcopy(root)
+                        params = changed.find(".//MODULE[@INSTANCE='aster']/PARAMETERS")
+                        node = params.find(f"PARAMETER[@NAME='{name}']")
+                        if mutation == "missing": params.remove(node)
+                        elif mutation == "duplicate": params.append(deepcopy(node))
+                        else: node.set("VALUE", "0" if mutation == "wrong" and name != "COHERENT_L1" else
+                                       str(int(not caches)) if mutation == "wrong" else "invalid")
+                        with self.subTest(harts=harts, cache=caches, name=name, mutation=mutation), self.assertRaises(ValueError):
+                            validate_handoff(self.save(changed), harts, expected_coherent=True, expected_cache=caches)
+        with self.assertRaises(ValueError):
+            validate_handoff(self.save(fixture()), 0, expected_coherent=True)
+
     def test_missing_and_duplicate_modules_parameters_ports(self):
         for tag in ("MODULE", "PARAMETER", "PORT"):
             for duplicate in (False, True):
