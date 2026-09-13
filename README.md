@@ -57,16 +57,19 @@ new bridge; `make fpga-linux-dual` builds its overlay. Original `fpga` and
 `fpga-linux` targets preserve the single-core map. Phase 6 is now in progress:
 the [coherence and full RV32A contract](docs/phase6.md) defines staged PCPI,
 atomic-memory, MSI-like cache, runtime, benchmark and physical acceptance gates.
-Legacy builds and the currently loaded board remain RV32IM. The new RV32IMA bring-up passes
+Legacy builds remain RV32IM. The new RV32IMA bring-up passes
 independent atomic-fabric tests and compiled one-/two-core C runtime tests.
 The new MSI-like D-cache controller also passes geometry, dirty-data, flush and
 real-core atomic tests. The new SoC passes RAM-preserving warm-stop and repeated
 secondary-reset tests. The Phase 6 AXI bridge and stopped-only host helpers pass
 serial, RAM-retention and protocol tests. AsterBench v4 now exercises nine
 atomic/coherent workloads with exact simulated per-hart event scoreboards and
-independent RAM results. A clean-source coherent overlay builds with routed
-signoff, but has not yet been deployed. Complete clean-source benchmark studies,
-remaining verification and Phase 6 physical acceptance are still pending.
+independent RAM results. Both cache-off/on overlays pass clean-source routed
+signoff, and the cache-enabled RV32IMA overlay now runs on the PYNQ through
+Linux/PCAP: the first two warm boots/six atomic-add jobs match every reference
+counter, with full UART and stopped-RAM evidence. The 57-capture clean-source
+simulation study and complete 22-target regression rerun pass. Broader physical
+workload coverage and the final Phase 6 evidence/closeout audit remain pending.
 
 Start here:
 

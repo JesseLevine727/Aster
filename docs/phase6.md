@@ -1,6 +1,6 @@
 # Phase 6: coherent RAM and full RV32A
 
-Status: **in progress; not an implementation or hardware completion claim**.
+Status: **in progress; first coherent hardware checkpoint passed, final acceptance pending**.
 Baseline: clean Phase 5 closeout `29fbe34`, implementation `71e2570`.
 The Phase 5 evidence audit and directed retirement regression passed before
 Phase 6 changes. This document is the implementation and acceptance contract.
@@ -22,9 +22,9 @@ Complete and commit/push these tested milestones in order:
   reservation monitor and independent instruction-level reference checks.
 - [x] Two private coherent D-cache banks, ownership/dirty-data/reset rules,
   coherent instruction reads from RAM and coherent atomic transactions.
-- [ ] Dual-hart RAM-backed C runtime and compiled atomic workloads; complete
+- [x] Dual-hart RAM-backed C runtime and compiled atomic workloads; complete
   directed, randomized, progress, latency, reset and compatibility matrices.
-- [ ] Versioned AsterBench coherent/atomic experiments, validated per-hart
+- [x] Versioned AsterBench coherent/atomic experiments, validated per-hart
   measurements, independent results and clean-source reproducibility.
 - [ ] Clean-source FPGA signoff and repeated real PYNQ jobs/boots over Linux.
 - [ ] Evidence audit, fresh-checkout verification and pushed final closeout.
@@ -653,7 +653,56 @@ an attestation system or a replacement for running the build in that worktree.
 Offline board validation checks package consistency without Git; final host
 validation additionally compares every source file against the recorded Git
 revision. Packages are currently under `build/phase6-215b2d0/overlay-c0/` and
-`overlay-c1/`. These verified builds have **not yet been deployed** to the PYNQ.
+`overlay-c1/`. The cache-enabled overlay has now passed its first real board
+checkpoint below; cache-disabled deployment and broader physical cases remain.
+
+### First physical coherent checkpoint and full regression rerun
+
+The complete clean-source 22-target Phase 1–6 run at `215b2d0` finishes with
+every child exit status zero, stable source/toolchain and full retained logs
+under `build/phase6-215b2d0/regressions/`. Cumulative target time is 2240.7 s.
+The fixed 57-capture/114-boot/342-job v4 study at clean `26e18cb` independently
+audits successfully, including identical fresh-rebuild ROM, records, per-hart
+observations and stopped RAM. Its small contended jobs' measured slowdowns are
+retained; see [AsterBench v4](asterbench-v4.md#fixed-simulation-study).
+
+PYNQ-Z1 `10.0.0.145` was reverified through its known SSH host key. Read-only
+process checks found no executing notebook kernel/FPGA job. The previous
+Phase 5 overlay had CONTROL/STATUS/HART_STATUS all zero before Phase 6 PCAP.
+The new cache-enabled bitstream was loaded via PYNQ 3.1.1 under Linux, without
+JTAG, ARM halt/reset or SD/QSPI changes. The collector at `f4e330c` then runs
+the clean `26e18cb` two-worker atomic-add reference without another download:
+
+- Two complete warm boots, three jobs each, 64 shared atomic updates per job.
+- Each job takes 2600 measured cycles. All fourteen counters on both harts
+  exactly match the independently scored simulation reference.
+- Each boot captures 3750 real UART bytes with equal TX/RX totals, empty final
+  FIFO and clear framing/overflow/trap flags.
+- Independent lifetime retirements are 433929/3288 and 434142/3288 for h0/h1.
+  Primary lifetime includes unmeasured UART waiting; it is not expected to be
+  identical across host-controlled boots.
+- Both full 64 KiB stopped snapshots pass independent ELF-addressed job/output
+  checks. Final CONTROL/STATUS/HART_STATUS are zero and STOPPED is one.
+
+The host's default `coherent_physical.py` audit checks downloaded artifacts
+against actual reference, overlay and collector Git revisions and passes.
+Evidence is under `build/phase6-f4e330c/board/`; the board directory is
+`/home/xilinx/aster_phase6_7d25898/`, with immutable `collector_f4e330c/` code.
+The exact loaded overlay is `overlay-c1/aster_linux.bit` in that directory.
+
+Two unsuccessful host checkpoints are retained separately, not relabeled PASS:
+the initial `1b8ec6d` launch omitted a transitive parser and stopped before PYNQ
+import; `7d25898` completed three correct hardware jobs but incorrectly treated
+retained successful-request address/opcode payloads as faults despite clear
+valid flags. An isolated-shipping import regression and a red/green diagnostic
+validity regression correct those host errors. Hardware/firmware were unchanged;
+all 65 current host tests pass, including strict real-fault rejection.
+
+This is **not final Phase 6 acceptance**. All-AMO/LRSC/C11 functional execution
+on the board, broader cached/uncached and one-/two-worker physical studies,
+immutable closeout evidence, full requirement-to-log mutation audit and final
+fresh-checkout verification still remain. The first atomic-add checkpoint does
+not stand in for those gates.
 
 ## Verification and closeout requirements
 
