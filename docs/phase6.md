@@ -808,6 +808,18 @@ These completed physical and regression gates do not yet mark the phase closed:
 immutable committed evidence, final requirement-to-evidence/mutation audit,
 fresh-checkout verification and the dedicated pushed closeout remain required.
 
+The final `scripts/audit_phase6.py` validator maps the seven acceptance
+requirements below to a fixed, self-contained package layout. It calls the
+strict inner auditors, verifies every retained file hash, binds both overlays
+to the complete regression sources, checks the physical PCAP/program sequence
+and final raw stopped registers, and recomputes totals. The new
+`run_phase6_regressions.py --check-only` mode records a fresh isolated `make
+check` with the same clean-source/toolchain/log provenance; it cannot pass the
+default complete-22-target audit. Final `audit_phase6.py audit <bundle>
+--current` additionally requires current tracked build/audit sources to match
+that fresh verification. Later documentation-only commits do not change the
+identified implementation or pretend the FPGA was rebuilt from them.
+
 ## Verification and closeout requirements
 
 1. Real-core PCPI probe, adapter unit tests and independent full-A reference:

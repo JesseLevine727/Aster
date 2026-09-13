@@ -35,7 +35,7 @@ def identity(executable):
     return {"path": str(path), "sha256": sha(path), "version": command([str(path), "--version"]).splitlines()[0]}
 
 
-def run(output):
+def run(output, *, check_only=False):
     output = output.resolve()
     if output.exists():
         raise ValueError("output must be a new directory; no existing build/evidence is overwritten")
@@ -48,10 +48,11 @@ def run(output):
     toolchain = fingerprint_tools(config)
     output.mkdir(parents=True)
     build = output/"build"
+    targets = ("check",) if check_only else TARGETS
     manifest = dict(schema="aster.regressions.phase6.v1", status="running", revision=revision, dirty=False,
                     source_files=sources, source_sha256=fingerprint, toolchain=toolchain,
                     python=identity(sys.executable), host_compiler=identity("g++"), platform=platform.platform(),
-                    targets=list(TARGETS), build_directory=str(build), results=[],
+                    targets=list(targets), build_directory=str(build), results=[],
                     started_utc=datetime.now(timezone.utc).isoformat())
 
     def save():
@@ -60,12 +61,12 @@ def run(output):
 
     save()
     try:
-        for index, target in enumerate(TARGETS, 1):
+        for index, target in enumerate(targets, 1):
             if source_state() != (sources, fingerprint) or command(["git", "rev-parse", "HEAD"]) != revision or command(["git", "status", "--porcelain"]):
                 raise ValueError("source changed during regression sequence")
             invocation = ["make", "--no-print-directory", "-j2", f"BUILD_DIR={build}", target]
             name = f"{index:02d}-{target}.log"
-            print(f"RUN {index}/{len(TARGETS)} {target}: {output/name}", flush=True)
+            print(f"RUN {index}/{len(targets)} {target}: {output/name}", flush=True)
             started = time.monotonic()
             with (output/name).open("xb") as log:
                 result = subprocess.run(invocation, cwd=ROOT, stdout=log, stderr=subprocess.STDOUT)
@@ -85,7 +86,8 @@ def run(output):
             raise ValueError("toolchain changed during regression sequence")
         manifest["status"] = "complete"
         manifest["finished_utc"] = datetime.now(timezone.utc).isoformat(); save()
-        print(f"PASS: complete clean-source Phase 1-6 regression plan ({len(TARGETS)} targets), {output/'manifest.json'}", flush=True)
+        label = "fresh-checkout make check" if check_only else "complete Phase 1-6 regression plan"
+        print(f"PASS: clean-source {label} ({len(targets)} targets), {output/'manifest.json'}", flush=True)
     except BaseException as error:
         manifest["status"] = "failed"; manifest["error"] = str(error)
         manifest["finished_utc"] = datetime.now(timezone.utc).isoformat(); save()
@@ -95,9 +97,10 @@ def run(output):
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--output", type=Path, required=True)
+    parser.add_argument("--check-only", action="store_true", help="fresh make check only; NOT the complete regression plan")
     args = parser.parse_args()
     try:
-        run(args.output)
+        run(args.output, check_only=args.check_only)
     except (ValueError, OSError, subprocess.CalledProcessError) as error:
         parser.exit(1, f"FAIL: {error}\n")
 

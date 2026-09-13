@@ -291,7 +291,7 @@ def validate_log(target, raw):
     return dict(target=target, passing_scenarios=count)
 
 
-def audit(path, *, clean=True):
+def audit(path, *, clean=True, check_only=False):
     require(not path.is_symlink(), "symlink regression manifest")
     m = bench.json_record(path.read_text())
     fields = {"schema", "status", "revision", "dirty", "source_files", "source_sha256", "toolchain", "python", "host_compiler", "platform", "targets", "build_directory", "results", "started_utc", "finished_utc"}
@@ -313,9 +313,10 @@ def audit(path, *, clean=True):
     for key in ("started_utc", "finished_utc"):
         require(type(m[key]) is str, "invalid regression timestamp")
         date = datetime.fromisoformat(m[key]); require(date.utcoffset() is not None and date.utcoffset().total_seconds() == 0, "non-UTC regression timestamp"); dates.append(date)
-    require(dates[1] > dates[0] and m["targets"] == list(TARGETS) and type(m["results"]) is list and len(m["results"]) == len(TARGETS), "missing/reordered regression plan")
+    targets = ("check",) if check_only else TARGETS
+    require(dates[1] > dates[0] and m["targets"] == list(targets) and type(m["results"]) is list and len(m["results"]) == len(targets), "missing/reordered regression plan")
     summary = []; expected_files = {path.name}; elapsed = 0
-    for index, (target, entry) in enumerate(zip(TARGETS, m["results"]), 1):
+    for index, (target, entry) in enumerate(zip(targets, m["results"]), 1):
         name = f"{index:02d}-{target}.log"; expected_files.add(name)
         fields = {"target", "command", "exit_code", "elapsed_seconds", "log", "log_sha256", "log_bytes"}
         require(type(entry) is dict and set(entry) == fields and entry["target"] == target and entry["log"] == name and type(entry["exit_code"]) is int and entry["exit_code"] == 0, "failed/reordered regression target")
@@ -337,9 +338,11 @@ def audit(path, *, clean=True):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description=__doc__); parser.add_argument("manifest", type=Path)
+    parser.add_argument("--check-only", action="store_true", help="audit fresh make check, not all 22 regression targets")
     args = parser.parse_args()
     try:
-        result = audit(args.manifest)
+        result = audit(args.manifest, check_only=args.check_only)
         print(json.dumps(result, indent=2, sort_keys=True))
-        print("PASS: all 22 regression targets, emitted scenario coverage, raw hashes and complete Git provenance")
+        label = "fresh make check" if args.check_only else "all 22 regression targets"
+        print(f"PASS: {label}, emitted scenario coverage, raw hashes and complete Git provenance")
     except (ValueError, OSError, subprocess.CalledProcessError) as error: parser.exit(1, f"FAIL: {error}\n")

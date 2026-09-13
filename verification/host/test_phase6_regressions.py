@@ -59,6 +59,16 @@ def v4_fixture():
 
 
 class Phase6Regressions(unittest.TestCase):
+    def test_fresh_check_only_cannot_pass_as_complete_regressions(self):
+        with tempfile.TemporaryDirectory(prefix="aster-fresh-check-") as directory:
+            root = Path(directory); original = manifest(root)
+            for entry in original["results"][1:]: (root/entry["log"]).unlink()
+            original["results"] = original["results"][:1]; original["targets"] = ["check"]
+            path = root/"manifest.json"; path.write_text(json.dumps(original))
+            with mock.patch.object(audit, "validate_log", return_value=dict(target="check", passing_scenarios=157)), mock.patch.object(audit, "source_at_revision"):
+                self.assertEqual(audit.audit(path, check_only=True)["passing_scenarios"], 157)
+                with self.assertRaises(ValueError): audit.audit(path)
+
     def test_manifest_mutations_and_default_git_validation(self):
         with tempfile.TemporaryDirectory(prefix="aster-regression-audit-") as directory:
             root = Path(directory); path = root/"manifest.json"; original = manifest(root)
