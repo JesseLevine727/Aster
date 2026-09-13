@@ -1,0 +1,66 @@
+mkdir -p /tmp/aster-phase8-dot8-regressions-0dce16b/build/runtime-h2-c1-s0-w7/dot8_soc_h2_l11_sync0_wait7_w4_n16
+mkdir -p /tmp/aster-phase8-dot8-regressions-0dce16b/build/runtime-h2-c1-s0-w7/software
+verilator --cc --exe --build --timing --Wall -DRISCV_FORMAL --Wno-DECLFILENAME --Wno-GENUNNAMED --Wno-UNUSEDSIGNAL --Wno-BLKSEQ --unroll-count 2048 --unroll-stmts 100000 \
+	--assert -DASTER_COHERENCE_ASSERT -DASTER_DOT8_ASSERT --top-module aster_coherent_soc \
+	-GHART_COUNT=2 "-GENABLE_L1=1'b1" "-GENABLE_DMA=1'b1" "-GENABLE_DOT8=1'b1" \
+	"-GSYNC_MEMORY=1'b0" -GMEMORY_WAIT_CYCLES=7 "-GHOST_BOOT=1'b1" \
+	-GLINE_WORDS=4 -GLINE_COUNT=16 \
+	-CFLAGS '-DASTER_HART_COUNT=2 -DASTER_L1=1 -DASTER_MEMORY_WAIT=7' \
+	--Mdir /tmp/aster-phase8-dot8-regressions-0dce16b/build/runtime-h2-c1-s0-w7/dot8_soc_h2_l11_sync0_wait7_w4_n16/obj -o /tmp/aster-phase8-dot8-regressions-0dce16b/build/runtime-h2-c1-s0-w7/dot8_soc_h2_l11_sync0_wait7_w4_n16/aster_dot8_soc_sim \
+	/tmp/aster-phase8-regression-source-Fb8Fft/rtl/core/aster_picorv32.sv /tmp/aster-phase8-regression-source-Fb8Fft/vendor/picorv32/picorv32.v /tmp/aster-phase8-regression-source-Fb8Fft/rtl/cache/aster_l1_cache.sv /tmp/aster-phase8-regression-source-Fb8Fft/rtl/memory/aster_rom.sv /tmp/aster-phase8-regression-source-Fb8Fft/rtl/memory/aster_ram.sv /tmp/aster-phase8-regression-source-Fb8Fft/rtl/core/aster_pcpi_atomic.sv /tmp/aster-phase8-regression-source-Fb8Fft/rtl/core/aster_pcpi_dot8.sv /tmp/aster-phase8-regression-source-Fb8Fft/rtl/core/aster_atomic_hart.sv /tmp/aster-phase8-regression-source-Fb8Fft/rtl/cache/aster_coherent_cache.sv /tmp/aster-phase8-regression-source-Fb8Fft/rtl/interconnect/aster_atomic_fabric.sv /tmp/aster-phase8-regression-source-Fb8Fft/rtl/soc/aster_warm_stop.sv /tmp/aster-phase8-regression-source-Fb8Fft/rtl/peripherals/aster_uart.sv /tmp/aster-phase8-regression-source-Fb8Fft/rtl/peripherals/aster_coherent_perf.sv /tmp/aster-phase8-regression-source-Fb8Fft/rtl/dma/aster_dma_engine.sv /tmp/aster-phase8-regression-source-Fb8Fft/rtl/interconnect/aster_dma_arbiter.sv /tmp/aster-phase8-regression-source-Fb8Fft/rtl/peripherals/aster_dma_perf.sv /tmp/aster-phase8-regression-source-Fb8Fft/rtl/peripherals/aster_dot8_perf.sv /tmp/aster-phase8-regression-source-Fb8Fft/rtl/soc/aster_coherent_soc.sv /tmp/aster-phase8-regression-source-Fb8Fft/verification/soc/tb_aster_dot8_soc.cpp
+riscv32-unknown-elf-gcc -mabi=ilp32 -nostdlib -nostartfiles -nodefaultlibs -ffreestanding -Wall -Wextra -Werror -O2 -fno-pic -fno-stack-protector -msmall-data-limit=0 -Isoftware/runtime -march=rv32ima -Isoftware/drivers -Isoftware/benchmarks \
+	-fno-builtin -fno-tree-loop-distribute-patterns -T software/boot/link_multicore.ld -Wl,-Map,/tmp/aster-phase8-dot8-regressions-0dce16b/build/runtime-h2-c1-s0-w7/software/dot8_runtime.map \
+	-o /tmp/aster-phase8-dot8-regressions-0dce16b/build/runtime-h2-c1-s0-w7/software/dot8_runtime.elf software/runtime/start_multicore.S software/drivers/aster_dma.c software/benchmarks/dot8_kernels.c software/tests/dot8_runtime.c
+make[1]: warning: jobserver unavailable: using -j1.  Add '+' to parent make rule.
+g++  -I.  -MMD -I/home/elfo/tools/verilator/root/include -I/home/elfo/tools/verilator/root/include/vltstd -DVM_COVERAGE=0 -DVM_SC=0 -DVM_TRACE=0 -DVM_TRACE_FST=0 -DVM_TRACE_VCD=0 -faligned-new -fcf-protection=none -Wno-bool-operation -Wno-overloaded-virtual -Wno-shadow -Wno-sign-compare -Wno-uninitialized -Wno-unused-but-set-parameter -Wno-unused-but-set-variable -Wno-unused-parameter -Wno-unused-variable     -DASTER_HART_COUNT=2 -DASTER_L1=1 -DASTER_MEMORY_WAIT=7   -Os -c -o tb_aster_dot8_soc.o /tmp/aster-phase8-regression-source-Fb8Fft/verification/soc/tb_aster_dot8_soc.cpp
+riscv32-unknown-elf-objdump -d /tmp/aster-phase8-dot8-regressions-0dce16b/build/runtime-h2-c1-s0-w7/software/dot8_runtime.elf > /tmp/aster-phase8-dot8-regressions-0dce16b/build/runtime-h2-c1-s0-w7/software/dot8_runtime.dis
+riscv32-unknown-elf-gcc -mabi=ilp32 -nostdlib -nostartfiles -nodefaultlibs -ffreestanding -Wall -Wextra -Werror -O2 -fno-pic -fno-stack-protector -msmall-data-limit=0 -Isoftware/runtime -march=rv32ima -Isoftware/drivers \
+	-T software/boot/link_multicore.ld -Wl,-Map,/tmp/aster-phase8-dot8-regressions-0dce16b/build/runtime-h2-c1-s0-w7/software/dot8_stop_fixture.map -o /tmp/aster-phase8-dot8-regressions-0dce16b/build/runtime-h2-c1-s0-w7/software/dot8_stop_fixture.elf \
+	software/runtime/start_multicore.S software/drivers/aster_dma.c software/tests/dot8_stop_fixture.c
+riscv32-unknown-elf-objdump -d /tmp/aster-phase8-dot8-regressions-0dce16b/build/runtime-h2-c1-s0-w7/software/dot8_stop_fixture.elf > /tmp/aster-phase8-dot8-regressions-0dce16b/build/runtime-h2-c1-s0-w7/software/dot8_stop_fixture.dis
+python3 scripts/elf_to_hex.py --rom-bytes 65536 /tmp/aster-phase8-dot8-regressions-0dce16b/build/runtime-h2-c1-s0-w7/software/dot8_runtime.elf /tmp/aster-phase8-dot8-regressions-0dce16b/build/runtime-h2-c1-s0-w7/software/dot8_runtime.hex
+python3 scripts/elf_to_hex.py --rom-bytes 65536 /tmp/aster-phase8-dot8-regressions-0dce16b/build/runtime-h2-c1-s0-w7/software/dot8_stop_fixture.elf /tmp/aster-phase8-dot8-regressions-0dce16b/build/runtime-h2-c1-s0-w7/software/dot8_stop_fixture.hex
+g++ -Os  -I.  -MMD -I/home/elfo/tools/verilator/root/include -I/home/elfo/tools/verilator/root/include/vltstd -DVM_COVERAGE=0 -DVM_SC=0 -DVM_TRACE=0 -DVM_TRACE_FST=0 -DVM_TRACE_VCD=0 -faligned-new -fcf-protection=none -Wno-bool-operation -Wno-overloaded-virtual -Wno-shadow -Wno-sign-compare -Wno-uninitialized -Wno-unused-but-set-parameter -Wno-unused-but-set-variable -Wno-unused-parameter -Wno-unused-variable     -DASTER_HART_COUNT=2 -DASTER_L1=1 -DASTER_MEMORY_WAIT=7   -c -o verilated.o /home/elfo/tools/verilator/root/include/verilated.cpp
+g++ -Os  -I.  -MMD -I/home/elfo/tools/verilator/root/include -I/home/elfo/tools/verilator/root/include/vltstd -DVM_COVERAGE=0 -DVM_SC=0 -DVM_TRACE=0 -DVM_TRACE_FST=0 -DVM_TRACE_VCD=0 -faligned-new -fcf-protection=none -Wno-bool-operation -Wno-overloaded-virtual -Wno-shadow -Wno-sign-compare -Wno-uninitialized -Wno-unused-but-set-parameter -Wno-unused-but-set-variable -Wno-unused-parameter -Wno-unused-variable     -DASTER_HART_COUNT=2 -DASTER_L1=1 -DASTER_MEMORY_WAIT=7   -c -o verilated_threads.o /home/elfo/tools/verilator/root/include/verilated_threads.cpp
+/usr/bin/python3 /home/elfo/tools/verilator/root/bin/verilator_includer -DVL_INCLUDE_OPT=include Vaster_coherent_soc.cpp Vaster_coherent_soc___024root__DepSet_hc6677697__0.cpp Vaster_coherent_soc___024root__DepSet_h9074b246__0.cpp Vaster_coherent_soc_aster_atomic_hart__pi1__DepSet_h7d6270d0__0.cpp Vaster_coherent_soc__ConstPool_0.cpp Vaster_coherent_soc___024root__Slow.cpp Vaster_coherent_soc___024root__DepSet_hc6677697__0__Slow.cpp Vaster_coherent_soc___024root__DepSet_h9074b246__0__Slow.cpp Vaster_coherent_soc_aster_atomic_hart__pi1__Slow.cpp Vaster_coherent_soc_aster_atomic_hart__pi1__DepSet_h7d6270d0__0__Slow.cpp Vaster_coherent_soc_aster_atomic_hart__pi1__DepSet_h3577b40b__0__Slow.cpp Vaster_coherent_soc__Syms.cpp > Vaster_coherent_soc__ALL.cpp
+g++ -Os  -I.  -MMD -I/home/elfo/tools/verilator/root/include -I/home/elfo/tools/verilator/root/include/vltstd -DVM_COVERAGE=0 -DVM_SC=0 -DVM_TRACE=0 -DVM_TRACE_FST=0 -DVM_TRACE_VCD=0 -faligned-new -fcf-protection=none -Wno-bool-operation -Wno-overloaded-virtual -Wno-shadow -Wno-sign-compare -Wno-uninitialized -Wno-unused-but-set-parameter -Wno-unused-but-set-variable -Wno-unused-parameter -Wno-unused-variable     -DASTER_HART_COUNT=2 -DASTER_L1=1 -DASTER_MEMORY_WAIT=7   -c -o Vaster_coherent_soc__ALL.o Vaster_coherent_soc__ALL.cpp
+echo "" > Vaster_coherent_soc__ALL.verilator_deplist.tmp
+Archive ar -rcs Vaster_coherent_soc__ALL.a Vaster_coherent_soc__ALL.o
+g++     tb_aster_dot8_soc.o verilated.o verilated_threads.o Vaster_coherent_soc__ALL.a    -pthread -lpthread -latomic   -o /tmp/aster-phase8-dot8-regressions-0dce16b/build/runtime-h2-c1-s0-w7/dot8_soc_h2_l11_sync0_wait7_w4_n16/aster_dot8_soc_sim
+rm Vaster_coherent_soc__ALL.verilator_deplist.tmp
+OBS: hart=0 directed_pairs=128
+OBS: hart=1 directed_pairs=128
+OBS: hart=0 directed_pairs=256
+OBS: hart=1 directed_pairs=256
+OBS: hart=0 directed_pairs=384
+OBS: hart=1 directed_pairs=384
+OBS: hart=0 directed_pairs=512
+OBS: hart=1 directed_pairs=512
+OBS: hart=0 directed_pairs=640
+OBS: hart=1 directed_pairs=640
+PASS: dot8 C runtime harts=2 cache=1 wait=7 cycles=359172370 pairs=1472 output_methods=2947 dots=25393,25689 DMA-overlap=20; all 16 byte alignments, tails, dot/FIR/GEMM, actual output stores, full guards/RAM, LRSC, dirty DMA publication, ABI 6
+OBS: hart=0 directed_pairs=128
+OBS: hart=1 directed_pairs=128
+OBS: hart=0 directed_pairs=256
+OBS: hart=1 directed_pairs=256
+OBS: hart=0 directed_pairs=384
+OBS: hart=1 directed_pairs=384
+OBS: hart=0 directed_pairs=512
+OBS: hart=1 directed_pairs=512
+OBS: hart=0 directed_pairs=640
+OBS: hart=1 directed_pairs=640
+PASS: dot8 C runtime harts=2 cache=1 wait=7 cycles=359172369 pairs=1472 output_methods=2947 dots=25393,25689 DMA-overlap=20; all 16 byte alignments, tails, dot/FIR/GEMM, actual output stores, full guards/RAM, LRSC, dirty DMA publication, ABI 6
+PASS: dot8 warm stop hart=0 point=0 escalation=0 selective=1; all admitted sums completed, no reset race, full retained RAM
+PASS: dot8 warm stop hart=0 point=1 escalation=0 selective=1; all admitted sums completed, no reset race, full retained RAM
+PASS: dot8 warm stop hart=0 point=2 escalation=0 selective=1; all admitted sums completed, no reset race, full retained RAM
+PASS: dot8 warm stop hart=0 point=3 escalation=0 selective=1; all admitted sums completed, no reset race, full retained RAM
+PASS: dot8 warm stop hart=1 point=0 escalation=0 selective=0; all admitted sums completed, no reset race, full retained RAM
+PASS: dot8 warm stop hart=1 point=1 escalation=0 selective=0; all admitted sums completed, no reset race, full retained RAM
+PASS: dot8 warm stop hart=1 point=2 escalation=0 selective=0; all admitted sums completed, no reset race, full retained RAM
+PASS: dot8 warm stop hart=1 point=3 escalation=0 selective=0; all admitted sums completed, no reset race, full retained RAM
+PASS: dot8 warm stop hart=0 point=4 escalation=0 selective=8; all admitted sums completed, no reset race, full retained RAM
+PASS: dot8 warm stop hart=0 point=0 escalation=1 selective=0; all admitted sums completed, no reset race, full retained RAM
+PASS: dot8 warm stop hart=0 point=1 escalation=1 selective=1; all admitted sums completed, no reset race, full retained RAM
+PASS: dot8 warm stop hart=0 point=2 escalation=1 selective=1; all admitted sums completed, no reset race, full retained RAM
+PASS: dot8 warm stop hart=0 point=3 escalation=1 selective=1; all admitted sums completed, no reset race, full retained RAM
+PASS: dot8 runtime closeout warm_boots=2 stopped=15 CPU-stores=3580283 DMA-stores=2239; no reset after initial POR

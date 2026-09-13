@@ -1,0 +1,873 @@
+DOT8_PHYSICAL_STUDY 1/174 dot-k0-aaligned-c0
+PYNQ8: complete overlay/reset/signoff/ELF/ROM/reference preflight passed
+PYNQ8: downloading verified dot8 overlay through Linux/PCAP
+PASS: physical Pynq-Z1 dot8 boot=1 methods=8 serial_bytes=20712 retained_RAM=65536 exact_reference_counters
+PASS: physical Pynq-Z1 dot8 boot=2 methods=8 serial_bytes=20712 retained_RAM=65536 exact_reference_counters
+PASS: physical dot8 package audited and CPU/DMA/compute safely STOPPED, /home/xilinx/aster_phase8_study_e5d83fa/physical/dot-k0-aaligned-c0/physical.json
+DOT8_PHYSICAL_STUDY 2/174 dot-k1-aaligned-c0
+PYNQ8: complete overlay/reset/signoff/ELF/ROM/reference preflight passed
+PASS: physical Pynq-Z1 dot8 boot=1 methods=8 serial_bytes=20712 retained_RAM=65536 exact_reference_counters
+PASS: physical Pynq-Z1 dot8 boot=2 methods=8 serial_bytes=20712 retained_RAM=65536 exact_reference_counters
+PASS: physical dot8 package audited and CPU/DMA/compute safely STOPPED, /home/xilinx/aster_phase8_study_e5d83fa/physical/dot-k1-aaligned-c0/physical.json
+DOT8_PHYSICAL_STUDY 3/174 dot-k3-aaligned-c0
+PYNQ8: complete overlay/reset/signoff/ELF/ROM/reference preflight passed
+PASS: physical Pynq-Z1 dot8 boot=1 methods=8 serial_bytes=20712 retained_RAM=65536 exact_reference_counters
+PASS: physical Pynq-Z1 dot8 boot=2 methods=8 serial_bytes=20712 retained_RAM=65536 exact_reference_counters
+PASS: physical dot8 package audited and CPU/DMA/compute safely STOPPED, /home/xilinx/aster_phase8_study_e5d83fa/physical/dot-k3-aaligned-c0/physical.json
+DOT8_PHYSICAL_STUDY 4/174 dot-k4-aaligned-c0
+PYNQ8: complete overlay/reset/signoff/ELF/ROM/reference preflight passed
+PASS: physical Pynq-Z1 dot8 boot=1 methods=8 serial_bytes=20712 retained_RAM=65536 exact_reference_counters
+PASS: physical Pynq-Z1 dot8 boot=2 methods=8 serial_bytes=20712 retained_RAM=65536 exact_reference_counters
+PASS: physical dot8 package audited and CPU/DMA/compute safely STOPPED, /home/xilinx/aster_phase8_study_e5d83fa/physical/dot-k4-aaligned-c0/physical.json
+DOT8_PHYSICAL_STUDY 5/174 dot-k7-aaligned-c0
+PYNQ8: complete overlay/reset/signoff/ELF/ROM/reference preflight passed
+PASS: physical Pynq-Z1 dot8 boot=1 methods=8 serial_bytes=20712 retained_RAM=65536 exact_reference_counters
+PASS: physical Pynq-Z1 dot8 boot=2 methods=8 serial_bytes=20712 retained_RAM=65536 exact_reference_counters
+PASS: physical dot8 package audited and CPU/DMA/compute safely STOPPED, /home/xilinx/aster_phase8_study_e5d83fa/physical/dot-k7-aaligned-c0/physical.json
+DOT8_PHYSICAL_STUDY 6/174 dot-k8-aaligned-c0
+PYNQ8: complete overlay/reset/signoff/ELF/ROM/reference preflight passed
+PASS: physical Pynq-Z1 dot8 boot=1 methods=8 serial_bytes=20712 retained_RAM=65536 exact_reference_counters
+PASS: physical Pynq-Z1 dot8 boot=2 methods=8 serial_bytes=20712 retained_RAM=65536 exact_reference_counters
+PASS: physical dot8 package audited and CPU/DMA/compute safely STOPPED, /home/xilinx/aster_phase8_study_e5d83fa/physical/dot-k8-aaligned-c0/physical.json
+DOT8_PHYSICAL_STUDY 7/174 dot-k15-aaligned-c0
+PYNQ8: complete overlay/reset/signoff/ELF/ROM/reference preflight passed
+PASS: physical Pynq-Z1 dot8 boot=1 methods=8 serial_bytes=20736 retained_RAM=65536 exact_reference_counters
+PASS: physical Pynq-Z1 dot8 boot=2 methods=8 serial_bytes=20736 retained_RAM=65536 exact_reference_counters
+PASS: physical dot8 package audited and CPU/DMA/compute safely STOPPED, /home/xilinx/aster_phase8_study_e5d83fa/physical/dot-k15-aaligned-c0/physical.json
+DOT8_PHYSICAL_STUDY 8/174 dot-k16-aaligned-c0
+PYNQ8: complete overlay/reset/signoff/ELF/ROM/reference preflight passed
+PASS: physical Pynq-Z1 dot8 boot=1 methods=8 serial_bytes=20736 retained_RAM=65536 exact_reference_counters
+PASS: physical Pynq-Z1 dot8 boot=2 methods=8 serial_bytes=20736 retained_RAM=65536 exact_reference_counters
+PASS: physical dot8 package audited and CPU/DMA/compute safely STOPPED, /home/xilinx/aster_phase8_study_e5d83fa/physical/dot-k16-aaligned-c0/physical.json
+DOT8_PHYSICAL_STUDY 9/174 dot-k31-aaligned-c0
+PYNQ8: complete overlay/reset/signoff/ELF/ROM/reference preflight passed
+PASS: physical Pynq-Z1 dot8 boot=1 methods=8 serial_bytes=20736 retained_RAM=65536 exact_reference_counters
+PASS: physical Pynq-Z1 dot8 boot=2 methods=8 serial_bytes=20736 retained_RAM=65536 exact_reference_counters
+PASS: physical dot8 package audited and CPU/DMA/compute safely STOPPED, /home/xilinx/aster_phase8_study_e5d83fa/physical/dot-k31-aaligned-c0/physical.json
+DOT8_PHYSICAL_STUDY 10/174 dot-k32-aaligned-c0
+PYNQ8: complete overlay/reset/signoff/ELF/ROM/reference preflight passed
+PASS: physical Pynq-Z1 dot8 boot=1 methods=8 serial_bytes=20736 retained_RAM=65536 exact_reference_counters
+PASS: physical Pynq-Z1 dot8 boot=2 methods=8 serial_bytes=20736 retained_RAM=65536 exact_reference_counters
+PASS: physical dot8 package audited and CPU/DMA/compute safely STOPPED, /home/xilinx/aster_phase8_study_e5d83fa/physical/dot-k32-aaligned-c0/physical.json
+DOT8_PHYSICAL_STUDY 11/174 dot-k63-aaligned-c0
+PYNQ8: complete overlay/reset/signoff/ELF/ROM/reference preflight passed
+PASS: physical Pynq-Z1 dot8 boot=1 methods=8 serial_bytes=20744 retained_RAM=65536 exact_reference_counters
+PASS: physical Pynq-Z1 dot8 boot=2 methods=8 serial_bytes=20744 retained_RAM=65536 exact_reference_counters
+PASS: physical dot8 package audited and CPU/DMA/compute safely STOPPED, /home/xilinx/aster_phase8_study_e5d83fa/physical/dot-k63-aaligned-c0/physical.json
+DOT8_PHYSICAL_STUDY 12/174 dot-k64-aaligned-c0
+PYNQ8: complete overlay/reset/signoff/ELF/ROM/reference preflight passed
+PASS: physical Pynq-Z1 dot8 boot=1 methods=8 serial_bytes=20744 retained_RAM=65536 exact_reference_counters
+PASS: physical Pynq-Z1 dot8 boot=2 methods=8 serial_bytes=20744 retained_RAM=65536 exact_reference_counters
+PASS: physical dot8 package audited and CPU/DMA/compute safely STOPPED, /home/xilinx/aster_phase8_study_e5d83fa/physical/dot-k64-aaligned-c0/physical.json
+DOT8_PHYSICAL_STUDY 13/174 dot-k127-aaligned-c0
+PYNQ8: complete overlay/reset/signoff/ELF/ROM/reference preflight passed
+PASS: physical Pynq-Z1 dot8 boot=1 methods=8 serial_bytes=20768 retained_RAM=65536 exact_reference_counters
+PASS: physical Pynq-Z1 dot8 boot=2 methods=8 serial_bytes=20768 retained_RAM=65536 exact_reference_counters
+PASS: physical dot8 package audited and CPU/DMA/compute safely STOPPED, /home/xilinx/aster_phase8_study_e5d83fa/physical/dot-k127-aaligned-c0/physical.json
+DOT8_PHYSICAL_STUDY 14/174 dot-k128-aaligned-c0
+PYNQ8: complete overlay/reset/signoff/ELF/ROM/reference preflight passed
+PASS: physical Pynq-Z1 dot8 boot=1 methods=8 serial_bytes=20768 retained_RAM=65536 exact_reference_counters
+PASS: physical Pynq-Z1 dot8 boot=2 methods=8 serial_bytes=20768 retained_RAM=65536 exact_reference_counters
+PASS: physical dot8 package audited and CPU/DMA/compute safely STOPPED, /home/xilinx/aster_phase8_study_e5d83fa/physical/dot-k128-aaligned-c0/physical.json
+DOT8_PHYSICAL_STUDY 15/174 dot-k511-aaligned-c0
+PYNQ8: complete overlay/reset/signoff/ELF/ROM/reference preflight passed
+PASS: physical Pynq-Z1 dot8 boot=1 methods=8 serial_bytes=20776 retained_RAM=65536 exact_reference_counters
+PASS: physical Pynq-Z1 dot8 boot=2 methods=8 serial_bytes=20776 retained_RAM=65536 exact_reference_counters
+PASS: physical dot8 package audited and CPU/DMA/compute safely STOPPED, /home/xilinx/aster_phase8_study_e5d83fa/physical/dot-k511-aaligned-c0/physical.json
+DOT8_PHYSICAL_STUDY 16/174 dot-k512-aaligned-c0
+PYNQ8: complete overlay/reset/signoff/ELF/ROM/reference preflight passed
+PASS: physical Pynq-Z1 dot8 boot=1 methods=8 serial_bytes=20776 retained_RAM=65536 exact_reference_counters
+PASS: physical Pynq-Z1 dot8 boot=2 methods=8 serial_bytes=20776 retained_RAM=65536 exact_reference_counters
+PASS: physical dot8 package audited and CPU/DMA/compute safely STOPPED, /home/xilinx/aster_phase8_study_e5d83fa/physical/dot-k512-aaligned-c0/physical.json
+DOT8_PHYSICAL_STUDY 17/174 dot-k1024-aaligned-c0
+PYNQ8: complete overlay/reset/signoff/ELF/ROM/reference preflight passed
+PASS: physical Pynq-Z1 dot8 boot=1 methods=8 serial_bytes=20816 retained_RAM=65536 exact_reference_counters
+PASS: physical Pynq-Z1 dot8 boot=2 methods=8 serial_bytes=20816 retained_RAM=65536 exact_reference_counters
+PASS: physical dot8 package audited and CPU/DMA/compute safely STOPPED, /home/xilinx/aster_phase8_study_e5d83fa/physical/dot-k1024-aaligned-c0/physical.json
+DOT8_PHYSICAL_STUDY 18/174 dot-k4096-aaligned-c0
+PYNQ8: complete overlay/reset/signoff/ELF/ROM/reference preflight passed
+PASS: physical Pynq-Z1 dot8 boot=1 methods=8 serial_bytes=20824 retained_RAM=65536 exact_reference_counters
+PASS: physical Pynq-Z1 dot8 boot=2 methods=8 serial_bytes=20824 retained_RAM=65536 exact_reference_counters
+PASS: physical dot8 package audited and CPU/DMA/compute safely STOPPED, /home/xilinx/aster_phase8_study_e5d83fa/physical/dot-k4096-aaligned-c0/physical.json
+DOT8_PHYSICAL_STUDY 19/174 dot-k0-aunaligned-c0
+PYNQ8: complete overlay/reset/signoff/ELF/ROM/reference preflight passed
+PASS: physical Pynq-Z1 dot8 boot=1 methods=8 serial_bytes=20728 retained_RAM=65536 exact_reference_counters
+PASS: physical Pynq-Z1 dot8 boot=2 methods=8 serial_bytes=20728 retained_RAM=65536 exact_reference_counters
+PASS: physical dot8 package audited and CPU/DMA/compute safely STOPPED, /home/xilinx/aster_phase8_study_e5d83fa/physical/dot-k0-aunaligned-c0/physical.json
+DOT8_PHYSICAL_STUDY 20/174 dot-k1-aunaligned-c0
+PYNQ8: complete overlay/reset/signoff/ELF/ROM/reference preflight passed
+PASS: physical Pynq-Z1 dot8 boot=1 methods=8 serial_bytes=20728 retained_RAM=65536 exact_reference_counters
+PASS: physical Pynq-Z1 dot8 boot=2 methods=8 serial_bytes=20728 retained_RAM=65536 exact_reference_counters
+PASS: physical dot8 package audited and CPU/DMA/compute safely STOPPED, /home/xilinx/aster_phase8_study_e5d83fa/physical/dot-k1-aunaligned-c0/physical.json
+DOT8_PHYSICAL_STUDY 21/174 dot-k3-aunaligned-c0
+PYNQ8: complete overlay/reset/signoff/ELF/ROM/reference preflight passed
+PASS: physical Pynq-Z1 dot8 boot=1 methods=8 serial_bytes=20728 retained_RAM=65536 exact_reference_counters
+PASS: physical Pynq-Z1 dot8 boot=2 methods=8 serial_bytes=20728 retained_RAM=65536 exact_reference_counters
+PASS: physical dot8 package audited and CPU/DMA/compute safely STOPPED, /home/xilinx/aster_phase8_study_e5d83fa/physical/dot-k3-aunaligned-c0/physical.json
+DOT8_PHYSICAL_STUDY 22/174 dot-k4-aunaligned-c0
+PYNQ8: complete overlay/reset/signoff/ELF/ROM/reference preflight passed
+PASS: physical Pynq-Z1 dot8 boot=1 methods=8 serial_bytes=20728 retained_RAM=65536 exact_reference_counters
+PASS: physical Pynq-Z1 dot8 boot=2 methods=8 serial_bytes=20728 retained_RAM=65536 exact_reference_counters
+PASS: physical dot8 package audited and CPU/DMA/compute safely STOPPED, /home/xilinx/aster_phase8_study_e5d83fa/physical/dot-k4-aunaligned-c0/physical.json
+DOT8_PHYSICAL_STUDY 23/174 dot-k7-aunaligned-c0
+PYNQ8: complete overlay/reset/signoff/ELF/ROM/reference preflight passed
+PASS: physical Pynq-Z1 dot8 boot=1 methods=8 serial_bytes=20728 retained_RAM=65536 exact_reference_counters
+PASS: physical Pynq-Z1 dot8 boot=2 methods=8 serial_bytes=20728 retained_RAM=65536 exact_reference_counters
+PASS: physical dot8 package audited and CPU/DMA/compute safely STOPPED, /home/xilinx/aster_phase8_study_e5d83fa/physical/dot-k7-aunaligned-c0/physical.json
+DOT8_PHYSICAL_STUDY 24/174 dot-k8-aunaligned-c0
+PYNQ8: complete overlay/reset/signoff/ELF/ROM/reference preflight passed
+PASS: physical Pynq-Z1 dot8 boot=1 methods=8 serial_bytes=20728 retained_RAM=65536 exact_reference_counters
+PASS: physical Pynq-Z1 dot8 boot=2 methods=8 serial_bytes=20728 retained_RAM=65536 exact_reference_counters
+PASS: physical dot8 package audited and CPU/DMA/compute safely STOPPED, /home/xilinx/aster_phase8_study_e5d83fa/physical/dot-k8-aunaligned-c0/physical.json
+DOT8_PHYSICAL_STUDY 25/174 dot-k15-aunaligned-c0
+PYNQ8: complete overlay/reset/signoff/ELF/ROM/reference preflight passed
+PASS: physical Pynq-Z1 dot8 boot=1 methods=8 serial_bytes=20752 retained_RAM=65536 exact_reference_counters
+PASS: physical Pynq-Z1 dot8 boot=2 methods=8 serial_bytes=20752 retained_RAM=65536 exact_reference_counters
+PASS: physical dot8 package audited and CPU/DMA/compute safely STOPPED, /home/xilinx/aster_phase8_study_e5d83fa/physical/dot-k15-aunaligned-c0/physical.json
+DOT8_PHYSICAL_STUDY 26/174 dot-k16-aunaligned-c0
+PYNQ8: complete overlay/reset/signoff/ELF/ROM/reference preflight passed
+PASS: physical Pynq-Z1 dot8 boot=1 methods=8 serial_bytes=20752 retained_RAM=65536 exact_reference_counters
+PASS: physical Pynq-Z1 dot8 boot=2 methods=8 serial_bytes=20752 retained_RAM=65536 exact_reference_counters
+PASS: physical dot8 package audited and CPU/DMA/compute safely STOPPED, /home/xilinx/aster_phase8_study_e5d83fa/physical/dot-k16-aunaligned-c0/physical.json
+DOT8_PHYSICAL_STUDY 27/174 dot-k31-aunaligned-c0
+PYNQ8: complete overlay/reset/signoff/ELF/ROM/reference preflight passed
+PASS: physical Pynq-Z1 dot8 boot=1 methods=8 serial_bytes=20752 retained_RAM=65536 exact_reference_counters
+PASS: physical Pynq-Z1 dot8 boot=2 methods=8 serial_bytes=20752 retained_RAM=65536 exact_reference_counters
+PASS: physical dot8 package audited and CPU/DMA/compute safely STOPPED, /home/xilinx/aster_phase8_study_e5d83fa/physical/dot-k31-aunaligned-c0/physical.json
+DOT8_PHYSICAL_STUDY 28/174 dot-k32-aunaligned-c0
+PYNQ8: complete overlay/reset/signoff/ELF/ROM/reference preflight passed
+PASS: physical Pynq-Z1 dot8 boot=1 methods=8 serial_bytes=20752 retained_RAM=65536 exact_reference_counters
+PASS: physical Pynq-Z1 dot8 boot=2 methods=8 serial_bytes=20752 retained_RAM=65536 exact_reference_counters
+PASS: physical dot8 package audited and CPU/DMA/compute safely STOPPED, /home/xilinx/aster_phase8_study_e5d83fa/physical/dot-k32-aunaligned-c0/physical.json
+DOT8_PHYSICAL_STUDY 29/174 dot-k63-aunaligned-c0
+PYNQ8: complete overlay/reset/signoff/ELF/ROM/reference preflight passed
+PASS: physical Pynq-Z1 dot8 boot=1 methods=8 serial_bytes=20760 retained_RAM=65536 exact_reference_counters
+PASS: physical Pynq-Z1 dot8 boot=2 methods=8 serial_bytes=20760 retained_RAM=65536 exact_reference_counters
+PASS: physical dot8 package audited and CPU/DMA/compute safely STOPPED, /home/xilinx/aster_phase8_study_e5d83fa/physical/dot-k63-aunaligned-c0/physical.json
+DOT8_PHYSICAL_STUDY 30/174 dot-k64-aunaligned-c0
+PYNQ8: complete overlay/reset/signoff/ELF/ROM/reference preflight passed
+PASS: physical Pynq-Z1 dot8 boot=1 methods=8 serial_bytes=20760 retained_RAM=65536 exact_reference_counters
+PASS: physical Pynq-Z1 dot8 boot=2 methods=8 serial_bytes=20760 retained_RAM=65536 exact_reference_counters
+PASS: physical dot8 package audited and CPU/DMA/compute safely STOPPED, /home/xilinx/aster_phase8_study_e5d83fa/physical/dot-k64-aunaligned-c0/physical.json
+DOT8_PHYSICAL_STUDY 31/174 dot-k127-aunaligned-c0
+PYNQ8: complete overlay/reset/signoff/ELF/ROM/reference preflight passed
+PASS: physical Pynq-Z1 dot8 boot=1 methods=8 serial_bytes=20784 retained_RAM=65536 exact_reference_counters
+PASS: physical Pynq-Z1 dot8 boot=2 methods=8 serial_bytes=20784 retained_RAM=65536 exact_reference_counters
+PASS: physical dot8 package audited and CPU/DMA/compute safely STOPPED, /home/xilinx/aster_phase8_study_e5d83fa/physical/dot-k127-aunaligned-c0/physical.json
+DOT8_PHYSICAL_STUDY 32/174 dot-k128-aunaligned-c0
+PYNQ8: complete overlay/reset/signoff/ELF/ROM/reference preflight passed
+PASS: physical Pynq-Z1 dot8 boot=1 methods=8 serial_bytes=20784 retained_RAM=65536 exact_reference_counters
+PASS: physical Pynq-Z1 dot8 boot=2 methods=8 serial_bytes=20784 retained_RAM=65536 exact_reference_counters
+PASS: physical dot8 package audited and CPU/DMA/compute safely STOPPED, /home/xilinx/aster_phase8_study_e5d83fa/physical/dot-k128-aunaligned-c0/physical.json
+DOT8_PHYSICAL_STUDY 33/174 dot-k511-aunaligned-c0
+PYNQ8: complete overlay/reset/signoff/ELF/ROM/reference preflight passed
+PASS: physical Pynq-Z1 dot8 boot=1 methods=8 serial_bytes=20792 retained_RAM=65536 exact_reference_counters
+PASS: physical Pynq-Z1 dot8 boot=2 methods=8 serial_bytes=20792 retained_RAM=65536 exact_reference_counters
+PASS: physical dot8 package audited and CPU/DMA/compute safely STOPPED, /home/xilinx/aster_phase8_study_e5d83fa/physical/dot-k511-aunaligned-c0/physical.json
+DOT8_PHYSICAL_STUDY 34/174 dot-k512-aunaligned-c0
+PYNQ8: complete overlay/reset/signoff/ELF/ROM/reference preflight passed
+PASS: physical Pynq-Z1 dot8 boot=1 methods=8 serial_bytes=20792 retained_RAM=65536 exact_reference_counters
+PASS: physical Pynq-Z1 dot8 boot=2 methods=8 serial_bytes=20792 retained_RAM=65536 exact_reference_counters
+PASS: physical dot8 package audited and CPU/DMA/compute safely STOPPED, /home/xilinx/aster_phase8_study_e5d83fa/physical/dot-k512-aunaligned-c0/physical.json
+DOT8_PHYSICAL_STUDY 35/174 dot-k1024-aunaligned-c0
+PYNQ8: complete overlay/reset/signoff/ELF/ROM/reference preflight passed
+PASS: physical Pynq-Z1 dot8 boot=1 methods=8 serial_bytes=20832 retained_RAM=65536 exact_reference_counters
+PASS: physical Pynq-Z1 dot8 boot=2 methods=8 serial_bytes=20832 retained_RAM=65536 exact_reference_counters
+PASS: physical dot8 package audited and CPU/DMA/compute safely STOPPED, /home/xilinx/aster_phase8_study_e5d83fa/physical/dot-k1024-aunaligned-c0/physical.json
+DOT8_PHYSICAL_STUDY 36/174 dot-k4096-aunaligned-c0
+PYNQ8: complete overlay/reset/signoff/ELF/ROM/reference preflight passed
+PASS: physical Pynq-Z1 dot8 boot=1 methods=8 serial_bytes=20840 retained_RAM=65536 exact_reference_counters
+PASS: physical Pynq-Z1 dot8 boot=2 methods=8 serial_bytes=20840 retained_RAM=65536 exact_reference_counters
+PASS: physical dot8 package audited and CPU/DMA/compute safely STOPPED, /home/xilinx/aster_phase8_study_e5d83fa/physical/dot-k4096-aunaligned-c0/physical.json
+DOT8_PHYSICAL_STUDY 37/174 fir-k0-aaligned-c0
+PYNQ8: complete overlay/reset/signoff/ELF/ROM/reference preflight passed
+PASS: physical Pynq-Z1 dot8 boot=1 methods=8 serial_bytes=20712 retained_RAM=65536 exact_reference_counters
+PASS: physical Pynq-Z1 dot8 boot=2 methods=8 serial_bytes=20712 retained_RAM=65536 exact_reference_counters
+PASS: physical dot8 package audited and CPU/DMA/compute safely STOPPED, /home/xilinx/aster_phase8_study_e5d83fa/physical/fir-k0-aaligned-c0/physical.json
+DOT8_PHYSICAL_STUDY 38/174 fir-k1-aaligned-c0
+PYNQ8: complete overlay/reset/signoff/ELF/ROM/reference preflight passed
+PASS: physical Pynq-Z1 dot8 boot=1 methods=8 serial_bytes=20712 retained_RAM=65536 exact_reference_counters
+PASS: physical Pynq-Z1 dot8 boot=2 methods=8 serial_bytes=20712 retained_RAM=65536 exact_reference_counters
+PASS: physical dot8 package audited and CPU/DMA/compute safely STOPPED, /home/xilinx/aster_phase8_study_e5d83fa/physical/fir-k1-aaligned-c0/physical.json
+DOT8_PHYSICAL_STUDY 39/174 fir-k3-aaligned-c0
+PYNQ8: complete overlay/reset/signoff/ELF/ROM/reference preflight passed
+PASS: physical Pynq-Z1 dot8 boot=1 methods=8 serial_bytes=20720 retained_RAM=65536 exact_reference_counters
+PASS: physical Pynq-Z1 dot8 boot=2 methods=8 serial_bytes=20720 retained_RAM=65536 exact_reference_counters
+PASS: physical dot8 package audited and CPU/DMA/compute safely STOPPED, /home/xilinx/aster_phase8_study_e5d83fa/physical/fir-k3-aaligned-c0/physical.json
+DOT8_PHYSICAL_STUDY 40/174 fir-k4-aaligned-c0
+PYNQ8: complete overlay/reset/signoff/ELF/ROM/reference preflight passed
+PASS: physical Pynq-Z1 dot8 boot=1 methods=8 serial_bytes=20720 retained_RAM=65536 exact_reference_counters
+PASS: physical Pynq-Z1 dot8 boot=2 methods=8 serial_bytes=20720 retained_RAM=65536 exact_reference_counters
+PASS: physical dot8 package audited and CPU/DMA/compute safely STOPPED, /home/xilinx/aster_phase8_study_e5d83fa/physical/fir-k4-aaligned-c0/physical.json
+DOT8_PHYSICAL_STUDY 41/174 fir-k7-aaligned-c0
+PYNQ8: complete overlay/reset/signoff/ELF/ROM/reference preflight passed
+PASS: physical Pynq-Z1 dot8 boot=1 methods=8 serial_bytes=20720 retained_RAM=65536 exact_reference_counters
+PASS: physical Pynq-Z1 dot8 boot=2 methods=8 serial_bytes=20720 retained_RAM=65536 exact_reference_counters
+PASS: physical dot8 package audited and CPU/DMA/compute safely STOPPED, /home/xilinx/aster_phase8_study_e5d83fa/physical/fir-k7-aaligned-c0/physical.json
+DOT8_PHYSICAL_STUDY 42/174 fir-k8-aaligned-c0
+PYNQ8: complete overlay/reset/signoff/ELF/ROM/reference preflight passed
+PASS: physical Pynq-Z1 dot8 boot=1 methods=8 serial_bytes=20728 retained_RAM=65536 exact_reference_counters
+PASS: physical Pynq-Z1 dot8 boot=2 methods=8 serial_bytes=20728 retained_RAM=65536 exact_reference_counters
+PASS: physical dot8 package audited and CPU/DMA/compute safely STOPPED, /home/xilinx/aster_phase8_study_e5d83fa/physical/fir-k8-aaligned-c0/physical.json
+DOT8_PHYSICAL_STUDY 43/174 fir-k15-aaligned-c0
+PYNQ8: complete overlay/reset/signoff/ELF/ROM/reference preflight passed
+PASS: physical Pynq-Z1 dot8 boot=1 methods=8 serial_bytes=20744 retained_RAM=65536 exact_reference_counters
+PASS: physical Pynq-Z1 dot8 boot=2 methods=8 serial_bytes=20744 retained_RAM=65536 exact_reference_counters
+PASS: physical dot8 package audited and CPU/DMA/compute safely STOPPED, /home/xilinx/aster_phase8_study_e5d83fa/physical/fir-k15-aaligned-c0/physical.json
+DOT8_PHYSICAL_STUDY 44/174 fir-k16-aaligned-c0
+PYNQ8: complete overlay/reset/signoff/ELF/ROM/reference preflight passed
+PASS: physical Pynq-Z1 dot8 boot=1 methods=8 serial_bytes=20744 retained_RAM=65536 exact_reference_counters
+PASS: physical Pynq-Z1 dot8 boot=2 methods=8 serial_bytes=20744 retained_RAM=65536 exact_reference_counters
+PASS: physical dot8 package audited and CPU/DMA/compute safely STOPPED, /home/xilinx/aster_phase8_study_e5d83fa/physical/fir-k16-aaligned-c0/physical.json
+DOT8_PHYSICAL_STUDY 45/174 fir-k31-aaligned-c0
+PYNQ8: complete overlay/reset/signoff/ELF/ROM/reference preflight passed
+PASS: physical Pynq-Z1 dot8 boot=1 methods=8 serial_bytes=20744 retained_RAM=65536 exact_reference_counters
+PASS: physical Pynq-Z1 dot8 boot=2 methods=8 serial_bytes=20744 retained_RAM=65536 exact_reference_counters
+PASS: physical dot8 package audited and CPU/DMA/compute safely STOPPED, /home/xilinx/aster_phase8_study_e5d83fa/physical/fir-k31-aaligned-c0/physical.json
+DOT8_PHYSICAL_STUDY 46/174 fir-k32-aaligned-c0
+PYNQ8: complete overlay/reset/signoff/ELF/ROM/reference preflight passed
+PASS: physical Pynq-Z1 dot8 boot=1 methods=8 serial_bytes=20744 retained_RAM=65536 exact_reference_counters
+PASS: physical Pynq-Z1 dot8 boot=2 methods=8 serial_bytes=20744 retained_RAM=65536 exact_reference_counters
+PASS: physical dot8 package audited and CPU/DMA/compute safely STOPPED, /home/xilinx/aster_phase8_study_e5d83fa/physical/fir-k32-aaligned-c0/physical.json
+DOT8_PHYSICAL_STUDY 47/174 fir-k63-aaligned-c0
+PYNQ8: complete overlay/reset/signoff/ELF/ROM/reference preflight passed
+PASS: physical Pynq-Z1 dot8 boot=1 methods=8 serial_bytes=20752 retained_RAM=65536 exact_reference_counters
+PASS: physical Pynq-Z1 dot8 boot=2 methods=8 serial_bytes=20752 retained_RAM=65536 exact_reference_counters
+PASS: physical dot8 package audited and CPU/DMA/compute safely STOPPED, /home/xilinx/aster_phase8_study_e5d83fa/physical/fir-k63-aaligned-c0/physical.json
+DOT8_PHYSICAL_STUDY 48/174 fir-k64-aaligned-c0
+PYNQ8: complete overlay/reset/signoff/ELF/ROM/reference preflight passed
+PASS: physical Pynq-Z1 dot8 boot=1 methods=8 serial_bytes=20752 retained_RAM=65536 exact_reference_counters
+PASS: physical Pynq-Z1 dot8 boot=2 methods=8 serial_bytes=20752 retained_RAM=65536 exact_reference_counters
+PASS: physical dot8 package audited and CPU/DMA/compute safely STOPPED, /home/xilinx/aster_phase8_study_e5d83fa/physical/fir-k64-aaligned-c0/physical.json
+DOT8_PHYSICAL_STUDY 49/174 fir-k0-aunaligned-c0
+PYNQ8: complete overlay/reset/signoff/ELF/ROM/reference preflight passed
+PASS: physical Pynq-Z1 dot8 boot=1 methods=8 serial_bytes=20728 retained_RAM=65536 exact_reference_counters
+PASS: physical Pynq-Z1 dot8 boot=2 methods=8 serial_bytes=20728 retained_RAM=65536 exact_reference_counters
+PASS: physical dot8 package audited and CPU/DMA/compute safely STOPPED, /home/xilinx/aster_phase8_study_e5d83fa/physical/fir-k0-aunaligned-c0/physical.json
+DOT8_PHYSICAL_STUDY 50/174 fir-k1-aunaligned-c0
+PYNQ8: complete overlay/reset/signoff/ELF/ROM/reference preflight passed
+PASS: physical Pynq-Z1 dot8 boot=1 methods=8 serial_bytes=20728 retained_RAM=65536 exact_reference_counters
+PASS: physical Pynq-Z1 dot8 boot=2 methods=8 serial_bytes=20728 retained_RAM=65536 exact_reference_counters
+PASS: physical dot8 package audited and CPU/DMA/compute safely STOPPED, /home/xilinx/aster_phase8_study_e5d83fa/physical/fir-k1-aunaligned-c0/physical.json
+DOT8_PHYSICAL_STUDY 51/174 fir-k3-aunaligned-c0
+PYNQ8: complete overlay/reset/signoff/ELF/ROM/reference preflight passed
+PASS: physical Pynq-Z1 dot8 boot=1 methods=8 serial_bytes=20736 retained_RAM=65536 exact_reference_counters
+PASS: physical Pynq-Z1 dot8 boot=2 methods=8 serial_bytes=20736 retained_RAM=65536 exact_reference_counters
+PASS: physical dot8 package audited and CPU/DMA/compute safely STOPPED, /home/xilinx/aster_phase8_study_e5d83fa/physical/fir-k3-aunaligned-c0/physical.json
+DOT8_PHYSICAL_STUDY 52/174 fir-k4-aunaligned-c0
+PYNQ8: complete overlay/reset/signoff/ELF/ROM/reference preflight passed
+PASS: physical Pynq-Z1 dot8 boot=1 methods=8 serial_bytes=20736 retained_RAM=65536 exact_reference_counters
+PASS: physical Pynq-Z1 dot8 boot=2 methods=8 serial_bytes=20736 retained_RAM=65536 exact_reference_counters
+PASS: physical dot8 package audited and CPU/DMA/compute safely STOPPED, /home/xilinx/aster_phase8_study_e5d83fa/physical/fir-k4-aunaligned-c0/physical.json
+DOT8_PHYSICAL_STUDY 53/174 fir-k7-aunaligned-c0
+PYNQ8: complete overlay/reset/signoff/ELF/ROM/reference preflight passed
+PASS: physical Pynq-Z1 dot8 boot=1 methods=8 serial_bytes=20736 retained_RAM=65536 exact_reference_counters
+PASS: physical Pynq-Z1 dot8 boot=2 methods=8 serial_bytes=20736 retained_RAM=65536 exact_reference_counters
+PASS: physical dot8 package audited and CPU/DMA/compute safely STOPPED, /home/xilinx/aster_phase8_study_e5d83fa/physical/fir-k7-aunaligned-c0/physical.json
+DOT8_PHYSICAL_STUDY 54/174 fir-k8-aunaligned-c0
+PYNQ8: complete overlay/reset/signoff/ELF/ROM/reference preflight passed
+PASS: physical Pynq-Z1 dot8 boot=1 methods=8 serial_bytes=20744 retained_RAM=65536 exact_reference_counters
+PASS: physical Pynq-Z1 dot8 boot=2 methods=8 serial_bytes=20744 retained_RAM=65536 exact_reference_counters
+PASS: physical dot8 package audited and CPU/DMA/compute safely STOPPED, /home/xilinx/aster_phase8_study_e5d83fa/physical/fir-k8-aunaligned-c0/physical.json
+DOT8_PHYSICAL_STUDY 55/174 fir-k15-aunaligned-c0
+PYNQ8: complete overlay/reset/signoff/ELF/ROM/reference preflight passed
+PASS: physical Pynq-Z1 dot8 boot=1 methods=8 serial_bytes=20760 retained_RAM=65536 exact_reference_counters
+PASS: physical Pynq-Z1 dot8 boot=2 methods=8 serial_bytes=20760 retained_RAM=65536 exact_reference_counters
+PASS: physical dot8 package audited and CPU/DMA/compute safely STOPPED, /home/xilinx/aster_phase8_study_e5d83fa/physical/fir-k15-aunaligned-c0/physical.json
+DOT8_PHYSICAL_STUDY 56/174 fir-k16-aunaligned-c0
+PYNQ8: complete overlay/reset/signoff/ELF/ROM/reference preflight passed
+PASS: physical Pynq-Z1 dot8 boot=1 methods=8 serial_bytes=20760 retained_RAM=65536 exact_reference_counters
+PASS: physical Pynq-Z1 dot8 boot=2 methods=8 serial_bytes=20760 retained_RAM=65536 exact_reference_counters
+PASS: physical dot8 package audited and CPU/DMA/compute safely STOPPED, /home/xilinx/aster_phase8_study_e5d83fa/physical/fir-k16-aunaligned-c0/physical.json
+DOT8_PHYSICAL_STUDY 57/174 fir-k31-aunaligned-c0
+PYNQ8: complete overlay/reset/signoff/ELF/ROM/reference preflight passed
+PASS: physical Pynq-Z1 dot8 boot=1 methods=8 serial_bytes=20760 retained_RAM=65536 exact_reference_counters
+PASS: physical Pynq-Z1 dot8 boot=2 methods=8 serial_bytes=20760 retained_RAM=65536 exact_reference_counters
+PASS: physical dot8 package audited and CPU/DMA/compute safely STOPPED, /home/xilinx/aster_phase8_study_e5d83fa/physical/fir-k31-aunaligned-c0/physical.json
+DOT8_PHYSICAL_STUDY 58/174 fir-k32-aunaligned-c0
+PYNQ8: complete overlay/reset/signoff/ELF/ROM/reference preflight passed
+PASS: physical Pynq-Z1 dot8 boot=1 methods=8 serial_bytes=20760 retained_RAM=65536 exact_reference_counters
+PASS: physical Pynq-Z1 dot8 boot=2 methods=8 serial_bytes=20760 retained_RAM=65536 exact_reference_counters
+PASS: physical dot8 package audited and CPU/DMA/compute safely STOPPED, /home/xilinx/aster_phase8_study_e5d83fa/physical/fir-k32-aunaligned-c0/physical.json
+DOT8_PHYSICAL_STUDY 59/174 fir-k63-aunaligned-c0
+PYNQ8: complete overlay/reset/signoff/ELF/ROM/reference preflight passed
+PASS: physical Pynq-Z1 dot8 boot=1 methods=8 serial_bytes=20768 retained_RAM=65536 exact_reference_counters
+PASS: physical Pynq-Z1 dot8 boot=2 methods=8 serial_bytes=20768 retained_RAM=65536 exact_reference_counters
+PASS: physical dot8 package audited and CPU/DMA/compute safely STOPPED, /home/xilinx/aster_phase8_study_e5d83fa/physical/fir-k63-aunaligned-c0/physical.json
+DOT8_PHYSICAL_STUDY 60/174 fir-k64-aunaligned-c0
+PYNQ8: complete overlay/reset/signoff/ELF/ROM/reference preflight passed
+PASS: physical Pynq-Z1 dot8 boot=1 methods=8 serial_bytes=20768 retained_RAM=65536 exact_reference_counters
+PASS: physical Pynq-Z1 dot8 boot=2 methods=8 serial_bytes=20768 retained_RAM=65536 exact_reference_counters
+PASS: physical dot8 package audited and CPU/DMA/compute safely STOPPED, /home/xilinx/aster_phase8_study_e5d83fa/physical/fir-k64-aunaligned-c0/physical.json
+DOT8_PHYSICAL_STUDY 61/174 gemm-k0-aaligned-c0
+PYNQ8: complete overlay/reset/signoff/ELF/ROM/reference preflight passed
+PASS: physical Pynq-Z1 dot8 boot=1 methods=8 serial_bytes=20728 retained_RAM=65536 exact_reference_counters
+PASS: physical Pynq-Z1 dot8 boot=2 methods=8 serial_bytes=20728 retained_RAM=65536 exact_reference_counters
+PASS: physical dot8 package audited and CPU/DMA/compute safely STOPPED, /home/xilinx/aster_phase8_study_e5d83fa/physical/gemm-k0-aaligned-c0/physical.json
+DOT8_PHYSICAL_STUDY 62/174 gemm-k1-aaligned-c0
+PYNQ8: complete overlay/reset/signoff/ELF/ROM/reference preflight passed
+PASS: physical Pynq-Z1 dot8 boot=1 methods=8 serial_bytes=20728 retained_RAM=65536 exact_reference_counters
+PASS: physical Pynq-Z1 dot8 boot=2 methods=8 serial_bytes=20728 retained_RAM=65536 exact_reference_counters
+PASS: physical dot8 package audited and CPU/DMA/compute safely STOPPED, /home/xilinx/aster_phase8_study_e5d83fa/physical/gemm-k1-aaligned-c0/physical.json
+DOT8_PHYSICAL_STUDY 63/174 gemm-k3-aaligned-c0
+PYNQ8: complete overlay/reset/signoff/ELF/ROM/reference preflight passed
+PASS: physical Pynq-Z1 dot8 boot=1 methods=8 serial_bytes=20736 retained_RAM=65536 exact_reference_counters
+PASS: physical Pynq-Z1 dot8 boot=2 methods=8 serial_bytes=20736 retained_RAM=65536 exact_reference_counters
+PASS: physical dot8 package audited and CPU/DMA/compute safely STOPPED, /home/xilinx/aster_phase8_study_e5d83fa/physical/gemm-k3-aaligned-c0/physical.json
+DOT8_PHYSICAL_STUDY 64/174 gemm-k4-aaligned-c0
+PYNQ8: complete overlay/reset/signoff/ELF/ROM/reference preflight passed
+PASS: physical Pynq-Z1 dot8 boot=1 methods=8 serial_bytes=20752 retained_RAM=65536 exact_reference_counters
+PASS: physical Pynq-Z1 dot8 boot=2 methods=8 serial_bytes=20752 retained_RAM=65536 exact_reference_counters
+PASS: physical dot8 package audited and CPU/DMA/compute safely STOPPED, /home/xilinx/aster_phase8_study_e5d83fa/physical/gemm-k4-aaligned-c0/physical.json
+DOT8_PHYSICAL_STUDY 65/174 gemm-k7-aaligned-c0
+PYNQ8: complete overlay/reset/signoff/ELF/ROM/reference preflight passed
+PASS: physical Pynq-Z1 dot8 boot=1 methods=8 serial_bytes=20752 retained_RAM=65536 exact_reference_counters
+PASS: physical Pynq-Z1 dot8 boot=2 methods=8 serial_bytes=20752 retained_RAM=65536 exact_reference_counters
+PASS: physical dot8 package audited and CPU/DMA/compute safely STOPPED, /home/xilinx/aster_phase8_study_e5d83fa/physical/gemm-k7-aaligned-c0/physical.json
+DOT8_PHYSICAL_STUDY 66/174 gemm-k8-aaligned-c0
+PYNQ8: complete overlay/reset/signoff/ELF/ROM/reference preflight passed
+PASS: physical Pynq-Z1 dot8 boot=1 methods=8 serial_bytes=20752 retained_RAM=65536 exact_reference_counters
+PASS: physical Pynq-Z1 dot8 boot=2 methods=8 serial_bytes=20752 retained_RAM=65536 exact_reference_counters
+PASS: physical dot8 package audited and CPU/DMA/compute safely STOPPED, /home/xilinx/aster_phase8_study_e5d83fa/physical/gemm-k8-aaligned-c0/physical.json
+DOT8_PHYSICAL_STUDY 67/174 gemm-k15-aaligned-c0
+PYNQ8: complete overlay/reset/signoff/ELF/ROM/reference preflight passed
+PASS: physical Pynq-Z1 dot8 boot=1 methods=8 serial_bytes=20760 retained_RAM=65536 exact_reference_counters
+PASS: physical Pynq-Z1 dot8 boot=2 methods=8 serial_bytes=20760 retained_RAM=65536 exact_reference_counters
+PASS: physical dot8 package audited and CPU/DMA/compute safely STOPPED, /home/xilinx/aster_phase8_study_e5d83fa/physical/gemm-k15-aaligned-c0/physical.json
+DOT8_PHYSICAL_STUDY 68/174 gemm-k16-aaligned-c0
+PYNQ8: complete overlay/reset/signoff/ELF/ROM/reference preflight passed
+PASS: physical Pynq-Z1 dot8 boot=1 methods=8 serial_bytes=20760 retained_RAM=65536 exact_reference_counters
+PASS: physical Pynq-Z1 dot8 boot=2 methods=8 serial_bytes=20760 retained_RAM=65536 exact_reference_counters
+PASS: physical dot8 package audited and CPU/DMA/compute safely STOPPED, /home/xilinx/aster_phase8_study_e5d83fa/physical/gemm-k16-aaligned-c0/physical.json
+DOT8_PHYSICAL_STUDY 69/174 gemm-k31-aaligned-c0
+PYNQ8: complete overlay/reset/signoff/ELF/ROM/reference preflight passed
+PASS: physical Pynq-Z1 dot8 boot=1 methods=8 serial_bytes=20776 retained_RAM=65536 exact_reference_counters
+PASS: physical Pynq-Z1 dot8 boot=2 methods=8 serial_bytes=20776 retained_RAM=65536 exact_reference_counters
+PASS: physical dot8 package audited and CPU/DMA/compute safely STOPPED, /home/xilinx/aster_phase8_study_e5d83fa/physical/gemm-k31-aaligned-c0/physical.json
+DOT8_PHYSICAL_STUDY 70/174 gemm-k32-aaligned-c0
+PYNQ8: complete overlay/reset/signoff/ELF/ROM/reference preflight passed
+PASS: physical Pynq-Z1 dot8 boot=1 methods=8 serial_bytes=20776 retained_RAM=65536 exact_reference_counters
+PASS: physical Pynq-Z1 dot8 boot=2 methods=8 serial_bytes=20776 retained_RAM=65536 exact_reference_counters
+PASS: physical dot8 package audited and CPU/DMA/compute safely STOPPED, /home/xilinx/aster_phase8_study_e5d83fa/physical/gemm-k32-aaligned-c0/physical.json
+DOT8_PHYSICAL_STUDY 71/174 gemm-k63-aaligned-c0
+PYNQ8: complete overlay/reset/signoff/ELF/ROM/reference preflight passed
+PASS: physical Pynq-Z1 dot8 boot=1 methods=8 serial_bytes=20784 retained_RAM=65536 exact_reference_counters
+PASS: physical Pynq-Z1 dot8 boot=2 methods=8 serial_bytes=20784 retained_RAM=65536 exact_reference_counters
+PASS: physical dot8 package audited and CPU/DMA/compute safely STOPPED, /home/xilinx/aster_phase8_study_e5d83fa/physical/gemm-k63-aaligned-c0/physical.json
+DOT8_PHYSICAL_STUDY 72/174 gemm-k64-aaligned-c0
+PYNQ8: complete overlay/reset/signoff/ELF/ROM/reference preflight passed
+PASS: physical Pynq-Z1 dot8 boot=1 methods=8 serial_bytes=20784 retained_RAM=65536 exact_reference_counters
+PASS: physical Pynq-Z1 dot8 boot=2 methods=8 serial_bytes=20784 retained_RAM=65536 exact_reference_counters
+PASS: physical dot8 package audited and CPU/DMA/compute safely STOPPED, /home/xilinx/aster_phase8_study_e5d83fa/physical/gemm-k64-aaligned-c0/physical.json
+DOT8_PHYSICAL_STUDY 73/174 gemm-k0-aunaligned-c0
+PYNQ8: complete overlay/reset/signoff/ELF/ROM/reference preflight passed
+PASS: physical Pynq-Z1 dot8 boot=1 methods=8 serial_bytes=20744 retained_RAM=65536 exact_reference_counters
+PASS: physical Pynq-Z1 dot8 boot=2 methods=8 serial_bytes=20744 retained_RAM=65536 exact_reference_counters
+PASS: physical dot8 package audited and CPU/DMA/compute safely STOPPED, /home/xilinx/aster_phase8_study_e5d83fa/physical/gemm-k0-aunaligned-c0/physical.json
+DOT8_PHYSICAL_STUDY 74/174 gemm-k1-aunaligned-c0
+PYNQ8: complete overlay/reset/signoff/ELF/ROM/reference preflight passed
+PASS: physical Pynq-Z1 dot8 boot=1 methods=8 serial_bytes=20744 retained_RAM=65536 exact_reference_counters
+PASS: physical Pynq-Z1 dot8 boot=2 methods=8 serial_bytes=20744 retained_RAM=65536 exact_reference_counters
+PASS: physical dot8 package audited and CPU/DMA/compute safely STOPPED, /home/xilinx/aster_phase8_study_e5d83fa/physical/gemm-k1-aunaligned-c0/physical.json
+DOT8_PHYSICAL_STUDY 75/174 gemm-k3-aunaligned-c0
+PYNQ8: complete overlay/reset/signoff/ELF/ROM/reference preflight passed
+PASS: physical Pynq-Z1 dot8 boot=1 methods=8 serial_bytes=20752 retained_RAM=65536 exact_reference_counters
+PASS: physical Pynq-Z1 dot8 boot=2 methods=8 serial_bytes=20752 retained_RAM=65536 exact_reference_counters
+PASS: physical dot8 package audited and CPU/DMA/compute safely STOPPED, /home/xilinx/aster_phase8_study_e5d83fa/physical/gemm-k3-aunaligned-c0/physical.json
+DOT8_PHYSICAL_STUDY 76/174 gemm-k4-aunaligned-c0
+PYNQ8: complete overlay/reset/signoff/ELF/ROM/reference preflight passed
+PASS: physical Pynq-Z1 dot8 boot=1 methods=8 serial_bytes=20768 retained_RAM=65536 exact_reference_counters
+PASS: physical Pynq-Z1 dot8 boot=2 methods=8 serial_bytes=20768 retained_RAM=65536 exact_reference_counters
+PASS: physical dot8 package audited and CPU/DMA/compute safely STOPPED, /home/xilinx/aster_phase8_study_e5d83fa/physical/gemm-k4-aunaligned-c0/physical.json
+DOT8_PHYSICAL_STUDY 77/174 gemm-k7-aunaligned-c0
+PYNQ8: complete overlay/reset/signoff/ELF/ROM/reference preflight passed
+PASS: physical Pynq-Z1 dot8 boot=1 methods=8 serial_bytes=20768 retained_RAM=65536 exact_reference_counters
+PASS: physical Pynq-Z1 dot8 boot=2 methods=8 serial_bytes=20768 retained_RAM=65536 exact_reference_counters
+PASS: physical dot8 package audited and CPU/DMA/compute safely STOPPED, /home/xilinx/aster_phase8_study_e5d83fa/physical/gemm-k7-aunaligned-c0/physical.json
+DOT8_PHYSICAL_STUDY 78/174 gemm-k8-aunaligned-c0
+PYNQ8: complete overlay/reset/signoff/ELF/ROM/reference preflight passed
+PASS: physical Pynq-Z1 dot8 boot=1 methods=8 serial_bytes=20768 retained_RAM=65536 exact_reference_counters
+PASS: physical Pynq-Z1 dot8 boot=2 methods=8 serial_bytes=20768 retained_RAM=65536 exact_reference_counters
+PASS: physical dot8 package audited and CPU/DMA/compute safely STOPPED, /home/xilinx/aster_phase8_study_e5d83fa/physical/gemm-k8-aunaligned-c0/physical.json
+DOT8_PHYSICAL_STUDY 79/174 gemm-k15-aunaligned-c0
+PYNQ8: complete overlay/reset/signoff/ELF/ROM/reference preflight passed
+PASS: physical Pynq-Z1 dot8 boot=1 methods=8 serial_bytes=20776 retained_RAM=65536 exact_reference_counters
+PASS: physical Pynq-Z1 dot8 boot=2 methods=8 serial_bytes=20776 retained_RAM=65536 exact_reference_counters
+PASS: physical dot8 package audited and CPU/DMA/compute safely STOPPED, /home/xilinx/aster_phase8_study_e5d83fa/physical/gemm-k15-aunaligned-c0/physical.json
+DOT8_PHYSICAL_STUDY 80/174 gemm-k16-aunaligned-c0
+PYNQ8: complete overlay/reset/signoff/ELF/ROM/reference preflight passed
+PASS: physical Pynq-Z1 dot8 boot=1 methods=8 serial_bytes=20776 retained_RAM=65536 exact_reference_counters
+PASS: physical Pynq-Z1 dot8 boot=2 methods=8 serial_bytes=20776 retained_RAM=65536 exact_reference_counters
+PASS: physical dot8 package audited and CPU/DMA/compute safely STOPPED, /home/xilinx/aster_phase8_study_e5d83fa/physical/gemm-k16-aunaligned-c0/physical.json
+DOT8_PHYSICAL_STUDY 81/174 gemm-k31-aunaligned-c0
+PYNQ8: complete overlay/reset/signoff/ELF/ROM/reference preflight passed
+PASS: physical Pynq-Z1 dot8 boot=1 methods=8 serial_bytes=20792 retained_RAM=65536 exact_reference_counters
+PASS: physical Pynq-Z1 dot8 boot=2 methods=8 serial_bytes=20792 retained_RAM=65536 exact_reference_counters
+PASS: physical dot8 package audited and CPU/DMA/compute safely STOPPED, /home/xilinx/aster_phase8_study_e5d83fa/physical/gemm-k31-aunaligned-c0/physical.json
+DOT8_PHYSICAL_STUDY 82/174 gemm-k32-aunaligned-c0
+PYNQ8: complete overlay/reset/signoff/ELF/ROM/reference preflight passed
+PASS: physical Pynq-Z1 dot8 boot=1 methods=8 serial_bytes=20792 retained_RAM=65536 exact_reference_counters
+PASS: physical Pynq-Z1 dot8 boot=2 methods=8 serial_bytes=20792 retained_RAM=65536 exact_reference_counters
+PASS: physical dot8 package audited and CPU/DMA/compute safely STOPPED, /home/xilinx/aster_phase8_study_e5d83fa/physical/gemm-k32-aunaligned-c0/physical.json
+DOT8_PHYSICAL_STUDY 83/174 gemm-k63-aunaligned-c0
+PYNQ8: complete overlay/reset/signoff/ELF/ROM/reference preflight passed
+PASS: physical Pynq-Z1 dot8 boot=1 methods=8 serial_bytes=20800 retained_RAM=65536 exact_reference_counters
+PASS: physical Pynq-Z1 dot8 boot=2 methods=8 serial_bytes=20800 retained_RAM=65536 exact_reference_counters
+PASS: physical dot8 package audited and CPU/DMA/compute safely STOPPED, /home/xilinx/aster_phase8_study_e5d83fa/physical/gemm-k63-aunaligned-c0/physical.json
+DOT8_PHYSICAL_STUDY 84/174 gemm-k64-aunaligned-c0
+PYNQ8: complete overlay/reset/signoff/ELF/ROM/reference preflight passed
+PASS: physical Pynq-Z1 dot8 boot=1 methods=8 serial_bytes=20800 retained_RAM=65536 exact_reference_counters
+PASS: physical Pynq-Z1 dot8 boot=2 methods=8 serial_bytes=20800 retained_RAM=65536 exact_reference_counters
+PASS: physical dot8 package audited and CPU/DMA/compute safely STOPPED, /home/xilinx/aster_phase8_study_e5d83fa/physical/gemm-k64-aunaligned-c0/physical.json
+DOT8_PHYSICAL_STUDY 85/174 dot-k128-aaligned-c0-repeat
+PYNQ8: complete overlay/reset/signoff/ELF/ROM/reference preflight passed
+PASS: physical Pynq-Z1 dot8 boot=1 methods=8 serial_bytes=20768 retained_RAM=65536 exact_reference_counters
+PASS: physical Pynq-Z1 dot8 boot=2 methods=8 serial_bytes=20768 retained_RAM=65536 exact_reference_counters
+PASS: physical dot8 package audited and CPU/DMA/compute safely STOPPED, /home/xilinx/aster_phase8_study_e5d83fa/physical/dot-k128-aaligned-c0-repeat/physical.json
+DOT8_PHYSICAL_STUDY 86/174 fir-k32-aaligned-c0-repeat
+PYNQ8: complete overlay/reset/signoff/ELF/ROM/reference preflight passed
+PASS: physical Pynq-Z1 dot8 boot=1 methods=8 serial_bytes=20744 retained_RAM=65536 exact_reference_counters
+PASS: physical Pynq-Z1 dot8 boot=2 methods=8 serial_bytes=20744 retained_RAM=65536 exact_reference_counters
+PASS: physical dot8 package audited and CPU/DMA/compute safely STOPPED, /home/xilinx/aster_phase8_study_e5d83fa/physical/fir-k32-aaligned-c0-repeat/physical.json
+DOT8_PHYSICAL_STUDY 87/174 gemm-k32-aaligned-c0-repeat
+PYNQ8: complete overlay/reset/signoff/ELF/ROM/reference preflight passed
+PASS: physical Pynq-Z1 dot8 boot=1 methods=8 serial_bytes=20776 retained_RAM=65536 exact_reference_counters
+PASS: physical Pynq-Z1 dot8 boot=2 methods=8 serial_bytes=20776 retained_RAM=65536 exact_reference_counters
+PASS: physical dot8 package audited and CPU/DMA/compute safely STOPPED, /home/xilinx/aster_phase8_study_e5d83fa/physical/gemm-k32-aaligned-c0-repeat/physical.json
+DOT8_PHYSICAL_STUDY 88/174 dot-k0-aaligned-c1
+PYNQ8: complete overlay/reset/signoff/ELF/ROM/reference preflight passed
+PYNQ8: downloading verified dot8 overlay through Linux/PCAP
+PASS: physical Pynq-Z1 dot8 boot=1 methods=8 serial_bytes=20712 retained_RAM=65536 exact_reference_counters
+PASS: physical Pynq-Z1 dot8 boot=2 methods=8 serial_bytes=20712 retained_RAM=65536 exact_reference_counters
+PASS: physical dot8 package audited and CPU/DMA/compute safely STOPPED, /home/xilinx/aster_phase8_study_e5d83fa/physical/dot-k0-aaligned-c1/physical.json
+DOT8_PHYSICAL_STUDY 89/174 dot-k1-aaligned-c1
+PYNQ8: complete overlay/reset/signoff/ELF/ROM/reference preflight passed
+PASS: physical Pynq-Z1 dot8 boot=1 methods=8 serial_bytes=20712 retained_RAM=65536 exact_reference_counters
+PASS: physical Pynq-Z1 dot8 boot=2 methods=8 serial_bytes=20712 retained_RAM=65536 exact_reference_counters
+PASS: physical dot8 package audited and CPU/DMA/compute safely STOPPED, /home/xilinx/aster_phase8_study_e5d83fa/physical/dot-k1-aaligned-c1/physical.json
+DOT8_PHYSICAL_STUDY 90/174 dot-k3-aaligned-c1
+PYNQ8: complete overlay/reset/signoff/ELF/ROM/reference preflight passed
+PASS: physical Pynq-Z1 dot8 boot=1 methods=8 serial_bytes=20712 retained_RAM=65536 exact_reference_counters
+PASS: physical Pynq-Z1 dot8 boot=2 methods=8 serial_bytes=20712 retained_RAM=65536 exact_reference_counters
+PASS: physical dot8 package audited and CPU/DMA/compute safely STOPPED, /home/xilinx/aster_phase8_study_e5d83fa/physical/dot-k3-aaligned-c1/physical.json
+DOT8_PHYSICAL_STUDY 91/174 dot-k4-aaligned-c1
+PYNQ8: complete overlay/reset/signoff/ELF/ROM/reference preflight passed
+PASS: physical Pynq-Z1 dot8 boot=1 methods=8 serial_bytes=20712 retained_RAM=65536 exact_reference_counters
+PASS: physical Pynq-Z1 dot8 boot=2 methods=8 serial_bytes=20712 retained_RAM=65536 exact_reference_counters
+PASS: physical dot8 package audited and CPU/DMA/compute safely STOPPED, /home/xilinx/aster_phase8_study_e5d83fa/physical/dot-k4-aaligned-c1/physical.json
+DOT8_PHYSICAL_STUDY 92/174 dot-k7-aaligned-c1
+PYNQ8: complete overlay/reset/signoff/ELF/ROM/reference preflight passed
+PASS: physical Pynq-Z1 dot8 boot=1 methods=8 serial_bytes=20712 retained_RAM=65536 exact_reference_counters
+PASS: physical Pynq-Z1 dot8 boot=2 methods=8 serial_bytes=20712 retained_RAM=65536 exact_reference_counters
+PASS: physical dot8 package audited and CPU/DMA/compute safely STOPPED, /home/xilinx/aster_phase8_study_e5d83fa/physical/dot-k7-aaligned-c1/physical.json
+DOT8_PHYSICAL_STUDY 93/174 dot-k8-aaligned-c1
+PYNQ8: complete overlay/reset/signoff/ELF/ROM/reference preflight passed
+PASS: physical Pynq-Z1 dot8 boot=1 methods=8 serial_bytes=20712 retained_RAM=65536 exact_reference_counters
+PASS: physical Pynq-Z1 dot8 boot=2 methods=8 serial_bytes=20712 retained_RAM=65536 exact_reference_counters
+PASS: physical dot8 package audited and CPU/DMA/compute safely STOPPED, /home/xilinx/aster_phase8_study_e5d83fa/physical/dot-k8-aaligned-c1/physical.json
+DOT8_PHYSICAL_STUDY 94/174 dot-k15-aaligned-c1
+PYNQ8: complete overlay/reset/signoff/ELF/ROM/reference preflight passed
+PASS: physical Pynq-Z1 dot8 boot=1 methods=8 serial_bytes=20736 retained_RAM=65536 exact_reference_counters
+PASS: physical Pynq-Z1 dot8 boot=2 methods=8 serial_bytes=20736 retained_RAM=65536 exact_reference_counters
+PASS: physical dot8 package audited and CPU/DMA/compute safely STOPPED, /home/xilinx/aster_phase8_study_e5d83fa/physical/dot-k15-aaligned-c1/physical.json
+DOT8_PHYSICAL_STUDY 95/174 dot-k16-aaligned-c1
+PYNQ8: complete overlay/reset/signoff/ELF/ROM/reference preflight passed
+PASS: physical Pynq-Z1 dot8 boot=1 methods=8 serial_bytes=20736 retained_RAM=65536 exact_reference_counters
+PASS: physical Pynq-Z1 dot8 boot=2 methods=8 serial_bytes=20736 retained_RAM=65536 exact_reference_counters
+PASS: physical dot8 package audited and CPU/DMA/compute safely STOPPED, /home/xilinx/aster_phase8_study_e5d83fa/physical/dot-k16-aaligned-c1/physical.json
+DOT8_PHYSICAL_STUDY 96/174 dot-k31-aaligned-c1
+PYNQ8: complete overlay/reset/signoff/ELF/ROM/reference preflight passed
+PASS: physical Pynq-Z1 dot8 boot=1 methods=8 serial_bytes=20736 retained_RAM=65536 exact_reference_counters
+PASS: physical Pynq-Z1 dot8 boot=2 methods=8 serial_bytes=20736 retained_RAM=65536 exact_reference_counters
+PASS: physical dot8 package audited and CPU/DMA/compute safely STOPPED, /home/xilinx/aster_phase8_study_e5d83fa/physical/dot-k31-aaligned-c1/physical.json
+DOT8_PHYSICAL_STUDY 97/174 dot-k32-aaligned-c1
+PYNQ8: complete overlay/reset/signoff/ELF/ROM/reference preflight passed
+PASS: physical Pynq-Z1 dot8 boot=1 methods=8 serial_bytes=20736 retained_RAM=65536 exact_reference_counters
+PASS: physical Pynq-Z1 dot8 boot=2 methods=8 serial_bytes=20736 retained_RAM=65536 exact_reference_counters
+PASS: physical dot8 package audited and CPU/DMA/compute safely STOPPED, /home/xilinx/aster_phase8_study_e5d83fa/physical/dot-k32-aaligned-c1/physical.json
+DOT8_PHYSICAL_STUDY 98/174 dot-k63-aaligned-c1
+PYNQ8: complete overlay/reset/signoff/ELF/ROM/reference preflight passed
+PASS: physical Pynq-Z1 dot8 boot=1 methods=8 serial_bytes=20744 retained_RAM=65536 exact_reference_counters
+PASS: physical Pynq-Z1 dot8 boot=2 methods=8 serial_bytes=20744 retained_RAM=65536 exact_reference_counters
+PASS: physical dot8 package audited and CPU/DMA/compute safely STOPPED, /home/xilinx/aster_phase8_study_e5d83fa/physical/dot-k63-aaligned-c1/physical.json
+DOT8_PHYSICAL_STUDY 99/174 dot-k64-aaligned-c1
+PYNQ8: complete overlay/reset/signoff/ELF/ROM/reference preflight passed
+PASS: physical Pynq-Z1 dot8 boot=1 methods=8 serial_bytes=20744 retained_RAM=65536 exact_reference_counters
+PASS: physical Pynq-Z1 dot8 boot=2 methods=8 serial_bytes=20744 retained_RAM=65536 exact_reference_counters
+PASS: physical dot8 package audited and CPU/DMA/compute safely STOPPED, /home/xilinx/aster_phase8_study_e5d83fa/physical/dot-k64-aaligned-c1/physical.json
+DOT8_PHYSICAL_STUDY 100/174 dot-k127-aaligned-c1
+PYNQ8: complete overlay/reset/signoff/ELF/ROM/reference preflight passed
+PASS: physical Pynq-Z1 dot8 boot=1 methods=8 serial_bytes=20768 retained_RAM=65536 exact_reference_counters
+PASS: physical Pynq-Z1 dot8 boot=2 methods=8 serial_bytes=20768 retained_RAM=65536 exact_reference_counters
+PASS: physical dot8 package audited and CPU/DMA/compute safely STOPPED, /home/xilinx/aster_phase8_study_e5d83fa/physical/dot-k127-aaligned-c1/physical.json
+DOT8_PHYSICAL_STUDY 101/174 dot-k128-aaligned-c1
+PYNQ8: complete overlay/reset/signoff/ELF/ROM/reference preflight passed
+PASS: physical Pynq-Z1 dot8 boot=1 methods=8 serial_bytes=20768 retained_RAM=65536 exact_reference_counters
+PASS: physical Pynq-Z1 dot8 boot=2 methods=8 serial_bytes=20768 retained_RAM=65536 exact_reference_counters
+PASS: physical dot8 package audited and CPU/DMA/compute safely STOPPED, /home/xilinx/aster_phase8_study_e5d83fa/physical/dot-k128-aaligned-c1/physical.json
+DOT8_PHYSICAL_STUDY 102/174 dot-k511-aaligned-c1
+PYNQ8: complete overlay/reset/signoff/ELF/ROM/reference preflight passed
+PASS: physical Pynq-Z1 dot8 boot=1 methods=8 serial_bytes=20776 retained_RAM=65536 exact_reference_counters
+PASS: physical Pynq-Z1 dot8 boot=2 methods=8 serial_bytes=20776 retained_RAM=65536 exact_reference_counters
+PASS: physical dot8 package audited and CPU/DMA/compute safely STOPPED, /home/xilinx/aster_phase8_study_e5d83fa/physical/dot-k511-aaligned-c1/physical.json
+DOT8_PHYSICAL_STUDY 103/174 dot-k512-aaligned-c1
+PYNQ8: complete overlay/reset/signoff/ELF/ROM/reference preflight passed
+PASS: physical Pynq-Z1 dot8 boot=1 methods=8 serial_bytes=20776 retained_RAM=65536 exact_reference_counters
+PASS: physical Pynq-Z1 dot8 boot=2 methods=8 serial_bytes=20776 retained_RAM=65536 exact_reference_counters
+PASS: physical dot8 package audited and CPU/DMA/compute safely STOPPED, /home/xilinx/aster_phase8_study_e5d83fa/physical/dot-k512-aaligned-c1/physical.json
+DOT8_PHYSICAL_STUDY 104/174 dot-k1024-aaligned-c1
+PYNQ8: complete overlay/reset/signoff/ELF/ROM/reference preflight passed
+PASS: physical Pynq-Z1 dot8 boot=1 methods=8 serial_bytes=20816 retained_RAM=65536 exact_reference_counters
+PASS: physical Pynq-Z1 dot8 boot=2 methods=8 serial_bytes=20816 retained_RAM=65536 exact_reference_counters
+PASS: physical dot8 package audited and CPU/DMA/compute safely STOPPED, /home/xilinx/aster_phase8_study_e5d83fa/physical/dot-k1024-aaligned-c1/physical.json
+DOT8_PHYSICAL_STUDY 105/174 dot-k4096-aaligned-c1
+PYNQ8: complete overlay/reset/signoff/ELF/ROM/reference preflight passed
+PASS: physical Pynq-Z1 dot8 boot=1 methods=8 serial_bytes=20824 retained_RAM=65536 exact_reference_counters
+PASS: physical Pynq-Z1 dot8 boot=2 methods=8 serial_bytes=20824 retained_RAM=65536 exact_reference_counters
+PASS: physical dot8 package audited and CPU/DMA/compute safely STOPPED, /home/xilinx/aster_phase8_study_e5d83fa/physical/dot-k4096-aaligned-c1/physical.json
+DOT8_PHYSICAL_STUDY 106/174 dot-k0-aunaligned-c1
+PYNQ8: complete overlay/reset/signoff/ELF/ROM/reference preflight passed
+PASS: physical Pynq-Z1 dot8 boot=1 methods=8 serial_bytes=20728 retained_RAM=65536 exact_reference_counters
+PASS: physical Pynq-Z1 dot8 boot=2 methods=8 serial_bytes=20728 retained_RAM=65536 exact_reference_counters
+PASS: physical dot8 package audited and CPU/DMA/compute safely STOPPED, /home/xilinx/aster_phase8_study_e5d83fa/physical/dot-k0-aunaligned-c1/physical.json
+DOT8_PHYSICAL_STUDY 107/174 dot-k1-aunaligned-c1
+PYNQ8: complete overlay/reset/signoff/ELF/ROM/reference preflight passed
+PASS: physical Pynq-Z1 dot8 boot=1 methods=8 serial_bytes=20728 retained_RAM=65536 exact_reference_counters
+PASS: physical Pynq-Z1 dot8 boot=2 methods=8 serial_bytes=20728 retained_RAM=65536 exact_reference_counters
+PASS: physical dot8 package audited and CPU/DMA/compute safely STOPPED, /home/xilinx/aster_phase8_study_e5d83fa/physical/dot-k1-aunaligned-c1/physical.json
+DOT8_PHYSICAL_STUDY 108/174 dot-k3-aunaligned-c1
+PYNQ8: complete overlay/reset/signoff/ELF/ROM/reference preflight passed
+PASS: physical Pynq-Z1 dot8 boot=1 methods=8 serial_bytes=20728 retained_RAM=65536 exact_reference_counters
+PASS: physical Pynq-Z1 dot8 boot=2 methods=8 serial_bytes=20728 retained_RAM=65536 exact_reference_counters
+PASS: physical dot8 package audited and CPU/DMA/compute safely STOPPED, /home/xilinx/aster_phase8_study_e5d83fa/physical/dot-k3-aunaligned-c1/physical.json
+DOT8_PHYSICAL_STUDY 109/174 dot-k4-aunaligned-c1
+PYNQ8: complete overlay/reset/signoff/ELF/ROM/reference preflight passed
+PASS: physical Pynq-Z1 dot8 boot=1 methods=8 serial_bytes=20728 retained_RAM=65536 exact_reference_counters
+PASS: physical Pynq-Z1 dot8 boot=2 methods=8 serial_bytes=20728 retained_RAM=65536 exact_reference_counters
+PASS: physical dot8 package audited and CPU/DMA/compute safely STOPPED, /home/xilinx/aster_phase8_study_e5d83fa/physical/dot-k4-aunaligned-c1/physical.json
+DOT8_PHYSICAL_STUDY 110/174 dot-k7-aunaligned-c1
+PYNQ8: complete overlay/reset/signoff/ELF/ROM/reference preflight passed
+PASS: physical Pynq-Z1 dot8 boot=1 methods=8 serial_bytes=20728 retained_RAM=65536 exact_reference_counters
+PASS: physical Pynq-Z1 dot8 boot=2 methods=8 serial_bytes=20728 retained_RAM=65536 exact_reference_counters
+PASS: physical dot8 package audited and CPU/DMA/compute safely STOPPED, /home/xilinx/aster_phase8_study_e5d83fa/physical/dot-k7-aunaligned-c1/physical.json
+DOT8_PHYSICAL_STUDY 111/174 dot-k8-aunaligned-c1
+PYNQ8: complete overlay/reset/signoff/ELF/ROM/reference preflight passed
+PASS: physical Pynq-Z1 dot8 boot=1 methods=8 serial_bytes=20728 retained_RAM=65536 exact_reference_counters
+PASS: physical Pynq-Z1 dot8 boot=2 methods=8 serial_bytes=20728 retained_RAM=65536 exact_reference_counters
+PASS: physical dot8 package audited and CPU/DMA/compute safely STOPPED, /home/xilinx/aster_phase8_study_e5d83fa/physical/dot-k8-aunaligned-c1/physical.json
+DOT8_PHYSICAL_STUDY 112/174 dot-k15-aunaligned-c1
+PYNQ8: complete overlay/reset/signoff/ELF/ROM/reference preflight passed
+PASS: physical Pynq-Z1 dot8 boot=1 methods=8 serial_bytes=20752 retained_RAM=65536 exact_reference_counters
+PASS: physical Pynq-Z1 dot8 boot=2 methods=8 serial_bytes=20752 retained_RAM=65536 exact_reference_counters
+PASS: physical dot8 package audited and CPU/DMA/compute safely STOPPED, /home/xilinx/aster_phase8_study_e5d83fa/physical/dot-k15-aunaligned-c1/physical.json
+DOT8_PHYSICAL_STUDY 113/174 dot-k16-aunaligned-c1
+PYNQ8: complete overlay/reset/signoff/ELF/ROM/reference preflight passed
+PASS: physical Pynq-Z1 dot8 boot=1 methods=8 serial_bytes=20752 retained_RAM=65536 exact_reference_counters
+PASS: physical Pynq-Z1 dot8 boot=2 methods=8 serial_bytes=20752 retained_RAM=65536 exact_reference_counters
+PASS: physical dot8 package audited and CPU/DMA/compute safely STOPPED, /home/xilinx/aster_phase8_study_e5d83fa/physical/dot-k16-aunaligned-c1/physical.json
+DOT8_PHYSICAL_STUDY 114/174 dot-k31-aunaligned-c1
+PYNQ8: complete overlay/reset/signoff/ELF/ROM/reference preflight passed
+PASS: physical Pynq-Z1 dot8 boot=1 methods=8 serial_bytes=20752 retained_RAM=65536 exact_reference_counters
+PASS: physical Pynq-Z1 dot8 boot=2 methods=8 serial_bytes=20752 retained_RAM=65536 exact_reference_counters
+PASS: physical dot8 package audited and CPU/DMA/compute safely STOPPED, /home/xilinx/aster_phase8_study_e5d83fa/physical/dot-k31-aunaligned-c1/physical.json
+DOT8_PHYSICAL_STUDY 115/174 dot-k32-aunaligned-c1
+PYNQ8: complete overlay/reset/signoff/ELF/ROM/reference preflight passed
+PASS: physical Pynq-Z1 dot8 boot=1 methods=8 serial_bytes=20752 retained_RAM=65536 exact_reference_counters
+PASS: physical Pynq-Z1 dot8 boot=2 methods=8 serial_bytes=20752 retained_RAM=65536 exact_reference_counters
+PASS: physical dot8 package audited and CPU/DMA/compute safely STOPPED, /home/xilinx/aster_phase8_study_e5d83fa/physical/dot-k32-aunaligned-c1/physical.json
+DOT8_PHYSICAL_STUDY 116/174 dot-k63-aunaligned-c1
+PYNQ8: complete overlay/reset/signoff/ELF/ROM/reference preflight passed
+PASS: physical Pynq-Z1 dot8 boot=1 methods=8 serial_bytes=20760 retained_RAM=65536 exact_reference_counters
+PASS: physical Pynq-Z1 dot8 boot=2 methods=8 serial_bytes=20760 retained_RAM=65536 exact_reference_counters
+PASS: physical dot8 package audited and CPU/DMA/compute safely STOPPED, /home/xilinx/aster_phase8_study_e5d83fa/physical/dot-k63-aunaligned-c1/physical.json
+DOT8_PHYSICAL_STUDY 117/174 dot-k64-aunaligned-c1
+PYNQ8: complete overlay/reset/signoff/ELF/ROM/reference preflight passed
+PASS: physical Pynq-Z1 dot8 boot=1 methods=8 serial_bytes=20760 retained_RAM=65536 exact_reference_counters
+PASS: physical Pynq-Z1 dot8 boot=2 methods=8 serial_bytes=20760 retained_RAM=65536 exact_reference_counters
+PASS: physical dot8 package audited and CPU/DMA/compute safely STOPPED, /home/xilinx/aster_phase8_study_e5d83fa/physical/dot-k64-aunaligned-c1/physical.json
+DOT8_PHYSICAL_STUDY 118/174 dot-k127-aunaligned-c1
+PYNQ8: complete overlay/reset/signoff/ELF/ROM/reference preflight passed
+PASS: physical Pynq-Z1 dot8 boot=1 methods=8 serial_bytes=20784 retained_RAM=65536 exact_reference_counters
+PASS: physical Pynq-Z1 dot8 boot=2 methods=8 serial_bytes=20784 retained_RAM=65536 exact_reference_counters
+PASS: physical dot8 package audited and CPU/DMA/compute safely STOPPED, /home/xilinx/aster_phase8_study_e5d83fa/physical/dot-k127-aunaligned-c1/physical.json
+DOT8_PHYSICAL_STUDY 119/174 dot-k128-aunaligned-c1
+PYNQ8: complete overlay/reset/signoff/ELF/ROM/reference preflight passed
+PASS: physical Pynq-Z1 dot8 boot=1 methods=8 serial_bytes=20784 retained_RAM=65536 exact_reference_counters
+PASS: physical Pynq-Z1 dot8 boot=2 methods=8 serial_bytes=20784 retained_RAM=65536 exact_reference_counters
+PASS: physical dot8 package audited and CPU/DMA/compute safely STOPPED, /home/xilinx/aster_phase8_study_e5d83fa/physical/dot-k128-aunaligned-c1/physical.json
+DOT8_PHYSICAL_STUDY 120/174 dot-k511-aunaligned-c1
+PYNQ8: complete overlay/reset/signoff/ELF/ROM/reference preflight passed
+PASS: physical Pynq-Z1 dot8 boot=1 methods=8 serial_bytes=20792 retained_RAM=65536 exact_reference_counters
+PASS: physical Pynq-Z1 dot8 boot=2 methods=8 serial_bytes=20792 retained_RAM=65536 exact_reference_counters
+PASS: physical dot8 package audited and CPU/DMA/compute safely STOPPED, /home/xilinx/aster_phase8_study_e5d83fa/physical/dot-k511-aunaligned-c1/physical.json
+DOT8_PHYSICAL_STUDY 121/174 dot-k512-aunaligned-c1
+PYNQ8: complete overlay/reset/signoff/ELF/ROM/reference preflight passed
+PASS: physical Pynq-Z1 dot8 boot=1 methods=8 serial_bytes=20792 retained_RAM=65536 exact_reference_counters
+PASS: physical Pynq-Z1 dot8 boot=2 methods=8 serial_bytes=20792 retained_RAM=65536 exact_reference_counters
+PASS: physical dot8 package audited and CPU/DMA/compute safely STOPPED, /home/xilinx/aster_phase8_study_e5d83fa/physical/dot-k512-aunaligned-c1/physical.json
+DOT8_PHYSICAL_STUDY 122/174 dot-k1024-aunaligned-c1
+PYNQ8: complete overlay/reset/signoff/ELF/ROM/reference preflight passed
+PASS: physical Pynq-Z1 dot8 boot=1 methods=8 serial_bytes=20832 retained_RAM=65536 exact_reference_counters
+PASS: physical Pynq-Z1 dot8 boot=2 methods=8 serial_bytes=20832 retained_RAM=65536 exact_reference_counters
+PASS: physical dot8 package audited and CPU/DMA/compute safely STOPPED, /home/xilinx/aster_phase8_study_e5d83fa/physical/dot-k1024-aunaligned-c1/physical.json
+DOT8_PHYSICAL_STUDY 123/174 dot-k4096-aunaligned-c1
+PYNQ8: complete overlay/reset/signoff/ELF/ROM/reference preflight passed
+PASS: physical Pynq-Z1 dot8 boot=1 methods=8 serial_bytes=20840 retained_RAM=65536 exact_reference_counters
+PASS: physical Pynq-Z1 dot8 boot=2 methods=8 serial_bytes=20840 retained_RAM=65536 exact_reference_counters
+PASS: physical dot8 package audited and CPU/DMA/compute safely STOPPED, /home/xilinx/aster_phase8_study_e5d83fa/physical/dot-k4096-aunaligned-c1/physical.json
+DOT8_PHYSICAL_STUDY 124/174 fir-k0-aaligned-c1
+PYNQ8: complete overlay/reset/signoff/ELF/ROM/reference preflight passed
+PASS: physical Pynq-Z1 dot8 boot=1 methods=8 serial_bytes=20712 retained_RAM=65536 exact_reference_counters
+PASS: physical Pynq-Z1 dot8 boot=2 methods=8 serial_bytes=20712 retained_RAM=65536 exact_reference_counters
+PASS: physical dot8 package audited and CPU/DMA/compute safely STOPPED, /home/xilinx/aster_phase8_study_e5d83fa/physical/fir-k0-aaligned-c1/physical.json
+DOT8_PHYSICAL_STUDY 125/174 fir-k1-aaligned-c1
+PYNQ8: complete overlay/reset/signoff/ELF/ROM/reference preflight passed
+PASS: physical Pynq-Z1 dot8 boot=1 methods=8 serial_bytes=20712 retained_RAM=65536 exact_reference_counters
+PASS: physical Pynq-Z1 dot8 boot=2 methods=8 serial_bytes=20712 retained_RAM=65536 exact_reference_counters
+PASS: physical dot8 package audited and CPU/DMA/compute safely STOPPED, /home/xilinx/aster_phase8_study_e5d83fa/physical/fir-k1-aaligned-c1/physical.json
+DOT8_PHYSICAL_STUDY 126/174 fir-k3-aaligned-c1
+PYNQ8: complete overlay/reset/signoff/ELF/ROM/reference preflight passed
+PASS: physical Pynq-Z1 dot8 boot=1 methods=8 serial_bytes=20720 retained_RAM=65536 exact_reference_counters
+PASS: physical Pynq-Z1 dot8 boot=2 methods=8 serial_bytes=20720 retained_RAM=65536 exact_reference_counters
+PASS: physical dot8 package audited and CPU/DMA/compute safely STOPPED, /home/xilinx/aster_phase8_study_e5d83fa/physical/fir-k3-aaligned-c1/physical.json
+DOT8_PHYSICAL_STUDY 127/174 fir-k4-aaligned-c1
+PYNQ8: complete overlay/reset/signoff/ELF/ROM/reference preflight passed
+PASS: physical Pynq-Z1 dot8 boot=1 methods=8 serial_bytes=20720 retained_RAM=65536 exact_reference_counters
+PASS: physical Pynq-Z1 dot8 boot=2 methods=8 serial_bytes=20720 retained_RAM=65536 exact_reference_counters
+PASS: physical dot8 package audited and CPU/DMA/compute safely STOPPED, /home/xilinx/aster_phase8_study_e5d83fa/physical/fir-k4-aaligned-c1/physical.json
+DOT8_PHYSICAL_STUDY 128/174 fir-k7-aaligned-c1
+PYNQ8: complete overlay/reset/signoff/ELF/ROM/reference preflight passed
+PASS: physical Pynq-Z1 dot8 boot=1 methods=8 serial_bytes=20720 retained_RAM=65536 exact_reference_counters
+PASS: physical Pynq-Z1 dot8 boot=2 methods=8 serial_bytes=20720 retained_RAM=65536 exact_reference_counters
+PASS: physical dot8 package audited and CPU/DMA/compute safely STOPPED, /home/xilinx/aster_phase8_study_e5d83fa/physical/fir-k7-aaligned-c1/physical.json
+DOT8_PHYSICAL_STUDY 129/174 fir-k8-aaligned-c1
+PYNQ8: complete overlay/reset/signoff/ELF/ROM/reference preflight passed
+PASS: physical Pynq-Z1 dot8 boot=1 methods=8 serial_bytes=20728 retained_RAM=65536 exact_reference_counters
+PASS: physical Pynq-Z1 dot8 boot=2 methods=8 serial_bytes=20728 retained_RAM=65536 exact_reference_counters
+PASS: physical dot8 package audited and CPU/DMA/compute safely STOPPED, /home/xilinx/aster_phase8_study_e5d83fa/physical/fir-k8-aaligned-c1/physical.json
+DOT8_PHYSICAL_STUDY 130/174 fir-k15-aaligned-c1
+PYNQ8: complete overlay/reset/signoff/ELF/ROM/reference preflight passed
+PASS: physical Pynq-Z1 dot8 boot=1 methods=8 serial_bytes=20744 retained_RAM=65536 exact_reference_counters
+PASS: physical Pynq-Z1 dot8 boot=2 methods=8 serial_bytes=20744 retained_RAM=65536 exact_reference_counters
+PASS: physical dot8 package audited and CPU/DMA/compute safely STOPPED, /home/xilinx/aster_phase8_study_e5d83fa/physical/fir-k15-aaligned-c1/physical.json
+DOT8_PHYSICAL_STUDY 131/174 fir-k16-aaligned-c1
+PYNQ8: complete overlay/reset/signoff/ELF/ROM/reference preflight passed
+PASS: physical Pynq-Z1 dot8 boot=1 methods=8 serial_bytes=20744 retained_RAM=65536 exact_reference_counters
+PASS: physical Pynq-Z1 dot8 boot=2 methods=8 serial_bytes=20744 retained_RAM=65536 exact_reference_counters
+PASS: physical dot8 package audited and CPU/DMA/compute safely STOPPED, /home/xilinx/aster_phase8_study_e5d83fa/physical/fir-k16-aaligned-c1/physical.json
+DOT8_PHYSICAL_STUDY 132/174 fir-k31-aaligned-c1
+PYNQ8: complete overlay/reset/signoff/ELF/ROM/reference preflight passed
+PASS: physical Pynq-Z1 dot8 boot=1 methods=8 serial_bytes=20744 retained_RAM=65536 exact_reference_counters
+PASS: physical Pynq-Z1 dot8 boot=2 methods=8 serial_bytes=20744 retained_RAM=65536 exact_reference_counters
+PASS: physical dot8 package audited and CPU/DMA/compute safely STOPPED, /home/xilinx/aster_phase8_study_e5d83fa/physical/fir-k31-aaligned-c1/physical.json
+DOT8_PHYSICAL_STUDY 133/174 fir-k32-aaligned-c1
+PYNQ8: complete overlay/reset/signoff/ELF/ROM/reference preflight passed
+PASS: physical Pynq-Z1 dot8 boot=1 methods=8 serial_bytes=20744 retained_RAM=65536 exact_reference_counters
+PASS: physical Pynq-Z1 dot8 boot=2 methods=8 serial_bytes=20744 retained_RAM=65536 exact_reference_counters
+PASS: physical dot8 package audited and CPU/DMA/compute safely STOPPED, /home/xilinx/aster_phase8_study_e5d83fa/physical/fir-k32-aaligned-c1/physical.json
+DOT8_PHYSICAL_STUDY 134/174 fir-k63-aaligned-c1
+PYNQ8: complete overlay/reset/signoff/ELF/ROM/reference preflight passed
+PASS: physical Pynq-Z1 dot8 boot=1 methods=8 serial_bytes=20752 retained_RAM=65536 exact_reference_counters
+PASS: physical Pynq-Z1 dot8 boot=2 methods=8 serial_bytes=20752 retained_RAM=65536 exact_reference_counters
+PASS: physical dot8 package audited and CPU/DMA/compute safely STOPPED, /home/xilinx/aster_phase8_study_e5d83fa/physical/fir-k63-aaligned-c1/physical.json
+DOT8_PHYSICAL_STUDY 135/174 fir-k64-aaligned-c1
+PYNQ8: complete overlay/reset/signoff/ELF/ROM/reference preflight passed
+PASS: physical Pynq-Z1 dot8 boot=1 methods=8 serial_bytes=20752 retained_RAM=65536 exact_reference_counters
+PASS: physical Pynq-Z1 dot8 boot=2 methods=8 serial_bytes=20752 retained_RAM=65536 exact_reference_counters
+PASS: physical dot8 package audited and CPU/DMA/compute safely STOPPED, /home/xilinx/aster_phase8_study_e5d83fa/physical/fir-k64-aaligned-c1/physical.json
+DOT8_PHYSICAL_STUDY 136/174 fir-k0-aunaligned-c1
+PYNQ8: complete overlay/reset/signoff/ELF/ROM/reference preflight passed
+PASS: physical Pynq-Z1 dot8 boot=1 methods=8 serial_bytes=20728 retained_RAM=65536 exact_reference_counters
+PASS: physical Pynq-Z1 dot8 boot=2 methods=8 serial_bytes=20728 retained_RAM=65536 exact_reference_counters
+PASS: physical dot8 package audited and CPU/DMA/compute safely STOPPED, /home/xilinx/aster_phase8_study_e5d83fa/physical/fir-k0-aunaligned-c1/physical.json
+DOT8_PHYSICAL_STUDY 137/174 fir-k1-aunaligned-c1
+PYNQ8: complete overlay/reset/signoff/ELF/ROM/reference preflight passed
+PASS: physical Pynq-Z1 dot8 boot=1 methods=8 serial_bytes=20728 retained_RAM=65536 exact_reference_counters
+PASS: physical Pynq-Z1 dot8 boot=2 methods=8 serial_bytes=20728 retained_RAM=65536 exact_reference_counters
+PASS: physical dot8 package audited and CPU/DMA/compute safely STOPPED, /home/xilinx/aster_phase8_study_e5d83fa/physical/fir-k1-aunaligned-c1/physical.json
+DOT8_PHYSICAL_STUDY 138/174 fir-k3-aunaligned-c1
+PYNQ8: complete overlay/reset/signoff/ELF/ROM/reference preflight passed
+PASS: physical Pynq-Z1 dot8 boot=1 methods=8 serial_bytes=20736 retained_RAM=65536 exact_reference_counters
+PASS: physical Pynq-Z1 dot8 boot=2 methods=8 serial_bytes=20736 retained_RAM=65536 exact_reference_counters
+PASS: physical dot8 package audited and CPU/DMA/compute safely STOPPED, /home/xilinx/aster_phase8_study_e5d83fa/physical/fir-k3-aunaligned-c1/physical.json
+DOT8_PHYSICAL_STUDY 139/174 fir-k4-aunaligned-c1
+PYNQ8: complete overlay/reset/signoff/ELF/ROM/reference preflight passed
+PASS: physical Pynq-Z1 dot8 boot=1 methods=8 serial_bytes=20736 retained_RAM=65536 exact_reference_counters
+PASS: physical Pynq-Z1 dot8 boot=2 methods=8 serial_bytes=20736 retained_RAM=65536 exact_reference_counters
+PASS: physical dot8 package audited and CPU/DMA/compute safely STOPPED, /home/xilinx/aster_phase8_study_e5d83fa/physical/fir-k4-aunaligned-c1/physical.json
+DOT8_PHYSICAL_STUDY 140/174 fir-k7-aunaligned-c1
+PYNQ8: complete overlay/reset/signoff/ELF/ROM/reference preflight passed
+PASS: physical Pynq-Z1 dot8 boot=1 methods=8 serial_bytes=20736 retained_RAM=65536 exact_reference_counters
+PASS: physical Pynq-Z1 dot8 boot=2 methods=8 serial_bytes=20736 retained_RAM=65536 exact_reference_counters
+PASS: physical dot8 package audited and CPU/DMA/compute safely STOPPED, /home/xilinx/aster_phase8_study_e5d83fa/physical/fir-k7-aunaligned-c1/physical.json
+DOT8_PHYSICAL_STUDY 141/174 fir-k8-aunaligned-c1
+PYNQ8: complete overlay/reset/signoff/ELF/ROM/reference preflight passed
+PASS: physical Pynq-Z1 dot8 boot=1 methods=8 serial_bytes=20744 retained_RAM=65536 exact_reference_counters
+PASS: physical Pynq-Z1 dot8 boot=2 methods=8 serial_bytes=20744 retained_RAM=65536 exact_reference_counters
+PASS: physical dot8 package audited and CPU/DMA/compute safely STOPPED, /home/xilinx/aster_phase8_study_e5d83fa/physical/fir-k8-aunaligned-c1/physical.json
+DOT8_PHYSICAL_STUDY 142/174 fir-k15-aunaligned-c1
+PYNQ8: complete overlay/reset/signoff/ELF/ROM/reference preflight passed
+PASS: physical Pynq-Z1 dot8 boot=1 methods=8 serial_bytes=20760 retained_RAM=65536 exact_reference_counters
+PASS: physical Pynq-Z1 dot8 boot=2 methods=8 serial_bytes=20760 retained_RAM=65536 exact_reference_counters
+PASS: physical dot8 package audited and CPU/DMA/compute safely STOPPED, /home/xilinx/aster_phase8_study_e5d83fa/physical/fir-k15-aunaligned-c1/physical.json
+DOT8_PHYSICAL_STUDY 143/174 fir-k16-aunaligned-c1
+PYNQ8: complete overlay/reset/signoff/ELF/ROM/reference preflight passed
+PASS: physical Pynq-Z1 dot8 boot=1 methods=8 serial_bytes=20760 retained_RAM=65536 exact_reference_counters
+PASS: physical Pynq-Z1 dot8 boot=2 methods=8 serial_bytes=20760 retained_RAM=65536 exact_reference_counters
+PASS: physical dot8 package audited and CPU/DMA/compute safely STOPPED, /home/xilinx/aster_phase8_study_e5d83fa/physical/fir-k16-aunaligned-c1/physical.json
+DOT8_PHYSICAL_STUDY 144/174 fir-k31-aunaligned-c1
+PYNQ8: complete overlay/reset/signoff/ELF/ROM/reference preflight passed
+PASS: physical Pynq-Z1 dot8 boot=1 methods=8 serial_bytes=20760 retained_RAM=65536 exact_reference_counters
+PASS: physical Pynq-Z1 dot8 boot=2 methods=8 serial_bytes=20760 retained_RAM=65536 exact_reference_counters
+PASS: physical dot8 package audited and CPU/DMA/compute safely STOPPED, /home/xilinx/aster_phase8_study_e5d83fa/physical/fir-k31-aunaligned-c1/physical.json
+DOT8_PHYSICAL_STUDY 145/174 fir-k32-aunaligned-c1
+PYNQ8: complete overlay/reset/signoff/ELF/ROM/reference preflight passed
+PASS: physical Pynq-Z1 dot8 boot=1 methods=8 serial_bytes=20760 retained_RAM=65536 exact_reference_counters
+PASS: physical Pynq-Z1 dot8 boot=2 methods=8 serial_bytes=20760 retained_RAM=65536 exact_reference_counters
+PASS: physical dot8 package audited and CPU/DMA/compute safely STOPPED, /home/xilinx/aster_phase8_study_e5d83fa/physical/fir-k32-aunaligned-c1/physical.json
+DOT8_PHYSICAL_STUDY 146/174 fir-k63-aunaligned-c1
+PYNQ8: complete overlay/reset/signoff/ELF/ROM/reference preflight passed
+PASS: physical Pynq-Z1 dot8 boot=1 methods=8 serial_bytes=20768 retained_RAM=65536 exact_reference_counters
+PASS: physical Pynq-Z1 dot8 boot=2 methods=8 serial_bytes=20768 retained_RAM=65536 exact_reference_counters
+PASS: physical dot8 package audited and CPU/DMA/compute safely STOPPED, /home/xilinx/aster_phase8_study_e5d83fa/physical/fir-k63-aunaligned-c1/physical.json
+DOT8_PHYSICAL_STUDY 147/174 fir-k64-aunaligned-c1
+PYNQ8: complete overlay/reset/signoff/ELF/ROM/reference preflight passed
+PASS: physical Pynq-Z1 dot8 boot=1 methods=8 serial_bytes=20768 retained_RAM=65536 exact_reference_counters
+PASS: physical Pynq-Z1 dot8 boot=2 methods=8 serial_bytes=20768 retained_RAM=65536 exact_reference_counters
+PASS: physical dot8 package audited and CPU/DMA/compute safely STOPPED, /home/xilinx/aster_phase8_study_e5d83fa/physical/fir-k64-aunaligned-c1/physical.json
+DOT8_PHYSICAL_STUDY 148/174 gemm-k0-aaligned-c1
+PYNQ8: complete overlay/reset/signoff/ELF/ROM/reference preflight passed
+PASS: physical Pynq-Z1 dot8 boot=1 methods=8 serial_bytes=20728 retained_RAM=65536 exact_reference_counters
+PASS: physical Pynq-Z1 dot8 boot=2 methods=8 serial_bytes=20728 retained_RAM=65536 exact_reference_counters
+PASS: physical dot8 package audited and CPU/DMA/compute safely STOPPED, /home/xilinx/aster_phase8_study_e5d83fa/physical/gemm-k0-aaligned-c1/physical.json
+DOT8_PHYSICAL_STUDY 149/174 gemm-k1-aaligned-c1
+PYNQ8: complete overlay/reset/signoff/ELF/ROM/reference preflight passed
+PASS: physical Pynq-Z1 dot8 boot=1 methods=8 serial_bytes=20728 retained_RAM=65536 exact_reference_counters
+PASS: physical Pynq-Z1 dot8 boot=2 methods=8 serial_bytes=20728 retained_RAM=65536 exact_reference_counters
+PASS: physical dot8 package audited and CPU/DMA/compute safely STOPPED, /home/xilinx/aster_phase8_study_e5d83fa/physical/gemm-k1-aaligned-c1/physical.json
+DOT8_PHYSICAL_STUDY 150/174 gemm-k3-aaligned-c1
+PYNQ8: complete overlay/reset/signoff/ELF/ROM/reference preflight passed
+PASS: physical Pynq-Z1 dot8 boot=1 methods=8 serial_bytes=20736 retained_RAM=65536 exact_reference_counters
+PASS: physical Pynq-Z1 dot8 boot=2 methods=8 serial_bytes=20736 retained_RAM=65536 exact_reference_counters
+PASS: physical dot8 package audited and CPU/DMA/compute safely STOPPED, /home/xilinx/aster_phase8_study_e5d83fa/physical/gemm-k3-aaligned-c1/physical.json
+DOT8_PHYSICAL_STUDY 151/174 gemm-k4-aaligned-c1
+PYNQ8: complete overlay/reset/signoff/ELF/ROM/reference preflight passed
+PASS: physical Pynq-Z1 dot8 boot=1 methods=8 serial_bytes=20752 retained_RAM=65536 exact_reference_counters
+PASS: physical Pynq-Z1 dot8 boot=2 methods=8 serial_bytes=20752 retained_RAM=65536 exact_reference_counters
+PASS: physical dot8 package audited and CPU/DMA/compute safely STOPPED, /home/xilinx/aster_phase8_study_e5d83fa/physical/gemm-k4-aaligned-c1/physical.json
+DOT8_PHYSICAL_STUDY 152/174 gemm-k7-aaligned-c1
+PYNQ8: complete overlay/reset/signoff/ELF/ROM/reference preflight passed
+PASS: physical Pynq-Z1 dot8 boot=1 methods=8 serial_bytes=20752 retained_RAM=65536 exact_reference_counters
+PASS: physical Pynq-Z1 dot8 boot=2 methods=8 serial_bytes=20752 retained_RAM=65536 exact_reference_counters
+PASS: physical dot8 package audited and CPU/DMA/compute safely STOPPED, /home/xilinx/aster_phase8_study_e5d83fa/physical/gemm-k7-aaligned-c1/physical.json
+DOT8_PHYSICAL_STUDY 153/174 gemm-k8-aaligned-c1
+PYNQ8: complete overlay/reset/signoff/ELF/ROM/reference preflight passed
+PASS: physical Pynq-Z1 dot8 boot=1 methods=8 serial_bytes=20752 retained_RAM=65536 exact_reference_counters
+PASS: physical Pynq-Z1 dot8 boot=2 methods=8 serial_bytes=20752 retained_RAM=65536 exact_reference_counters
+PASS: physical dot8 package audited and CPU/DMA/compute safely STOPPED, /home/xilinx/aster_phase8_study_e5d83fa/physical/gemm-k8-aaligned-c1/physical.json
+DOT8_PHYSICAL_STUDY 154/174 gemm-k15-aaligned-c1
+PYNQ8: complete overlay/reset/signoff/ELF/ROM/reference preflight passed
+PASS: physical Pynq-Z1 dot8 boot=1 methods=8 serial_bytes=20760 retained_RAM=65536 exact_reference_counters
+PASS: physical Pynq-Z1 dot8 boot=2 methods=8 serial_bytes=20760 retained_RAM=65536 exact_reference_counters
+PASS: physical dot8 package audited and CPU/DMA/compute safely STOPPED, /home/xilinx/aster_phase8_study_e5d83fa/physical/gemm-k15-aaligned-c1/physical.json
+DOT8_PHYSICAL_STUDY 155/174 gemm-k16-aaligned-c1
+PYNQ8: complete overlay/reset/signoff/ELF/ROM/reference preflight passed
+PASS: physical Pynq-Z1 dot8 boot=1 methods=8 serial_bytes=20760 retained_RAM=65536 exact_reference_counters
+PASS: physical Pynq-Z1 dot8 boot=2 methods=8 serial_bytes=20760 retained_RAM=65536 exact_reference_counters
+PASS: physical dot8 package audited and CPU/DMA/compute safely STOPPED, /home/xilinx/aster_phase8_study_e5d83fa/physical/gemm-k16-aaligned-c1/physical.json
+DOT8_PHYSICAL_STUDY 156/174 gemm-k31-aaligned-c1
+PYNQ8: complete overlay/reset/signoff/ELF/ROM/reference preflight passed
+PASS: physical Pynq-Z1 dot8 boot=1 methods=8 serial_bytes=20776 retained_RAM=65536 exact_reference_counters
+PASS: physical Pynq-Z1 dot8 boot=2 methods=8 serial_bytes=20776 retained_RAM=65536 exact_reference_counters
+PASS: physical dot8 package audited and CPU/DMA/compute safely STOPPED, /home/xilinx/aster_phase8_study_e5d83fa/physical/gemm-k31-aaligned-c1/physical.json
+DOT8_PHYSICAL_STUDY 157/174 gemm-k32-aaligned-c1
+PYNQ8: complete overlay/reset/signoff/ELF/ROM/reference preflight passed
+PASS: physical Pynq-Z1 dot8 boot=1 methods=8 serial_bytes=20776 retained_RAM=65536 exact_reference_counters
+PASS: physical Pynq-Z1 dot8 boot=2 methods=8 serial_bytes=20776 retained_RAM=65536 exact_reference_counters
+PASS: physical dot8 package audited and CPU/DMA/compute safely STOPPED, /home/xilinx/aster_phase8_study_e5d83fa/physical/gemm-k32-aaligned-c1/physical.json
+DOT8_PHYSICAL_STUDY 158/174 gemm-k63-aaligned-c1
+PYNQ8: complete overlay/reset/signoff/ELF/ROM/reference preflight passed
+PASS: physical Pynq-Z1 dot8 boot=1 methods=8 serial_bytes=20784 retained_RAM=65536 exact_reference_counters
+PASS: physical Pynq-Z1 dot8 boot=2 methods=8 serial_bytes=20784 retained_RAM=65536 exact_reference_counters
+PASS: physical dot8 package audited and CPU/DMA/compute safely STOPPED, /home/xilinx/aster_phase8_study_e5d83fa/physical/gemm-k63-aaligned-c1/physical.json
+DOT8_PHYSICAL_STUDY 159/174 gemm-k64-aaligned-c1
+PYNQ8: complete overlay/reset/signoff/ELF/ROM/reference preflight passed
+PASS: physical Pynq-Z1 dot8 boot=1 methods=8 serial_bytes=20784 retained_RAM=65536 exact_reference_counters
+PASS: physical Pynq-Z1 dot8 boot=2 methods=8 serial_bytes=20784 retained_RAM=65536 exact_reference_counters
+PASS: physical dot8 package audited and CPU/DMA/compute safely STOPPED, /home/xilinx/aster_phase8_study_e5d83fa/physical/gemm-k64-aaligned-c1/physical.json
+DOT8_PHYSICAL_STUDY 160/174 gemm-k0-aunaligned-c1
+PYNQ8: complete overlay/reset/signoff/ELF/ROM/reference preflight passed
+PASS: physical Pynq-Z1 dot8 boot=1 methods=8 serial_bytes=20744 retained_RAM=65536 exact_reference_counters
+PASS: physical Pynq-Z1 dot8 boot=2 methods=8 serial_bytes=20744 retained_RAM=65536 exact_reference_counters
+PASS: physical dot8 package audited and CPU/DMA/compute safely STOPPED, /home/xilinx/aster_phase8_study_e5d83fa/physical/gemm-k0-aunaligned-c1/physical.json
+DOT8_PHYSICAL_STUDY 161/174 gemm-k1-aunaligned-c1
+PYNQ8: complete overlay/reset/signoff/ELF/ROM/reference preflight passed
+PASS: physical Pynq-Z1 dot8 boot=1 methods=8 serial_bytes=20744 retained_RAM=65536 exact_reference_counters
+PASS: physical Pynq-Z1 dot8 boot=2 methods=8 serial_bytes=20744 retained_RAM=65536 exact_reference_counters
+PASS: physical dot8 package audited and CPU/DMA/compute safely STOPPED, /home/xilinx/aster_phase8_study_e5d83fa/physical/gemm-k1-aunaligned-c1/physical.json
+DOT8_PHYSICAL_STUDY 162/174 gemm-k3-aunaligned-c1
+PYNQ8: complete overlay/reset/signoff/ELF/ROM/reference preflight passed
+PASS: physical Pynq-Z1 dot8 boot=1 methods=8 serial_bytes=20752 retained_RAM=65536 exact_reference_counters
+PASS: physical Pynq-Z1 dot8 boot=2 methods=8 serial_bytes=20752 retained_RAM=65536 exact_reference_counters
+PASS: physical dot8 package audited and CPU/DMA/compute safely STOPPED, /home/xilinx/aster_phase8_study_e5d83fa/physical/gemm-k3-aunaligned-c1/physical.json
+DOT8_PHYSICAL_STUDY 163/174 gemm-k4-aunaligned-c1
+PYNQ8: complete overlay/reset/signoff/ELF/ROM/reference preflight passed
+PASS: physical Pynq-Z1 dot8 boot=1 methods=8 serial_bytes=20768 retained_RAM=65536 exact_reference_counters
+PASS: physical Pynq-Z1 dot8 boot=2 methods=8 serial_bytes=20768 retained_RAM=65536 exact_reference_counters
+PASS: physical dot8 package audited and CPU/DMA/compute safely STOPPED, /home/xilinx/aster_phase8_study_e5d83fa/physical/gemm-k4-aunaligned-c1/physical.json
+DOT8_PHYSICAL_STUDY 164/174 gemm-k7-aunaligned-c1
+PYNQ8: complete overlay/reset/signoff/ELF/ROM/reference preflight passed
+PASS: physical Pynq-Z1 dot8 boot=1 methods=8 serial_bytes=20768 retained_RAM=65536 exact_reference_counters
+PASS: physical Pynq-Z1 dot8 boot=2 methods=8 serial_bytes=20768 retained_RAM=65536 exact_reference_counters
+PASS: physical dot8 package audited and CPU/DMA/compute safely STOPPED, /home/xilinx/aster_phase8_study_e5d83fa/physical/gemm-k7-aunaligned-c1/physical.json
+DOT8_PHYSICAL_STUDY 165/174 gemm-k8-aunaligned-c1
+PYNQ8: complete overlay/reset/signoff/ELF/ROM/reference preflight passed
+PASS: physical Pynq-Z1 dot8 boot=1 methods=8 serial_bytes=20768 retained_RAM=65536 exact_reference_counters
+PASS: physical Pynq-Z1 dot8 boot=2 methods=8 serial_bytes=20768 retained_RAM=65536 exact_reference_counters
+PASS: physical dot8 package audited and CPU/DMA/compute safely STOPPED, /home/xilinx/aster_phase8_study_e5d83fa/physical/gemm-k8-aunaligned-c1/physical.json
+DOT8_PHYSICAL_STUDY 166/174 gemm-k15-aunaligned-c1
+PYNQ8: complete overlay/reset/signoff/ELF/ROM/reference preflight passed
+PASS: physical Pynq-Z1 dot8 boot=1 methods=8 serial_bytes=20776 retained_RAM=65536 exact_reference_counters
+PASS: physical Pynq-Z1 dot8 boot=2 methods=8 serial_bytes=20776 retained_RAM=65536 exact_reference_counters
+PASS: physical dot8 package audited and CPU/DMA/compute safely STOPPED, /home/xilinx/aster_phase8_study_e5d83fa/physical/gemm-k15-aunaligned-c1/physical.json
+DOT8_PHYSICAL_STUDY 167/174 gemm-k16-aunaligned-c1
+PYNQ8: complete overlay/reset/signoff/ELF/ROM/reference preflight passed
+PASS: physical Pynq-Z1 dot8 boot=1 methods=8 serial_bytes=20776 retained_RAM=65536 exact_reference_counters
+PASS: physical Pynq-Z1 dot8 boot=2 methods=8 serial_bytes=20776 retained_RAM=65536 exact_reference_counters
+PASS: physical dot8 package audited and CPU/DMA/compute safely STOPPED, /home/xilinx/aster_phase8_study_e5d83fa/physical/gemm-k16-aunaligned-c1/physical.json
+DOT8_PHYSICAL_STUDY 168/174 gemm-k31-aunaligned-c1
+PYNQ8: complete overlay/reset/signoff/ELF/ROM/reference preflight passed
+PASS: physical Pynq-Z1 dot8 boot=1 methods=8 serial_bytes=20792 retained_RAM=65536 exact_reference_counters
+PASS: physical Pynq-Z1 dot8 boot=2 methods=8 serial_bytes=20792 retained_RAM=65536 exact_reference_counters
+PASS: physical dot8 package audited and CPU/DMA/compute safely STOPPED, /home/xilinx/aster_phase8_study_e5d83fa/physical/gemm-k31-aunaligned-c1/physical.json
+DOT8_PHYSICAL_STUDY 169/174 gemm-k32-aunaligned-c1
+PYNQ8: complete overlay/reset/signoff/ELF/ROM/reference preflight passed
+PASS: physical Pynq-Z1 dot8 boot=1 methods=8 serial_bytes=20792 retained_RAM=65536 exact_reference_counters
+PASS: physical Pynq-Z1 dot8 boot=2 methods=8 serial_bytes=20792 retained_RAM=65536 exact_reference_counters
+PASS: physical dot8 package audited and CPU/DMA/compute safely STOPPED, /home/xilinx/aster_phase8_study_e5d83fa/physical/gemm-k32-aunaligned-c1/physical.json
+DOT8_PHYSICAL_STUDY 170/174 gemm-k63-aunaligned-c1
+PYNQ8: complete overlay/reset/signoff/ELF/ROM/reference preflight passed
+PASS: physical Pynq-Z1 dot8 boot=1 methods=8 serial_bytes=20800 retained_RAM=65536 exact_reference_counters
+PASS: physical Pynq-Z1 dot8 boot=2 methods=8 serial_bytes=20800 retained_RAM=65536 exact_reference_counters
+PASS: physical dot8 package audited and CPU/DMA/compute safely STOPPED, /home/xilinx/aster_phase8_study_e5d83fa/physical/gemm-k63-aunaligned-c1/physical.json
+DOT8_PHYSICAL_STUDY 171/174 gemm-k64-aunaligned-c1
+PYNQ8: complete overlay/reset/signoff/ELF/ROM/reference preflight passed
+PASS: physical Pynq-Z1 dot8 boot=1 methods=8 serial_bytes=20800 retained_RAM=65536 exact_reference_counters
+PASS: physical Pynq-Z1 dot8 boot=2 methods=8 serial_bytes=20800 retained_RAM=65536 exact_reference_counters
+PASS: physical dot8 package audited and CPU/DMA/compute safely STOPPED, /home/xilinx/aster_phase8_study_e5d83fa/physical/gemm-k64-aunaligned-c1/physical.json
+DOT8_PHYSICAL_STUDY 172/174 dot-k128-aaligned-c1-repeat
+PYNQ8: complete overlay/reset/signoff/ELF/ROM/reference preflight passed
+PASS: physical Pynq-Z1 dot8 boot=1 methods=8 serial_bytes=20768 retained_RAM=65536 exact_reference_counters
+PASS: physical Pynq-Z1 dot8 boot=2 methods=8 serial_bytes=20768 retained_RAM=65536 exact_reference_counters
+PASS: physical dot8 package audited and CPU/DMA/compute safely STOPPED, /home/xilinx/aster_phase8_study_e5d83fa/physical/dot-k128-aaligned-c1-repeat/physical.json
+DOT8_PHYSICAL_STUDY 173/174 fir-k32-aaligned-c1-repeat
+PYNQ8: complete overlay/reset/signoff/ELF/ROM/reference preflight passed
+PASS: physical Pynq-Z1 dot8 boot=1 methods=8 serial_bytes=20744 retained_RAM=65536 exact_reference_counters
+PASS: physical Pynq-Z1 dot8 boot=2 methods=8 serial_bytes=20744 retained_RAM=65536 exact_reference_counters
+PASS: physical dot8 package audited and CPU/DMA/compute safely STOPPED, /home/xilinx/aster_phase8_study_e5d83fa/physical/fir-k32-aaligned-c1-repeat/physical.json
+DOT8_PHYSICAL_STUDY 174/174 gemm-k32-aaligned-c1-repeat
+PYNQ8: complete overlay/reset/signoff/ELF/ROM/reference preflight passed
+PASS: physical Pynq-Z1 dot8 boot=1 methods=8 serial_bytes=20776 retained_RAM=65536 exact_reference_counters
+PASS: physical Pynq-Z1 dot8 boot=2 methods=8 serial_bytes=20776 retained_RAM=65536 exact_reference_counters
+PASS: physical dot8 package audited and CPU/DMA/compute safely STOPPED, /home/xilinx/aster_phase8_study_e5d83fa/physical/gemm-k32-aaligned-c1-repeat/physical.json
+PASS: complete physical DOT8 study, 174 captures / 348 warm boots / 1392 paired jobs, /home/xilinx/aster_phase8_study_e5d83fa/physical/physical-study.json

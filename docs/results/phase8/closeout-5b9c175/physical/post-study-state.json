@@ -1,0 +1,50 @@
+{
+  "fclk0_mhz": 31.25,
+  "fifo_count": 0,
+  "loaded_bitstream": "/home/xilinx/aster_phase8_study_e5d83fa/overlay-c1/aster_linux.bit",
+  "loaded_bitstream_sha256": "84a556203d8e1ab9bb876110bce6bd946f36b7e52022dfea6df691f482caaaff",
+  "observed_utc": "2026-09-13T21:56:11.097533+00:00",
+  "state": {
+    "control": 0,
+    "dma": {
+      "bytes_done": 0,
+      "counters": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "counting": 0,
+      "error_code": 0,
+      "job_cycles": 0,
+      "status": 0
+    },
+    "dot8": {
+      "busy": 0,
+      "counters": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "counting": 0
+    },
+    "hart_status": 0,
+    "status": 0,
+    "stop_status": 1
+  }
+}

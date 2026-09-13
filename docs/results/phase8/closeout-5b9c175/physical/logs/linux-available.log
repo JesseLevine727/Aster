@@ -1,0 +1,4 @@
+pynq
+Linux 6.6.10-xilinx-v2024.1-g916a1f7c7222 armv7l GNU/Linux
+uid=1000(xilinx) gid=1000(xilinx) groups=1000(xilinx),4(adm),27(sudo)
+ 22:12:39 up 1 day, 53 min,  1 user,  load average: 0.38, 0.35, 0.49

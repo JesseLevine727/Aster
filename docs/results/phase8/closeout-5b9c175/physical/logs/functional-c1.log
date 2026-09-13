@@ -1,0 +1,5 @@
+PYNQ8_FUNCTIONAL: complete ELF/ROM/source/reset/signoff preflight passed
+PYNQ8_FUNCTIONAL: downloading verified DOT8 overlay through Linux/PCAP
+PASS: physical Pynq-Z1 DOT8 functional cache=1 boot=1 serial_bytes=18 retained_RAM=65536 independent_functional_oracle exact_50_reference_counters
+PASS: physical Pynq-Z1 DOT8 functional cache=1 boot=2 serial_bytes=18 retained_RAM=65536 independent_functional_oracle exact_50_reference_counters
+PASS: physical DOT8 functional package audited and CPU/DMA/compute safely STOPPED, /home/xilinx/aster_phase8_functional_be3d1a7/physical-c1-chain-final/functional-physical.json

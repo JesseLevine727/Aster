@@ -1,0 +1,87 @@
+pynq
+uid=1000(xilinx) gid=1000(xilinx) groups=1000(xilinx),4(adm),27(sudo)
+ 20:07:13 up 22:47,  1 user,  load average: 0.00, 0.00, 0.00
+xilinx   ttyPS0       2026-09-12 17:47
+  PID USER     ELAPSED COMMAND
+    1 root       82078 /sbin/init earlyprintk
+    2 root       82078 [kthreadd]
+    3 root       82078 [pool_workqueue_release]
+    4 root       82078 [kworker/R-rcu_g]
+    5 root       82078 [kworker/R-rcu_p]
+    6 root       82078 [kworker/R-slub_]
+    7 root       82078 [kworker/R-netns]
+   12 root       82078 [kworker/R-mm_pe]
+   13 root       82078 [rcu_tasks_kthread]
+   14 root       82078 [rcu_tasks_trace_kthread]
+   15 root       82078 [ksoftirqd/0]
+   16 root       82078 [rcu_preempt]
+   17 root       82078 [migration/0]
+   18 root       82078 [cpuhp/0]
+   19 root       82078 [cpuhp/1]
+   20 root       82078 [migration/1]
+   21 root       82078 [ksoftirqd/1]
+   24 root       82078 [kdevtmpfs]
+   25 root       82078 [kworker/R-inet_]
+   27 root       82078 [oom_reaper]
+   28 root       82078 [kworker/R-write]
+   29 root       82078 [kworker/R-kbloc]
+   30 root       82078 [kworker/R-blkcg]
+   32 root       82077 [kworker/R-edac-]
+   33 root       82077 [watchdogd]
+   34 root       82077 [kworker/1:1H-kblockd]
+   35 root       82077 [kworker/R-rpcio]
+   36 root       82077 [kworker/R-xprti]
+   37 root       82077 [kworker/R-cfg80]
+   38 root       82077 [kswapd0]
+   39 root       82077 [kworker/R-nfsio]
+   40 root       82077 [kworker/R-kthro]
+   44 root       82038 [kworker/R-ci_ot]
+   45 root       82038 [kworker/R-dm_bu]
+   46 root       82038 [kworker/u5:0]
+   47 root       82038 [kworker/R-sdhci]
+   48 root       82038 [irq/43-mmc0]
+   49 root       82038 [kworker/0:1H-mmc_complete]
+   51 root       82038 [kworker/R-mld]
+   52 root       82038 [kworker/R-ipv6_]
+   53 root       82038 [kworker/R-mmc_c]
+   59 root       82038 [jbd2/mmcblk0p2-8]
+   60 root       82038 [kworker/R-ext4-]
+   81 root       82032 /lib/systemd/systemd-journald
+  129 root       82030 /lib/systemd/systemd-udevd
+  144 systemd+   82029 /lib/systemd/systemd-resolved
+  145 systemd+   82029 /lib/systemd/systemd-timesyncd
+  208 root       82027 /sbin/dhclient -1 -4 -v -i -pf /run/dhclient.eth0.pid -lf /var/lib/dhcp/dhclient.eth0.leases -I -df /var/lib/dhcp/dhclient6.eth0.leases eth0
+  233 root       82026 /usr/sbin/cron -f -P
+  234 message+   82026 @dbus-daemon --system --address=systemd: --nofork --nopidfile --systemd-activation --syslog-only
+  253 root       82026 /usr/bin/python3 /usr/bin/networkd-dispatcher --run-startup-triggers
+  261 syslog     82026 /usr/sbin/rsyslogd -n -iNONE
+  267 root       82026 /lib/systemd/systemd-logind
+  404 root       82014 /usr/local/share/pynq-venv/bin/python3 /usr/local/share/pynq-venv/bin/jupyter-notebook --no-browser --allow-root
+  605 root       82011 /usr/sbin/nmbd --foreground --no-process-group
+  614 root       82010 /usr/bin/python3 /usr/share/unattended-upgrades/unattended-upgrade-shutdown --wait-for-signal
+  615 root       82010 /bin/login -f
+  619 root       82009 /sbin/agetty -o -p -- \u --noclear tty1 linux
+  620 root       82009 sshd: /usr/sbin/sshd -D [listener] 0 of 10-100 startups
+  641 xilinx     82008 /lib/systemd/systemd --user
+  644 root       82008 /usr/sbin/smbd --foreground --no-process-group
+  647 xilinx     82008 (sd-pam)
+  658 root       82006 /usr/sbin/smbd --foreground --no-process-group
+  659 root       82006 /usr/sbin/smbd --foreground --no-process-group
+  661 root       82005 /usr/lib/arm-linux-gnueabihf/samba/samba-bgqd --ready-signal-fd=46 --parent-watch-fd=-1 --debuglevel=0 -F
+  673 xilinx     82004 -bash
+  784 root       81978 python3 /usr/local/bin/redirect_server
+ 2236 root       59246 /usr/libexec/packagekitd
+ 2240 root       59246 /usr/libexec/polkitd --no-debug
+ 3163 root       55995 [kworker/0:1-events]
+ 6041 root       11469 [kworker/u4:1-flush-179:0]
+ 6285 root       11074 [kworker/1:2H]
+ 6427 root       10579 [kworker/u4:2-events_unbound]
+ 6748 root        9988 [kworker/0:0H]
+ 6774 root        9924 [kworker/0:0]
+ 6801 root        7253 [kworker/u4:0-flush-179:0]
+ 6863 root        1388 [kworker/1:1-events_power_efficient]
+ 6868 root         473 [kworker/1:2-cgroup_destroy]
+ 6869 root         166 [kworker/1:0-events_power_efficient]
+ 6872 root           1 sshd: xilinx [priv]
+ 6888 xilinx         1 sshd: xilinx@notty
+ 6890 xilinx         0 ps -eo pid,user,etimes,args

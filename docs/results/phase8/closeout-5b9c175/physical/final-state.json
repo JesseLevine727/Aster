@@ -1,0 +1,63 @@
+{
+  "dma": {
+    "bytes_done": 0,
+    "counters": [
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0
+    ],
+    "counting": 0,
+    "error_code": 0,
+    "job_cycles": 0,
+    "status": 0
+  },
+  "dot8": {
+    "busy": 0,
+    "counters": [
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0
+    ],
+    "counting": 0
+  },
+  "fclk0_mhz": 31.25,
+  "loaded_bitstream": "/home/xilinx/aster_phase8_functional_be3d1a7/overlay-c1/aster_linux.bit",
+  "loaded_bitstream_sha256": "1ced70151af28685e0f8943b783995de53668cb2dc99ac36ddecc6a7cbf0388c",
+  "observed_utc": "2026-09-13T22:29:32.755345+00:00",
+  "registers": {
+    "abi": 524289,
+    "clock_hz": 31250000,
+    "control": 0,
+    "dma_abi": 1,
+    "dma_counter_abi": 5,
+    "dot8_abi": 1,
+    "dot8_counter_abi": 6,
+    "dot8_lanes": 4,
+    "dot8_mask": 4261441663,
+    "dot8_value": 11,
+    "features": 15,
+    "fifo_count": 0,
+    "hart_status": 0,
+    "harts": 2,
+    "magic": 1095980114,
+    "status": 0,
+    "stop_status": 1
+  },
+  "schema": "aster.dot8.final-state.v1"
+}

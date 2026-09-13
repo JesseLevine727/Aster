@@ -1,0 +1,38 @@
+OBS: hart=0 directed_pairs=128
+OBS: hart=1 directed_pairs=128
+OBS: hart=0 directed_pairs=256
+OBS: hart=1 directed_pairs=256
+OBS: hart=0 directed_pairs=384
+OBS: hart=1 directed_pairs=384
+OBS: hart=0 directed_pairs=512
+OBS: hart=1 directed_pairs=512
+OBS: hart=0 directed_pairs=640
+OBS: hart=1 directed_pairs=640
+PASS: dot8 C runtime harts=2 cache=1 wait=1 cycles=199476614 pairs=1472 output_methods=2947 dots=25393,25689 DMA-overlap=11; all 16 byte alignments, tails, dot/FIR/GEMM, actual output stores, full guards/RAM, LRSC, dirty DMA publication, ABI 6
+DOT8_FUNCTIONAL_OBS {"boot":1,"counts":[199443814,25918781,32338340,28954779,361008,3382764,2723120,15522888,32,16,0,125,466,3185640,199443814,25951547,32372836,28988558,360868,3383541,2717687,15496152,32,16,0,604,260,3181196,14804,12756,512,512,2048,368,612,144,100,25,4,0,0,0,25393,50786,25393,25393,25689,51378,25689,25689],"pairs":[736,736],"methods":[1472,1475],"dots":[25393,25689],"dma_overlap":11}
+OBS: hart=0 directed_pairs=128
+OBS: hart=1 directed_pairs=128
+OBS: hart=0 directed_pairs=256
+OBS: hart=1 directed_pairs=256
+OBS: hart=0 directed_pairs=384
+OBS: hart=1 directed_pairs=384
+OBS: hart=0 directed_pairs=512
+OBS: hart=1 directed_pairs=512
+OBS: hart=0 directed_pairs=640
+OBS: hart=1 directed_pairs=640
+PASS: dot8 C runtime harts=2 cache=1 wait=1 cycles=199476614 pairs=1472 output_methods=2947 dots=25393,25689 DMA-overlap=11; all 16 byte alignments, tails, dot/FIR/GEMM, actual output stores, full guards/RAM, LRSC, dirty DMA publication, ABI 6
+DOT8_FUNCTIONAL_OBS {"boot":2,"counts":[199443814,25918781,32338340,28954779,361008,3382764,2723120,15522888,32,16,0,125,466,3185640,199443814,25951547,32372836,28988558,360868,3383541,2717687,15496152,32,16,0,604,260,3181196,14804,12756,512,512,2048,368,612,144,100,25,4,0,0,0,25393,50786,25393,25393,25689,51378,25689,25689],"pairs":[736,736],"methods":[1472,1475],"dots":[25393,25689],"dma_overlap":11}
+PASS: dot8 warm stop hart=0 point=0 escalation=0 selective=1; all admitted sums completed, no reset race, full retained RAM
+PASS: dot8 warm stop hart=0 point=1 escalation=0 selective=1; all admitted sums completed, no reset race, full retained RAM
+PASS: dot8 warm stop hart=0 point=2 escalation=0 selective=1; all admitted sums completed, no reset race, full retained RAM
+PASS: dot8 warm stop hart=0 point=3 escalation=0 selective=1; all admitted sums completed, no reset race, full retained RAM
+PASS: dot8 warm stop hart=1 point=0 escalation=0 selective=0; all admitted sums completed, no reset race, full retained RAM
+PASS: dot8 warm stop hart=1 point=1 escalation=0 selective=0; all admitted sums completed, no reset race, full retained RAM
+PASS: dot8 warm stop hart=1 point=2 escalation=0 selective=0; all admitted sums completed, no reset race, full retained RAM
+PASS: dot8 warm stop hart=1 point=3 escalation=0 selective=0; all admitted sums completed, no reset race, full retained RAM
+PASS: dot8 warm stop hart=0 point=4 escalation=0 selective=8; all admitted sums completed, no reset race, full retained RAM
+PASS: dot8 warm stop hart=0 point=0 escalation=1 selective=0; all admitted sums completed, no reset race, full retained RAM
+PASS: dot8 warm stop hart=0 point=1 escalation=1 selective=1; all admitted sums completed, no reset race, full retained RAM
+PASS: dot8 warm stop hart=0 point=2 escalation=1 selective=1; all admitted sums completed, no reset race, full retained RAM
+PASS: dot8 warm stop hart=0 point=3 escalation=1 selective=1; all admitted sums completed, no reset race, full retained RAM
+PASS: dot8 runtime closeout warm_boots=2 stopped=15 CPU-stores=3580173 DMA-stores=2239; no reset after initial POR
