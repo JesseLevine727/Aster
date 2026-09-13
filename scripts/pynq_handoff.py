@@ -11,15 +11,17 @@ from pathlib import Path
 import xml.etree.ElementTree as ET
 
 
-def validate_handoff(path, expected_harts=0, *, expected_coherent=False, expected_cache=True, expected_dma=False):
+def validate_handoff(path, expected_harts=0, *, expected_coherent=False, expected_cache=True, expected_dma=False, expected_dot8=False):
     if type(expected_harts) is not int or expected_harts not in (0, 1, 2):
         raise ValueError("invalid expected Linux hart configuration")
-    if type(expected_coherent) is not bool or type(expected_cache) is not bool or type(expected_dma) is not bool:
+    if any(type(value) is not bool for value in (expected_coherent, expected_cache, expected_dma, expected_dot8)):
         raise ValueError("coherence/cache expectations must be boolean")
     if expected_coherent and not expected_harts:
         raise ValueError("coherent Linux needs one or two harts")
     if expected_dma and not expected_coherent:
         raise ValueError("DMA Linux requires coherent memory")
+    if expected_dot8 and not (expected_coherent and expected_dma):
+        raise ValueError("dot8 Linux requires coherence and DMA")
     root = ET.parse(path).getroot()
 
     def require(condition, message):
@@ -70,6 +72,11 @@ def validate_handoff(path, expected_harts=0, *, expected_coherent=False, expecte
     require(len(dma_parameters) <= 1, "duplicate DMA configuration")
     dma = int(dma_parameters[0].get("VALUE", "-1"), 0) if dma_parameters else 0
     require(dma in (0, 1) and bool(dma) == expected_dma and (not dma or coherent), "wrong DMA / host diagnostic ABI")
+    dot8_parameters = modules["aster"].findall("./PARAMETERS/PARAMETER[@NAME='ENABLE_DOT8']")
+    require(len(dot8_parameters) <= 1, "duplicate dot8 configuration")
+    dot8 = int(dot8_parameters[0].get("VALUE", "-1"), 0) if dot8_parameters else 0
+    require(dot8 in (0, 1) and bool(dot8) == expected_dot8 and (not dot8 or (coherent and dma)),
+            "wrong dot8 instruction / counter / host ABI")
 
     def driven(module, name, driver, output):
         sink, source = port(module, name), port(driver, output)
@@ -126,6 +133,8 @@ def validate_handoff(path, expected_harts=0, *, expected_coherent=False, expecte
         result.update(coherent=True, caches=bool(cached), isa="rv32ima", safe_warm_stop=True)
     if dma:
         result.update(dma=True, bridge_version=0x00070001, dma_abi=1, dma_counter_abi=5)
+    if dot8:
+        result.update(dot8=True, bridge_version=0x00080001, dot8_abi=1, dot8_counter_abi=6)
     return result
 
 
@@ -136,10 +145,14 @@ if __name__ == "__main__":
     parser.add_argument("--coherent", action="store_true")
     parser.add_argument("--no-cache", action="store_true")
     parser.add_argument("--dma", action="store_true")
+    parser.add_argument("--dot8", action="store_true")
     args = parser.parse_args()
     if args.no_cache and not args.coherent:
         parser.error("--no-cache requires --coherent")
     if args.dma and not args.coherent:
         parser.error("--dma requires --coherent")
+    if args.dot8 and not (args.coherent and args.dma):
+        parser.error("--dot8 requires --coherent and --dma")
     print("PASS: Aster Linux clock/reset/address handoff", validate_handoff(
-        args.handoff, args.harts, expected_coherent=args.coherent, expected_cache=not args.no_cache, expected_dma=args.dma))
+        args.handoff, args.harts, expected_coherent=args.coherent, expected_cache=not args.no_cache,
+        expected_dma=args.dma, expected_dot8=args.dot8))

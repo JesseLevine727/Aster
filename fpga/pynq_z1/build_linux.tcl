@@ -1,5 +1,5 @@
 # AXI host bridge and real serial loopback, loaded through PYNQ Linux/PCAP.
-if {$argc < 2 || $argc > 6} { error "usage: build_linux.tcl <repo-root> <output-dir> ?harts(0=legacy,1,2)? ?coherent(0,1)? ?caches(0,1)? ?dma(0,1)?" }
+if {$argc < 2 || $argc > 7} { error "usage: build_linux.tcl <repo-root> <output-dir> ?harts(0=legacy,1,2)? ?coherent(0,1)? ?caches(0,1)? ?dma(0,1)? ?dot8(0,1)?" }
 set repo_root [file normalize [lindex $argv 0]]
 set output_dir [file normalize [lindex $argv 1]]
 set harts 0
@@ -8,12 +8,15 @@ if {$harts ni {0 1 2}} { error "invalid Linux hart configuration" }
 set coherent 0
 set caches 1
 set dma 0
+set dot8 0
 if {$argc >= 4} { set coherent [lindex $argv 3] }
 if {$argc >= 5} { set caches [lindex $argv 4] }
 if {$argc >= 6} { set dma [lindex $argv 5] }
+if {$argc >= 7} { set dot8 [lindex $argv 6] }
 if {$coherent ni {0 1} || $caches ni {0 1} || $dma ni {0 1} || ($coherent && !$harts) || (!$coherent && (!$caches || $dma))} {
     error "invalid coherent Linux configuration"
 }
+if {$dot8 ni {0 1} || ($dot8 && (!$coherent || !$dma))} { error "dot8 Linux requires coherence and DMA" }
 set part xc7z020clg400-1
 file mkdir $output_dir
 create_project aster_linux $output_dir -part $part -force
@@ -45,6 +48,7 @@ set_property CONFIG.HART_COUNT $harts [get_bd_cells aster]
 set_property CONFIG.ENABLE_COHERENCE $coherent [get_bd_cells aster]
 set_property CONFIG.COHERENT_L1 $caches [get_bd_cells aster]
 set_property CONFIG.ENABLE_DMA $dma [get_bd_cells aster]
+set_property CONFIG.ENABLE_DOT8 $dot8 [get_bd_cells aster]
 create_bd_cell -type ip -vlnv xilinx.com:ip:axi_interconnect:2.1 fabric
 set_property CONFIG.NUM_MI 1 [get_bd_cells fabric]
 create_bd_cell -type ip -vlnv xilinx.com:ip:proc_sys_reset:5.0 reset
@@ -84,6 +88,7 @@ set handoff_check [list python3 [file join $repo_root scripts/pynq_handoff.py] $
 if {$coherent} { lappend handoff_check --coherent }
 if {!$caches} { lappend handoff_check --no-cache }
 if {$dma} { lappend handoff_check --dma }
+if {$dot8} { lappend handoff_check --dot8 }
 puts [exec {*}$handoff_check]
 add_files [make_wrapper -files $bd -top]
 set_property top aster_linux_wrapper [current_fileset]

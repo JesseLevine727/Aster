@@ -7,6 +7,7 @@ module aster_pynq_linux #(
     parameter bit ENABLE_COHERENCE = 1'b0,
     parameter bit COHERENT_L1 = 1'b1,
     parameter bit ENABLE_DMA = 1'b0,
+    parameter bit ENABLE_DOT8 = 1'b0,
     parameter int unsigned CLK_HZ = 31_250_000,
     parameter int unsigned BAUD = 115_200,
     parameter int unsigned RX_DEPTH = 512
@@ -81,6 +82,10 @@ module aster_pynq_linux #(
     logic dma_backing_valid, dma_backing_ready, dma_backing_device, dma_backing_owner;
     logic [31:0] dma_backing_addr, dma_backing_data;
     logic [3:0] dma_backing_mask;
+    logic [1:0] dot8_busy;
+    logic [3:0] dot8_events [0:1];
+    logic [63:0] dot8_counters [0:7];
+    logic dot8_counting;
     logic ram_read_pending;
     logic [15:0] ram_read_addr;
     wire [15:0] host_ram_addr = ram_read_pending ? ram_read_addr : s_axi_araddr[15:0];
@@ -118,6 +123,7 @@ module aster_pynq_linux #(
         if (HART_COUNT > 2) $error("Linux HART_COUNT must be 0 (legacy), 1 or 2");
         if (ENABLE_COHERENCE && HART_COUNT == 0) $error("coherent Linux requires one or two harts");
         if (ENABLE_DMA && !ENABLE_COHERENCE) $error("Linux DMA requires the coherent SoC");
+        if (ENABLE_DOT8 && (!ENABLE_COHERENCE || !ENABLE_DMA)) $error("Linux dot8 requires coherence and DMA");
         if (RX_DEPTH < 128 || (RX_DEPTH & (RX_DEPTH-1)) != 0)
             $error("RX_DEPTH must be a power of two >= 128");
     end
@@ -189,7 +195,7 @@ module aster_pynq_linux #(
                     18'h10: s_axi_rdata <= transmitted;
                     18'h14: s_axi_rdata <= received;
                     18'h18: s_axi_rdata <= 32'h41535452; // ASTR
-                    18'h1c: s_axi_rdata <= ENABLE_DMA ? 32'h00070001 : ENABLE_COHERENCE ? 32'h00060001 :
+                    18'h1c: s_axi_rdata <= ENABLE_DOT8 ? 32'h00080001 : ENABLE_DMA ? 32'h00070001 : ENABLE_COHERENCE ? 32'h00060001 :
                         HART_COUNT == 0 ? 32'h00020001 : 32'h00050001;
                     18'h20: s_axi_rdata <= CLK_HZ;
                     18'h24, 18'h28, 18'h30, 18'h34, 18'h38, 18'h3c: begin
@@ -209,7 +215,7 @@ module aster_pynq_linux #(
                         if (!ENABLE_COHERENCE) begin s_axi_rdata <= 0; s_axi_rresp <= 2'b10; end
                         else case (s_axi_araddr)
                             18'h40: s_axi_rdata <= {29'b0, coherent_flush, coherent_stop_busy, coherent_stopped};
-                            18'h44: s_axi_rdata <= {29'b0, ENABLE_DMA, COHERENT_L1, 1'b1};
+                            18'h44: s_axi_rdata <= {28'b0, ENABLE_DOT8, ENABLE_DMA, COHERENT_L1, 1'b1};
                             18'h50, 18'h60: s_axi_rdata <= {27'b0, atomic_fault_valid[s_axi_araddr[5]], atomic_fault_cause[s_axi_araddr[5]]};
                             18'h54, 18'h64: s_axi_rdata <= atomic_fault_addr[s_axi_araddr[5]];
                             18'h58, 18'h68: s_axi_rdata <= atomic_fault_insn[s_axi_araddr[5]];
@@ -231,10 +237,26 @@ module aster_pynq_linux #(
                             default: s_axi_rdata <= 0;
                         endcase
                     end
+                    18'h110, 18'h114, 18'h118, 18'h11c, 18'h160, 18'h164, 18'h168: begin
+                        if (!ENABLE_DOT8) begin s_axi_rdata <= 0; s_axi_rresp <= 2'b10; end
+                        else case (s_axi_araddr)
+                            18'h110: s_axi_rdata <= 1;
+                            18'h114: s_axi_rdata <= 6;
+                            18'h118: s_axi_rdata <= {31'b0, dot8_counting};
+                            18'h11c: s_axi_rdata <= {30'b0, dot8_busy};
+                            18'h160: s_axi_rdata <= 32'h0000_000b;
+                            18'h164: s_axi_rdata <= 32'hfe00_707f;
+                            18'h168: s_axi_rdata <= 4;
+                            default: s_axi_rdata <= 0;
+                        endcase
+                    end
                     default: begin
                         if (ENABLE_DMA && s_axi_araddr >= 18'ha0 && s_axi_araddr < 18'h110 && s_axi_araddr[1:0] == 0)
                             s_axi_rdata <= s_axi_araddr[2] ? dma_counters[4'((s_axi_araddr-18'ha0) >> 3)][63:32] :
                                 dma_counters[4'((s_axi_araddr-18'ha0) >> 3)][31:0];
+                        else if (ENABLE_DOT8 && s_axi_araddr >= 18'h120 && s_axi_araddr < 18'h160 && s_axi_araddr[1:0] == 0)
+                            s_axi_rdata <= s_axi_araddr[2] ? dot8_counters[3'((s_axi_araddr-18'h120) >> 3)][63:32] :
+                                dot8_counters[3'((s_axi_araddr-18'h120) >> 3)][31:0];
                         else begin s_axi_rdata <= 0; s_axi_rresp <= 2'b10; end
                     end
                     endcase
@@ -306,6 +328,9 @@ module aster_pynq_linux #(
         assign dma_backing_addr = 0;
         assign dma_backing_data = 0;
         assign dma_backing_mask = 0;
+        assign dot8_busy = 0;
+        assign dot8_counting = 0;
+        for (genvar i = 0; i < 8; i++) assign dot8_counters[i] = 0;
         for (genvar i = 0; i < 14; i++) begin : g_no_dma_events
             assign dma_events[i] = 0;
             assign dma_counters[i] = 0;
@@ -316,6 +341,7 @@ module aster_pynq_linux #(
             assign atomic_fault_insn[h] = 0;
             assign hart_pc[h] = 0;
             assign coherent_perf_events[h] = 0;
+            assign dot8_events[h] = 0;
         end
     end endgenerate
     generate if (HART_COUNT == 0) begin : g_legacy
@@ -331,7 +357,7 @@ module aster_pynq_linux #(
     end else if (ENABLE_COHERENCE) begin : g_coherent
         /* verilator lint_off PINCONNECTEMPTY */
         aster_coherent_soc #(.HART_COUNT(HART_COUNT), .SYNC_MEMORY(1'b1), .HOST_BOOT(1'b1),
-                            .ENABLE_L1(COHERENT_L1), .ENABLE_DMA(ENABLE_DMA), .CLOCK_HZ(CLK_HZ)) soc (
+                            .ENABLE_L1(COHERENT_L1), .ENABLE_DMA(ENABLE_DMA), .ENABLE_DOT8(ENABLE_DOT8), .CLOCK_HZ(CLK_HZ)) soc (
             .clk(aclk), .resetn(aresetn), .host_run(run && run_pipe[1]),
             .stopped(coherent_stopped), .stop_busy(coherent_stop_busy), .flush_active(coherent_flush),
             .uart_tx_valid(core_tx_valid), .uart_tx_data(core_tx_data), .uart_tx_ready(core_tx_ready),
@@ -350,7 +376,7 @@ module aster_pynq_linux #(
             .dma_request_data(dma_request_data), .dma_request_rdata(dma_request_rdata), .dma_request_mask(dma_request_mask),
             .dma_status(dma_status), .dma_bytes_done(dma_bytes_done), .dma_error_code(dma_error_code), .dma_job_cycles(dma_job_cycles),
             .dma_store_commit(dma_store_commit), .dma_events(dma_events), .dma_counters(dma_counters), .dma_counting(dma_counting),
-            .dot8_busy(), .dot8_events(), .dot8_counters(), .dot8_counting(),
+            .dot8_busy(dot8_busy), .dot8_events(dot8_events), .dot8_counters(dot8_counters), .dot8_counting(dot8_counting),
             .boot_we(boot_we), .boot_addr(awaddr[15:0]), .boot_wdata(wdata), .boot_wstrb(wstrb),
             .host_ram_addr(host_ram_addr), .host_ram_rdata(host_ram_rdata)
         );

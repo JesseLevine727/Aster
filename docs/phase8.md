@@ -267,6 +267,47 @@ regressions pass after integration with dot8 disabled.
 frozen state, command-edge exclusions, absent-hart zeros and 32/64-bit wrap.
 The new SoC counter bank/lifecycle connections still require full runtime tests.
 
+### C/runtime and Linux-interface milestone
+
+The C driver now emits real `.insn` operations. Safe four-byte packing uses
+an aligned `__builtin_memcpy` only after checking alignment; the unaligned
+path uses four byte loads. Exact `int8_t` representation copies allow GCC to
+emit ordinary signed `LB` instructions in the scalar kernel without an
+out-of-range signed conversion. Both paths have identical no-IPA boundaries,
+and packing/gather/tail/output work remains inside the custom kernel.
+
+The two-hart cached synchronous/wait-one runtime passes two warm boots, each
+with 736 paired dot/FIR/GEMM shapes per hart (1,472 pairs), all 16 input-byte
+alignment combinations, independently checked actual output stores and full
+input/output guards. It completes 16 LR-dot8-SC trials per hart, rd=x0, three
+DMA-produced GEMM input publications and register-only compute overlapping
+active DMA. Each boot has 25,393 primary and 25,689 secondary custom retirements,
+2,048 DMA bytes and exact agreement among all 50 event/counter/RAM snapshots.
+The complete 64 KiB architectural-store oracle survives acknowledged STOP.
+One-hart cached synchronous/wait-one also passes two boots and four active-stop
+boundaries. Additional geometry/cache/timing and clean regression coverage is
+still pending; these are functional results, not benchmark speedups.
+
+`make dot8-stops` separately passes 13 two-hart cached/wait-one adversarial
+boundaries: pre-admission, captured sum, completed response and retirement on
+each hart; eight repeated selective resets; and four transient global-STOP
+escalation points during selective DMA drain/flush. Every admitted sum completes,
+compute is quiescent at hart reset, and the full RAM oracle is retained without
+destructive reset. RVFI may wait for the next instruction's fetch; warm-stop
+tests therefore distinguish completed PCPI work from retirement observations
+at a cut window rather than inventing retirement for a canceled next fetch.
+
+The enabled two-hart cached Linux shell also passes two full functional boots
+through real AXI ROM loading, serialized UART reception and stopped-RAM reads.
+All 50 observed counters match firmware snapshots and live host diagnostics.
+Every byte offset in the added register region and all sixteen write strobes
+are tested with held/split AXI transactions. The extension-disabled shell
+retains ABI `0x70001` and denies the added bank. Both shells reject unsupported
+custom instructions, LR to the new MMIO bank and MMIO instruction fetches.
+HWH validation explicitly requires the dot8/coherence/DMA combination and
+rejects mismatched/missing/duplicated parameters; legacy return shapes remain
+unchanged. No Phase 8 bitstream or physical acceptance is claimed yet.
+
 Physical work requires clean source, generated reset simulation, routed setup/
 hold/pulse-width, routing/DRC/methodology/resources, full HWH and matched bitstream
 hashes. Check verified-key SSH identity, active board use and the exact existing

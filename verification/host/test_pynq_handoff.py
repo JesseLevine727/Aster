@@ -177,6 +177,43 @@ class HandoffSafety(unittest.TestCase):
                 with self.subTest(tag=tag, duplicate=duplicate), self.assertRaises(ValueError):
                     validate_handoff(self.save(root))
 
+    def test_dot8_is_explicit_and_legacy_loaders_reject_it(self):
+        for harts in (1, 2):
+            for cache in (False, True):
+                root = fixture()
+                params = root.find(".//MODULE[@INSTANCE='aster']/PARAMETERS")
+                for name, value in (("HART_COUNT", harts), ("ENABLE_COHERENCE", 1),
+                                    ("COHERENT_L1", int(cache)), ("ENABLE_DMA", 1), ("ENABLE_DOT8", 1)):
+                    ET.SubElement(params, "PARAMETER", NAME=name, VALUE=str(value))
+                options = dict(expected_coherent=True, expected_cache=cache, expected_dma=True, expected_dot8=True)
+                result = validate_handoff(self.save(root), harts, **options)
+                self.assertEqual(result["bridge_version"], 0x80001)
+                self.assertEqual(result["dot8_abi"], 1)
+                self.assertEqual(result["dot8_counter_abi"], 6)
+                self.assertTrue(result["dma"] and result["dot8"])
+                with self.assertRaisesRegex(ValueError, "dot8"):
+                    validate_handoff(self.path, harts, expected_coherent=True, expected_cache=cache, expected_dma=True)
+                for name in ("HART_COUNT", "ENABLE_COHERENCE", "COHERENT_L1", "ENABLE_DMA", "ENABLE_DOT8"):
+                    for action in ("remove", "duplicate", "wrong", "empty"):
+                        changed = deepcopy(root)
+                        parent = changed.find(".//MODULE[@INSTANCE='aster']/PARAMETERS")
+                        node = parent.find(f"PARAMETER[@NAME='{name}']")
+                        if action == "remove": parent.remove(node)
+                        elif action == "duplicate": parent.append(deepcopy(node))
+                        elif action == "empty": node.attrib.pop("VALUE")
+                        else: node.set("VALUE", str(1-int(cache)) if name == "COHERENT_L1" else "0")
+                        with self.subTest(harts=harts, cache=cache, name=name, action=action), self.assertRaises(ValueError):
+                            validate_handoff(self.save(changed), harts, **options)
+                for field in ("expected_coherent", "expected_dma"):
+                    changed = dict(options, **{field: False})
+                    with self.assertRaises(ValueError): validate_handoff(self.save(root), harts, **changed)
+        # An absent/explicit-zero dot8 parameter retains the legacy return shape.
+        root = fixture()
+        before = validate_handoff(self.save(root))
+        ET.SubElement(root.find(".//MODULE[@INSTANCE='aster']/PARAMETERS"), "PARAMETER", NAME="ENABLE_DOT8", VALUE="0")
+        self.assertEqual(validate_handoff(self.save(root)), before)
+        with self.assertRaises(ValueError): validate_handoff(self.path, expected_dot8=1)
+
 
 if __name__ == "__main__":
     unittest.main()

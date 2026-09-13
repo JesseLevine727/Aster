@@ -117,6 +117,11 @@ DOT8_PROBE_CACHE ?= 0
 DOT8_PROBE_DIR := $(BUILD_DIR)/dot8_probe_e$(DOT8_PROBE_ENABLE)_c$(DOT8_PROBE_CACHE)
 DOT8_PROBE_SIM := $(DOT8_PROBE_DIR)/aster_dot8_probe_sim
 DOT8_PERF_SIM := $(BUILD_DIR)/aster_dot8_perf_h$(HART_COUNT)_sim
+DOT8_SOC_DIR := $(BUILD_DIR)/dot8_soc_h$(HART_COUNT)_$(CONFIG_TAG)
+DOT8_SOC_SIM := $(DOT8_SOC_DIR)/aster_dot8_soc_sim
+DOT8_RUNTIME_ELF := $(HELLO_DIR)/dot8_runtime.elf
+DOT8_RUNTIME_HEX := $(HELLO_DIR)/dot8_runtime.hex
+DOT8_STOP_HEX := $(HELLO_DIR)/dot8_stop_fixture.hex
 DMA_ATOMIC_FABRIC_SIM := $(BUILD_DIR)/aster_dma_atomic_fabric_sim
 DMA_CACHE_DIR := $(BUILD_DIR)/dma_cache_l1$(ENABLE_L1)_w$(L1_LINE_WORDS)_n$(L1_LINE_COUNT)
 DMA_CACHE_SIM := $(DMA_CACHE_DIR)/aster_dma_cache_sim
@@ -184,6 +189,9 @@ LINUX_COHERENT_DIR := $(BUILD_DIR)/linux_coherent_h$(HART_COUNT)_l1$(ENABLE_L1)
 LINUX_COHERENT_SIM := $(LINUX_COHERENT_DIR)/aster_linux_coherent_sim
 LINUX_DMA_DIR := $(BUILD_DIR)/linux_dma_h$(HART_COUNT)_l1$(ENABLE_L1)
 LINUX_DMA_SIM := $(LINUX_DMA_DIR)/aster_linux_dma_sim
+DOT8_LINUX_ENABLE ?= 1
+LINUX_DOT8_DIR := $(BUILD_DIR)/linux_dot8_e$(DOT8_LINUX_ENABLE)_h$(HART_COUNT)_l1$(ENABLE_L1)
+LINUX_DOT8_SIM := $(LINUX_DOT8_DIR)/aster_linux_dot8_sim
 LINUX_DMA_BAUD ?= 781250
 LINUX_DMA_BENCH_DIR := $(BUILD_DIR)/linux_dma_bench_h$(HART_COUNT)_l1$(ENABLE_L1)_b$(LINUX_DMA_BAUD)
 LINUX_DMA_BENCH_SIM := $(LINUX_DMA_BENCH_DIR)/aster_linux_dma_bench_sim
@@ -191,10 +199,14 @@ LINUX_HART_COUNT ?= 0
 LINUX_COHERENCE ?= 0
 LINUX_CACHE ?= 1
 LINUX_DMA ?= 0
+LINUX_DOT8 ?= 0
 ifeq ($(filter $(LINUX_DMA),0 1),)
 $(error LINUX_DMA must be 0 or 1)
 endif
-LINUX_BUILD_DIR = $(FPGA_BUILD_DIR)/linux$(if $(filter 0,$(LINUX_HART_COUNT)),,-h$(LINUX_HART_COUNT))$(if $(filter 1,$(LINUX_COHERENCE)),-coherent-c$(LINUX_CACHE),)$(if $(filter 1,$(LINUX_DMA)),-dma,)
+ifeq ($(filter $(LINUX_DOT8),0 1),)
+$(error LINUX_DOT8 must be 0 or 1)
+endif
+LINUX_BUILD_DIR = $(FPGA_BUILD_DIR)/linux$(if $(filter 0,$(LINUX_HART_COUNT)),,-h$(LINUX_HART_COUNT))$(if $(filter 1,$(LINUX_COHERENCE)),-coherent-c$(LINUX_CACHE),)$(if $(filter 1,$(LINUX_DMA)),-dma,)$(if $(filter 1,$(LINUX_DOT8)),-dot8,)
 SOC_TEST_DIR := $(BUILD_DIR)/soc_$(CONFIG_TAG)
 SOC_SIM := $(SOC_TEST_DIR)/aster_soc_sim
 TRAP_CASES := 0 1 2 3 4 5 6 7 8 9 10 11
@@ -466,7 +478,7 @@ fpga-linux:
 	@mkdir -p $(LINUX_BUILD_DIR)
 	$(VIVADO) -mode batch -nojournal -nolog -notrace \
 		-source $(ROOT)/fpga/pynq_z1/build_linux.tcl \
-		-tclargs $(ROOT) $(LINUX_BUILD_DIR) $(LINUX_HART_COUNT) $(LINUX_COHERENCE) $(LINUX_CACHE) $(if $(filter 1,$(LINUX_DMA)),1,)
+		-tclargs $(ROOT) $(LINUX_BUILD_DIR) $(LINUX_HART_COUNT) $(LINUX_COHERENCE) $(LINUX_CACHE) $(if $(filter 1,$(LINUX_DMA)),1,$(if $(filter 1,$(LINUX_DOT8)),0,)) $(if $(filter 1,$(LINUX_DOT8)),1,)
 
 .PHONY: fpga-linux-dual
 fpga-linux-dual:
@@ -479,6 +491,10 @@ fpga-linux-coherent:
 .PHONY: fpga-linux-dma
 fpga-linux-dma:
 	$(MAKE) LINUX_HART_COUNT=2 LINUX_COHERENCE=1 LINUX_DMA=1 fpga-linux
+
+.PHONY: fpga-linux-dot8
+fpga-linux-dot8:
+	$(MAKE) LINUX_HART_COUNT=2 LINUX_COHERENCE=1 LINUX_DMA=1 LINUX_DOT8=1 fpga-linux
 
 $(LINUX_SIM): $(RTL_CORE) $(RTL_CACHE) $(RTL_MEMORY) $(RTL_PERIPHERALS) $(RTL_SOC) $(RTL_MULTICORE) $(RTL_COHERENT) \
 		rtl/peripherals/aster_uart_tx.sv rtl/peripherals/aster_uart_rx.sv \
@@ -530,6 +546,25 @@ linux-coherent-matrix:
 	done; done
 
 .PHONY: linux-dma-sim linux-dma-matrix
+.PHONY: linux-dot8-sim
+$(LINUX_DOT8_SIM): $(RTL_CORE) $(RTL_CACHE) $(RTL_MEMORY) $(RTL_PERIPHERALS) $(RTL_SOC) $(RTL_MULTICORE) $(RTL_COHERENT) \
+		rtl/peripherals/aster_uart_tx.sv rtl/peripherals/aster_uart_rx.sv rtl/soc/aster_pynq_linux.sv \
+		verification/common/linux_bus.h verification/soc/tb_pynq_linux_dot8.cpp Makefile
+	mkdir -p $(LINUX_DOT8_DIR)
+	$(VERILATOR) --cc --exe --build --timing --Wall $(VERILATOR_VENDOR_LINT_FLAGS) $(VERILATOR_COHERENT_FLAGS) \
+		--assert -DASTER_COHERENCE_ASSERT -DASTER_DOT8_ASSERT --public-flat-rw \
+		--top-module aster_pynq_linux -GHART_COUNT=$(HART_COUNT) "-GENABLE_COHERENCE=1'b1" \
+		"-GCOHERENT_L1=1'b$(ENABLE_L1)" "-GENABLE_DMA=1'b1" "-GENABLE_DOT8=1'b$(DOT8_LINUX_ENABLE)" \
+		-GCLK_HZ=31250000 -GBAUD=781250 -GRX_DEPTH=128 \
+		-CFLAGS '-DASTER_HART_COUNT=$(HART_COUNT) -DASTER_L1=$(ENABLE_L1) -DASTER_DOT8=$(DOT8_LINUX_ENABLE)' \
+		--Mdir $(LINUX_DOT8_DIR)/obj -o $(abspath $@) \
+		$(addprefix $(ROOT)/,$(sort $(RTL_CORE) $(RTL_CACHE) $(RTL_MEMORY) $(RTL_PERIPHERALS) $(RTL_SOC) $(RTL_MULTICORE) $(RTL_COHERENT))) \
+		$(ROOT)/rtl/peripherals/aster_uart_tx.sv $(ROOT)/rtl/peripherals/aster_uart_rx.sv \
+		$(ROOT)/rtl/soc/aster_pynq_linux.sv $(ROOT)/verification/soc/tb_pynq_linux_dot8.cpp
+
+linux-dot8-sim: $(LINUX_DOT8_SIM) $(DOT8_RUNTIME_HEX)
+	@$(LINUX_DOT8_SIM) $(DOT8_RUNTIME_HEX)
+
 $(LINUX_DMA_SIM): $(RTL_CORE) $(RTL_CACHE) $(RTL_MEMORY) $(RTL_PERIPHERALS) $(RTL_SOC) $(RTL_MULTICORE) $(RTL_COHERENT) \
 		rtl/peripherals/aster_uart_tx.sv rtl/peripherals/aster_uart_rx.sv rtl/soc/aster_pynq_linux.sv \
 		verification/common/linux_bus.h verification/soc/tb_pynq_linux_coherent.cpp Makefile
@@ -915,6 +950,40 @@ coherent-cache-matrix:
 	done; done; done
 
 .PHONY: dma-runtime dma-runtime-matrix
+.PHONY: dot8-runtime dot8-stops
+$(DOT8_RUNTIME_ELF): software/tests/dot8_runtime.c software/drivers/aster_dot8.h software/benchmarks/dot8_kernels.c \
+	software/benchmarks/dot8_kernels.h software/drivers/aster_dma.c software/drivers/aster_dma.h \
+	software/runtime/start_multicore.S software/runtime/aster.h software/boot/link_multicore.ld Makefile | $(HELLO_DIR)
+	$(CC) $(filter-out -march=%,$(HELLO_CFLAGS)) -march=rv32ima -Isoftware/drivers -Isoftware/benchmarks \
+		-fno-builtin -fno-tree-loop-distribute-patterns -T software/boot/link_multicore.ld -Wl,-Map,$(@:.elf=.map) \
+		-o $@ software/runtime/start_multicore.S software/drivers/aster_dma.c software/benchmarks/dot8_kernels.c $<
+	$(OBJDUMP) -d $@ > $(@:.elf=.dis)
+
+$(HELLO_DIR)/dot8_stop_fixture.elf: software/tests/dot8_stop_fixture.c software/drivers/aster_dot8.h \
+	software/drivers/aster_dma.c software/drivers/aster_dma.h software/runtime/start_multicore.S software/runtime/aster.h \
+	software/boot/link_multicore.ld Makefile | $(HELLO_DIR)
+	$(CC) $(filter-out -march=%,$(HELLO_CFLAGS)) -march=rv32ima -Isoftware/drivers \
+		-T software/boot/link_multicore.ld -Wl,-Map,$(@:.elf=.map) -o $@ \
+		software/runtime/start_multicore.S software/drivers/aster_dma.c $<
+	$(OBJDUMP) -d $@ > $(@:.elf=.dis)
+
+$(DOT8_SOC_SIM): $(RTL_COHERENT) verification/soc/tb_aster_dot8_soc.cpp Makefile
+	mkdir -p $(DOT8_SOC_DIR)
+	$(VERILATOR) --cc --exe --build --timing --Wall $(VERILATOR_VENDOR_LINT_FLAGS) $(VERILATOR_COHERENT_FLAGS) \
+		--assert -DASTER_COHERENCE_ASSERT -DASTER_DOT8_ASSERT --top-module aster_coherent_soc \
+		-GHART_COUNT=$(HART_COUNT) "-GENABLE_L1=1'b$(ENABLE_L1)" "-GENABLE_DMA=1'b1" "-GENABLE_DOT8=1'b1" \
+		"-GSYNC_MEMORY=1'b$(SYNC_MEMORY)" -GMEMORY_WAIT_CYCLES=$(MEMORY_WAIT_CYCLES) "-GHOST_BOOT=1'b1" \
+		-GLINE_WORDS=$(L1_LINE_WORDS) -GLINE_COUNT=$(L1_LINE_COUNT) \
+		-CFLAGS '-DASTER_HART_COUNT=$(HART_COUNT) -DASTER_L1=$(ENABLE_L1) -DASTER_MEMORY_WAIT=$(MEMORY_WAIT_CYCLES)' \
+		--Mdir $(DOT8_SOC_DIR)/obj -o $(abspath $@) \
+		$(addprefix $(ROOT)/,$(RTL_COHERENT)) $(ROOT)/verification/soc/tb_aster_dot8_soc.cpp
+
+dot8-runtime: $(DOT8_SOC_SIM) $(DOT8_RUNTIME_HEX) $(DOT8_STOP_HEX)
+	@$(DOT8_SOC_SIM) +rom=$(DOT8_RUNTIME_HEX) +ram_fill=a5a5a5a5 --stop-rom=$(DOT8_STOP_HEX)
+
+dot8-stops: $(DOT8_SOC_SIM) $(DOT8_STOP_HEX)
+	@$(DOT8_SOC_SIM) +ram_fill=a5a5a5a5 --stop-rom=$(DOT8_STOP_HEX) --stops-only
+
 $(DMA_RUNTIME_ELF): software/tests/dma_runtime.c software/drivers/aster_dma.c software/drivers/aster_dma.h software/runtime/start_multicore.S software/runtime/aster.h software/boot/link_multicore.ld Makefile | $(HELLO_DIR)
 	$(CC) $(filter-out -march=%,$(HELLO_CFLAGS)) -march=rv32ima -Isoftware/drivers \
 		-T software/boot/link_multicore.ld -Wl,-Map,$(HELLO_DIR)/dma_runtime.map \
