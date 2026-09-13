@@ -295,11 +295,17 @@ Build a memory-to-memory DMA engine with source, destination, length, start/stat
 retains the verified 31.25 MHz baseline. Completion is pollable; interrupts,
 shared L2 and Phase 8+ remain outside this phase.
 The [paired AsterBench v5 tools](docs/phase7-bench.md) now verify actual CPU/DMA
-copies, full outputs, counters and saved provenance in simulation. The fixed
-size sweep, FPGA/physical proof and final Phase 7 closeout remain pending.
+copies, full outputs, counters and saved provenance. The clean fixed simulation
+study passes 144 captures / 288 warm boots / 1,152 paired jobs, and both
+31.25 MHz DMA overlays pass routed/reset/HWH signoff. All 144 physical benchmark
+captures have passed per-capture UART/RAM/counter checks; the complete physical
+study audit, separate functional board proof and immutable closeout remain pending.
 The DMA-enabled Linux shell also passes actual-core AXI/serial runtime,
 RAM-code publication and safe-stop tests; its v5 benchmark has separate
 freeze-time CPU/DMA observations and physical-baud simulation coverage.
+Clean cache-off/on functional references retain actual ELF/ROM/UART/RAM and
+independent event/retirement evidence for both C programs over eight warm boots.
+The [physical workflow](docs/phase7-physical.md) uses guarded Linux/PCAP only.
 
 ## Phase 8 — Custom compute instruction
 

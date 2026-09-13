@@ -489,6 +489,27 @@ with Linux available. A host sleep or simulated result is not physical proof.
    audit and mutation tests. Rebuild and audit from fresh checkouts, inspect the
    exact committed bundle, and finish with clean main synchronized to origin.
 
+## Regression closeout tooling
+
+Regression closeout uses both `scripts/audit_phase6_regressions.py` and
+`scripts/audit_phase7_regressions.py` on the separate clean-source manifests.
+The latter checks all 14 DMA targets: host mutation tests, engine, arbiter,
+counters, warm-stop, cache geometries and extreme boundaries, DMA-enabled full-A
+fabric, the 16-configuration real-core runtime matrix, 42 regular and nine
+sensitivity benchmark captures, four Linux runtime/code configurations, ten
+serial benchmark cases and two physical-baud cases. It verifies raw records and
+independent event windows where emitted, actual serial/retained-RAM gates,
+ordered reset/escalation coverage, complete source/tool provenance and fixed
+commands. A PASS count alone, or a partial target manifest, cannot close the
+phase. Saved commands are never executed by either audit. Scenario and manifest
+mutations test omitted cases, changed seeds/geometry, broken atomic and reset
+coverage, reordered warm boots, damaged UART/counter evidence and false hashes.
+
+The new clean Phase 1–6 run on DMA-capable source `888c24b` has passed its
+independent 22-target / 2,397-scenario audit. The complete DMA supplement from
+`694ae0e` is still running; completed unit logs and earlier Linux matrices pass
+the new scenario parser. This is progress evidence, not final phase acceptance.
+
 ## References and basis
 
 - [RISC-V A v2.1, LR/SC device-store requirement](https://docs.riscv.org/reference/isa/v20240411/unpriv/a-st-ext.html):
