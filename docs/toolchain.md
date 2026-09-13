@@ -16,6 +16,13 @@ OpenROAD remain later ASIC-phase dependencies.
 The Linux FPGA build also uses Vivado's `xvlog`, `xelab` and `xsim` to test the
 generated reset netlist; it finds them through `XILINX_VIVADO` or `PATH`.
 
+The accepted Phase 7 captures record GCC 16.1.0, binutils 2.47.20260726,
+Verilator 5.020 and Vivado 2025.1. These are recorded tool identities, not a
+claim that an arbitrary different release reproduces their exact binaries or
+timing. Each accepted capture binds the actual compiler/linker/assembler and
+simulator paths, versions and hashes. Physical collection uses PYNQ on ARM;
+saved-record audits require only Python 3 and the repository's full Git history.
+
 Run the repository check with:
 
 ```sh
@@ -68,18 +75,60 @@ make multicore-runtime-matrix  Cross 1/2 harts, caches off/on and four memory ti
 make parallel    Run split-array AsterBench v3 and independent RTL scoreboards
 make parallel-matrix  Cross 1/2 cores/workers, caches and four memory timings
 make parallel-workloads  Test odd/boundary sizes, seeds and round counts
+make atomic-runtime-matrix  Run real RV32IMA C with caches disabled
+make coherent-runtime-matrix  Run full-A C with coherent caches enabled
+make coherent-cache-matrix  Check independent coherence state/backing histories
+make coherent-soc-matrix  Check real-core coherence and RAM-preserving lifecycle
+make coherent-bench-matrix  Run AsterBench v4 configuration/workload combinations
+make riscv-reference-matrix  Execute pinned upstream RV32UA test bodies
+make coherent-litmus-matrix  Test ordering/publication/LRSC outcomes and progress
+make linux-coherent-matrix  Test the Phase 6 AXI/serial runtime and lifecycle
+make fpga-linux-coherent  Build a two-hart coherent RV32IMA PCAP overlay
+make dma-engine dma-arbiter  Check autonomous copy/descriptor and CPU-group ordering
+make dma-cache-matrix dma-cache-boundaries  Check coherent DMA and extreme geometry
+make dma-counters dma-warm-stop  Check DMA event windows and safe stop escalation
+make dma-runtime-matrix  Cross actual DMA C with harts, caches and memory timing
+make dma-bench-cases dma-bench-sensitivity  Run paired v5 size/configuration checks
+make linux-dma-matrix  Check actual DMA runtime and RAM-code publication over AXI
+make linux-dma-bench-cases linux-dma-bench-baud  Check paired serial/physical-baud cases
+make fpga-linux-dma  Build the explicitly DMA-enabled coherent PCAP overlay
 make check       Run tool checks, directed tests and simulations
 make clean       Remove generated files under build/
 ```
 
 Both Verilator and Vivado define `RISCV_FORMAL` to expose the pinned core's
-synthesizable RVFI observation ports. They do not define `FORMAL`. Firmware is
-still RV32IM/ILP32; the extra interface changes measurement, not the ISA.
+synthesizable RVFI observation ports. They do not define `FORMAL`.
+RVFI itself changes measurement, not the ISA. Legacy firmware remains
+RV32IM/ilp32; the explicit coherent/atomic/DMA targets build RV32IMA/ilp32.
 
 Phase 5 simulation uses `HART_COUNT=1|2` (default 2) and the existing cache and
 memory knobs. Legacy single-core targets ignore `HART_COUNT`; they retain their
-original map. The multicore linker/runtime and simulation top are separate,
-and no dual-core FPGA target or physical closeout is claimed yet.
+original map. The multicore linker/runtime and simulation top are separate.
+The [Phase 5 closeout](results/phase5/closeout-71e2570/README.md) documents its
+actual dual-core FPGA/physical acceptance; Phase 6 and Phase 7 use separately
+versioned coherent and DMA overlays.
+
+The [current runtime guide](runtime.md) and [Phase 7 contract](phase7.md)
+describe DMA-capable RV32IMA builds. Legacy targets do not enable DMA.
+`make fpga-linux-dma LINUX_CACHE=0` and `LINUX_CACHE=1` retain 31.25 MHz and
+the strict reset/HWH/routed signoff gates. They build images only; programming
+requires the explicit [guarded PYNQ workflow](phase7-physical.md).
+
+Use these separate clean-source runners for full acceptance, each with a new
+output directory and isolated build tree:
+
+```sh
+python3 scripts/run_phase6_regressions.py --output /new/path/legacy-regressions
+python3 scripts/run_phase7_regressions.py --output /new/path/dma-regressions
+python3 scripts/audit_phase6_regressions.py /new/path/legacy-regressions/manifest.json
+python3 scripts/audit_phase7_regressions.py /new/path/dma-regressions/manifest.json
+```
+
+They record all 22 legacy and 14 DMA targets respectively, complete logs and
+exact source/tool identities. `run_phase6_regressions.py --check-only` is for
+a fresh `make check`, not a replacement for either full run. Never rebuild
+different configurations concurrently into the same `BUILD_DIR`. Failed or
+partial evidence is retained; accepted captures refuse existing output paths.
 
 `PARALLEL_WORDS=2..1024`, `PARALLEL_ROUNDS=1..64`, `PARALLEL_JOBS=1..16`,
 `PARALLEL_WORKERS=1|2` and `PARALLEL_SEED` configure the new workload. The default
@@ -156,11 +205,14 @@ without creating a 256 MiB sparse ROM image.
 
 ## Toolchain policy
 
-The architecture target and current bring-up configuration are RV32IM. The
-PicoRV32 wrapper enables its internal multiply/divide implementations, and the
+The legacy architecture target is RV32IM. The PicoRV32 wrapper enables its
+internal multiply/divide implementations, and the
 directed ISA image tests all eight RV32M operations and integer corner cases.
 Compressed instructions remain disabled so the ROM format and fetch path stay
-32-bit word aligned.
+32-bit word aligned. Coherent and DMA configurations additionally implement
+full word RV32A through Aster-owned PCPI/memory integration; the pinned vendor
+core is unchanged. This is a bare-metal ISA configuration, not privileged-mode
+Linux support on the RISC-V harts.
 
 Firmware uses `-nostdlib -nostartfiles -nodefaultlibs -ffreestanding`; every
 runtime service is therefore explicit and reviewable. `start.S` establishes a

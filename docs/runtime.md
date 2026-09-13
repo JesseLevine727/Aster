@@ -52,8 +52,9 @@ all byte alignments and zero-length no-ops are supported.
 `aster_dma_copy(destination, source, bytes, maximum_polls)` includes submission,
 polling and completion fences. The coherent hardware obtains dirty source
 data, preserves dirty destination neighbors and invalidates destination cache
-lines as required: no manual flush is needed. The caller must retain ownership of both buffers until actual
-completion. Timeout means the poll budget expired, not that the hardware
+lines as required: no manual flush is needed. The caller must retain ownership
+of both buffers until actual completion. Timeout means the poll budget expired,
+not that the hardware
 stopped; `aster_dma_abort_and_wait` drains an offered transaction and reports
 the completed prefix. A second timeout still does not release the buffers.
 
