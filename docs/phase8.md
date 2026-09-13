@@ -225,7 +225,7 @@ real-core, runtime, FPGA or performance acceptance.
 - [x] Audit the baseline; specify instruction, integration and fair study before RTL.
 - [x] Arithmetic/PCPI unit oracles and real-core feasibility, including M/A coexistence.
 - [ ] C API/runtime, full-core encoding/fault/alias tests and lifecycle/coherence/DMA matrices.
-- [ ] ABI 6/v6 counter, record, ELF/RAM and mutation-tested capture tools.
+- [x] ABI 6/v6 counter, record, ELF/RAM and mutation-tested capture tools.
 - [ ] Complete applicable 22-target legacy and 14-target DMA regressions plus the new supplement.
 - [ ] Clean simulation study, cache-off/on FPGA routed/reset/HWH signoff and complete physical study/functional tests.
 - [ ] Self-contained immutable evidence, requirement audit, fresh-checkout verification and clean/pushed closeout.
@@ -239,6 +239,26 @@ Full C runtime covers both harts, all 16 input-byte alignment pairs, tails,
 dirty shared data, publication, genuine DMA-produced inputs and active DMA
 with unrelated custom work, LR/SC preservation and selective/global escalation.
 Require complete RAM/store/guard oracles and exact independent events.
+
+The fixed `scripts/run_phase8_regressions.py` supplement contains 56 cases:
+one complete host suite, three-seed exhaustive arithmetic, four optional-dot8/
+I-cache real-core probes, both counter hart counts, twenty full runtime/STOP
+configurations, ten Linux-interface configurations and eighteen benchmark
+sensitivity captures. Runtime crosses one/two harts, cache off/on and
+asynchronous wait 0/7 or synchronous wait 1/7 at 4-word/16-line geometry, then
+adds cached 2-word/2-line and 8-word/4-line geometries at synchronous wait 3
+for both hart counts. Linux crosses extension off/on, one/two harts and both
+cache modes at 781250 baud; two additional enabled two-hart configurations
+use the physical 115200 baud. Sensitivity runs dot/FIR/GEMM at K=0,7,maximum,
+both alignments, one hart, cached 2x2, asynchronous wait 7, three paired jobs,
+two boots and seed `0xc0ffee`, with seeded UART backpressure `0xa57e8`.
+`scripts/audit_phase8_regressions.py` checks the exact plan, ordered actual
+scenarios and metadata, not only return codes or PASS counts. These cases do
+not replace the unchanged 22-target legacy and 14-target DMA plans or the
+separate 174-capture study. Up to eight independent cases run concurrently;
+each owns a separate model and firmware build tree, so configurations cannot
+race into one output. The manifest retains fixed plan order regardless of
+completion order. Failures cancel unstarted cases and retain every started log.
 
 ### Real-core feasibility milestone
 
