@@ -1,6 +1,8 @@
 // PYNQ Linux host bridge. ARM loads boot ROM while Aster is held in reset,
 // then starts the real RV32IM CPU and reads decoded serial output via AXI.
 module aster_pynq_linux #(
+    // 0 preserves the legacy Phase 2 map/ABI; 1/2 select the Phase 5 map.
+    parameter int unsigned HART_COUNT = 0,
     parameter int unsigned CLK_HZ = 31_250_000,
     parameter int unsigned BAUD = 115_200,
     parameter int unsigned RX_DEPTH = 512
@@ -65,6 +67,9 @@ module aster_pynq_linux #(
     wire read_fire = s_axi_arvalid && s_axi_arready;
 
     logic core_tx_valid, core_tx_ready, phy_ready, phy_busy, trap;
+    logic [1:0] hart_run, hart_trap, hart_retired;
+    logic [63:0] retirement [0:1];
+    assign trap = |hart_trap;
     logic [7:0] core_tx_data;
     logic rx_valid, rx_framing_error;
     logic [7:0] rx_data;
@@ -81,6 +86,7 @@ module aster_pynq_linux #(
     assign core_tx_ready = phy_ready && receive_room;
 
     initial begin
+        if (HART_COUNT > 2) $error("Linux HART_COUNT must be 0 (legacy), 1 or 2");
         if (RX_DEPTH < 128 || (RX_DEPTH & (RX_DEPTH-1)) != 0)
             $error("RX_DEPTH must be a power of two >= 128");
     end
@@ -133,8 +139,20 @@ module aster_pynq_linux #(
                     18'h10: s_axi_rdata <= transmitted;
                     18'h14: s_axi_rdata <= received;
                     18'h18: s_axi_rdata <= 32'h41535452; // ASTR
-                    18'h1c: s_axi_rdata <= 32'h00020001;
+                    18'h1c: s_axi_rdata <= HART_COUNT == 0 ? 32'h00020001 : 32'h00050001;
                     18'h20: s_axi_rdata <= CLK_HZ;
+                    18'h24, 18'h28, 18'h30, 18'h34, 18'h38, 18'h3c: begin
+                        if (HART_COUNT == 0) begin s_axi_rdata <= 0; s_axi_rresp <= 2'b10; end
+                        else case (s_axi_araddr)
+                            18'h24: s_axi_rdata <= HART_COUNT;
+                            18'h28: s_axi_rdata <= {22'd0, hart_trap & hart_run, 6'd0, hart_run};
+                            18'h30: s_axi_rdata <= retirement[0][31:0];
+                            18'h34: s_axi_rdata <= retirement[0][63:32];
+                            18'h38: s_axi_rdata <= retirement[1][31:0];
+                            18'h3c: s_axi_rdata <= retirement[1][63:32];
+                            default: s_axi_rdata <= 0;
+                        endcase
+                    end
                     default: begin s_axi_rdata <= 0; s_axi_rresp <= 2'b10; end
                 endcase
             end
@@ -164,12 +182,34 @@ module aster_pynq_linux #(
         end
     end
 
-    aster_minimal #(.SYNC_MEMORY(1'b1), .HOST_BOOT(1'b1), .CLOCK_HZ(CLK_HZ)) soc (
-        .clk(aclk), .rst_n(cpu_reset_n),
-        .uart_tx_valid(core_tx_valid), .uart_tx_data(core_tx_data),
-        .uart_tx_ready(core_tx_ready), .trap(trap),
-        .boot_we(boot_we), .boot_addr(awaddr[15:0]), .boot_wdata(wdata), .boot_wstrb(wstrb)
-    );
+    for (genvar h = 0; h < 2; h++) begin : g_retirement
+        always_ff @(posedge aclk) begin
+            if (!cpu_reset_n) retirement[h] <= 0;
+            else if (hart_retired[h]) retirement[h] <= retirement[h] + 1'b1;
+        end
+    end
+    generate if (HART_COUNT == 0) begin : g_legacy
+        assign hart_run = {1'b0, cpu_reset_n};
+        assign hart_trap[1] = 0;
+        assign hart_retired = 0; // no lifetime-bank ABI in the legacy shell
+        aster_minimal #(.SYNC_MEMORY(1'b1), .HOST_BOOT(1'b1), .CLOCK_HZ(CLK_HZ)) soc (
+            .clk(aclk), .rst_n(cpu_reset_n),
+            .uart_tx_valid(core_tx_valid), .uart_tx_data(core_tx_data),
+            .uart_tx_ready(core_tx_ready), .trap(hart_trap[0]),
+            .boot_we(boot_we), .boot_addr(awaddr[15:0]), .boot_wdata(wdata), .boot_wstrb(wstrb)
+        );
+    end else begin : g_multicore
+        /* verilator lint_off PINCONNECTEMPTY */
+        aster_multicore #(.HART_COUNT(HART_COUNT), .SYNC_MEMORY(1'b1), .HOST_BOOT(1'b1), .CLOCK_HZ(CLK_HZ)) soc (
+            .clk(aclk), .rst_n(cpu_reset_n),
+            .uart_tx_valid(core_tx_valid), .uart_tx_data(core_tx_data), .uart_tx_ready(core_tx_ready),
+            .hart_trap(hart_trap), .hart_run(hart_run), .retired(hart_retired), .retired_pc(),
+            .perf_start(), .perf_freeze(), .perf_resume(), .memory_events(),
+            .cache_access_events(), .cache_miss_events(), .backing_events(),
+            .boot_we(boot_we), .boot_addr(awaddr[15:0]), .boot_wdata(wdata), .boot_wstrb(wstrb)
+        );
+        /* verilator lint_on PINCONNECTEMPTY */
+    end endgenerate
     aster_uart_tx #(.CLK_HZ(CLK_HZ), .BAUD(BAUD), .FIFO_DEPTH(TX_DEPTH)) transmitter (
         .clk(aclk), .rst_n(cpu_reset_n), .tx_valid_i(core_tx_valid && receive_room),
         .tx_data_i(core_tx_data), .ready_o(phy_ready), .tx_o(uart_tx), .busy_o(phy_busy)

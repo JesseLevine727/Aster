@@ -48,13 +48,15 @@ simulation runs a separate-stack C runtime on two real PicoRV32 instances;
 restarts and warm boots. `make parallel` now runs a deterministic split-array
 workload with strict AsterBench v3 records, independent references, observed
 kernel overlap and an exact per-hart RTL counter scoreboard. Full Phase 5
-verification and the dual-core PYNQ Linux overlay/physical validation remain
-unfinished. The existing FPGA targets still build the verified single-core shell.
+verification and physical validation remain unfinished. `make linux-dual-sim`
+tests the new host bridge; `make fpga-linux-dual` builds its dual-core overlay.
+The original `fpga`/`fpga-linux` targets preserve the single-core shell.
 
 [Clean-revision parallel captures](docs/results/phase5/README.md) show 1.974×
 speedup for the initial 64-word workload in cached synchronous-memory
 **simulation**, including dispatch/copy/completion overhead. This is not yet a
-physical FPGA performance result.
+physical FPGA performance result. These initial captures predate the data-
+request fault qualification fix; they are historical, not current timing claims.
 
 Start here:
 

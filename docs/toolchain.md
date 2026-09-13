@@ -61,6 +61,9 @@ make counters    Test common counter windows, event semantics and rollover
 make arbiter     Run directed/seeded two-requester arbitration scoreboards
 make fabric-matrix  Test shared decode/control for 1/2 harts and four memory timings
 make multicore-runtime  Run the Phase 5 C runtime with real per-hart retirement
+make multicore-adversarial-matrix  Test real-core faults and reset during transfers
+make linux-dual-sim  Check the dual-hart AXI loader and actual serial backpressure
+make fpga-linux-dual  Build the Phase 5 PCAP overlay, retaining all safety gates
 make multicore-runtime-matrix  Cross 1/2 harts, caches off/on and four memory timings
 make parallel    Run split-array AsterBench v3 and independent RTL scoreboards
 make parallel-matrix  Cross 1/2 cores/workers, caches and four memory timings

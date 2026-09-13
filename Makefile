@@ -74,6 +74,8 @@ FABRIC_DIR := $(BUILD_DIR)/fabric_h$(HART_COUNT)_$(CONFIG_TAG)
 FABRIC_SIM := $(FABRIC_DIR)/aster_fabric_sim
 MULTICORE_DIR := $(BUILD_DIR)/multicore_h$(HART_COUNT)_$(CONFIG_TAG)
 MULTICORE_SIM := $(MULTICORE_DIR)/aster_multicore_sim
+ADVERSARIAL_DIR := $(BUILD_DIR)/adversarial_$(CONFIG_TAG)
+ADVERSARIAL_SIM := $(ADVERSARIAL_DIR)/aster_multicore_adversarial_sim
 PARALLEL_SIM := $(MULTICORE_DIR)/aster_parallel_sim
 PARALLEL_FW_DIR := $(HELLO_DIR)/parallel_w$(PARALLEL_WORDS)_r$(PARALLEL_ROUNDS)_j$(PARALLEL_JOBS)_p$(PARALLEL_WORKERS)_s$(PARALLEL_SEED)
 PARALLEL_ELF := $(PARALLEL_FW_DIR)/parallel.elf
@@ -84,6 +86,9 @@ PARALLEL_LDFLAGS = -T software/boot/link_multicore.ld -Wl,-Map,$(PARALLEL_FW_DIR
 SMOKE_SIM := $(BUILD_DIR)/aster_smoke_sim
 PYNQ_SIM := $(BUILD_DIR)/aster_pynq_z1_sim
 LINUX_SIM := $(BUILD_DIR)/aster_pynq_linux_sim
+LINUX_DUAL_SIM := $(BUILD_DIR)/aster_pynq_linux_dual_sim
+LINUX_HART_COUNT ?= 0
+LINUX_BUILD_DIR = $(FPGA_BUILD_DIR)/linux$(if $(filter 0,$(LINUX_HART_COUNT)),,-h$(LINUX_HART_COUNT))
 SOC_TEST_DIR := $(BUILD_DIR)/soc_$(CONFIG_TAG)
 SOC_SIM := $(SOC_TEST_DIR)/aster_soc_sim
 TRAP_CASES := 0 1 2 3 4 5 6 7 8 9 10 11
@@ -125,6 +130,9 @@ help:
 	@echo "  make phase4-soc-matrix  Cross caches, geometry and memory latency"
 	@echo "  make arbiter    Test two-requester fairness, backpressure and ownership"
 	@echo "  make fabric-matrix  Test Phase 5 shared memory/control across harts and latency"
+	@echo "  make multicore-adversarial-matrix  Test real-core faults and in-flight resets"
+	@echo "  make linux-dual-sim  Test dual-hart AXI loading, lifetime counters and serial output"
+	@echo "  make fpga-linux-dual  Build the dual-hart PYNQ PCAP overlay"
 	@echo "  make multicore-runtime-matrix  Test dual-hart startup, isolation and warm boots"
 	@echo "  make parallel   Run parallel AsterBench v3 with independent RTL event/retirement checks"
 	@echo "  make parallel-matrix  Cross 1/2 workers/cores, caches and memory latency"
@@ -323,19 +331,23 @@ fpga: firmware
 		-tclargs $(ROOT) $(FPGA_BUILD_DIR) $(HELLO_HEX)
 
 fpga-linux:
-	@mkdir -p $(FPGA_BUILD_DIR)/linux
+	@mkdir -p $(LINUX_BUILD_DIR)
 	$(VIVADO) -mode batch -nojournal -nolog -notrace \
 		-source $(ROOT)/fpga/pynq_z1/build_linux.tcl \
-		-tclargs $(ROOT) $(FPGA_BUILD_DIR)/linux
+		-tclargs $(ROOT) $(LINUX_BUILD_DIR) $(LINUX_HART_COUNT)
 
-$(LINUX_SIM): $(RTL_CORE) $(RTL_CACHE) $(RTL_MEMORY) $(RTL_PERIPHERALS) $(RTL_SOC) \
+.PHONY: fpga-linux-dual
+fpga-linux-dual:
+	$(MAKE) LINUX_HART_COUNT=2 fpga-linux
+
+$(LINUX_SIM): $(RTL_CORE) $(RTL_CACHE) $(RTL_MEMORY) $(RTL_PERIPHERALS) $(RTL_SOC) $(RTL_MULTICORE) \
 		rtl/peripherals/aster_uart_tx.sv rtl/peripherals/aster_uart_rx.sv \
-		rtl/soc/aster_pynq_linux.sv verification/soc/tb_pynq_linux.cpp verification/common/bench_record.h | $(BUILD_DIR)
+		rtl/soc/aster_pynq_linux.sv verification/soc/tb_pynq_linux.cpp verification/common/bench_record.h verification/common/linux_bus.h Makefile | $(BUILD_DIR)
 	$(VERILATOR) --cc --exe --build --timing --Wall --Wno-fatal \
 		$(VERILATOR_VENDOR_LINT_FLAGS) --top-module aster_pynq_linux \
 		-GCLK_HZ=400 -GBAUD=10 -GRX_DEPTH=128 \
 		--Mdir $(BUILD_DIR)/obj_linux -o $(abspath $@) \
-		$(addprefix $(ROOT)/,$(RTL_CORE) $(RTL_CACHE) $(RTL_MEMORY) $(RTL_PERIPHERALS) $(RTL_SOC)) \
+		$(addprefix $(ROOT)/,$(RTL_CORE) $(sort $(RTL_CACHE) $(RTL_MEMORY) $(RTL_PERIPHERALS) $(RTL_SOC) $(RTL_MULTICORE))) \
 		$(ROOT)/rtl/peripherals/aster_uart_tx.sv $(ROOT)/rtl/peripherals/aster_uart_rx.sv \
 		$(ROOT)/rtl/soc/aster_pynq_linux.sv $(ROOT)/verification/soc/tb_pynq_linux.cpp
 
@@ -343,6 +355,25 @@ linux-sim: $(LINUX_SIM) $(HELLO_HEX) $(BENCH_HEX) $(HELLO_DIR)/uart_stress.hex
 	@$(LINUX_SIM) $(HELLO_HEX) hello
 	@$(LINUX_SIM) $(HELLO_DIR)/uart_stress.hex stress
 	@$(LINUX_SIM) $(BENCH_HEX) bench
+
+.PHONY: linux-dual-sim linux-dual-parallel
+$(LINUX_DUAL_SIM): $(RTL_CORE) $(RTL_CACHE) $(RTL_MEMORY) $(RTL_PERIPHERALS) $(RTL_SOC) $(RTL_MULTICORE) \
+		rtl/peripherals/aster_uart_tx.sv rtl/peripherals/aster_uart_rx.sv rtl/soc/aster_pynq_linux.sv \
+		verification/common/linux_bus.h verification/common/parallel_record.h verification/soc/tb_pynq_linux_dual.cpp Makefile | $(BUILD_DIR)
+	$(VERILATOR) --cc --exe --build --timing --Wall $(VERILATOR_VENDOR_LINT_FLAGS) \
+		--top-module aster_pynq_linux -GHART_COUNT=2 -GCLK_HZ=400 -GBAUD=10 -GRX_DEPTH=128 \
+		--Mdir $(BUILD_DIR)/obj_linux_dual -o $(abspath $@) \
+		$(addprefix $(ROOT)/,$(RTL_CORE) $(sort $(RTL_CACHE) $(RTL_MEMORY) $(RTL_PERIPHERALS) $(RTL_SOC) $(RTL_MULTICORE))) \
+		$(ROOT)/rtl/peripherals/aster_uart_tx.sv $(ROOT)/rtl/peripherals/aster_uart_rx.sv \
+		$(ROOT)/rtl/soc/aster_pynq_linux.sv $(ROOT)/verification/soc/tb_pynq_linux_dual.cpp
+
+linux-dual-parallel: $(LINUX_DUAL_SIM) $(PARALLEL_HEX)
+	@$(LINUX_DUAL_SIM) $(PARALLEL_HEX) parallel $(PARALLEL_JOBS) $(PARALLEL_WORKERS)
+
+linux-dual-sim: $(LINUX_DUAL_SIM) $(HELLO_DIR)/multicore_runtime.hex
+	@$(LINUX_DUAL_SIM) $(HELLO_DIR)/multicore_runtime.hex runtime
+	@$(MAKE) PARALLEL_WORKERS=1 linux-dual-parallel
+	@$(MAKE) PARALLEL_WORKERS=2 linux-dual-parallel
 
 hello: $(HELLO_SIM)
 	@$(HELLO_SIM)
@@ -492,6 +523,34 @@ multicore-runtime-matrix:
 	done; done; done
 
 .PHONY: parallel parallel-config parallel-firmware
+.PHONY: multicore-adversarial multicore-adversarial-matrix
+$(HELLO_DIR)/multicore_faults.elf $(HELLO_DIR)/multicore_reset_stress.elf: $(HELLO_DIR)/%.elf: software/tests/%.c \
+		software/runtime/start_multicore.S software/runtime/aster_multicore.h software/runtime/aster.h software/boot/link_multicore.ld Makefile | $(HELLO_DIR)
+	$(CC) $(HELLO_CFLAGS) -T software/boot/link_multicore.ld -o $@ software/runtime/start_multicore.S $<
+
+$(ADVERSARIAL_SIM): $(RTL_CORE) $(RTL_CACHE) $(RTL_MEMORY) $(RTL_PERIPHERALS) $(RTL_MULTICORE) \
+		verification/soc/aster_multicore_probe.sv verification/soc/tb_multicore_adversarial.cpp Makefile | $(BUILD_DIR)
+	mkdir -p $(ADVERSARIAL_DIR)
+	$(VERILATOR) --cc --exe --build --timing --Wall $(VERILATOR_VENDOR_LINT_FLAGS) \
+		--top-module aster_multicore_probe --Mdir $(ADVERSARIAL_DIR)/obj -o $(abspath $@) \
+		"-GENABLE_L1=1'b$(ENABLE_L1)" "-GSYNC_MEMORY=1'b$(SYNC_MEMORY)" -GMEMORY_WAIT_CYCLES=$(MEMORY_WAIT_CYCLES) \
+		$(addprefix $(ROOT)/,$(RTL_CORE) $(RTL_CACHE) $(RTL_MEMORY) $(RTL_PERIPHERALS) $(RTL_MULTICORE)) \
+		$(ROOT)/verification/soc/aster_multicore_probe.sv $(ROOT)/verification/soc/tb_multicore_adversarial.cpp
+
+multicore-adversarial: $(ADVERSARIAL_SIM) $(HELLO_DIR)/multicore_faults.hex $(HELLO_DIR)/multicore_reset_stress.hex
+	@$(ADVERSARIAL_SIM) --faults +rom=$(HELLO_DIR)/multicore_faults.hex +ram_fill=a5a5a5a5
+	@if [ $(MEMORY_WAIT_CYCLES) -gt 0 ]; then \
+		for seed in 1 0xa57e 0xc0ffee; do \
+			$(ADVERSARIAL_SIM) --resets $$seed +rom=$(HELLO_DIR)/multicore_reset_stress.hex +ram_fill=a5a5a5a5 || exit 1; \
+		done; \
+	fi
+
+multicore-adversarial-matrix:
+	@set -e; for l1 in 0 1; do for timing in '0 0' '0 4' '1 1' '1 4'; do \
+		read -r sync wait_cycles <<< "$$timing"; \
+		$(MAKE) ENABLE_L1=$$l1 SYNC_MEMORY=$$sync MEMORY_WAIT_CYCLES=$$wait_cycles multicore-adversarial; \
+	done; done
+
 $(PARALLEL_ELF): software/benchmarks/parallel_mix.c software/runtime/start_multicore.S \
 		software/runtime/aster_multicore.h software/runtime/aster.h software/boot/link_multicore.ld Makefile
 	mkdir -p $(PARALLEL_FW_DIR)
@@ -545,7 +604,7 @@ parallel-workloads:
 
 test: smoke phase1 hello bench cache uart fpga-sim linux-sim counters retirement arbiter shared-fabric multicore-runtime parallel
 
-check: tools smoke phase1 hello bench cache uart fpga-sim linux-sim counters retirement arbiter shared-fabric multicore-runtime parallel
+check: tools smoke phase1 hello bench cache uart fpga-sim linux-sim linux-dual-sim counters retirement arbiter shared-fabric multicore-runtime multicore-adversarial parallel
 
 clean:
 	rm -rf $(BUILD_DIR)

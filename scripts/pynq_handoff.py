@@ -10,7 +10,9 @@ from pathlib import Path
 import xml.etree.ElementTree as ET
 
 
-def validate_handoff(path):
+def validate_handoff(path, expected_harts=0):
+    if expected_harts not in (0, 1, 2):
+        raise ValueError("invalid expected Linux hart configuration")
     root = ET.parse(path).getroot()
 
     def require(condition, message):
@@ -36,6 +38,15 @@ def validate_handoff(path):
 
     def port(module, name):
         return one(modules[module], f"./PORTS/PORT[@NAME='{name}']", f"{module}.{name}")
+
+    # Older, retained Phase 2 exports predate this parameter. Absence is valid
+    # only for that legacy map; it cannot pass a multicore deployment preflight.
+    hart_parameters = modules["aster"].findall("./PARAMETERS/PARAMETER[@NAME='HART_COUNT']")
+    require(len(hart_parameters) <= 1, "duplicate hart configuration")
+    if hart_parameters:
+        require(hart_parameters[0].get("VALUE") is not None, "missing hart configuration value")
+    harts = int(hart_parameters[0].get("VALUE"), 0) if hart_parameters else 0
+    require(harts == expected_harts, "wrong hart configuration / memory map")
 
     def driven(module, name, driver, output):
         sink, source = port(module, name), port(driver, output)
@@ -84,11 +95,16 @@ def validate_handoff(path):
     require(memory.get("BASEVALUE") == "0x40000000" and memory.get("HIGHVALUE") == "0x4003FFFF"
             and memory.get("MASTERBUSINTERFACE") == "M_AXI_GP0"
             and memory.get("SLAVEBUSINTERFACE") == "s_axi", "PS AXI address mapping")
-    return {"clock_hz": 31250000, "axi_base": 0x40000000, "axi_span": 0x40000,
+    result = {"clock_hz": 31250000, "axi_base": 0x40000000, "axi_span": 0x40000,
             "external_reset_active_high": False, "auxiliary_reset_active_high": True}
+    if harts:
+        result.update(hart_count=harts, bridge_version=0x00050001)
+    return result
 
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("handoff", type=Path)
-    print("PASS: Aster Linux clock/reset/address handoff", validate_handoff(parser.parse_args().handoff))
+    parser.add_argument("--harts", type=int, choices=(0, 1, 2), default=0)
+    args = parser.parse_args()
+    print("PASS: Aster Linux clock/reset/address handoff", validate_handoff(args.handoff, args.harts))

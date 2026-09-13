@@ -34,6 +34,32 @@ module aster_picorv32 #(
     output logic [31:0] eoi
 );
     logic rvfi_valid, rvfi_trap;
+    logic core_mem_valid, core_mem_ready;
+    logic data_checked, request_admitted;
+
+    // The pinned core can present an aligned data request one cycle before
+    // asserting trap for the original misaligned address. Qualify each data
+    // request for one cycle before exposing it to caches/MMIO, including reads
+    // with side effects. Instruction fetches need no qualification delay.
+    // Once exposed, a stalled request MUST complete even if trap rises: caches
+    // and the shared arbiter may already own it. Unadmitted trapped requests
+    // are drained internally without any external transaction.
+    assign mem_valid = resetn && core_mem_valid &&
+                       (request_admitted || (!trap && (mem_instr || data_checked)));
+    assign core_mem_ready = (mem_valid && mem_ready) ||
+                            (resetn && trap && !request_admitted);
+    always_ff @(posedge clk) begin
+        if (!resetn) begin
+            data_checked <= 1'b0;
+            request_admitted <= 1'b0;
+        end else begin
+            request_admitted <= mem_valid && !mem_ready;
+            if (!core_mem_valid || core_mem_ready)
+                data_checked <= 1'b0;
+            else
+                data_checked <= 1'b1;
+        end
+    end
     // RISCV_FORMAL exposes upstream's synthesizable RVFI observation ports.
     // It does not enable the separate FORMAL assumptions/assertions. Trapping
     // instructions do not retire; upstream may repeat trap records while halted.
@@ -71,9 +97,9 @@ module aster_picorv32 #(
         .rvfi_trap(rvfi_trap),
         .rvfi_pc_rdata(retired_pc),
         .rvfi_insn(retired_insn),
-        .mem_valid(mem_valid),
+        .mem_valid(core_mem_valid),
         .mem_instr(mem_instr),
-        .mem_ready(mem_ready),
+        .mem_ready(core_mem_ready),
         .mem_addr(mem_addr),
         .mem_wdata(mem_wdata),
         .mem_wstrb(mem_wstrb),

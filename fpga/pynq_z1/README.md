@@ -100,7 +100,38 @@ The CPU is stopped after a completed run. Loading replaces the active PL
 design; ensure another application is not using it. Existing board projects
 must be preserved.
 
-### Reset and deployment gates
+### Phase 5 dual-hart variant
+
+`make linux-dual-sim` tests the runtime and one/two-worker parallel firmware
+through the real UART TX/RX and AXI shell. `make fpga-linux-dual` builds the
+two-core version under `build/fpga/pynq_z1/linux-h2/`. The original `fpga-linux`
+still selects `LINUX_HART_COUNT=0` (legacy); 1/2 select the Phase 5 memory map.
+Do not load a legacy binary into the new map. Dual-hart physical validation is
+still pending; a successful simulation/build is not board evidence.
+
+For the new variant, transfer the matched bit/HWH pair and scripts listed
+above, plus `asterbench_parallel.py`, `parallel_results.py`,
+`run_parallel_sim.py`, and the host reference `.json` **and matching `.log`**.
+Use clean-source `parallel_results.py capture --sync-memory 1` references and
+the exact firmware hex identified by each reference's SHA-256. Run in the
+board's root login/PYNQ environment (not a Python environment lacking XRT):
+
+```sh
+python3 run_pynq.py --bitstream aster_linux.bit --firmware multicore_runtime.hex \
+  --kind runtime --hart-count 2 --revision SOURCE_REVISION --output runtime.json
+python3 run_pynq.py --bitstream aster_linux.bit --firmware parallel.hex \
+  --kind parallel --hart-count 2 --revision SOURCE_REVISION \
+  --provenance reference.json --output parallel.json --no-download
+```
+
+Complete repeated-job output, not just its first line, is validated. Workload,
+configuration and result fields must match the host reference; physical cycle
+counts remain actual observations because UART stalls can shift worker polling
+between jobs. The two captured boots also require independent per-hart RVFI
+lifetime activity, no traps/serial errors, exact byte counts, and a stopped
+worker. `--timeout` is bounded to 1–120 seconds. Global RUN is cleared on exit.
+
+### Reset and deployment gates (both variants)
 
 `fpga-linux` explicitly makes the unused, low-tied auxiliary reset active-high.
 The PS external reset remains active-low, propagated from `FCLK_RESET0_N`.
@@ -133,13 +164,21 @@ Base `0x40000000`, span 256 KiB:
 | `0x08` | RX FIFO pop: bit 31 valid, low byte data; zero if empty |
 | `0x0c` | RX queued byte count |
 | `0x10/0x14` | Bytes accepted by TX PHY / decoded by RX |
-| `0x18/0x1c` | Bridge ID `0x41535452` / version `0x00020001` |
+| `0x18/0x1c` | Bridge ID `0x41535452` / legacy version `0x00020001`, Phase 5 `0x00050001` |
 | `0x20` | RTL clock frequency in Hz |
+| `0x24` | Phase 5 only: actual hardware hart count (1 or 2) |
+| `0x28` | Phase 5 only: running bits 0/1, trapped bits 8/9 |
+| `0x30/0x34` | Phase 5 only: hart 0 lifetime RVFI retirements, low/high |
+| `0x38/0x3c` | Phase 5 only: hart 1 lifetime RVFI retirements, low/high |
 | `0x10000..0x1ffff` | Boot ROM programming, word aligned, byte strobes honored |
 
 Invalid accesses and programming while running return AXI SLVERR. Read data
 and write responses are held under backpressure; AW/W arrival order is
 independent. Receive credits reserve enough space for all in-flight TX bytes.
+New observation registers are read-only and invalid in the legacy map; `0x2c`
+remains reserved. Lifetime counters survive secondary reset, clear on global
+RUN=0, and count idle/setup as well as work; use high/low/high retry reads.
+Use the frozen AsterBench v3 job counters, not lifetime totals, for performance.
 
 ## Validation status
 

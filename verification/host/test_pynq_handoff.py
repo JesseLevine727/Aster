@@ -104,6 +104,18 @@ class HandoffSafety(unittest.TestCase):
         self.assertIn("C_AUX_RESET_HIGH", result.stderr)
         self.assertNotIn("ModuleNotFoundError", result.stderr)
 
+    def test_multicore_map_must_match_requested_harts(self):
+        for harts in (1, 2):
+            root = fixture()
+            parent = root.find(".//MODULE[@INSTANCE='aster']/PARAMETERS")
+            node = ET.SubElement(parent, "PARAMETER", NAME="HART_COUNT", VALUE=str(harts))
+            self.assertEqual(validate_handoff(self.save(root), harts)["hart_count"], harts)
+            with self.assertRaises(ValueError): validate_handoff(self.path)
+            with self.assertRaises(ValueError): validate_handoff(self.path, 3-harts)
+            parent.append(deepcopy(node))
+            with self.assertRaises(ValueError): validate_handoff(self.save(root), harts)
+        with self.assertRaises(ValueError): validate_handoff(self.save(fixture()), 2)
+
     def test_mutated_exports_fail_closed(self):
         original = fixture()
         # Every consumed parameter, driver, polarity, frequency and map field.

@@ -18,6 +18,14 @@ All harts use one clock, reset PC zero, RV32IM/ilp32 and no interrupts. Hart ID
 is an Aster read-only MMIO register, not an added `mhartid` CSR or vendor patch.
 The ARM Linux host remains the loader; neither RISC-V hart runs an OS.
 
+`aster_picorv32` qualifies every new data request for one cycle before exposing
+it to a cache or MMIO. The pinned vendor can otherwise emit an aligned request
+one cycle before trapping on the original misaligned address. Unadmitted
+faulting loads/stores have no external side effects. Once admitted, a stalled
+request is never withdrawn on trap: it completes to preserve fabric ownership.
+The pinned vendor is unchanged. Valid data accesses now cost one extra cycle;
+earlier retained timings must not be represented as this implementation's.
+
 ## Dual-hart memory map and ownership
 
 Ranges are start-inclusive/end-exclusive. ROM and RAM retain their physical
@@ -91,6 +99,20 @@ Mailbox writes merge enabled byte lanes. No read side effects, interrupts or
 implicit atomic read-modify-write operations. Unsupported offsets and writes
 are ignored. Reset commands recognize only lane 0; upper-byte writes cannot
 change lifecycle state. UART writes from hart 1 are ignored without stalling.
+
+## Linux deployment boundary
+
+`aster_pynq_linux` and its Verilog IP facade use `HART_COUNT=0` for the preserved
+legacy map, or 1/2 for this map. `make fpga-linux-dual` selects 2 and writes to
+`build/fpga/pynq_z1/linux-h2`; the exported HWH must contain the matching
+parameter. The preflight rejects a mismatched map before importing PYNQ.
+The dual ABI version is `0x00050001`. ARM-only registers expose real hardware
+hart count/status and two 64-bit lifetime RVFI retirement counters. They reset
+on global RUN=0, not on a secondary reset, allowing the host to verify both
+harts executed even when firmware finishes with the worker held in reset.
+These lifetime totals include setup/idle/UART time and are **not** job speedup
+measurements. AsterBench v3's common frozen job interval supplies those.
+See the [bridge map and deployment commands](../fpga/pynq_z1/README.md).
 
 ## Arbitration and memory timing
 

@@ -31,9 +31,10 @@ int main(int argc, char** argv) {
         };
         const std::array<std::uint32_t, 6> faults = {
             0xffffffff, 0x00000073, 0x00100073, // illegal, ECALL, EBREAK
-            0x0012a303, 0x0042a0a3, 0x0020006f // misaligned LW, SW, JAL
+            0x0012a303, 0x0002a0a3, 0x0020006f // misaligned LW, SW zero, JAL
         };
         std::mt19937 random(0xa57e);
+        for (int latency : {0, 1, 7, -1})
         for (auto fault : faults) for (unsigned boot = 0; boot < 2; ++boot) {
             code.back() = fault;
             dut.resetn = 0;
@@ -45,6 +46,7 @@ int main(int argc, char** argv) {
             dut.resetn = 1;
             std::uint32_t ram = 0;
             unsigned remaining = 0, trapped_cycles = 0;
+            unsigned data_reads = 0, data_writes = 0;
             bool pending = false;
             std::uint32_t address = 0, data = 0, mask = 0;
             std::vector<unsigned> observed;
@@ -54,7 +56,7 @@ int main(int argc, char** argv) {
                     if (!pending) {
                         pending = true;
                         address = dut.mem_addr; data = dut.mem_wdata; mask = dut.mem_wstrb;
-                        remaining = random() % 8;
+                        remaining = latency < 0 ? random() % 8 : unsigned(latency);
                     } else require(address == dut.mem_addr && data == dut.mem_wdata &&
                                    mask == dut.mem_wstrb, "native request changed while stalled");
                     if (remaining) --remaining;
@@ -63,13 +65,14 @@ int main(int argc, char** argv) {
                         dut.mem_rdata = address < code.size()*4 ? code[address/4]
                                        : address == 0x10000000 ? ram : 0;
                         if (mask) {
+                            ++data_writes;
                             require(address == 0x10000000, "unexpected/misaligned store reached memory");
                             for (unsigned lane = 0; lane < 4; ++lane) if (mask & (1u << lane))
                                 ram = (ram & ~(255u << (lane*8))) | (data & (255u << (lane*8)));
-                        }
+                        } else if (!dut.mem_instr) ++data_reads;
                         pending = false;
                     }
-                } else require(!pending || dut.trap, "native request withdrawn while stalled");
+                } else require(!pending, "native request withdrawn while stalled");
                 dut.eval(); dut.clk = 1; dut.eval();
                 if (dut.instr_retired) {
                     require(dut.retired_pc < 68, "faulting/skipped instruction retired");
@@ -80,9 +83,10 @@ int main(int argc, char** argv) {
             }
             require(trapped_cycles == 40, "expected persistent trap did not occur");
             require(ram == 7, "arithmetic/store/load fixture failed");
+            require(data_reads == 1 && data_writes == 1, "faulting data access escaped the core wrapper");
             require(observed == expected, "retirement PC sequence/count mismatch");
         }
-        std::cout << "PASS: exact RVFI retirement sequence, stalled memory, six trap types and warm reset\n";
+        std::cout << "PASS: exact RVFI retirement, no fault side effects, six traps, four latencies and warm reset\n";
         return 0;
     } catch (const std::exception& error) {
         std::cerr << "FAIL: " << error.what() << '\n';

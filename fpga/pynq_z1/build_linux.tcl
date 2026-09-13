@@ -1,7 +1,10 @@
 # AXI host bridge and real serial loopback, loaded through PYNQ Linux/PCAP.
-if {$argc != 2} { error "usage: build_linux.tcl <repo-root> <output-dir>" }
+if {$argc < 2 || $argc > 3} { error "usage: build_linux.tcl <repo-root> <output-dir> ?harts(0=legacy,1,2)?" }
 set repo_root [file normalize [lindex $argv 0]]
 set output_dir [file normalize [lindex $argv 1]]
+set harts 0
+if {$argc == 3} { set harts [lindex $argv 2] }
+if {$harts ni {0 1 2}} { error "invalid Linux hart configuration" }
 set part xc7z020clg400-1
 file mkdir $output_dir
 create_project aster_linux $output_dir -part $part -force
@@ -10,7 +13,8 @@ set rtl_files [list rtl/core/aster_picorv32.sv vendor/picorv32/picorv32.v \
     rtl/cache/aster_l1_cache.sv rtl/memory/aster_rom.sv rtl/memory/aster_ram.sv \
     rtl/peripherals/aster_uart.sv rtl/peripherals/aster_uart_tx.sv \
     rtl/peripherals/aster_uart_rx.sv rtl/peripherals/aster_perf_counters.sv \
-    rtl/core/aster_hart.sv rtl/soc/aster_minimal.sv rtl/soc/aster_pynq_linux.sv]
+    rtl/core/aster_hart.sv rtl/soc/aster_minimal.sv rtl/soc/aster_pynq_linux.sv \
+    rtl/interconnect/aster_arbiter2.sv rtl/soc/aster_shared_fabric.sv rtl/soc/aster_multicore.sv]
 foreach relative $rtl_files { read_verilog -sv [file join $repo_root $relative] }
 read_verilog [file join $repo_root rtl/soc/aster_linux_ip.v]
 
@@ -23,6 +27,7 @@ make_bd_intf_pins_external [get_bd_intf_pins ps7/DDR]
 make_bd_intf_pins_external [get_bd_intf_pins ps7/FIXED_IO]
 
 create_bd_cell -type module -reference aster_linux_ip aster
+set_property CONFIG.HART_COUNT $harts [get_bd_cells aster]
 create_bd_cell -type ip -vlnv xilinx.com:ip:axi_interconnect:2.1 fabric
 set_property CONFIG.NUM_MI 1 [get_bd_cells fabric]
 create_bd_cell -type ip -vlnv xilinx.com:ip:proc_sys_reset:5.0 reset
@@ -58,7 +63,7 @@ save_bd_design
 set bd [get_files */aster_linux.bd]
 generate_target all $bd
 set handoff [file join $output_dir aster_linux.gen sources_1 bd aster_linux hw_handoff aster_linux.hwh]
-puts [exec python3 [file join $repo_root scripts/pynq_handoff.py] $handoff]
+puts [exec python3 [file join $repo_root scripts/pynq_handoff.py] $handoff --harts $harts]
 add_files [make_wrapper -files $bd -top]
 set_property top aster_linux_wrapper [current_fileset]
 read_xdc [file join $repo_root fpga/pynq_z1/aster_linux.xdc]

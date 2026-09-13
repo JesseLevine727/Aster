@@ -9,6 +9,31 @@ unit RTL checks → core instruction tests → SoC bare-metal tests
 
 ## Phase 5 development tests (not closeout)
 
+`make multicore-adversarial-matrix` runs real-core fault and in-flight global
+reset tests with caches off/on and async 0/4 or sync 1/4 wait cycles. Each of
+eight configurations runs 12 secondary fault cases over two warm boots:
+ECALL/EBREAK/illegal, misaligned LW/LH/SW/SH/JALR, execution from MMIO, peer
+private RAM or unmapped memory, and unsupported AMO. Shared sentinels must
+survive, hart 0 must continue retiring, and each secondary restart must clear
+its private BSS. Six latency-bearing configurations also run three seeds, each
+with 24 resets at actual stalled reads/writes from both cores, then 24 checks
+that accepted stores survive reset. Verification-only RAM/transaction taps are
+not part of any FPGA file set.
+
+The fault regression exposed a genuine vendor-integration defect: a misaligned
+store reached memory before trap. Core-wrapper qualification fixes both cached
+and uncached/zero-wait paths. `make retirement` now checks exactly one legitimate
+load and store (not just the final RAM value), forbids withdrawal even on trap,
+and crosses all six fault endings with fixed 0/1/7 and seeded 0–7-cycle waits.
+An old store fixture wrote the value already in RAM and could not reveal this
+side effect; the faulting store now writes zero to a nonzero sentinel.
+
+`make linux-dual-sim` tests the new bridge ABI, partial AXI write reset, ROM
+programming protection, read-only hart/lifetime registers, secondary lifecycle,
+and complete actual UART TX/RX streams for the runtime plus one/two-worker
+parallel firmware. Each has two boots and delayed host reads; the parallel
+runs exercise RX credit backpressure. Original `linux-sim` remains in `check`.
+
 The new tests are additive; Phase 1–4 tests still target the legacy map and
 measurement ABI. `make check` includes the default arbiter, shared-fabric and
 multicore-runtime tests as well as all existing targets.
@@ -152,7 +177,7 @@ make bench
 
 - `make retirement`: an independent fixed instruction/PC fixture includes
   branches/jumps over prefetched instructions, MUL/DIV, load/store with seeded
-  0–7-cycle memory stalls, FENCE and six fault endings over two boots. Exactly
+  fixed 0/1/7 and seeded 0–7-cycle memory stalls, FENCE and six fault endings over two boots. Exactly
   16 successful instructions retire; the fault and repeated halted cycles do
   not. The memory protocol and final arithmetic result are also checked.
 - `make counters`: seeded events/control writes are compared every cycle

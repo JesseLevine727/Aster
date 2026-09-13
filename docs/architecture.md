@@ -214,6 +214,15 @@ launch; this is not a fetch or the upstream early instruction-launch CSR proxy.
 `make retirement` checks an exact PC/opcode sequence with skipped prefetched
 instructions, long multiply/divide, stalled memory, six traps and two resets.
 
+The owned wrapper also qualifies each new data request for one cycle. The
+pinned core can assert a word-aligned native request before asserting `trap`
+for its original misaligned load/store address. Without qualification, even a
+faulting store can change RAM (or a load can consume MMIO). Unadmitted trapped
+requests drain internally; admitted stalled requests still complete, preserving
+cache/arbiter ownership. Instruction fetches remain immediate. This adds one
+cycle to valid data operations in both single- and dual-hart configurations;
+retained Phase 1–4 and initial Phase 5 timings identify older source revisions.
+
 All eight counters use one hardware clock interval. Start/stop/resume command
 edges themselves exclude events; counting occurs strictly between a start
 and freeze acceptance. The runtime freezes before reading **any** counter.
