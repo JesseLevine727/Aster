@@ -623,6 +623,38 @@ See [the study plan and measurement caveats](asterbench-v4.md#fixed-simulation-s
 This implementation checkpoint does not claim the full study or physical
 acceptance has run; their final raw evidence and audits remain required.
 
+### Clean dual FPGA build and archive checkpoint
+
+Detached clean source `215b2d08333d060abe3afe5874cf104ada2abfaf` produces separate
+two-hart cache-enabled and cache-disabled Phase 6 overlays using Vivado 2025.1.
+Both builds pass the five actual generated-reset-netlist scenarios, strict
+HWH/clock/reset/ISA preflight, full routing, zero DRC/methodology findings and
+setup/hold/pulse-width signoff at 31.25 MHz:
+
+| Variant | Setup slack | Hold slack | LUTs | Flip-flops | BRAM tiles | DSPs |
+| --- | --- | --- | --- | --- | --- | --- |
+| Coherent caches enabled | 9.207 ns | 0.035 ns | 15,357 | 15,167 | 32 | 0 |
+| Caches disabled | 9.691 ns | 0.047 ns | 12,064 | 10,824 | 32 | 0 |
+
+There are zero unconstrained internal endpoints. The four LEDs and asynchronous
+UART TX are five external ports without synchronous output-delay constraints;
+the archive/auditor retains this explicit exception rather than claiming zero
+unconstrained external outputs.
+
+`scripts/coherent_overlay.py capture` archives the generated bit/HWH pair,
+full build log, routed timing/utilization/routing/DRC/methodology reports,
+actual reset simulation netlist and all three compile/elaborate/run logs.
+Its source manifest covers the complete relevant clean Git tree. The read-only
+audit binds all artifact hashes, recomputes signoff/resource claims and rejects
+wrong topology/cache metadata, changed build paths, omitted evidence, failed
+gates (even after rehashing a modified report), symlinks and unlisted files.
+The post-build collector verifies the still-clean source worktree; it is not
+an attestation system or a replacement for running the build in that worktree.
+Offline board validation checks package consistency without Git; final host
+validation additionally compares every source file against the recorded Git
+revision. Packages are currently under `build/phase6-215b2d0/overlay-c0/` and
+`overlay-c1/`. These verified builds have **not yet been deployed** to the PYNQ.
+
 ## Verification and closeout requirements
 
 1. Real-core PCPI probe, adapter unit tests and independent full-A reference:
