@@ -1,6 +1,8 @@
 # Aster architecture specification
 
-Status: Phases 1–7 complete and physically verified, 2026-09-13. Phase 8 in progress.
+Status: Phases 1–8 complete and physically verified, 2026-09-13. See the
+[Phase 8 closeout](results/phase8/closeout-5b9c175/README.md) for the immutable
+acceptance bundle.
 
 Phase 5 is implemented and physically verified in the `aster_multicore` top. Its
 [dual-hart contract](phase5.md) specifies the new memory ownership, runtime,
@@ -25,8 +27,9 @@ separate and preserved.
 [Phase 8](phase8.md) implements optional Xasterdot8 packed signed INT8
 computation in an Aster-owned PCPI unit. The pinned PicoRV32 and full-A path
 are unchanged; no compiler fork is required. Its fixed AsterBench v6 simulation
-study and routed/reset/HWH builds pass. Physical execution and final closeout
-are in progress under the [guarded workflow](phase8-physical.md).
+and matching PYNQ Linux study pass, as do the routed/reset/HWH, runtime,
+regression, programming-chain and final stopped-state gates under the
+[guarded workflow](phase8-physical.md).
 
 This document is the executable contract for the first bring-up slice. It
 separates decisions that are fixed for the minimal system from features that

@@ -1,8 +1,8 @@
 # AsterBench v6: scalar versus packed INT8 computation
 
-Status: development firmware, RTL scoreboard and independent record/ELF/RAM
-oracles verified; clean fixed-study capture and physical acceptance pending.
-The predeclared [Phase 8 study](phase8.md#asterbench-v6-fixed-paired-experiment)
+Status: the complete clean 174-capture simulation study and matching physical
+study pass. Results below are labeled by their evidence boundary. The
+predeclared [Phase 8 study](phase8.md#asterbench-v6-fixed-paired-experiment)
 remains 174 captures per platform, not the smaller development test set.
 
 ## Execution and fairness
@@ -129,7 +129,71 @@ one-group PC fixture incorrectly selected both aligned and unaligned instruction
 sites; correcting the fixture preserved the exactly-once gate. The command
 mutation test then exposed an unbound compiler-prefix setting; the validator now
 requires the standard compiler command or its fingerprinted absolute path.
-The complete clean regression/study and physical board gates remain required.
+The completed clean simulation study is distinct from those development runs;
+the complete regression and physical board gates are recorded in the accepted
+Phase 8 bundle.
+
+## Complete clean simulation study
+
+Source `6a0449c035570a9f9d24538140bdb08a039f8651` passes all 174 captures,
+348 warm boots, 1,392 paired jobs and 2,784 method records. All six independently
+rebuilt repeats have identical records, observations, stops, ROM and RAM. Every
+kernel's full output, guards, actual retired instruction sites and 50-counter
+window pass independent checks. The physical study uses the same ELF/ROMs and
+reproduces every recorded counter; it is independently audited and is not
+inferred from simulation.
+
+The following are scalar cycles divided by custom cycles at the largest sampled
+K. Ratios below one would indicate a custom slowdown. These are separate
+workloads/configurations, not an average speedup or universal crossover.
+
+| Kernel | Input-base alignment | Cache | First all-pairs custom win K | Largest K | Scalar/custom at largest K |
+| --- | --- | --- | ---: | ---: | ---: |
+| Dot | aligned | off | 4 | 4096 | 3.456655× |
+| Dot | aligned | on | 4 | 4096 | 4.945886× |
+| Dot | unaligned | off | 4 | 4096 | 1.325939× |
+| Dot | unaligned | on | 15 | 4096 | 1.744679× |
+| FIR, eight outputs | aligned | off | 4 | 64 | 1.981878× |
+| FIR, eight outputs | aligned | on | 4 | 64 | 2.587211× |
+| FIR, eight outputs | unaligned | off | 4 | 64 | 1.408323× |
+| FIR, eight outputs | unaligned | on | 4 | 64 | 1.761938× |
+| GEMM, 3×5 outputs | aligned | off | 4 | 64 | 2.017784× |
+| GEMM, 3×5 outputs | aligned | on | 4 | 64 | 2.347995× |
+| GEMM, 3×5 outputs | unaligned | off | 4 | 64 | 1.375439× |
+| GEMM, 3×5 outputs | unaligned | on | 4 | 64 | 1.565204× |
+
+No later sampled reversal occurs after those first all-pairs wins in this fixed
+study; the audit still checks and retains reversals rather than assuming that
+property. “Aligned” describes the initial A/B pointers, not every FIR sliding
+window or GEMM gathered element. K is inner-product length, not a DMA byte size.
+
+Two actual cache-on board captures already reproduce these simulation records:
+aligned dot K=4096 uses **393,831 scalar versus 79,628 custom cycles**; unaligned
+dot K=7 uses **1,116 versus 1,389 cycles**, a genuine **0.803456× slowdown**.
+The first case retires 28,696 versus 12,319 instructions and performs 8,197
+versus 2,053 data-cache accesses; the custom path retires 1,024 DOT8 instructions.
+Four lanes therefore neither guarantee nor cap a fourfold whole-kernel ratio:
+packing into aligned word loads, fewer loop instructions and replacing the
+pinned core's iterative scalar MUL all matter. This is not an instruction-only
+throughput measurement.
+
+Zero-length cases still store all zero outputs and exercise distinct C control
+paths, with no DOT8 activity. For example, aligned cache-off dot K=0 measures
+279 scalar versus 319 custom cycles (0.874608×). FIR/GEMM zero-K and tiny-tail
+slowdowns are retained too. The complete physical study and independent final
+audit retain the full board evidence, including every cache/alignment/K case
+and six fresh-build repeats.
+
+### Routed cost at the unchanged clock
+
+The study images retain 31.25 MHz, 32 BRAM tiles and zero DSP blocks. Relative
+to the accepted Phase 7 DMA images, cache off adds 1,114 LUTs and 663 registers;
+cache on adds 1,165 LUTs and 757 registers. This includes the custom unit,
+eight event counters and shell/lifecycle integration, not isolated multiplier
+area. Total LUT/register counts are 17,221/12,782 and 20,727/17,271 respectively.
+Setup slack is 4.544/4.319 ns; hold is 0.041 ns and pulse width 14.750 ns for
+both. Routed/reset/HWH gates pass. This is not an Fmax search or a Phase 9 NPU
+measurement.
 
 ## Physical capture boundary
 
@@ -152,7 +216,7 @@ saved commands, and host audits additionally check collector/source Git blobs.
 and both compatible images before any board write. It executes 87 captures in
 each cache mode, including the three separately rebuilt repeats, recording the
 exact prior/loaded bitstream hash chain. Warm boots do not reprogram the PL.
-This collector and its mutation/isolated-import tests are implemented; physical
-study execution is still pending. A first physical-test fixture accidentally
-escaped its synthetic ROM newlines; that failure was retained and the fixture
-corrected without altering the canonical-ROM or board-preflight gates.
+This collector and its mutation/isolated-import tests are implemented and the
+physical study is complete. A first physical-test fixture accidentally escaped
+its synthetic ROM newlines; that failure was retained and the fixture corrected
+without altering the canonical-ROM or board-preflight gates.

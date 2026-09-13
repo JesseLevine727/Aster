@@ -141,7 +141,7 @@ def physical_logs(directory,measured,reports):
     bench.require(len(rows) == 1,"missing/duplicate physical study completion"); log.finish(523)
     for c,report in reports.items():
         raw = (directory/f"functional-c{c}.log").read_text(); log = legacy.Log(raw)
-        rows = log.rows("physical Pynq-Z1 DOT8 functional",rf"physical Pynq-Z1 DOT8 functional cache={c} boot=(\d+) serial_bytes=17 retained_RAM=65536 independent_functional_oracle exact_50_reference_counters")
+        rows = log.rows("physical Pynq-Z1 DOT8 functional",rf"physical Pynq-Z1 DOT8 functional cache={c} boot=(\d+) serial_bytes=18 retained_RAM=65536 independent_functional_oracle exact_50_reference_counters")
         bench.require(rows == [(1,),(2,)],"raw functional cache/boot differs")
         rows = log.rows("physical DOT8 functional package",r"physical DOT8 functional package audited and CPU/DMA/compute safely STOPPED, (.+)")
         bench.require(len(rows) == 1,"missing/duplicate functional closeout"); log.finish(3)

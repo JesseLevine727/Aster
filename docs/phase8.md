@@ -1,9 +1,11 @@
 # Phase 8: packed signed INT8 dot-product instruction
 
-Status: **arithmetic/real-core feasibility verified; runtime and full acceptance in progress**.
+Status: **complete — runtime, regression, routed FPGA and guarded physical acceptance audited**.
 Baseline: clean/pushed Phase 7 `370ea20c3bbf91e06546a1f634e793755a053267`.
 Before source changes, the complete Phase 7 audit with `--current` and the
-historical Phase 6 audit both passed. This document precedes Phase 8 RTL.
+historical Phase 6 audit both passed. This contract was frozen before the Phase
+8 RTL and its completed evidence is retained in the [immutable closeout
+bundle](results/phase8/closeout-5b9c175/README.md).
 
 ## README scope
 
@@ -224,11 +226,11 @@ real-core, runtime, FPGA or performance acceptance.
 
 - [x] Audit the baseline; specify instruction, integration and fair study before RTL.
 - [x] Arithmetic/PCPI unit oracles and real-core feasibility, including M/A coexistence.
-- [ ] C API/runtime, full-core encoding/fault/alias tests and lifecycle/coherence/DMA matrices.
+- [x] C API/runtime, full-core encoding/fault/alias tests and lifecycle/coherence/DMA matrices.
 - [x] ABI 6/v6 counter, record, ELF/RAM and mutation-tested capture tools.
-- [ ] Complete applicable 22-target legacy and 14-target DMA regressions plus the new supplement.
-- [ ] Clean simulation study, cache-off/on FPGA routed/reset/HWH signoff and complete physical study/functional tests.
-- [ ] Self-contained immutable evidence, requirement audit, fresh-checkout verification and clean/pushed closeout.
+- [x] Complete applicable 22-target legacy and 14-target DMA regressions plus the new supplement.
+- [x] Clean simulation study, cache-off/on FPGA routed/reset/HWH signoff and complete physical study/functional tests.
+- [x] Self-contained immutable evidence, requirement audit, fresh-checkout verification and clean/pushed closeout.
 
 Independent unit arithmetic covers all 65,536 signed byte-pair products in
 each lane, extrema/cancellation sums and seeded packed combinations. Decode
@@ -306,8 +308,9 @@ active DMA. Each boot has 25,393 primary and 25,689 secondary custom retirements
 2,048 DMA bytes and exact agreement among all 50 event/counter/RAM snapshots.
 The complete 64 KiB architectural-store oracle survives acknowledged STOP.
 One-hart cached synchronous/wait-one also passes two boots and four active-stop
-boundaries. Additional geometry/cache/timing and clean regression coverage is
-still pending; these are functional results, not benchmark speedups.
+boundaries. Additional geometry/cache/timing and clean regression coverage also
+pass in the 56-case supplement and complete legacy/DMA regression packages;
+these are functional results, not benchmark speedups.
 
 `make dot8-stops` separately passes 13 two-hart cached/wait-one adversarial
 boundaries: pre-admission, captured sum, completed response and retirement on
@@ -327,7 +330,8 @@ retains ABI `0x70001` and denies the added bank. Both shells reject unsupported
 custom instructions, LR to the new MMIO bank and MMIO instruction fetches.
 HWH validation explicitly requires the dot8/coherence/DMA combination and
 rejects mismatched/missing/duplicated parameters; legacy return shapes remain
-unchanged. Physical acceptance is still pending.
+unchanged. The matching PYNQ Linux physical study and two-cache functional
+acceptance each pass two warm boots with exact UART/RAM/counter comparisons.
 
 ### Routed FPGA milestone
 
@@ -387,7 +391,8 @@ symbols, exact build/model/compiler arguments and complete source/tool identity.
 File-local BSS symbols are bound through ELF sections/symbols; GNU linker maps
 do not emit those local names. Synthetic validator fixtures are not measurements.
 The expanded host suite passes 198 tests. Clean accepted captures and physical
-functional comparisons remain acceptance work; this milestone is not closeout.
+functional comparisons pass independently; this milestone is included in the
+immutable closeout bundle.
 
 The guarded physical-functional collector and read-only report auditor are
 implemented separately from the benchmark collector. They retain raw UART,
@@ -396,7 +401,9 @@ comparison; failure cleanup only touches an identity-verified bridge. The host
 suite now passes 202 tests, including collector races, malformed input, PCAP
 failure, corrupted RAM/live counters and frozen-event mismatches. The
 [physical workflow](phase8-physical.md) describes deployment and read-only
-reproduction. Actual physical functional acceptance remains pending.
+reproduction. Actual physical functional acceptance passes for both cache modes,
+with `serial_bytes=18`, complete 64 KiB RAM artifacts and exact 50-counter
+comparisons.
 
 ### Combined acceptance audit milestone
 
@@ -406,9 +413,9 @@ historical Phase 6/7 audits, physical programming/hash chronology and final
 CPU/DMA/DOT8 STOPPED. Five outer-audit tests reject omitted/rehashed inventory,
 invented summaries, source drift, unreviewed Makefile/exporter changes, broken
 deployment chains, nonzero final state and incomplete physical logs. The full
-host suite passes 207 tests. A clean fresh-checkout rebuild and completed
-physical/reference/regression packages are still required before this auditor
-can create an accepted closeout manifest.
+host suite passes 207 tests. The clean fresh-checkout rebuild, completed
+physical/reference/regression packages and pushed immutable bundle are recorded
+in [the Phase 8 closeout](results/phase8/closeout-5b9c175/README.md).
 
 ## Primary references
 

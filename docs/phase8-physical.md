@@ -116,6 +116,7 @@ python3 scripts/dot8_functional_physical.py RESULTS/functional-physical.json \
   --reference REFERENCE/functional.json --overlay OVERLAY/overlay.json
 ```
 
-The final Phase 8 bundle will bind those packages, raw board logs, the exact
-programming/hash chain, complete regression evidence and fresh-checkout tests.
-This workflow document alone is not acceptance evidence.
+The [accepted Phase 8 bundle](results/phase8/closeout-5b9c175/README.md) binds
+those packages, raw board logs, the exact programming/hash chain, complete
+regression evidence and fresh-checkout tests. This workflow document alone is
+not acceptance evidence.

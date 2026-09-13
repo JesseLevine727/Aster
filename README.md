@@ -80,8 +80,10 @@ The 2,003-artifact bundle retains all 22 legacy and 14 DMA regression targets,
 144 physical benchmark captures, eight additional functional board boots,
 both routed 31.25 MHz overlays and a fresh rebuild with 149 host tests.
 The [current runtime guide](docs/runtime.md) covers the coherent RV32IMA/DMA
-configuration separately from the preserved legacy maps. Phase 8 is now
-in progress under its [instruction and acceptance contract](docs/phase8.md).
+configuration separately from the preserved legacy maps. Phase 8 is complete:
+the packed signed INT8 instruction, RAM-backed runtime, full regressions, routed
+overlays and guarded PYNQ Linux acceptance all pass the [immutable closeout
+audit](docs/results/phase8/closeout-5b9c175/README.md).
 
 Start here:
 
@@ -329,13 +331,14 @@ Add a packed INT8 dot-product/MAC-style RISC-V extension with software support a
 
 **Experiment:** scalar dot product/FIR/GEMM vs custom instruction.
 
-**In progress:** [Phase 8 contract](docs/phase8.md). The baseline is audited;
-the initial design specifies four signed INT8 products summed into a 32-bit
-register result, explicit software accumulation and safe PCPI/lifecycle
-integration. Its fixed AsterBench v6 study includes scalar and custom dot,
-FIR and row-major GEMM, full packing/tail/memory costs and both cache modes.
-Implementation, timing and physical performance are not yet claimed. Preserve
-31.25 MHz and all Phase 1–7 evidence; the Phase 9 NPU remains separate.
+**Complete:** [Phase 8 contract and results](docs/phase8.md). Xasterdot8
+computes four signed INT8 products into a 32-bit result through the pinned
+PicoRV32 PCPI path, with a RAM-backed C runtime and explicit modulo-2^32
+accumulation. The fixed AsterBench v6 study covers 174 simulation captures and
+the matching 174-capture PYNQ Linux study; both cache modes, full regressions,
+routed/reset/HWH signoff, guarded functional boots and the final stopped-state
+audit pass at 31.25 MHz. The [self-contained evidence bundle](docs/results/phase8/closeout-5b9c175/README.md)
+retains the raw records and provenance. Phase 9's NPU remains separate.
 
 ## Phase 9 — Matrix accelerator / NPU
 

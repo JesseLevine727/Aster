@@ -149,7 +149,7 @@ class Phase8Closeout(unittest.TestCase):
             raw += "PASS: complete physical DOT8 study, 174 captures / 348 warm boots / 1392 paired jobs, /board/physical-study.json\n"
             path = root/"study.log"; path.write_text(raw)
             for c in (0,1):
-                log = "".join(f"PASS: physical Pynq-Z1 DOT8 functional cache={c} boot={b} serial_bytes=17 retained_RAM=65536 independent_functional_oracle exact_50_reference_counters\n" for b in (1,2))
+                log = "".join(f"PASS: physical Pynq-Z1 DOT8 functional cache={c} boot={b} serial_bytes=18 retained_RAM=65536 independent_functional_oracle exact_50_reference_counters\n" for b in (1,2))
                 log += f"PASS: physical DOT8 functional package audited and CPU/DMA/compute safely STOPPED, /board/functional-c{c}/functional-physical.json\n"
                 (root/f"functional-c{c}.log").write_text(log)
             (root/"initial-activity.log").write_text("pynq jupyter-notebook\n")
