@@ -13,7 +13,7 @@ from bench_results import ROOT, sha
 
 SCHEMA = "aster.coherent.physical.v1"
 TRANSPORT = "PYNQ Linux PCAP/AXI, FPGA UART TX-to-RX serial loopback"
-COLLECTOR_FILES = {"asterbench_coherent.py", "bench_results.py", "coherent_bridge.py", "coherent_elf.py",
+COLLECTOR_FILES = {"asterbench.py", "asterbench_coherent.py", "bench_results.py", "coherent_bridge.py", "coherent_elf.py",
                    "coherent_overlay.py", "coherent_physical.py", "coherent_results.py", "pynq_handoff.py",
                    "run_coherent_sim.py", "run_pynq_coherent.py"}
 

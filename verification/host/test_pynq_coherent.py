@@ -5,7 +5,9 @@ import hashlib
 import io
 import json
 from pathlib import Path
+import shutil
 import struct
+import subprocess
 import sys
 import tempfile
 from types import SimpleNamespace
@@ -64,6 +66,15 @@ def inputs(root):
 
 
 class PhysicalCollector(unittest.TestCase):
+    def test_isolated_shipping_manifest_contains_transitive_imports(self):
+        with tempfile.TemporaryDirectory(prefix="aster-pynq6-package-") as directory:
+            root = Path(directory)
+            for name in physical.COLLECTOR_FILES: shutil.copy2(ROOT/"scripts"/name, root/name)
+            # No repository/PYTHONPATH fallback; importing the shipped collector
+            # must work without importing PYNQ or touching hardware.
+            code = "import sys; sys.path.insert(0,sys.argv[1]); import run_pynq_coherent; assert 'pynq' not in sys.modules"
+            subprocess.run([sys.executable, "-I", "-c", code, str(root)], cwd=root, check=True, capture_output=True)
+
     def test_capture_warm_boot_stop_and_failure_preservation(self):
         for scenario in ("complete", "bad-pop", "timeout", "trailing", "counter-mismatch", "bad-ram", "download-failed", "wrong-identity"):
             with self.subTest(scenario=scenario), tempfile.TemporaryDirectory(prefix="aster-pynq6-host-") as directory, ExitStack() as stack:
