@@ -87,3 +87,29 @@ Fixtures deliberately test failure paths and are never stored as physical
 acceptance results. The complete fixed study, repeated physical sweeps,
 functional DMA/code-publication proof and final regression/immutable closeout
 are still required by [the phase contract](phase7.md).
+
+## First physical run and full-study schedule
+
+The first real PYNQ run used the clean cache-off `888c24b` bitstream and the
+64-byte aligned reference, collected by committed `1dfb2b3` tools through
+Linux/PCAP. **Two warm boots / eight paired jobs / 16 method records** passed
+the independent host-side Git/raw evidence audit, including 19,503 actual
+serial bytes and a complete 64 KiB stopped-RAM snapshot per boot. Every v5
+counter matched the independent direct-SoC reference. CPU copying measured
+1,204 cycles versus DMA's 1,443 cycles in all eight pairs: at this size DMA is
+slower. A separate read-only check confirmed FCLK0=31.25 MHz and zero final
+CPU/DMA state, then SSH was closed. No ARM reset or JTAG operation was used.
+This pilot is not a full crossover study or functional-runtime closeout.
+
+`scripts/pynq_dma_study.py` runs **all 144 cases** from the fixed simulation
+plan: 23 sizes × three alignments × two cache modes plus six independently
+rebuilt 1 KiB references. It finishes all 72 cache-off cases, including three
+repeats, then all 72 cache-on cases. Only the initial load when necessary and
+the cache-mode switch use PCAP; both boots of every capture reuse the image.
+Every transition checks the preceding loaded path **and bitstream hash**.
+The entire reference study and both overlays must pass preflight before the
+first physical action. The batch audit requires every case in order, raw
+per-capture audits, a valid programming chain, identical fresh-repeat records
+and a recomputed physical crossover/slowdown summary. Missing cases cannot be
+presented as a completed study. Physical measurements come from board UART/
+RAM/registers, not substituted simulation records or invented RTL observations.

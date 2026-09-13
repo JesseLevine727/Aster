@@ -4,8 +4,9 @@ Status: **coherent DMA, driver and one-/two-hart real-core integration verified
 in simulation, including the AXI/serial Linux shell, code publication and
 selective/global stop escalation; paired AsterBench v5 firmware/capture/study
 tools verified in development; complete size study, full regression closeout,
-physical acceptance and immutable evidence pending; both clean routed FPGA
-builds have passed their individual signoff gates**.
+full physical study/functional acceptance and immutable evidence pending;
+both clean routed FPGA builds and the first physical paired-copy pilot have
+passed their individual gates**.
 Baseline: clean/pushed Phase 6 closeout
 `70a1b55b303786144aaa052b6cd8b9e8a4d75bf1`. Before any Phase 7 edits,
 `audit_phase6.py ... --current` passed all seven baseline acceptance gates.
@@ -154,6 +155,23 @@ The tested physical collector adds seven mock-only safety/audit tests
 (**124 host tests total**), including failure cleanup, read-only prior-overlay
 guards, exact no-download reuse, changed-input rejection and raw evidence
 mutations. These fixtures are not board results.
+
+The first actual PYNQ cache-off/64-byte aligned pilot now passes two warm boots,
+eight paired jobs, 16 raw serial records, full published RAM/buffer checks,
+all 42 reference counters and the host Git-provenance audit. CPU 1,204 versus
+DMA 1,443 cycles is a measured small-transfer slowdown, not a crossover claim.
+The board was independently rechecked safely STOPPED at 31.25 MHz. The full
+144-case physical study and functional runtime/code-publication acceptance
+remain pending.
+
+`scripts/run_phase7_regressions.py` fixes a **14-target DMA supplement**:
+host validators, engine/arbiter/counters/stop units, cache matrices/boundaries,
+atomic permissions, the complete post-escalation 16-configuration actual-core
+runtime matrix, direct benchmark size/alignment/sensitivity cases, Linux
+runtime/publication matrices and paired serial/physical-baud cases. It records
+clean/stable source and toolchain, exact commands, complete logs and retained
+failure state. It **does not replace** the existing 22-target Phase 1–6 run;
+both complete audited runs are required for final acceptance.
 
 ## Architecture and coherent serialization
 
