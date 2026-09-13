@@ -27,13 +27,17 @@ def compatible(reference, hardware):
     for key, value in dict(harts=2, sync_memory=1, memory_wait=1, line_words=4, line_count=16, uart_seed=0).items():
         bench.require(type(c[key]) is int and c[key] == value, "reference is not the physical overlay configuration: "+key)
     bench.require(c["l1"] == int(hardware["caches"]), "reference/overlay caches differ")
-    bench.require(reference["metadata"]["dirty"] is False and hardware["dirty"] is False, "physical proof requires clean source")
+    compatible_sources(reference["metadata"], hardware)
+
+
+def compatible_sources(metadata, hardware):
+    bench.require(metadata["dirty"] is False and hardware["dirty"] is False, "physical proof requires clean source")
     # Tools/workloads/docs may advance after an expensive bitstream build, but
     # the actual RTL, pinned core, constraints and build/reset recipes may not.
     def hardware_sources(sources):
         return {name: value for name, value in sources.items() if name.startswith(("rtl/", "fpga/", "vendor/picorv32/")) or
                 name in {"Makefile", "scripts/pynq_handoff.py", "scripts/check_pynq_reset.py"}}
-    left = hardware_sources(reference["metadata"]["source_files"]); right = hardware_sources(hardware["source_files"])
+    left = hardware_sources(metadata["source_files"]); right = hardware_sources(hardware["source_files"])
     bench.require(left and left == right, "reference and bitstream hardware/build sources differ")
 
 
@@ -60,6 +64,19 @@ def reference_comparison(records, reference, index):
                           for key in bench.FIELDS-bench.COUNTERS), "physical workload/configuration/result differs from reference")
         deltas.append({key: actual[key]-original[key] for key in sorted(bench.COUNTERS)})
     return dict(counter_deltas=deltas, exact_counter_match=all(value == 0 for job in deltas for value in job.values()))
+
+
+def validate_faults(faults):
+    bench.require(type(faults) is list and len(faults) == 2, "missing physical fault observations")
+    for hart, fault in enumerate(faults):
+        expected = dict(hart=hart, trapped=False, atomic_fault_valid=False, cause=0, address=0, instruction=0, pc=0)
+        # Adapter IDLE latches address/opcode on EVERY legal atomic request,
+        # including successful operations. Their fault meaning is conditional
+        # on atomic_fault_valid. PC is live unless the hart has trapped.
+        bench.require(type(fault) is dict and set(fault) == set(expected), "invalid physical fault fields")
+        for key in ("address", "instruction", "pc"):
+            bench.integer(fault[key], 0, bench.U32); expected[key] = fault[key]
+        bench.require(results.typed_equal(fault, expected), "physical atomic fault/trap")
 
 
 def validate_boot(boot, reference, directory):
@@ -96,17 +113,7 @@ def validate_boot(boot, reference, directory):
         minimum = sum(row[f"h{hart}_retired"] for row in records)
         bench.require(lifetime[hart] >= minimum > 0 if hart < records[0]["workers"] else lifetime[hart] == 0,
                       "missing/unexpected physical hart execution")
-    faults = before["faults"]
-    bench.require(type(faults) is list and len(faults) == 2, "missing physical fault observations")
-    for hart, fault in enumerate(faults):
-        expected = dict(hart=hart, trapped=False, atomic_fault_valid=False, cause=0, address=0, instruction=0, pc=0)
-        # Adapter IDLE latches address/opcode on EVERY legal atomic request,
-        # including successful operations. Their fault meaning is conditional
-        # on atomic_fault_valid. PC is live unless the hart has trapped.
-        bench.require(type(fault) is dict and set(fault) == set(expected), "invalid physical fault fields")
-        for key in ("address", "instruction", "pc"):
-            bench.integer(fault[key], 0, bench.U32); expected[key] = fault[key]
-        bench.require(results.typed_equal(fault, expected), "physical atomic fault/trap")
+    validate_faults(before["faults"])
     bench.require(results.typed_equal(boot["after_stop"], dict(control=0, status=0, hart_status=0, stop_status=1)), "warm stop did not acknowledge safe reset")
     finite(boot["elapsed_seconds"], 0, 180)  # includes final flush and 16K AXI RAM reads
     return records

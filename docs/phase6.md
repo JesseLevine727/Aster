@@ -729,6 +729,23 @@ variable using actual ELF object symbols. An untyped startup branch label named
 The functional serial model uses 400 Hz/10 baud for simulation speed; its
 logical correctness evidence is not a physical cycle/baud measurement.
 
+Fresh clean-reference captures at `90d07d3` pass for both cache configurations
+under `build/phase6-90d07d3/functional-c0/` and `functional-c1/`. Each program's
+loaded ROM and audited symbols are identical across those independent builds;
+raw ELF hashes retain the differing temporary-object symbol strings. Their actual
+hardware/build inputs match the `215b2d0` FPGA packages despite later host-tool
+revisions. `run_pynq_functional.py` consumes these audited packages and records
+two real warm boots of the selected program with full serial, per-hart lifetime
+and stopped-RAM proof. Runtime legitimately leaves both harts running in their
+halt loops before global stop; lifecycle has already stopped the secondary.
+The dedicated schema validates that distinction, all diagnostic validity flags,
+exact UART, independent array/scalar results and final STOPPED. Like the v4
+collector, it preflights before importing PYNQ, requires the expected loaded
+overlay/explicit PCAP choice, retains failed evidence, and never writes an
+unidentified bridge. Isolated-package and fake-MMIO/PCAP tests cover both
+programs/cache modes plus serial/RAM/fault/download failures; actual functional
+board execution is still a separate acceptance gate.
+
 ## Verification and closeout requirements
 
 1. Real-core PCPI probe, adapter unit tests and independent full-A reference:
