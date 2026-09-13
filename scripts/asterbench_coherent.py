@@ -161,7 +161,7 @@ def simulation_log(log, boots, jobs):
     starts = [i for i, line in enumerate(lines) if line.startswith("ASTERBOOT")]
     require(len(starts) == boots, "missing/extra boot markers")
     cursor = starts[0]
-    serials, observations, stops = [], [], []
+    serials, observations, stops, boot_firsts = [], [], [], []
     for boot in range(1, boots+1):
         require(cursor < len(lines) and lines[cursor] == f"ASTERBOOT {boot}\n", "wrong boot order")
         cursor += 1; serial = ""
@@ -172,7 +172,7 @@ def simulation_log(log, boots, jobs):
             require(lines[cursor+1].startswith("COHERENT_OBS "), "missing paired observation")
             obs = json_record(lines[cursor+1][len("COHERENT_OBS "):])
             validate_observation(obs, row, boot); observations.append(obs); cursor += 2
-        rows = parse_stream(serial); serials.append(serial)
+        rows = parse_stream(serial); serials.append(serial); boot_firsts.append(rows[0])
         require(cursor < len(lines) and lines[cursor].startswith("ASTERSTOP "), "missing safe-stop evidence")
         stop = json_record(lines[cursor][len("ASTERSTOP "):]); cursor += 1
         require(type(stop) is dict and set(stop) == {"boot", "jobs", "ram_bytes", "stores", "lifetime_retired"}, "wrong stop fields")
@@ -189,8 +189,11 @@ def simulation_log(log, boots, jobs):
     require(not any(line.startswith(("ASTER", "COHERENT_OBS")) for line in lines[cursor+1:]), "trailing evidence")
     # Different warm-boot measurements are retained, not silently averaged or
     # required to be identical. They must describe the same program/config.
-    first = parse_stream(serials[0])[0]
-    require(all(all(parse_stream(s)[0][k] == first[k] for k in INVARIANT) for s in serials), "boot configuration changed")
+    # Each stream has already passed the full schema/oracle/sequence validator.
+    # Re-parsing inside the field loop repeated the expensive full-output math
+    # dozens of times on the ARM host without adding any validation coverage.
+    first = boot_firsts[0]
+    require(all(all(row[k] == first[k] for k in INVARIANT) for row in boot_firsts), "boot configuration changed")
     return {"serial_boots": serials, "observations": observations, "stops": stops}
 
 

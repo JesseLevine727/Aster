@@ -67,6 +67,20 @@ def elf_fixture():
 
 
 class CoherentRecords(unittest.TestCase):
+    def test_boot_invariants_reuse_validated_streams(self):
+        def log_for(rows):
+            log = ""
+            for boot, row in enumerate(rows, 1):
+                stop = dict(boot=boot, jobs=1, ram_bytes=65536, stores=40, lifetime_retired=[50000, 30000])
+                log += f"ASTERBOOT {boot}\n"+emit(row)+"COHERENT_OBS "+json.dumps(observation(row, boot))+"\nASTERSTOP "+json.dumps(stop)+"\n"
+            return log+"PASS: coherent benchmark boots=2 jobs=2; exact 14-counter/hart windows, independent full outputs, retained RAM\n"
+        row = fixture()
+        with mock.patch.object(bench, "parse_stream", wraps=bench.parse_stream) as parser:
+            bench.simulation_log(log_for([row, row]), 2, 1)
+            self.assertEqual(parser.call_count, 2)  # Once per boot, not once per invariant field.
+        other = dict(row, line_count=32)
+        with self.assertRaises(ValueError): bench.simulation_log(log_for([row, other]), 2, 1)
+
     def test_python_cpp_mutation_corpus(self):
         valid = emit(fixture())
         cases = [(valid, True)]
