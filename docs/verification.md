@@ -284,3 +284,31 @@ kernels must have identical opcodes and PCs for each swept working set and
 the 2/4096-word boundaries, with the measured ring at the same RAM base.
 See [AsterBench](../software/benchmarks/README.md) for measurement windows,
 warm-up, independent correctness checks, seeds and experiment commands.
+
+## Phase 6 development gates
+
+The [Phase 6 contract](phase6.md) distinguishes simulation checkpoints from
+the remaining lifecycle, measurement and physical closeout. Current commands:
+
+```sh
+make pcpi-probe              # Real pinned-core boundary + exhaustive decode
+make atomic-fabric           # Independent full word-A / reservation history
+make atomic-runtime-matrix   # One/two real cores, uncached compiled RV32IMA C
+make coherent-cache-matrix   # 18 cache configurations × 3 seeds × 4 latencies
+make coherent-runtime-matrix # One/two real cores, private I$ + coherent D$
+make atomic-faults-matrix    # Actual-core fatal fault isolation, cache off/on
+```
+
+The RV32IMA fixture uses the protected-stack runtime, all word AMOs, LR/SC and
+32-bit C11 atomics. Runtime tests compare published RAM results independently
+and correlate each A retirement with a completed architectural memory command.
+They do not count cache writebacks as extra architectural stores. MSI checks
+include transient ownership/shared-data assertions, separate logical/backing
+memory models, dirty latest-data authority, RAM instruction fetches and
+selective flushes. Fault fixtures check exact retirement prefixes, typed halt
+identity and absence of cache/backing/MMIO side effects, not just a trap bit.
+
+Recursive configuration matrices should run separately or in independent build
+roots. A geometry passing simulation does not imply it meets FPGA resources or
+timing. A quiescent probe flush is not yet a general host-controlled warm-stop
+implementation; no new Phase 6 board ABI or hardware acceptance is claimed.

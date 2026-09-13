@@ -1,7 +1,11 @@
 // Phase 6 RV32IMA front end. Native fetch/data and PCPI commands share one
 // held lower port; private coherent D$ storage belongs below the atomic fabric.
 `timescale 1 ns / 1 ps
-module aster_atomic_hart (
+module aster_atomic_hart #(
+    parameter bit ENABLE_ICACHE = 1'b0,
+    parameter int unsigned LINE_WORDS = 4,
+    parameter int unsigned LINE_COUNT = 16
+) (
     input logic clk,
     input logic resetn,
     output logic trap,
@@ -23,7 +27,9 @@ module aster_atomic_hart (
     input logic [31:0] lower_rdata,
     input logic [3:0] lower_fault,
     output logic memory_event,
-    output logic atomic_busy
+    output logic atomic_busy,
+    output logic icache_access,
+    output logic icache_miss
 );
     logic mem_valid, mem_instr, mem_ready;
     logic [31:0] mem_addr, mem_wdata, mem_rdata;
@@ -34,6 +40,12 @@ module aster_atomic_hart (
     logic [31:0] cmd_addr, cmd_operand;
     logic [4:0] cmd_op;
     logic locked, locked_atomic, select_atomic;
+    logic native_valid, native_ready;
+    logic [31:0] native_addr, native_wdata;
+    logic [3:0] native_wstrb;
+    logic i_valid, i_ready, i_cpu_ready;
+    logic [31:0] i_addr, i_wdata, i_cpu_rdata;
+    logic [3:0] i_wstrb;
 
     /* verilator lint_off PINCONNECTEMPTY */
     aster_picorv32 core (
@@ -57,22 +69,38 @@ module aster_atomic_hart (
     );
     /* verilator lint_on PINCONNECTEMPTY */
 
-    // Finish native prefetch before issuing a new atomic command. The in-order
+    aster_l1_cache #(.LINE_WORDS(LINE_WORDS), .LINE_COUNT(LINE_COUNT)) icache (
+        .clk(clk), .rst_n(resetn), .cpu_valid(ENABLE_ICACHE && mem_valid && mem_instr),
+        .cpu_cacheable(mem_addr < 32'h0001_0000), .cpu_addr(mem_addr),
+        .cpu_wdata(mem_wdata), .cpu_wstrb(mem_wstrb),
+        .cpu_ready(i_cpu_ready), .cpu_rdata(i_cpu_rdata),
+        .lower_valid(i_valid), .lower_addr(i_addr), .lower_wdata(i_wdata), .lower_wstrb(i_wstrb),
+        .lower_ready(i_ready), .lower_rdata(lower_rdata),
+        .cache_access(icache_access), .cache_miss(icache_miss)
+    );
+    assign native_valid = ENABLE_ICACHE && mem_instr ? i_valid : mem_valid;
+    assign native_addr = ENABLE_ICACHE && mem_instr ? i_addr : mem_addr;
+    assign native_wdata = ENABLE_ICACHE && mem_instr ? i_wdata : mem_wdata;
+    assign native_wstrb = ENABLE_ICACHE && mem_instr ? i_wstrb : mem_wstrb;
+    assign i_ready = ENABLE_ICACHE && mem_instr && native_ready;
+    assign mem_ready = ENABLE_ICACHE && mem_instr ? i_cpu_ready : native_ready;
+    assign mem_rdata = ENABLE_ICACHE && mem_instr ? i_cpu_rdata : lower_rdata;
+
+    // Finish admitted native transfers before issuing a new atomic command. The in-order
     // core cannot issue a following data operation while its PCPI instruction
     // waits, so this finite prefetch cannot starve the atomic. Once selected,
     // neither source can steal the port, even if the other becomes valid later.
-    assign select_atomic = locked ? locked_atomic : !mem_valid;
-    assign lower_valid = resetn && (select_atomic ? cmd_valid : mem_valid);
+    assign select_atomic = locked ? locked_atomic : !native_valid;
+    assign lower_valid = resetn && (select_atomic ? cmd_valid : native_valid);
     assign lower_atomic = select_atomic;
     assign lower_instr = !select_atomic && mem_instr;
-    assign lower_addr = select_atomic ? cmd_addr : mem_addr;
-    assign lower_wdata = select_atomic ? cmd_operand : mem_wdata;
-    assign lower_wstrb = select_atomic ? 4'hf : mem_wstrb;
+    assign lower_addr = select_atomic ? cmd_addr : native_addr;
+    assign lower_wdata = select_atomic ? cmd_operand : native_wdata;
+    assign lower_wstrb = select_atomic ? 4'hf : native_wstrb;
     assign lower_op = cmd_op;
     assign cmd_ready = lower_valid && select_atomic && lower_ready;
-    assign mem_ready = lower_valid && !select_atomic && lower_ready;
-    assign mem_rdata = lower_rdata;
-    assign memory_event = lower_valid && lower_ready;
+    assign native_ready = lower_valid && !select_atomic && lower_ready;
+    assign memory_event = (mem_valid && mem_ready) || cmd_ready;
     always_ff @(posedge clk) begin
         if (!resetn) begin
             locked <= 0;

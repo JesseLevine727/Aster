@@ -71,10 +71,15 @@ RETIRE_SIM := $(BUILD_DIR)/aster_retirement_sim
 PCPI_PROBE_SIM := $(BUILD_DIR)/aster_pcpi_probe_sim
 PCPI_ADAPTER_SIM := $(BUILD_DIR)/aster_pcpi_atomic_sim
 ATOMIC_FABRIC_SIM := $(BUILD_DIR)/aster_atomic_fabric_sim
-ATOMIC_RUNTIME_DIR := $(BUILD_DIR)/atomic_h$(HART_COUNT)
+ATOMIC_CACHE ?= 0
+ATOMIC_RUNTIME_DIR := $(BUILD_DIR)/atomic_h$(HART_COUNT)_c$(ATOMIC_CACHE)_w$(L1_LINE_WORDS)_n$(L1_LINE_COUNT)
 ATOMIC_RUNTIME_SIM := $(ATOMIC_RUNTIME_DIR)/aster_atomic_probe_sim
 ATOMIC_RUNTIME_ELF := $(HELLO_DIR)/atomic_runtime.elf
 ATOMIC_RUNTIME_BIN := $(HELLO_DIR)/atomic_runtime.bin
+ATOMIC_FAULT_DIR := $(BUILD_DIR)/atomic_faults_c$(ATOMIC_CACHE)_w$(L1_LINE_WORDS)_n$(L1_LINE_COUNT)
+ATOMIC_FAULT_SIM := $(ATOMIC_FAULT_DIR)/aster_atomic_faults_sim
+COHERENT_CACHE_DIR := $(BUILD_DIR)/coherent_l1$(ENABLE_L1)_w$(L1_LINE_WORDS)_n$(L1_LINE_COUNT)
+COHERENT_CACHE_SIM := $(COHERENT_CACHE_DIR)/aster_coherent_cache_sim
 PERF_SIM := $(BUILD_DIR)/aster_perf_sim
 ARBITER_SIM := $(BUILD_DIR)/aster_arbiter2_sim
 FABRIC_DIR := $(BUILD_DIR)/fabric_h$(HART_COUNT)_$(CONFIG_TAG)
@@ -130,6 +135,9 @@ help:
 	@echo "  make pcpi-probe Test real-core RV32A extension boundary (not full A yet)"
 	@echo "  make atomic-fabric  Test serialized RV32A memory/reservation semantics"
 	@echo "  make atomic-runtime-matrix  Run compiled RV32IMA C on one/two real cores"
+	@echo "  make atomic-faults-matrix   Check real-core atomic faults with caches off/on"
+	@echo "  make coherent-cache-matrix Run MSI/dirty-data/flush reference matrices"
+	@echo "  make coherent-runtime-matrix  Run RV32IMA C with private I$/coherent D$"
 	@echo "  make phase1     Run CPU, runtime, memory-map and trap regressions"
 	@echo "  make phase1-matrix  Test Phase 1 with L1 off/on, async/sync memory"
 	@echo "  make hello      Build and run Hello from Aster on the RTL CPU"
@@ -510,12 +518,15 @@ $(ATOMIC_RUNTIME_ELF): software/tests/atomic_runtime.c software/runtime/start_mu
 $(ATOMIC_RUNTIME_BIN): $(ATOMIC_RUNTIME_ELF)
 	$(OBJCOPY) -O binary $< $@
 
-$(ATOMIC_RUNTIME_SIM): $(RTL_CORE) rtl/core/aster_pcpi_atomic.sv rtl/core/aster_atomic_hart.sv rtl/interconnect/aster_atomic_fabric.sv verification/soc/aster_atomic_probe.sv verification/soc/tb_aster_atomic_probe.cpp Makefile
+$(ATOMIC_RUNTIME_SIM): $(RTL_CORE) $(RTL_CACHE) rtl/cache/aster_coherent_cache.sv rtl/core/aster_pcpi_atomic.sv rtl/core/aster_atomic_hart.sv rtl/interconnect/aster_atomic_fabric.sv verification/soc/aster_atomic_probe.sv verification/soc/tb_aster_atomic_probe.cpp Makefile
 	mkdir -p $(ATOMIC_RUNTIME_DIR)
-	$(VERILATOR) --cc --exe --build --timing --Wall $(VERILATOR_VENDOR_LINT_FLAGS) \
+	$(VERILATOR) --cc --exe --build --timing --Wall $(VERILATOR_VENDOR_LINT_FLAGS) --assert -DASTER_COHERENCE_ASSERT \
 		--top-module aster_atomic_probe -GHART_COUNT=$(HART_COUNT) \
-		-CFLAGS '-DASTER_HART_COUNT=$(HART_COUNT)' --Mdir $(ATOMIC_RUNTIME_DIR)/obj -o $(abspath $@) \
-		$(addprefix $(ROOT)/,$(RTL_CORE)) $(ROOT)/rtl/core/aster_pcpi_atomic.sv \
+		"-GENABLE_CACHE=1'b$(ATOMIC_CACHE)" -GLINE_WORDS=$(L1_LINE_WORDS) -GLINE_COUNT=$(L1_LINE_COUNT) \
+		-CFLAGS '-DASTER_HART_COUNT=$(HART_COUNT) -DASTER_ATOMIC_CACHE=$(ATOMIC_CACHE) -DASTER_LINE_WORDS=$(L1_LINE_WORDS) -DASTER_LINE_COUNT=$(L1_LINE_COUNT)' \
+		--Mdir $(ATOMIC_RUNTIME_DIR)/obj -o $(abspath $@) \
+		$(addprefix $(ROOT)/,$(RTL_CORE) $(RTL_CACHE)) $(ROOT)/rtl/core/aster_pcpi_atomic.sv \
+		$(ROOT)/rtl/cache/aster_coherent_cache.sv \
 		$(ROOT)/rtl/core/aster_atomic_hart.sv $(ROOT)/rtl/interconnect/aster_atomic_fabric.sv \
 		$(ROOT)/verification/soc/aster_atomic_probe.sv $(ROOT)/verification/soc/tb_aster_atomic_probe.cpp
 
@@ -524,6 +535,47 @@ atomic-runtime: $(ATOMIC_RUNTIME_SIM) $(ATOMIC_RUNTIME_BIN)
 
 atomic-runtime-matrix:
 	@set -e; for harts in 1 2; do $(MAKE) --no-print-directory atomic-runtime HART_COUNT=$$harts; done
+
+.PHONY: coherent-runtime-matrix
+coherent-runtime-matrix:
+	@set -e; for harts in 1 2; do $(MAKE) --no-print-directory atomic-runtime HART_COUNT=$$harts ATOMIC_CACHE=1; done
+
+.PHONY: atomic-faults atomic-faults-matrix
+$(ATOMIC_FAULT_SIM): $(RTL_CORE) $(RTL_CACHE) rtl/cache/aster_coherent_cache.sv rtl/core/aster_pcpi_atomic.sv rtl/core/aster_atomic_hart.sv rtl/interconnect/aster_atomic_fabric.sv verification/soc/aster_atomic_probe.sv verification/soc/tb_aster_atomic_faults.cpp Makefile
+	mkdir -p $(ATOMIC_FAULT_DIR)
+	$(VERILATOR) --cc --exe --build --timing --Wall $(VERILATOR_VENDOR_LINT_FLAGS) --assert -DASTER_COHERENCE_ASSERT \
+		--top-module aster_atomic_probe -GHART_COUNT=2 "-GENABLE_CACHE=1'b$(ATOMIC_CACHE)" \
+		-GLINE_WORDS=$(L1_LINE_WORDS) -GLINE_COUNT=$(L1_LINE_COUNT) \
+		-CFLAGS '-DASTER_ATOMIC_CACHE=$(ATOMIC_CACHE) -DASTER_LINE_WORDS=$(L1_LINE_WORDS) -DASTER_LINE_COUNT=$(L1_LINE_COUNT)' \
+		--Mdir $(ATOMIC_FAULT_DIR)/obj -o $(abspath $@) \
+		$(addprefix $(ROOT)/,$(RTL_CORE) $(RTL_CACHE)) $(ROOT)/rtl/core/aster_pcpi_atomic.sv \
+		$(ROOT)/rtl/cache/aster_coherent_cache.sv $(ROOT)/rtl/core/aster_atomic_hart.sv \
+		$(ROOT)/rtl/interconnect/aster_atomic_fabric.sv $(ROOT)/verification/soc/aster_atomic_probe.sv \
+		$(ROOT)/verification/soc/tb_aster_atomic_faults.cpp
+
+atomic-faults: $(ATOMIC_FAULT_SIM)
+	@$(ATOMIC_FAULT_SIM)
+
+atomic-faults-matrix:
+	@set -e; for cache in 0 1; do $(MAKE) --no-print-directory atomic-faults ATOMIC_CACHE=$$cache; done
+
+.PHONY: coherent-cache coherent-cache-matrix
+$(COHERENT_CACHE_SIM): rtl/cache/aster_coherent_cache.sv verification/unit/tb_aster_coherent_cache.cpp Makefile
+	mkdir -p $(COHERENT_CACHE_DIR)
+	$(VERILATOR) --cc --exe --build --timing --Wall --Wno-UNUSEDSIGNAL --assert -DASTER_COHERENCE_ASSERT \
+		--top-module aster_coherent_cache "-GENABLE_CACHE=1'b$(ENABLE_L1)" \
+		-GLINE_WORDS=$(L1_LINE_WORDS) -GLINE_COUNT=$(L1_LINE_COUNT) \
+		-CFLAGS '-DASTER_CACHE_ENABLE=$(ENABLE_L1) -DASTER_LINE_WORDS=$(L1_LINE_WORDS) -DASTER_LINE_COUNT=$(L1_LINE_COUNT)' \
+		--Mdir $(COHERENT_CACHE_DIR)/obj -o $(abspath $@) \
+		$(ROOT)/rtl/cache/aster_coherent_cache.sv $(ROOT)/verification/unit/tb_aster_coherent_cache.cpp
+
+coherent-cache: $(COHERENT_CACHE_SIM)
+	@set -e; for seed in 1 0xc06e6 0xc0ffee; do $(COHERENT_CACHE_SIM) $$seed; done
+
+coherent-cache-matrix:
+	@set -e; for enabled in 0 1; do for words in 1 4 8; do for lines in 1 4 16; do \
+		$(MAKE) --no-print-directory coherent-cache ENABLE_L1=$$enabled L1_LINE_WORDS=$$words L1_LINE_COUNT=$$lines; \
+	done; done; done
 
 counters: $(PERF_SIM)
 	@$(PERF_SIM)
@@ -665,7 +717,7 @@ parallel-workloads:
 
 test: smoke phase1 hello bench cache uart fpga-sim linux-sim counters retirement arbiter shared-fabric multicore-runtime parallel
 
-check: tools smoke phase1 hello bench cache uart fpga-sim linux-sim linux-dual-sim counters retirement pcpi-probe atomic-fabric atomic-runtime arbiter shared-fabric multicore-runtime multicore-adversarial parallel
+check: tools smoke phase1 hello bench cache uart fpga-sim linux-sim linux-dual-sim counters retirement pcpi-probe atomic-fabric atomic-runtime atomic-faults coherent-cache arbiter shared-fabric multicore-runtime multicore-adversarial parallel
 
 clean:
 	rm -rf $(BUILD_DIR)

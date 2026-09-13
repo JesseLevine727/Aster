@@ -13,6 +13,11 @@
 #ifndef ASTER_HART_COUNT
 #define ASTER_HART_COUNT 2
 #endif
+#ifndef ASTER_ATOMIC_CACHE
+#define ASTER_ATOMIC_CACHE 0
+#define ASTER_LINE_WORDS 4
+#define ASTER_LINE_COUNT 16
+#endif
 static void require(bool ok, const char* why) {
     if (!ok) throw std::runtime_error(why);
 }
@@ -39,7 +44,7 @@ int main(int argc, char** argv) {
         for (auto& word : ram) word = rng();
         Vaster_atomic_probe d;
         for (int latency : {0, 1, 19, -1}) for (unsigned boot = 0; boot < 2; ++boot) {
-            d.resetn = d.hart_run = d.m_ready = d.m_rdata = 0;
+            d.resetn = d.hart_run = d.m_ready = d.m_rdata = d.flush_valid = 0;
             for (unsigned i = 0; i < 8; ++i) { d.clk = 0; d.eval(); d.clk = 1; d.eval(); }
             require(!d.hart_trap && !d.retired && !d.fault_valid && !d.m_valid, "cluster reset failed");
             d.resetn = 1; unsigned hart_run = 1;
@@ -53,6 +58,14 @@ int main(int argc, char** argv) {
             bool instr = false, atomic = false;
             std::uint32_t address = 0, data = 0;
             std::string line;
+            bool flushed = false;
+            auto coherent_word = [&](std::uint32_t address) -> std::uint32_t {
+                const auto base = address & ~(ASTER_LINE_WORDS*4-1);
+                for (unsigned slot = 0; slot < 2*ASTER_LINE_COUNT; ++slot)
+                    if (d.observed_state[slot] && d.observed_tag[slot] == base)
+                        return d.observed_data[slot*ASTER_LINE_WORDS+(address-base)/4];
+                return ram[(address - 0x10000000)/4];
+            };
             for (; cycles < 30000000; ++cycles) {
                 d.clk = 0; d.m_ready = 0; d.hart_run = hart_run; d.eval();
                 require(!d.hart_trap && !d.fault_valid, "unexpected real-core trap / fatal atomic access");
@@ -75,7 +88,6 @@ int main(int argc, char** argv) {
                         else if (address == 0x20002008) d.m_rdata = ASTER_HART_COUNT;
                         if (atomic) {
                             require(is_ram && !instr, "atomic touched ROM/MMIO or instruction path");
-                            if (mask) ++active.writes; else ++active.reads;
                         }
                         if (mask) {
                             if (is_ram) ram[(address - 0x10000000)/4] = merge(d.m_rdata, data, mask);
@@ -91,13 +103,13 @@ int main(int argc, char** argv) {
                                     } else {
                                         require(line == "RV32A JOB PASS" && jobs < 3, "compiled atomic job failed");
                                         ++jobs;
-                                        const auto base = 0x8000/4;
-                                        require(ram[base] == jobs, "job epoch result not published");
+                                        const auto base = 0x10008000;
+                                        require(coherent_word(base) == jobs, "job epoch result not published");
                                         for (unsigned i = 1; i <= 4; ++i)
-                                            require(ram[base+i] == 128 * ASTER_HART_COUNT,
+                                            require(coherent_word(base+4*i) == 128 * ASTER_HART_COUNT,
                                                     "independent atomic/locked counter result mismatch");
-                                        require(ram[base+5] == 8256 * (ASTER_HART_COUNT == 2 ? 3 : 1) &&
-                                                ram[base+6] == 1 && ram[base+7] == ASTER_HART_COUNT,
+                                        require(coherent_word(base+20) == 8256 * (ASTER_HART_COUNT == 2 ? 3 : 1) &&
+                                                coherent_word(base+24) == 1 && coherent_word(base+28) == ASTER_HART_COUNT,
                                                 "protected sum/lock-free/worker result mismatch");
                                     }
                                     line.clear();
@@ -108,11 +120,15 @@ int main(int argc, char** argv) {
                     }
                 } else require(!pending, "backing transaction lost by native/PCPI merge");
                 d.eval();
+                if (d.op_accepted && d.op_atomic) {
+                    if (d.op_mask) ++active.writes; else ++active.reads;
+                }
                 if (d.atomic_complete) {
                     active.sc_success = d.sc_success; active.sc_failure = d.sc_failure;
-                    completed[d.m_owner].push_back(active); active = {};
-                    ++atomic_completed[d.m_owner]; successes += d.sc_success; failures += d.sc_failure;
+                    completed[d.op_owner].push_back(active); active = {};
+                    ++atomic_completed[d.op_owner]; successes += d.sc_success; failures += d.sc_failure;
                 }
+                flushed = d.flush_ready;
                 d.clk = 1; d.eval();
                 for (unsigned h = 0; h < 2; ++h) if (d.retired & (1u << h)) {
                     ++retired[h];
@@ -131,9 +147,16 @@ int main(int argc, char** argv) {
                                      "AMO retired without exactly one read and write");
                     }
                 }
-                if (jobs == 3 && ++postlude == 2000) break;
+                if (jobs == 3 && postlude < 2000) ++postlude;
+                if (postlude == 2000) d.flush_valid = 1;
+                if (flushed) break;
             }
-            require(directed && jobs == 3 && line.empty() && postlude == 2000, "runtime timed out");
+            require(directed && jobs == 3 && line.empty() && postlude == 2000 && flushed, "runtime/flush timed out");
+            d.flush_valid = 0;
+            for (unsigned slot = 0; slot < 2*ASTER_LINE_COUNT; ++slot)
+                require(d.observed_state[slot] == 0, "warm-boot checkpoint still has valid/dirty D$ lines");
+            for (unsigned i = 1; i <= 4; ++i)
+                require(ram[0x8000/4+i] == 128 * ASTER_HART_COUNT, "flush lost acknowledged atomic results");
             for (unsigned h = 0; h < 2; ++h) {
                 require(atomic_completed[h] == atomic_retired[h] && completed[h].empty(),
                         "missing/duplicate atomic retirement at job closeout");
@@ -143,7 +166,7 @@ int main(int argc, char** argv) {
             for (unsigned op : {0u, 1u, 2u, 3u, 4u, 8u, 12u, 16u, 20u, 24u, 28u})
                 require(observed_ops[op], "full RV32A operation coverage missing from actual retirement");
             require(successes && failures, "actual SC success/failure coverage missing");
-            std::cout << "PASS: compiled RV32IMA runtime harts=" << ASTER_HART_COUNT << " latency=" << latency
+            std::cout << "PASS: compiled RV32IMA runtime harts=" << ASTER_HART_COUNT << " cache=" << ASTER_ATOMIC_CACHE << " latency=" << latency
                       << " boot=" << boot << " jobs=" << jobs << " cycles=" << cycles
                       << " retired=" << retired[0] << "," << retired[1] << " A-retired="
                       << atomic_retired[0] << "," << atomic_retired[1] << " SC=" << successes << "/" << failures << '\n';

@@ -18,7 +18,7 @@ Complete and commit/push these tested milestones in order:
 - [x] Architecture and acceptance contract written (this document).
 - [x] Real PicoRV32 PCPI feasibility: operands, native memory/MUL/DIV overlap,
   exactly-once results/retirement, prolonged waits, faults and reset.
-- [ ] Full RV32A against a serialized uncached memory backend, including a
+- [x] Full RV32A against a serialized uncached memory backend, including a
   reservation monitor and independent instruction-level reference checks.
 - [ ] Two private coherent D-cache banks, ownership/dirty-data/reset rules,
   coherent instruction reads from RAM and coherent atomic transactions.
@@ -237,6 +237,56 @@ provenance and FPGA evidence remain required before final full-A closeout.
 The expanded default `make -j2 check` passes with these additions, including
 the existing single-core, multicore, fault, parallel and Linux-bridge regressions.
 This is not yet a rerun of every historical configuration matrix.
+
+### Coherent-controller and integrated-fault checkpoint
+
+`aster_coherent_cache` implements the two-bank write-back/write-allocate MSI
+service below the atomic fabric. A single controller snoops both banks; dirty
+victims/interventions drain all words before replacement/downgrade, partial
+fills remain invalid, and word/byte stores acquire sole M ownership. The
+atomic fabric still owns architectural permissions/reservations and remains
+locked across an AMO's two cache-service operations. Maintenance traffic is
+observed separately from architectural atomic reads/writes.
+
+`aster_atomic_hart` optionally uses the existing private ROM I$ implementation.
+RAM fetches reach the coherent service and see its latest dirty data; they do
+not allocate into I$. Cache-off build targets still bypass the new service.
+This is a simulation integration, not yet the lifecycle-aware FPGA SoC.
+
+Verified initial coverage:
+
+- `make coherent-cache-matrix`: cache off/on, 1/4/8-word lines, 1/4/16 lines,
+  three seeds and four latency policies: **54 test invocations / 671,112
+  requests / 7,560 flushes**. Independent logical memory/backing memory and
+  cache observations check latest-data authority, clean RAM agreement,
+  transient ownership/shared-copy assertions, every nonempty byte mask,
+  dirty victims/transfers, RAM instruction reads, and selective flush retaining
+  the other bank. Flush requested during an admitted operation waits for it.
+- `make coherent-runtime-matrix`: another **16 boots / 48 jobs**, on one/two
+  real cores with private I$ and coherent D$ and four physical-port latency
+  policies. All A operations retire and C11/LRSC/locked results match the host's
+  independent checks. Actual SC retries occur under two-hart contention. The
+  probe explicitly flushes the quiescent completed workload before its next
+  reset and checks the resulting backing RAM; this does not establish a general
+  host RUN/secondary-stop protocol for arbitrary in-flight programs.
+- `make atomic-faults-matrix`: **6,864 actual-core negative programs** across
+  cache off/on, each physical hart, all A operations/order bits, three latency
+  policies, misalignment, inaccessible ROM/MMIO/peer-private/unmapped RAM and
+  illegal `.D` encodings. SC faults with and without a preceding successful LR.
+  Exact pre-fault retirement, persistent fault PC/opcode/cause/address, memory
+  transfers and both dirty cached/backing data are checked; a subsequent poison
+  store never executes. Fault fixtures use destructive component reset, not
+  the future RAM-preserving warm-stop protocol.
+- The uncached runtime matrix was rerun after adding the optional caches and
+  continues to pass all 16 boots / 48 jobs.
+
+Remaining gates still include a lifecycle-aware SoC and host bridge, adversarial
+warm-stop/reset at arbitrary transaction phases, complete higher-level coherent
+workloads/litmus/progress tests, measurement ABI/provenance, final compatibility
+matrices and clean-source physical validation. Do not load the current Phase 5
+overlay expecting this new ISA/cache/lifecycle contract.
+The expanded `make -j2 check` passes again with the coherent-cache unit and
+integrated uncached fault regression included alongside all default legacy tests.
 
 ## Runtime, reset and host contract
 

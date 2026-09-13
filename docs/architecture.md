@@ -1,13 +1,15 @@
 # Aster architecture specification
 
-Status: Phases 1–4 verified, including physical PYNQ-Z1 execution, 2026-09-12
+Status: Phases 1–5 verified, including physical PYNQ-Z1 execution, 2026-09-12
 
 Phase 5 is implemented and physically verified in the `aster_multicore` top. Its
 [dual-hart contract](phase5.md) specifies the new memory ownership, runtime,
 arbitration, lifecycle and measurement ABI. The Phase 1–4 map described below
 continues to apply to `aster_minimal`; both tops reuse `aster_hart`, an owned
-core/private-cache integration boundary. The dual-hart design is not yet
-physically validated and does not implement coherence.
+core/private-cache integration boundary. That dual-hart implementation remains
+noncoherent. The separate [Phase 6 contract](phase6.md) tracks the new RV32IMA
+front end, coherent-cache development and still-pending lifecycle/measurement/
+physical acceptance; it does not silently change either established map or ABI.
 
 This document is the executable contract for the first bring-up slice. It
 separates decisions that are fixed for the minimal system from features that
