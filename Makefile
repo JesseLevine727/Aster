@@ -34,6 +34,9 @@ COHERENT_WORKERS ?= $(HART_COUNT)
 COHERENT_SEED ?= 0x13570000
 COHERENT_BOOTS ?= 2
 COHERENT_UART_SEED ?= 0
+LITMUS_EPOCHS ?= 128
+LITMUS_STEPS ?= 64
+LITMUS_SEED ?= 0xa57e6
 COHERENT_NAMES := atomic_add lrsc_counter cas_counter lock_sum false_shared padded ping_pong spsc_queue shared_mix
 ifeq ($(filter $(COHERENT_WORKLOAD),$(COHERENT_NAMES)),)
 $(error COHERENT_WORKLOAD must be one of $(COHERENT_NAMES))
@@ -108,6 +111,11 @@ REFERENCE_FW_DIR := $(HELLO_DIR)/riscv_reference
 REFERENCE_IMAGES := $(foreach h,0 1,$(addprefix $(REFERENCE_FW_DIR)/,$(addsuffix _h$(h).hex,$(REFERENCE_TESTS))))
 REFERENCE_DIR := $(BUILD_DIR)/riscv_reference_$(CONFIG_TAG)
 REFERENCE_SIM := $(REFERENCE_DIR)/aster_riscv_reference_sim
+LITMUS_FW_DIR := $(HELLO_DIR)/litmus_e$(LITMUS_EPOCHS)_n$(LITMUS_STEPS)_s$(LITMUS_SEED)
+LITMUS_ELF := $(LITMUS_FW_DIR)/litmus.elf
+LITMUS_HEX := $(LITMUS_FW_DIR)/litmus.hex
+LITMUS_DIR := $(BUILD_DIR)/litmus_$(CONFIG_TAG)
+LITMUS_SIM := $(LITMUS_DIR)/aster_coherent_litmus_sim
 COHERENT_BENCH_SIM := $(COHERENT_SOC_DIR)/aster_coherent_bench_sim
 COHERENT_FW_DIR := $(HELLO_DIR)/coherent_$(COHERENT_WORKLOAD)_i$(COHERENT_ITEMS)_r$(COHERENT_ROUNDS)_j$(COHERENT_JOBS)_p$(COHERENT_WORKERS)_s$(COHERENT_SEED)
 COHERENT_ELF := $(COHERENT_FW_DIR)/coherent.elf
@@ -185,6 +193,7 @@ help:
 	@echo "  make coherent-bench       AsterBench v4 atomic/coherent C workload with exact per-hart counters"
 	@echo "  make coherent-bench-matrix  Cross all nine workloads with topology/cache/memory timing"
 	@echo "  make riscv-reference      Unmodified pinned public RV32UA programs on each actual hart"
+	@echo "  make coherent-litmus      Two-hart ordering and LR/SC progress trials with independent oracles"
 	@echo "  make phase1     Run CPU, runtime, memory-map and trap regressions"
 	@echo "  make phase1-matrix  Test Phase 1 with L1 off/on, async/sync memory"
 	@echo "  make hello      Build and run Hello from Aster on the RTL CPU"
@@ -803,6 +812,43 @@ riscv-reference-matrix:
 		$(MAKE) --no-print-directory riscv-reference riscv-reference-negative ENABLE_L1=$$cache SYNC_MEMORY=$$sync MEMORY_WAIT_CYCLES=$$wait_cycles; \
 	done; done
 
+.PHONY: coherent-litmus coherent-litmus-matrix coherent-litmus-boundaries
+$(LITMUS_ELF): software/tests/coherent_litmus.c software/runtime/start_multicore.S software/runtime/aster.h software/boot/link_multicore.ld Makefile
+	mkdir -p $(LITMUS_FW_DIR)
+	$(CC) $(filter-out -march=% -mabi=%,$(HELLO_CFLAGS)) -march=rv32ima -mabi=ilp32 \
+		-DLITMUS_EPOCHS=$(LITMUS_EPOCHS) -DLITMUS_STEPS=$(LITMUS_STEPS) -DLITMUS_SEED=$(LITMUS_SEED) \
+		-T software/boot/link_multicore.ld -Wl,-Map,$(@:.elf=.map) -o $@ software/runtime/start_multicore.S $<
+
+$(LITMUS_HEX): $(LITMUS_ELF) scripts/elf_to_hex.py
+	$(PYTHON) scripts/elf_to_hex.py --rom-bytes 65536 $< $@
+
+$(LITMUS_SIM): $(RTL_COHERENT) verification/soc/tb_coherent_litmus.cpp verification/common/coherent_record.h Makefile
+	mkdir -p $(LITMUS_DIR)
+	$(VERILATOR) --cc --exe --build --timing --Wall $(VERILATOR_VENDOR_LINT_FLAGS) $(VERILATOR_COHERENT_FLAGS) --assert -DASTER_COHERENCE_ASSERT \
+		--top-module aster_coherent_soc -GHART_COUNT=2 "-GENABLE_L1=1'b$(ENABLE_L1)" \
+		"-GSYNC_MEMORY=1'b$(SYNC_MEMORY)" -GMEMORY_WAIT_CYCLES=$(MEMORY_WAIT_CYCLES) "-GHOST_BOOT=1'b1" \
+		-GLINE_WORDS=$(L1_LINE_WORDS) -GLINE_COUNT=$(L1_LINE_COUNT) \
+		--Mdir $(LITMUS_DIR)/obj -o $(abspath $@) \
+		$(addprefix $(ROOT)/,$(RTL_COHERENT)) $(ROOT)/verification/soc/tb_coherent_litmus.cpp
+
+coherent-litmus: $(LITMUS_HEX) $(LITMUS_SIM)
+	@$(PYTHON) scripts/run_coherent_litmus.py --simulator $(LITMUS_SIM) --elf $(LITMUS_ELF) \
+		--firmware $(LITMUS_HEX) --nm $(RISCV_PREFIX)nm --epochs $(LITMUS_EPOCHS) --steps $(LITMUS_STEPS) --seed $(LITMUS_SEED)
+
+coherent-litmus-matrix:
+	@set -e; for cache in 0 1; do for timing in '0 0' '0 7' '1 1' '1 7'; do read -r sync wait_cycles <<< "$$timing"; \
+		for seed in 0 1 0xc0ffee; do \
+			$(MAKE) --no-print-directory coherent-litmus ENABLE_L1=$$cache SYNC_MEMORY=$$sync MEMORY_WAIT_CYCLES=$$wait_cycles LITMUS_SEED=$$seed; \
+		done; \
+	done; done
+
+coherent-litmus-boundaries:
+	@set -e; for config in '0 2 2 1024' '1 2 2 1024' '1 1024 2 1' '1 2 1024 1'; do \
+		read -r cache words lines wait_cycles <<< "$$config"; \
+		$(MAKE) --no-print-directory coherent-litmus ENABLE_L1=$$cache L1_LINE_WORDS=$$words L1_LINE_COUNT=$$lines \
+			SYNC_MEMORY=1 MEMORY_WAIT_CYCLES=$$wait_cycles LITMUS_EPOCHS=2 LITMUS_STEPS=2 LITMUS_SEED=0xffffffff; \
+	done
+
 counters: $(PERF_SIM)
 	@$(PERF_SIM)
 
@@ -943,7 +989,7 @@ parallel-workloads:
 
 test: smoke phase1 hello bench cache uart fpga-sim linux-sim counters retirement arbiter shared-fabric multicore-runtime parallel
 
-check: tools smoke phase1 hello bench cache uart fpga-sim linux-sim linux-dual-sim linux-coherent-sim counters retirement pcpi-probe atomic-fabric atomic-runtime atomic-faults coherent-cache warm-stop coherent-counters coherent-soc coherent-bench riscv-reference riscv-reference-negative arbiter shared-fabric multicore-runtime multicore-adversarial parallel
+check: tools smoke phase1 hello bench cache uart fpga-sim linux-sim linux-dual-sim linux-coherent-sim counters retirement pcpi-probe atomic-fabric atomic-runtime atomic-faults coherent-cache warm-stop coherent-counters coherent-soc coherent-bench riscv-reference riscv-reference-negative coherent-litmus arbiter shared-fabric multicore-runtime multicore-adversarial parallel
 
 clean:
 	rm -rf $(BUILD_DIR)

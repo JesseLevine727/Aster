@@ -560,6 +560,54 @@ final historical matrices and physical/evidence closeout remain open.
 The expanded `make -j2 check` passes with all 52 host tests and both reference
 success/failure paths included. No FPGA RTL or board state changed here.
 
+### Ordering and reservation-progress checkpoint
+
+`software/tests/coherent_litmus.c` runs eight kinds of two-hart trials. The
+worker remains live between trials; release/acquire epoch handshakes prevent
+reinitializing shared data before the preceding trial's worker has completed.
+Seeded instruction delays vary relative arrival. There is no emulation of a
+third/fourth core or claim to test IRIW on only two hardware harts.
+
+| Mode | Trial / forbidden or required outcome |
+| --- | --- |
+| 0 / 1 | C11 seq_cst store buffering, same/separate line: forbid both loads returning zero |
+| 2 / 3 | C11 seq_cst load buffering, same/separate line: forbid both loads returning one |
+| 4 | Ordinary 16-word payload published with release, consumed with acquire: every word and checksum must match |
+| 5 | Native `sw; fence rw,rw; lw` store buffering: forbid both loads returning zero |
+| 6 | Constrained four-instruction LR/SC increment versus peer reads, nonoverlapping same-line writes and dirty conflicting evictions: correct tickets, zero manufactured SC failures |
+| 7 | Both harts increment the same word with constrained LR/SC loops: all increments/tickets present despite actual SC retries |
+
+A primary-owned mailbox publishes **each** trial's observations. The independent
+RTL host checks order, epoch, values, forbidden outcomes and ticket sums before
+accepting a phase histogram. It also matches all 28 physical counter registers
+to its event scoreboard, checks real kernel-PC retirement on both harts and
+verifies exact successful-SC counts. Mode 6 cannot hide spurious SC failure
+behind a software retry loop: the independent failed-SC observation must be zero.
+Mode 7 establishes completion for this finite contention workload; it does not
+promise per-hart starvation freedom under infinitely conflicting writers.
+The primary stays live for every phase, the worker is safely stopped at the
+end, and each complete warm stop compares all 64 KiB to architectural history.
+
+`make coherent-litmus-matrix` passes **24 configurations / 48 warm boots /
+49,152 trials**, crossing cache off/on, async/0, async/7, sync/1, sync/7 timing
+and three seeds (0, 1, 0xc0ffee). No forbidden outcome or unrelated-traffic SC
+failure occurs; genuine contention produces observed retries and correct totals.
+`make coherent-litmus-boundaries` adds **eight boots / 128 trials** at maximum
+memory wait 1024 (caches off/on, 2×2 geometry), 1024-word lines and 1024 lines
+(two-item trials, two LR/SC steps, maximum seed). All gates remain enabled.
+The expanded default regression includes the litmus suite.
+
+`scripts/run_phase6_regressions.py --output <new-directory>` provides the full
+22-target Phase 1–6 rerun: all historical and new matrices execute sequentially
+relative to each other in a fresh build tree. It requires a complete clean Git
+source manifest, records tools/commands/log hashes/exit status, retains partial
+failure evidence and rejects source/toolchain changes before completion. It
+never deletes an existing build/output. Unit tests cover child failure, changed
+source/toolchain, partial results and non-mutating refusal of dirty/existing
+input. A complete final run and its evidence audit are still required.
+The expanded `make -j2 check` passes, including all 55 host tests, the ordering
+suite, public ISA cases and every existing default regression.
+
 ## Verification and closeout requirements
 
 1. Real-core PCPI probe, adapter unit tests and independent full-A reference:
