@@ -1,6 +1,6 @@
 # Phase 6: coherent RAM and full RV32A
 
-Status: **in progress; first coherent hardware checkpoint passed, final acceptance pending**.
+Status: **physical workload/full-A gates passed; final evidence/fresh-checkout acceptance pending**.
 Baseline: clean Phase 5 closeout `29fbe34`, implementation `71e2570`.
 The Phase 5 evidence audit and directed retirement regression passed before
 Phase 6 changes. This document is the implementation and acceptance contract.
@@ -26,7 +26,7 @@ Complete and commit/push these tested milestones in order:
   directed, randomized, progress, latency, reset and compatibility matrices.
 - [x] Versioned AsterBench coherent/atomic experiments, validated per-hart
   measurements, independent results and clean-source reproducibility.
-- [ ] Clean-source FPGA signoff and repeated real PYNQ jobs/boots over Linux.
+- [x] Clean-source FPGA signoff and repeated real PYNQ jobs/boots over Linux.
 - [ ] Evidence audit, fresh-checkout verification and pushed final closeout.
 
 A milestone may reveal a necessary design change. Update this contract with
@@ -698,7 +698,7 @@ valid flags. An isolated-shipping import regression and a red/green diagnostic
 validity regression correct those host errors. Hardware/firmware were unchanged;
 all 65 current host tests pass, including strict real-fault rejection.
 
-This is **not final Phase 6 acceptance**. All-AMO/LRSC/C11 functional execution
+At this first checkpoint, this was **not final Phase 6 acceptance**. All-AMO/LRSC/C11 functional execution
 on the board, broader cached/uncached and one-/two-worker physical studies,
 immutable closeout evidence, full requirement-to-log mutation audit and final
 fresh-checkout verification still remain. The first atomic-add checkpoint does
@@ -744,7 +744,69 @@ collector, it preflights before importing PYNQ, requires the expected loaded
 overlay/explicit PCAP choice, retains failed evidence, and never writes an
 unidentified bridge. Isolated-package and fake-MMIO/PCAP tests cover both
 programs/cache modes plus serial/RAM/fault/download failures; actual functional
-board execution is still a separate acceptance gate.
+board execution is a separate acceptance gate, completed below.
+
+### Complete physical study and functional acceptance checkpoint
+
+The immutable `3baae6a` collector completed the entire physical study, including
+its final read-only audit: **57 captures, 114 warm boots and 342 jobs**. The
+host's default Git-backed audit independently accepted the copied package at
+`build/phase6-3baae6a/board/physical_study_3baae6a/physical-study.json` against
+the clean `26e18cb` simulation study and both `215b2d0` routed overlays. Every
+job's 28 counters matches its corresponding reference; all raw UART, complete
+64-KiB RAM snapshots, per-hart execution and safe-stop checks pass. All 29
+cache-enabled cases precede the 28 cache-disabled cases, with one explicit
+PCAP switch and no programming between either capture's two warm boots.
+
+The 61 controlled comparisons retain real slowdowns. For default 64-item,
+four-round cached workloads, one-worker cycles divided by two-worker cycles
+are: atomic-add 0.795385, LRSC 0.745677, CAS 0.825417, lock-sum 0.428351,
+false-shared 0.819575, padded 0.948967, ping-pong 1.317701, queue 1.228518 and
+shared-mix 1.877091. These are distinct physical workload comparisons, not
+one aggregate speedup. The dispatch/work/join window, cold secondary startup,
+warm primary state, excluded UART/global flush and serialized cache-hit policy
+remain unchanged. The longer 1024-item and independently rebuilt repeat cases
+are retained too; no slower case was discarded.
+
+Collector `ed8ab67` then ran `atomic_runtime` and `coherent_lifecycle` on both
+overlays, two warm boots each: **eight functional physical boots**, separately
+from the 114 benchmark boots. The four runtime boots each pass all 1296
+directed AMO operand/ordering cases, LR/SC/byte-store checks and three compiled
+two-hart C11 jobs. The four lifecycle boots each pass eight selective secondary
+resets with retained primary state and independently checked complete arrays.
+Every runtime UART is exactly 65 bytes and every lifecycle UART exactly 24;
+all ELF-addressed scalar/array results and diagnostic validity checks pass.
+All four copied packages under `build/phase6-ed8ab67/board/` pass the default
+host Git/ELF/ROM/overlay audit. The final independent read reports cache-enabled
+ABI `0x60001`, 31.25 MHz, two harts, empty serial FIFO and
+`CONTROL/STATUS/HART_STATUS/STOP_STATUS = 0/0/0/1`.
+
+### Strict full-regression evidence audit
+
+`python3 scripts/audit_phase6_regressions.py <regressions/manifest.json>` audits
+the completed clean `215b2d0` run. It verifies all 22 ordered target commands,
+exit codes, timings, tool identities, raw log sizes/hashes and the complete
+source manifest against Git. It then checks **2397 emitted passing scenarios**:
+named seeds/geometries/topologies where printed, each atomic/reference case and
+warm boot, real-hart activity, architectural fault/reset coverage, all benchmark
+configurations and paired observations, and litmus histogram/progress/retry
+totals. Unknown, duplicated, missing or malformed PASS gates are rejected.
+The older harnesses do not print every timing/cache selector: those selectors
+are bound to the actual pinned Makefile and successful fixed target invocation,
+not claimed as independently emitted hardware telemetry. PASS scenario counts
+are not instruction coverage or a formal proof of the ISA.
+
+The audit passes the actual retained run; 66 deliberate real-log mutations
+(missing gate, extra gate, late failure for every target) are rejected. Five
+new self-contained host-test groups cover manifest omissions, commands/paths,
+hash-consistent semantic damage, all upstream AMOs/LRSC, original negative
+controls, forbidden litmus outcomes and observer pairing. The complete current
+host suite passes **80 tests**. The original clean regression's host-test count
+remains its historical 55; later tests are not retroactively attributed to it.
+
+These completed physical and regression gates do not yet mark the phase closed:
+immutable committed evidence, final requirement-to-evidence/mutation audit,
+fresh-checkout verification and the dedicated pushed closeout remain required.
 
 ## Verification and closeout requirements
 

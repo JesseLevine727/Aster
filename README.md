@@ -65,11 +65,13 @@ secondary-reset tests. The Phase 6 AXI bridge and stopped-only host helpers pass
 serial, RAM-retention and protocol tests. AsterBench v4 now exercises nine
 atomic/coherent workloads with exact simulated per-hart event scoreboards and
 independent RAM results. Both cache-off/on overlays pass clean-source routed
-signoff, and the cache-enabled RV32IMA overlay now runs on the PYNQ through
-Linux/PCAP: the first two warm boots/six atomic-add jobs match every reference
-counter, with full UART and stopped-RAM evidence. The 57-capture clean-source
-simulation study and complete 22-target regression rerun pass. Broader physical
-workload coverage and the final Phase 6 evidence/closeout audit remain pending.
+signoff. The complete physical Linux/PCAP study now passes all 57 captures,
+114 warm boots and 342 jobs, matching every reference counter with full UART
+and stopped-RAM evidence. Full-A C runtime and selective-reset lifecycle tests
+also pass two physical boots each with caches off and on. The matching
+clean-source simulation study and strict 22-target regression audit pass.
+Immutable evidence packaging, final fresh-checkout verification and the
+Phase 6 requirement/closeout audit remain pending.
 
 Start here:
 
