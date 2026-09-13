@@ -230,7 +230,7 @@ cannot replace these 4×4 captures.
 
 - [x] README scope, Phase 8 baseline, memory ownership and Phase 9 arithmetic/control contract frozen.
 - [x] PE directed signed products, zero/extrema/cancellation and handshake/reset tests (`make npu-pe`; exhaustive 256×256 operands plus 10,000 randomized accumulators).
-- [ ] 4×4 array edge masks, tile sequencing, K=0 and exact scalar-oracle tests.
+- [x] 4×4 array edge masks, tile sequencing, K=0 and exact scalar-oracle tests (`make npu-array`; 3 seeds, 252 tiles/seed).
 - [ ] RAM master bounds, byte placement, stride, guard and malformed-descriptor tests.
 - [ ] Actual CPU-controlled RAM-backed C GEMM on one/two harts, cache off/on and supported waits.
 - [ ] DMA publication/coherence, safe global STOP/ABORT, reset/error/timeout and disabled/legacy tests.
