@@ -55,7 +55,8 @@ acc_out = (acc_in + sign_extend(product)) modulo 2^32
 The product is formed at signed 16-bit precision before sign extension. The
 output is a 32-bit bit pattern; software and the oracle interpret it as a
 two's-complement result. `valid` remains asserted and all inputs remain stable
-until `ready`. Reset drops `ready/valid` state and clears the accumulator. No
+until `ready`. The PE has no hidden accumulator: `acc_in` and `acc_out` are the
+explicit accumulation boundary. Reset drops `ready` and acceptance, and no
 operation is accepted while reset is asserted.
 
 For the contracted K limit of 1024, the mathematical sum fits in signed 32-bit
@@ -228,7 +229,7 @@ cannot replace these 4×4 captures.
 ## Verification and acceptance gates
 
 - [x] README scope, Phase 8 baseline, memory ownership and Phase 9 arithmetic/control contract frozen.
-- [ ] PE directed signed products, zero/extrema/cancellation and handshake/reset tests.
+- [x] PE directed signed products, zero/extrema/cancellation and handshake/reset tests (`make npu-pe`; exhaustive 256×256 operands plus 10,000 randomized accumulators).
 - [ ] 4×4 array edge masks, tile sequencing, K=0 and exact scalar-oracle tests.
 - [ ] RAM master bounds, byte placement, stride, guard and malformed-descriptor tests.
 - [ ] Actual CPU-controlled RAM-backed C GEMM on one/two harts, cache off/on and supported waits.
