@@ -201,6 +201,10 @@ ROM, loads once and repeats the reference's warm-boot count without downloading
 again. Every job travels through actual PL UART TX-to-RX and the AXI receive
 FIFO. Raw `.uart` bytes are retained separately; TX/RX/FIFO/error counts and
 independent lifetime retirements are captured before stop clears state.
+Atomic diagnostic address/opcode fields retain the last accepted atomic request,
+including successful requests. They describe a fault only when `fault_valid` is
+asserted; the auditor retains and type-checks their payload while requiring
+clear trap/fault flags and a zero cause for successful benchmark runs.
 
 After every boot the runner requires acknowledged STOPPED and captures all
 64 KiB of RAM. Independent host math checks every saved job result and the

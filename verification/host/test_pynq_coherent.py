@@ -28,6 +28,10 @@ class PhysicalMMIO(MMIO):
         self.ram = list(struct.unpack("<16384I", ram))
 
     def read(self, address):
+        # The real adapter latches address/opcode on EVERY legal atomic request;
+        # these are not necessarily zero when fault_valid is false.
+        if address == 0x54: return 0x10000000
+        if address == 0x58: return 0x0107a52f
         if self.registers[0]:
             if address == 0x0c:
                 return 0 if self.scenario == "timeout" else min(512, len(self.payload)-self.cursor)
@@ -127,6 +131,9 @@ class PhysicalCollector(unittest.TestCase):
                     bad = copy.deepcopy(report); bad["boots"][0]["after_stop"]["stop_status"] = 6; mutants.append(bad)
                     bad = copy.deepcopy(report); bad["boots"][0]["reference_comparison"]["exact_counter_match"] = False; mutants.append(bad)
                     bad = copy.deepcopy(report); bad["collector_files"].pop("coherent_bridge.py"); mutants.append(bad)
+                    for key, value in (("trapped", True), ("atomic_fault_valid", True), ("cause", 5),
+                                       ("address", 1 << 32), ("instruction", -1), ("pc", 1.0)):
+                        bad = copy.deepcopy(report); bad["boots"][0]["before_stop"]["faults"][0][key] = value; mutants.append(bad)
                     for index, bad in enumerate(mutants):
                         path.write_text(json.dumps(bad))
                         with self.subTest(report_mutation=index), self.assertRaises(ValueError):

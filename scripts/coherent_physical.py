@@ -100,9 +100,12 @@ def validate_boot(boot, reference, directory):
     bench.require(type(faults) is list and len(faults) == 2, "missing physical fault observations")
     for hart, fault in enumerate(faults):
         expected = dict(hart=hart, trapped=False, atomic_fault_valid=False, cause=0, address=0, instruction=0, pc=0)
-        # PC observation is live, not a fault PC unless the hart trapped.
+        # Adapter IDLE latches address/opcode on EVERY legal atomic request,
+        # including successful operations. Their fault meaning is conditional
+        # on atomic_fault_valid. PC is live unless the hart has trapped.
         bench.require(type(fault) is dict and set(fault) == set(expected), "invalid physical fault fields")
-        bench.integer(fault["pc"], 0, bench.U32); expected["pc"] = fault["pc"]
+        for key in ("address", "instruction", "pc"):
+            bench.integer(fault[key], 0, bench.U32); expected[key] = fault[key]
         bench.require(results.typed_equal(fault, expected), "physical atomic fault/trap")
     bench.require(results.typed_equal(boot["after_stop"], dict(control=0, status=0, hart_status=0, stop_status=1)), "warm stop did not acknowledge safe reset")
     finite(boot["elapsed_seconds"], 0, 180)  # includes final flush and 16K AXI RAM reads
