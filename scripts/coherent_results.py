@@ -155,7 +155,7 @@ def validate_result(result, log, directory=None, *, clean=True):
     return records
 
 
-def fingerprint_tools(config):
+def fingerprint_tools(config, *, source="software/benchmarks/coherent.c"):
     compiler = Path(shutil.which(config["compiler"]) or "").resolve()
     bench.require(compiler.is_file(), "compiler unavailable")
     paths = {"gcc": str(compiler), "nm": config["nm"], "objdump": config["nm"][:-2]+"objdump", "verilator": config["verilator"]}
@@ -174,7 +174,7 @@ def fingerprint_tools(config):
         version = (process.stderr+process.stdout).strip() if name in ("cc1", "collect2") else (process.stdout+process.stderr).strip()
         bench.require(version, "tool did not report its version: "+name)
         tools[name] = {"path": str(actual), "sha256": sha(actual), "version": version.splitlines()[0]}
-    dependencies = command([str(compiler), *shlex.split(config["cflags"]), "-M", "software/benchmarks/coherent.c"])
+    dependencies = command([str(compiler), *shlex.split(config["cflags"]), "-M", source])
     paths = shlex.split(dependencies.replace("\\\n", " ").split(":", 1)[1])
     headers = {str(Path(path).resolve()): sha(path) for path in paths if Path(path).is_absolute()}
     result = {"tools": tools, "headers": headers}; validate_toolchain(result)

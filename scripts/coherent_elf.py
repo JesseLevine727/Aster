@@ -8,7 +8,8 @@ import struct
 from asterbench_coherent import require
 
 
-def inspect_elf(data):
+def inspect_elf(data, *, profile="benchmark"):
+    require(profile in ("benchmark", "runtime", "lifecycle"), "unknown audited firmware profile")
     require(type(data) is bytes and 52 <= len(data) <= 16*1024*1024, "invalid ELF length")
     h = struct.unpack_from("<16sHHIIIIIHHHHHH", data)
     require(h[0][:7] == b"\x7fELF\x01\x01\x01" and h[1:5] == (2, 243, 1, 0) and h[7] == 0,
@@ -36,6 +37,19 @@ def inspect_elf(data):
     wanted = {"aster_coherent_kernel": (2, 0, 65536),
               "aster_coherent_output": (1, 0x10000000, 0x10008000),
               "aster_coherent_results": (1, 0x10008000, 0x1000b000)}
+    sizes = {}
+    if profile != "benchmark":
+        wanted = {"main": (2, 0, 65536), "aster_secondary_main": (2, 0, 65536)}
+        sizes = ({"probe_results": 32, "directed_word": 4, "counter": 4, "cas_counter": 4,
+                  "lrsc_counter": 4, "protected_counter": 4, "protected_sum": 4, "lock_word": 4,
+                  "start_epoch": 4, "done": 8} if profile == "runtime" else
+                 {"requested_epoch": 4, "done_epoch": 4, "generations": 4, "worker_error": 4,
+                  "primary_reservation": 4, "secondary_reservation": 4, "payload": 256,
+                  "primary_private": 64, "secondary_private": 64})
+        for name in sizes:
+            low, high = ((0x10008000, 0x1000b000) if name in ("probe_results", "primary_private") else
+                         (0x1000c000, 0x1000f000) if name == "secondary_private" else (0x10000000, 0x10008000))
+            wanted[name] = (1, low, high)
     found = {}
     for s in sections:
         if s[1] != 2:  # SHT_SYMTAB, not a dynamic-symbol substitute.
@@ -52,8 +66,13 @@ def inspect_elf(data):
             if text not in wanted:
                 continue
             kind, low, high = wanted[text]
+            # The startup assembly has a local untyped branch label named
+            # primary_private, distinct from the lifecycle C data object.
+            if profile != "benchmark" and info & 15 == 0:
+                continue
             require(text not in found and info & 15 == kind and 0 < index < len(sections) and
-                    value % 4 == 0 and low <= value < value+size <= high, "duplicate/invalid benchmark symbol")
+                    value % 4 == 0 and low <= value < value+size <= high and
+                    (text not in sizes or size == sizes[text]), "duplicate/invalid firmware symbol")
             owner = sections[index]
             require(owner[2] & 2 and owner[3] <= value < value+size <= owner[3]+owner[5], "symbol outside allocated section")
             if kind == 2:

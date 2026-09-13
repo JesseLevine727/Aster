@@ -704,6 +704,31 @@ immutable closeout evidence, full requirement-to-log mutation audit and final
 fresh-checkout verification still remain. The first atomic-add checkpoint does
 not stand in for those gates.
 
+### Full-A/lifecycle functional reference tooling
+
+`scripts/coherent_functional.py capture --caches 0|1 --output <new-directory>`
+builds the existing `atomic_runtime.c` and `coherent_lifecycle.c` from clean
+source in a fresh isolated directory, then runs both through the actual Linux
+AXI/serial RTL harness. No RTL, Makefile, firmware or pinned-core change is
+needed. The resulting package retains actual compiler commands/flags, complete
+Git sources, compiler components and each program's used headers, ELF-derived
+ROM and symbol bounds, map/disassembly and raw serial/reset/RAM gate logs.
+The default read-only audit checks every source against Git and rejects changed
+artifacts, malformed/missing reference boots and a ROM inconsistent with ELF.
+
+The runtime exercises 9 AMOs × 4 ordering encodings × 6 old values × 6 operands
+(1296 directed cases), LR/SC success/failure and overlapping byte-store
+invalidation, then three two-hart C11 AMO/LRSC/CAS/lock jobs. Independent stopped
+RAM checks require all four counters to be 256, protected sum 24768, lock zero,
+completed epochs and the full eight-word result signature. The lifecycle
+program runs eight selective secondary-reset epochs, checks retained primary
+state/reservations and worker-private reinitialization, and publishes 64 words.
+Host checks cover every payload/private-array word and epoch/generation/error
+variable using actual ELF object symbols. An untyped startup branch label named
+`primary_private` is not confused with the lifecycle C object of that name.
+The functional serial model uses 400 Hz/10 baud for simulation speed; its
+logical correctness evidence is not a physical cycle/baud measurement.
+
 ## Verification and closeout requirements
 
 1. Real-core PCPI probe, adapter unit tests and independent full-A reference:
