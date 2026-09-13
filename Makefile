@@ -273,6 +273,7 @@ help:
 	@echo "  make npu-array    Phase 9 4x4 INT8 tile-array unit test"
 	@echo "  make npu-engine   Phase 9 RAM-backed INT8 GEMM engine unit test"
 	@echo "  make npu-regs     Phase 9 NPU ABI/control register unit test"
+	@echo "  make npu-driver   Phase 9 RV32 driver/scalar-model compile check"
 	@echo "  make atomic-fabric  Test serialized RV32A memory/reservation semantics"
 	@echo "  make atomic-runtime-matrix  Run compiled RV32IMA C on one/two real cores"
 	@echo "  make atomic-faults-matrix   Check real-core atomic faults with caches off/on"
@@ -806,6 +807,10 @@ $(NPU_REGS_SIM): rtl/accelerator/aster_int8_pe.sv rtl/accelerator/aster_int8_arr
 
 npu-regs: $(NPU_REGS_SIM)
 	@$(NPU_REGS_SIM)
+
+.PHONY: npu-driver
+npu-driver: software/drivers/aster_npu.c software/drivers/aster_npu.h
+	$(CC) $(HELLO_CFLAGS) -Isoftware/drivers -Isoftware/runtime -fsyntax-only software/drivers/aster_npu.c
 
 .PHONY: dot8-probe dot8-probe-matrix
 $(DOT8_PROBE_SIM): $(RTL_CORE) $(RTL_CACHE) rtl/core/aster_pcpi_atomic.sv rtl/core/aster_pcpi_dot8.sv \
@@ -1471,9 +1476,9 @@ parallel-workloads:
 		done; \
 	done
 
-test: smoke phase1 hello bench cache uart fpga-sim linux-sim counters retirement npu-pe npu-array npu-engine npu-regs arbiter shared-fabric multicore-runtime parallel
+test: smoke phase1 hello bench cache uart fpga-sim linux-sim counters retirement npu-pe npu-array npu-engine npu-regs npu-driver arbiter shared-fabric multicore-runtime parallel
 
-check: tools smoke phase1 hello bench cache uart fpga-sim linux-sim linux-dual-sim linux-coherent-sim counters retirement pcpi-probe dot8-unit npu-pe npu-array npu-engine npu-regs atomic-fabric atomic-runtime atomic-faults coherent-cache warm-stop coherent-counters coherent-soc coherent-bench riscv-reference riscv-reference-negative coherent-litmus arbiter shared-fabric multicore-runtime multicore-adversarial parallel
+check: tools smoke phase1 hello bench cache uart fpga-sim linux-sim linux-dual-sim linux-coherent-sim counters retirement pcpi-probe dot8-unit npu-pe npu-array npu-engine npu-regs npu-driver atomic-fabric atomic-runtime atomic-faults coherent-cache warm-stop coherent-counters coherent-soc coherent-bench riscv-reference riscv-reference-negative coherent-litmus arbiter shared-fabric multicore-runtime multicore-adversarial parallel
 
 clean:
 	rm -rf $(BUILD_DIR)

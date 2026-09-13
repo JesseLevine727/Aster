@@ -36,4 +36,12 @@ CPU offload or define the end-to-end AsterBench measurement window.
 
 `make dma-runtime` compiles and runs the driver on the actual Verilated cores;
 its integration acceptance is tracked in [Phase 7](../../docs/phase7.md).
-UART, timer, interrupt and NPU driver expansion remains separate work.
+UART, timer and interrupt driver expansion remain separate work.
+
+The Phase 9 [`aster_npu.h`](aster_npu.h) / [`aster_npu.c`](aster_npu.c) driver
+controls the ABI-1 INT8 GEMM engine at `0x40000000`. It validates RV32 shared
+RAM ranges, byte strides, non-overlap and hart-0 ownership before publishing a
+descriptor with `fence iorw,iorw`. `aster_npu_poll`/`wait`/`abort_and_wait` use
+poll-count semantics and never release buffers after a timeout. The scalar
+`aster_npu_scalar_gemm` routine is the software/reference boundary and writes
+unaligned C payloads by bytes, matching the hardware layout.
