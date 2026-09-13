@@ -1,8 +1,9 @@
 # Phase 7: coherent memory-to-memory DMA
 
 Status: **coherent DMA, driver and one-/two-hart real-core integration verified
-in simulation; AsterBench, expanded adversarial/AXI coverage, full regression
-closeout and physical acceptance pending**.
+in simulation; paired AsterBench v5 firmware/capture/study tools verified in
+development; complete size study, expanded adversarial/AXI coverage, full
+regression closeout and physical acceptance pending**.
 Baseline: clean/pushed Phase 6 closeout
 `70a1b55b303786144aaa052b6cd8b9e8a4d75bf1`. Before any Phase 7 edits,
 `audit_phase6.py ... --current` passed all seven baseline acceptance gates.
@@ -84,6 +85,21 @@ actual DMA destination acceptance. Raw firmware snapshots match all 42 counters.
 `dma-atomic-fabric` adds all 32 A encodings/alignment faults on the DMA MMIO
 page to the independent serialized-memory oracle. These are simulation results,
 not a Phase 7 FPGA/timing/physical closeout.
+
+The paired-measurement tooling milestone adds `make dma-bench` and the
+[AsterBench v5 experiment](phase7-bench.md). Actual-core default and 8 KiB
+different-offset development captures each pass two warm boots/four balanced
+jobs, all 42 observed counters, all 108 RAM-published words per method, complete
+source/destination/guard byte checks and whole-RAM architectural-store equality.
+The default 64-byte aligned/cache-on/synchronous case measures CPU 1,362 cycles
+versus DMA 1,672; the 8 KiB different-offset counterpart measures 398,918 versus
+245,795. These are **development simulation observations**, not a complete
+crossover study or physical claim. Do not use them to check off the study gate.
+The 107-test host suite includes independent Python/C++ v5 record parity,
+counter/ownership/ELF/ROM/RAM mutations and fixed-study/repeat/crossover audit
+mutations. A fixed 144-capture plan is specified before collection; source
+must be clean and stable for accepted captures. Historical Phase 6 acceptance
+still passes without the inapplicable `--current` flag.
 
 ## Architecture and coherent serialization
 

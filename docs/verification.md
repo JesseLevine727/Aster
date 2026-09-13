@@ -340,6 +340,7 @@ make dma-cache-boundaries # Largest supported word/index widths, separately
 make dma-counters        # ABI 5 multi-increment/common-window/carry checks
 make dma-atomic-fabric   # Native DMA MMIO routing and all A/fetch denials
 make dma-runtime-matrix  # 16 actual-core hart/cache/memory configurations
+make dma-bench SYNC_MEMORY=1 # Paired CPU/DMA, full bytes/guards/RAM and 42 counters
 ```
 
 The compiled [DMA driver](../software/drivers/README.md) runs on the actual
@@ -355,6 +356,8 @@ event windows. Initial POR is distinct from these RAM-preserving stops.
 Keep DMA-disabled regressions and the immutable Phase 6 audit. Do not use
 `audit_phase6 --current` to certify changed Phase 7 RTL; the historical audit
 remains valid against its own recorded Git revision. The
-[AsterBench v5 experiment](phase7-bench.md), further adversarial/AXI coverage,
+[AsterBench v5 tools](phase7-bench.md) have verified development captures and
+107 passing host tests, including C++/Python schema parity and saved-evidence
+mutations. Complete fixed-study collection, further adversarial/AXI coverage,
 clean routed FPGA gates, actual PYNQ copies and Phase 7 closeout are still
 separate pending acceptance work.

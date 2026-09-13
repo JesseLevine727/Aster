@@ -294,6 +294,9 @@ Build a memory-to-memory DMA engine with source, destination, length, start/stat
 `0x3000_0000` register page, participates in coherent shared-RAM access and
 retains the verified 31.25 MHz baseline. Completion is pollable; interrupts,
 shared L2 and Phase 8+ remain outside this phase.
+The [paired AsterBench v5 tools](docs/phase7-bench.md) now verify actual CPU/DMA
+copies, full outputs, counters and saved provenance in simulation. The fixed
+size sweep, FPGA/physical proof and final Phase 7 closeout remain pending.
 
 ## Phase 8 — Custom compute instruction
 

@@ -1,7 +1,9 @@
 # AsterBench v5 DMA experiment contract
 
-Status: design for the next implementation milestone; no benchmark or board
-results claimed here. The [Phase 7 contract](phase7.md) and README remain the
+Status: paired firmware, actual-core scoreboard and saved-capture/study audits
+have passed development verification. Complete fixed-study collection and
+physical acceptance are pending. No complete study or board results claimed here.
+The [Phase 7 contract](phase7.md) and README remain the
 acceptance authority. Preserve all v2/v3/v4 record and capture interfaces.
 
 ## Paired experiment
@@ -48,8 +50,11 @@ substitutes for the measured window.
 
 Default **four jobs**, alternating method order: CPU/DMA in jobs 1 and 3,
 DMA/CPU in jobs 2 and 4. Both methods of one job use the same seed. Each capture
-includes two warm boots, and the fixed study includes an independently rebuilt
-repeat. Keep every per-boot/job/method result rather than averaging away order
+includes two warm boots. The fixed study independently rebuilds the 1 KiB case
+for each of its six cache/alignment series, selected before running the study.
+That is 138 main captures plus six fresh repeats: **144 captures, 288 boots,
+1,152 paired jobs, 2,304 method records**. Keep every per-boot/job/method result
+rather than averaging away order
 effects or negative speedups.
 
 ## Fixed study and correctness
@@ -102,3 +107,42 @@ cache/alignment dependence. Convert cycles to latency with the verified clock;
 nonzero-size bandwidth is payload bytes / that end-to-end latency. Zero-byte
 bandwidth is undefined. Do not claim a universal crossover, CPU availability
 while polling or a future accelerator's performance from this experiment.
+
+## Development commands and evidence gates
+
+`make dma-bench SYNC_MEMORY=1` builds an RV32IMA ELF/complete ROM and runs
+the actual-core scoreboard for the default 64-byte aligned case, four balanced
+jobs and two warm boots. Select `DMA_BYTES`, `DMA_ALIGNMENT` (`aligned`,
+`same_offset`, `different_offset`), `DMA_JOBS`, `DMA_SEED`, `DMA_BOOTS`,
+`DMA_UART_SEED` and the usual hart/cache/memory geometry knobs. RAM snapshots
+use exclusive creation: use a fresh `BUILD_DIR` or `DMA_RAM_PREFIX` for a rerun.
+With caches enabled, actual-core runs retain the instruction cache's minimum
+two words/two lines; the standalone coherent-device cache's 1x1 and 1x1024
+boundary tests do not make those instruction-cache configurations supported.
+
+`python3 scripts/dma_results.py capture --output /new/path/b64.json` makes a
+fresh isolated build and saves raw log, actual ELF/ROM/map/disassembly and both
+64 KiB stopped-RAM snapshots beside a versioned envelope. The capture defaults
+to clean source; `--allow-dirty` is explicitly development-only. Source and
+toolchain identities must remain stable during execution. Failed runs retain
+partial log/RAM and cannot overwrite an earlier attempt. The capture checker
+audits all 108 metadata/counter words per method, complete final source and
+destination allocations, actual CPU-kernel retirement, exclusive CPU/DMA
+payload ownership and all 42 observed counters. Full-RAM architectural-store
+equality and identical pre-method buffer preparation are additionally checked
+on every run by the actual-core scoreboard.
+
+`python3 scripts/dma_results.py audit /path/b64.json` reads artifact bytes and
+the complete committed source inventory. It does not run executables or build
+commands named in evidence. Its output preserves every paired ratio, latency
+and bandwidth (undefined for zero bytes).
+
+`python3 scripts/dma_study.py plan` prints the fixed plan;
+`capture --output /new/study/directory` executes it against one clean revision,
+sharing only the freshly built configuration-specific simulation models across
+main cases. Each selected repeat gets a separate new build root. `audit
+/path/study.json` rejects missing/extra/reordered cases, altered artifacts,
+mixed source/toolchains and non-independent repeats, and recomputes every
+summary. It reports any-pair and all-pairs first wins separately, subsequent
+reversals, and a sustained win only through the **largest tested** size. It
+does not interpolate a universal crossover or suppress negative ratios.

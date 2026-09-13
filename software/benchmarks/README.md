@@ -214,3 +214,29 @@ hashed build/run log and source/compiler/firmware/model provenance. Its audit
 checks those bindings and independent references; its comparison checks equal
 work, reports configuration/compiler differences and computes actual speedup
 or slowdown. V2 capture and parsing remain separate and backward compatible.
+
+## Phase 7 paired CPU/DMA copy (v5)
+
+`make dma-bench SYNC_MEMORY=1` executes `dma.c` on actual RV32IMA cores with
+coherent DMA enabled. Hart 1 stays reset. The same image contains an optimized
+word-copy CPU kernel and `aster_dma_copy`; there is no CPU fallback in the DMA
+method. Each of four jobs runs both methods using identical, fully reinitialized
+buffers and a shared seed, alternating CPU/DMA and DMA/CPU order. Two warm boots
+check reset/reuse. The common counter window includes method dispatch,
+descriptor setup, polling, coherent service and completion fences.
+
+`DMA_BYTES=0..8192`, `DMA_ALIGNMENT=aligned|same_offset|different_offset`,
+`DMA_JOBS=1..8` and `DMA_SEED` select development workloads. Fixed linker sections
+keep source/destination bases at `0x10001000`/`0x10005080` across all sizes.
+Each method checks every source, destination and guard byte and prints the
+complete destination allocation plus both 14-counter CPU banks and the
+14-counter DMA bank. Raw job-cycle diagnostics are separate from the end-to-end
+window. Cache preparation is **not cold cache**, and polling is CPU work.
+
+The [v5 experiment contract](../../docs/phase7-bench.md) specifies the exact
+23-size × 3-alignment × 2-cache study and fresh repeats. `scripts/dma_results.py`
+captures/audits clean-source ELF/ROM/UART/RAM/event/toolchain evidence;
+`scripts/dma_study.py` checks full coverage and recomputes paired speedups,
+slowdowns and sampled crossovers. V2/v3/v4 remain distinct and compatible.
+Development verification is complete; the full size study and PYNQ physical
+acceptance are not yet claimed.

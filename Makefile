@@ -34,6 +34,16 @@ COHERENT_WORKERS ?= $(HART_COUNT)
 COHERENT_SEED ?= 0x13570000
 COHERENT_BOOTS ?= 2
 COHERENT_UART_SEED ?= 0
+DMA_BYTES ?= 64
+DMA_ALIGNMENT ?= aligned
+DMA_JOBS ?= 4
+DMA_SEED ?= 0x13570000
+DMA_BOOTS ?= 2
+DMA_UART_SEED ?= 0
+ifeq ($(filter $(DMA_ALIGNMENT),aligned same_offset different_offset),)
+$(error DMA_ALIGNMENT must be aligned, same_offset or different_offset)
+endif
+DMA_ALIGNMENT_ID := $(if $(filter aligned,$(DMA_ALIGNMENT)),0,$(if $(filter same_offset,$(DMA_ALIGNMENT)),1,2))
 LITMUS_EPOCHS ?= 128
 LITMUS_STEPS ?= 64
 LITMUS_SEED ?= 0xa57e6
@@ -106,6 +116,14 @@ DMA_SOC_DIR := $(BUILD_DIR)/dma_soc_h$(HART_COUNT)_$(CONFIG_TAG)
 DMA_SOC_SIM := $(DMA_SOC_DIR)/aster_dma_soc_sim
 DMA_RUNTIME_ELF := $(HELLO_DIR)/dma_runtime.elf
 DMA_RUNTIME_HEX := $(HELLO_DIR)/dma_runtime.hex
+DMA_BENCH_SIM := $(DMA_SOC_DIR)/aster_dma_bench_sim
+DMA_FW_DIR := $(HELLO_DIR)/dma_b$(DMA_BYTES)_a$(DMA_ALIGNMENT)_j$(DMA_JOBS)_s$(DMA_SEED)
+DMA_ELF := $(DMA_FW_DIR)/dma.elf
+DMA_HEX := $(DMA_FW_DIR)/dma.hex
+DMA_CFLAGS = $(filter-out -march=%,$(HELLO_CFLAGS)) -march=rv32ima -Isoftware/drivers \
+	-fno-builtin -fno-tree-loop-distribute-patterns -DDMA_BYTES=$(DMA_BYTES) -DDMA_ALIGNMENT=$(DMA_ALIGNMENT_ID) -DDMA_JOBS=$(DMA_JOBS) -DDMA_SEED=$(DMA_SEED)
+DMA_LDFLAGS = -T software/boot/link_dma_bench.ld -Wl,-Map,$(DMA_FW_DIR)/dma.map
+DMA_RAM_PREFIX ?= $(DMA_FW_DIR)/observed_h$(HART_COUNT)_$(CONFIG_TAG)_u$(DMA_UART_SEED)
 ATOMIC_CACHE ?= 0
 ATOMIC_RUNTIME_DIR := $(BUILD_DIR)/atomic_h$(HART_COUNT)_c$(ATOMIC_CACHE)_w$(L1_LINE_WORDS)_n$(L1_LINE_COUNT)
 ATOMIC_RUNTIME_SIM := $(ATOMIC_RUNTIME_DIR)/aster_atomic_probe_sim
@@ -204,6 +222,7 @@ help:
 	@echo "  make dma-cache-matrix    Test coherent DMA snoops/dirty writes across cache geometries"
 	@echo "  make dma-counters       Test the separate AsterBench v5 DMA common-window bank"
 	@echo "  make dma-runtime        Run compiled RV32IMA DMA/driver/LRSC/pause/stop and full-RAM checks"
+	@echo "  make dma-bench          Paired AsterBench v5 copy windows, full outputs and actual CPU/DMA counters"
 	@echo "  make linux-coherent-matrix  Test Phase 6 AXI/serial/RAM/stop protocol"
 	@echo "  make fpga-linux-coherent   Build the dual-core RV32IMA coherent PYNQ overlay"
 	@echo "  make coherent-bench       AsterBench v4 atomic/coherent C workload with exact per-hart counters"
@@ -782,6 +801,36 @@ dma-runtime-matrix:
 		read -r sync wait_cycles <<< "$$timing"; \
 		$(MAKE) --no-print-directory dma-runtime HART_COUNT=$$harts ENABLE_L1=$$cache SYNC_MEMORY=$$sync MEMORY_WAIT_CYCLES=$$wait_cycles; \
 	done; done; done
+
+.PHONY: dma-bench dma-firmware dma-bench-sim dma-config
+$(DMA_ELF): software/benchmarks/dma.c software/drivers/aster_dma.c software/drivers/aster_dma.h software/runtime/start_multicore.S software/runtime/aster.h software/boot/link_dma_bench.ld Makefile
+	mkdir -p $(DMA_FW_DIR)
+	$(CC) $(DMA_CFLAGS) $(DMA_LDFLAGS) -o $@ software/runtime/start_multicore.S software/drivers/aster_dma.c $<
+	$(OBJDUMP) -d $@ > $(DMA_FW_DIR)/dma.dis
+
+$(DMA_HEX): $(DMA_ELF) scripts/elf_to_hex.py
+	$(PYTHON) scripts/elf_to_hex.py --rom-bytes 65536 $< $@
+
+$(DMA_BENCH_SIM): $(RTL_COHERENT) verification/soc/tb_aster_dma_bench.cpp verification/common/dma_record.h Makefile
+	mkdir -p $(DMA_SOC_DIR)
+	$(VERILATOR) --cc --exe --build --timing --Wall $(VERILATOR_VENDOR_LINT_FLAGS) $(VERILATOR_COHERENT_FLAGS) --assert -DASTER_COHERENCE_ASSERT \
+		--top-module aster_coherent_soc -GHART_COUNT=$(HART_COUNT) "-GENABLE_L1=1'b$(ENABLE_L1)" "-GENABLE_DMA=1'b1" \
+		"-GSYNC_MEMORY=1'b$(SYNC_MEMORY)" -GMEMORY_WAIT_CYCLES=$(MEMORY_WAIT_CYCLES) "-GHOST_BOOT=1'b1" \
+		-GLINE_WORDS=$(L1_LINE_WORDS) -GLINE_COUNT=$(L1_LINE_COUNT) \
+		--Mdir $(DMA_SOC_DIR)/bench_obj -o $(abspath $@) \
+		$(addprefix $(ROOT)/,$(RTL_COHERENT)) $(ROOT)/verification/soc/tb_aster_dma_bench.cpp
+
+dma-firmware: $(DMA_HEX)
+dma-bench-sim: $(DMA_BENCH_SIM)
+
+dma-bench: $(DMA_HEX) $(DMA_BENCH_SIM)
+	@$(PYTHON) scripts/run_dma_sim.py --simulator $(DMA_BENCH_SIM) --elf $(DMA_ELF) --firmware $(DMA_HEX) \
+		--ram-prefix $(DMA_RAM_PREFIX) --size $(DMA_BYTES) --alignment $(DMA_ALIGNMENT_ID) --harts $(HART_COUNT) \
+		--jobs $(DMA_JOBS) --seed $(DMA_SEED) --l1 $(ENABLE_L1) --sync-memory $(SYNC_MEMORY) --memory-wait $(MEMORY_WAIT_CYCLES) \
+		--line-words $(L1_LINE_WORDS) --line-count $(L1_LINE_COUNT) --boots $(DMA_BOOTS) --uart-seed $(DMA_UART_SEED)
+
+dma-config:
+	@$(PYTHON) -c 'import json; print(json.dumps({"compiler":"$(CC)","nm":"$(RISCV_PREFIX)nm","objdump":"$(OBJDUMP)","host_cxx":"$(CXX)","cflags":"$(DMA_CFLAGS)","ldflags":"$(DMA_LDFLAGS)","verilator":"$(VERILATOR)","elf":"$(DMA_ELF)","firmware":"$(DMA_HEX)","simulator":"$(DMA_BENCH_SIM)","ram_prefix":"$(DMA_RAM_PREFIX)"},sort_keys=True))'
 
 .PHONY: coherent-soc coherent-soc-matrix
 $(COHERENT_SOC_SIM): $(RTL_COHERENT) verification/soc/tb_aster_coherent_soc.cpp Makefile

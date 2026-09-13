@@ -8,8 +8,13 @@ import struct
 from asterbench_coherent import require
 
 
-def inspect_elf(data, *, profile="benchmark"):
-    require(profile in ("benchmark", "runtime", "lifecycle"), "unknown audited firmware profile")
+def inspect_elf(data, *, profile="benchmark", dma_size=None, dma_jobs=None):
+    require(profile in ("benchmark", "runtime", "lifecycle", "dma_benchmark", "dma_runtime"), "unknown audited firmware profile")
+    if profile == "dma_benchmark":
+        require(type(dma_size) is int and 0 <= dma_size <= 8192 and type(dma_jobs) is int and 1 <= dma_jobs <= 8,
+                "DMA benchmark requires exact size/job symbol contract")
+    else:
+        require(dma_size is None and dma_jobs is None, "unexpected DMA benchmark arguments for another ELF profile")
     require(type(data) is bytes and 52 <= len(data) <= 16*1024*1024, "invalid ELF length")
     h = struct.unpack_from("<16sHHIIIIIHHHHHH", data)
     require(h[0][:7] == b"\x7fELF\x01\x01\x01" and h[1:5] == (2, 243, 1, 0) and h[7] == 0,
@@ -38,7 +43,23 @@ def inspect_elf(data, *, profile="benchmark"):
               "aster_coherent_output": (1, 0x10000000, 0x10008000),
               "aster_coherent_results": (1, 0x10008000, 0x1000b000)}
     sizes = {}
-    if profile != "benchmark":
+    if profile == "dma_benchmark":
+        allocation = (dma_size+194) & ~63
+        wanted = {"aster_dma_cpu_memcpy": (2, 0, 65536), "aster_dma_copy": (2, 0, 65536),
+                  "aster_dma_submit": (2, 0, 65536), "aster_dma_poll": (2, 0, 65536),
+                  "aster_dma_bench_source": (1, 0x10001000, 0x10001000+allocation),
+                  "aster_dma_bench_destination": (1, 0x10005080, 0x10005080+allocation),
+                  "aster_dma_bench_results": (1, 0x10008000, 0x1000b000)}
+        sizes = {"aster_dma_bench_source": allocation, "aster_dma_bench_destination": allocation,
+                 "aster_dma_bench_results": dma_jobs*2*108*4}
+    elif profile == "dma_runtime":
+        wanted = {"main": (2, 0, 65536), "aster_secondary_main": (2, 0, 65536),
+                  "aster_dma_copy": (2, 0, 65536), "aster_dma_submit": (2, 0, 65536),
+                  "aster_dma_poll": (2, 0, 65536), "aster_dma_abort_and_wait": (2, 0, 65536),
+                  "source": (1, 0x10000000, 0x10008000), "destination": (1, 0x10000000, 0x10008000),
+                  "dma_results": (1, 0x10008000, 0x1000b000)}
+        sizes = {"source": 1152, "destination": 1152, "dma_results": 512}
+    elif profile != "benchmark":
         wanted = {"main": (2, 0, 65536), "aster_secondary_main": (2, 0, 65536)}
         sizes = ({"probe_results": 32, "directed_word": 4, "counter": 4, "cas_counter": 4,
                   "lrsc_counter": 4, "protected_counter": 4, "protected_sum": 4, "lock_word": 4,
