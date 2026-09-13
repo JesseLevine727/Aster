@@ -63,7 +63,8 @@ RTL_FABRIC := rtl/interconnect/aster_arbiter2.sv rtl/soc/aster_shared_fabric.sv
 RTL_MULTICORE := $(RTL_FABRIC) rtl/core/aster_hart.sv rtl/soc/aster_multicore.sv
 RTL_COHERENT := $(RTL_CORE) $(RTL_CACHE) $(RTL_MEMORY) rtl/core/aster_pcpi_atomic.sv \
 	rtl/core/aster_atomic_hart.sv rtl/cache/aster_coherent_cache.sv rtl/interconnect/aster_atomic_fabric.sv \
-	rtl/soc/aster_warm_stop.sv rtl/peripherals/aster_uart.sv rtl/peripherals/aster_coherent_perf.sv rtl/soc/aster_coherent_soc.sv
+	rtl/soc/aster_warm_stop.sv rtl/peripherals/aster_uart.sv rtl/peripherals/aster_coherent_perf.sv \
+	rtl/dma/aster_dma_engine.sv rtl/interconnect/aster_dma_arbiter.sv rtl/peripherals/aster_dma_perf.sv rtl/soc/aster_coherent_soc.sv
 RTL_FPGA := rtl/peripherals/aster_uart_tx.sv rtl/soc/aster_pynq_z1.sv
 
 HELLO_DIR := $(BUILD_DIR)/software
@@ -98,8 +99,13 @@ COHERENT_PERF_SIM := $(BUILD_DIR)/aster_coherent_perf_sim
 DMA_ENGINE_SIM := $(BUILD_DIR)/aster_dma_engine_sim
 DMA_ARBITER_SIM := $(BUILD_DIR)/aster_dma_arbiter_sim
 DMA_PERF_SIM := $(BUILD_DIR)/aster_dma_perf_sim
+DMA_ATOMIC_FABRIC_SIM := $(BUILD_DIR)/aster_dma_atomic_fabric_sim
 DMA_CACHE_DIR := $(BUILD_DIR)/dma_cache_l1$(ENABLE_L1)_w$(L1_LINE_WORDS)_n$(L1_LINE_COUNT)
 DMA_CACHE_SIM := $(DMA_CACHE_DIR)/aster_dma_cache_sim
+DMA_SOC_DIR := $(BUILD_DIR)/dma_soc_h$(HART_COUNT)_$(CONFIG_TAG)
+DMA_SOC_SIM := $(DMA_SOC_DIR)/aster_dma_soc_sim
+DMA_RUNTIME_ELF := $(HELLO_DIR)/dma_runtime.elf
+DMA_RUNTIME_HEX := $(HELLO_DIR)/dma_runtime.hex
 ATOMIC_CACHE ?= 0
 ATOMIC_RUNTIME_DIR := $(BUILD_DIR)/atomic_h$(HART_COUNT)_c$(ATOMIC_CACHE)_w$(L1_LINE_WORDS)_n$(L1_LINE_COUNT)
 ATOMIC_RUNTIME_SIM := $(ATOMIC_RUNTIME_DIR)/aster_atomic_probe_sim
@@ -197,6 +203,7 @@ help:
 	@echo "  make dma-arbiter         Test whole-CPU/AMO locking and fair DMA arbitration"
 	@echo "  make dma-cache-matrix    Test coherent DMA snoops/dirty writes across cache geometries"
 	@echo "  make dma-counters       Test the separate AsterBench v5 DMA common-window bank"
+	@echo "  make dma-runtime        Run compiled RV32IMA DMA/driver/LRSC/pause/stop and full-RAM checks"
 	@echo "  make linux-coherent-matrix  Test Phase 6 AXI/serial/RAM/stop protocol"
 	@echo "  make fpga-linux-coherent   Build the dual-core RV32IMA coherent PYNQ overlay"
 	@echo "  make coherent-bench       AsterBench v4 atomic/coherent C workload with exact per-hart counters"
@@ -599,6 +606,16 @@ $(ATOMIC_FABRIC_SIM): rtl/interconnect/aster_atomic_fabric.sv verification/unit/
 atomic-fabric: $(ATOMIC_FABRIC_SIM)
 	@set -e; for seed in 1 0xa57e6 0xc0ffee; do $(ATOMIC_FABRIC_SIM) $$seed; done
 
+.PHONY: dma-atomic-fabric
+$(DMA_ATOMIC_FABRIC_SIM): rtl/interconnect/aster_atomic_fabric.sv verification/unit/tb_aster_atomic_fabric.cpp Makefile | $(BUILD_DIR)
+	$(VERILATOR) --cc --exe --build --timing --Wall --Wno-UNUSEDSIGNAL \
+		--top-module aster_atomic_fabric "-GENABLE_DMA=1'b1" -CFLAGS '-DASTER_DMA_ENABLE=1' \
+		--Mdir $(BUILD_DIR)/obj_dma_atomic_fabric -o $(abspath $@) \
+		$(ROOT)/rtl/interconnect/aster_atomic_fabric.sv $(ROOT)/verification/unit/tb_aster_atomic_fabric.cpp
+
+dma-atomic-fabric: $(DMA_ATOMIC_FABRIC_SIM)
+	@set -e; for seed in 1 0xa57e7 0xc0ffee; do $(DMA_ATOMIC_FABRIC_SIM) $$seed; done
+
 .PHONY: dma-engine
 $(DMA_ENGINE_SIM): rtl/dma/aster_dma_engine.sv verification/unit/tb_aster_dma_engine.cpp Makefile | $(BUILD_DIR)
 	$(VERILATOR) --cc --exe --build --timing --Wall --assert --top-module aster_dma_engine \
@@ -738,6 +755,32 @@ coherent-cache: $(COHERENT_CACHE_SIM)
 coherent-cache-matrix:
 	@set -e; for enabled in 0 1; do for words in 1 4 8; do for lines in 1 4 16; do \
 		$(MAKE) --no-print-directory coherent-cache ENABLE_L1=$$enabled L1_LINE_WORDS=$$words L1_LINE_COUNT=$$lines; \
+	done; done; done
+
+.PHONY: dma-runtime dma-runtime-matrix
+$(DMA_RUNTIME_ELF): software/tests/dma_runtime.c software/drivers/aster_dma.c software/drivers/aster_dma.h software/runtime/start_multicore.S software/runtime/aster.h software/boot/link_multicore.ld Makefile | $(HELLO_DIR)
+	$(CC) $(filter-out -march=%,$(HELLO_CFLAGS)) -march=rv32ima -Isoftware/drivers \
+		-T software/boot/link_multicore.ld -Wl,-Map,$(HELLO_DIR)/dma_runtime.map \
+		-o $@ software/runtime/start_multicore.S software/drivers/aster_dma.c $<
+	$(OBJDUMP) -d $@ > $(HELLO_DIR)/dma_runtime.dis
+
+$(DMA_SOC_SIM): $(RTL_COHERENT) verification/soc/tb_aster_dma_soc.cpp Makefile
+	mkdir -p $(DMA_SOC_DIR)
+	$(VERILATOR) --cc --exe --build --timing --Wall $(VERILATOR_VENDOR_LINT_FLAGS) $(VERILATOR_COHERENT_FLAGS) --assert -DASTER_COHERENCE_ASSERT \
+		--top-module aster_coherent_soc -GHART_COUNT=$(HART_COUNT) "-GENABLE_L1=1'b$(ENABLE_L1)" "-GENABLE_DMA=1'b1" \
+		"-GSYNC_MEMORY=1'b$(SYNC_MEMORY)" -GMEMORY_WAIT_CYCLES=$(MEMORY_WAIT_CYCLES) "-GHOST_BOOT=1'b1" \
+		-GLINE_WORDS=$(L1_LINE_WORDS) -GLINE_COUNT=$(L1_LINE_COUNT) \
+		-CFLAGS '-DASTER_HART_COUNT=$(HART_COUNT) -DASTER_L1=$(ENABLE_L1) -DASTER_MEMORY_WAIT=$(MEMORY_WAIT_CYCLES)' \
+		--Mdir $(DMA_SOC_DIR)/obj -o $(abspath $@) \
+		$(addprefix $(ROOT)/,$(RTL_COHERENT)) $(ROOT)/verification/soc/tb_aster_dma_soc.cpp
+
+dma-runtime: $(DMA_SOC_SIM) $(DMA_RUNTIME_HEX)
+	@$(DMA_SOC_SIM) +rom=$(DMA_RUNTIME_HEX) +ram_fill=a5a5a5a5
+
+dma-runtime-matrix:
+	@set -e; for harts in 1 2; do for cache in 0 1; do for timing in '0 0' '0 7' '1 1' '1 7'; do \
+		read -r sync wait_cycles <<< "$$timing"; \
+		$(MAKE) --no-print-directory dma-runtime HART_COUNT=$$harts ENABLE_L1=$$cache SYNC_MEMORY=$$sync MEMORY_WAIT_CYCLES=$$wait_cycles; \
 	done; done; done
 
 .PHONY: coherent-soc coherent-soc-matrix

@@ -1,8 +1,8 @@
 # Phase 7: coherent memory-to-memory DMA
 
-Status: **engine/arbitration, coherent-device cache and DMA-counter units
-verified; SoC integration/lifecycle, real-core, measurement and physical
-acceptance pending**.
+Status: **coherent DMA, driver and one-/two-hart real-core integration verified
+in simulation; AsterBench, expanded adversarial/AXI coverage, full regression
+closeout and physical acceptance pending**.
 Baseline: clean/pushed Phase 6 closeout
 `70a1b55b303786144aaa052b6cd8b9e8a4d75bf1`. Before any Phase 7 edits,
 `audit_phase6.py ... --current` passed all seven baseline acceptance gates.
@@ -35,8 +35,8 @@ in `verification/unit/` and `verification/soc/`, and provenance/audits in
 
 - [x] Audit the Phase 6 baseline and specify this contract before RTL changes.
 - [x] Independent DMA engine/register and fair-arbiter tests.
-- [ ] Coherent device accesses, reservations, permissions and safe lifecycle.
-- [ ] Compiled RISC-V driver/runtime plus directed/seeded integrated matrices.
+- [x] Coherent device accesses, reservations, permissions and safe lifecycle.
+- [x] Compiled RISC-V driver/runtime plus directed/seeded integrated matrices.
 - [ ] Versioned AsterBench CPU/DMA sweep, independent oracles and provenance.
 - [ ] Full applicable Phase 1–7 regression run and clean routed FPGA signoff.
 - [ ] Real PYNQ Linux/PCAP DMA and CPU/DMA sweeps, repeated jobs/warm boots.
@@ -70,6 +70,20 @@ Whole-SoC reservation/lifecycle and actual-core DMA proofs remain separate gates
 covering the largest supported index and line-word widths independently.
 DMA-disabled real-core `atomic-runtime ATOMIC_CACHE=1` and `coherent-soc` pass
 their compiled atomic and RAM-preserving lifecycle checks with the new cache.
+
+The real-core integration milestone adds `make dma-runtime-matrix`: one/two
+harts, cache off/on and asynchronous waits 0/7 or synchronous waits 1/7.
+All **16 configurations** pass **48 complete runtime boots**, each with 320
+directed size/alignment copies, full source/destination/guard checks, driver
+range/overlap/zero/timeout/abort cases, six directed LR/SC interactions and three
+published jobs. Two-hart boots also perform eight selective resets during DMA
+(192 total), retain the primary and deny raw secondary DMA-register writes.
+Five in-flight global-stop triggers per configuration add **80 stop trials**;
+every one checks all 64 KiB of retained RAM against observed CPU stores and
+actual DMA destination acceptance. Raw firmware snapshots match all 42 counters.
+`dma-atomic-fabric` adds all 32 A encodings/alignment faults on the DMA MMIO
+page to the independent serialized-memory oracle. These are simulation results,
+not a Phase 7 FPGA/timing/physical closeout.
 
 ## Architecture and coherent serialization
 
@@ -231,6 +245,10 @@ to clear while simultaneously preventing its remaining requests. Preserve
 primary state, DMA progress and unaffected reservations.
 
 ## Measurement contract: AsterBench v5
+
+The [paired-study design](phase7-bench.md) expands this contract: four jobs with
+balanced method order, two warm boots, full destination/guard serial output,
+same-image CPU/DMA kernels and explicit prepared-cache/placement semantics.
 
 Retain both fourteen-counter CPU banks at their existing addresses. Add the
 separate DMA bank, with START/FREEZE/RESUME driven by the same primary-only

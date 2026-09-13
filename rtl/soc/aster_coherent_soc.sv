@@ -7,6 +7,7 @@ module aster_coherent_soc #(
     parameter bit SYNC_MEMORY = 1'b0,
     parameter int unsigned MEMORY_WAIT_CYCLES = SYNC_MEMORY ? 1 : 0,
     parameter bit ENABLE_L1 = 1'b1,
+    parameter bit ENABLE_DMA = 1'b0,
     parameter bit HOST_BOOT = 1'b0,
     parameter int unsigned CLOCK_HZ = 31_250_000,
     parameter int unsigned LINE_WORDS = 4,
@@ -50,13 +51,32 @@ module aster_coherent_soc #(
     output logic flush_active,
     output logic [1:0] stop_commit,
     output logic [1:0] reservations,
+    output logic [31:0] reservation_addr [0:1],
     output logic backing_valid,
     output logic backing_ready,
     output logic [31:0] backing_addr,
     output logic [3:0] backing_mask,
     output logic atomic_active,
     output logic atomic_read_commit,
-    output logic atomic_write_pending
+    output logic atomic_write_pending,
+    output logic backing_device,
+    output logic backing_owner,
+    output logic [31:0] backing_data,
+    output logic dma_busy,
+    output logic dma_request_pending,
+    output logic dma_request_ready,
+    output logic [31:0] dma_request_addr,
+    output logic [31:0] dma_request_data,
+    output logic [31:0] dma_request_rdata,
+    output logic [3:0] dma_request_mask,
+    output logic [4:0] dma_status,
+    output logic [31:0] dma_bytes_done,
+    output logic [31:0] dma_error_code,
+    output logic [63:0] dma_job_cycles,
+    output logic dma_store_commit,
+    output logic [2:0] dma_events [0:13],
+    output logic [63:0] dma_counters [0:13],
+    output logic dma_counting
 );
     logic secondary_run;
     logic [31:0] to_hart1, to_hart0;
@@ -68,13 +88,21 @@ module aster_coherent_soc #(
     logic [4:0] s_op [0:1];
     logic [1:0] memory_event, icache_access, icache_miss;
     logic f_valid, f_owner, f_instr, f_ready, f_atomic;
+    logic cpu_busy, cpu_admit;
+    logic c_valid, c_device, c_owner, c_instr, c_ready;
+    logic [31:0] c_addr, c_wdata, c_rdata;
+    logic [3:0] c_mask;
+    logic [1:0] reservation_clear;
     logic [31:0] f_addr, f_wdata, f_rdata;
     logic [3:0] f_mask;
     logic atomic_complete, sc_success, sc_failure;
-    logic m_valid, m_owner, m_instr, m_ready;
+    logic m_valid, m_owner, m_instr, m_ready, m_device;
     logic [31:0] m_addr, m_wdata, m_rdata;
     logic [3:0] m_mask;
     logic d_access, d_miss, intervention, invalidation, writeback;
+    logic device_forward, device_writeback;
+    logic [1:0] device_invalidations;
+    logic [31:0] dma_rdata;
     logic [31:0] rom_rdata, ram_rdata, control_rdata, uart_rdata, perf_rdata [0:1];
     logic uart_write_ready, uart_slot_valid;
     wire peripheral_resetn = resetn && !stopped;
@@ -83,6 +111,7 @@ module aster_coherent_soc #(
     wire memory_access = m_valid && (rom_access || ram_access);
     wire uart_access = !m_instr && m_addr[31:12] == 20'h20000;
     wire control_access = !m_instr && m_addr[31:12] == 20'h20002;
+    wire dma_access = ENABLE_DMA && !m_instr && !m_device && m_addr[31:12] == 20'h30000;
     wire uart_request = uart_access && !m_owner && m_addr[11:0] == 0 && m_mask[0];
     wire accepted = resetn && m_valid && m_ready;
     wire control_write = accepted && control_access && |m_mask;
@@ -101,7 +130,10 @@ module aster_coherent_soc #(
     assign backing_ready = m_ready;
     assign backing_addr = m_addr;
     assign backing_mask = m_mask;
-    assign atomic_active = fabric_busy && f_atomic;
+    assign backing_device = m_device;
+    assign backing_owner = m_owner;
+    assign backing_data = m_wdata;
+    assign atomic_active = cpu_busy && f_atomic;
     assign atomic_read_commit = f_valid && f_ready && f_atomic && f_mask == 0;
     assign atomic_write_pending = f_valid && f_atomic && |f_mask;
     initial begin
@@ -149,21 +181,99 @@ module aster_coherent_soc #(
             assign icache_miss[h] = 0;
         end
     end
-    aster_atomic_fabric #(.HART_COUNT(HART_COUNT)) fabric (
-        .clk(clk), .resetn(resetn), .reservation_clear(~hart_run | stop_commit),
-        .s_valid(s_valid & admit), .s_atomic(s_atomic), .s_instr(s_instr),
+    for (genvar h = 0; h < 2; h++) begin : g_reservation_clear
+        assign reservation_clear[h] = !hart_run[h] || stop_commit[h] ||
+            (dma_store_commit && reservation_addr[h][31:2] == m_addr[31:2]);
+    end
+    aster_atomic_fabric #(.HART_COUNT(HART_COUNT), .ENABLE_DMA(ENABLE_DMA)) fabric (
+        .clk(clk), .resetn(resetn), .reservation_clear(reservation_clear),
+        .s_valid(s_valid & admit & {2{cpu_admit}}), .s_atomic(s_atomic), .s_instr(s_instr),
         .s_addr(s_addr), .s_wdata(s_wdata), .s_wstrb(s_wstrb), .s_op(s_op),
         .s_ready(s_ready), .s_rdata(s_rdata), .s_fault(s_fault),
         .m_valid(f_valid), .m_owner(f_owner), .m_instr(f_instr), .m_atomic(f_atomic),
         .m_addr(f_addr), .m_wdata(f_wdata), .m_wstrb(f_mask), .m_ready(f_ready), .m_rdata(f_rdata),
-        .busy(fabric_busy), .reserved(reservations), .reservation_addr(), .store_commit(store_commit),
+        .busy(cpu_busy), .reserved(reservations), .reservation_addr(reservation_addr), .store_commit(store_commit),
         .atomic_complete(atomic_complete), .sc_success(sc_success), .sc_failure(sc_failure)
     );
-    aster_coherent_cache #(.ENABLE_CACHE(ENABLE_L1), .LINE_WORDS(LINE_WORDS), .LINE_COUNT(LINE_COUNT)) cache (
-        .clk(clk), .resetn(resetn), .s_valid(f_valid), .s_owner(f_owner), .s_instr(f_instr),
-        .s_device(1'b0), .m_device(), .device_store_commit(), .device_read_forward(),
-        .device_writeback(), .device_invalidations(),
-        .s_addr(f_addr), .s_wdata(f_wdata), .s_wstrb(f_mask), .s_ready(f_ready), .s_rdata(f_rdata),
+    if (ENABLE_DMA) begin : g_dma
+        logic valid, ready, arb_busy, global_stop_pending;
+        logic [31:0] address, data_out, data_in, engine_rdata, counter_rdata;
+        logic [3:0] mask;
+        logic read_event, write_event, success_event, abort_event, error_event, reject_event;
+        wire global_abort = !host_run || global_stop_pending;
+        wire pause_dma = stop_busy || stopped || !host_run || !hart_run[0];
+        always_ff @(posedge clk) begin
+            if (!resetn || stopped || stop_commit[0]) global_stop_pending <= 0;
+            else if (!host_run) global_stop_pending <= 1;
+        end
+        // A selective flush waits only for an offered request, not the entire
+        // paused job. Global STOP must also drain cooperative abort to idle.
+        assign fabric_busy = cpu_busy || arb_busy || (global_abort && dma_busy);
+        assign dma_request_pending = valid;
+        assign dma_request_ready = ready;
+        assign dma_request_addr = address;
+        assign dma_request_data = data_out;
+        assign dma_request_rdata = data_in;
+        assign dma_request_mask = mask;
+        assign dma_rdata = m_addr[11:8] == 1 ? counter_rdata : engine_rdata;
+        aster_dma_engine engine (
+            .clk(clk), .resetn(peripheral_resetn), .cfg_valid(accepted && dma_access), .cfg_owner(m_owner),
+            .cfg_addr(m_addr[11:0]), .cfg_wdata(m_wdata), .cfg_wstrb(m_mask), .cfg_rdata(engine_rdata),
+            .pause(pause_dma), .abort_request(global_abort),
+            .m_valid(valid), .m_addr(address), .m_wdata(data_out), .m_wstrb(mask), .m_ready(ready), .m_rdata(data_in),
+            .busy(dma_busy), .completion(), .status(dma_status), .bytes_done(dma_bytes_done),
+            .error_code(dma_error_code), .job_cycles(dma_job_cycles), .event_read(read_event), .event_write(write_event),
+            .event_success(success_event), .event_abort(abort_event), .event_error(error_event), .event_reject(reject_event)
+        );
+        aster_dma_arbiter arbiter (
+            .clk(clk), .resetn(resetn), .cpu_request(|(s_valid & admit)), .cpu_admit(cpu_admit),
+            .cpu_busy(cpu_busy), .cpu_valid(f_valid), .cpu_owner(f_owner), .cpu_instr(f_instr),
+            .cpu_addr(f_addr), .cpu_wdata(f_wdata), .cpu_wstrb(f_mask), .cpu_ready(f_ready), .cpu_rdata(f_rdata),
+            .dma_valid(valid), .dma_addr(address), .dma_wdata(data_out), .dma_wstrb(mask), .dma_ready(ready), .dma_rdata(data_in),
+            .m_valid(c_valid), .m_device(c_device), .m_owner(c_owner), .m_instr(c_instr),
+            .m_addr(c_addr), .m_wdata(c_wdata), .m_wstrb(c_mask), .m_ready(c_ready), .m_rdata(c_rdata), .busy(arb_busy)
+        );
+        assign dma_events[0] = {2'b0, dma_busy};
+        assign dma_events[1] = {2'b0, valid && !ready};
+        assign dma_events[2] = {2'b0, read_event};
+        assign dma_events[3] = {2'b0, write_event};
+        assign dma_events[4] = dma_store_commit ?
+            ({2'b0, m_mask[0]} + {2'b0, m_mask[1]} + {2'b0, m_mask[2]} + {2'b0, m_mask[3]}) : 3'd0;
+        assign dma_events[5] = {2'b0, accepted && m_device && m_mask == 0};
+        assign dma_events[6] = {2'b0, accepted && m_device && |m_mask};
+        assign dma_events[7] = {2'b0, device_forward};
+        assign dma_events[8] = {2'b0, device_writeback};
+        assign dma_events[9] = {1'b0, device_invalidations};
+        assign dma_events[10] = {2'b0, success_event};
+        assign dma_events[11] = {2'b0, abort_event};
+        assign dma_events[12] = {2'b0, error_event};
+        assign dma_events[13] = {2'b0, reject_event};
+        aster_dma_perf #(.CLOCK_HZ(CLOCK_HZ), .ENABLE_L1(ENABLE_L1), .SYNC_MEMORY(SYNC_MEMORY),
+            .MEMORY_WAIT_CYCLES(MEMORY_WAIT_CYCLES), .LINE_WORDS(LINE_WORDS), .LINE_COUNT(LINE_COUNT)) perf (
+            .clk(clk), .resetn(peripheral_resetn), .start(perf_start), .freeze(perf_freeze), .resume_counting(perf_resume),
+            .increments(dma_events), .addr(m_addr[11:0]), .rdata(counter_rdata), .running(dma_counting), .counters(dma_counters)
+        );
+    end else begin : g_no_dma
+        assign cpu_admit = 1;
+        assign fabric_busy = cpu_busy;
+        assign c_valid = f_valid; assign c_owner = f_owner; assign c_instr = f_instr;
+        assign c_addr = f_addr; assign c_wdata = f_wdata; assign c_mask = f_mask; assign c_device = 0;
+        assign f_ready = c_ready; assign f_rdata = c_rdata;
+        assign dma_rdata = 0; assign dma_busy = 0; assign dma_request_pending = 0;
+        assign dma_request_ready = 0; assign dma_request_addr = 0; assign dma_request_data = 0;
+        assign dma_request_rdata = 0; assign dma_request_mask = 0;
+        assign dma_status = 0; assign dma_bytes_done = 0; assign dma_error_code = 0; assign dma_job_cycles = 0;
+        assign dma_counting = 0;
+        for (genvar n = 0; n < 14; n++) begin : g_counters
+            assign dma_events[n] = 0; assign dma_counters[n] = 0;
+        end
+    end
+    aster_coherent_cache #(.ENABLE_CACHE(ENABLE_L1), .ENABLE_DMA(ENABLE_DMA),
+        .LINE_WORDS(LINE_WORDS), .LINE_COUNT(LINE_COUNT)) cache (
+        .clk(clk), .resetn(resetn), .s_valid(c_valid), .s_owner(c_owner), .s_instr(c_instr),
+        .s_device(c_device), .m_device(m_device), .device_store_commit(dma_store_commit), .device_read_forward(device_forward),
+        .device_writeback(device_writeback), .device_invalidations(device_invalidations),
+        .s_addr(c_addr), .s_wdata(c_wdata), .s_wstrb(c_mask), .s_ready(c_ready), .s_rdata(c_rdata),
         .flush_valid(flush_active), .flush_mask(flush_mask), .flush_ready(flush_ready), .busy(),
         .m_valid(m_valid), .m_owner(m_owner), .m_instr(m_instr), .m_addr(m_addr),
         .m_wdata(m_wdata), .m_wstrb(m_mask), .m_ready(m_ready), .m_rdata(m_rdata),
@@ -236,7 +346,7 @@ module aster_coherent_soc #(
         assign perf_events[h][4] = icache_miss[h] && hart_run[h];
         assign perf_events[h][5] = d_access && f_owner == 1'(h);
         assign perf_events[h][6] = d_miss && f_owner == 1'(h);
-        assign perf_events[h][7] = accepted && memory_access && m_owner == 1'(h);
+        assign perf_events[h][7] = accepted && memory_access && !m_device && m_owner == 1'(h);
         assign perf_events[h][8] = atomic_complete && f_owner == 1'(h);
         assign perf_events[h][9] = sc_success && f_owner == 1'(h);
         assign perf_events[h][10] = sc_failure && f_owner == 1'(h);
@@ -258,6 +368,7 @@ module aster_coherent_soc #(
         else if (ram_access) m_rdata = ram_rdata;
         else if (uart_access) m_rdata = uart_rdata;
         else if (control_access) m_rdata = control_rdata;
+        else if (dma_access) m_rdata = dma_rdata;
         else if (!m_instr && m_addr[31:8] == 24'h200030) m_rdata = perf_rdata[0];
         else if (!m_instr && m_addr[31:8] == 24'h200031) m_rdata = perf_rdata[1];
     end

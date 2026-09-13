@@ -7,6 +7,10 @@
 #include <stdexcept>
 #include <vector>
 
+#ifndef ASTER_DMA_ENABLE
+#define ASTER_DMA_ENABLE 0
+#endif
+
 static void require(bool ok, const char* why) {
     if (!ok) throw std::runtime_error(why);
 }
@@ -128,7 +132,8 @@ public:
         } else {
             const auto page = r.addr >> 12;
             const bool permitted = permit(h, r.addr) || (r.addr < 0x10000 && !r.mask) ||
-                (!r.instr && (page == 0x20000 && (h == 0 || !r.mask) || page == 0x20002 || page == 0x20003));
+                (!r.instr && (page == 0x20000 && (h == 0 || !r.mask) || page == 0x20002 || page == 0x20003 ||
+                             ASTER_DMA_ENABLE && page == 0x30000));
             if (permitted) {
                 write = r.mask && !r.instr; read = !write;
                 if (read) result = backing_read(r.addr, true);
@@ -257,6 +262,15 @@ int main(int argc, char** argv) {
                 }
             }
             std::array<std::vector<Request>, 2> q;
+            if (ASTER_DMA_ENABLE) for (unsigned h = 0; h < 2; ++h) {
+                for (auto address : {0x30000000u,0x3000000cu,0x30000100u,0x30000ffcu,0x30001000u}) {
+                    for (unsigned op = 0; op < 32; ++op) for (unsigned byte = 0; byte < 4; ++byte)
+                        b.one(h,a(op,address+byte,7)); // every A encoding/order of fault checks on DMA MMIO
+                    b.one(h,{false,false,address,0,0,0});
+                    b.one(h,store(1,address));
+                    b.one(h,{false,true,address,0,0,0}); // instruction fetch must never enter a device page
+                }
+            }
             for (unsigned h = 0; h < 2; ++h) for (unsigned i = 0; i < 3000; ++i) {
                 const auto address = 0x10000000u + (b.rng() % 16) * 4;
                 const unsigned type = b.rng() % 5;
@@ -274,7 +288,7 @@ int main(int argc, char** argv) {
             runs += b.runs; stores += b.stores; success += b.successes; fail += b.failures;
             commands += b.commands; stalls += b.stalled;
         }
-        std::cout << "PASS: RV32A uncached fabric seed=" << seed << ": " << runs << " operations, "
+        std::cout << (ASTER_DMA_ENABLE ? "PASS: RV32A DMA-enabled fabric seed=" : "PASS: RV32A uncached fabric seed=") << seed << ": " << runs << " operations, "
                   << commands << " backing transfers, " << stores << " committed stores, SC="
                   << success << "/" << fail << " success/failure, " << stalls << " stalled cycles\n";
         return 0;

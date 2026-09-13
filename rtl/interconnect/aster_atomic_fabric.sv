@@ -4,7 +4,8 @@
 // below this boundary and must not look like additional architectural stores.
 `timescale 1 ns / 1 ps
 module aster_atomic_fabric #(
-    parameter int unsigned HART_COUNT = 2
+    parameter int unsigned HART_COUNT = 2,
+    parameter bit ENABLE_DMA = 1'b0
 ) (
     input  logic        clk,
     input  logic        resetn,
@@ -66,7 +67,8 @@ module aster_atomic_fabric #(
             (address < 32'h0001_0000 && mask == 0) ||
             (!is_instr && ((address[31:12] == 20'h20000 && (!owner || mask == 0)) ||
                           address[31:12] == 20'h20002 ||
-                          address[31:12] == 20'h20003));
+                          address[31:12] == 20'h20003 ||
+                          (ENABLE_DMA && address[31:12] == 20'h30000)));
         supported_op = 1;
         modified = operand;
         case (operation)

@@ -285,10 +285,11 @@ the 2/4096-word boundaries, with the measured ring at the same RAM base.
 See [AsterBench](../software/benchmarks/README.md) for measurement windows,
 warm-up, independent correctness checks, seeds and experiment commands.
 
-## Phase 6 development gates
+## Phase 6 verification gates
 
 The [Phase 6 contract](phase6.md) distinguishes simulation checkpoints from
-the remaining lifecycle, measurement and physical closeout. Current commands:
+the completed [physical/evidence closeout](results/phase6/closeout-215b2d0/README.md).
+Current commands:
 
 ```sh
 make pcpi-probe              # Real pinned-core boundary + exhaustive decode
@@ -317,7 +318,8 @@ timing. A quiescent probe flush is not yet a general host-controlled warm-stop
 implementation. The newer `coherent-soc` tests exercise the actual warm-stop
 controller, full 64 KiB RAM retention and repeated selective resets across
 16 hart/cache/async/sync timing configurations. AXI loader/board integration
-and physical acceptance are still separate, unfinished gates.
+and physical acceptance remain separately audited gates; their completed
+evidence is retained in the Phase 6 closeout, not inferred from these unit tests.
 
 The coherent Linux bridge test uses real serial TX/RX and complete host RAM
 snapshots in one/two-core, cache-off/on configurations. It exercises split
@@ -325,3 +327,34 @@ AW/W channels, held B/R responses, RAM-read/RUN races, early restart/boot
 rejection, atomic fault diagnostics and a saturated UART producer. Host tests
 separately mutate HWH configuration and mock the AXI transport to verify that
 wrong ABI/configuration or incomplete flush cannot reach firmware programming.
+
+## Phase 7 DMA checkpoints
+
+[Phase 7](phase7.md) now has verified simulation foundations:
+
+```sh
+make dma-engine          # Byte-addressed full-RAM oracle, registers, abort/pause
+make dma-arbiter         # Whole-CPU/AMO lock and completed-group fairness
+make dma-cache-matrix    # 216 device/cache/geometry/seed/latency scenarios
+make dma-cache-boundaries # Largest supported word/index widths, separately
+make dma-counters        # ABI 5 multi-increment/common-window/carry checks
+make dma-atomic-fabric   # Native DMA MMIO routing and all A/fetch denials
+make dma-runtime-matrix  # 16 actual-core hart/cache/memory configurations
+```
+
+The compiled [DMA driver](../software/drivers/README.md) runs on the actual
+PicoRV32 harts. Tests verify full buffers and guards, exact DMA bytes/requests,
+dirty-data visibility, same-value byte-write reservation invalidation,
+unaffected word reservations, primary-only MMIO control, source/destination
+ownership, timeout/abort semantics and selective reset pausing an active copy.
+The runtime matrix includes 48 complete warm boots, 192 selective resets and
+80 in-flight global-stop trials, with every acknowledged CPU/DMA byte checked
+against all 64 KiB of stopped RAM. Firmware snapshots match actual CPU/DMA
+event windows. Initial POR is distinct from these RAM-preserving stops.
+
+Keep DMA-disabled regressions and the immutable Phase 6 audit. Do not use
+`audit_phase6 --current` to certify changed Phase 7 RTL; the historical audit
+remains valid against its own recorded Git revision. The
+[AsterBench v5 experiment](phase7-bench.md), further adversarial/AXI coverage,
+clean routed FPGA gates, actual PYNQ copies and Phase 7 closeout are still
+separate pending acceptance work.

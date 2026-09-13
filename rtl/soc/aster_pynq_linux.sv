@@ -287,9 +287,13 @@ module aster_pynq_linux #(
             .perf_events(coherent_perf_events),
             .store_commit(coherent_store_commit), .store_owner(coherent_store_owner),
             .store_addr(coherent_store_addr), .store_data(coherent_store_data), .store_mask(coherent_store_mask),
-            .fabric_busy(), .stop_commit(), .reservations(),
+            .fabric_busy(), .stop_commit(), .reservations(), .reservation_addr(),
             .backing_valid(), .backing_ready(), .backing_addr(), .backing_mask(),
             .atomic_active(), .atomic_read_commit(), .atomic_write_pending(),
+            .backing_device(), .backing_owner(), .backing_data(), .dma_busy(), .dma_request_pending(),
+            .dma_request_ready(), .dma_request_addr(), .dma_request_data(), .dma_request_rdata(), .dma_request_mask(),
+            .dma_status(), .dma_bytes_done(), .dma_error_code(), .dma_job_cycles(), .dma_store_commit(),
+            .dma_events(), .dma_counters(), .dma_counting(),
             .boot_we(boot_we), .boot_addr(awaddr[15:0]), .boot_wdata(wdata), .boot_wstrb(wstrb),
             .host_ram_addr(host_ram_addr), .host_ram_rdata(host_ram_rdata)
         );

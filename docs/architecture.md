@@ -1,15 +1,19 @@
 # Aster architecture specification
 
-Status: Phases 1–5 verified, including physical PYNQ-Z1 execution, 2026-09-12
+Status: Phases 1–6 physically verified; Phase 7 DMA in progress, 2026-09-13.
 
 Phase 5 is implemented and physically verified in the `aster_multicore` top. Its
 [dual-hart contract](phase5.md) specifies the new memory ownership, runtime,
 arbitration, lifecycle and measurement ABI. The Phase 1–4 map described below
 continues to apply to `aster_minimal`; both tops reuse `aster_hart`, an owned
 core/private-cache integration boundary. That dual-hart implementation remains
-noncoherent. The separate [Phase 6 contract](phase6.md) tracks the new RV32IMA
-front end, coherent-cache development and still-pending lifecycle/measurement/
-physical acceptance; it does not silently change either established map or ABI.
+noncoherent. The separate [Phase 6 contract](phase6.md) and
+[audited closeout](results/phase6/closeout-215b2d0/README.md) establish the full
+RV32IMA front end, coherent cache, safe lifecycle and physical AsterBench v4
+baseline; they do not silently change either legacy map or ABI.
+[Phase 7](phase7.md) adds optional coherent shared-RAM DMA. Engine/cache/counter
+units and the one-/two-hart SoC runtime matrix are verified in simulation;
+AsterBench, full closeout and physical acceptance remain in progress.
 
 This document is the executable contract for the first bring-up slice. It
 separates decisions that are fixed for the minimal system from features that
@@ -51,14 +55,13 @@ reset netlist are checked before deployment. This is internal FPGA serial
 loopback, not an external Pmod electrical test. See the
 [physical evidence](results/phase2/README.md) and [board workflow](../fpga/pynq_z1/README.md).
 
-The planned v1 target remains two RV32IM cores, a shared L2, coherence, DMA,
-custom packed INT8 instructions, an INT8 matrix accelerator, interrupts and
-timers. Phase 3 implements the performance-counter MMIO block and first
-AsterBench workload. Phase 4 now adds the first private I/D L1 pair; L2,
-coherence, DMA and accelerator event sources remain disconnected until their
-roadmap phases.
+The minimal-system baseline below retains RV32IM, the Phase 3 performance
+counter block and Phase 4 private I/D L1 pair. Its DMA/accelerator event sources
+remain disconnected. Phase 6 separately adds two RV32IMA harts and coherent
+private caches. Phase 7 targets DMA; shared L2, custom packed INT8 instructions,
+the INT8 accelerator, interrupts and timers remain future work.
 
-## Current block diagram
+## Minimal-system block diagram (Phases 1–4)
 
 ```text
                   +--------------------+
@@ -166,6 +169,15 @@ reserved 4 KiB stack at the top; the linker rejects data/BSS overlap with it.
 | Performance counters | `0x2000_3000` | `0x2000_4000` | 4 KiB | RW | Cycles, RVFI retirement and traffic counters |
 | DMA | `0x3000_0000` | `0x3000_1000` | 4 KiB | RW | Reserved for Phase 7 |
 | INT8 NPU | `0x4000_0000` | `0x4000_1000` | 4 KiB | RW | Reserved for Phase 9 |
+
+This table describes `aster_minimal`. The Phase 5/6 tops repurpose
+`0x20002000` for hart control and partition RAM into 32 KiB shared plus two
+16 KiB private regions; see their contracts rather than treating that control
+page as an implemented interrupt controller. With Phase 7 `ENABLE_DMA=1`,
+the reserved `0x30000000` page becomes data-only DMA ABI 1 control/status plus
+the separate AsterBench v5 counter bank. DMA payloads are restricted to shared
+`0x10000000–0x10008000`; its own source/destination/length validation cannot be
+bypassed by either hart. DMA-disabled builds retain the reserved page behavior.
 
 ### UART registers
 
