@@ -107,7 +107,8 @@ through the real UART TX/RX and AXI shell. `make fpga-linux-dual` builds the
 two-core version under `build/fpga/pynq_z1/linux-h2/`. The original `fpga-linux`
 still selects `LINUX_HART_COUNT=0` (legacy); 1/2 select the Phase 5 memory map.
 Do not load a legacy binary into the new map. Dual-hart physical validation is
-still pending; a successful simulation/build is not board evidence.
+[retained at source `71e2570`](../../docs/results/phase5/closeout-71e2570/README.md);
+a successful simulation/build alone is not board evidence.
 
 For the new variant, transfer the matched bit/HWH pair and scripts listed
 above, plus `asterbench_parallel.py`, `parallel_results.py`,
@@ -181,6 +182,14 @@ RUN=0, and count idle/setup as well as work; use high/low/high retry reads.
 Use the frozen AsterBench v3 job counters, not lifetime totals, for performance.
 
 ## Validation status
+
+Phase 5's dual-hart overlay at clean `71e2570` also passes all gates and runs
+the runtime plus eight one-/two-worker benchmark variants on PYNQ Linux: 18
+physical warm boots, 48 measured jobs, independently observed harts, complete
+serial validation, and final cluster reset with Linux/SSH still available.
+Resource usage is 11,721 LUTs, 12,611 registers and 32 BRAM tiles; setup/hold
+slack is 3.938/0.037 ns. [Raw reports and audit](../../docs/results/phase5/closeout-71e2570/README.md)
+keep these measurements separate from the older single-core results below.
 
 Both builds pass Vivado implementation and bitstream generation. Shared
 `signoff.tcl` enforces setup/hold slack and DRC errors; reports retain routing,

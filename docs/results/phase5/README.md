@@ -1,8 +1,10 @@
-# Phase 5 development evidence
+# Phase 5 evidence
 
-Phase 5 is **not closed**. This directory retains incremental evidence with its
-actual source revision; it does not substitute for the remaining adversarial
-tests, complete regression audit or physical dual-core PYNQ validation.
+Phase 5 is complete. [The `71e2570` closeout](closeout-71e2570/README.md) retains
+18 real PYNQ warm boots, 48 benchmark jobs, complete legacy/multicore matrices,
+FPGA signoff, raw reference/physical records and the hash-checked audit.
+The initial simulation-only checkpoint below is historical; its source predates
+the data-request fault qualification fix and its cycle counts are not current.
 
 ## Parallel software/RTL checkpoint: `4188064`
 
@@ -50,8 +52,8 @@ python3 scripts/parallel_results.py capture --workers 1 --sync-memory 1 --output
 python3 scripts/parallel_results.py capture --workers 2 --sync-memory 1 --output build/parallel-reproduction/two.json
 ```
 
-Development gates also passed for this implementation: `make check` (29 host
+Development gates also passed for that implementation: `make check` (29 host
 tests plus RTL/system tests), `make parallel-matrix` (24 configurations), and
 `make parallel-workloads` (10 boundary/seed/round configurations). Those broad
 development runs are not claimed as retained clean-revision final closeout
-logs; the final Phase 5 regression evidence still needs to be collected.
+logs; the final evidence is retained separately in `closeout-71e2570/`.

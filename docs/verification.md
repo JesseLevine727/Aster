@@ -7,7 +7,13 @@ unit RTL checks → core instruction tests → SoC bare-metal tests
                  → subsystem randomized tests → AsterBench regressions
 ```
 
-## Phase 5 development tests (not closeout)
+## Phase 5 tests and closeout
+
+[Clean-source raw evidence](results/phase5/closeout-71e2570/README.md) closes
+the complete simulation/FPGA/physical contract. `scripts/audit_phase5.py`
+checks hashes, signoff, regression coverage, complete board/reference streams
+and actual per-hart execution; host mutation tests reject corrupted reports.
+Run recursive matrix targets individually or with separate build roots.
 
 `make multicore-adversarial-matrix` runs real-core fault and in-flight global
 reset tests with caches off/on and async 0/4 or sync 1/4 wait cycles. Each of
@@ -83,8 +89,8 @@ and inactive workers. The host stream checker rejects missing, reordered or
 extra jobs and independently verifies their checksums. Capture mutation tests
 bind serial records and per-hart observations to the actual hashed run log.
 
-Further adversarial core-level trap/reset tests, full regression closeout and
-actual FPGA validation remain tracked in [the Phase 5 contract](phase5.md).
+All acceptance items, including adversarial tests and actual FPGA validation,
+are mapped to evidence in [the Phase 5 contract](phase5.md).
 
 ## Phase 0 tests
 

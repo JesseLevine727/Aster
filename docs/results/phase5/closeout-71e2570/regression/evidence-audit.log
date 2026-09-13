@@ -1,0 +1,28 @@
+PASS: physical runtime, 2 warm boots, real per-hart retirement and complete serial
+PASS: physical default_1, 2 warm boots, real per-hart retirement and complete serial
+PASS: physical default_2, 2 warm boots, real per-hart retirement and complete serial
+PASS: physical odd_1, 2 warm boots, real per-hart retirement and complete serial
+PASS: physical odd_2, 2 warm boots, real per-hart retirement and complete serial
+PASS: physical long_1, 2 warm boots, real per-hart retirement and complete serial
+PASS: physical long_2, 2 warm boots, real per-hart retirement and complete serial
+PASS: physical large_1, 2 warm boots, real per-hart retirement and complete serial
+PASS: physical large_2, 2 warm boots, real per-hart retirement and complete serial
+MEASURED: default boot=0 job_cycles=[123828, 62766] speedup=1.972852
+MEASURED: default boot=1 job_cycles=[123828, 62766] speedup=1.972852
+MEASURED: odd boot=0 job_cycles=[14262, 8721] speedup=1.635363
+MEASURED: odd boot=1 job_cycles=[14262, 8721] speedup=1.635363
+MEASURED: long boot=0 job_cycles=[913749, 454841] speedup=2.008942
+MEASURED: long boot=1 job_cycles=[913749, 454841] speedup=2.008942
+MEASURED: large boot=0 job_cycles=[1998366, 1007113] speedup=1.984252
+MEASURED: large boot=1 job_cycles=[1998366, 1007113] speedup=1.984252
+PASS: retained check
+PASS: retained phase1-matrix
+PASS: retained cache-matrix
+PASS: retained cache-boundaries
+PASS: retained phase4-soc-matrix
+PASS: retained fabric-matrix
+PASS: retained multicore-runtime-matrix
+PASS: retained multicore-adversarial-matrix
+PASS: retained parallel-matrix
+PASS: retained parallel-workloads
+PASS: Phase 5 physical evidence, clean-source references, signoff and regression audit

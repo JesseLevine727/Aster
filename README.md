@@ -40,23 +40,21 @@ analysis of both cache benefits and slowdowns. Phases 1–4 are complete;
 [`docs/phase-closeout.md`](docs/phase-closeout.md) maps the acceptance contract
 to retained evidence.
 
-Phase 5 is in progress, not closed. The [dual-hart contract](docs/phase5.md)
-defines hardware-protected private cached regions, uncached shared RAM,
-round-robin arbitration and polling mailboxes. The new `aster_multicore`
-simulation runs a separate-stack C runtime on two real PicoRV32 instances;
-`make multicore-runtime` checks per-hart retirement, repeated jobs/secondary
-restarts and warm boots. `make parallel` now runs a deterministic split-array
-workload with strict AsterBench v3 records, independent references, observed
-kernel overlap and an exact per-hart RTL counter scoreboard. Full Phase 5
-verification and physical validation remain unfinished. `make linux-dual-sim`
-tests the new host bridge; `make fpga-linux-dual` builds its dual-core overlay.
-The original `fpga`/`fpga-linux` targets preserve the single-core shell.
+Phase 5 is complete: two independent PicoRV32 RV32IM harts execute a protected,
+separate-stack C runtime and a correctly checked parallel workload on the
+PYNQ-Z1 through Linux/PCAP. Private I/D caches, uncached shared RAM, round-robin
+arbitration, hart lifecycle and polling mailboxes follow the
+[dual-hart contract and acceptance audit](docs/phase5.md). Strict AsterBench v3
+records use common measurement windows, per-hart counters and full provenance.
 
-[Clean-revision parallel captures](docs/results/phase5/README.md) show 1.974×
-speedup for the initial 64-word workload in cached synchronous-memory
-**simulation**, including dispatch/copy/completion overhead. This is not yet a
-physical FPGA performance result. These initial captures predate the data-
-request fault qualification fix; they are historical, not current timing claims.
+[Retained physical evidence](docs/results/phase5/closeout-71e2570/README.md)
+contains 18 warm boots, 48 benchmark jobs, clean FPGA signoff and complete
+legacy/multicore regression matrices. The default 64-word workload measures
+**1.973× physical speedup**, including dispatch/copy/completion overhead;
+small-job overhead and cache-dependent scaling remain visible. Older captures
+retain their original source/timing meaning. `make linux-dual-sim` tests the
+new bridge; `make fpga-linux-dual` builds its overlay. Original `fpga` and
+`fpga-linux` targets preserve the single-core map. Phase 6 coherence has not begun.
 
 Start here:
 

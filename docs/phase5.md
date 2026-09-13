@@ -1,9 +1,10 @@
 # Phase 5: dual-hart implementation contract
 
-Status: implementation in progress, starting from `754db0c`. This is a design
-contract and acceptance checklist, **not a completion claim**. The README exit
-is two independently executing cores and a correct parallel workload. Phase 6
-coherence, L2, atomics, DMA and accelerators are explicitly excluded.
+Status: complete. Starting from `754db0c`, clean implementation `71e2570`
+satisfies the README exit: two independently executing cores and a correct
+parallel workload, including actual PYNQ Linux/PCAP execution. The contract
+below is followed by a requirement-by-requirement evidence audit. Phase 6
+coherence, L2, atomics, DMA and accelerators remain explicitly excluded.
 
 ## Integration and compatibility
 
@@ -158,7 +159,7 @@ version/hash/flags, firmware hash, RTL configuration and full workload identity.
 
 ## Acceptance tracking
 
-### Foundation development checkpoint
+### Historical foundation development checkpoint
 
 Implemented: reusable core/cache front end; round-robin arbiter; protected
 shared fabric/control; one/two-hart simulation top; separate-stack C runtime;
@@ -182,9 +183,9 @@ dual-hart legs, independent retirement from both cores. The arbiter's three
 seeded runs completed 32,111 transfers and aborted 272 stalled transfers under
 reset. These development results are not a clean-revision physical closeout;
 the final Phase 5 evidence must be captured with provenance at a stable source
-revision. See [verification scope](verification.md#phase-5-development-tests-not-closeout).
+revision. See [verification scope](verification.md#phase-5-tests-and-closeout).
 
-### Parallel workload development checkpoint
+### Historical parallel workload development checkpoint
 
 `software/benchmarks/parallel_mix.c` implements the measured parallel slice;
 it is distinct from the startup/producer-consumer test. Jobs use an arm/ready
@@ -210,32 +211,35 @@ synchronous-memory simulation. Three-job totals are 121,515 and 61,569 cycles
 overlapping kernel retirement on the two active harts. These are simulation
 results, not measured FPGA performance or a general 2× speedup promise.
 
-The full-phase boxes stay open until the final requirement audit. Evidence
-paths and source revisions will be recorded as work lands; old Phase 1–4
-evidence keeps its original meaning.
+### Completed requirement audit
 
-- [ ] Shared front end preserves the legacy single-core regressions.
-- [ ] Arbiter directed/seeded scoreboard: fairness, stability, ownership,
-  exactly-once stores/MMIO, lane masks, identical requests, reset in flight.
-- [ ] Dual-hart decoder/control tests: IDs, ownership, permissions, byte lanes,
-  lifecycle, mailboxes, traps, held slaves and denied operations.
-- [ ] Runtime isolation, poisoned RAM, initialized odd bytes/BSS, private
-  stacks, repeated jobs and warm boots, secondary stop/restart.
-- [ ] Real parallel firmware, independently checked per-hart contributions,
-  measured one-/two-core comparison and per-hart retirement observations.
-- [ ] Strict v3 parsers, rejection/mutation tests and provenance capture.
-- [ ] Single/dual × caches off/on × async/sync/extra-latency test matrix.
-- [ ] Full Phase 1–4 regression suite, including cache/reference matrices.
-- [ ] Linux host bridge simulation with dual-core boot, UART backpressure and
-  reset; preserve legacy one-core tests.
-- [ ] Stable-source Vivado build; generated reset-netlist/HWH gates; clean
-  routing/timing/DRC; retained utilization/signoff reports.
-- [ ] Physical dual-core execution through SSH/PYNQ Linux/PCAP with real serial
-  capture, repeated boots/jobs, complete reference comparisons and provenance.
-- [ ] README, architecture/runtime/toolchain/verification/deployment docs,
-  raw results and requirement audit; completed Phase 5 commit pushed; clean
-  worktree and origin/main synchronized.
+All paths below refer to the [retained `71e2570` evidence](results/phase5/closeout-71e2570/README.md)
+unless a source/test path is explicit. Its manifest binds raw records/logs and
+signoff reports; `python3 scripts/audit_phase5.py docs/results/phase5/closeout-71e2570`
+independently checks them. Earlier Phase 1–4 and `4188064` timing evidence keeps
+its original meaning. The qualification fix changes valid data-access timing
+and is included in every current reference, regression and physical run.
 
-Do not close Phase 5 on simulation or an untested bitstream. Preserve unrelated
-board projects; no JTAG programming or ARM halt/reset without new recovery
-authorization. Use a dedicated Phase 5 deployment directory.
+| Requirement | Implementation and verified evidence |
+| --- | --- |
+| Preserve proven core, wrapper and legacy configuration | Vendor unchanged; shared `aster_hart`; `regression/check.log`, four-way `phase1-matrix.log`, 24-leg `phase4-soc-matrix.log` |
+| Safe private caching / uncached sharing, no aliases | `aster_hart` cache ranges and fabric owner checks; 24 seeded `fabric-matrix.log` runs; peer data/fetch denial and private-boundary tests |
+| IDs, isolated stacks, one-time initialization | MMIO request-owner ID; multicore startup/linker; host overflow/layout tests; `multicore-runtime-matrix.log`: 16 real-core configurations, 32 poisoned-RAM warm boots |
+| Startup, independent traps, repeated jobs and restart | Explicit secondary release/reset, independent trap/status; runtime lifecycle and 192 real-core fault episodes in `multicore-adversarial-matrix.log` |
+| Faults have no invalid data side effects | Wrapper data-request qualification; exact accepted load/store counts at four latencies, unchanged sentinels for misaligned accesses, traps while primary continues retiring |
+| Ordering, inter-core signaling, UART ownership | Fenced uncached publication and two owner-written mailboxes; runtime repeated producer/consumer, parallel ARM/READY/GO/DONE; fabric tests reject peer UART/control writes |
+| Bounded fairness, stable requests, correct response ownership | Three seeded arbiter scoreboards in `check.log`; seeded shared-fabric comparisons, simultaneous/held requests, all masks, identical transfers and exactly-once effects |
+| Reset under traffic | Selected secondary operations complete before reset command; fabric tests plus 432 real-core pending-transfer aborts and 432 accepted-store retention checks across seeds/timing/cache modes |
+| Genuine parallel work and independent result reference | Split-array C kernel; every-word scalar check, independent C++/Python slice/whole oracles, actual per-hart RVFI kernel-PC retirement and overlap in eight `reference_*.json/.log` pairs |
+| Configurations, seeds, sizes and warm boots | `parallel-matrix.log`: 24 topology/cache/latency configurations; `parallel-workloads.log`: ten boundary/seed/round cases; three jobs/two boots each |
+| Honest measurements and reproducible v3 ABI | Common start/freeze, exact 16-value RTL event scoreboard; strict parsers and complete streams; clean source/compiler/flags/firmware/model provenance; same-hardware one-/two-worker board comparison |
+| Preserve Phase 1–4 cache/reference verification | 108 seeded cache runs/36 geometries, Phase 4 SoC matrix, host parser/layout/reference tests; retained historical Phase 2 and 60-configuration Phase 4 audits |
+| Dual Linux bridge + legacy serial regression | `check.log`: old paths plus six dual runtime/parallel boots, partial AXI write reset, actual serial backpressure, protected ROM programming, real lifetime counters |
+| Stable-source FPGA implementation and safety | Clean `71e2570` build; `fpga/` contains generated-reset simulation, HWH dual-map/clock/reset checks, timing/routing/DRC/methodology/resource reports and full build log |
+| Real board acceptance, not simulation-only | `runtime.json` plus eight physical workload reports: 18 warm boots / 48 benchmark jobs, complete TX/RX bytes, both hardware harts observed, independent reference agreement |
+| Preserve board state and unrelated projects | Dedicated deployment directory and PCAP only; `board/before.log`, command/log records and final CONTROL/STATUS/HART_STATUS all zero; no Phase 5 JTAG or ARM reset |
+| Documentation, raw evidence and publication | README, this contract/audit, architecture, toolchain, verification and deployment docs; strict physical-evidence auditor and mutation tests; dedicated Phase 5 closeout committed/pushed |
+
+No Phase 6 coherence, shared L2, A extension, DMA or accelerator work was added.
+Future deployment must still preserve unrelated board projects and obtain new
+authorization before any JTAG programming or ARM halt/reset.

@@ -124,6 +124,12 @@ not a prediction of a future multicore/L2 system or achieved FPGA frequency.
 
 ## Phase 5 parallel mix (v3)
 
+[Physical Phase 5 results and provenance](../../docs/results/phase5/closeout-71e2570/README.md)
+compare one/two active workers on the same PYNQ hardware. The default job shows
+1.973× measured speedup including coordination/copy overhead; smaller jobs and
+different private-cache footprints show different scaling. Raw hardware
+timings remain distinct from event-UART simulator references.
+
 `make parallel` uses the new multicore memory map and runtime, not the legacy
 single-core overlay. `PARALLEL_WORDS` is 2..1024 (odd lengths supported),
 `PARALLEL_ROUNDS` 1..64, `PARALLEL_JOBS` 1..16, and `PARALLEL_WORKERS` is 1 or 2

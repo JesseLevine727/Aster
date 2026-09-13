@@ -1,0 +1,5 @@
+Archive ar -rcs Vaster_multicore_probe__ALL.a Vaster_multicore_probe__ALL.o
+[DEBUG-p5-store] cycle=18971 trap=0 native_store=1 native_ready=1 lower_valid=1 lower_ready=1 owner=1 address=10007000 data=0 mask=f
+FAIL: fault firmware output: MULTICORE FAULTS FAIL mode=00000005 reason=00000004
+ traps=6
+make: *** [Makefile:538: multicore-adversarial] Error 1

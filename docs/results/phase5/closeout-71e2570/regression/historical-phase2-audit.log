@@ -1,0 +1,6 @@
+PASS: physical hello, 2 boots, 17 serial bytes
+PASS: physical stress, 2 boots, 1060 serial bytes
+PASS: physical memcpy, 2 boots, 448 serial bytes, cycles=7646, retired=1553
+PASS: physical walk_sequential, 2 boots, 457 serial bytes, cycles=27966, retired=6158
+PASS: physical walk_random, 2 boots, 453 serial bytes, cycles=31710, retired=6158
+PASS: physical Phase 2 evidence, image hashes, reset regression and FPGA signoff

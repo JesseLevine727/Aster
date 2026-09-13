@@ -1,0 +1,62 @@
+{
+  "schema": 2,
+  "board": "Pynq-Z1",
+  "pynq_version": "3.1.1",
+  "kernel": "6.6.10-xilinx-v2024.1-g916a1f7c7222",
+  "source_revision": "71e257073960c5dee6d35af49efbeec9e1364687",
+  "kind": "runtime",
+  "handoff_preflight": {
+    "clock_hz": 31250000,
+    "axi_base": 1073741824,
+    "axi_span": 262144,
+    "external_reset_active_high": false,
+    "auxiliary_reset_active_high": true,
+    "hart_count": 2,
+    "bridge_version": 327681
+  },
+  "host_build_provenance": null,
+  "transport": "PYNQ Linux PCAP/AXI, FPGA UART TX-to-RX serial loopback",
+  "external_pmod_loopback": false,
+  "previous_bitstream": "/home/xilinx/aster_phase2_ebea984/aster_linux.bit",
+  "bitstream_sha256": "0f2698413f3d267fa9b1f8f85a677ccaca01f2211a1356ff6a76c619e646cca1",
+  "hwh_sha256": "67dd4889fdbe7578840b801f2ed89ca961c09962ad2e9d4901e779f772785586",
+  "firmware_sha256": "13bf268ef26cd8547fed3544843f44a28785a9f4c77473746933f59950de753c",
+  "clock_mhz": 31.25,
+  "baud": 115200,
+  "host_pause_seconds": 0.2,
+  "boots": [
+    {
+      "boot": 0,
+      "status": "PASS",
+      "bridge_status": 1,
+      "tx_bytes": 23,
+      "rx_bytes": 23,
+      "uart_output": "MULTICORE RUNTIME PASS\n",
+      "counter_record": null,
+      "elapsed_seconds": 0.22101051599929633,
+      "hart_status": 1,
+      "lifetime_retired": [
+        2301526,
+        1563
+      ]
+    },
+    {
+      "boot": 1,
+      "status": "PASS",
+      "bridge_status": 1,
+      "tx_bytes": 23,
+      "rx_bytes": 23,
+      "uart_output": "MULTICORE RUNTIME PASS\n",
+      "counter_record": null,
+      "elapsed_seconds": 0.22101860899965686,
+      "hart_status": 1,
+      "lifetime_retired": [
+        2301558,
+        1563
+      ]
+    }
+  ],
+  "hart_count": 2,
+  "bridge_version": 327681,
+  "host_reference_sha256": null
+}

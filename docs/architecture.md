@@ -2,7 +2,7 @@
 
 Status: Phases 1–4 verified, including physical PYNQ-Z1 execution, 2026-09-12
 
-Phase 5 is under implementation in a separate `aster_multicore` top. Its
+Phase 5 is implemented and physically verified in the `aster_multicore` top. Its
 [dual-hart contract](phase5.md) specifies the new memory ownership, runtime,
 arbitration, lifecycle and measurement ABI. The Phase 1–4 map described below
 continues to apply to `aster_minimal`; both tops reuse `aster_hart`, an owned

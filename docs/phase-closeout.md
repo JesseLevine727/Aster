@@ -3,7 +3,9 @@
 The README roadmap is the acceptance contract. Completion requires evidence;
 simulation, FPGA implementation and physical execution are recorded separately.
 The earlier Phase 4 completion claim was premature; the retained closeout
-below supersedes it. Phases 1–4 are now verified. Phase 5 is out of scope.
+below supersedes it. Phases 1–4 are verified. Phase 5's later closeout is in
+[its separate contract/audit](phase5.md) and [physical evidence](results/phase5/closeout-71e2570/README.md).
+The historical measurements below retain their original source revisions.
 
 | Phase | State | Evidence / remaining acceptance |
 | --- | --- | --- |

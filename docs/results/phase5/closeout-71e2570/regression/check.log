@@ -1,0 +1,539 @@
+OK   verilator                      /home/elfo/tools/verilator/usr/bin/verilator
+OK   python3                        /usr/bin/python3
+OK   make                           /usr/bin/make
+OK   riscv32-unknown-elf-gcc        /home/elfo/tools/riscv/bin/riscv32-unknown-elf-gcc
+OK   riscv32-unknown-elf-objcopy    /home/elfo/tools/riscv/bin/riscv32-unknown-elf-objcopy
+OK   riscv32-unknown-elf-objdump    /home/elfo/tools/riscv/bin/riscv32-unknown-elf-objdump
+Aster Phase 0 toolchain is available.
+mkdir -p /home/elfo/Documents/Aster/build/phase5-71e2570/legacy-verified
+verilator --cc --exe --build --timing --Wall --Wno-fatal \
+	--top-module aster_smoke \
+	--Mdir /home/elfo/Documents/Aster/build/phase5-71e2570/legacy-verified/obj_smoke \
+	-o /home/elfo/Documents/Aster/build/phase5-71e2570/legacy-verified/aster_smoke_sim \
+	/home/elfo/Documents/Aster/rtl/verification/aster_smoke.sv \
+	/home/elfo/Documents/Aster/verification/unit/tb_aster_smoke.cpp
+make[1]: Entering directory '/home/elfo/Documents/Aster/build/phase5-71e2570/legacy-verified/obj_smoke'
+g++  -I.  -MMD -I/home/elfo/tools/verilator/root/include -I/home/elfo/tools/verilator/root/include/vltstd -DVM_COVERAGE=0 -DVM_SC=0 -DVM_TRACE=0 -DVM_TRACE_FST=0 -DVM_TRACE_VCD=0 -faligned-new -fcf-protection=none -Wno-bool-operation -Wno-overloaded-virtual -Wno-shadow -Wno-sign-compare -Wno-uninitialized -Wno-unused-but-set-parameter -Wno-unused-but-set-variable -Wno-unused-parameter -Wno-unused-variable       -Os -c -o tb_aster_smoke.o /home/elfo/Documents/Aster/verification/unit/tb_aster_smoke.cpp
+g++ -Os  -I.  -MMD -I/home/elfo/tools/verilator/root/include -I/home/elfo/tools/verilator/root/include/vltstd -DVM_COVERAGE=0 -DVM_SC=0 -DVM_TRACE=0 -DVM_TRACE_FST=0 -DVM_TRACE_VCD=0 -faligned-new -fcf-protection=none -Wno-bool-operation -Wno-overloaded-virtual -Wno-shadow -Wno-sign-compare -Wno-uninitialized -Wno-unused-but-set-parameter -Wno-unused-but-set-variable -Wno-unused-parameter -Wno-unused-variable       -c -o verilated.o /home/elfo/tools/verilator/root/include/verilated.cpp
+g++ -Os  -I.  -MMD -I/home/elfo/tools/verilator/root/include -I/home/elfo/tools/verilator/root/include/vltstd -DVM_COVERAGE=0 -DVM_SC=0 -DVM_TRACE=0 -DVM_TRACE_FST=0 -DVM_TRACE_VCD=0 -faligned-new -fcf-protection=none -Wno-bool-operation -Wno-overloaded-virtual -Wno-shadow -Wno-sign-compare -Wno-uninitialized -Wno-unused-but-set-parameter -Wno-unused-but-set-variable -Wno-unused-parameter -Wno-unused-variable       -c -o verilated_threads.o /home/elfo/tools/verilator/root/include/verilated_threads.cpp
+/usr/bin/python3 /home/elfo/tools/verilator/root/bin/verilator_includer -DVL_INCLUDE_OPT=include Vaster_smoke.cpp Vaster_smoke___024root__DepSet_h7c569d73__0.cpp Vaster_smoke___024root__DepSet_h578a97ca__0.cpp Vaster_smoke___024root__Slow.cpp Vaster_smoke___024root__DepSet_h578a97ca__0__Slow.cpp Vaster_smoke__Syms.cpp > Vaster_smoke__ALL.cpp
+g++ -Os  -I.  -MMD -I/home/elfo/tools/verilator/root/include -I/home/elfo/tools/verilator/root/include/vltstd -DVM_COVERAGE=0 -DVM_SC=0 -DVM_TRACE=0 -DVM_TRACE_FST=0 -DVM_TRACE_VCD=0 -faligned-new -fcf-protection=none -Wno-bool-operation -Wno-overloaded-virtual -Wno-shadow -Wno-sign-compare -Wno-uninitialized -Wno-unused-but-set-parameter -Wno-unused-but-set-variable -Wno-unused-parameter -Wno-unused-variable       -c -o Vaster_smoke__ALL.o Vaster_smoke__ALL.cpp
+echo "" > Vaster_smoke__ALL.verilator_deplist.tmp
+Archive ar -rcs Vaster_smoke__ALL.a Vaster_smoke__ALL.o
+g++     tb_aster_smoke.o verilated.o verilated_threads.o Vaster_smoke__ALL.a    -pthread -lpthread -latomic   -o /home/elfo/Documents/Aster/build/phase5-71e2570/legacy-verified/aster_smoke_sim
+rm Vaster_smoke__ALL.verilator_deplist.tmp
+make[1]: Leaving directory '/home/elfo/Documents/Aster/build/phase5-71e2570/legacy-verified/obj_smoke'
+PASS: Aster Verilator smoke test (16 cycles)
+mkdir -p /home/elfo/Documents/Aster/build/phase5-71e2570/legacy-verified/software
+python3 scripts/gen_rv32im_vectors.py /home/elfo/Documents/Aster/build/phase5-71e2570/legacy-verified/software/rv32im_vectors.inc
+Generated 1584 RV32IM vector groups, seed=42366
+riscv32-unknown-elf-gcc -march=rv32im -mabi=ilp32 -nostdlib -ffreestanding -Wa,-I,/home/elfo/Documents/Aster/build/phase5-71e2570/legacy-verified/software -T software/tests/link_directed.ld \
+	-Wl,--gc-sections -Wl,-Map,/home/elfo/Documents/Aster/build/phase5-71e2570/legacy-verified/software/rv32im_directed.map -o /home/elfo/Documents/Aster/build/phase5-71e2570/legacy-verified/software/rv32im_directed.elf software/tests/rv32im_directed.S
+riscv32-unknown-elf-objcopy -O binary /home/elfo/Documents/Aster/build/phase5-71e2570/legacy-verified/software/rv32im_directed.elf /home/elfo/Documents/Aster/build/phase5-71e2570/legacy-verified/software/rv32im_directed.bin
+python3 scripts/elf_to_hex.py --rom-bytes 65536 /home/elfo/Documents/Aster/build/phase5-71e2570/legacy-verified/software/rv32im_directed.elf /home/elfo/Documents/Aster/build/phase5-71e2570/legacy-verified/software/rv32im_directed.hex
+mkdir -p /home/elfo/Documents/Aster/build/phase5-71e2570/legacy-verified/soc_l11_sync0_wait0_w4_n16
+verilator --cc --exe --build --timing --Wall --Wno-fatal \
+	-DRISCV_FORMAL --Wno-DECLFILENAME --Wno-GENUNNAMED --Wno-UNUSEDSIGNAL --Wno-BLKSEQ --top-module aster_minimal \
+	"-GENABLE_L1=1'b1" "-GSYNC_MEMORY=1'b0" \
+	-GMEMORY_WAIT_CYCLES=0 -GL1_LINE_WORDS=4 -GL1_LINE_COUNT=16 \
+	--Mdir /home/elfo/Documents/Aster/build/phase5-71e2570/legacy-verified/soc_l11_sync0_wait0_w4_n16/obj -o /home/elfo/Documents/Aster/build/phase5-71e2570/legacy-verified/soc_l11_sync0_wait0_w4_n16/aster_soc_sim \
+	/home/elfo/Documents/Aster/rtl/core/aster_picorv32.sv /home/elfo/Documents/Aster/vendor/picorv32/picorv32.v /home/elfo/Documents/Aster/rtl/cache/aster_l1_cache.sv /home/elfo/Documents/Aster/rtl/memory/aster_rom.sv /home/elfo/Documents/Aster/rtl/memory/aster_ram.sv /home/elfo/Documents/Aster/rtl/peripherals/aster_uart.sv /home/elfo/Documents/Aster/rtl/peripherals/aster_perf_counters.sv /home/elfo/Documents/Aster/rtl/core/aster_hart.sv /home/elfo/Documents/Aster/rtl/soc/aster_minimal.sv \
+	/home/elfo/Documents/Aster/verification/soc/tb_aster_soc.cpp
+make[1]: Entering directory '/home/elfo/Documents/Aster/build/phase5-71e2570/legacy-verified/soc_l11_sync0_wait0_w4_n16/obj'
+g++  -I.  -MMD -I/home/elfo/tools/verilator/root/include -I/home/elfo/tools/verilator/root/include/vltstd -DVM_COVERAGE=0 -DVM_SC=0 -DVM_TRACE=0 -DVM_TRACE_FST=0 -DVM_TRACE_VCD=0 -faligned-new -fcf-protection=none -Wno-bool-operation -Wno-overloaded-virtual -Wno-shadow -Wno-sign-compare -Wno-uninitialized -Wno-unused-but-set-parameter -Wno-unused-but-set-variable -Wno-unused-parameter -Wno-unused-variable       -Os -c -o tb_aster_soc.o /home/elfo/Documents/Aster/verification/soc/tb_aster_soc.cpp
+g++ -Os  -I.  -MMD -I/home/elfo/tools/verilator/root/include -I/home/elfo/tools/verilator/root/include/vltstd -DVM_COVERAGE=0 -DVM_SC=0 -DVM_TRACE=0 -DVM_TRACE_FST=0 -DVM_TRACE_VCD=0 -faligned-new -fcf-protection=none -Wno-bool-operation -Wno-overloaded-virtual -Wno-shadow -Wno-sign-compare -Wno-uninitialized -Wno-unused-but-set-parameter -Wno-unused-but-set-variable -Wno-unused-parameter -Wno-unused-variable       -c -o verilated.o /home/elfo/tools/verilator/root/include/verilated.cpp
+g++ -Os  -I.  -MMD -I/home/elfo/tools/verilator/root/include -I/home/elfo/tools/verilator/root/include/vltstd -DVM_COVERAGE=0 -DVM_SC=0 -DVM_TRACE=0 -DVM_TRACE_FST=0 -DVM_TRACE_VCD=0 -faligned-new -fcf-protection=none -Wno-bool-operation -Wno-overloaded-virtual -Wno-shadow -Wno-sign-compare -Wno-uninitialized -Wno-unused-but-set-parameter -Wno-unused-but-set-variable -Wno-unused-parameter -Wno-unused-variable       -c -o verilated_threads.o /home/elfo/tools/verilator/root/include/verilated_threads.cpp
+/usr/bin/python3 /home/elfo/tools/verilator/root/bin/verilator_includer -DVL_INCLUDE_OPT=include Vaster_minimal.cpp Vaster_minimal___024root__DepSet_h32747b0f__0.cpp Vaster_minimal___024root__DepSet_h1d8fc093__0.cpp Vaster_minimal___024root__Slow.cpp Vaster_minimal___024root__DepSet_h32747b0f__0__Slow.cpp Vaster_minimal___024root__DepSet_h1d8fc093__0__Slow.cpp Vaster_minimal__Syms.cpp > Vaster_minimal__ALL.cpp
+g++ -Os  -I.  -MMD -I/home/elfo/tools/verilator/root/include -I/home/elfo/tools/verilator/root/include/vltstd -DVM_COVERAGE=0 -DVM_SC=0 -DVM_TRACE=0 -DVM_TRACE_FST=0 -DVM_TRACE_VCD=0 -faligned-new -fcf-protection=none -Wno-bool-operation -Wno-overloaded-virtual -Wno-shadow -Wno-sign-compare -Wno-uninitialized -Wno-unused-but-set-parameter -Wno-unused-but-set-variable -Wno-unused-parameter -Wno-unused-variable       -c -o Vaster_minimal__ALL.o Vaster_minimal__ALL.cpp
+echo "" > Vaster_minimal__ALL.verilator_deplist.tmp
+Archive ar -rcs Vaster_minimal__ALL.a Vaster_minimal__ALL.o
+g++     tb_aster_soc.o verilated.o verilated_threads.o Vaster_minimal__ALL.a    -pthread -lpthread -latomic   -o /home/elfo/Documents/Aster/build/phase5-71e2570/legacy-verified/soc_l11_sync0_wait0_w4_n16/aster_soc_sim
+rm Vaster_minimal__ALL.verilator_deplist.tmp
+make[1]: Leaving directory '/home/elfo/Documents/Aster/build/phase5-71e2570/legacy-verified/soc_l11_sync0_wait0_w4_n16/obj'
+RV32IM PASS
+PASS: RV32IM PASS (1 boot(s))
+riscv32-unknown-elf-gcc -march=rv32im -mabi=ilp32 -nostdlib -nostartfiles -nodefaultlibs -ffreestanding -Wall -Wextra -Werror -O2 -fno-pic -fno-stack-protector -msmall-data-limit=0 -Isoftware/runtime -T software/boot/link.ld -o /home/elfo/Documents/Aster/build/phase5-71e2570/legacy-verified/software/runtime.elf software/runtime/start.S software/tests/runtime.c
+python3 scripts/elf_to_hex.py --rom-bytes 65536 /home/elfo/Documents/Aster/build/phase5-71e2570/legacy-verified/software/runtime.elf /home/elfo/Documents/Aster/build/phase5-71e2570/legacy-verified/software/runtime.hex
+RUNTIME PASS
+RUNTIME PASS
+PASS: RUNTIME PASS (2 boot(s))
+riscv32-unknown-elf-gcc -march=rv32im -mabi=ilp32 -nostdlib -nostartfiles -nodefaultlibs -ffreestanding -Wall -Wextra -Werror -O2 -fno-pic -fno-stack-protector -msmall-data-limit=0 -Isoftware/runtime -T software/boot/link.ld -o /home/elfo/Documents/Aster/build/phase5-71e2570/legacy-verified/software/memory_map.elf software/runtime/start.S software/tests/memory_map.c
+python3 scripts/elf_to_hex.py --rom-bytes 65536 /home/elfo/Documents/Aster/build/phase5-71e2570/legacy-verified/software/memory_map.elf /home/elfo/Documents/Aster/build/phase5-71e2570/legacy-verified/software/memory_map.hex
+MEMORY MAP PASS
+PASS: MEMORY MAP PASS (1 boot(s))
+riscv32-unknown-elf-gcc -march=rv32im -mabi=ilp32 -nostdlib -ffreestanding -DTRAP_CASE=0 -T software/tests/link_directed.ld -o /home/elfo/Documents/Aster/build/phase5-71e2570/legacy-verified/software/trap_0.elf software/tests/traps.S
+python3 scripts/elf_to_hex.py --rom-bytes 65536 /home/elfo/Documents/Aster/build/phase5-71e2570/legacy-verified/software/trap_0.elf /home/elfo/Documents/Aster/build/phase5-71e2570/legacy-verified/software/trap_0.hex
+riscv32-unknown-elf-gcc -march=rv32im -mabi=ilp32 -nostdlib -ffreestanding -DTRAP_CASE=1 -T software/tests/link_directed.ld -o /home/elfo/Documents/Aster/build/phase5-71e2570/legacy-verified/software/trap_1.elf software/tests/traps.S
+python3 scripts/elf_to_hex.py --rom-bytes 65536 /home/elfo/Documents/Aster/build/phase5-71e2570/legacy-verified/software/trap_1.elf /home/elfo/Documents/Aster/build/phase5-71e2570/legacy-verified/software/trap_1.hex
+riscv32-unknown-elf-gcc -march=rv32im -mabi=ilp32 -nostdlib -ffreestanding -DTRAP_CASE=2 -T software/tests/link_directed.ld -o /home/elfo/Documents/Aster/build/phase5-71e2570/legacy-verified/software/trap_2.elf software/tests/traps.S
+python3 scripts/elf_to_hex.py --rom-bytes 65536 /home/elfo/Documents/Aster/build/phase5-71e2570/legacy-verified/software/trap_2.elf /home/elfo/Documents/Aster/build/phase5-71e2570/legacy-verified/software/trap_2.hex
+riscv32-unknown-elf-gcc -march=rv32im -mabi=ilp32 -nostdlib -ffreestanding -DTRAP_CASE=3 -T software/tests/link_directed.ld -o /home/elfo/Documents/Aster/build/phase5-71e2570/legacy-verified/software/trap_3.elf software/tests/traps.S
+python3 scripts/elf_to_hex.py --rom-bytes 65536 /home/elfo/Documents/Aster/build/phase5-71e2570/legacy-verified/software/trap_3.elf /home/elfo/Documents/Aster/build/phase5-71e2570/legacy-verified/software/trap_3.hex
+riscv32-unknown-elf-gcc -march=rv32im -mabi=ilp32 -nostdlib -ffreestanding -DTRAP_CASE=4 -T software/tests/link_directed.ld -o /home/elfo/Documents/Aster/build/phase5-71e2570/legacy-verified/software/trap_4.elf software/tests/traps.S
+python3 scripts/elf_to_hex.py --rom-bytes 65536 /home/elfo/Documents/Aster/build/phase5-71e2570/legacy-verified/software/trap_4.elf /home/elfo/Documents/Aster/build/phase5-71e2570/legacy-verified/software/trap_4.hex
+riscv32-unknown-elf-gcc -march=rv32im -mabi=ilp32 -nostdlib -ffreestanding -DTRAP_CASE=5 -T software/tests/link_directed.ld -o /home/elfo/Documents/Aster/build/phase5-71e2570/legacy-verified/software/trap_5.elf software/tests/traps.S
+python3 scripts/elf_to_hex.py --rom-bytes 65536 /home/elfo/Documents/Aster/build/phase5-71e2570/legacy-verified/software/trap_5.elf /home/elfo/Documents/Aster/build/phase5-71e2570/legacy-verified/software/trap_5.hex
+riscv32-unknown-elf-gcc -march=rv32im -mabi=ilp32 -nostdlib -ffreestanding -DTRAP_CASE=6 -T software/tests/link_directed.ld -o /home/elfo/Documents/Aster/build/phase5-71e2570/legacy-verified/software/trap_6.elf software/tests/traps.S
+python3 scripts/elf_to_hex.py --rom-bytes 65536 /home/elfo/Documents/Aster/build/phase5-71e2570/legacy-verified/software/trap_6.elf /home/elfo/Documents/Aster/build/phase5-71e2570/legacy-verified/software/trap_6.hex
+riscv32-unknown-elf-gcc -march=rv32im -mabi=ilp32 -nostdlib -ffreestanding -DTRAP_CASE=7 -T software/tests/link_directed.ld -o /home/elfo/Documents/Aster/build/phase5-71e2570/legacy-verified/software/trap_7.elf software/tests/traps.S
+python3 scripts/elf_to_hex.py --rom-bytes 65536 /home/elfo/Documents/Aster/build/phase5-71e2570/legacy-verified/software/trap_7.elf /home/elfo/Documents/Aster/build/phase5-71e2570/legacy-verified/software/trap_7.hex
+riscv32-unknown-elf-gcc -march=rv32im -mabi=ilp32 -nostdlib -ffreestanding -DTRAP_CASE=8 -T software/tests/link_directed.ld -o /home/elfo/Documents/Aster/build/phase5-71e2570/legacy-verified/software/trap_8.elf software/tests/traps.S
+python3 scripts/elf_to_hex.py --rom-bytes 65536 /home/elfo/Documents/Aster/build/phase5-71e2570/legacy-verified/software/trap_8.elf /home/elfo/Documents/Aster/build/phase5-71e2570/legacy-verified/software/trap_8.hex
+riscv32-unknown-elf-gcc -march=rv32im -mabi=ilp32 -nostdlib -ffreestanding -DTRAP_CASE=9 -T software/tests/link_directed.ld -o /home/elfo/Documents/Aster/build/phase5-71e2570/legacy-verified/software/trap_9.elf software/tests/traps.S
+python3 scripts/elf_to_hex.py --rom-bytes 65536 /home/elfo/Documents/Aster/build/phase5-71e2570/legacy-verified/software/trap_9.elf /home/elfo/Documents/Aster/build/phase5-71e2570/legacy-verified/software/trap_9.hex
+riscv32-unknown-elf-gcc -march=rv32im -mabi=ilp32 -nostdlib -ffreestanding -DTRAP_CASE=10 -T software/tests/link_directed.ld -o /home/elfo/Documents/Aster/build/phase5-71e2570/legacy-verified/software/trap_10.elf software/tests/traps.S
+python3 scripts/elf_to_hex.py --rom-bytes 65536 /home/elfo/Documents/Aster/build/phase5-71e2570/legacy-verified/software/trap_10.elf /home/elfo/Documents/Aster/build/phase5-71e2570/legacy-verified/software/trap_10.hex
+riscv32-unknown-elf-gcc -march=rv32im -mabi=ilp32 -nostdlib -ffreestanding -DTRAP_CASE=11 -T software/tests/link_directed.ld -o /home/elfo/Documents/Aster/build/phase5-71e2570/legacy-verified/software/trap_11.elf software/tests/traps.S
+python3 scripts/elf_to_hex.py --rom-bytes 65536 /home/elfo/Documents/Aster/build/phase5-71e2570/legacy-verified/software/trap_11.elf /home/elfo/Documents/Aster/build/phase5-71e2570/legacy-verified/software/trap_11.hex
+Trap case 0
+TRAP ARMED
+TRAP ARMED
+PASS: TRAP ARMED (2 boot(s))
+Trap case 1
+TRAP ARMED
+TRAP ARMED
+PASS: TRAP ARMED (2 boot(s))
+Trap case 2
+TRAP ARMED
+TRAP ARMED
+PASS: TRAP ARMED (2 boot(s))
+Trap case 3
+TRAP ARMED
+TRAP ARMED
+PASS: TRAP ARMED (2 boot(s))
+Trap case 4
+TRAP ARMED
+TRAP ARMED
+PASS: TRAP ARMED (2 boot(s))
+Trap case 5
+TRAP ARMED
+TRAP ARMED
+PASS: TRAP ARMED (2 boot(s))
+Trap case 6
+TRAP ARMED
+TRAP ARMED
+PASS: TRAP ARMED (2 boot(s))
+Trap case 7
+TRAP ARMED
+TRAP ARMED
+PASS: TRAP ARMED (2 boot(s))
+Trap case 8
+TRAP ARMED
+TRAP ARMED
+PASS: TRAP ARMED (2 boot(s))
+Trap case 9
+TRAP ARMED
+TRAP ARMED
+PASS: TRAP ARMED (2 boot(s))
+Trap case 10
+TRAP ARMED
+TRAP ARMED
+PASS: TRAP ARMED (2 boot(s))
+Trap case 11
+TRAP ARMED
+TRAP ARMED
+PASS: TRAP ARMED (2 boot(s))
+test_board_output_validation_uses_strict_parser (test_asterbench.ResultProvenance.test_board_output_validation_uses_strict_parser) ... ok
+test_comparison_contract (test_asterbench.ResultProvenance.test_comparison_contract) ... ok
+test_required_provenance (test_asterbench.ResultProvenance.test_required_provenance) ... ok
+test_serial_and_typed_record_must_agree (test_asterbench.ResultProvenance.test_serial_and_typed_record_must_agree) ... ok
+test_common_corpus (test_asterbench.StrictRecords.test_common_corpus) ... ok
+test_bad_options_and_known_references (test_cache_experiments.CacheExperiments.test_bad_options_and_known_references) ... ok
+test_missing_experiment_rejected (test_cache_experiments.CacheExperiments.test_missing_experiment_rejected) ... ok
+test_pattern_kernels_and_data_addresses_match (test_cache_experiments.CacheExperiments.test_pattern_kernels_and_data_addresses_match) ... ok
+test_plan_covers_all_readme_experiments (test_cache_experiments.CacheExperiments.test_plan_covers_all_readme_experiments) ... ok
+test_study_audit_rejects_corruption (test_cache_experiments.CacheExperiments.test_study_audit_rejects_corruption) ... ok
+test_each_private_region_cannot_overflow_its_stack (test_multicore_layout.MulticoreLayout.test_each_private_region_cannot_overflow_its_stack) ... ok
+test_rom_limit (test_multicore_layout.MulticoreLayout.test_rom_limit) ... ok
+test_shared_initialized_odd_bytes_have_rom_load_image (test_multicore_layout.MulticoreLayout.test_shared_initialized_odd_bytes_have_rom_load_image) ... ok
+test_shared_size_and_no_stack_alias (test_multicore_layout.MulticoreLayout.test_shared_size_and_no_stack_alias) ... ok
+test_stack_alignment_and_minimum (test_multicore_layout.MulticoreLayout.test_stack_alignment_and_minimum) ... ok
+test_comparison_refuses_different_work (test_parallel.ParallelProvenance.test_comparison_refuses_different_work) ... ok
+test_required_fields_and_raw_log_binding (test_parallel.ParallelProvenance.test_required_fields_and_raw_log_binding) ... ok
+test_complete_job_stream_and_independent_oracle (test_parallel.ParallelRecords.test_complete_job_stream_and_independent_oracle) ... ok
+test_python_cpp_malformed_corpus (test_parallel.ParallelRecords.test_python_cpp_malformed_corpus) ... ok
+test_known_corners (test_phase1.ArithmeticReference.test_known_corners) ... ok
+test_seed_reproducibility (test_phase1.ArithmeticReference.test_seed_reproducibility) ... ok
+test_initialized_byte_segment (test_phase1.FirmwareLayout.test_initialized_byte_segment) ... ok
+test_rom_overflow (test_phase1.FirmwareLayout.test_rom_overflow) ... ok
+test_stack_reservation (test_phase1.FirmwareLayout.test_stack_reservation) ... ok
+test_missing_and_duplicate_modules_parameters_ports (test_pynq_handoff.HandoffSafety.test_missing_and_duplicate_modules_parameters_ports) ... ok
+test_multicore_map_must_match_requested_harts (test_pynq_handoff.HandoffSafety.test_multicore_map_must_match_requested_harts) ... ok
+test_mutated_exports_fail_closed (test_pynq_handoff.HandoffSafety.test_mutated_exports_fail_closed) ... ok
+test_original_active_low_auxiliary_tied_zero_is_rejected (test_pynq_handoff.HandoffSafety.test_original_active_low_auxiliary_tied_zero_is_rejected) ... ok
+test_valid_export (test_pynq_handoff.HandoffSafety.test_valid_export) ... ok
+test_captured_reports_and_rejected_mutations (test_pynq_results.PhysicalResults.test_captured_reports_and_rejected_mutations) ... ok
+test_bad_cli_preflight_never_imports_board_api (test_run_pynq.CollectorChecks.test_bad_cli_preflight_never_imports_board_api) ... ok
+test_exact_runtime_and_complete_parallel_streams (test_run_pynq.CollectorChecks.test_exact_runtime_and_complete_parallel_streams) ... ok
+test_lifetime_counter_rollover (test_run_pynq.CollectorChecks.test_lifetime_counter_rollover) ... ok
+
+----------------------------------------------------------------------
+Ran 33 tests in 5.571s
+
+OK
+riscv32-unknown-elf-gcc -march=rv32im -mabi=ilp32 -nostdlib -nostartfiles -nodefaultlibs -ffreestanding -Wall -Wextra -Werror -O2 -fno-pic -fno-stack-protector -msmall-data-limit=0 -Isoftware/runtime -c -o /home/elfo/Documents/Aster/build/phase5-71e2570/legacy-verified/software/start.o software/runtime/start.S
+riscv32-unknown-elf-gcc -march=rv32im -mabi=ilp32 -nostdlib -nostartfiles -nodefaultlibs -ffreestanding -Wall -Wextra -Werror -O2 -fno-pic -fno-stack-protector -msmall-data-limit=0 -Isoftware/runtime -c -o /home/elfo/Documents/Aster/build/phase5-71e2570/legacy-verified/software/hello.o software/boot/hello.c
+riscv32-unknown-elf-gcc -march=rv32im -mabi=ilp32 -nostdlib -nostartfiles -nodefaultlibs -ffreestanding -Wall -Wextra -Werror -O2 -fno-pic -fno-stack-protector -msmall-data-limit=0 -Isoftware/runtime -T software/boot/link.ld -Wl,--gc-sections -Wl,-Map,/home/elfo/Documents/Aster/build/phase5-71e2570/legacy-verified/software/hello.map -o /home/elfo/Documents/Aster/build/phase5-71e2570/legacy-verified/software/hello.elf /home/elfo/Documents/Aster/build/phase5-71e2570/legacy-verified/software/start.o /home/elfo/Documents/Aster/build/phase5-71e2570/legacy-verified/software/hello.o
+python3 scripts/elf_to_hex.py --rom-bytes 65536 /home/elfo/Documents/Aster/build/phase5-71e2570/legacy-verified/software/hello.elf /home/elfo/Documents/Aster/build/phase5-71e2570/legacy-verified/software/hello.hex
+verilator --cc --exe --build --timing --Wall --Wno-fatal \
+	-DRISCV_FORMAL --Wno-DECLFILENAME --Wno-GENUNNAMED --Wno-UNUSEDSIGNAL --Wno-BLKSEQ \
+	--top-module aster_minimal \
+	--Mdir /home/elfo/Documents/Aster/build/phase5-71e2570/legacy-verified/obj_hello \
+	-o /home/elfo/Documents/Aster/build/phase5-71e2570/legacy-verified/aster_hello_sim \
+	-GMEM_INIT_FILE=\"/home/elfo/Documents/Aster/build/phase5-71e2570/legacy-verified/software/hello.hex\" \
+	/home/elfo/Documents/Aster/rtl/core/aster_picorv32.sv /home/elfo/Documents/Aster/vendor/picorv32/picorv32.v /home/elfo/Documents/Aster/rtl/cache/aster_l1_cache.sv \
+	/home/elfo/Documents/Aster/rtl/memory/aster_rom.sv /home/elfo/Documents/Aster/rtl/memory/aster_ram.sv \
+	/home/elfo/Documents/Aster/rtl/peripherals/aster_uart.sv /home/elfo/Documents/Aster/rtl/peripherals/aster_perf_counters.sv /home/elfo/Documents/Aster/rtl/core/aster_hart.sv /home/elfo/Documents/Aster/rtl/soc/aster_minimal.sv \
+	/home/elfo/Documents/Aster/verification/soc/tb_aster_hello.cpp
+make[1]: Entering directory '/home/elfo/Documents/Aster/build/phase5-71e2570/legacy-verified/obj_hello'
+g++  -I.  -MMD -I/home/elfo/tools/verilator/root/include -I/home/elfo/tools/verilator/root/include/vltstd -DVM_COVERAGE=0 -DVM_SC=0 -DVM_TRACE=0 -DVM_TRACE_FST=0 -DVM_TRACE_VCD=0 -faligned-new -fcf-protection=none -Wno-bool-operation -Wno-overloaded-virtual -Wno-shadow -Wno-sign-compare -Wno-uninitialized -Wno-unused-but-set-parameter -Wno-unused-but-set-variable -Wno-unused-parameter -Wno-unused-variable       -Os -c -o tb_aster_hello.o /home/elfo/Documents/Aster/verification/soc/tb_aster_hello.cpp
+g++ -Os  -I.  -MMD -I/home/elfo/tools/verilator/root/include -I/home/elfo/tools/verilator/root/include/vltstd -DVM_COVERAGE=0 -DVM_SC=0 -DVM_TRACE=0 -DVM_TRACE_FST=0 -DVM_TRACE_VCD=0 -faligned-new -fcf-protection=none -Wno-bool-operation -Wno-overloaded-virtual -Wno-shadow -Wno-sign-compare -Wno-uninitialized -Wno-unused-but-set-parameter -Wno-unused-but-set-variable -Wno-unused-parameter -Wno-unused-variable       -c -o verilated.o /home/elfo/tools/verilator/root/include/verilated.cpp
+g++ -Os  -I.  -MMD -I/home/elfo/tools/verilator/root/include -I/home/elfo/tools/verilator/root/include/vltstd -DVM_COVERAGE=0 -DVM_SC=0 -DVM_TRACE=0 -DVM_TRACE_FST=0 -DVM_TRACE_VCD=0 -faligned-new -fcf-protection=none -Wno-bool-operation -Wno-overloaded-virtual -Wno-shadow -Wno-sign-compare -Wno-uninitialized -Wno-unused-but-set-parameter -Wno-unused-but-set-variable -Wno-unused-parameter -Wno-unused-variable       -c -o verilated_threads.o /home/elfo/tools/verilator/root/include/verilated_threads.cpp
+/usr/bin/python3 /home/elfo/tools/verilator/root/bin/verilator_includer -DVL_INCLUDE_OPT=include Vaster_minimal.cpp Vaster_minimal___024root__DepSet_h32747b0f__0.cpp Vaster_minimal___024root__DepSet_h1d8fc093__0.cpp Vaster_minimal___024root__Slow.cpp Vaster_minimal___024root__DepSet_h32747b0f__0__Slow.cpp Vaster_minimal___024root__DepSet_h1d8fc093__0__Slow.cpp Vaster_minimal__Syms.cpp > Vaster_minimal__ALL.cpp
+g++ -Os  -I.  -MMD -I/home/elfo/tools/verilator/root/include -I/home/elfo/tools/verilator/root/include/vltstd -DVM_COVERAGE=0 -DVM_SC=0 -DVM_TRACE=0 -DVM_TRACE_FST=0 -DVM_TRACE_VCD=0 -faligned-new -fcf-protection=none -Wno-bool-operation -Wno-overloaded-virtual -Wno-shadow -Wno-sign-compare -Wno-uninitialized -Wno-unused-but-set-parameter -Wno-unused-but-set-variable -Wno-unused-parameter -Wno-unused-variable       -c -o Vaster_minimal__ALL.o Vaster_minimal__ALL.cpp
+echo "" > Vaster_minimal__ALL.verilator_deplist.tmp
+Archive ar -rcs Vaster_minimal__ALL.a Vaster_minimal__ALL.o
+g++     tb_aster_hello.o verilated.o verilated_threads.o Vaster_minimal__ALL.a    -pthread -lpthread -latomic   -o /home/elfo/Documents/Aster/build/phase5-71e2570/legacy-verified/aster_hello_sim
+rm Vaster_minimal__ALL.verilator_deplist.tmp
+make[1]: Leaving directory '/home/elfo/Documents/Aster/build/phase5-71e2570/legacy-verified/obj_hello'
+Hello from Aster
+PASS: Hello from Aster reached the simulated UART
+mkdir -p /home/elfo/Documents/Aster/build/phase5-71e2570/legacy-verified/software/bench_memcpy_w64_r4_s0x13570000
+riscv32-unknown-elf-gcc -march=rv32im -mabi=ilp32 -nostdlib -nostartfiles -nodefaultlibs -ffreestanding -Wall -Wextra -Werror -O2 -fno-pic -fno-stack-protector -msmall-data-limit=0 -Isoftware/runtime -DBENCHMARK_WORDS=64 -DBENCHMARK_REPETITIONS=4 -DBENCHMARK_SEED=0x13570000 -DBENCH_RANDOM=0 -c -o /home/elfo/Documents/Aster/build/phase5-71e2570/legacy-verified/software/bench_memcpy_w64_r4_s0x13570000/benchmark.o software/benchmarks/memcpy_bench.c
+riscv32-unknown-elf-gcc -march=rv32im -mabi=ilp32 -nostdlib -nostartfiles -nodefaultlibs -ffreestanding -Wall -Wextra -Werror -O2 -fno-pic -fno-stack-protector -msmall-data-limit=0 -Isoftware/runtime -DBENCHMARK_WORDS=64 -DBENCHMARK_REPETITIONS=4 -DBENCHMARK_SEED=0x13570000 -DBENCH_RANDOM=0 -T software/boot/link.ld -Wl,--gc-sections -Wl,-Map,/home/elfo/Documents/Aster/build/phase5-71e2570/legacy-verified/software/bench_memcpy_w64_r4_s0x13570000/benchmark.map -o /home/elfo/Documents/Aster/build/phase5-71e2570/legacy-verified/software/bench_memcpy_w64_r4_s0x13570000/benchmark.elf /home/elfo/Documents/Aster/build/phase5-71e2570/legacy-verified/software/start.o /home/elfo/Documents/Aster/build/phase5-71e2570/legacy-verified/software/bench_memcpy_w64_r4_s0x13570000/benchmark.o
+riscv32-unknown-elf-objcopy -O binary /home/elfo/Documents/Aster/build/phase5-71e2570/legacy-verified/software/bench_memcpy_w64_r4_s0x13570000/benchmark.elf /home/elfo/Documents/Aster/build/phase5-71e2570/legacy-verified/software/bench_memcpy_w64_r4_s0x13570000/benchmark.bin
+python3 scripts/elf_to_hex.py --rom-bytes 65536 /home/elfo/Documents/Aster/build/phase5-71e2570/legacy-verified/software/bench_memcpy_w64_r4_s0x13570000/benchmark.elf /home/elfo/Documents/Aster/build/phase5-71e2570/legacy-verified/software/bench_memcpy_w64_r4_s0x13570000/benchmark.hex
+mkdir -p /home/elfo/Documents/Aster/build/phase5-71e2570/legacy-verified/bench_l11_sync0_wait0_w4_n16
+verilator --cc --exe --build --timing --Wall --Wno-fatal \
+	-DRISCV_FORMAL --Wno-DECLFILENAME --Wno-GENUNNAMED --Wno-UNUSEDSIGNAL --Wno-BLKSEQ \
+	--top-module aster_minimal \
+	"-GENABLE_L1=1'b1" "-GSYNC_MEMORY=1'b0" \
+	-GMEMORY_WAIT_CYCLES=0 -GL1_LINE_WORDS=4 -GL1_LINE_COUNT=16 \
+	--Mdir /home/elfo/Documents/Aster/build/phase5-71e2570/legacy-verified/bench_l11_sync0_wait0_w4_n16/obj \
+	-o /home/elfo/Documents/Aster/build/phase5-71e2570/legacy-verified/bench_l11_sync0_wait0_w4_n16/asterbench_sim \
+	/home/elfo/Documents/Aster/rtl/core/aster_picorv32.sv /home/elfo/Documents/Aster/vendor/picorv32/picorv32.v /home/elfo/Documents/Aster/rtl/cache/aster_l1_cache.sv \
+	/home/elfo/Documents/Aster/rtl/memory/aster_rom.sv /home/elfo/Documents/Aster/rtl/memory/aster_ram.sv \
+	/home/elfo/Documents/Aster/rtl/peripherals/aster_uart.sv /home/elfo/Documents/Aster/rtl/peripherals/aster_perf_counters.sv /home/elfo/Documents/Aster/rtl/core/aster_hart.sv /home/elfo/Documents/Aster/rtl/soc/aster_minimal.sv \
+	/home/elfo/Documents/Aster/verification/soc/tb_asterbench.cpp
+make[1]: Entering directory '/home/elfo/Documents/Aster/build/phase5-71e2570/legacy-verified/bench_l11_sync0_wait0_w4_n16/obj'
+g++  -I.  -MMD -I/home/elfo/tools/verilator/root/include -I/home/elfo/tools/verilator/root/include/vltstd -DVM_COVERAGE=0 -DVM_SC=0 -DVM_TRACE=0 -DVM_TRACE_FST=0 -DVM_TRACE_VCD=0 -faligned-new -fcf-protection=none -Wno-bool-operation -Wno-overloaded-virtual -Wno-shadow -Wno-sign-compare -Wno-uninitialized -Wno-unused-but-set-parameter -Wno-unused-but-set-variable -Wno-unused-parameter -Wno-unused-variable       -Os -c -o tb_asterbench.o /home/elfo/Documents/Aster/verification/soc/tb_asterbench.cpp
+g++ -Os  -I.  -MMD -I/home/elfo/tools/verilator/root/include -I/home/elfo/tools/verilator/root/include/vltstd -DVM_COVERAGE=0 -DVM_SC=0 -DVM_TRACE=0 -DVM_TRACE_FST=0 -DVM_TRACE_VCD=0 -faligned-new -fcf-protection=none -Wno-bool-operation -Wno-overloaded-virtual -Wno-shadow -Wno-sign-compare -Wno-uninitialized -Wno-unused-but-set-parameter -Wno-unused-but-set-variable -Wno-unused-parameter -Wno-unused-variable       -c -o verilated.o /home/elfo/tools/verilator/root/include/verilated.cpp
+g++ -Os  -I.  -MMD -I/home/elfo/tools/verilator/root/include -I/home/elfo/tools/verilator/root/include/vltstd -DVM_COVERAGE=0 -DVM_SC=0 -DVM_TRACE=0 -DVM_TRACE_FST=0 -DVM_TRACE_VCD=0 -faligned-new -fcf-protection=none -Wno-bool-operation -Wno-overloaded-virtual -Wno-shadow -Wno-sign-compare -Wno-uninitialized -Wno-unused-but-set-parameter -Wno-unused-but-set-variable -Wno-unused-parameter -Wno-unused-variable       -c -o verilated_threads.o /home/elfo/tools/verilator/root/include/verilated_threads.cpp
+/usr/bin/python3 /home/elfo/tools/verilator/root/bin/verilator_includer -DVL_INCLUDE_OPT=include Vaster_minimal.cpp Vaster_minimal___024root__DepSet_h32747b0f__0.cpp Vaster_minimal___024root__DepSet_h1d8fc093__0.cpp Vaster_minimal___024root__Slow.cpp Vaster_minimal___024root__DepSet_h32747b0f__0__Slow.cpp Vaster_minimal___024root__DepSet_h1d8fc093__0__Slow.cpp Vaster_minimal__Syms.cpp > Vaster_minimal__ALL.cpp
+g++ -Os  -I.  -MMD -I/home/elfo/tools/verilator/root/include -I/home/elfo/tools/verilator/root/include/vltstd -DVM_COVERAGE=0 -DVM_SC=0 -DVM_TRACE=0 -DVM_TRACE_FST=0 -DVM_TRACE_VCD=0 -faligned-new -fcf-protection=none -Wno-bool-operation -Wno-overloaded-virtual -Wno-shadow -Wno-sign-compare -Wno-uninitialized -Wno-unused-but-set-parameter -Wno-unused-but-set-variable -Wno-unused-parameter -Wno-unused-variable       -c -o Vaster_minimal__ALL.o Vaster_minimal__ALL.cpp
+echo "" > Vaster_minimal__ALL.verilator_deplist.tmp
+Archive ar -rcs Vaster_minimal__ALL.a Vaster_minimal__ALL.o
+g++     tb_asterbench.o verilated.o verilated_threads.o Vaster_minimal__ALL.a    -pthread -lpthread -latomic   -o /home/elfo/Documents/Aster/build/phase5-71e2570/legacy-verified/bench_l11_sync0_wait0_w4_n16/asterbench_sim
+rm Vaster_minimal__ALL.verilator_deplist.tmp
+make[1]: Leaving directory '/home/elfo/Documents/Aster/build/phase5-71e2570/legacy-verified/bench_l11_sync0_wait0_w4_n16/obj'
+ASTERBENCH,version=2,name=memcpy,bytes=256,repetitions=4,seed=0x13570000,status=PASS,checksum=0xc4be3200,clock_hz=31250000,l1=1,sync_memory=0,line_words=4,line_count=16,memory_wait=0,cycles=0x0000000000001e93,retired=0x0000000000000611,memory_transactions=0x0000000000000910,backing_transactions=0x000000000000014c,cache_accesses=0x0000000000000910,cache_misses=0x0000000000000113,dma_bytes=0x0000000000000000,accelerator_cycles=0x0000000000000000
+PASS: strict AsterBench v2 record
+mkdir -p /home/elfo/Documents/Aster/build/phase5-71e2570/legacy-verified/cache_w4_n16
+verilator --cc --exe --build --timing --Wall --Wno-fatal \
+	-DRISCV_FORMAL --Wno-DECLFILENAME --Wno-GENUNNAMED --Wno-UNUSEDSIGNAL --Wno-BLKSEQ --top-module aster_l1_cache \
+	-GLINE_WORDS=4 -GLINE_COUNT=16 \
+	-CFLAGS '-DASTER_LINE_WORDS=4 -DASTER_LINE_COUNT=16' \
+	--Mdir /home/elfo/Documents/Aster/build/phase5-71e2570/legacy-verified/cache_w4_n16/obj -o /home/elfo/Documents/Aster/build/phase5-71e2570/legacy-verified/cache_w4_n16/aster_cache_random_sim \
+	/home/elfo/Documents/Aster/rtl/cache/aster_l1_cache.sv /home/elfo/Documents/Aster/verification/unit/tb_aster_l1_random.cpp
+make[1]: Entering directory '/home/elfo/Documents/Aster/build/phase5-71e2570/legacy-verified/cache_w4_n16/obj'
+g++  -I.  -MMD -I/home/elfo/tools/verilator/root/include -I/home/elfo/tools/verilator/root/include/vltstd -DVM_COVERAGE=0 -DVM_SC=0 -DVM_TRACE=0 -DVM_TRACE_FST=0 -DVM_TRACE_VCD=0 -faligned-new -fcf-protection=none -Wno-bool-operation -Wno-overloaded-virtual -Wno-shadow -Wno-sign-compare -Wno-uninitialized -Wno-unused-but-set-parameter -Wno-unused-but-set-variable -Wno-unused-parameter -Wno-unused-variable     -DASTER_LINE_WORDS=4 -DASTER_LINE_COUNT=16   -Os -c -o tb_aster_l1_random.o /home/elfo/Documents/Aster/verification/unit/tb_aster_l1_random.cpp
+g++ -Os  -I.  -MMD -I/home/elfo/tools/verilator/root/include -I/home/elfo/tools/verilator/root/include/vltstd -DVM_COVERAGE=0 -DVM_SC=0 -DVM_TRACE=0 -DVM_TRACE_FST=0 -DVM_TRACE_VCD=0 -faligned-new -fcf-protection=none -Wno-bool-operation -Wno-overloaded-virtual -Wno-shadow -Wno-sign-compare -Wno-uninitialized -Wno-unused-but-set-parameter -Wno-unused-but-set-variable -Wno-unused-parameter -Wno-unused-variable     -DASTER_LINE_WORDS=4 -DASTER_LINE_COUNT=16   -c -o verilated.o /home/elfo/tools/verilator/root/include/verilated.cpp
+g++ -Os  -I.  -MMD -I/home/elfo/tools/verilator/root/include -I/home/elfo/tools/verilator/root/include/vltstd -DVM_COVERAGE=0 -DVM_SC=0 -DVM_TRACE=0 -DVM_TRACE_FST=0 -DVM_TRACE_VCD=0 -faligned-new -fcf-protection=none -Wno-bool-operation -Wno-overloaded-virtual -Wno-shadow -Wno-sign-compare -Wno-uninitialized -Wno-unused-but-set-parameter -Wno-unused-but-set-variable -Wno-unused-parameter -Wno-unused-variable     -DASTER_LINE_WORDS=4 -DASTER_LINE_COUNT=16   -c -o verilated_threads.o /home/elfo/tools/verilator/root/include/verilated_threads.cpp
+/usr/bin/python3 /home/elfo/tools/verilator/root/bin/verilator_includer -DVL_INCLUDE_OPT=include Vaster_l1_cache.cpp Vaster_l1_cache___024root__DepSet_h78ad57e8__0.cpp Vaster_l1_cache___024root__DepSet_h6c6b1863__0.cpp Vaster_l1_cache___024root__Slow.cpp Vaster_l1_cache___024root__DepSet_h78ad57e8__0__Slow.cpp Vaster_l1_cache___024root__DepSet_h6c6b1863__0__Slow.cpp Vaster_l1_cache__Syms.cpp > Vaster_l1_cache__ALL.cpp
+g++ -Os  -I.  -MMD -I/home/elfo/tools/verilator/root/include -I/home/elfo/tools/verilator/root/include/vltstd -DVM_COVERAGE=0 -DVM_SC=0 -DVM_TRACE=0 -DVM_TRACE_FST=0 -DVM_TRACE_VCD=0 -faligned-new -fcf-protection=none -Wno-bool-operation -Wno-overloaded-virtual -Wno-shadow -Wno-sign-compare -Wno-uninitialized -Wno-unused-but-set-parameter -Wno-unused-but-set-variable -Wno-unused-parameter -Wno-unused-variable     -DASTER_LINE_WORDS=4 -DASTER_LINE_COUNT=16   -c -o Vaster_l1_cache__ALL.o Vaster_l1_cache__ALL.cpp
+echo "" > Vaster_l1_cache__ALL.verilator_deplist.tmp
+Archive ar -rcs Vaster_l1_cache__ALL.a Vaster_l1_cache__ALL.o
+g++     tb_aster_l1_random.o verilated.o verilated_threads.o Vaster_l1_cache__ALL.a    -pthread -lpthread -latomic   -o /home/elfo/Documents/Aster/build/phase5-71e2570/legacy-verified/cache_w4_n16/aster_cache_random_sim
+rm Vaster_l1_cache__ALL.verilator_deplist.tmp
+make[1]: Leaving directory '/home/elfo/Documents/Aster/build/phase5-71e2570/legacy-verified/cache_w4_n16/obj'
+PASS: cache scoreboard words=4 lines=16 seed=1 completed=5092 aborted=5 stalls=35198 reads=8537 writes=1642
+PASS: cache scoreboard words=4 lines=16 seed=42366 completed=5092 aborted=5 stalls=34509 reads=8100 writes=1740
+PASS: cache scoreboard words=4 lines=16 seed=12648430 completed=5092 aborted=5 stalls=35790 reads=8549 writes=1672
+verilator --cc --exe --build --timing --Wall --Wno-fatal \
+	-DRISCV_FORMAL --Wno-DECLFILENAME --Wno-GENUNNAMED --Wno-UNUSEDSIGNAL --Wno-BLKSEQ \
+	--top-module aster_l1_cache \
+	--Mdir /home/elfo/Documents/Aster/build/phase5-71e2570/legacy-verified/obj_cache \
+	-o /home/elfo/Documents/Aster/build/phase5-71e2570/legacy-verified/aster_l1_cache_sim \
+	/home/elfo/Documents/Aster/rtl/cache/aster_l1_cache.sv /home/elfo/Documents/Aster/verification/unit/tb_aster_l1_cache.cpp
+make[1]: Entering directory '/home/elfo/Documents/Aster/build/phase5-71e2570/legacy-verified/obj_cache'
+g++  -I.  -MMD -I/home/elfo/tools/verilator/root/include -I/home/elfo/tools/verilator/root/include/vltstd -DVM_COVERAGE=0 -DVM_SC=0 -DVM_TRACE=0 -DVM_TRACE_FST=0 -DVM_TRACE_VCD=0 -faligned-new -fcf-protection=none -Wno-bool-operation -Wno-overloaded-virtual -Wno-shadow -Wno-sign-compare -Wno-uninitialized -Wno-unused-but-set-parameter -Wno-unused-but-set-variable -Wno-unused-parameter -Wno-unused-variable       -Os -c -o tb_aster_l1_cache.o /home/elfo/Documents/Aster/verification/unit/tb_aster_l1_cache.cpp
+g++ -Os  -I.  -MMD -I/home/elfo/tools/verilator/root/include -I/home/elfo/tools/verilator/root/include/vltstd -DVM_COVERAGE=0 -DVM_SC=0 -DVM_TRACE=0 -DVM_TRACE_FST=0 -DVM_TRACE_VCD=0 -faligned-new -fcf-protection=none -Wno-bool-operation -Wno-overloaded-virtual -Wno-shadow -Wno-sign-compare -Wno-uninitialized -Wno-unused-but-set-parameter -Wno-unused-but-set-variable -Wno-unused-parameter -Wno-unused-variable       -c -o verilated.o /home/elfo/tools/verilator/root/include/verilated.cpp
+g++ -Os  -I.  -MMD -I/home/elfo/tools/verilator/root/include -I/home/elfo/tools/verilator/root/include/vltstd -DVM_COVERAGE=0 -DVM_SC=0 -DVM_TRACE=0 -DVM_TRACE_FST=0 -DVM_TRACE_VCD=0 -faligned-new -fcf-protection=none -Wno-bool-operation -Wno-overloaded-virtual -Wno-shadow -Wno-sign-compare -Wno-uninitialized -Wno-unused-but-set-parameter -Wno-unused-but-set-variable -Wno-unused-parameter -Wno-unused-variable       -c -o verilated_threads.o /home/elfo/tools/verilator/root/include/verilated_threads.cpp
+/usr/bin/python3 /home/elfo/tools/verilator/root/bin/verilator_includer -DVL_INCLUDE_OPT=include Vaster_l1_cache.cpp Vaster_l1_cache___024root__DepSet_h78ad57e8__0.cpp Vaster_l1_cache___024root__DepSet_h6c6b1863__0.cpp Vaster_l1_cache___024root__Slow.cpp Vaster_l1_cache___024root__DepSet_h78ad57e8__0__Slow.cpp Vaster_l1_cache___024root__DepSet_h6c6b1863__0__Slow.cpp Vaster_l1_cache__Syms.cpp > Vaster_l1_cache__ALL.cpp
+g++ -Os  -I.  -MMD -I/home/elfo/tools/verilator/root/include -I/home/elfo/tools/verilator/root/include/vltstd -DVM_COVERAGE=0 -DVM_SC=0 -DVM_TRACE=0 -DVM_TRACE_FST=0 -DVM_TRACE_VCD=0 -faligned-new -fcf-protection=none -Wno-bool-operation -Wno-overloaded-virtual -Wno-shadow -Wno-sign-compare -Wno-uninitialized -Wno-unused-but-set-parameter -Wno-unused-but-set-variable -Wno-unused-parameter -Wno-unused-variable       -c -o Vaster_l1_cache__ALL.o Vaster_l1_cache__ALL.cpp
+echo "" > Vaster_l1_cache__ALL.verilator_deplist.tmp
+Archive ar -rcs Vaster_l1_cache__ALL.a Vaster_l1_cache__ALL.o
+g++     tb_aster_l1_cache.o verilated.o verilated_threads.o Vaster_l1_cache__ALL.a    -pthread -lpthread -latomic   -o /home/elfo/Documents/Aster/build/phase5-71e2570/legacy-verified/aster_l1_cache_sim
+rm Vaster_l1_cache__ALL.verilator_deplist.tmp
+make[1]: Leaving directory '/home/elfo/Documents/Aster/build/phase5-71e2570/legacy-verified/obj_cache'
+PASS: L1 cache refill, hit, byte-write, eviction and bypass tests
+verilator --cc --exe --build --timing --Wall --Wno-fatal \
+	--top-module aster_uart_tx -GCLK_HZ=40 -GBAUD=10 -GFIFO_DEPTH=3 \
+	--Mdir /home/elfo/Documents/Aster/build/phase5-71e2570/legacy-verified/obj_uart_3 -o /home/elfo/Documents/Aster/build/phase5-71e2570/legacy-verified/aster_uart_tx_3_sim \
+	/home/elfo/Documents/Aster/rtl/peripherals/aster_uart_tx.sv /home/elfo/Documents/Aster/verification/unit/tb_aster_uart_tx.cpp
+make[1]: Entering directory '/home/elfo/Documents/Aster/build/phase5-71e2570/legacy-verified/obj_uart_3'
+g++  -I.  -MMD -I/home/elfo/tools/verilator/root/include -I/home/elfo/tools/verilator/root/include/vltstd -DVM_COVERAGE=0 -DVM_SC=0 -DVM_TRACE=0 -DVM_TRACE_FST=0 -DVM_TRACE_VCD=0 -faligned-new -fcf-protection=none -Wno-bool-operation -Wno-overloaded-virtual -Wno-shadow -Wno-sign-compare -Wno-uninitialized -Wno-unused-but-set-parameter -Wno-unused-but-set-variable -Wno-unused-parameter -Wno-unused-variable       -Os -c -o tb_aster_uart_tx.o /home/elfo/Documents/Aster/verification/unit/tb_aster_uart_tx.cpp
+g++ -Os  -I.  -MMD -I/home/elfo/tools/verilator/root/include -I/home/elfo/tools/verilator/root/include/vltstd -DVM_COVERAGE=0 -DVM_SC=0 -DVM_TRACE=0 -DVM_TRACE_FST=0 -DVM_TRACE_VCD=0 -faligned-new -fcf-protection=none -Wno-bool-operation -Wno-overloaded-virtual -Wno-shadow -Wno-sign-compare -Wno-uninitialized -Wno-unused-but-set-parameter -Wno-unused-but-set-variable -Wno-unused-parameter -Wno-unused-variable       -c -o verilated.o /home/elfo/tools/verilator/root/include/verilated.cpp
+g++ -Os  -I.  -MMD -I/home/elfo/tools/verilator/root/include -I/home/elfo/tools/verilator/root/include/vltstd -DVM_COVERAGE=0 -DVM_SC=0 -DVM_TRACE=0 -DVM_TRACE_FST=0 -DVM_TRACE_VCD=0 -faligned-new -fcf-protection=none -Wno-bool-operation -Wno-overloaded-virtual -Wno-shadow -Wno-sign-compare -Wno-uninitialized -Wno-unused-but-set-parameter -Wno-unused-but-set-variable -Wno-unused-parameter -Wno-unused-variable       -c -o verilated_threads.o /home/elfo/tools/verilator/root/include/verilated_threads.cpp
+/usr/bin/python3 /home/elfo/tools/verilator/root/bin/verilator_includer -DVL_INCLUDE_OPT=include Vaster_uart_tx.cpp Vaster_uart_tx___024root__DepSet_h1414e768__0.cpp Vaster_uart_tx___024root__DepSet_h34a59516__0.cpp Vaster_uart_tx___024root__Slow.cpp Vaster_uart_tx___024root__DepSet_h1414e768__0__Slow.cpp Vaster_uart_tx___024root__DepSet_h34a59516__0__Slow.cpp Vaster_uart_tx__Syms.cpp > Vaster_uart_tx__ALL.cpp
+g++ -Os  -I.  -MMD -I/home/elfo/tools/verilator/root/include -I/home/elfo/tools/verilator/root/include/vltstd -DVM_COVERAGE=0 -DVM_SC=0 -DVM_TRACE=0 -DVM_TRACE_FST=0 -DVM_TRACE_VCD=0 -faligned-new -fcf-protection=none -Wno-bool-operation -Wno-overloaded-virtual -Wno-shadow -Wno-sign-compare -Wno-uninitialized -Wno-unused-but-set-parameter -Wno-unused-but-set-variable -Wno-unused-parameter -Wno-unused-variable       -c -o Vaster_uart_tx__ALL.o Vaster_uart_tx__ALL.cpp
+echo "" > Vaster_uart_tx__ALL.verilator_deplist.tmp
+Archive ar -rcs Vaster_uart_tx__ALL.a Vaster_uart_tx__ALL.o
+g++     tb_aster_uart_tx.o verilated.o verilated_threads.o Vaster_uart_tx__ALL.a    -pthread -lpthread -latomic   -o /home/elfo/Documents/Aster/build/phase5-71e2570/legacy-verified/aster_uart_tx_3_sim
+rm Vaster_uart_tx__ALL.verilator_deplist.tmp
+make[1]: Leaving directory '/home/elfo/Documents/Aster/build/phase5-71e2570/legacy-verified/obj_uart_3'
+verilator --cc --exe --build --timing --Wall --Wno-fatal \
+	--top-module aster_uart_rx -GCLK_HZ=400 -GBAUD=10 \
+	--Mdir /home/elfo/Documents/Aster/build/phase5-71e2570/legacy-verified/obj_uart_rx -o /home/elfo/Documents/Aster/build/phase5-71e2570/legacy-verified/aster_uart_rx_sim \
+	/home/elfo/Documents/Aster/rtl/peripherals/aster_uart_rx.sv /home/elfo/Documents/Aster/verification/unit/tb_aster_uart_rx.cpp
+make[1]: Entering directory '/home/elfo/Documents/Aster/build/phase5-71e2570/legacy-verified/obj_uart_rx'
+g++  -I.  -MMD -I/home/elfo/tools/verilator/root/include -I/home/elfo/tools/verilator/root/include/vltstd -DVM_COVERAGE=0 -DVM_SC=0 -DVM_TRACE=0 -DVM_TRACE_FST=0 -DVM_TRACE_VCD=0 -faligned-new -fcf-protection=none -Wno-bool-operation -Wno-overloaded-virtual -Wno-shadow -Wno-sign-compare -Wno-uninitialized -Wno-unused-but-set-parameter -Wno-unused-but-set-variable -Wno-unused-parameter -Wno-unused-variable       -Os -c -o tb_aster_uart_rx.o /home/elfo/Documents/Aster/verification/unit/tb_aster_uart_rx.cpp
+g++ -Os  -I.  -MMD -I/home/elfo/tools/verilator/root/include -I/home/elfo/tools/verilator/root/include/vltstd -DVM_COVERAGE=0 -DVM_SC=0 -DVM_TRACE=0 -DVM_TRACE_FST=0 -DVM_TRACE_VCD=0 -faligned-new -fcf-protection=none -Wno-bool-operation -Wno-overloaded-virtual -Wno-shadow -Wno-sign-compare -Wno-uninitialized -Wno-unused-but-set-parameter -Wno-unused-but-set-variable -Wno-unused-parameter -Wno-unused-variable       -c -o verilated.o /home/elfo/tools/verilator/root/include/verilated.cpp
+g++ -Os  -I.  -MMD -I/home/elfo/tools/verilator/root/include -I/home/elfo/tools/verilator/root/include/vltstd -DVM_COVERAGE=0 -DVM_SC=0 -DVM_TRACE=0 -DVM_TRACE_FST=0 -DVM_TRACE_VCD=0 -faligned-new -fcf-protection=none -Wno-bool-operation -Wno-overloaded-virtual -Wno-shadow -Wno-sign-compare -Wno-uninitialized -Wno-unused-but-set-parameter -Wno-unused-but-set-variable -Wno-unused-parameter -Wno-unused-variable       -c -o verilated_threads.o /home/elfo/tools/verilator/root/include/verilated_threads.cpp
+/usr/bin/python3 /home/elfo/tools/verilator/root/bin/verilator_includer -DVL_INCLUDE_OPT=include Vaster_uart_rx.cpp Vaster_uart_rx___024root__DepSet_h436a5f88__0.cpp Vaster_uart_rx___024root__DepSet_h40c2336c__0.cpp Vaster_uart_rx___024root__Slow.cpp Vaster_uart_rx___024root__DepSet_h40c2336c__0__Slow.cpp Vaster_uart_rx__Syms.cpp > Vaster_uart_rx__ALL.cpp
+g++ -Os  -I.  -MMD -I/home/elfo/tools/verilator/root/include -I/home/elfo/tools/verilator/root/include/vltstd -DVM_COVERAGE=0 -DVM_SC=0 -DVM_TRACE=0 -DVM_TRACE_FST=0 -DVM_TRACE_VCD=0 -faligned-new -fcf-protection=none -Wno-bool-operation -Wno-overloaded-virtual -Wno-shadow -Wno-sign-compare -Wno-uninitialized -Wno-unused-but-set-parameter -Wno-unused-but-set-variable -Wno-unused-parameter -Wno-unused-variable       -c -o Vaster_uart_rx__ALL.o Vaster_uart_rx__ALL.cpp
+echo "" > Vaster_uart_rx__ALL.verilator_deplist.tmp
+Archive ar -rcs Vaster_uart_rx__ALL.a Vaster_uart_rx__ALL.o
+g++     tb_aster_uart_rx.o verilated.o verilated_threads.o Vaster_uart_rx__ALL.a    -pthread -lpthread -latomic   -o /home/elfo/Documents/Aster/build/phase5-71e2570/legacy-verified/aster_uart_rx_sim
+rm Vaster_uart_rx__ALL.verilator_deplist.tmp
+make[1]: Leaving directory '/home/elfo/Documents/Aster/build/phase5-71e2570/legacy-verified/obj_uart_rx'
+PASS: UART FIFO backpressure, wraparound, all byte values and mid-frame reset
+PASS: UART RX false starts, framing errors, reset and all 256 bytes
+verilator --cc --exe --build --timing --Wall --Wno-fatal \
+	-DRISCV_FORMAL --Wno-DECLFILENAME --Wno-GENUNNAMED --Wno-UNUSEDSIGNAL --Wno-BLKSEQ \
+	--top-module aster_pynq_z1 \
+	--Mdir /home/elfo/Documents/Aster/build/phase5-71e2570/legacy-verified/obj_pynq_z1 \
+	-o /home/elfo/Documents/Aster/build/phase5-71e2570/legacy-verified/aster_pynq_z1_sim \
+	-GMEM_INIT_FILE=\"/home/elfo/Documents/Aster/build/phase5-71e2570/legacy-verified/software/hello.hex\" \
+	/home/elfo/Documents/Aster/rtl/core/aster_picorv32.sv /home/elfo/Documents/Aster/vendor/picorv32/picorv32.v /home/elfo/Documents/Aster/rtl/cache/aster_l1_cache.sv \
+	/home/elfo/Documents/Aster/rtl/memory/aster_rom.sv /home/elfo/Documents/Aster/rtl/memory/aster_ram.sv \
+	/home/elfo/Documents/Aster/rtl/peripherals/aster_uart.sv /home/elfo/Documents/Aster/rtl/peripherals/aster_perf_counters.sv /home/elfo/Documents/Aster/rtl/peripherals/aster_uart_tx.sv /home/elfo/Documents/Aster/rtl/soc/aster_pynq_z1.sv \
+	/home/elfo/Documents/Aster/rtl/core/aster_hart.sv /home/elfo/Documents/Aster/rtl/soc/aster_minimal.sv /home/elfo/Documents/Aster/verification/soc/tb_pynq_z1.cpp
+make[1]: Entering directory '/home/elfo/Documents/Aster/build/phase5-71e2570/legacy-verified/obj_pynq_z1'
+g++  -I.  -MMD -I/home/elfo/tools/verilator/root/include -I/home/elfo/tools/verilator/root/include/vltstd -DVM_COVERAGE=0 -DVM_SC=0 -DVM_TRACE=0 -DVM_TRACE_FST=0 -DVM_TRACE_VCD=0 -faligned-new -fcf-protection=none -Wno-bool-operation -Wno-overloaded-virtual -Wno-shadow -Wno-sign-compare -Wno-uninitialized -Wno-unused-but-set-parameter -Wno-unused-but-set-variable -Wno-unused-parameter -Wno-unused-variable       -Os -c -o tb_pynq_z1.o /home/elfo/Documents/Aster/verification/soc/tb_pynq_z1.cpp
+g++ -Os  -I.  -MMD -I/home/elfo/tools/verilator/root/include -I/home/elfo/tools/verilator/root/include/vltstd -DVM_COVERAGE=0 -DVM_SC=0 -DVM_TRACE=0 -DVM_TRACE_FST=0 -DVM_TRACE_VCD=0 -faligned-new -fcf-protection=none -Wno-bool-operation -Wno-overloaded-virtual -Wno-shadow -Wno-sign-compare -Wno-uninitialized -Wno-unused-but-set-parameter -Wno-unused-but-set-variable -Wno-unused-parameter -Wno-unused-variable       -c -o verilated.o /home/elfo/tools/verilator/root/include/verilated.cpp
+g++ -Os  -I.  -MMD -I/home/elfo/tools/verilator/root/include -I/home/elfo/tools/verilator/root/include/vltstd -DVM_COVERAGE=0 -DVM_SC=0 -DVM_TRACE=0 -DVM_TRACE_FST=0 -DVM_TRACE_VCD=0 -faligned-new -fcf-protection=none -Wno-bool-operation -Wno-overloaded-virtual -Wno-shadow -Wno-sign-compare -Wno-uninitialized -Wno-unused-but-set-parameter -Wno-unused-but-set-variable -Wno-unused-parameter -Wno-unused-variable       -c -o verilated_threads.o /home/elfo/tools/verilator/root/include/verilated_threads.cpp
+/usr/bin/python3 /home/elfo/tools/verilator/root/bin/verilator_includer -DVL_INCLUDE_OPT=include Vaster_pynq_z1.cpp Vaster_pynq_z1___024root__DepSet_h28096f94__0.cpp Vaster_pynq_z1___024root__DepSet_h5729cf8c__0.cpp Vaster_pynq_z1___024root__Slow.cpp Vaster_pynq_z1___024root__DepSet_h28096f94__0__Slow.cpp Vaster_pynq_z1___024root__DepSet_h5729cf8c__0__Slow.cpp Vaster_pynq_z1__Syms.cpp > Vaster_pynq_z1__ALL.cpp
+g++ -Os  -I.  -MMD -I/home/elfo/tools/verilator/root/include -I/home/elfo/tools/verilator/root/include/vltstd -DVM_COVERAGE=0 -DVM_SC=0 -DVM_TRACE=0 -DVM_TRACE_FST=0 -DVM_TRACE_VCD=0 -faligned-new -fcf-protection=none -Wno-bool-operation -Wno-overloaded-virtual -Wno-shadow -Wno-sign-compare -Wno-uninitialized -Wno-unused-but-set-parameter -Wno-unused-but-set-variable -Wno-unused-parameter -Wno-unused-variable       -c -o Vaster_pynq_z1__ALL.o Vaster_pynq_z1__ALL.cpp
+echo "" > Vaster_pynq_z1__ALL.verilator_deplist.tmp
+Archive ar -rcs Vaster_pynq_z1__ALL.a Vaster_pynq_z1__ALL.o
+g++     tb_pynq_z1.o verilated.o verilated_threads.o Vaster_pynq_z1__ALL.a    -pthread -lpthread -latomic   -o /home/elfo/Documents/Aster/build/phase5-71e2570/legacy-verified/aster_pynq_z1_sim
+rm Vaster_pynq_z1__ALL.verilator_deplist.tmp
+make[1]: Leaving directory '/home/elfo/Documents/Aster/build/phase5-71e2570/legacy-verified/obj_pynq_z1'
+riscv32-unknown-elf-gcc -march=rv32im -mabi=ilp32 -nostdlib -nostartfiles -nodefaultlibs -ffreestanding -Wall -Wextra -Werror -O2 -fno-pic -fno-stack-protector -msmall-data-limit=0 -Isoftware/runtime -T software/boot/link.ld -o /home/elfo/Documents/Aster/build/phase5-71e2570/legacy-verified/software/uart_stress.elf software/runtime/start.S software/tests/uart_stress.c
+python3 scripts/elf_to_hex.py --rom-bytes 65536 /home/elfo/Documents/Aster/build/phase5-71e2570/legacy-verified/software/uart_stress.elf /home/elfo/Documents/Aster/build/phase5-71e2570/legacy-verified/software/uart_stress.hex
+PASS: PYNQ-Z1 UART serial decode (17 bytes)
+PASS: PYNQ-Z1 UART serial decode (17 bytes)
+PASS: PYNQ-Z1 UART serial decode (1060 bytes)
+PASS: PYNQ-Z1 UART serial decode (1060 bytes)
+PASS: PYNQ-Z1 UART serial decode (448 bytes)
+PASS: PYNQ-Z1 UART serial decode (448 bytes)
+verilator --cc --exe --build --timing --Wall --Wno-fatal \
+	-DRISCV_FORMAL --Wno-DECLFILENAME --Wno-GENUNNAMED --Wno-UNUSEDSIGNAL --Wno-BLKSEQ --top-module aster_pynq_linux \
+	-GCLK_HZ=400 -GBAUD=10 -GRX_DEPTH=128 \
+	--Mdir /home/elfo/Documents/Aster/build/phase5-71e2570/legacy-verified/obj_linux -o /home/elfo/Documents/Aster/build/phase5-71e2570/legacy-verified/aster_pynq_linux_sim \
+	/home/elfo/Documents/Aster/rtl/core/aster_picorv32.sv /home/elfo/Documents/Aster/vendor/picorv32/picorv32.v /home/elfo/Documents/Aster/rtl/cache/aster_l1_cache.sv /home/elfo/Documents/Aster/rtl/core/aster_hart.sv /home/elfo/Documents/Aster/rtl/interconnect/aster_arbiter2.sv /home/elfo/Documents/Aster/rtl/memory/aster_ram.sv /home/elfo/Documents/Aster/rtl/memory/aster_rom.sv /home/elfo/Documents/Aster/rtl/peripherals/aster_perf_counters.sv /home/elfo/Documents/Aster/rtl/peripherals/aster_uart.sv /home/elfo/Documents/Aster/rtl/soc/aster_minimal.sv /home/elfo/Documents/Aster/rtl/soc/aster_multicore.sv /home/elfo/Documents/Aster/rtl/soc/aster_shared_fabric.sv \
+	/home/elfo/Documents/Aster/rtl/peripherals/aster_uart_tx.sv /home/elfo/Documents/Aster/rtl/peripherals/aster_uart_rx.sv \
+	/home/elfo/Documents/Aster/rtl/soc/aster_pynq_linux.sv /home/elfo/Documents/Aster/verification/soc/tb_pynq_linux.cpp
+make[1]: Entering directory '/home/elfo/Documents/Aster/build/phase5-71e2570/legacy-verified/obj_linux'
+g++  -I.  -MMD -I/home/elfo/tools/verilator/root/include -I/home/elfo/tools/verilator/root/include/vltstd -DVM_COVERAGE=0 -DVM_SC=0 -DVM_TRACE=0 -DVM_TRACE_FST=0 -DVM_TRACE_VCD=0 -faligned-new -fcf-protection=none -Wno-bool-operation -Wno-overloaded-virtual -Wno-shadow -Wno-sign-compare -Wno-uninitialized -Wno-unused-but-set-parameter -Wno-unused-but-set-variable -Wno-unused-parameter -Wno-unused-variable       -Os -c -o tb_pynq_linux.o /home/elfo/Documents/Aster/verification/soc/tb_pynq_linux.cpp
+g++ -Os  -I.  -MMD -I/home/elfo/tools/verilator/root/include -I/home/elfo/tools/verilator/root/include/vltstd -DVM_COVERAGE=0 -DVM_SC=0 -DVM_TRACE=0 -DVM_TRACE_FST=0 -DVM_TRACE_VCD=0 -faligned-new -fcf-protection=none -Wno-bool-operation -Wno-overloaded-virtual -Wno-shadow -Wno-sign-compare -Wno-uninitialized -Wno-unused-but-set-parameter -Wno-unused-but-set-variable -Wno-unused-parameter -Wno-unused-variable       -c -o verilated.o /home/elfo/tools/verilator/root/include/verilated.cpp
+g++ -Os  -I.  -MMD -I/home/elfo/tools/verilator/root/include -I/home/elfo/tools/verilator/root/include/vltstd -DVM_COVERAGE=0 -DVM_SC=0 -DVM_TRACE=0 -DVM_TRACE_FST=0 -DVM_TRACE_VCD=0 -faligned-new -fcf-protection=none -Wno-bool-operation -Wno-overloaded-virtual -Wno-shadow -Wno-sign-compare -Wno-uninitialized -Wno-unused-but-set-parameter -Wno-unused-but-set-variable -Wno-unused-parameter -Wno-unused-variable       -c -o verilated_threads.o /home/elfo/tools/verilator/root/include/verilated_threads.cpp
+/usr/bin/python3 /home/elfo/tools/verilator/root/bin/verilator_includer -DVL_INCLUDE_OPT=include Vaster_pynq_linux.cpp Vaster_pynq_linux___024root__DepSet_h5a538cb5__0.cpp Vaster_pynq_linux___024root__DepSet_hcaf910c3__0.cpp Vaster_pynq_linux___024root__Slow.cpp Vaster_pynq_linux___024root__DepSet_h5a538cb5__0__Slow.cpp Vaster_pynq_linux___024root__DepSet_hcaf910c3__0__Slow.cpp Vaster_pynq_linux__Syms.cpp > Vaster_pynq_linux__ALL.cpp
+g++ -Os  -I.  -MMD -I/home/elfo/tools/verilator/root/include -I/home/elfo/tools/verilator/root/include/vltstd -DVM_COVERAGE=0 -DVM_SC=0 -DVM_TRACE=0 -DVM_TRACE_FST=0 -DVM_TRACE_VCD=0 -faligned-new -fcf-protection=none -Wno-bool-operation -Wno-overloaded-virtual -Wno-shadow -Wno-sign-compare -Wno-uninitialized -Wno-unused-but-set-parameter -Wno-unused-but-set-variable -Wno-unused-parameter -Wno-unused-variable       -c -o Vaster_pynq_linux__ALL.o Vaster_pynq_linux__ALL.cpp
+echo "" > Vaster_pynq_linux__ALL.verilator_deplist.tmp
+Archive ar -rcs Vaster_pynq_linux__ALL.a Vaster_pynq_linux__ALL.o
+g++     tb_pynq_linux.o verilated.o verilated_threads.o Vaster_pynq_linux__ALL.a    -pthread -lpthread -latomic   -o /home/elfo/Documents/Aster/build/phase5-71e2570/legacy-verified/aster_pynq_linux_sim
+rm Vaster_pynq_linux__ALL.verilator_deplist.tmp
+make[1]: Leaving directory '/home/elfo/Documents/Aster/build/phase5-71e2570/legacy-verified/obj_linux'
+PASS: Linux AXI boot + UART serial capture (17 bytes)
+PASS: Linux AXI boot + UART serial capture (17 bytes)
+PASS: Linux AXI boot + UART serial capture (1060 bytes)
+PASS: Linux AXI boot + UART serial capture (1060 bytes)
+PASS: Linux AXI boot + UART serial capture (443 bytes)
+PASS: Linux AXI boot + UART serial capture (443 bytes)
+verilator --cc --exe --build --timing --Wall -DRISCV_FORMAL --Wno-DECLFILENAME --Wno-GENUNNAMED --Wno-UNUSEDSIGNAL --Wno-BLKSEQ \
+	--top-module aster_pynq_linux -GHART_COUNT=2 -GCLK_HZ=400 -GBAUD=10 -GRX_DEPTH=128 \
+	--Mdir /home/elfo/Documents/Aster/build/phase5-71e2570/legacy-verified/obj_linux_dual -o /home/elfo/Documents/Aster/build/phase5-71e2570/legacy-verified/aster_pynq_linux_dual_sim \
+	/home/elfo/Documents/Aster/rtl/core/aster_picorv32.sv /home/elfo/Documents/Aster/vendor/picorv32/picorv32.v /home/elfo/Documents/Aster/rtl/cache/aster_l1_cache.sv /home/elfo/Documents/Aster/rtl/core/aster_hart.sv /home/elfo/Documents/Aster/rtl/interconnect/aster_arbiter2.sv /home/elfo/Documents/Aster/rtl/memory/aster_ram.sv /home/elfo/Documents/Aster/rtl/memory/aster_rom.sv /home/elfo/Documents/Aster/rtl/peripherals/aster_perf_counters.sv /home/elfo/Documents/Aster/rtl/peripherals/aster_uart.sv /home/elfo/Documents/Aster/rtl/soc/aster_minimal.sv /home/elfo/Documents/Aster/rtl/soc/aster_multicore.sv /home/elfo/Documents/Aster/rtl/soc/aster_shared_fabric.sv \
+	/home/elfo/Documents/Aster/rtl/peripherals/aster_uart_tx.sv /home/elfo/Documents/Aster/rtl/peripherals/aster_uart_rx.sv \
+	/home/elfo/Documents/Aster/rtl/soc/aster_pynq_linux.sv /home/elfo/Documents/Aster/verification/soc/tb_pynq_linux_dual.cpp
+make[1]: Entering directory '/home/elfo/Documents/Aster/build/phase5-71e2570/legacy-verified/obj_linux_dual'
+g++  -I.  -MMD -I/home/elfo/tools/verilator/root/include -I/home/elfo/tools/verilator/root/include/vltstd -DVM_COVERAGE=0 -DVM_SC=0 -DVM_TRACE=0 -DVM_TRACE_FST=0 -DVM_TRACE_VCD=0 -faligned-new -fcf-protection=none -Wno-bool-operation -Wno-overloaded-virtual -Wno-shadow -Wno-sign-compare -Wno-uninitialized -Wno-unused-but-set-parameter -Wno-unused-but-set-variable -Wno-unused-parameter -Wno-unused-variable       -Os -c -o tb_pynq_linux_dual.o /home/elfo/Documents/Aster/verification/soc/tb_pynq_linux_dual.cpp
+g++ -Os  -I.  -MMD -I/home/elfo/tools/verilator/root/include -I/home/elfo/tools/verilator/root/include/vltstd -DVM_COVERAGE=0 -DVM_SC=0 -DVM_TRACE=0 -DVM_TRACE_FST=0 -DVM_TRACE_VCD=0 -faligned-new -fcf-protection=none -Wno-bool-operation -Wno-overloaded-virtual -Wno-shadow -Wno-sign-compare -Wno-uninitialized -Wno-unused-but-set-parameter -Wno-unused-but-set-variable -Wno-unused-parameter -Wno-unused-variable       -c -o verilated.o /home/elfo/tools/verilator/root/include/verilated.cpp
+g++ -Os  -I.  -MMD -I/home/elfo/tools/verilator/root/include -I/home/elfo/tools/verilator/root/include/vltstd -DVM_COVERAGE=0 -DVM_SC=0 -DVM_TRACE=0 -DVM_TRACE_FST=0 -DVM_TRACE_VCD=0 -faligned-new -fcf-protection=none -Wno-bool-operation -Wno-overloaded-virtual -Wno-shadow -Wno-sign-compare -Wno-uninitialized -Wno-unused-but-set-parameter -Wno-unused-but-set-variable -Wno-unused-parameter -Wno-unused-variable       -c -o verilated_threads.o /home/elfo/tools/verilator/root/include/verilated_threads.cpp
+/usr/bin/python3 /home/elfo/tools/verilator/root/bin/verilator_includer -DVL_INCLUDE_OPT=include Vaster_pynq_linux.cpp Vaster_pynq_linux___024root__DepSet_h5a538cb5__0.cpp Vaster_pynq_linux___024root__DepSet_hcaf910c3__0.cpp Vaster_pynq_linux_aster_picorv32__DepSet_h867fa0a7__0.cpp Vaster_pynq_linux___024root__Slow.cpp Vaster_pynq_linux___024root__DepSet_h5a538cb5__0__Slow.cpp Vaster_pynq_linux___024root__DepSet_hcaf910c3__0__Slow.cpp Vaster_pynq_linux_aster_picorv32__Slow.cpp Vaster_pynq_linux_aster_picorv32__DepSet_h867fa0a7__0__Slow.cpp Vaster_pynq_linux_aster_picorv32__DepSet_h8f252cd1__0__Slow.cpp Vaster_pynq_linux__Syms.cpp > Vaster_pynq_linux__ALL.cpp
+g++ -Os  -I.  -MMD -I/home/elfo/tools/verilator/root/include -I/home/elfo/tools/verilator/root/include/vltstd -DVM_COVERAGE=0 -DVM_SC=0 -DVM_TRACE=0 -DVM_TRACE_FST=0 -DVM_TRACE_VCD=0 -faligned-new -fcf-protection=none -Wno-bool-operation -Wno-overloaded-virtual -Wno-shadow -Wno-sign-compare -Wno-uninitialized -Wno-unused-but-set-parameter -Wno-unused-but-set-variable -Wno-unused-parameter -Wno-unused-variable       -c -o Vaster_pynq_linux__ALL.o Vaster_pynq_linux__ALL.cpp
+echo "" > Vaster_pynq_linux__ALL.verilator_deplist.tmp
+Archive ar -rcs Vaster_pynq_linux__ALL.a Vaster_pynq_linux__ALL.o
+g++     tb_pynq_linux_dual.o verilated.o verilated_threads.o Vaster_pynq_linux__ALL.a    -pthread -lpthread -latomic   -o /home/elfo/Documents/Aster/build/phase5-71e2570/legacy-verified/aster_pynq_linux_dual_sim
+rm Vaster_pynq_linux__ALL.verilator_deplist.tmp
+make[1]: Leaving directory '/home/elfo/Documents/Aster/build/phase5-71e2570/legacy-verified/obj_linux_dual'
+riscv32-unknown-elf-gcc -march=rv32im -mabi=ilp32 -nostdlib -nostartfiles -nodefaultlibs -ffreestanding -Wall -Wextra -Werror -O2 -fno-pic -fno-stack-protector -msmall-data-limit=0 -Isoftware/runtime -T software/boot/link_multicore.ld -Wl,-Map,/home/elfo/Documents/Aster/build/phase5-71e2570/legacy-verified/software/multicore_runtime.map \
+	-o /home/elfo/Documents/Aster/build/phase5-71e2570/legacy-verified/software/multicore_runtime.elf software/runtime/start_multicore.S software/tests/multicore_runtime.c
+python3 scripts/elf_to_hex.py --rom-bytes 65536 /home/elfo/Documents/Aster/build/phase5-71e2570/legacy-verified/software/multicore_runtime.elf /home/elfo/Documents/Aster/build/phase5-71e2570/legacy-verified/software/multicore_runtime.hex
+PASS: dual Linux AXI/serial runtime boot=0 jobs=1 workers=2 bytes=23 h0_retired=168444 h1_retired=1563
+PASS: dual Linux AXI/serial runtime boot=1 jobs=1 workers=2 bytes=23 h0_retired=168444 h1_retired=1563
+make[1]: Entering directory '/home/elfo/Documents/Aster'
+mkdir -p /home/elfo/Documents/Aster/build/phase5-71e2570/legacy-verified/software/parallel_w64_r4_j3_p1_s0x13570000
+riscv32-unknown-elf-gcc -march=rv32im -mabi=ilp32 -nostdlib -nostartfiles -nodefaultlibs -ffreestanding -Wall -Wextra -Werror -O2 -fno-pic -fno-stack-protector -msmall-data-limit=0 -Isoftware/runtime -DPARALLEL_WORDS=64 -DPARALLEL_ROUNDS=4 -DPARALLEL_JOBS=3 -DPARALLEL_WORKERS=1 -DPARALLEL_SEED=0x13570000 -T software/boot/link_multicore.ld -Wl,-Map,/home/elfo/Documents/Aster/build/phase5-71e2570/legacy-verified/software/parallel_w64_r4_j3_p1_s0x13570000/parallel.map -o /home/elfo/Documents/Aster/build/phase5-71e2570/legacy-verified/software/parallel_w64_r4_j3_p1_s0x13570000/parallel.elf software/runtime/start_multicore.S software/benchmarks/parallel_mix.c
+python3 scripts/elf_to_hex.py --rom-bytes 65536 /home/elfo/Documents/Aster/build/phase5-71e2570/legacy-verified/software/parallel_w64_r4_j3_p1_s0x13570000/parallel.elf /home/elfo/Documents/Aster/build/phase5-71e2570/legacy-verified/software/parallel_w64_r4_j3_p1_s0x13570000/parallel.hex
+PASS: dual Linux AXI/serial parallel boot=0 jobs=3 workers=1 bytes=2712 h0_retired=66602 h1_retired=0
+PASS: dual Linux AXI/serial parallel boot=1 jobs=3 workers=1 bytes=2712 h0_retired=66602 h1_retired=0
+make[1]: Leaving directory '/home/elfo/Documents/Aster'
+make[1]: Entering directory '/home/elfo/Documents/Aster'
+mkdir -p /home/elfo/Documents/Aster/build/phase5-71e2570/legacy-verified/software/parallel_w64_r4_j3_p2_s0x13570000
+riscv32-unknown-elf-gcc -march=rv32im -mabi=ilp32 -nostdlib -nostartfiles -nodefaultlibs -ffreestanding -Wall -Wextra -Werror -O2 -fno-pic -fno-stack-protector -msmall-data-limit=0 -Isoftware/runtime -DPARALLEL_WORDS=64 -DPARALLEL_ROUNDS=4 -DPARALLEL_JOBS=3 -DPARALLEL_WORKERS=2 -DPARALLEL_SEED=0x13570000 -T software/boot/link_multicore.ld -Wl,-Map,/home/elfo/Documents/Aster/build/phase5-71e2570/legacy-verified/software/parallel_w64_r4_j3_p2_s0x13570000/parallel.map -o /home/elfo/Documents/Aster/build/phase5-71e2570/legacy-verified/software/parallel_w64_r4_j3_p2_s0x13570000/parallel.elf software/runtime/start_multicore.S software/benchmarks/parallel_mix.c
+python3 scripts/elf_to_hex.py --rom-bytes 65536 /home/elfo/Documents/Aster/build/phase5-71e2570/legacy-verified/software/parallel_w64_r4_j3_p2_s0x13570000/parallel.elf /home/elfo/Documents/Aster/build/phase5-71e2570/legacy-verified/software/parallel_w64_r4_j3_p2_s0x13570000/parallel.hex
+PASS: dual Linux AXI/serial parallel boot=0 jobs=3 workers=2 bytes=2715 h0_retired=61544 h1_retired=72676
+PASS: dual Linux AXI/serial parallel boot=1 jobs=3 workers=2 bytes=2715 h0_retired=61544 h1_retired=72676
+make[1]: Leaving directory '/home/elfo/Documents/Aster'
+verilator --cc --exe --build --timing --Wall --Wno-fatal --public-flat-rw \
+	--top-module aster_perf_counters --Mdir /home/elfo/Documents/Aster/build/phase5-71e2570/legacy-verified/obj_perf -o /home/elfo/Documents/Aster/build/phase5-71e2570/legacy-verified/aster_perf_sim \
+	/home/elfo/Documents/Aster/rtl/peripherals/aster_perf_counters.sv /home/elfo/Documents/Aster/verification/unit/tb_aster_perf_counters.cpp
+make[1]: Entering directory '/home/elfo/Documents/Aster/build/phase5-71e2570/legacy-verified/obj_perf'
+g++  -I.  -MMD -I/home/elfo/tools/verilator/root/include -I/home/elfo/tools/verilator/root/include/vltstd -DVM_COVERAGE=0 -DVM_SC=0 -DVM_TRACE=0 -DVM_TRACE_FST=0 -DVM_TRACE_VCD=0 -faligned-new -fcf-protection=none -Wno-bool-operation -Wno-overloaded-virtual -Wno-shadow -Wno-sign-compare -Wno-uninitialized -Wno-unused-but-set-parameter -Wno-unused-but-set-variable -Wno-unused-parameter -Wno-unused-variable       -Os -c -o tb_aster_perf_counters.o /home/elfo/Documents/Aster/verification/unit/tb_aster_perf_counters.cpp
+g++ -Os  -I.  -MMD -I/home/elfo/tools/verilator/root/include -I/home/elfo/tools/verilator/root/include/vltstd -DVM_COVERAGE=0 -DVM_SC=0 -DVM_TRACE=0 -DVM_TRACE_FST=0 -DVM_TRACE_VCD=0 -faligned-new -fcf-protection=none -Wno-bool-operation -Wno-overloaded-virtual -Wno-shadow -Wno-sign-compare -Wno-uninitialized -Wno-unused-but-set-parameter -Wno-unused-but-set-variable -Wno-unused-parameter -Wno-unused-variable       -c -o verilated.o /home/elfo/tools/verilator/root/include/verilated.cpp
+g++ -Os  -I.  -MMD -I/home/elfo/tools/verilator/root/include -I/home/elfo/tools/verilator/root/include/vltstd -DVM_COVERAGE=0 -DVM_SC=0 -DVM_TRACE=0 -DVM_TRACE_FST=0 -DVM_TRACE_VCD=0 -faligned-new -fcf-protection=none -Wno-bool-operation -Wno-overloaded-virtual -Wno-shadow -Wno-sign-compare -Wno-uninitialized -Wno-unused-but-set-parameter -Wno-unused-but-set-variable -Wno-unused-parameter -Wno-unused-variable       -c -o verilated_dpi.o /home/elfo/tools/verilator/root/include/verilated_dpi.cpp
+g++ -Os  -I.  -MMD -I/home/elfo/tools/verilator/root/include -I/home/elfo/tools/verilator/root/include/vltstd -DVM_COVERAGE=0 -DVM_SC=0 -DVM_TRACE=0 -DVM_TRACE_FST=0 -DVM_TRACE_VCD=0 -faligned-new -fcf-protection=none -Wno-bool-operation -Wno-overloaded-virtual -Wno-shadow -Wno-sign-compare -Wno-uninitialized -Wno-unused-but-set-parameter -Wno-unused-but-set-variable -Wno-unused-parameter -Wno-unused-variable       -c -o verilated_threads.o /home/elfo/tools/verilator/root/include/verilated_threads.cpp
+/usr/bin/python3 /home/elfo/tools/verilator/root/bin/verilator_includer -DVL_INCLUDE_OPT=include Vaster_perf_counters.cpp Vaster_perf_counters___024root__DepSet_h26d6ddd9__0.cpp Vaster_perf_counters___024root__DepSet_h37027d7b__0.cpp Vaster_perf_counters__Dpi.cpp Vaster_perf_counters___024root__Slow.cpp Vaster_perf_counters___024root__DepSet_h26d6ddd9__0__Slow.cpp Vaster_perf_counters___024root__DepSet_h37027d7b__0__Slow.cpp Vaster_perf_counters__Syms.cpp > Vaster_perf_counters__ALL.cpp
+g++ -Os  -I.  -MMD -I/home/elfo/tools/verilator/root/include -I/home/elfo/tools/verilator/root/include/vltstd -DVM_COVERAGE=0 -DVM_SC=0 -DVM_TRACE=0 -DVM_TRACE_FST=0 -DVM_TRACE_VCD=0 -faligned-new -fcf-protection=none -Wno-bool-operation -Wno-overloaded-virtual -Wno-shadow -Wno-sign-compare -Wno-uninitialized -Wno-unused-but-set-parameter -Wno-unused-but-set-variable -Wno-unused-parameter -Wno-unused-variable       -c -o Vaster_perf_counters__ALL.o Vaster_perf_counters__ALL.cpp
+echo "" > Vaster_perf_counters__ALL.verilator_deplist.tmp
+Archive ar -rcs Vaster_perf_counters__ALL.a Vaster_perf_counters__ALL.o
+g++     tb_aster_perf_counters.o verilated.o verilated_dpi.o verilated_threads.o Vaster_perf_counters__ALL.a    -pthread -lpthread -latomic   -o /home/elfo/Documents/Aster/build/phase5-71e2570/legacy-verified/aster_perf_sim
+rm Vaster_perf_counters__ALL.verilator_deplist.tmp
+make[1]: Leaving directory '/home/elfo/Documents/Aster/build/phase5-71e2570/legacy-verified/obj_perf'
+PASS: counters/events, command strobes, freeze/resume, reset and 64-bit rollover
+verilator --cc --exe --build --timing --Wall --Wno-fatal \
+	-DRISCV_FORMAL --Wno-DECLFILENAME --Wno-GENUNNAMED --Wno-UNUSEDSIGNAL --Wno-BLKSEQ --top-module aster_picorv32 \
+	--Mdir /home/elfo/Documents/Aster/build/phase5-71e2570/legacy-verified/obj_retirement -o /home/elfo/Documents/Aster/build/phase5-71e2570/legacy-verified/aster_retirement_sim \
+	/home/elfo/Documents/Aster/rtl/core/aster_picorv32.sv /home/elfo/Documents/Aster/vendor/picorv32/picorv32.v /home/elfo/Documents/Aster/verification/unit/tb_aster_retirement.cpp
+make[1]: Entering directory '/home/elfo/Documents/Aster/build/phase5-71e2570/legacy-verified/obj_retirement'
+g++  -I.  -MMD -I/home/elfo/tools/verilator/root/include -I/home/elfo/tools/verilator/root/include/vltstd -DVM_COVERAGE=0 -DVM_SC=0 -DVM_TRACE=0 -DVM_TRACE_FST=0 -DVM_TRACE_VCD=0 -faligned-new -fcf-protection=none -Wno-bool-operation -Wno-overloaded-virtual -Wno-shadow -Wno-sign-compare -Wno-uninitialized -Wno-unused-but-set-parameter -Wno-unused-but-set-variable -Wno-unused-parameter -Wno-unused-variable       -Os -c -o tb_aster_retirement.o /home/elfo/Documents/Aster/verification/unit/tb_aster_retirement.cpp
+g++ -Os  -I.  -MMD -I/home/elfo/tools/verilator/root/include -I/home/elfo/tools/verilator/root/include/vltstd -DVM_COVERAGE=0 -DVM_SC=0 -DVM_TRACE=0 -DVM_TRACE_FST=0 -DVM_TRACE_VCD=0 -faligned-new -fcf-protection=none -Wno-bool-operation -Wno-overloaded-virtual -Wno-shadow -Wno-sign-compare -Wno-uninitialized -Wno-unused-but-set-parameter -Wno-unused-but-set-variable -Wno-unused-parameter -Wno-unused-variable       -c -o verilated.o /home/elfo/tools/verilator/root/include/verilated.cpp
+g++ -Os  -I.  -MMD -I/home/elfo/tools/verilator/root/include -I/home/elfo/tools/verilator/root/include/vltstd -DVM_COVERAGE=0 -DVM_SC=0 -DVM_TRACE=0 -DVM_TRACE_FST=0 -DVM_TRACE_VCD=0 -faligned-new -fcf-protection=none -Wno-bool-operation -Wno-overloaded-virtual -Wno-shadow -Wno-sign-compare -Wno-uninitialized -Wno-unused-but-set-parameter -Wno-unused-but-set-variable -Wno-unused-parameter -Wno-unused-variable       -c -o verilated_threads.o /home/elfo/tools/verilator/root/include/verilated_threads.cpp
+/usr/bin/python3 /home/elfo/tools/verilator/root/bin/verilator_includer -DVL_INCLUDE_OPT=include Vaster_picorv32.cpp Vaster_picorv32___024root__DepSet_h19ae85db__0.cpp Vaster_picorv32___024root__DepSet_ha0b6e078__0.cpp Vaster_picorv32___024root__Slow.cpp Vaster_picorv32___024root__DepSet_h19ae85db__0__Slow.cpp Vaster_picorv32___024root__DepSet_ha0b6e078__0__Slow.cpp Vaster_picorv32__Syms.cpp > Vaster_picorv32__ALL.cpp
+g++ -Os  -I.  -MMD -I/home/elfo/tools/verilator/root/include -I/home/elfo/tools/verilator/root/include/vltstd -DVM_COVERAGE=0 -DVM_SC=0 -DVM_TRACE=0 -DVM_TRACE_FST=0 -DVM_TRACE_VCD=0 -faligned-new -fcf-protection=none -Wno-bool-operation -Wno-overloaded-virtual -Wno-shadow -Wno-sign-compare -Wno-uninitialized -Wno-unused-but-set-parameter -Wno-unused-but-set-variable -Wno-unused-parameter -Wno-unused-variable       -c -o Vaster_picorv32__ALL.o Vaster_picorv32__ALL.cpp
+echo "" > Vaster_picorv32__ALL.verilator_deplist.tmp
+Archive ar -rcs Vaster_picorv32__ALL.a Vaster_picorv32__ALL.o
+g++     tb_aster_retirement.o verilated.o verilated_threads.o Vaster_picorv32__ALL.a    -pthread -lpthread -latomic   -o /home/elfo/Documents/Aster/build/phase5-71e2570/legacy-verified/aster_retirement_sim
+rm Vaster_picorv32__ALL.verilator_deplist.tmp
+make[1]: Leaving directory '/home/elfo/Documents/Aster/build/phase5-71e2570/legacy-verified/obj_retirement'
+PASS: exact RVFI retirement, no fault side effects, six traps, four latencies and warm reset
+verilator --cc --exe --build --timing --Wall \
+	--top-module aster_arbiter2 --Mdir /home/elfo/Documents/Aster/build/phase5-71e2570/legacy-verified/obj_arbiter -o /home/elfo/Documents/Aster/build/phase5-71e2570/legacy-verified/aster_arbiter2_sim \
+	/home/elfo/Documents/Aster/rtl/interconnect/aster_arbiter2.sv /home/elfo/Documents/Aster/verification/unit/tb_aster_arbiter2.cpp
+make[1]: Entering directory '/home/elfo/Documents/Aster/build/phase5-71e2570/legacy-verified/obj_arbiter'
+g++  -I.  -MMD -I/home/elfo/tools/verilator/root/include -I/home/elfo/tools/verilator/root/include/vltstd -DVM_COVERAGE=0 -DVM_SC=0 -DVM_TRACE=0 -DVM_TRACE_FST=0 -DVM_TRACE_VCD=0 -faligned-new -fcf-protection=none -Wno-bool-operation -Wno-overloaded-virtual -Wno-shadow -Wno-sign-compare -Wno-uninitialized -Wno-unused-but-set-parameter -Wno-unused-but-set-variable -Wno-unused-parameter -Wno-unused-variable       -Os -c -o tb_aster_arbiter2.o /home/elfo/Documents/Aster/verification/unit/tb_aster_arbiter2.cpp
+g++ -Os  -I.  -MMD -I/home/elfo/tools/verilator/root/include -I/home/elfo/tools/verilator/root/include/vltstd -DVM_COVERAGE=0 -DVM_SC=0 -DVM_TRACE=0 -DVM_TRACE_FST=0 -DVM_TRACE_VCD=0 -faligned-new -fcf-protection=none -Wno-bool-operation -Wno-overloaded-virtual -Wno-shadow -Wno-sign-compare -Wno-uninitialized -Wno-unused-but-set-parameter -Wno-unused-but-set-variable -Wno-unused-parameter -Wno-unused-variable       -c -o verilated.o /home/elfo/tools/verilator/root/include/verilated.cpp
+g++ -Os  -I.  -MMD -I/home/elfo/tools/verilator/root/include -I/home/elfo/tools/verilator/root/include/vltstd -DVM_COVERAGE=0 -DVM_SC=0 -DVM_TRACE=0 -DVM_TRACE_FST=0 -DVM_TRACE_VCD=0 -faligned-new -fcf-protection=none -Wno-bool-operation -Wno-overloaded-virtual -Wno-shadow -Wno-sign-compare -Wno-uninitialized -Wno-unused-but-set-parameter -Wno-unused-but-set-variable -Wno-unused-parameter -Wno-unused-variable       -c -o verilated_threads.o /home/elfo/tools/verilator/root/include/verilated_threads.cpp
+/usr/bin/python3 /home/elfo/tools/verilator/root/bin/verilator_includer -DVL_INCLUDE_OPT=include Vaster_arbiter2.cpp Vaster_arbiter2___024root__DepSet_h3befc4ee__0.cpp Vaster_arbiter2___024root__DepSet_h30216faf__0.cpp Vaster_arbiter2___024root__Slow.cpp Vaster_arbiter2___024root__DepSet_h3befc4ee__0__Slow.cpp Vaster_arbiter2___024root__DepSet_h30216faf__0__Slow.cpp Vaster_arbiter2__Syms.cpp > Vaster_arbiter2__ALL.cpp
+g++ -Os  -I.  -MMD -I/home/elfo/tools/verilator/root/include -I/home/elfo/tools/verilator/root/include/vltstd -DVM_COVERAGE=0 -DVM_SC=0 -DVM_TRACE=0 -DVM_TRACE_FST=0 -DVM_TRACE_VCD=0 -faligned-new -fcf-protection=none -Wno-bool-operation -Wno-overloaded-virtual -Wno-shadow -Wno-sign-compare -Wno-uninitialized -Wno-unused-but-set-parameter -Wno-unused-but-set-variable -Wno-unused-parameter -Wno-unused-variable       -c -o Vaster_arbiter2__ALL.o Vaster_arbiter2__ALL.cpp
+echo "" > Vaster_arbiter2__ALL.verilator_deplist.tmp
+Archive ar -rcs Vaster_arbiter2__ALL.a Vaster_arbiter2__ALL.o
+g++     tb_aster_arbiter2.o verilated.o verilated_threads.o Vaster_arbiter2__ALL.a    -pthread -lpthread -latomic   -o /home/elfo/Documents/Aster/build/phase5-71e2570/legacy-verified/aster_arbiter2_sim
+rm Vaster_arbiter2__ALL.verilator_deplist.tmp
+make[1]: Leaving directory '/home/elfo/Documents/Aster/build/phase5-71e2570/legacy-verified/obj_arbiter'
+PASS: arbiter seed=1 completions=10733 hart0=5390 hart1=5343 stores=8086 aborted=92 simultaneous=10503 stalled=89395 identical=128
+PASS: arbiter seed=42366 completions=10686 hart0=5356 hart1=5330 stores=8011 aborted=90 simultaneous=10437 stalled=89437 identical=128
+PASS: arbiter seed=12648430 completions=10692 hart0=5359 hart1=5333 stores=8091 aborted=90 simultaneous=10438 stalled=89446 identical=128
+mkdir -p /home/elfo/Documents/Aster/build/phase5-71e2570/legacy-verified/fabric_h2_l11_sync0_wait0_w4_n16
+verilator --cc --exe --build --timing --Wall --Wno-UNUSEDSIGNAL \
+	--top-module aster_shared_fabric --Mdir /home/elfo/Documents/Aster/build/phase5-71e2570/legacy-verified/fabric_h2_l11_sync0_wait0_w4_n16/obj -o /home/elfo/Documents/Aster/build/phase5-71e2570/legacy-verified/fabric_h2_l11_sync0_wait0_w4_n16/aster_fabric_sim \
+	-GHART_COUNT=2 "-GSYNC_MEMORY=1'b0" \
+	"-GENABLE_L1=1'b1" -GL1_LINE_WORDS=4 -GL1_LINE_COUNT=16 \
+	-GMEMORY_WAIT_CYCLES=0 "-GHOST_BOOT=1'b1" \
+	-CFLAGS '-DASTER_HART_COUNT=2 -DASTER_MEMORY_WAIT=0 -DASTER_SYNC_MEMORY=0 -DASTER_ENABLE_L1=1 -DASTER_LINE_WORDS=4 -DASTER_LINE_COUNT=16' \
+	/home/elfo/Documents/Aster/rtl/interconnect/aster_arbiter2.sv /home/elfo/Documents/Aster/rtl/soc/aster_shared_fabric.sv /home/elfo/Documents/Aster/rtl/memory/aster_rom.sv /home/elfo/Documents/Aster/rtl/memory/aster_ram.sv /home/elfo/Documents/Aster/rtl/peripherals/aster_uart.sv /home/elfo/Documents/Aster/rtl/peripherals/aster_perf_counters.sv \
+	/home/elfo/Documents/Aster/verification/soc/tb_aster_shared_fabric.cpp
+make[1]: Entering directory '/home/elfo/Documents/Aster/build/phase5-71e2570/legacy-verified/fabric_h2_l11_sync0_wait0_w4_n16/obj'
+g++  -I.  -MMD -I/home/elfo/tools/verilator/root/include -I/home/elfo/tools/verilator/root/include/vltstd -DVM_COVERAGE=0 -DVM_SC=0 -DVM_TRACE=0 -DVM_TRACE_FST=0 -DVM_TRACE_VCD=0 -faligned-new -fcf-protection=none -Wno-bool-operation -Wno-overloaded-virtual -Wno-shadow -Wno-sign-compare -Wno-uninitialized -Wno-unused-but-set-parameter -Wno-unused-but-set-variable -Wno-unused-parameter -Wno-unused-variable     -DASTER_HART_COUNT=2 -DASTER_MEMORY_WAIT=0 -DASTER_SYNC_MEMORY=0 -DASTER_ENABLE_L1=1 -DASTER_LINE_WORDS=4 -DASTER_LINE_COUNT=16   -Os -c -o tb_aster_shared_fabric.o /home/elfo/Documents/Aster/verification/soc/tb_aster_shared_fabric.cpp
+g++ -Os  -I.  -MMD -I/home/elfo/tools/verilator/root/include -I/home/elfo/tools/verilator/root/include/vltstd -DVM_COVERAGE=0 -DVM_SC=0 -DVM_TRACE=0 -DVM_TRACE_FST=0 -DVM_TRACE_VCD=0 -faligned-new -fcf-protection=none -Wno-bool-operation -Wno-overloaded-virtual -Wno-shadow -Wno-sign-compare -Wno-uninitialized -Wno-unused-but-set-parameter -Wno-unused-but-set-variable -Wno-unused-parameter -Wno-unused-variable     -DASTER_HART_COUNT=2 -DASTER_MEMORY_WAIT=0 -DASTER_SYNC_MEMORY=0 -DASTER_ENABLE_L1=1 -DASTER_LINE_WORDS=4 -DASTER_LINE_COUNT=16   -c -o verilated.o /home/elfo/tools/verilator/root/include/verilated.cpp
+g++ -Os  -I.  -MMD -I/home/elfo/tools/verilator/root/include -I/home/elfo/tools/verilator/root/include/vltstd -DVM_COVERAGE=0 -DVM_SC=0 -DVM_TRACE=0 -DVM_TRACE_FST=0 -DVM_TRACE_VCD=0 -faligned-new -fcf-protection=none -Wno-bool-operation -Wno-overloaded-virtual -Wno-shadow -Wno-sign-compare -Wno-uninitialized -Wno-unused-but-set-parameter -Wno-unused-but-set-variable -Wno-unused-parameter -Wno-unused-variable     -DASTER_HART_COUNT=2 -DASTER_MEMORY_WAIT=0 -DASTER_SYNC_MEMORY=0 -DASTER_ENABLE_L1=1 -DASTER_LINE_WORDS=4 -DASTER_LINE_COUNT=16   -c -o verilated_threads.o /home/elfo/tools/verilator/root/include/verilated_threads.cpp
+/usr/bin/python3 /home/elfo/tools/verilator/root/bin/verilator_includer -DVL_INCLUDE_OPT=include Vaster_shared_fabric.cpp Vaster_shared_fabric___024root__DepSet_h4a87bb73__0.cpp Vaster_shared_fabric___024root__DepSet_h6205f4b1__0.cpp Vaster_shared_fabric___024root__Slow.cpp Vaster_shared_fabric___024root__DepSet_h4a87bb73__0__Slow.cpp Vaster_shared_fabric___024root__DepSet_h6205f4b1__0__Slow.cpp Vaster_shared_fabric__Syms.cpp > Vaster_shared_fabric__ALL.cpp
+g++ -Os  -I.  -MMD -I/home/elfo/tools/verilator/root/include -I/home/elfo/tools/verilator/root/include/vltstd -DVM_COVERAGE=0 -DVM_SC=0 -DVM_TRACE=0 -DVM_TRACE_FST=0 -DVM_TRACE_VCD=0 -faligned-new -fcf-protection=none -Wno-bool-operation -Wno-overloaded-virtual -Wno-shadow -Wno-sign-compare -Wno-uninitialized -Wno-unused-but-set-parameter -Wno-unused-but-set-variable -Wno-unused-parameter -Wno-unused-variable     -DASTER_HART_COUNT=2 -DASTER_MEMORY_WAIT=0 -DASTER_SYNC_MEMORY=0 -DASTER_ENABLE_L1=1 -DASTER_LINE_WORDS=4 -DASTER_LINE_COUNT=16   -c -o Vaster_shared_fabric__ALL.o Vaster_shared_fabric__ALL.cpp
+echo "" > Vaster_shared_fabric__ALL.verilator_deplist.tmp
+Archive ar -rcs Vaster_shared_fabric__ALL.a Vaster_shared_fabric__ALL.o
+g++     tb_aster_shared_fabric.o verilated.o verilated_threads.o Vaster_shared_fabric__ALL.a    -pthread -lpthread -latomic   -o /home/elfo/Documents/Aster/build/phase5-71e2570/legacy-verified/fabric_h2_l11_sync0_wait0_w4_n16/aster_fabric_sim
+rm Vaster_shared_fabric__ALL.verilator_deplist.tmp
+make[1]: Leaving directory '/home/elfo/Documents/Aster/build/phase5-71e2570/legacy-verified/fabric_h2_l11_sync0_wait0_w4_n16/obj'
+PASS: shared fabric harts=2 seed=1 transfers=76049 dual_pending=41479 denied=23635 memory_wait=0
+PASS: shared fabric harts=2 seed=42366 transfers=76116 dual_pending=41449 denied=23390 memory_wait=0
+PASS: shared fabric harts=2 seed=12648430 transfers=76118 dual_pending=41417 denied=23520 memory_wait=0
+mkdir -p /home/elfo/Documents/Aster/build/phase5-71e2570/legacy-verified/multicore_h2_l11_sync0_wait0_w4_n16
+verilator --cc --exe --build --timing --Wall -DRISCV_FORMAL --Wno-DECLFILENAME --Wno-GENUNNAMED --Wno-UNUSEDSIGNAL --Wno-BLKSEQ \
+	--top-module aster_multicore --Mdir /home/elfo/Documents/Aster/build/phase5-71e2570/legacy-verified/multicore_h2_l11_sync0_wait0_w4_n16/obj -o /home/elfo/Documents/Aster/build/phase5-71e2570/legacy-verified/multicore_h2_l11_sync0_wait0_w4_n16/aster_multicore_sim \
+	-GHART_COUNT=2 "-GSYNC_MEMORY=1'b0" "-GENABLE_L1=1'b1" \
+	-GMEMORY_WAIT_CYCLES=0 -GL1_LINE_WORDS=4 -GL1_LINE_COUNT=16 \
+	-CFLAGS '-DASTER_HART_COUNT=2' \
+	/home/elfo/Documents/Aster/rtl/core/aster_picorv32.sv /home/elfo/Documents/Aster/vendor/picorv32/picorv32.v /home/elfo/Documents/Aster/rtl/cache/aster_l1_cache.sv /home/elfo/Documents/Aster/rtl/memory/aster_rom.sv /home/elfo/Documents/Aster/rtl/memory/aster_ram.sv /home/elfo/Documents/Aster/rtl/peripherals/aster_uart.sv /home/elfo/Documents/Aster/rtl/peripherals/aster_perf_counters.sv /home/elfo/Documents/Aster/rtl/interconnect/aster_arbiter2.sv /home/elfo/Documents/Aster/rtl/soc/aster_shared_fabric.sv /home/elfo/Documents/Aster/rtl/core/aster_hart.sv /home/elfo/Documents/Aster/rtl/soc/aster_multicore.sv \
+	/home/elfo/Documents/Aster/verification/soc/tb_aster_multicore.cpp
+make[1]: Entering directory '/home/elfo/Documents/Aster/build/phase5-71e2570/legacy-verified/multicore_h2_l11_sync0_wait0_w4_n16/obj'
+g++  -I.  -MMD -I/home/elfo/tools/verilator/root/include -I/home/elfo/tools/verilator/root/include/vltstd -DVM_COVERAGE=0 -DVM_SC=0 -DVM_TRACE=0 -DVM_TRACE_FST=0 -DVM_TRACE_VCD=0 -faligned-new -fcf-protection=none -Wno-bool-operation -Wno-overloaded-virtual -Wno-shadow -Wno-sign-compare -Wno-uninitialized -Wno-unused-but-set-parameter -Wno-unused-but-set-variable -Wno-unused-parameter -Wno-unused-variable     -DASTER_HART_COUNT=2   -Os -c -o tb_aster_multicore.o /home/elfo/Documents/Aster/verification/soc/tb_aster_multicore.cpp
+g++ -Os  -I.  -MMD -I/home/elfo/tools/verilator/root/include -I/home/elfo/tools/verilator/root/include/vltstd -DVM_COVERAGE=0 -DVM_SC=0 -DVM_TRACE=0 -DVM_TRACE_FST=0 -DVM_TRACE_VCD=0 -faligned-new -fcf-protection=none -Wno-bool-operation -Wno-overloaded-virtual -Wno-shadow -Wno-sign-compare -Wno-uninitialized -Wno-unused-but-set-parameter -Wno-unused-but-set-variable -Wno-unused-parameter -Wno-unused-variable     -DASTER_HART_COUNT=2   -c -o verilated.o /home/elfo/tools/verilator/root/include/verilated.cpp
+g++ -Os  -I.  -MMD -I/home/elfo/tools/verilator/root/include -I/home/elfo/tools/verilator/root/include/vltstd -DVM_COVERAGE=0 -DVM_SC=0 -DVM_TRACE=0 -DVM_TRACE_FST=0 -DVM_TRACE_VCD=0 -faligned-new -fcf-protection=none -Wno-bool-operation -Wno-overloaded-virtual -Wno-shadow -Wno-sign-compare -Wno-uninitialized -Wno-unused-but-set-parameter -Wno-unused-but-set-variable -Wno-unused-parameter -Wno-unused-variable     -DASTER_HART_COUNT=2   -c -o verilated_threads.o /home/elfo/tools/verilator/root/include/verilated_threads.cpp
+/usr/bin/python3 /home/elfo/tools/verilator/root/bin/verilator_includer -DVL_INCLUDE_OPT=include Vaster_multicore.cpp Vaster_multicore___024root__DepSet_h171db9e5__0.cpp Vaster_multicore___024root__DepSet_ha3570658__0.cpp Vaster_multicore_aster_picorv32__DepSet_hba852829__0.cpp Vaster_multicore___024root__Slow.cpp Vaster_multicore___024root__DepSet_h171db9e5__0__Slow.cpp Vaster_multicore___024root__DepSet_ha3570658__0__Slow.cpp Vaster_multicore_aster_picorv32__Slow.cpp Vaster_multicore_aster_picorv32__DepSet_hba852829__0__Slow.cpp Vaster_multicore_aster_picorv32__DepSet_h0dde77a4__0__Slow.cpp Vaster_multicore__Syms.cpp > Vaster_multicore__ALL.cpp
+g++ -Os  -I.  -MMD -I/home/elfo/tools/verilator/root/include -I/home/elfo/tools/verilator/root/include/vltstd -DVM_COVERAGE=0 -DVM_SC=0 -DVM_TRACE=0 -DVM_TRACE_FST=0 -DVM_TRACE_VCD=0 -faligned-new -fcf-protection=none -Wno-bool-operation -Wno-overloaded-virtual -Wno-shadow -Wno-sign-compare -Wno-uninitialized -Wno-unused-but-set-parameter -Wno-unused-but-set-variable -Wno-unused-parameter -Wno-unused-variable     -DASTER_HART_COUNT=2   -c -o Vaster_multicore__ALL.o Vaster_multicore__ALL.cpp
+echo "" > Vaster_multicore__ALL.verilator_deplist.tmp
+Archive ar -rcs Vaster_multicore__ALL.a Vaster_multicore__ALL.o
+g++     tb_aster_multicore.o verilated.o verilated_threads.o Vaster_multicore__ALL.a    -pthread -lpthread -latomic   -o /home/elfo/Documents/Aster/build/phase5-71e2570/legacy-verified/multicore_h2_l11_sync0_wait0_w4_n16/aster_multicore_sim
+rm Vaster_multicore__ALL.verilator_deplist.tmp
+make[1]: Leaving directory '/home/elfo/Documents/Aster/build/phase5-71e2570/legacy-verified/multicore_h2_l11_sync0_wait0_w4_n16/obj'
+MULTICORE RUNTIME PASS
+PASS: runtime boot=0 hart0_retired=1612 hart1_retired=1474 hart0_pcs=195 hart1_pcs=115
+MULTICORE RUNTIME PASS
+PASS: runtime boot=1 hart0_retired=1612 hart1_retired=1474 hart0_pcs=195 hart1_pcs=115
+mkdir -p /home/elfo/Documents/Aster/build/phase5-71e2570/legacy-verified/adversarial_l11_sync0_wait0_w4_n16
+verilator --cc --exe --build --timing --Wall -DRISCV_FORMAL --Wno-DECLFILENAME --Wno-GENUNNAMED --Wno-UNUSEDSIGNAL --Wno-BLKSEQ \
+	--top-module aster_multicore_probe --Mdir /home/elfo/Documents/Aster/build/phase5-71e2570/legacy-verified/adversarial_l11_sync0_wait0_w4_n16/obj -o /home/elfo/Documents/Aster/build/phase5-71e2570/legacy-verified/adversarial_l11_sync0_wait0_w4_n16/aster_multicore_adversarial_sim \
+	"-GENABLE_L1=1'b1" "-GSYNC_MEMORY=1'b0" -GMEMORY_WAIT_CYCLES=0 \
+	/home/elfo/Documents/Aster/rtl/core/aster_picorv32.sv /home/elfo/Documents/Aster/vendor/picorv32/picorv32.v /home/elfo/Documents/Aster/rtl/cache/aster_l1_cache.sv /home/elfo/Documents/Aster/rtl/memory/aster_rom.sv /home/elfo/Documents/Aster/rtl/memory/aster_ram.sv /home/elfo/Documents/Aster/rtl/peripherals/aster_uart.sv /home/elfo/Documents/Aster/rtl/peripherals/aster_perf_counters.sv /home/elfo/Documents/Aster/rtl/interconnect/aster_arbiter2.sv /home/elfo/Documents/Aster/rtl/soc/aster_shared_fabric.sv /home/elfo/Documents/Aster/rtl/core/aster_hart.sv /home/elfo/Documents/Aster/rtl/soc/aster_multicore.sv \
+	/home/elfo/Documents/Aster/verification/soc/aster_multicore_probe.sv /home/elfo/Documents/Aster/verification/soc/tb_multicore_adversarial.cpp
+make[1]: Entering directory '/home/elfo/Documents/Aster/build/phase5-71e2570/legacy-verified/adversarial_l11_sync0_wait0_w4_n16/obj'
+g++  -I.  -MMD -I/home/elfo/tools/verilator/root/include -I/home/elfo/tools/verilator/root/include/vltstd -DVM_COVERAGE=0 -DVM_SC=0 -DVM_TRACE=0 -DVM_TRACE_FST=0 -DVM_TRACE_VCD=0 -faligned-new -fcf-protection=none -Wno-bool-operation -Wno-overloaded-virtual -Wno-shadow -Wno-sign-compare -Wno-uninitialized -Wno-unused-but-set-parameter -Wno-unused-but-set-variable -Wno-unused-parameter -Wno-unused-variable       -Os -c -o tb_multicore_adversarial.o /home/elfo/Documents/Aster/verification/soc/tb_multicore_adversarial.cpp
+g++ -Os  -I.  -MMD -I/home/elfo/tools/verilator/root/include -I/home/elfo/tools/verilator/root/include/vltstd -DVM_COVERAGE=0 -DVM_SC=0 -DVM_TRACE=0 -DVM_TRACE_FST=0 -DVM_TRACE_VCD=0 -faligned-new -fcf-protection=none -Wno-bool-operation -Wno-overloaded-virtual -Wno-shadow -Wno-sign-compare -Wno-uninitialized -Wno-unused-but-set-parameter -Wno-unused-but-set-variable -Wno-unused-parameter -Wno-unused-variable       -c -o verilated.o /home/elfo/tools/verilator/root/include/verilated.cpp
+g++ -Os  -I.  -MMD -I/home/elfo/tools/verilator/root/include -I/home/elfo/tools/verilator/root/include/vltstd -DVM_COVERAGE=0 -DVM_SC=0 -DVM_TRACE=0 -DVM_TRACE_FST=0 -DVM_TRACE_VCD=0 -faligned-new -fcf-protection=none -Wno-bool-operation -Wno-overloaded-virtual -Wno-shadow -Wno-sign-compare -Wno-uninitialized -Wno-unused-but-set-parameter -Wno-unused-but-set-variable -Wno-unused-parameter -Wno-unused-variable       -c -o verilated_threads.o /home/elfo/tools/verilator/root/include/verilated_threads.cpp
+/usr/bin/python3 /home/elfo/tools/verilator/root/bin/verilator_includer -DVL_INCLUDE_OPT=include Vaster_multicore_probe.cpp Vaster_multicore_probe___024root__DepSet_h752dbbb1__0.cpp Vaster_multicore_probe___024root__DepSet_hc8bc0555__0.cpp Vaster_multicore_probe_aster_picorv32__DepSet_h70c71e93__0.cpp Vaster_multicore_probe___024root__Slow.cpp Vaster_multicore_probe___024root__DepSet_h752dbbb1__0__Slow.cpp Vaster_multicore_probe___024root__DepSet_hc8bc0555__0__Slow.cpp Vaster_multicore_probe_aster_picorv32__Slow.cpp Vaster_multicore_probe_aster_picorv32__DepSet_h70c71e93__0__Slow.cpp Vaster_multicore_probe_aster_picorv32__DepSet_hcae56077__0__Slow.cpp Vaster_multicore_probe__Syms.cpp > Vaster_multicore_probe__ALL.cpp
+g++ -Os  -I.  -MMD -I/home/elfo/tools/verilator/root/include -I/home/elfo/tools/verilator/root/include/vltstd -DVM_COVERAGE=0 -DVM_SC=0 -DVM_TRACE=0 -DVM_TRACE_FST=0 -DVM_TRACE_VCD=0 -faligned-new -fcf-protection=none -Wno-bool-operation -Wno-overloaded-virtual -Wno-shadow -Wno-sign-compare -Wno-uninitialized -Wno-unused-but-set-parameter -Wno-unused-but-set-variable -Wno-unused-parameter -Wno-unused-variable       -c -o Vaster_multicore_probe__ALL.o Vaster_multicore_probe__ALL.cpp
+echo "" > Vaster_multicore_probe__ALL.verilator_deplist.tmp
+Archive ar -rcs Vaster_multicore_probe__ALL.a Vaster_multicore_probe__ALL.o
+g++     tb_multicore_adversarial.o verilated.o verilated_threads.o Vaster_multicore_probe__ALL.a    -pthread -lpthread -latomic   -o /home/elfo/Documents/Aster/build/phase5-71e2570/legacy-verified/adversarial_l11_sync0_wait0_w4_n16/aster_multicore_adversarial_sim
+rm Vaster_multicore_probe__ALL.verilator_deplist.tmp
+make[1]: Leaving directory '/home/elfo/Documents/Aster/build/phase5-71e2570/legacy-verified/adversarial_l11_sync0_wait0_w4_n16/obj'
+riscv32-unknown-elf-gcc -march=rv32im -mabi=ilp32 -nostdlib -nostartfiles -nodefaultlibs -ffreestanding -Wall -Wextra -Werror -O2 -fno-pic -fno-stack-protector -msmall-data-limit=0 -Isoftware/runtime -T software/boot/link_multicore.ld -o /home/elfo/Documents/Aster/build/phase5-71e2570/legacy-verified/software/multicore_faults.elf software/runtime/start_multicore.S software/tests/multicore_faults.c
+python3 scripts/elf_to_hex.py --rom-bytes 65536 /home/elfo/Documents/Aster/build/phase5-71e2570/legacy-verified/software/multicore_faults.elf /home/elfo/Documents/Aster/build/phase5-71e2570/legacy-verified/software/multicore_faults.hex
+riscv32-unknown-elf-gcc -march=rv32im -mabi=ilp32 -nostdlib -nostartfiles -nodefaultlibs -ffreestanding -Wall -Wextra -Werror -O2 -fno-pic -fno-stack-protector -msmall-data-limit=0 -Isoftware/runtime -T software/boot/link_multicore.ld -o /home/elfo/Documents/Aster/build/phase5-71e2570/legacy-verified/software/multicore_reset_stress.elf software/runtime/start_multicore.S software/tests/multicore_reset_stress.c
+python3 scripts/elf_to_hex.py --rom-bytes 65536 /home/elfo/Documents/Aster/build/phase5-71e2570/legacy-verified/software/multicore_reset_stress.elf /home/elfo/Documents/Aster/build/phase5-71e2570/legacy-verified/software/multicore_reset_stress.hex
+PASS: real-core faults boot=0 traps=12 primary_retired_while_peer_trapped=9453
+PASS: real-core faults boot=1 traps=12 primary_retired_while_peer_trapped=9453
+mkdir -p /home/elfo/Documents/Aster/build/phase5-71e2570/legacy-verified/multicore_h2_l11_sync0_wait0_w4_n16
+verilator --cc --exe --build --timing --Wall -DRISCV_FORMAL --Wno-DECLFILENAME --Wno-GENUNNAMED --Wno-UNUSEDSIGNAL --Wno-BLKSEQ \
+	--top-module aster_multicore --Mdir /home/elfo/Documents/Aster/build/phase5-71e2570/legacy-verified/multicore_h2_l11_sync0_wait0_w4_n16/parallel_obj -o /home/elfo/Documents/Aster/build/phase5-71e2570/legacy-verified/multicore_h2_l11_sync0_wait0_w4_n16/aster_parallel_sim \
+	-GHART_COUNT=2 "-GSYNC_MEMORY=1'b0" "-GENABLE_L1=1'b1" \
+	-GMEMORY_WAIT_CYCLES=0 -GL1_LINE_WORDS=4 -GL1_LINE_COUNT=16 \
+	/home/elfo/Documents/Aster/rtl/core/aster_picorv32.sv /home/elfo/Documents/Aster/vendor/picorv32/picorv32.v /home/elfo/Documents/Aster/rtl/cache/aster_l1_cache.sv /home/elfo/Documents/Aster/rtl/memory/aster_rom.sv /home/elfo/Documents/Aster/rtl/memory/aster_ram.sv /home/elfo/Documents/Aster/rtl/peripherals/aster_uart.sv /home/elfo/Documents/Aster/rtl/peripherals/aster_perf_counters.sv /home/elfo/Documents/Aster/rtl/interconnect/aster_arbiter2.sv /home/elfo/Documents/Aster/rtl/soc/aster_shared_fabric.sv /home/elfo/Documents/Aster/rtl/core/aster_hart.sv /home/elfo/Documents/Aster/rtl/soc/aster_multicore.sv \
+	/home/elfo/Documents/Aster/verification/soc/tb_aster_parallel.cpp
+make[1]: Entering directory '/home/elfo/Documents/Aster/build/phase5-71e2570/legacy-verified/multicore_h2_l11_sync0_wait0_w4_n16/parallel_obj'
+g++  -I.  -MMD -I/home/elfo/tools/verilator/root/include -I/home/elfo/tools/verilator/root/include/vltstd -DVM_COVERAGE=0 -DVM_SC=0 -DVM_TRACE=0 -DVM_TRACE_FST=0 -DVM_TRACE_VCD=0 -faligned-new -fcf-protection=none -Wno-bool-operation -Wno-overloaded-virtual -Wno-shadow -Wno-sign-compare -Wno-uninitialized -Wno-unused-but-set-parameter -Wno-unused-but-set-variable -Wno-unused-parameter -Wno-unused-variable       -Os -c -o tb_aster_parallel.o /home/elfo/Documents/Aster/verification/soc/tb_aster_parallel.cpp
+g++ -Os  -I.  -MMD -I/home/elfo/tools/verilator/root/include -I/home/elfo/tools/verilator/root/include/vltstd -DVM_COVERAGE=0 -DVM_SC=0 -DVM_TRACE=0 -DVM_TRACE_FST=0 -DVM_TRACE_VCD=0 -faligned-new -fcf-protection=none -Wno-bool-operation -Wno-overloaded-virtual -Wno-shadow -Wno-sign-compare -Wno-uninitialized -Wno-unused-but-set-parameter -Wno-unused-but-set-variable -Wno-unused-parameter -Wno-unused-variable       -c -o verilated.o /home/elfo/tools/verilator/root/include/verilated.cpp
+g++ -Os  -I.  -MMD -I/home/elfo/tools/verilator/root/include -I/home/elfo/tools/verilator/root/include/vltstd -DVM_COVERAGE=0 -DVM_SC=0 -DVM_TRACE=0 -DVM_TRACE_FST=0 -DVM_TRACE_VCD=0 -faligned-new -fcf-protection=none -Wno-bool-operation -Wno-overloaded-virtual -Wno-shadow -Wno-sign-compare -Wno-uninitialized -Wno-unused-but-set-parameter -Wno-unused-but-set-variable -Wno-unused-parameter -Wno-unused-variable       -c -o verilated_threads.o /home/elfo/tools/verilator/root/include/verilated_threads.cpp
+/usr/bin/python3 /home/elfo/tools/verilator/root/bin/verilator_includer -DVL_INCLUDE_OPT=include Vaster_multicore.cpp Vaster_multicore___024root__DepSet_h171db9e5__0.cpp Vaster_multicore___024root__DepSet_ha3570658__0.cpp Vaster_multicore_aster_picorv32__DepSet_hba852829__0.cpp Vaster_multicore___024root__Slow.cpp Vaster_multicore___024root__DepSet_h171db9e5__0__Slow.cpp Vaster_multicore___024root__DepSet_ha3570658__0__Slow.cpp Vaster_multicore_aster_picorv32__Slow.cpp Vaster_multicore_aster_picorv32__DepSet_hba852829__0__Slow.cpp Vaster_multicore_aster_picorv32__DepSet_h0dde77a4__0__Slow.cpp Vaster_multicore__Syms.cpp > Vaster_multicore__ALL.cpp
+g++ -Os  -I.  -MMD -I/home/elfo/tools/verilator/root/include -I/home/elfo/tools/verilator/root/include/vltstd -DVM_COVERAGE=0 -DVM_SC=0 -DVM_TRACE=0 -DVM_TRACE_FST=0 -DVM_TRACE_VCD=0 -faligned-new -fcf-protection=none -Wno-bool-operation -Wno-overloaded-virtual -Wno-shadow -Wno-sign-compare -Wno-uninitialized -Wno-unused-but-set-parameter -Wno-unused-but-set-variable -Wno-unused-parameter -Wno-unused-variable       -c -o Vaster_multicore__ALL.o Vaster_multicore__ALL.cpp
+echo "" > Vaster_multicore__ALL.verilator_deplist.tmp
+Archive ar -rcs Vaster_multicore__ALL.a Vaster_multicore__ALL.o
+g++     tb_aster_parallel.o verilated.o verilated_threads.o Vaster_multicore__ALL.a    -pthread -lpthread -latomic   -o /home/elfo/Documents/Aster/build/phase5-71e2570/legacy-verified/multicore_h2_l11_sync0_wait0_w4_n16/aster_parallel_sim
+rm Vaster_multicore__ALL.verilator_deplist.tmp
+make[1]: Leaving directory '/home/elfo/Documents/Aster/build/phase5-71e2570/legacy-verified/multicore_h2_l11_sync0_wait0_w4_n16/parallel_obj'
+ASTERBENCH,version=3,name=parallel_mix,status=PASS,bytes=256,rounds=4,jobs=3,job=1,base_seed=0x13570000,seed=0x8d6079b9,harts=2,workers=2,h0_words=32,h1_words=32,h0_checksum=0xff055ff7,h1_checksum=0xc153b60d,checksum=0xc0591604,clock_hz=31250000,l1=1,sync_memory=0,line_words=4,line_count=16,memory_wait=0,cycles=0x0000000000005058,h0_cycles=0x0000000000005058,h0_retired=0x00000000000008d4,h0_memory_transactions=0x0000000000000b19,h0_cache_accesses=0x0000000000000ad5,h0_cache_misses=0x000000000000003e,h0_dma_bytes=0x0000000000000000,h0_accelerator_cycles=0x0000000000000000,h0_backing_transactions=0x000000000000015b,h1_cycles=0x0000000000005058,h1_retired=0x00000000000008db,h1_memory_transactions=0x0000000000000b25,h1_cache_accesses=0x0000000000000adc,h1_cache_misses=0x0000000000000038,h1_dma_bytes=0x0000000000000000,h1_accelerator_cycles=0x0000000000000000,h1_backing_transactions=0x0000000000000142
+ASTEROBS,{"boot":0,"job":1,"cycles":20568,"kernel_overlap_cycles":17931,"h0_kernel_retired":1688,"h0_kernel_first":1181,"h0_kernel_last":19112,"h1_kernel_retired":1688,"h1_kernel_first":1176,"h1_kernel_last":19111}
+ASTERBENCH,version=3,name=parallel_mix,status=PASS,bytes=256,rounds=4,jobs=3,job=2,base_seed=0x13570000,seed=0x2f39f372,harts=2,workers=2,h0_words=32,h1_words=32,h0_checksum=0x21e97907,h1_checksum=0x42671933,checksum=0x6450923a,clock_hz=31250000,l1=1,sync_memory=0,line_words=4,line_count=16,memory_wait=0,cycles=0x000000000000504f,h0_cycles=0x000000000000504f,h0_retired=0x00000000000008d4,h0_memory_transactions=0x0000000000000b19,h0_cache_accesses=0x0000000000000ad5,h0_cache_misses=0x0000000000000038,h0_dma_bytes=0x0000000000000000,h0_accelerator_cycles=0x0000000000000000,h0_backing_transactions=0x0000000000000153,h1_cycles=0x000000000000504f,h1_retired=0x00000000000008e2,h1_memory_transactions=0x0000000000000b32,h1_cache_accesses=0x0000000000000ae7,h1_cache_misses=0x000000000000000e,h1_dma_bytes=0x0000000000000000,h1_accelerator_cycles=0x0000000000000000,h1_backing_transactions=0x000000000000011a
+ASTEROBS,{"boot":0,"job":2,"cycles":20559,"kernel_overlap_cycles":17886,"h0_kernel_retired":1688,"h0_kernel_first":1171,"h0_kernel_last":19104,"h1_kernel_retired":1688,"h1_kernel_first":1151,"h1_kernel_last":19056}
+ASTERBENCH,version=3,name=parallel_mix,status=PASS,bytes=256,rounds=4,jobs=3,job=3,base_seed=0x13570000,seed=0xc9f16d2b,harts=2,workers=2,h0_words=32,h1_words=32,h0_checksum=0x2760a968,h1_checksum=0xa400e5c3,checksum=0xcb618f2b,clock_hz=31250000,l1=1,sync_memory=0,line_words=4,line_count=16,memory_wait=0,cycles=0x000000000000504d,h0_cycles=0x000000000000504d,h0_retired=0x00000000000008d4,h0_memory_transactions=0x0000000000000b19,h0_cache_accesses=0x0000000000000ad5,h0_cache_misses=0x0000000000000038,h0_dma_bytes=0x0000000000000000,h0_accelerator_cycles=0x0000000000000000,h0_backing_transactions=0x0000000000000153,h1_cycles=0x000000000000504d,h1_retired=0x00000000000008da,h1_memory_transactions=0x0000000000000b27,h1_cache_accesses=0x0000000000000ae2,h1_cache_misses=0x0000000000000014,h1_dma_bytes=0x0000000000000000,h1_accelerator_cycles=0x0000000000000000,h1_backing_transactions=0x0000000000000132
+ASTEROBS,{"boot":0,"job":3,"cycles":20557,"kernel_overlap_cycles":17878,"h0_kernel_retired":1688,"h0_kernel_first":1172,"h0_kernel_last":19100,"h1_kernel_retired":1688,"h1_kernel_first":1148,"h1_kernel_last":19049}
+ASTERBENCH,version=3,name=parallel_mix,status=PASS,bytes=256,rounds=4,jobs=3,job=1,base_seed=0x13570000,seed=0x8d6079b9,harts=2,workers=2,h0_words=32,h1_words=32,h0_checksum=0xff055ff7,h1_checksum=0xc153b60d,checksum=0xc0591604,clock_hz=31250000,l1=1,sync_memory=0,line_words=4,line_count=16,memory_wait=0,cycles=0x0000000000005058,h0_cycles=0x0000000000005058,h0_retired=0x00000000000008d4,h0_memory_transactions=0x0000000000000b19,h0_cache_accesses=0x0000000000000ad5,h0_cache_misses=0x000000000000003e,h0_dma_bytes=0x0000000000000000,h0_accelerator_cycles=0x0000000000000000,h0_backing_transactions=0x000000000000015b,h1_cycles=0x0000000000005058,h1_retired=0x00000000000008db,h1_memory_transactions=0x0000000000000b25,h1_cache_accesses=0x0000000000000adc,h1_cache_misses=0x0000000000000038,h1_dma_bytes=0x0000000000000000,h1_accelerator_cycles=0x0000000000000000,h1_backing_transactions=0x0000000000000142
+ASTEROBS,{"boot":1,"job":1,"cycles":20568,"kernel_overlap_cycles":17931,"h0_kernel_retired":1688,"h0_kernel_first":1181,"h0_kernel_last":19112,"h1_kernel_retired":1688,"h1_kernel_first":1176,"h1_kernel_last":19111}
+ASTERBENCH,version=3,name=parallel_mix,status=PASS,bytes=256,rounds=4,jobs=3,job=2,base_seed=0x13570000,seed=0x2f39f372,harts=2,workers=2,h0_words=32,h1_words=32,h0_checksum=0x21e97907,h1_checksum=0x42671933,checksum=0x6450923a,clock_hz=31250000,l1=1,sync_memory=0,line_words=4,line_count=16,memory_wait=0,cycles=0x000000000000504f,h0_cycles=0x000000000000504f,h0_retired=0x00000000000008d4,h0_memory_transactions=0x0000000000000b19,h0_cache_accesses=0x0000000000000ad5,h0_cache_misses=0x0000000000000038,h0_dma_bytes=0x0000000000000000,h0_accelerator_cycles=0x0000000000000000,h0_backing_transactions=0x0000000000000153,h1_cycles=0x000000000000504f,h1_retired=0x00000000000008e2,h1_memory_transactions=0x0000000000000b32,h1_cache_accesses=0x0000000000000ae7,h1_cache_misses=0x000000000000000e,h1_dma_bytes=0x0000000000000000,h1_accelerator_cycles=0x0000000000000000,h1_backing_transactions=0x000000000000011a
+ASTEROBS,{"boot":1,"job":2,"cycles":20559,"kernel_overlap_cycles":17886,"h0_kernel_retired":1688,"h0_kernel_first":1171,"h0_kernel_last":19104,"h1_kernel_retired":1688,"h1_kernel_first":1151,"h1_kernel_last":19056}
+ASTERBENCH,version=3,name=parallel_mix,status=PASS,bytes=256,rounds=4,jobs=3,job=3,base_seed=0x13570000,seed=0xc9f16d2b,harts=2,workers=2,h0_words=32,h1_words=32,h0_checksum=0x2760a968,h1_checksum=0xa400e5c3,checksum=0xcb618f2b,clock_hz=31250000,l1=1,sync_memory=0,line_words=4,line_count=16,memory_wait=0,cycles=0x000000000000504d,h0_cycles=0x000000000000504d,h0_retired=0x00000000000008d4,h0_memory_transactions=0x0000000000000b19,h0_cache_accesses=0x0000000000000ad5,h0_cache_misses=0x0000000000000038,h0_dma_bytes=0x0000000000000000,h0_accelerator_cycles=0x0000000000000000,h0_backing_transactions=0x0000000000000153,h1_cycles=0x000000000000504d,h1_retired=0x00000000000008da,h1_memory_transactions=0x0000000000000b27,h1_cache_accesses=0x0000000000000ae2,h1_cache_misses=0x0000000000000014,h1_dma_bytes=0x0000000000000000,h1_accelerator_cycles=0x0000000000000000,h1_backing_transactions=0x0000000000000132
+ASTEROBS,{"boot":1,"job":3,"cycles":20557,"kernel_overlap_cycles":17878,"h0_kernel_retired":1688,"h0_kernel_first":1172,"h0_kernel_last":19100,"h1_kernel_retired":1688,"h1_kernel_first":1148,"h1_kernel_last":19049}
+PASS: parallel jobs, independent kernel retirement and exact RTL counter scoreboard (2 boots)
