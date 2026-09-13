@@ -370,8 +370,6 @@ and invented summaries. A fresh clean checkout must rebuild/verify the current
 implementation and audit the exact committed bundle plus preserved historical
 evidence. Commit and push each verified milestone; complete only after all gates.
 
-## Primary references
-
 ### Functional evidence capture milestone
 
 `scripts/dot8_functional_results.py capture OUTPUT --l1 {0,1}` builds a fresh
@@ -390,6 +388,17 @@ File-local BSS symbols are bound through ELF sections/symbols; GNU linker maps
 do not emit those local names. Synthetic validator fixtures are not measurements.
 The expanded host suite passes 198 tests. Clean accepted captures and physical
 functional comparisons remain acceptance work; this milestone is not closeout.
+
+The guarded physical-functional collector and read-only report auditor are
+implemented separately from the benchmark collector. They retain raw UART,
+full RAM, live DMA/DOT8 state, both active harts and an exact 50-counter reference
+comparison; failure cleanup only touches an identity-verified bridge. The host
+suite now passes 202 tests, including collector races, malformed input, PCAP
+failure, corrupted RAM/live counters and frozen-event mismatches. The
+[physical workflow](phase8-physical.md) describes deployment and read-only
+reproduction. Actual physical functional acceptance remains pending.
+
+## Primary references
 
 The implemented v6 record/layout/observation contract is detailed in
 [Phase 8 AsterBench](phase8-bench.md).
