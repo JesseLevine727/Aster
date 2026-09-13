@@ -54,7 +54,10 @@ legacy/multicore regression matrices. The default 64-word workload measures
 small-job overhead and cache-dependent scaling remain visible. Older captures
 retain their original source/timing meaning. `make linux-dual-sim` tests the
 new bridge; `make fpga-linux-dual` builds its overlay. Original `fpga` and
-`fpga-linux` targets preserve the single-core map. Phase 6 coherence has not begun.
+`fpga-linux` targets preserve the single-core map. Phase 6 is now in progress:
+the [coherence and full RV32A contract](docs/phase6.md) defines staged PCPI,
+atomic-memory, MSI-like cache, runtime, benchmark and physical acceptance gates.
+Existing builds remain RV32IM until the new implementation is verified.
 
 Start here:
 
@@ -257,6 +260,10 @@ Add hart IDs, startup/reset, synchronization and inter-core signaling.
 Introduce a simple two-core snooping coherence protocol, such as MSI/MESI-like behavior, and eventually a shared L2 where appropriate.
 
 **Tests:** ping-pong, producer/consumer, atomics, false sharing and adversarial ownership transitions.
+
+The active [Phase 6 contract](docs/phase6.md) adds full RV32A (LR/SC and all word
+AMOs) through Aster-owned PicoRV32 integration. Shared L2 is deferred; coherent
+shared RAM, ordering/fault/reset correctness and physical validation are not.
 
 ## Phase 7 — DMA
 
