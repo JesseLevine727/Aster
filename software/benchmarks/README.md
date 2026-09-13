@@ -1,5 +1,10 @@
 # AsterBench
 
+Phase 6 adds [AsterBench v4](../../docs/asterbench-v4.md) through
+`make coherent-bench`: real RV32IMA atomic counters, locks, ping-pong, SPSC
+queues, false-sharing/padded counters and parallel shared-RAM compute. It has
+a separate ABI/schema/capture path; the v2/v3 records below retain their meaning.
+
 The default workload copies 64 RAM words four times. Source word i is
 `0x13570000 ^ (i * 0x1021)`. Initialization is outside the measurement
 window; byte-for-byte validation and checksum generation happen after freeze.

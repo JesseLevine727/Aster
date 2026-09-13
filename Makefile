@@ -26,6 +26,19 @@ PARALLEL_ROUNDS ?= 4
 PARALLEL_JOBS ?= 3
 PARALLEL_WORKERS ?= $(HART_COUNT)
 PARALLEL_SEED ?= 0x13570000
+COHERENT_WORKLOAD ?= atomic_add
+COHERENT_ITEMS ?= 64
+COHERENT_ROUNDS ?= 4
+COHERENT_JOBS ?= 3
+COHERENT_WORKERS ?= $(HART_COUNT)
+COHERENT_SEED ?= 0x13570000
+COHERENT_BOOTS ?= 2
+COHERENT_UART_SEED ?= 0
+COHERENT_NAMES := atomic_add lrsc_counter cas_counter lock_sum false_shared padded ping_pong spsc_queue shared_mix
+ifeq ($(filter $(COHERENT_WORKLOAD),$(COHERENT_NAMES)),)
+$(error COHERENT_WORKLOAD must be one of $(COHERENT_NAMES))
+endif
+COHERENT_KIND := $(shell names=($(COHERENT_NAMES)); for i in "$${!names[@]}"; do if [[ "$${names[$$i]}" == '$(COHERENT_WORKLOAD)' ]]; then echo $$i; fi; done)
 ifeq ($(filter $(BENCH_WORKLOAD),memcpy walk_sequential walk_random),)
 $(error BENCH_WORKLOAD must be memcpy, walk_sequential or walk_random)
 endif
@@ -34,6 +47,9 @@ UART_FIFO_DEPTH ?= 3
 # Enable the pinned core's synthesizable RVFI ports, not FORMAL assumptions.
 VERILATOR_VENDOR_LINT_FLAGS := -DRISCV_FORMAL --Wno-DECLFILENAME --Wno-GENUNNAMED \
 	--Wno-UNUSEDSIGNAL --Wno-BLKSEQ
+# Verilator 5.020 needs reset loops unrolled for unpacked nonblocking arrays.
+# Keep synchronous reset semantics and all assertions at the 1024-line boundary.
+VERILATOR_COHERENT_FLAGS := --unroll-count 2048 --unroll-stmts 100000
 
 RTL_CORE := rtl/core/aster_picorv32.sv vendor/picorv32/picorv32.v
 RTL_CACHE := rtl/cache/aster_l1_cache.sv
@@ -87,6 +103,14 @@ COHERENT_CACHE_DIR := $(BUILD_DIR)/coherent_l1$(ENABLE_L1)_w$(L1_LINE_WORDS)_n$(
 COHERENT_CACHE_SIM := $(COHERENT_CACHE_DIR)/aster_coherent_cache_sim
 COHERENT_SOC_DIR := $(BUILD_DIR)/coherent_soc_h$(HART_COUNT)_$(CONFIG_TAG)
 COHERENT_SOC_SIM := $(COHERENT_SOC_DIR)/aster_coherent_soc_sim
+COHERENT_BENCH_SIM := $(COHERENT_SOC_DIR)/aster_coherent_bench_sim
+COHERENT_FW_DIR := $(HELLO_DIR)/coherent_$(COHERENT_WORKLOAD)_i$(COHERENT_ITEMS)_r$(COHERENT_ROUNDS)_j$(COHERENT_JOBS)_p$(COHERENT_WORKERS)_s$(COHERENT_SEED)
+COHERENT_ELF := $(COHERENT_FW_DIR)/coherent.elf
+COHERENT_HEX := $(COHERENT_FW_DIR)/coherent.hex
+COHERENT_CFLAGS = $(filter-out -march=% -mabi=%,$(HELLO_CFLAGS)) -march=rv32ima -mabi=ilp32 \
+	-DCOHERENT_KIND=$(COHERENT_KIND) -DCOHERENT_ITEMS=$(COHERENT_ITEMS) -DCOHERENT_ROUNDS=$(COHERENT_ROUNDS) \
+	-DCOHERENT_JOBS=$(COHERENT_JOBS) -DCOHERENT_WORKERS=$(COHERENT_WORKERS) -DCOHERENT_SEED=$(COHERENT_SEED)
+COHERENT_LDFLAGS = -T software/boot/link_multicore.ld -Wl,-Map,$(COHERENT_FW_DIR)/coherent.map
 PERF_SIM := $(BUILD_DIR)/aster_perf_sim
 ARBITER_SIM := $(BUILD_DIR)/aster_arbiter2_sim
 FABRIC_DIR := $(BUILD_DIR)/fabric_h$(HART_COUNT)_$(CONFIG_TAG)
@@ -153,6 +177,8 @@ help:
 	@echo "  make coherent-counters   Check ABI 4 counter windows and 64-bit carry"
 	@echo "  make linux-coherent-matrix  Test Phase 6 AXI/serial/RAM/stop protocol"
 	@echo "  make fpga-linux-coherent   Build the dual-core RV32IMA coherent PYNQ overlay"
+	@echo "  make coherent-bench       AsterBench v4 atomic/coherent C workload with exact per-hart counters"
+	@echo "  make coherent-bench-matrix  Cross all nine workloads with topology/cache/memory timing"
 	@echo "  make phase1     Run CPU, runtime, memory-map and trap regressions"
 	@echo "  make phase1-matrix  Test Phase 1 with L1 off/on, async/sync memory"
 	@echo "  make hello      Build and run Hello from Aster on the RTL CPU"
@@ -409,7 +435,7 @@ $(LINUX_COHERENT_SIM): $(RTL_CORE) $(RTL_CACHE) $(RTL_MEMORY) $(RTL_PERIPHERALS)
 		rtl/peripherals/aster_uart_tx.sv rtl/peripherals/aster_uart_rx.sv rtl/soc/aster_pynq_linux.sv \
 		verification/common/linux_bus.h verification/soc/tb_pynq_linux_coherent.cpp Makefile
 	mkdir -p $(LINUX_COHERENT_DIR)
-	$(VERILATOR) --cc --exe --build --timing --Wall $(VERILATOR_VENDOR_LINT_FLAGS) --assert -DASTER_COHERENCE_ASSERT --public-flat-rw \
+	$(VERILATOR) --cc --exe --build --timing --Wall $(VERILATOR_VENDOR_LINT_FLAGS) $(VERILATOR_COHERENT_FLAGS) --assert -DASTER_COHERENCE_ASSERT --public-flat-rw \
 		--top-module aster_pynq_linux -GHART_COUNT=$(HART_COUNT) "-GENABLE_COHERENCE=1'b1" "-GCOHERENT_L1=1'b$(ENABLE_L1)" \
 		-GCLK_HZ=400 -GBAUD=10 -GRX_DEPTH=128 -CFLAGS '-DASTER_HART_COUNT=$(HART_COUNT) -DASTER_L1=$(ENABLE_L1)' \
 		--Mdir $(LINUX_COHERENT_DIR)/obj -o $(abspath $@) \
@@ -584,7 +610,7 @@ $(HELLO_DIR)/coherent_lifecycle.elf: software/tests/coherent_lifecycle.c softwar
 
 $(ATOMIC_RUNTIME_SIM): $(RTL_CORE) $(RTL_CACHE) rtl/cache/aster_coherent_cache.sv rtl/core/aster_pcpi_atomic.sv rtl/core/aster_atomic_hart.sv rtl/interconnect/aster_atomic_fabric.sv verification/soc/aster_atomic_probe.sv verification/soc/tb_aster_atomic_probe.cpp Makefile
 	mkdir -p $(ATOMIC_RUNTIME_DIR)
-	$(VERILATOR) --cc --exe --build --timing --Wall $(VERILATOR_VENDOR_LINT_FLAGS) --assert -DASTER_COHERENCE_ASSERT \
+	$(VERILATOR) --cc --exe --build --timing --Wall $(VERILATOR_VENDOR_LINT_FLAGS) $(VERILATOR_COHERENT_FLAGS) --assert -DASTER_COHERENCE_ASSERT \
 		--top-module aster_atomic_probe -GHART_COUNT=$(HART_COUNT) \
 		"-GENABLE_CACHE=1'b$(ATOMIC_CACHE)" -GLINE_WORDS=$(L1_LINE_WORDS) -GLINE_COUNT=$(L1_LINE_COUNT) \
 		-CFLAGS '-DASTER_HART_COUNT=$(HART_COUNT) -DASTER_ATOMIC_CACHE=$(ATOMIC_CACHE) -DASTER_LINE_WORDS=$(L1_LINE_WORDS) -DASTER_LINE_COUNT=$(L1_LINE_COUNT)' \
@@ -607,7 +633,7 @@ coherent-runtime-matrix:
 .PHONY: atomic-faults atomic-faults-matrix
 $(ATOMIC_FAULT_SIM): $(RTL_CORE) $(RTL_CACHE) rtl/cache/aster_coherent_cache.sv rtl/core/aster_pcpi_atomic.sv rtl/core/aster_atomic_hart.sv rtl/interconnect/aster_atomic_fabric.sv verification/soc/aster_atomic_probe.sv verification/soc/tb_aster_atomic_faults.cpp Makefile
 	mkdir -p $(ATOMIC_FAULT_DIR)
-	$(VERILATOR) --cc --exe --build --timing --Wall $(VERILATOR_VENDOR_LINT_FLAGS) --assert -DASTER_COHERENCE_ASSERT \
+	$(VERILATOR) --cc --exe --build --timing --Wall $(VERILATOR_VENDOR_LINT_FLAGS) $(VERILATOR_COHERENT_FLAGS) --assert -DASTER_COHERENCE_ASSERT \
 		--top-module aster_atomic_probe -GHART_COUNT=2 "-GENABLE_CACHE=1'b$(ATOMIC_CACHE)" \
 		-GLINE_WORDS=$(L1_LINE_WORDS) -GLINE_COUNT=$(L1_LINE_COUNT) \
 		-CFLAGS '-DASTER_ATOMIC_CACHE=$(ATOMIC_CACHE) -DASTER_LINE_WORDS=$(L1_LINE_WORDS) -DASTER_LINE_COUNT=$(L1_LINE_COUNT)' \
@@ -626,7 +652,7 @@ atomic-faults-matrix:
 .PHONY: coherent-cache coherent-cache-matrix
 $(COHERENT_CACHE_SIM): rtl/cache/aster_coherent_cache.sv verification/unit/tb_aster_coherent_cache.cpp Makefile
 	mkdir -p $(COHERENT_CACHE_DIR)
-	$(VERILATOR) --cc --exe --build --timing --Wall --Wno-UNUSEDSIGNAL --assert -DASTER_COHERENCE_ASSERT \
+	$(VERILATOR) --cc --exe --build --timing --Wall --Wno-UNUSEDSIGNAL $(VERILATOR_COHERENT_FLAGS) --assert -DASTER_COHERENCE_ASSERT \
 		--top-module aster_coherent_cache "-GENABLE_CACHE=1'b$(ENABLE_L1)" \
 		-GLINE_WORDS=$(L1_LINE_WORDS) -GLINE_COUNT=$(L1_LINE_COUNT) \
 		-CFLAGS '-DASTER_CACHE_ENABLE=$(ENABLE_L1) -DASTER_LINE_WORDS=$(L1_LINE_WORDS) -DASTER_LINE_COUNT=$(L1_LINE_COUNT)' \
@@ -644,7 +670,7 @@ coherent-cache-matrix:
 .PHONY: coherent-soc coherent-soc-matrix
 $(COHERENT_SOC_SIM): $(RTL_COHERENT) verification/soc/tb_aster_coherent_soc.cpp Makefile
 	mkdir -p $(COHERENT_SOC_DIR)
-	$(VERILATOR) --cc --exe --build --timing --Wall $(VERILATOR_VENDOR_LINT_FLAGS) --assert -DASTER_COHERENCE_ASSERT \
+	$(VERILATOR) --cc --exe --build --timing --Wall $(VERILATOR_VENDOR_LINT_FLAGS) $(VERILATOR_COHERENT_FLAGS) --assert -DASTER_COHERENCE_ASSERT \
 		--top-module aster_coherent_soc -GHART_COUNT=$(HART_COUNT) "-GENABLE_L1=1'b$(ENABLE_L1)" \
 		"-GSYNC_MEMORY=1'b$(SYNC_MEMORY)" -GMEMORY_WAIT_CYCLES=$(MEMORY_WAIT_CYCLES) "-GHOST_BOOT=1'b1" \
 		-GLINE_WORDS=$(L1_LINE_WORDS) -GLINE_COUNT=$(L1_LINE_COUNT) \
@@ -661,6 +687,69 @@ coherent-soc-matrix:
 		read -r sync wait_cycles <<< "$$timing"; \
 		$(MAKE) --no-print-directory coherent-soc HART_COUNT=$$harts ENABLE_L1=$$cache SYNC_MEMORY=$$sync MEMORY_WAIT_CYCLES=$$wait_cycles; \
 	done; done; done
+
+.PHONY: coherent-bench coherent-firmware coherent-config coherent-bench-workloads coherent-bench-matrix coherent-bench-boundaries coherent-bench-sizes
+$(COHERENT_ELF): software/benchmarks/coherent.c software/runtime/start_multicore.S software/runtime/aster.h software/boot/link_multicore.ld Makefile
+	mkdir -p $(COHERENT_FW_DIR)
+	$(CC) $(COHERENT_CFLAGS) $(COHERENT_LDFLAGS) -o $@ software/runtime/start_multicore.S $<
+
+$(COHERENT_HEX): $(COHERENT_ELF) scripts/elf_to_hex.py
+	$(PYTHON) scripts/elf_to_hex.py --rom-bytes 65536 $< $@
+
+coherent-firmware: $(COHERENT_HEX)
+
+$(COHERENT_BENCH_SIM): $(RTL_COHERENT) verification/soc/tb_aster_coherent_bench.cpp verification/common/coherent_record.h Makefile
+	mkdir -p $(COHERENT_SOC_DIR)
+	$(VERILATOR) --cc --exe --build --timing --Wall $(VERILATOR_VENDOR_LINT_FLAGS) $(VERILATOR_COHERENT_FLAGS) --assert -DASTER_COHERENCE_ASSERT \
+		--top-module aster_coherent_soc -GHART_COUNT=$(HART_COUNT) "-GENABLE_L1=1'b$(ENABLE_L1)" \
+		"-GSYNC_MEMORY=1'b$(SYNC_MEMORY)" -GMEMORY_WAIT_CYCLES=$(MEMORY_WAIT_CYCLES) "-GHOST_BOOT=1'b1" \
+		-GLINE_WORDS=$(L1_LINE_WORDS) -GLINE_COUNT=$(L1_LINE_COUNT) \
+		--Mdir $(COHERENT_SOC_DIR)/bench_obj -o $(abspath $@) \
+		$(addprefix $(ROOT)/,$(RTL_COHERENT)) $(ROOT)/verification/soc/tb_aster_coherent_bench.cpp
+
+coherent-bench: $(COHERENT_HEX) $(COHERENT_BENCH_SIM)
+	@$(PYTHON) scripts/run_coherent_sim.py --simulator $(COHERENT_BENCH_SIM) --elf $(COHERENT_ELF) \
+		--firmware $(COHERENT_HEX) --nm $(RISCV_PREFIX)nm --jobs $(COHERENT_JOBS) --items $(COHERENT_ITEMS) \
+		--kind $(COHERENT_KIND) --rounds $(COHERENT_ROUNDS) --workers $(COHERENT_WORKERS) --harts $(HART_COUNT) --seed $(COHERENT_SEED) \
+		--l1 $(ENABLE_L1) --sync-memory $(SYNC_MEMORY) --memory-wait $(MEMORY_WAIT_CYCLES) \
+		--line-words $(L1_LINE_WORDS) --line-count $(L1_LINE_COUNT) --boots $(COHERENT_BOOTS) --uart-seed $(COHERENT_UART_SEED) \
+		--ram-prefix $(COHERENT_FW_DIR)/h$(HART_COUNT)_$(CONFIG_TAG)_u$(COHERENT_UART_SEED)
+
+coherent-config:
+	@$(PYTHON) -c 'import json,sys; print(json.dumps(dict(zip(("compiler", "cflags", "ldflags", "verilator", "simulator", "firmware", "elf", "nm"), sys.argv[1:]))))' \
+		'$(CC)' '$(COHERENT_CFLAGS)' '$(COHERENT_LDFLAGS)' '$(VERILATOR)' '$(COHERENT_BENCH_SIM)' '$(COHERENT_HEX)' '$(COHERENT_ELF)' '$(RISCV_PREFIX)nm'
+
+coherent-bench-workloads:
+	@set -e; for name in $(COHERENT_NAMES); do for workers in 1 2; do \
+		$(MAKE) --no-print-directory coherent-bench HART_COUNT=2 COHERENT_WORKLOAD=$$name COHERENT_WORKERS=$$workers; \
+	done; done
+
+coherent-bench-matrix:
+	@set -e; for harts_workers in '1 1' '2 1' '2 2'; do read -r harts workers <<< "$$harts_workers"; \
+		for cache in 0 1; do for timing in '0 0' '0 7' '1 1' '1 7'; do read -r sync wait_cycles <<< "$$timing"; \
+		for name in $(COHERENT_NAMES); do \
+			$(MAKE) --no-print-directory coherent-bench HART_COUNT=$$harts COHERENT_WORKERS=$$workers COHERENT_WORKLOAD=$$name \
+				ENABLE_L1=$$cache SYNC_MEMORY=$$sync MEMORY_WAIT_CYCLES=$$wait_cycles; \
+		done; done; done; \
+	done
+
+coherent-bench-boundaries:
+	@set -e; for geometry in '2 2' '8 2' '1024 2' '2 1024'; do read -r words lines <<< "$$geometry"; \
+		for workers in 1 2; do for name in lrsc_counter false_shared padded spsc_queue shared_mix; do \
+			$(MAKE) --no-print-directory coherent-bench HART_COUNT=2 COHERENT_WORKERS=$$workers COHERENT_WORKLOAD=$$name \
+				COHERENT_ITEMS=7 COHERENT_SEED=0xffffffff COHERENT_UART_SEED=0xa57e6 \
+				ENABLE_L1=1 L1_LINE_WORDS=$$words L1_LINE_COUNT=$$lines SYNC_MEMORY=1 MEMORY_WAIT_CYCLES=7; \
+		done; done; \
+	done
+
+coherent-bench-sizes:
+	@set -e; for work in '2 1 0' '129 16 1' '1024 64 0xc0ffee'; do read -r items rounds seed <<< "$$work"; \
+		for cache in 0 1; do for workers in 1 2; do for name in $(COHERENT_NAMES); do \
+			$(MAKE) --no-print-directory coherent-bench HART_COUNT=2 COHERENT_WORKERS=$$workers COHERENT_WORKLOAD=$$name \
+				COHERENT_ITEMS=$$items COHERENT_ROUNDS=$$rounds COHERENT_SEED=$$seed COHERENT_UART_SEED=0xc0ffee \
+				ENABLE_L1=$$cache SYNC_MEMORY=1 MEMORY_WAIT_CYCLES=7; \
+		done; done; done; \
+	done
 
 counters: $(PERF_SIM)
 	@$(PERF_SIM)
@@ -802,7 +891,7 @@ parallel-workloads:
 
 test: smoke phase1 hello bench cache uart fpga-sim linux-sim counters retirement arbiter shared-fabric multicore-runtime parallel
 
-check: tools smoke phase1 hello bench cache uart fpga-sim linux-sim linux-dual-sim linux-coherent-sim counters retirement pcpi-probe atomic-fabric atomic-runtime atomic-faults coherent-cache warm-stop coherent-counters coherent-soc arbiter shared-fabric multicore-runtime multicore-adversarial parallel
+check: tools smoke phase1 hello bench cache uart fpga-sim linux-sim linux-dual-sim linux-coherent-sim counters retirement pcpi-probe atomic-fabric atomic-runtime atomic-faults coherent-cache warm-stop coherent-counters coherent-soc coherent-bench arbiter shared-fabric multicore-runtime multicore-adversarial parallel
 
 clean:
 	rm -rf $(BUILD_DIR)

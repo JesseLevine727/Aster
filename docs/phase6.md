@@ -458,6 +458,65 @@ The expanded default `make -j2 check` passes with the coherent Linux bridge
 regression included; the legacy Linux/parallel/serial tests retain their prior
 results. No board was reconfigured to establish this checkpoint.
 
+### AsterBench v4 implementation checkpoint
+
+[AsterBench v4](asterbench-v4.md) adds nine compiled RV32IMA workloads: AMO,
+constrained LR/SC and C11 CAS counters, an ordinary-RAM lock-protected sum,
+adjacent/padded per-worker counters, coherent request/reply ping-pong, an
+eight-slot wrapping SPSC queue and parallel ordinary shared-RAM compute.
+Independent C++ and Python oracles check values, work partitioning, returned
+ticket sums and full output arrays; release/acquire publication protects the
+ordinary communication data. A real secondary cold start occurs inside each
+two-worker measurement window and is counted as dispatch overhead. Primary
+stays running; secondary is safely stopped before each UART record.
+
+The direct SoC scoreboard independently accumulates all 14 actual event signals
+per hart and matches every reported counter exactly, including real SC retries
+and coherent maintenance ownership. ELF kernel-PC retirements establish actual
+per-hart execution. Every job's RAM-published eight-word result and complete
+output array match independent expectations. Every global stop compares all
+64 KiB of retained backing RAM to architectural-store history; every run ends
+STOPPED, without destructive reset after initial POR.
+
+`make coherent-bench-matrix` passes **216 workload/configuration combinations,
+432 warm boots and 1,296 measured jobs**: all nine workloads, (harts,workers)
+of (1,1)/(2,1)/(2,2), caches off/on and async/0, async/7, sync/1, sync/7 timing.
+`make coherent-bench-boundaries` passes another **40 configurations, 80 boots,
+240 jobs**: five atomic/coherent kernels, one/two workers, seven-item odd splits,
+maximum-value seed, seeded UART stalls and (words,lines) of (2,2)/(8,2)/
+(1024,2)/(2,1024), all with synchronous seven-cycle memory. Verilator 5.020
+requires increased unroll limits for the 1024-line nonblocking reset-array
+loops; the RTL, synchronous reset and assertions remain unchanged.
+
+The strict v4 collector retains raw serial/RTL observations, full RAM snapshots,
+actual firmware/ELF/map/disassembly, complete relevant Git-tree provenance,
+compiler components/headers and model/build identities. Audit binds actual ELF
+symbols and load bytes to RAM/firmware evidence, rejects omitted source files,
+and requires clean source by default. Host tests mutate schemas, numeric types,
+observations, artifacts, rehashed corrupt RAM/firmware and source manifests.
+Development capture/audit passes; complete clean-source studies, physical
+serial/reference integration and final evidence packages remain open.
+The expanded default `make -j2 check` passes with v4 included and all 50 host
+tests passing. This is not yet the final rerun of every historical matrix.
+
+### Early clean-source FPGA build checkpoint
+
+Detached clean source `aee9e913fd5ce561a06cb8ab27306408cdb0c564` builds the
+two-hart coherent/cache-on overlay with the mandatory generated-reset-netlist
+simulation (five scenarios), HWH ABI/hart/cache/clock/reset preflight and
+routed timing/DRC/routing/unconstrained gates. No board download occurred.
+The physical clock is 31.25 MHz; final routed setup slack is **9.207 ns**, hold
+slack **0.035 ns**. Resources: **15,357 LUTs, 15,167 registers, 32 BRAM tiles,
+0 DSPs**. Build output is `build/phase6-aee9e91/fpga/linux-h2-coherent-c1/`.
+
+- Bitstream SHA-256: `305ea8fbcae1a27e1880c5256201958426107869a68562eacf19e080516b9c60`
+- HWH SHA-256: `9bab3b5b238297a921ecc23f941c12b212cc72e8042658bc428e7150911e42e8`
+
+This establishes a synthesizable, routed checkpoint, not the final FPGA
+artifact/evidence audit or actual execution of Phase 6 on the PYNQ. Benchmark
+software changes do not alter its RTL; any subsequent RTL/build-input change
+must be reviewed and rebuilt before a final physical acceptance claim.
+
 ## Verification and closeout requirements
 
 1. Real-core PCPI probe, adapter unit tests and independent full-A reference:
