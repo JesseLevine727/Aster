@@ -4,7 +4,8 @@ Status: **coherent DMA, driver and one-/two-hart real-core integration verified
 in simulation, including the AXI/serial Linux shell, code publication and
 selective/global stop escalation; paired AsterBench v5 firmware/capture/study
 tools verified in development; complete size study, full regression closeout,
-clean routed FPGA builds and physical acceptance pending**.
+physical acceptance and immutable evidence pending; both clean routed FPGA
+builds have passed their individual signoff gates**.
 Baseline: clean/pushed Phase 6 closeout
 `70a1b55b303786144aaa052b6cd8b9e8a4d75bf1`. Before any Phase 7 edits,
 `audit_phase6.py ... --current` passed all seven baseline acceptance gates.
@@ -129,7 +130,10 @@ RAM. Initial 64-byte aligned/cache-on, zero-byte/cache-off, 8 KiB different-
 offset/cache-on and 127-byte same-offset/cache-on at **115,200 baud** all pass
 two boots/four balanced jobs. The repeatable final targets
 `linux-dma-bench-cases` and `linux-dma-bench-baud` cover ten configurations plus
-both cache modes at physical baud. Simulation of serial circuitry is not a
+both cache modes at physical baud. Both complete targets now pass: **24 warm
+boots / 192 methods**, also independently reparsed by the Python v5 validator.
+The identical-config 127-byte same-offset/cache-on direct-SoC and 115,200-baud
+captures match all 16 complete records exactly. Simulation of serial circuitry is not a
 claim that the FPGA has been programmed.
 
 `scripts/dma_overlay.py` adds a distinct DMA overlay envelope and strict
@@ -139,6 +143,17 @@ hash-consistent failed reports, incomplete source/artifact inventories and
 symlinks. No Phase 7 bitstream/physical results are claimed by those fixtures.
 The host suite now passes **117 tests**, including actual compiled publication/
 stop/benchmark ELF checks and the DMA host/overlay rejection gates.
+
+Clean cache-off/on FPGA builds at revision `888c24b` now pass actual generated
+reset, HWH, routing, setup/hold/pulse-width, DRC and methodology gates at
+31.25 MHz. See the [physical evidence contract](phase7-physical.md) for routed
+resources, safe Linux/PCAP deployment and independent physical audit rules.
+Physical execution and the combined full-regression/immutable closeout are
+still pending; FPGA builds alone do not complete the phase.
+The tested physical collector adds seven mock-only safety/audit tests
+(**124 host tests total**), including failure cleanup, read-only prior-overlay
+guards, exact no-download reuse, changed-input rejection and raw evidence
+mutations. These fixtures are not board results.
 
 ## Architecture and coherent serialization
 
