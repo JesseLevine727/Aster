@@ -73,7 +73,9 @@ clean-source simulation study and strict 22-target regression audit pass.
 The [self-contained Phase 6 evidence](docs/results/phase6/closeout-215b2d0/README.md)
 passes all seven requirement audits and a fresh clean rebuild with 84 host
 tests. Its 835 hash-checked artifacts include both actual bitstreams and full
-raw regression/firmware/physical records. README Phase 7 (DMA) is next.
+raw regression/firmware/physical records. Phase 7 (DMA) is now in progress;
+its [architecture and acceptance contract](docs/phase7.md) preserves that
+baseline while adding coherent hardware copies and CPU/DMA size experiments.
 
 Start here:
 
@@ -287,6 +289,11 @@ shared RAM, ordering/fault/reset correctness and physical validation are not.
 Build a memory-to-memory DMA engine with source, destination, length, start/status and completion signaling.
 
 **Experiment:** CPU `memcpy` vs DMA across increasing transfer sizes to identify the crossover point.
+
+**In progress:** [Phase 7 contract](docs/phase7.md). DMA uses the reserved
+`0x3000_0000` register page, participates in coherent shared-RAM access and
+retains the verified 31.25 MHz baseline. Completion is pollable; interrupts,
+shared L2 and Phase 8+ remain outside this phase.
 
 ## Phase 8 — Custom compute instruction
 

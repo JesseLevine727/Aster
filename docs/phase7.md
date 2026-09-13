@@ -1,0 +1,311 @@
+# Phase 7: coherent memory-to-memory DMA
+
+Status: **architecture contract; implementation and acceptance pending**.
+Baseline: clean/pushed Phase 6 closeout
+`70a1b55b303786144aaa052b6cd8b9e8a4d75bf1`. Before any Phase 7 edits,
+`audit_phase6.py ... --current` passed all seven baseline acceptance gates.
+
+## README contract and scope
+
+[README Phase 7](../README.md#phase-7--dma) requires source, destination,
+length, start/status and completion signaling, then CPU `memcpy` versus DMA
+over increasing transfer sizes to identify the crossover. A copy performed by
+a CPU loop and labeled DMA does not satisfy this requirement. No measured
+crossover in the supported range is an acceptable experimental finding, not
+a reason to omit slow cases or change the CPU baseline.
+
+Keep the verified **31.25 MHz**, two pinned PicoRV32 cores and RV32IMA/ilp32
+execution environment. Preserve Phase 1–6 targets/maps/ABIs and AsterBench
+v2/v3/v4. Add DMA as an explicit elaboration choice, disabled in legacy
+configurations. No shared L2, descriptor/scatter-gather engine, AXI DDR DMA,
+interrupt controller, OS/MMU, custom instruction, accelerator or clock-speed
+optimization is part of this phase. Completion is sticky and pollable; an
+interrupt-capable CPU is not a prerequisite.
+
+Use the README layout: owned engine/control logic in `rtl/dma/`, arbitration
+in `rtl/interconnect/`, coherent-service changes in `rtl/cache/`, integration
+in `rtl/soc/`, driver in `software/drivers/`, functional firmware in
+`software/tests/`, measurements in `software/benchmarks/`, independent tests
+in `verification/unit/` and `verification/soc/`, and provenance/audits in
+`scripts/`. Do not modify the pinned PicoRV32 implementation.
+
+## Milestones and exit evidence
+
+- [x] Audit the Phase 6 baseline and specify this contract before RTL changes.
+- [ ] Independent DMA engine/register and fair-arbiter tests.
+- [ ] Coherent device accesses, reservations, permissions and safe lifecycle.
+- [ ] Compiled RISC-V driver/runtime plus directed/seeded integrated matrices.
+- [ ] Versioned AsterBench CPU/DMA sweep, independent oracles and provenance.
+- [ ] Full applicable Phase 1–7 regression run and clean routed FPGA signoff.
+- [ ] Real PYNQ Linux/PCAP DMA and CPU/DMA sweeps, repeated jobs/warm boots.
+- [ ] Immutable evidence, mutation-tested requirement audit, fresh-checkout
+  verification and clean/pushed closeout.
+
+Commit and push each verified milestone. A changed design must update this
+contract with its evidence before subsequent stages depend on it.
+
+## Architecture and coherent serialization
+
+DMA is an uncached hardware requester on the **same coherent RAM service** as
+the CPU atomic fabric. It does not masquerade as a third cached hart and must
+not read/write the backing RAM behind dirty CPU lines.
+
+The existing atomic fabric retains its complete CPU-transaction lock, including
+both read and write halves of an AMO. An outer CPU-group/DMA arbiter grants
+either that whole transaction or one DMA read/write transaction. CPU-group
+admission is gated before the atomic fabric captures a request; DMA cannot
+slip between an AMO's halves. The existing inner hart round robin remains.
+Under simultaneous eligible requests, alternate CPU group and DMA at completed
+transaction boundaries. This bounds starvation in completed transactions,
+assuming backing memory eventually responds; it does not promise a finite
+cycle bound against an indefinitely stalled external responder.
+
+Once offered, request address/data/strobes and ownership stay fixed through
+completion, including abort/stop requests. The DMA engine has explicit issue
+and waiting states so pause can prevent the *next* offer without withdrawing
+an existing one. Capture one result, acknowledge once, then arbitrate again.
+
+The coherent cache service gains an explicitly tagged device path:
+
+1. **DMA read:** inspect both matching CPU cache lines. Return the current
+   word directly from a valid matching line (including M); retain its state.
+   With no hit, read backing RAM. Do not allocate a DMA line or unnecessarily
+   downgrade an M owner just because an uncached device consumed its data.
+2. **DMA write:** if a matching M line exists, write its entire dirty line
+   back first, preserving untouched bytes/words. Invalidate matching copies
+   in both banks, then perform the destination byte-enabled RAM store. Do
+   not allocate a CPU line for the device. S copies need no writeback.
+3. Hold the coherent transaction lock throughout snoop, dirty drain and final
+   read/write. No CPU access may observe a partial ownership transition.
+   Unrelated dirty victims/lines are not discarded.
+
+A successful DMA destination store is an architectural write. On its actual
+RAM acceptance edge, invalidate every matching CPU word reservation, including
+same-value and single-byte writes. Device reads, cache snoops and maintenance
+writebacks must not clear reservations. Forward matching invalidations through
+the atomic fabric's existing reservation-clear interface and observed reserved
+addresses; do not simulate an unrelated CPU store. CPU instruction fetches
+from RAM must see completed DMA writes through the existing uncached/coherent
+RAM-fetch path. Code publication requires a software handoff, not a claim
+that racing instruction modification is safe.
+
+Keep an explicit DMA-origin tag in store/backing observations. In Phase 7,
+device-initiated data traffic and snoop maintenance are recorded in DMA
+counters, not silently charged as CPU instructions or CPU-issued accesses.
+Legacy DMA-disabled per-hart event definitions stay unchanged.
+
+## Address, transfer and ownership contract
+
+Use the architecture's reserved DMA page **`0x3000_0000–0x3000_1000`**.
+The page is uncached, data-only and unavailable when DMA is disabled. Native
+register reads are available to either present hart; only hart 0 may write
+control/configuration. Hart 1 writes acknowledge with no effect. Atomics to
+this page fault, as do atomics to other MMIO. MMIO instruction fetch is denied.
+
+Payload sources and destinations must both lie in shared RAM
+**`0x1000_0000–0x1000_8000`**, end-exclusive. DMA cannot access ROM, either
+private stack/runtime region, MMIO or unmapped memory. Check both *entire*
+byte ranges with widened arithmetic before the first memory request. A
+descriptor crossing a range boundary or wrapping 32-bit arithmetic fails
+without reading or writing payload memory; checking only the first address
+is insufficient.
+
+Copy forward, supporting all 16 source/destination byte-alignment pairs:
+
+- If both pointers are word aligned and at least four bytes remain, copy a
+  word using one read and one full-strobe write.
+- Otherwise copy one byte via an aligned source-word read and one destination
+  byte-lane write. Matching alignments reach the word path after a short
+  prefix; different relative alignments use the documented byte path.
+- Tail writes must preserve every unselected byte. Reads of the containing
+  aligned word remain inside the word-aligned shared-RAM region.
+- Length zero is an immediate successful no-op, even for otherwise invalid
+  pointers: no memory request and zero payload bytes.
+- For nonzero length, reject any overlap, including identical source and
+  destination. This is a `memcpy`-style engine, not `memmove`.
+
+The driver/benchmark owns source and destination until completion. A whole
+buffer copy is not atomic, and a source modified concurrently is not a snapshot.
+Directed hardware tests may deliberately interleave CPU/DMA accesses and must
+check their actual serialized history, not invoke undefined racing C behavior.
+Use distinct memory for independent peer work and explicit publication/join
+handshakes when either hart prepares or consumes DMA buffers.
+
+## Register and completion ABI (planned DMA ABI 1)
+
+Registers are 32-bit and word aligned, relative to `0x3000_0000`.
+
+| Offset | Register | Access and meaning |
+| --- | --- | --- |
+| `0x00` | SOURCE | RW, byte address; lane writes merge only while idle |
+| `0x04` | DESTINATION | RW, byte address; same rule |
+| `0x08` | LENGTH | RW, byte count; same rule |
+| `0x0c` | COMMAND | W: exactly `1` START, `2` ABORT or `4` ACK in low byte |
+| `0x10` | STATUS | R: bit 0 BUSY, 1 DONE, 2 ERROR, 3 ABORTED, 4 REJECTED |
+| `0x14` | BYTES_DONE | R: completed destination bytes for the accepted job |
+| `0x18` | ERROR_CODE | R: 0 none, 1 source range/wrap, 2 destination range/wrap, 3 overlap |
+| `0x1c` | ABI | R: 1 |
+| `0x20/0x24` | JOB_CYCLES | R: low/high 64-bit cycles for the current/last accepted job |
+| `0x28` | LIMIT_LO | R: `0x1000_0000` |
+| `0x2c` | LIMIT_HI | R: `0x1000_8000`, exclusive |
+| `0x100–0x16c` | DMA window counters | R: fourteen 64-bit counters, low word then high word |
+| `0x180–0x19c` | Counter metadata | R: common-window running state, ABI 5, clock, flags, geometry, wait, counter count |
+
+Only COMMAND's low byte lane acts. Mixed/unknown commands set REJECTED and
+do not start/abort a job. Unsupported offsets read zero and ignore writes.
+START while busy, configuration writes while busy, or ACK while busy set
+REJECTED without changing the captured descriptor or canceling the active job.
+START while quiescing is rejected. A new accepted START clears old terminal
+flags, error and per-job accounting, captures the descriptor and validates it.
+Invalid nonzero descriptors finish with DONE+ERROR and zero bytes. ACK while
+idle clears sticky flags/error but does not invent a completion or copy.
+Validation priority is zero-length success, source range, destination range,
+then overlap. JOB_CYCLES counts rising edges entered BUSY, including its
+terminal response/abort edge but excluding the accepted START edge. Immediate
+zero-length and descriptor-error completions therefore report zero job cycles.
+Per-job BYTES_DONE advances on completed coherent destination responses; the
+window's payload-byte event is the actual destination RAM acceptance. Those
+edges may differ, but agree after completion and must not double count.
+
+Normal completion sets DONE only after every destination effect is globally
+visible and the last owned response has completed. ABORT is cooperative, not
+destructive: finish any already offered request, issue no subsequent request,
+and report DONE+ABORTED with the exact completed prefix count. A read drained
+after abort need not produce a destination write. An abort observed while busy
+wins over simultaneous normal termination, even if the completed count equals
+the full length. Abort while idle does nothing. The held completion level is
+available for observation; no CPU interrupt delivery is claimed.
+
+The production native RAM path has no late bus-error response. Range/overlap
+errors are descriptor errors; do not claim rollback or pretend an arbitrary
+backing-memory deadlock can be repaired by clearing BUSY.
+
+Driver API: submit, poll/status, bounded wait, abort-and-wait, acknowledge and
+blocking copy. Submission and successful completion include compiler barriers
+and `fence iorw, iorw` ordering. The driver must not call `memcpy` to implement
+DMA. Return explicit submission/range/abort/timeout results and verify ABI.
+
+## Global stop, selective reset and POR
+
+Global host STOP rejects new STARTs and requests a cooperative DMA abort. The
+lifecycle controller waits for CPU/AMO and already offered DMA requests, DMA
+quiescence, completion settlement and coherent-cache flush before STOPPED.
+Keep admitted transactions stable; preserve every acknowledged CPU/DMA store.
+Reasserting RUN mid-stop cannot cancel this sequence. Only after STOPPED may
+device registers/per-job state reset and host ROM loading or RAM snapshots
+proceed. Initial POR/FPGA programming is destructive and remains distinct.
+
+A selective hart-1 reset **pauses**, rather than aborts, DMA. Block the next
+DMA offer, drain any current one and CPU fabric ownership, then perform the
+existing selective cache flush/reset. A transfer with a captured source word
+may retain that pending write across the pause; resume it exactly once after
+the lifecycle controller reopens admissions. Do not wait for full-job BUSY
+to clear while simultaneously preventing its remaining requests. Preserve
+primary state, DMA progress and unaffected reservations.
+
+## Measurement contract: AsterBench v5
+
+Retain both fourteen-counter CPU banks at their existing addresses. Add the
+separate DMA bank, with START/FREEZE/RESUME driven by the same primary-only
+common-window command at `0x2000_3080`. All counters are 64-bit, freeze together
+and exclude command edges, as in Phase 6. Planned DMA fields are busy cycles,
+request-wait cycles, completed read/write transactions, committed payload
+bytes, backing reads/writes, cache-read forwards, dirty writeback words,
+invalidated lines, successful completions, aborts, descriptor errors and
+rejected commands. Byte increments are the actual destination strobe popcount;
+dirty writeback bytes are not payload bytes. Cross-check every reported field
+against independently observed RTL events, including carry and reset edges.
+
+Run CPU and DMA on the same DMA-capable hardware, with the same source,
+destination, data/length/alignment, cache configuration and preparation policy.
+Use a real optimized word-copy CPU kernel with byte prefix/tail (not volatile
+byte copying chosen to make DMA look good). Retain compiler flags and actual
+disassembly to prove that neither path was optimized away or substituted.
+
+Primary end-to-end window: START common counters **before** CPU copy or DMA
+descriptor programming; include setup, submission, polling, completion and
+ordering; FREEZE afterward. Initialization, result checking, UART and global
+stop are outside. `JOB_CYCLES` is a distinct engine-only diagnostic, not the
+CPU/DMA end-to-end comparison. Polling is CPU work: autonomous transfer does
+not mean the polling CPU was free. A separate useful-work overlap experiment
+may report actual independent kernel retirement; it cannot replace this
+latency experiment or credit idle loops as useful work.
+
+Fixed primary size sweep in bytes: **0, 1, 2, 3, 4, 7, 8, 15, 16, 31, 32, 63,
+64, 127, 128, 255, 256, 511, 512, 1024, 2048, 4096, 8192**. Test aligned and
+representative same-offset/different-offset unaligned copies; functional tests
+cover all alignment pairs. Cross cache off/on. Use at least three jobs and two
+warm boots per accepted capture, independently rebuilt repeats and seeded data.
+Retain both method orders or demonstrate an equivalent fixed preparation
+state; do not cherry-pick warmed CPU or DMA instruction paths. State buffer
+placement/cache-index effects and prepared-cache state explicitly. Do not
+claim cold caches without a verified mechanism that makes them cold.
+
+Compare common-window cycles; convert latency/bandwidth using the actual clock.
+Report the first measured DMA win, any later reversals and alignment/cache
+dependence, rather than claiming a universal crossover. Zero-byte throughput
+is undefined: report its setup latency, not division by zero. Retain complete
+raw output arrays and guards, not only a checksum or a PASS string. Versioned
+records identify method, configuration, size, alignment, seed, job/boot and
+all CPU/DMA observations. Old v2/v3/v4 parsers/captures remain unchanged.
+
+## FPGA and physical acceptance
+
+Add explicit DMA-capable build/serial simulation targets. The Linux bridge uses
+new ABI **`0x00070001`**, with DMA feature bit 2 at `0x44` alongside existing A
+and cache bits, while old configurations retain their exact identities.
+Add read-only host DMA diagnostics; ARM still controls only RUN and stopped
+ROM loading, not the RISC-V DMA descriptor registers. Preserve split AXI
+channels, held replies, bounded UART credits and stopped-only RAM gates.
+
+Build clean cache-off/on overlays at 31.25 MHz. Retain generated reset-netlist
+simulation, full HWH/clock/reset/ABI preflight, setup/hold/pulse-width signoff,
+routing/DRC/methodology/resources and actual bitstream hashes. Before physical
+PCAP, verify board identity/current image and inspect active use. Use a new
+Phase 7 directory through SSH/PYNQ Linux, preserving other projects. No JTAG,
+ARM halt/system reset or SD/QSPI writes without new permission.
+
+Run actual RISC-V DMA runtime and CPU/DMA size sweeps, not Python/ARM copies.
+Capture actual PL UART TX-to-RX via AXI/SSH (not external Pmod validation),
+per-hart/DMA diagnostics and complete stopped RAM over repeated jobs/boots.
+Require independent firmware/ELF/output/counter comparisons, retain every
+failed/partial attempt and finish in independently verified STOPPED state
+with Linux available. A host sleep or simulated result is not physical proof.
+
+## Required verification and final audit
+
+1. Engine/register model: full-byte oracle and guard regions; all alignments,
+   word/tail boundaries, zero, overlap, permissions/wrap; lane strobes, busy
+   mutations, sticky flags, held responses, abort at every transaction stage,
+   simultaneous completion/abort and repeated starts.
+2. Arbiter/cache model: CPU/AMO indivisibility, fair completed transactions,
+   latest dirty data from either hart, both S copies, dirty destination neighbor
+   preservation, no DMA allocation, cache-off path, no duplicated backing
+   stores, exact reservation invalidation and continuously checked invariants.
+3. Real one-/two-hart firmware: driver results, private-memory denial,
+   publication, CPU/DMA/atomic contention, LR/SC success/failure and unrelated
+   same-line traffic, selective pause/resume and global stop/retention, ROM
+   reload, RAM code visibility and supported synchronous/asynchronous waits.
+4. Preserve every applicable Phase 1–6 matrix and its historical audits; test
+   DMA-disabled behavior as well as Phase 7. Use isolated build trees and do
+   not concurrently rebuild different configurations into the same directory.
+5. Strict v5 measurement/capture/ELF/provenance plus mutation tests. Execute the
+   fixed CPU/DMA size study, both cache modes, alignment cases, repeated jobs/
+   boots and fresh rebuilds; retain and explain the actual crossover findings.
+6. Clean routed/reset/HWH FPGA gates and real repeated physical DMA/CPU sweeps
+   with complete raw UART/RAM/counters and safe final state.
+7. Commit a self-contained immutable evidence bundle, requirement-to-evidence
+   audit and mutation tests. Rebuild and audit from fresh checkouts, inspect the
+   exact committed bundle, and finish with clean main synchronized to origin.
+
+## References and basis
+
+- [RISC-V A v2.1, LR/SC device-store requirement](https://docs.riscv.org/reference/isa/v20240411/unpriv/a-st-ext.html):
+  DMA writes to LR-accessed bytes must invalidate a successful SC pairing.
+- [RISC-V memory/I/O ordering](https://docs.riscv.org/reference/isa/v20240411/unpriv/rv32.html):
+  the driver's FENCE contract includes both memory and MMIO.
+- [AMD coherency discussion](https://docs.amd.com/r/2024.2-English/Vitis-Tutorials/Vitis-Hardware-Acceleration/Memory-Allocation-Concepts?contentId=r2gxJSwrLaBllFp9EJAQdA):
+  background on dirty-source/stale-destination hazards. Aster implements its
+  own PL coherent path; it is not using ARM ACP/CCI or a Vitis runtime.
+- [Phase 6 architecture](phase6.md) and
+  [audited physical baseline](results/phase6/closeout-215b2d0/README.md).
