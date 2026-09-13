@@ -215,6 +215,13 @@ data. Capture directories are exclusive; preserve failed/partial evidence.
 
 ## Acceptance gates and milestones
 
+Arithmetic unit milestone: `make dot8-unit` passes seeds `1`, `0xa57e8`
+and `0xc0ffee`, each with 131,072 decode cases, 262,144 isolated-lane
+products, all 32,768 register-field combinations and 301,061 completed
+transactions. It checks delayed admission, captured operands, held replies,
+exactly-once events and four destructive-reset stages. This is not yet
+real-core, runtime, FPGA or performance acceptance.
+
 - [x] Audit the baseline; specify instruction, integration and fair study before RTL.
 - [ ] Arithmetic/PCPI unit oracles and real-core feasibility, including M/A coexistence.
 - [ ] C API/runtime, full-core encoding/fault/alias tests and lifecycle/coherence/DMA matrices.

@@ -110,6 +110,7 @@ COHERENT_PERF_SIM := $(BUILD_DIR)/aster_coherent_perf_sim
 DMA_ENGINE_SIM := $(BUILD_DIR)/aster_dma_engine_sim
 DMA_ARBITER_SIM := $(BUILD_DIR)/aster_dma_arbiter_sim
 DMA_PERF_SIM := $(BUILD_DIR)/aster_dma_perf_sim
+DOT8_UNIT_SIM := $(BUILD_DIR)/aster_pcpi_dot8_sim
 DMA_ATOMIC_FABRIC_SIM := $(BUILD_DIR)/aster_dma_atomic_fabric_sim
 DMA_CACHE_DIR := $(BUILD_DIR)/dma_cache_l1$(ENABLE_L1)_w$(L1_LINE_WORDS)_n$(L1_LINE_COUNT)
 DMA_CACHE_SIM := $(DMA_CACHE_DIR)/aster_dma_cache_sim
@@ -682,6 +683,15 @@ retirement: $(RETIRE_SIM)
 	@$(RETIRE_SIM)
 
 .PHONY: pcpi-probe
+.PHONY: dot8-unit
+$(DOT8_UNIT_SIM): rtl/core/aster_pcpi_dot8.sv verification/unit/tb_aster_pcpi_dot8.cpp Makefile | $(BUILD_DIR)
+	$(VERILATOR) --cc --exe --build --timing --Wall --assert -DASTER_DOT8_ASSERT \
+		--top-module aster_pcpi_dot8 --Mdir $(BUILD_DIR)/obj_dot8_unit -o $(abspath $@) \
+		$(ROOT)/rtl/core/aster_pcpi_dot8.sv $(ROOT)/verification/unit/tb_aster_pcpi_dot8.cpp
+
+dot8-unit: $(DOT8_UNIT_SIM)
+	@set -e; for seed in 1 0xa57e8 0xc0ffee; do $(DOT8_UNIT_SIM) $$seed; done
+
 $(PCPI_PROBE_SIM): $(RTL_CORE) rtl/core/aster_pcpi_atomic.sv verification/unit/aster_pcpi_probe.sv verification/unit/tb_aster_pcpi_probe.cpp Makefile | $(BUILD_DIR)
 	$(VERILATOR) --cc --exe --build --timing --Wall \
 		$(VERILATOR_VENDOR_LINT_FLAGS) --top-module aster_pcpi_probe \
