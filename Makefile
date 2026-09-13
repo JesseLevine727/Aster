@@ -103,6 +103,11 @@ COHERENT_CACHE_DIR := $(BUILD_DIR)/coherent_l1$(ENABLE_L1)_w$(L1_LINE_WORDS)_n$(
 COHERENT_CACHE_SIM := $(COHERENT_CACHE_DIR)/aster_coherent_cache_sim
 COHERENT_SOC_DIR := $(BUILD_DIR)/coherent_soc_h$(HART_COUNT)_$(CONFIG_TAG)
 COHERENT_SOC_SIM := $(COHERENT_SOC_DIR)/aster_coherent_soc_sim
+REFERENCE_TESTS := amoadd_w amoand_w amomax_w amomaxu_w amomin_w amominu_w amoor_w amoswap_w amoxor_w lrsc
+REFERENCE_FW_DIR := $(HELLO_DIR)/riscv_reference
+REFERENCE_IMAGES := $(foreach h,0 1,$(addprefix $(REFERENCE_FW_DIR)/,$(addsuffix _h$(h).hex,$(REFERENCE_TESTS))))
+REFERENCE_DIR := $(BUILD_DIR)/riscv_reference_$(CONFIG_TAG)
+REFERENCE_SIM := $(REFERENCE_DIR)/aster_riscv_reference_sim
 COHERENT_BENCH_SIM := $(COHERENT_SOC_DIR)/aster_coherent_bench_sim
 COHERENT_FW_DIR := $(HELLO_DIR)/coherent_$(COHERENT_WORKLOAD)_i$(COHERENT_ITEMS)_r$(COHERENT_ROUNDS)_j$(COHERENT_JOBS)_p$(COHERENT_WORKERS)_s$(COHERENT_SEED)
 COHERENT_ELF := $(COHERENT_FW_DIR)/coherent.elf
@@ -179,6 +184,7 @@ help:
 	@echo "  make fpga-linux-coherent   Build the dual-core RV32IMA coherent PYNQ overlay"
 	@echo "  make coherent-bench       AsterBench v4 atomic/coherent C workload with exact per-hart counters"
 	@echo "  make coherent-bench-matrix  Cross all nine workloads with topology/cache/memory timing"
+	@echo "  make riscv-reference      Unmodified pinned public RV32UA programs on each actual hart"
 	@echo "  make phase1     Run CPU, runtime, memory-map and trap regressions"
 	@echo "  make phase1-matrix  Test Phase 1 with L1 off/on, async/sync memory"
 	@echo "  make hello      Build and run Hello from Aster on the RTL CPU"
@@ -751,6 +757,52 @@ coherent-bench-sizes:
 		done; done; done; \
 	done
 
+.PHONY: riscv-reference riscv-reference-negative riscv-reference-matrix
+$(REFERENCE_FW_DIR)/%_h0.elf: vendor/riscv-tests/isa/rv32ua/%.S vendor/riscv-tests/isa/rv64ua/%.S \
+		vendor/riscv-tests/isa/macros/scalar/test_macros.h software/tests/riscv_reference/riscv_test.h \
+		software/tests/riscv_reference/start.S software/boot/link_multicore.ld Makefile
+	mkdir -p $(REFERENCE_FW_DIR)
+	$(CC) $(filter-out -march=% -mabi=%,$(HELLO_CFLAGS)) -march=rv32ima -mabi=ilp32 -DREFERENCE_HART=0 \
+		-Isoftware/tests/riscv_reference -Ivendor/riscv-tests/isa/macros/scalar -T software/boot/link_multicore.ld \
+		-Wl,-Map,$(@:.elf=.map) -o $@ software/tests/riscv_reference/start.S $<
+
+$(REFERENCE_FW_DIR)/%_h1.elf: vendor/riscv-tests/isa/rv32ua/%.S vendor/riscv-tests/isa/rv64ua/%.S \
+		vendor/riscv-tests/isa/macros/scalar/test_macros.h software/tests/riscv_reference/riscv_test.h \
+		software/tests/riscv_reference/start.S software/boot/link_multicore.ld Makefile
+	mkdir -p $(REFERENCE_FW_DIR)
+	$(CC) $(filter-out -march=% -mabi=%,$(HELLO_CFLAGS)) -march=rv32ima -mabi=ilp32 -DREFERENCE_HART=1 \
+		-Isoftware/tests/riscv_reference -Ivendor/riscv-tests/isa/macros/scalar -T software/boot/link_multicore.ld \
+		-Wl,-Map,$(@:.elf=.map) -o $@ software/tests/riscv_reference/start.S $<
+
+$(REFERENCE_FW_DIR)/%.hex: $(REFERENCE_FW_DIR)/%.elf scripts/elf_to_hex.py
+	$(PYTHON) scripts/elf_to_hex.py --rom-bytes 65536 $< $@
+
+$(REFERENCE_SIM): $(RTL_COHERENT) verification/soc/tb_riscv_reference.cpp verification/common/coherent_record.h Makefile
+	mkdir -p $(REFERENCE_DIR)
+	$(VERILATOR) --cc --exe --build --timing --Wall $(VERILATOR_VENDOR_LINT_FLAGS) $(VERILATOR_COHERENT_FLAGS) --assert -DASTER_COHERENCE_ASSERT \
+		--top-module aster_coherent_soc -GHART_COUNT=2 "-GENABLE_L1=1'b$(ENABLE_L1)" \
+		"-GSYNC_MEMORY=1'b$(SYNC_MEMORY)" -GMEMORY_WAIT_CYCLES=$(MEMORY_WAIT_CYCLES) "-GHOST_BOOT=1'b1" \
+		-GLINE_WORDS=$(L1_LINE_WORDS) -GLINE_COUNT=$(L1_LINE_COUNT) \
+		--Mdir $(REFERENCE_DIR)/obj -o $(abspath $@) \
+		$(addprefix $(ROOT)/,$(RTL_COHERENT)) $(ROOT)/verification/soc/tb_riscv_reference.cpp
+
+riscv-reference: $(REFERENCE_IMAGES) $(REFERENCE_SIM)
+	@set -e; for test in $(REFERENCE_TESTS); do for hart in 0 1; do \
+		$(PYTHON) scripts/run_riscv_reference.py --simulator $(REFERENCE_SIM) --elf $(REFERENCE_FW_DIR)/$${test}_h$$hart.elf \
+			--firmware $(REFERENCE_FW_DIR)/$${test}_h$$hart.hex --nm $(RISCV_PREFIX)nm --test $$test --hart $$hart; \
+	done; done
+
+riscv-reference-negative: $(REFERENCE_FW_DIR)/amoadd_w_h0.hex $(REFERENCE_FW_DIR)/amoadd_w_h1.hex $(REFERENCE_SIM)
+	@set -e; for hart in 0 1; do \
+		$(PYTHON) scripts/run_riscv_reference.py --simulator $(REFERENCE_SIM) --elf $(REFERENCE_FW_DIR)/amoadd_w_h$$hart.elf \
+			--firmware $(REFERENCE_FW_DIR)/amoadd_w_h$$hart.hex --nm $(RISCV_PREFIX)nm --test amoadd_w --hart $$hart --negative-check; \
+	done
+
+riscv-reference-matrix:
+	@set -e; for cache in 0 1; do for timing in '0 0' '0 7' '1 1' '1 7'; do read -r sync wait_cycles <<< "$$timing"; \
+		$(MAKE) --no-print-directory riscv-reference riscv-reference-negative ENABLE_L1=$$cache SYNC_MEMORY=$$sync MEMORY_WAIT_CYCLES=$$wait_cycles; \
+	done; done
+
 counters: $(PERF_SIM)
 	@$(PERF_SIM)
 
@@ -891,7 +943,7 @@ parallel-workloads:
 
 test: smoke phase1 hello bench cache uart fpga-sim linux-sim counters retirement arbiter shared-fabric multicore-runtime parallel
 
-check: tools smoke phase1 hello bench cache uart fpga-sim linux-sim linux-dual-sim linux-coherent-sim counters retirement pcpi-probe atomic-fabric atomic-runtime atomic-faults coherent-cache warm-stop coherent-counters coherent-soc coherent-bench arbiter shared-fabric multicore-runtime multicore-adversarial parallel
+check: tools smoke phase1 hello bench cache uart fpga-sim linux-sim linux-dual-sim linux-coherent-sim counters retirement pcpi-probe atomic-fabric atomic-runtime atomic-faults coherent-cache warm-stop coherent-counters coherent-soc coherent-bench riscv-reference riscv-reference-negative arbiter shared-fabric multicore-runtime multicore-adversarial parallel
 
 clean:
 	rm -rf $(BUILD_DIR)

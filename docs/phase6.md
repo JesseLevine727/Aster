@@ -487,6 +487,11 @@ maximum-value seed, seeded UART stalls and (words,lines) of (2,2)/(8,2)/
 (1024,2)/(2,1024), all with synchronous seven-cycle memory. Verilator 5.020
 requires increased unroll limits for the 1024-line nonblocking reset-array
 loops; the RTL, synchronous reset and assertions remain unchanged.
+`make coherent-bench-sizes` additionally passes **108 configurations, 216 warm
+boots and 648 jobs**, crossing all nine workloads, one/two workers, caches
+off/on and (items,rounds,seed) of (2,1,0)/(129,16,1)/(1024,64,0xc0ffee), with
+synchronous seven-cycle memory and seeded UART stalls. The 1024-item mix checks
+every output word after 64 rounds, not just the checksum.
 
 The strict v4 collector retains raw serial/RTL observations, full RAM snapshots,
 actual firmware/ELF/map/disassembly, complete relevant Git-tree provenance,
@@ -496,6 +501,11 @@ and requires clean source by default. Host tests mutate schemas, numeric types,
 observations, artifacts, rehashed corrupt RAM/firmware and source manifests.
 Development capture/audit passes; complete clean-source studies, physical
 serial/reference integration and final evidence packages remain open.
+After the implementation commit `bfd9a97`, fresh isolated one-/two-worker
+seven-item shared-mix captures (two boots/two jobs, sync/one-wait) pass the
+default clean-source/artifact audit and controlled comparison. These local
+packages in `build/phase6-bfd9a97/bench/` prove the capture path, not the full
+immutable final study. They preserve the source and compiler used for each run.
 The expanded default `make -j2 check` passes with v4 included and all 50 host
 tests passing. This is not yet the final rerun of every historical matrix.
 
@@ -516,6 +526,39 @@ This establishes a synthesizable, routed checkpoint, not the final FPGA
 artifact/evidence audit or actual execution of Phase 6 on the PYNQ. Benchmark
 software changes do not alter its RTL; any subsequent RTL/build-input change
 must be reviewed and rebuilt before a final physical acceptance claim.
+
+### Public RV32A reference checkpoint
+
+`vendor/riscv-tests` pins upstream revision
+`2ebecad997fa58cd9e5724340ba75aa4b59bd1d0`: ten RV32UA wrappers and their
+unchanged word-operation bodies (all nine AMOs plus LR/SC), the original scalar
+macros and license. An explicit 22-file hash manifest guards that subset.
+Only the separate owned platform environment supplies Aster RAM startup,
+physical-hart selection and private-RAM result transport. No upstream test
+instruction, expected value or disabled-case decision is modified.
+
+The actual coherent SoC executes each program independently on hart 0 and
+hart 1, with the peer parked outside the test. ELF-derived original test-case
+PCs must each retire exactly once on the selected core. Actual A retirements
+are observed (including 1025+ LR and 1028+ SC in the upstream loop); the final
+case/hart/result signature and all 64 KiB of RAM after warm stop are checked.
+The first full cache-off/on × async/0, async/7, sync/1, sync/7 matrix passes
+**320 warm boots / 1,408 original test-case retirements**. The original LR/SC
+program deliberately restricts itself to one active core; this is not claimed
+as an upstream two-core contention or weak-memory test. Aster's separate tests
+cover contention and the word-granule behavior skipped by that upstream test.
+
+An owned negative fixture changes only the generated ROM's expected-value
+instruction for upstream `amoadd_w` case 2. Both real cores take the original
+test's FAIL path, and the harness rejects it. The final reference matrix repeats
+all 320 positive boots and **16 negative failure-path checks**, both harts in
+all eight cache/timing configurations. Vendor sources remain unchanged.
+The default regression includes these reference programs and negative checks;
+this supplements Aster's broader directed coverage, not architectural
+certification or privileged-ISA support. Explicit memory-ordering litmus tests,
+final historical matrices and physical/evidence closeout remain open.
+The expanded `make -j2 check` passes with all 52 host tests and both reference
+success/failure paths included. No FPGA RTL or board state changed here.
 
 ## Verification and closeout requirements
 
