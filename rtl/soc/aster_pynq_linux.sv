@@ -6,6 +6,7 @@ module aster_pynq_linux #(
     parameter int unsigned HART_COUNT = 0,
     parameter bit ENABLE_COHERENCE = 1'b0,
     parameter bit COHERENT_L1 = 1'b1,
+    parameter bit ENABLE_DMA = 1'b0,
     parameter int unsigned CLK_HZ = 31_250_000,
     parameter int unsigned BAUD = 115_200,
     parameter int unsigned RX_DEPTH = 512
@@ -70,6 +71,16 @@ module aster_pynq_linux #(
     logic [3:0] coherent_store_mask;
     logic coherent_perf_start, coherent_perf_freeze, coherent_perf_resume;
     logic [13:0] coherent_perf_events [0:1];
+    logic [4:0] dma_status;
+    logic [31:0] dma_bytes_done, dma_error_code;
+    logic [63:0] dma_job_cycles, dma_counters [0:13];
+    logic dma_counting, dma_busy, dma_request_pending, dma_request_ready, dma_store_commit;
+    logic [31:0] dma_request_addr, dma_request_data, dma_request_rdata;
+    logic [3:0] dma_request_mask;
+    logic [2:0] dma_events [0:13];
+    logic dma_backing_valid, dma_backing_ready, dma_backing_device, dma_backing_owner;
+    logic [31:0] dma_backing_addr, dma_backing_data;
+    logic [3:0] dma_backing_mask;
     logic ram_read_pending;
     logic [15:0] ram_read_addr;
     wire [15:0] host_ram_addr = ram_read_pending ? ram_read_addr : s_axi_araddr[15:0];
@@ -106,6 +117,7 @@ module aster_pynq_linux #(
     initial begin
         if (HART_COUNT > 2) $error("Linux HART_COUNT must be 0 (legacy), 1 or 2");
         if (ENABLE_COHERENCE && HART_COUNT == 0) $error("coherent Linux requires one or two harts");
+        if (ENABLE_DMA && !ENABLE_COHERENCE) $error("Linux DMA requires the coherent SoC");
         if (RX_DEPTH < 128 || (RX_DEPTH & (RX_DEPTH-1)) != 0)
             $error("RX_DEPTH must be a power of two >= 128");
     end
@@ -177,7 +189,7 @@ module aster_pynq_linux #(
                     18'h10: s_axi_rdata <= transmitted;
                     18'h14: s_axi_rdata <= received;
                     18'h18: s_axi_rdata <= 32'h41535452; // ASTR
-                    18'h1c: s_axi_rdata <= ENABLE_COHERENCE ? 32'h00060001 :
+                    18'h1c: s_axi_rdata <= ENABLE_DMA ? 32'h00070001 : ENABLE_COHERENCE ? 32'h00060001 :
                         HART_COUNT == 0 ? 32'h00020001 : 32'h00050001;
                     18'h20: s_axi_rdata <= CLK_HZ;
                     18'h24, 18'h28, 18'h30, 18'h34, 18'h38, 18'h3c: begin
@@ -197,7 +209,7 @@ module aster_pynq_linux #(
                         if (!ENABLE_COHERENCE) begin s_axi_rdata <= 0; s_axi_rresp <= 2'b10; end
                         else case (s_axi_araddr)
                             18'h40: s_axi_rdata <= {29'b0, coherent_flush, coherent_stop_busy, coherent_stopped};
-                            18'h44: s_axi_rdata <= {30'b0, COHERENT_L1, 1'b1};
+                            18'h44: s_axi_rdata <= {29'b0, ENABLE_DMA, COHERENT_L1, 1'b1};
                             18'h50, 18'h60: s_axi_rdata <= {27'b0, atomic_fault_valid[s_axi_araddr[5]], atomic_fault_cause[s_axi_araddr[5]]};
                             18'h54, 18'h64: s_axi_rdata <= atomic_fault_addr[s_axi_araddr[5]];
                             18'h58, 18'h68: s_axi_rdata <= atomic_fault_insn[s_axi_araddr[5]];
@@ -205,7 +217,26 @@ module aster_pynq_linux #(
                             default: s_axi_rdata <= 0;
                         endcase
                     end
-                    default: begin s_axi_rdata <= 0; s_axi_rresp <= 2'b10; end
+                    18'h80, 18'h84, 18'h88, 18'h8c, 18'h90, 18'h94, 18'h98, 18'h9c: begin
+                        if (!ENABLE_DMA) begin s_axi_rdata <= 0; s_axi_rresp <= 2'b10; end
+                        else case (s_axi_araddr)
+                            18'h80: s_axi_rdata <= 1;
+                            18'h84: s_axi_rdata <= {27'b0, dma_status};
+                            18'h88: s_axi_rdata <= dma_bytes_done;
+                            18'h8c: s_axi_rdata <= dma_error_code;
+                            18'h90: s_axi_rdata <= dma_job_cycles[31:0];
+                            18'h94: s_axi_rdata <= dma_job_cycles[63:32];
+                            18'h98: s_axi_rdata <= {31'b0, dma_counting};
+                            18'h9c: s_axi_rdata <= 5;
+                            default: s_axi_rdata <= 0;
+                        endcase
+                    end
+                    default: begin
+                        if (ENABLE_DMA && s_axi_araddr >= 18'ha0 && s_axi_araddr < 18'h110 && s_axi_araddr[1:0] == 0)
+                            s_axi_rdata <= s_axi_araddr[2] ? dma_counters[4'((s_axi_araddr-18'ha0) >> 3)][63:32] :
+                                dma_counters[4'((s_axi_araddr-18'ha0) >> 3)][31:0];
+                        else begin s_axi_rdata <= 0; s_axi_rresp <= 2'b10; end
+                    end
                     endcase
                 end
             end
@@ -255,6 +286,30 @@ module aster_pynq_linux #(
         assign coherent_perf_start = 0;
         assign coherent_perf_freeze = 0;
         assign coherent_perf_resume = 0;
+        assign dma_status = 0;
+        assign dma_bytes_done = 0;
+        assign dma_error_code = 0;
+        assign dma_job_cycles = 0;
+        assign dma_counting = 0;
+        assign dma_busy = 0;
+        assign dma_request_pending = 0;
+        assign dma_request_ready = 0;
+        assign dma_store_commit = 0;
+        assign dma_request_addr = 0;
+        assign dma_request_data = 0;
+        assign dma_request_rdata = 0;
+        assign dma_request_mask = 0;
+        assign dma_backing_valid = 0;
+        assign dma_backing_ready = 0;
+        assign dma_backing_device = 0;
+        assign dma_backing_owner = 0;
+        assign dma_backing_addr = 0;
+        assign dma_backing_data = 0;
+        assign dma_backing_mask = 0;
+        for (genvar i = 0; i < 14; i++) begin : g_no_dma_events
+            assign dma_events[i] = 0;
+            assign dma_counters[i] = 0;
+        end
         for (genvar h = 0; h < 2; h++) begin : g_hart_status
             assign atomic_fault_cause[h] = 0;
             assign atomic_fault_addr[h] = 0;
@@ -276,7 +331,7 @@ module aster_pynq_linux #(
     end else if (ENABLE_COHERENCE) begin : g_coherent
         /* verilator lint_off PINCONNECTEMPTY */
         aster_coherent_soc #(.HART_COUNT(HART_COUNT), .SYNC_MEMORY(1'b1), .HOST_BOOT(1'b1),
-                            .ENABLE_L1(COHERENT_L1), .CLOCK_HZ(CLK_HZ)) soc (
+                            .ENABLE_L1(COHERENT_L1), .ENABLE_DMA(ENABLE_DMA), .CLOCK_HZ(CLK_HZ)) soc (
             .clk(aclk), .resetn(aresetn), .host_run(run && run_pipe[1]),
             .stopped(coherent_stopped), .stop_busy(coherent_stop_busy), .flush_active(coherent_flush),
             .uart_tx_valid(core_tx_valid), .uart_tx_data(core_tx_data), .uart_tx_ready(core_tx_ready),
@@ -288,12 +343,13 @@ module aster_pynq_linux #(
             .store_commit(coherent_store_commit), .store_owner(coherent_store_owner),
             .store_addr(coherent_store_addr), .store_data(coherent_store_data), .store_mask(coherent_store_mask),
             .fabric_busy(), .stop_commit(), .reservations(), .reservation_addr(),
-            .backing_valid(), .backing_ready(), .backing_addr(), .backing_mask(),
+            .backing_valid(dma_backing_valid), .backing_ready(dma_backing_ready), .backing_addr(dma_backing_addr), .backing_mask(dma_backing_mask),
             .atomic_active(), .atomic_read_commit(), .atomic_write_pending(),
-            .backing_device(), .backing_owner(), .backing_data(), .dma_busy(), .dma_request_pending(),
-            .dma_request_ready(), .dma_request_addr(), .dma_request_data(), .dma_request_rdata(), .dma_request_mask(),
-            .dma_status(), .dma_bytes_done(), .dma_error_code(), .dma_job_cycles(), .dma_store_commit(),
-            .dma_events(), .dma_counters(), .dma_counting(),
+            .backing_device(dma_backing_device), .backing_owner(dma_backing_owner), .backing_data(dma_backing_data), .dma_busy(dma_busy),
+            .dma_request_pending(dma_request_pending), .dma_request_ready(dma_request_ready), .dma_request_addr(dma_request_addr),
+            .dma_request_data(dma_request_data), .dma_request_rdata(dma_request_rdata), .dma_request_mask(dma_request_mask),
+            .dma_status(dma_status), .dma_bytes_done(dma_bytes_done), .dma_error_code(dma_error_code), .dma_job_cycles(dma_job_cycles),
+            .dma_store_commit(dma_store_commit), .dma_events(dma_events), .dma_counters(dma_counters), .dma_counting(dma_counting),
             .boot_we(boot_we), .boot_addr(awaddr[15:0]), .boot_wdata(wdata), .boot_wstrb(wstrb),
             .host_ram_addr(host_ram_addr), .host_ram_rdata(host_ram_rdata)
         );

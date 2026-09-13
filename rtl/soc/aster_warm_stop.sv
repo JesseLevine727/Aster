@@ -3,7 +3,8 @@
 // then reset those cores. Power/configuration reset remains destructive.
 `timescale 1 ns / 1 ps
 module aster_warm_stop #(
-    parameter int unsigned HART_COUNT = 2
+    parameter int unsigned HART_COUNT = 2,
+    parameter bit LATCH_GLOBAL_STOP = 1'b0
 ) (
     input logic clk,
     input logic resetn,
@@ -23,8 +24,10 @@ module aster_warm_stop #(
     state_t state;
     logic [1:0] running, selected;
     logic stop_requested;
+    logic global_stop_pending;
+    wire global_stop = !host_run || global_stop_pending;
     assign hart_run = resetn ? running : 2'b0;
-    assign stop_requested = (|running && !host_run) || (running[1] && !secondary_run);
+    assign stop_requested = (|running && global_stop) || (running[1] && !secondary_run);
     // Even a selective stop temporarily stalls BOTH harts' new memory
     // admissions. It never resets the peer and avoids flush/AMO interleaving.
     assign admit = resetn && state == IDLE && !stop_requested && host_run ? running : 2'b0;
@@ -42,10 +45,13 @@ module aster_warm_stop #(
             state <= IDLE;
             running <= 0;
             selected <= 0;
+            global_stop_pending <= 0;
         end else begin
+            if (!LATCH_GLOBAL_STOP || stopped || stop_commit[0]) global_stop_pending <= 0;
+            else if (|running && !host_run) global_stop_pending <= 1;
             case (state)
                 IDLE: begin
-                    if (|running && !host_run) begin
+                    if (|running && global_stop) begin
                         selected <= 2'b11;
                         state <= DRAIN;
                     end else if (running[1] && !secondary_run) begin
@@ -62,7 +68,13 @@ module aster_warm_stop #(
                 SETTLE2: state <= fabric_busy ? DRAIN : FLUSH;
                 FLUSH: if (flush_ready) begin
                     running <= running & ~selected;
-                    state <= IDLE;
+                    // Do not change an in-flight flush mask. Escalation is a
+                    // second transaction, with no intervening admissions even
+                    // if requested RUN has already returned high.
+                    if (LATCH_GLOBAL_STOP && global_stop && selected == 2'b10 && running[0]) begin
+                        selected <= 2'b11;
+                        state <= DRAIN;
+                    end else state <= IDLE;
                 end
                 default: state <= IDLE;
             endcase

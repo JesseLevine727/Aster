@@ -67,6 +67,29 @@ int main(int argc, char** argv) {
         d.host_run = 1; d.secondary_run = 0;
         finish(d, 3, 3, 8); require(d.stopped, "restart canceled mandatory flush");
         tick(d); require(d.hart_run == 1, "requested restart was lost"); ++cases;
+#ifdef ASTER_DMA_STOP_ESCALATION
+        // A transient global STOP during a selective stop is still mandatory,
+        // even if a direct-SoC host reasserts RUN before the first flush ends.
+        // Never widen a flush payload already offered to the cache: finish the
+        // secondary flush, then independently flush/reset the primary.
+        for (unsigned phase = 0; phase < 6; ++phase) for (unsigned delay : {0u,1u,31u,257u}) {
+            reset(d); d.secondary_run = 0; d.fabric_busy = phase == 0; tick(d);
+            if (phase >= 1) tick(d); // SETTLE1
+            if (phase >= 2) tick(d); // SETTLE2
+            if (phase >= 3) tick(d); // offered selective FLUSH
+            if (phase == 4) for (unsigned i = 0; i < 17; ++i) tick(d);
+            if (phase == 5) d.flush_ready = 1;
+            d.host_run = 0; tick(d); d.host_run = 1; d.flush_ready = 0; d.eval();
+            require(!d.admit,"RUN reassert canceled global escalation on selective completion");
+            if (phase != 5) {
+                for (unsigned i = 0; i < delay && d.fabric_busy; ++i) tick(d);
+                d.fabric_busy = 0; finish(d,2,3,delay);
+            }
+            require(d.hart_run == 1 && !d.stopped && !d.admit,"RUN reassert reopened admissions after global escalation");
+            finish(d,3,1,delay); require(d.stopped,"transient global stop failed to flush/reset primary");
+            d.host_run = 0; tick(d); require(d.stopped,"STOPPED did not persist after removing RUN"); ++cases;
+        }
+#endif
         std::cout << "PASS: warm-stop sequencing cases=" << cases
                   << "; drain, response settlement, held flush, selective/global stop, escalation/restart\n";
         return 0;

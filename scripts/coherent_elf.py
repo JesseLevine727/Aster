@@ -9,7 +9,7 @@ from asterbench_coherent import require
 
 
 def inspect_elf(data, *, profile="benchmark", dma_size=None, dma_jobs=None):
-    require(profile in ("benchmark", "runtime", "lifecycle", "dma_benchmark", "dma_runtime"), "unknown audited firmware profile")
+    require(profile in ("benchmark", "runtime", "lifecycle", "dma_benchmark", "dma_runtime", "dma_publication", "dma_stop_fixture"), "unknown audited firmware profile")
     if profile == "dma_benchmark":
         require(type(dma_size) is int and 0 <= dma_size <= 8192 and type(dma_jobs) is int and 1 <= dma_jobs <= 8,
                 "DMA benchmark requires exact size/job symbol contract")
@@ -59,6 +59,16 @@ def inspect_elf(data, *, profile="benchmark", dma_size=None, dma_jobs=None):
                   "source": (1, 0x10000000, 0x10008000), "destination": (1, 0x10000000, 0x10008000),
                   "dma_results": (1, 0x10008000, 0x1000b000)}
         sizes = {"source": 1152, "destination": 1152, "dma_results": 512}
+    elif profile == "dma_publication":
+        wanted = {"main": (2, 0, 65536), "aster_secondary_main": (2, 0, 65536), "execute_code": (2, 0, 65536),
+                  "aster_dma_copy": (2, 0, 65536), "aster_dma_submit": (2, 0, 65536), "aster_dma_poll": (2, 0, 65536),
+                  "staging": (1, 0x10000000, 0x10008000), "code": (1, 0x10000000, 0x10008000),
+                  "publication_results": (1, 0x10008000, 0x1000b000)}
+        sizes = {"staging": 64, "code": 64, "publication_results": 512}
+    elif profile == "dma_stop_fixture":
+        wanted = {"main": (2, 0, 65536), "aster_secondary_main": (2, 0, 65536), "aster_dma_submit": (2, 0, 65536),
+                  "source": (1, 0x10000000, 0x10008000), "destination": (1, 0x10000000, 0x10008000)}
+        sizes = {"source": 384, "destination": 384}
     elif profile != "benchmark":
         wanted = {"main": (2, 0, 65536), "aster_secondary_main": (2, 0, 65536)}
         sizes = ({"probe_results": 32, "directed_word": 4, "counter": 4, "cas_counter": 4,
@@ -102,4 +112,8 @@ def inspect_elf(data, *, profile="benchmark", dma_size=None, dma_jobs=None):
                 require(owner[2] & 1 and owner[1] == 8, "result/output must be writable NOLOAD RAM")
             found[text] = {"address": value, "size": size}
     require(set(found) == set(wanted), "missing actual ELF benchmark symbols")
+    if profile.startswith("dma_"):
+        allocations = sorted((found[name]["address"], found[name]["address"]+found[name]["size"])
+                             for name, (kind, _low, _high) in wanted.items() if kind == 1)
+        require(all(left[1] <= right[0] for left, right in zip(allocations, allocations[1:])), "overlapping DMA firmware allocations")
     return {"symbols": found, "image": bytes(image)}

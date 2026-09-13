@@ -105,6 +105,7 @@ PCPI_PROBE_SIM := $(BUILD_DIR)/aster_pcpi_probe_sim
 PCPI_ADAPTER_SIM := $(BUILD_DIR)/aster_pcpi_atomic_sim
 ATOMIC_FABRIC_SIM := $(BUILD_DIR)/aster_atomic_fabric_sim
 WARM_STOP_SIM := $(BUILD_DIR)/aster_warm_stop_sim
+DMA_WARM_STOP_SIM := $(BUILD_DIR)/aster_dma_warm_stop_sim
 COHERENT_PERF_SIM := $(BUILD_DIR)/aster_coherent_perf_sim
 DMA_ENGINE_SIM := $(BUILD_DIR)/aster_dma_engine_sim
 DMA_ARBITER_SIM := $(BUILD_DIR)/aster_dma_arbiter_sim
@@ -174,10 +175,19 @@ LINUX_SIM := $(BUILD_DIR)/aster_pynq_linux_sim
 LINUX_DUAL_SIM := $(BUILD_DIR)/aster_pynq_linux_dual_sim
 LINUX_COHERENT_DIR := $(BUILD_DIR)/linux_coherent_h$(HART_COUNT)_l1$(ENABLE_L1)
 LINUX_COHERENT_SIM := $(LINUX_COHERENT_DIR)/aster_linux_coherent_sim
+LINUX_DMA_DIR := $(BUILD_DIR)/linux_dma_h$(HART_COUNT)_l1$(ENABLE_L1)
+LINUX_DMA_SIM := $(LINUX_DMA_DIR)/aster_linux_dma_sim
+LINUX_DMA_BAUD ?= 781250
+LINUX_DMA_BENCH_DIR := $(BUILD_DIR)/linux_dma_bench_h$(HART_COUNT)_l1$(ENABLE_L1)_b$(LINUX_DMA_BAUD)
+LINUX_DMA_BENCH_SIM := $(LINUX_DMA_BENCH_DIR)/aster_linux_dma_bench_sim
 LINUX_HART_COUNT ?= 0
 LINUX_COHERENCE ?= 0
 LINUX_CACHE ?= 1
-LINUX_BUILD_DIR = $(FPGA_BUILD_DIR)/linux$(if $(filter 0,$(LINUX_HART_COUNT)),,-h$(LINUX_HART_COUNT))$(if $(filter 1,$(LINUX_COHERENCE)),-coherent-c$(LINUX_CACHE),)
+LINUX_DMA ?= 0
+ifeq ($(filter $(LINUX_DMA),0 1),)
+$(error LINUX_DMA must be 0 or 1)
+endif
+LINUX_BUILD_DIR = $(FPGA_BUILD_DIR)/linux$(if $(filter 0,$(LINUX_HART_COUNT)),,-h$(LINUX_HART_COUNT))$(if $(filter 1,$(LINUX_COHERENCE)),-coherent-c$(LINUX_CACHE),)$(if $(filter 1,$(LINUX_DMA)),-dma,)
 SOC_TEST_DIR := $(BUILD_DIR)/soc_$(CONFIG_TAG)
 SOC_SIM := $(SOC_TEST_DIR)/aster_soc_sim
 TRAP_CASES := 0 1 2 3 4 5 6 7 8 9 10 11
@@ -223,6 +233,11 @@ help:
 	@echo "  make dma-counters       Test the separate AsterBench v5 DMA common-window bank"
 	@echo "  make dma-runtime        Run compiled RV32IMA DMA/driver/LRSC/pause/stop and full-RAM checks"
 	@echo "  make dma-bench          Paired AsterBench v5 copy windows, full outputs and actual CPU/DMA counters"
+	@echo "  make dma-warm-stop      Latched global escalation through selective DMA pause/reset"
+	@echo "  make linux-dma-matrix   Real DMA and RAM-code publication through AXI/serial, one/two harts and cache off/on"
+	@echo "  make linux-dma-bench-cases  Paired zero/small/large and alignment checks through real AXI/serial"
+	@echo "  make linux-dma-bench-baud   Cache-off/on paired benchmark at physical 115200 baud"
+	@echo "  make fpga-linux-dma     Build the explicitly DMA-enabled PYNQ Linux overlay (no JTAG)"
 	@echo "  make linux-coherent-matrix  Test Phase 6 AXI/serial/RAM/stop protocol"
 	@echo "  make fpga-linux-coherent   Build the dual-core RV32IMA coherent PYNQ overlay"
 	@echo "  make coherent-bench       AsterBench v4 atomic/coherent C workload with exact per-hart counters"
@@ -443,7 +458,7 @@ fpga-linux:
 	@mkdir -p $(LINUX_BUILD_DIR)
 	$(VIVADO) -mode batch -nojournal -nolog -notrace \
 		-source $(ROOT)/fpga/pynq_z1/build_linux.tcl \
-		-tclargs $(ROOT) $(LINUX_BUILD_DIR) $(LINUX_HART_COUNT) $(LINUX_COHERENCE) $(LINUX_CACHE)
+		-tclargs $(ROOT) $(LINUX_BUILD_DIR) $(LINUX_HART_COUNT) $(LINUX_COHERENCE) $(LINUX_CACHE) $(if $(filter 1,$(LINUX_DMA)),1,)
 
 .PHONY: fpga-linux-dual
 fpga-linux-dual:
@@ -452,6 +467,10 @@ fpga-linux-dual:
 .PHONY: fpga-linux-coherent
 fpga-linux-coherent:
 	$(MAKE) LINUX_HART_COUNT=2 LINUX_COHERENCE=1 fpga-linux
+
+.PHONY: fpga-linux-dma
+fpga-linux-dma:
+	$(MAKE) LINUX_HART_COUNT=2 LINUX_COHERENCE=1 LINUX_DMA=1 fpga-linux
 
 $(LINUX_SIM): $(RTL_CORE) $(RTL_CACHE) $(RTL_MEMORY) $(RTL_PERIPHERALS) $(RTL_SOC) $(RTL_MULTICORE) $(RTL_COHERENT) \
 		rtl/peripherals/aster_uart_tx.sv rtl/peripherals/aster_uart_rx.sv \
@@ -501,6 +520,69 @@ linux-coherent-matrix:
 	@set -e; for harts in 1 2; do for cache in 0 1; do \
 		$(MAKE) --no-print-directory linux-coherent-sim HART_COUNT=$$harts ENABLE_L1=$$cache; \
 	done; done
+
+.PHONY: linux-dma-sim linux-dma-matrix
+$(LINUX_DMA_SIM): $(RTL_CORE) $(RTL_CACHE) $(RTL_MEMORY) $(RTL_PERIPHERALS) $(RTL_SOC) $(RTL_MULTICORE) $(RTL_COHERENT) \
+		rtl/peripherals/aster_uart_tx.sv rtl/peripherals/aster_uart_rx.sv rtl/soc/aster_pynq_linux.sv \
+		verification/common/linux_bus.h verification/soc/tb_pynq_linux_coherent.cpp Makefile
+	mkdir -p $(LINUX_DMA_DIR)
+	$(VERILATOR) --cc --exe --build --timing --Wall $(VERILATOR_VENDOR_LINT_FLAGS) $(VERILATOR_COHERENT_FLAGS) --assert -DASTER_COHERENCE_ASSERT --public-flat-rw \
+		--top-module aster_pynq_linux -GHART_COUNT=$(HART_COUNT) "-GENABLE_COHERENCE=1'b1" "-GCOHERENT_L1=1'b$(ENABLE_L1)" "-GENABLE_DMA=1'b1" \
+		-GCLK_HZ=31250000 -GBAUD=781250 -GRX_DEPTH=128 \
+		-CFLAGS '-DASTER_HART_COUNT=$(HART_COUNT) -DASTER_L1=$(ENABLE_L1) -DASTER_DMA=1 -DASTER_CLOCK=31250000' \
+		--Mdir $(LINUX_DMA_DIR)/obj -o $(abspath $@) \
+		$(addprefix $(ROOT)/,$(sort $(RTL_CORE) $(RTL_CACHE) $(RTL_MEMORY) $(RTL_PERIPHERALS) $(RTL_SOC) $(RTL_MULTICORE) $(RTL_COHERENT))) \
+		$(ROOT)/rtl/peripherals/aster_uart_tx.sv $(ROOT)/rtl/peripherals/aster_uart_rx.sv \
+		$(ROOT)/rtl/soc/aster_pynq_linux.sv $(ROOT)/verification/soc/tb_pynq_linux_coherent.cpp
+
+$(HELLO_DIR)/dma_publication.elf: software/tests/dma_publication.c software/drivers/aster_dma.c software/drivers/aster_dma.h software/runtime/start_multicore.S software/runtime/aster.h software/boot/link_multicore.ld Makefile | $(HELLO_DIR)
+	$(CC) $(filter-out -march=%,$(HELLO_CFLAGS)) -march=rv32ima -Isoftware/drivers \
+		-T software/boot/link_multicore.ld -Wl,-Map,$(@:.elf=.map) \
+		-o $@ software/runtime/start_multicore.S software/drivers/aster_dma.c $<
+	$(OBJDUMP) -d $@ > $(@:.elf=.dis)
+
+linux-dma-sim: $(LINUX_DMA_SIM) $(DMA_RUNTIME_HEX) $(HELLO_DIR)/dma_publication.hex
+	@$(LINUX_DMA_SIM) $(DMA_RUNTIME_HEX) dma
+	@$(LINUX_DMA_SIM) $(HELLO_DIR)/dma_publication.hex publication
+
+.PHONY: linux-dma-publication
+linux-dma-publication: $(LINUX_DMA_SIM) $(HELLO_DIR)/dma_publication.hex
+	@$(LINUX_DMA_SIM) $(HELLO_DIR)/dma_publication.hex publication
+
+linux-dma-matrix:
+	@set -e; for harts in 1 2; do for cache in 0 1; do \
+		$(MAKE) --no-print-directory linux-dma-sim HART_COUNT=$$harts ENABLE_L1=$$cache; \
+	done; done
+
+.PHONY: linux-dma-bench
+$(LINUX_DMA_BENCH_SIM): $(RTL_CORE) $(RTL_CACHE) $(RTL_MEMORY) $(RTL_PERIPHERALS) $(RTL_SOC) $(RTL_MULTICORE) $(RTL_COHERENT) \
+		rtl/peripherals/aster_uart_tx.sv rtl/peripherals/aster_uart_rx.sv rtl/soc/aster_pynq_linux.sv \
+		verification/common/linux_bus.h verification/common/dma_record.h verification/soc/tb_pynq_linux_dma_bench.cpp Makefile
+	mkdir -p $(LINUX_DMA_BENCH_DIR)
+	$(VERILATOR) --cc --exe --build --timing --Wall $(VERILATOR_VENDOR_LINT_FLAGS) $(VERILATOR_COHERENT_FLAGS) --assert -DASTER_COHERENCE_ASSERT --public-flat-rw \
+		--top-module aster_pynq_linux -GHART_COUNT=$(HART_COUNT) "-GENABLE_COHERENCE=1'b1" "-GCOHERENT_L1=1'b$(ENABLE_L1)" "-GENABLE_DMA=1'b1" \
+		-GCLK_HZ=31250000 -GBAUD=$(LINUX_DMA_BAUD) -GRX_DEPTH=128 -CFLAGS '-DASTER_HART_COUNT=$(HART_COUNT) -DASTER_L1=$(ENABLE_L1)' \
+		--Mdir $(LINUX_DMA_BENCH_DIR)/obj -o $(abspath $@) \
+		$(addprefix $(ROOT)/,$(sort $(RTL_CORE) $(RTL_CACHE) $(RTL_MEMORY) $(RTL_PERIPHERALS) $(RTL_SOC) $(RTL_MULTICORE) $(RTL_COHERENT))) \
+		$(ROOT)/rtl/peripherals/aster_uart_tx.sv $(ROOT)/rtl/peripherals/aster_uart_rx.sv \
+		$(ROOT)/rtl/soc/aster_pynq_linux.sv $(ROOT)/verification/soc/tb_pynq_linux_dma_bench.cpp
+
+linux-dma-bench: $(LINUX_DMA_BENCH_SIM) $(DMA_HEX)
+	@$(PYTHON) scripts/run_dma_linux.py --simulator $(LINUX_DMA_BENCH_SIM) --elf $(DMA_ELF) --firmware $(DMA_HEX) \
+		--size $(DMA_BYTES) --alignment $(DMA_ALIGNMENT_ID) --jobs $(DMA_JOBS) --boots $(DMA_BOOTS) --seed $(DMA_SEED)
+
+.PHONY: linux-dma-bench-cases linux-dma-bench-baud
+linux-dma-bench-cases:
+	@set -e; for cache in 0 1; do for spec in 0:aligned 1:different_offset 64:aligned 127:same_offset 8192:different_offset; do \
+		$(MAKE) --no-print-directory linux-dma-bench HART_COUNT=2 ENABLE_L1=$$cache LINUX_DMA_BAUD=781250 \
+			DMA_BYTES=$${spec%:*} DMA_ALIGNMENT=$${spec#*:} DMA_JOBS=4 DMA_BOOTS=2 DMA_SEED=0x13570000; \
+	done; done
+
+linux-dma-bench-baud:
+	@set -e; for cache in 0 1; do \
+		$(MAKE) --no-print-directory linux-dma-bench HART_COUNT=2 ENABLE_L1=$$cache LINUX_DMA_BAUD=115200 \
+			DMA_BYTES=127 DMA_ALIGNMENT=same_offset DMA_JOBS=4 DMA_BOOTS=2 DMA_SEED=0x13570000; \
+	done
 
 linux-dual-parallel: $(LINUX_DUAL_SIM) $(PARALLEL_HEX)
 	@$(LINUX_DUAL_SIM) $(PARALLEL_HEX) parallel $(PARALLEL_JOBS) $(PARALLEL_WORKERS)
@@ -671,6 +753,16 @@ $(WARM_STOP_SIM): rtl/soc/aster_warm_stop.sv verification/unit/tb_aster_warm_sto
 warm-stop: $(WARM_STOP_SIM)
 	@$(WARM_STOP_SIM)
 
+.PHONY: dma-warm-stop
+$(DMA_WARM_STOP_SIM): rtl/soc/aster_warm_stop.sv verification/unit/tb_aster_warm_stop.cpp Makefile | $(BUILD_DIR)
+	$(VERILATOR) --cc --exe --build --timing --Wall --assert --top-module aster_warm_stop \
+		"-GLATCH_GLOBAL_STOP=1'b1" -CFLAGS '-DASTER_DMA_STOP_ESCALATION=1' \
+		--Mdir $(BUILD_DIR)/obj_dma_warm_stop -o $(abspath $@) \
+		$(ROOT)/rtl/soc/aster_warm_stop.sv $(ROOT)/verification/unit/tb_aster_warm_stop.cpp
+
+dma-warm-stop: $(DMA_WARM_STOP_SIM)
+	@$(DMA_WARM_STOP_SIM)
+
 .PHONY: coherent-counters
 $(COHERENT_PERF_SIM): rtl/peripherals/aster_coherent_perf.sv verification/unit/tb_aster_coherent_perf.cpp Makefile | $(BUILD_DIR)
 	$(VERILATOR) --cc --exe --build --timing --Wall --public-flat-rw --top-module aster_coherent_perf \
@@ -793,8 +885,14 @@ $(DMA_SOC_SIM): $(RTL_COHERENT) verification/soc/tb_aster_dma_soc.cpp Makefile
 		--Mdir $(DMA_SOC_DIR)/obj -o $(abspath $@) \
 		$(addprefix $(ROOT)/,$(RTL_COHERENT)) $(ROOT)/verification/soc/tb_aster_dma_soc.cpp
 
-dma-runtime: $(DMA_SOC_SIM) $(DMA_RUNTIME_HEX)
-	@$(DMA_SOC_SIM) +rom=$(DMA_RUNTIME_HEX) +ram_fill=a5a5a5a5
+$(HELLO_DIR)/dma_stop_fixture.elf: software/tests/dma_stop_fixture.c software/drivers/aster_dma.c software/drivers/aster_dma.h software/runtime/start_multicore.S software/runtime/aster.h software/boot/link_multicore.ld Makefile | $(HELLO_DIR)
+	$(CC) $(filter-out -march=%,$(HELLO_CFLAGS)) -march=rv32ima -Isoftware/drivers \
+		-T software/boot/link_multicore.ld -Wl,-Map,$(@:.elf=.map) \
+		-o $@ software/runtime/start_multicore.S software/drivers/aster_dma.c $<
+	$(OBJDUMP) -d $@ > $(@:.elf=.dis)
+
+dma-runtime: $(DMA_SOC_SIM) $(DMA_RUNTIME_HEX) $(HELLO_DIR)/dma_stop_fixture.hex
+	@$(DMA_SOC_SIM) +rom=$(DMA_RUNTIME_HEX) +ram_fill=a5a5a5a5 --stop-rom=$(HELLO_DIR)/dma_stop_fixture.hex
 
 dma-runtime-matrix:
 	@set -e; for harts in 1 2; do for cache in 0 1; do for timing in '0 0' '0 7' '1 1' '1 7'; do \
@@ -831,6 +929,19 @@ dma-bench: $(DMA_HEX) $(DMA_BENCH_SIM)
 
 dma-config:
 	@$(PYTHON) -c 'import json; print(json.dumps({"compiler":"$(CC)","nm":"$(RISCV_PREFIX)nm","objdump":"$(OBJDUMP)","host_cxx":"$(CXX)","cflags":"$(DMA_CFLAGS)","ldflags":"$(DMA_LDFLAGS)","verilator":"$(VERILATOR)","elf":"$(DMA_ELF)","firmware":"$(DMA_HEX)","simulator":"$(DMA_BENCH_SIM)","ram_prefix":"$(DMA_RAM_PREFIX)"},sort_keys=True))'
+
+.PHONY: dma-bench-cases dma-bench-sensitivity
+dma-bench-cases:
+	@set -e; for cache in 0 1; do for bytes in 0 1 3 4 63 64 8192; do for alignment in aligned same_offset different_offset; do \
+		$(MAKE) --no-print-directory dma-bench HART_COUNT=2 ENABLE_L1=$$cache SYNC_MEMORY=1 MEMORY_WAIT_CYCLES=1 \
+			L1_LINE_WORDS=4 L1_LINE_COUNT=16 DMA_BYTES=$$bytes DMA_ALIGNMENT=$$alignment DMA_JOBS=4 DMA_SEED=0x13570000 DMA_BOOTS=2 DMA_UART_SEED=0; \
+	done; done; done
+
+dma-bench-sensitivity:
+	@set -e; for bytes in 0 127 8192; do for alignment in aligned same_offset different_offset; do \
+		$(MAKE) --no-print-directory dma-bench HART_COUNT=1 ENABLE_L1=1 SYNC_MEMORY=0 MEMORY_WAIT_CYCLES=7 \
+			L1_LINE_WORDS=2 L1_LINE_COUNT=2 DMA_BYTES=$$bytes DMA_ALIGNMENT=$$alignment DMA_JOBS=3 DMA_SEED=0xc0ffee DMA_BOOTS=2 DMA_UART_SEED=0xa57e7; \
+	done; done
 
 .PHONY: coherent-soc coherent-soc-matrix
 $(COHERENT_SOC_SIM): $(RTL_COHERENT) verification/soc/tb_aster_coherent_soc.cpp Makefile

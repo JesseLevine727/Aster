@@ -1,5 +1,5 @@
 # AXI host bridge and real serial loopback, loaded through PYNQ Linux/PCAP.
-if {$argc < 2 || $argc > 5} { error "usage: build_linux.tcl <repo-root> <output-dir> ?harts(0=legacy,1,2)? ?coherent(0,1)? ?caches(0,1)?" }
+if {$argc < 2 || $argc > 6} { error "usage: build_linux.tcl <repo-root> <output-dir> ?harts(0=legacy,1,2)? ?coherent(0,1)? ?caches(0,1)? ?dma(0,1)?" }
 set repo_root [file normalize [lindex $argv 0]]
 set output_dir [file normalize [lindex $argv 1]]
 set harts 0
@@ -7,9 +7,11 @@ if {$argc >= 3} { set harts [lindex $argv 2] }
 if {$harts ni {0 1 2}} { error "invalid Linux hart configuration" }
 set coherent 0
 set caches 1
+set dma 0
 if {$argc >= 4} { set coherent [lindex $argv 3] }
 if {$argc >= 5} { set caches [lindex $argv 4] }
-if {$coherent ni {0 1} || $caches ni {0 1} || ($coherent && !$harts) || (!$coherent && !$caches)} {
+if {$argc >= 6} { set dma [lindex $argv 5] }
+if {$coherent ni {0 1} || $caches ni {0 1} || $dma ni {0 1} || ($coherent && !$harts) || (!$coherent && (!$caches || $dma))} {
     error "invalid coherent Linux configuration"
 }
 set part xc7z020clg400-1
@@ -24,7 +26,8 @@ set rtl_files [list rtl/core/aster_picorv32.sv vendor/picorv32/picorv32.v \
     rtl/interconnect/aster_arbiter2.sv rtl/soc/aster_shared_fabric.sv rtl/soc/aster_multicore.sv \
     rtl/core/aster_pcpi_atomic.sv rtl/core/aster_atomic_hart.sv rtl/interconnect/aster_atomic_fabric.sv \
     rtl/cache/aster_coherent_cache.sv rtl/soc/aster_warm_stop.sv \
-    rtl/peripherals/aster_coherent_perf.sv rtl/soc/aster_coherent_soc.sv]
+    rtl/peripherals/aster_coherent_perf.sv rtl/dma/aster_dma_engine.sv \
+    rtl/interconnect/aster_dma_arbiter.sv rtl/peripherals/aster_dma_perf.sv rtl/soc/aster_coherent_soc.sv]
 foreach relative $rtl_files { read_verilog -sv [file join $repo_root $relative] }
 read_verilog [file join $repo_root rtl/soc/aster_linux_ip.v]
 
@@ -40,6 +43,7 @@ create_bd_cell -type module -reference aster_linux_ip aster
 set_property CONFIG.HART_COUNT $harts [get_bd_cells aster]
 set_property CONFIG.ENABLE_COHERENCE $coherent [get_bd_cells aster]
 set_property CONFIG.COHERENT_L1 $caches [get_bd_cells aster]
+set_property CONFIG.ENABLE_DMA $dma [get_bd_cells aster]
 create_bd_cell -type ip -vlnv xilinx.com:ip:axi_interconnect:2.1 fabric
 set_property CONFIG.NUM_MI 1 [get_bd_cells fabric]
 create_bd_cell -type ip -vlnv xilinx.com:ip:proc_sys_reset:5.0 reset
@@ -78,6 +82,7 @@ set handoff [file join $output_dir aster_linux.gen sources_1 bd aster_linux hw_h
 set handoff_check [list python3 [file join $repo_root scripts/pynq_handoff.py] $handoff --harts $harts]
 if {$coherent} { lappend handoff_check --coherent }
 if {!$caches} { lappend handoff_check --no-cache }
+if {$dma} { lappend handoff_check --dma }
 puts [exec {*}$handoff_check]
 add_files [make_wrapper -files $bd -top]
 set_property top aster_linux_wrapper [current_fileset]

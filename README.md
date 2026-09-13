@@ -297,6 +297,9 @@ shared L2 and Phase 8+ remain outside this phase.
 The [paired AsterBench v5 tools](docs/phase7-bench.md) now verify actual CPU/DMA
 copies, full outputs, counters and saved provenance in simulation. The fixed
 size sweep, FPGA/physical proof and final Phase 7 closeout remain pending.
+The DMA-enabled Linux shell also passes actual-core AXI/serial runtime,
+RAM-code publication and safe-stop tests; its v5 benchmark has separate
+freeze-time CPU/DMA observations and physical-baud simulation coverage.
 
 ## Phase 8 — Custom compute instruction
 

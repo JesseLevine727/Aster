@@ -3,6 +3,7 @@
 #include <array>
 #include <cstdint>
 #include <iostream>
+#include <fstream>
 #include <random>
 #include <stdexcept>
 #include <string>
@@ -111,7 +112,12 @@ public:
             }
         }
         if (d.stop_commit) {
-            require(!d.fabric_busy && !d.dma_request_pending, "reset/flush completion raced owned DMA/CPU transaction");
+            // A global request can arrive on the already-completing selective
+            // flush edge. The paused DMA job then contributes BUSY until its
+            // abort edge, but owns no memory request. Only that narrow case is
+            // allowed; the later primary reset still requires whole-job idle.
+            require(!d.dma_request_pending && (!d.fabric_busy || (d.stop_commit == 2 && d.dma_busy && !d.host_run &&
+                !d.backing_valid && !d.atomic_active)), "reset/flush completion raced owned DMA/CPU transaction");
             if (d.stop_commit & 1) require(!d.dma_busy, "global STOP reset an unquiesced DMA job");
             else { require(d.hart_run == 3, "selective reset lost primary"); ++secondary_stops; }
             clear_mask = d.stop_commit;
@@ -202,12 +208,60 @@ public:
         require(reached, "DMA adversarial stop trigger was not reached"); stop();
         std::cout << "PASS: real DMA warm stop point=" << point << " full acknowledged RAM retained; no destructive reset\n";
     }
+    void load(const std::string& path) {
+        std::ifstream file(path); require(bool(file),"cannot open actual escalation firmware");
+        std::vector<uint32_t> words;
+        for (std::string word; file >> word;) {
+            require(word.size() == 8 && word.find_first_not_of("0123456789abcdefABCDEF") == std::string::npos,"invalid firmware word");
+            words.push_back(std::stoul(word,nullptr,16));
+        }
+        require(words.size() == 16384 && d.stopped && !d.host_run,"firmware reload needs complete image and safe STOPPED");
+        for (unsigned i = 0; i < words.size(); ++i) {
+            d.boot_we = 1; d.boot_addr = i*4; d.boot_wdata = words[i]; d.boot_wstrb = 15; step();
+        }
+        d.boot_we = 0;
+    }
+    void escalation(unsigned point) {
+        start(false); bool reached = false, primary_reset = false; unsigned flush_edges = 0;
+        for (unsigned n = 0; n < 2000000; ++n) {
+            low();
+            if (d.flush_active) ++flush_edges;
+            bool trigger = d.stop_busy && d.hart_run == 3 && d.dma_busy &&
+                (point == 0 ? !d.flush_active : point == 1 ? d.flush_active : point == 2 ? flush_edges >= 8 : d.stop_commit == 2);
+            if (trigger) { d.host_run = 0; d.eval(); reached = true; }
+            rise(); if (reached) break;
+        }
+        require(reached,"did not reach actual selective-DMA escalation edge");
+        d.host_run = 1; // Deliberately challenge the direct-SoC interface.
+        for (unsigned n = 0; n < 2000000 && !d.stopped; ++n) {
+            low();
+            if (d.stop_commit & 1) { primary_reset = true; d.host_run = 0; d.eval(); }
+            rise();
+        }
+        require(primary_reset && d.stopped,"RUN reassert canceled mandatory global DMA escalation");
+        stop();
+        std::cout << "PASS: real DMA selective/global escalation point=" << point
+                  << " transient STOP latched, separate flushes, complete retained RAM\n";
+    }
 };
 int main(int argc, char** argv) {
     try {
-        Verilated::commandArgs(argc,argv); std::cout.setf(std::ios::unitbuf); Bench b;
+        Verilated::commandArgs(argc,argv); std::cout.setf(std::ios::unitbuf);
+        std::string runtime, stop_fixture;
+        for (int i = 1; i < argc; ++i) {
+            std::string arg = argv[i];
+            if (arg.rfind("+rom=",0) == 0) runtime = arg.substr(5);
+            if (arg.rfind("--stop-rom=",0) == 0) stop_fixture = arg.substr(11);
+        }
+        require(!runtime.empty() && (ASTER_HART_COUNT == 1 || !stop_fixture.empty()),"missing actual runtime/escalation ROM input");
+        Bench b;
         b.full(); b.full();
         for (unsigned point = 0; point < 5; ++point) b.abort(point);
+        if (ASTER_HART_COUNT == 2) {
+            b.load(stop_fixture);
+            for (unsigned point = 0; point < 4; ++point) b.escalation(point);
+            b.load(runtime);
+        }
         b.full();
         std::cout << "PASS: DMA SoC closeout stops=" << b.stops << " CPU stores=" << b.cpu_stores
                   << " DMA stores=" << b.dma_stores << " reads=" << b.dma_reads << " writes=" << b.dma_writes

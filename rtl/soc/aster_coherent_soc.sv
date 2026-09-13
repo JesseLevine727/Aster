@@ -140,7 +140,7 @@ module aster_coherent_soc #(
         if (MEMORY_WAIT_CYCLES < (SYNC_MEMORY ? 1 : 0) || MEMORY_WAIT_CYCLES > 1024)
             $error("invalid coherent SoC memory wait");
     end
-    aster_warm_stop #(.HART_COUNT(HART_COUNT)) lifecycle (
+    aster_warm_stop #(.HART_COUNT(HART_COUNT), .LATCH_GLOBAL_STOP(ENABLE_DMA)) lifecycle (
         .clk(clk), .resetn(resetn), .host_run(host_run), .secondary_run(secondary_run),
         .fabric_busy(fabric_busy), .flush_ready(flush_ready), .hart_run(hart_run), .admit(admit),
         .flush_valid(flush_active), .flush_mask(flush_mask), .stop_commit(stop_commit),

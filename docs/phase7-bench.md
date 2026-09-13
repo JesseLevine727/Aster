@@ -116,6 +116,15 @@ jobs and two warm boots. Select `DMA_BYTES`, `DMA_ALIGNMENT` (`aligned`,
 `same_offset`, `different_offset`), `DMA_JOBS`, `DMA_SEED`, `DMA_BOOTS`,
 `DMA_UART_SEED` and the usual hart/cache/memory geometry knobs. RAM snapshots
 use exclusive creation: use a fresh `BUILD_DIR` or `DMA_RAM_PREFIX` for a rerun.
+
+`make linux-dma-bench` runs the same audited ELF through the AXI bridge and
+actual TX/RX serial circuitry. Because UART can lag multiple measurement
+windows, this scoreboard queues independent observations at each FREEZE, then
+matches the arriving record to that window; it never substitutes the latest
+live counters for an earlier measurement. `linux-dma-bench-cases` checks both
+cache modes at zero/small/large sizes and all alignment policies;
+`linux-dma-bench-baud` checks both cache modes at the physical 115,200 baud.
+These are additional integration regressions, not physical capture packages.
 With caches enabled, actual-core runs retain the instruction cache's minimum
 two words/two lines; the standalone coherent-device cache's 1x1 and 1x1024
 boundary tests do not make those instruction-cache configurations supported.

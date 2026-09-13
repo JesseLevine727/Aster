@@ -1,9 +1,10 @@
 # Phase 7: coherent memory-to-memory DMA
 
 Status: **coherent DMA, driver and one-/two-hart real-core integration verified
-in simulation; paired AsterBench v5 firmware/capture/study tools verified in
-development; complete size study, expanded adversarial/AXI coverage, full
-regression closeout and physical acceptance pending**.
+in simulation, including the AXI/serial Linux shell, code publication and
+selective/global stop escalation; paired AsterBench v5 firmware/capture/study
+tools verified in development; complete size study, full regression closeout,
+clean routed FPGA builds and physical acceptance pending**.
 Baseline: clean/pushed Phase 6 closeout
 `70a1b55b303786144aaa052b6cd8b9e8a4d75bf1`. Before any Phase 7 edits,
 `audit_phase6.py ... --current` passed all seven baseline acceptance gates.
@@ -100,6 +101,44 @@ counter/ownership/ELF/ROM/RAM mutations and fixed-study/repeat/crossover audit
 mutations. A fixed 144-capture plan is specified before collection; source
 must be clean and stable for accepted captures. Historical Phase 6 acceptance
 still passes without the inapplicable `--current` flag.
+
+The Linux/lifecycle milestone adds `make linux-dma-matrix`. All four one-/two-
+hart, cache-off/on configurations pass after the latched-global-stop change:
+**16 complete runtime/publication boots and 68 retained-RAM snapshots**. These
+include three in-flight global DMA stop points per configuration, MMIO fetch/
+atomic denial, split/held AXI transactions and read-only host diagnostic gates.
+Publication firmware performs eight epochs of dirty-source DMA copying of RAM
+code, executing old and new instructions on hart 0 and new instructions on
+hart 1 only after a release/acquire handoff. PC-qualified retirement checks
+observe 32 primary and 16 secondary RAM instructions per two-hart boot.
+
+Transient global STOP during a selective stop is latched even if RUN reasserts.
+The new unit regression failed before the controller fix and now passes all
+**58 DMA-enabled scenarios**; all **34 legacy scenarios** still pass. Actual
+two-hart/cache-on and cache-off synchronous runs additionally pass four
+selective/global escalation arrival points, preserving complete RAM through
+separate selective and global flushes (`dma-runtime`, 12 stop acknowledgments).
+The complete post-change 16-configuration runtime matrix remains a final
+regression gate, not inferred from those two runs.
+
+`make linux-dma-bench` audits the actual ELF/ROM and checks v5 windows through
+AXI and bit-serial UART. It saves independent CPU/DMA event and payload
+observations at FREEZE, then compares each delayed serial record with its own
+saved window, all 108 RAM words, frozen host diagnostics and complete stopped
+RAM. Initial 64-byte aligned/cache-on, zero-byte/cache-off, 8 KiB different-
+offset/cache-on and 127-byte same-offset/cache-on at **115,200 baud** all pass
+two boots/four balanced jobs. The repeatable final targets
+`linux-dma-bench-cases` and `linux-dma-bench-baud` cover ten configurations plus
+both cache modes at physical baud. Simulation of serial circuitry is not a
+claim that the FPGA has been programmed.
+
+`scripts/dma_overlay.py` adds a distinct DMA overlay envelope and strict
+six-argument build/HWH checks, retaining the existing actual routed/reset
+signoff gate. Its mutation tests reject disabled/missing DMA identity,
+hash-consistent failed reports, incomplete source/artifact inventories and
+symlinks. No Phase 7 bitstream/physical results are claimed by those fixtures.
+The host suite now passes **117 tests**, including actual compiled publication/
+stop/benchmark ELF checks and the DMA host/overlay rejection gates.
 
 ## Architecture and coherent serialization
 
@@ -260,6 +299,16 @@ the lifecycle controller reopens admissions. Do not wait for full-job BUSY
 to clear while simultaneously preventing its remaining requests. Preserve
 primary state, DMA progress and unaffected reservations.
 
+DMA configurations enable `LATCH_GLOBAL_STOP` in the lifecycle controller.
+A sampled global request during **any** selective-stop stage remains mandatory
+even if a direct-SoC host reasserts RUN. Never widen an already offered selective
+flush mask: complete that transaction, keep admissions closed, then issue a
+separate all-bank flush and reset the remaining primary. The Linux bridge also
+rejects a cancelling RUN write, but that shell policy is not a substitute for
+the underlying DMA lifecycle guarantee. The option defaults to zero so legacy
+DMA-disabled timing/behavior stays unchanged. A new regression reproduced the
+previous transient-escalation failure before this fix was implemented.
+
 ## Measurement contract: AsterBench v5
 
 The [paired-study design](phase7-bench.md) expands this contract: four jobs with
@@ -335,6 +384,37 @@ and cache bits, while old configurations retain their exact identities.
 Add read-only host DMA diagnostics; ARM still controls only RUN and stopped
 ROM loading, not the RISC-V DMA descriptor registers. Preserve split AXI
 channels, held replies, bounded UART credits and stopped-only RAM gates.
+
+The explicit `ENABLE_DMA=1` Linux-shell/shim parameter requires coherent
+one-/two-hart hardware; its default is zero. `LINUX_DMA=1` selects this
+configuration in the build. HWH must contain the matching parameter, and the
+handoff audit must reject a DMA image when a legacy/non-DMA image was expected.
+Missing `ENABLE_DMA` is accepted only as zero for historical handoffs. Existing
+Phase 2/5/6 ABI values and handoff result fields remain unchanged when disabled.
+
+Host offsets below are relative to ARM AXI base `0x40000000`, **not** the
+RISC-V DMA page. Every write to these offsets returns SLVERR, including zero
+strobes; unknown/unaligned offsets also fail closed. Reads capture the current
+value once and retain it under AXI backpressure even if DMA subsequently moves
+or stops. No descriptor can be submitted through this diagnostic view.
+
+| Host offset | Read-only value |
+| --- | --- |
+| `0x80` | DMA register ABI, 1 |
+| `0x84` | Current five-bit DMA STATUS |
+| `0x88` | BYTES_DONE |
+| `0x8c` | ERROR_CODE |
+| `0x90/0x94` | JOB_CYCLES low/high |
+| `0x98` | DMA common-window counting flag |
+| `0x9c` | DMA counter ABI, 5 |
+| `0xa0–0x10c` | Fourteen DMA counters, consecutive low/high pairs |
+
+Live 64-bit reads need high/low/high retry; reading the whole live bank is not
+an atomic snapshot. Accepted benchmark captures read it only after the last
+serial record, with counting frozen and the engine idle, and compare it with
+the last method's RAM/UART record. STOPPED additionally requires idle/cleared
+DMA job status and zero reset counters. Clock remains verified independently
+through HWH, the bridge identity and the PYNQ clock readback.
 
 Build clean cache-off/on overlays at 31.25 MHz. Retain generated reset-netlist
 simulation, full HWH/clock/reset/ABI preflight, setup/hold/pulse-width signoff,
