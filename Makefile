@@ -70,6 +70,11 @@ UART_RX_SIM := $(BUILD_DIR)/aster_uart_rx_sim
 RETIRE_SIM := $(BUILD_DIR)/aster_retirement_sim
 PCPI_PROBE_SIM := $(BUILD_DIR)/aster_pcpi_probe_sim
 PCPI_ADAPTER_SIM := $(BUILD_DIR)/aster_pcpi_atomic_sim
+ATOMIC_FABRIC_SIM := $(BUILD_DIR)/aster_atomic_fabric_sim
+ATOMIC_RUNTIME_DIR := $(BUILD_DIR)/atomic_h$(HART_COUNT)
+ATOMIC_RUNTIME_SIM := $(ATOMIC_RUNTIME_DIR)/aster_atomic_probe_sim
+ATOMIC_RUNTIME_ELF := $(HELLO_DIR)/atomic_runtime.elf
+ATOMIC_RUNTIME_BIN := $(HELLO_DIR)/atomic_runtime.bin
 PERF_SIM := $(BUILD_DIR)/aster_perf_sim
 ARBITER_SIM := $(BUILD_DIR)/aster_arbiter2_sim
 FABRIC_DIR := $(BUILD_DIR)/fabric_h$(HART_COUNT)_$(CONFIG_TAG)
@@ -123,6 +128,8 @@ help:
 	@echo "  make smoke      Build and run the first Verilator smoke test"
 	@echo "  make directed   Run directed RV32IM instruction tests"
 	@echo "  make pcpi-probe Test real-core RV32A extension boundary (not full A yet)"
+	@echo "  make atomic-fabric  Test serialized RV32A memory/reservation semantics"
+	@echo "  make atomic-runtime-matrix  Run compiled RV32IMA C on one/two real cores"
 	@echo "  make phase1     Run CPU, runtime, memory-map and trap regressions"
 	@echo "  make phase1-matrix  Test Phase 1 with L1 off/on, async/sync memory"
 	@echo "  make hello      Build and run Hello from Aster on the RTL CPU"
@@ -484,6 +491,40 @@ pcpi-probe: $(PCPI_PROBE_SIM) $(PCPI_ADAPTER_SIM)
 	@$(PCPI_PROBE_SIM)
 	@$(PCPI_ADAPTER_SIM)
 
+.PHONY: atomic-fabric
+$(ATOMIC_FABRIC_SIM): rtl/interconnect/aster_atomic_fabric.sv verification/unit/tb_aster_atomic_fabric.cpp Makefile | $(BUILD_DIR)
+	$(VERILATOR) --cc --exe --build --timing --Wall --Wno-UNUSEDSIGNAL \
+		--top-module aster_atomic_fabric --Mdir $(BUILD_DIR)/obj_atomic_fabric -o $(abspath $@) \
+		$(ROOT)/rtl/interconnect/aster_atomic_fabric.sv $(ROOT)/verification/unit/tb_aster_atomic_fabric.cpp
+
+atomic-fabric: $(ATOMIC_FABRIC_SIM)
+	@set -e; for seed in 1 0xa57e6 0xc0ffee; do $(ATOMIC_FABRIC_SIM) $$seed; done
+
+.PHONY: atomic-runtime atomic-runtime-matrix
+$(ATOMIC_RUNTIME_ELF): software/tests/atomic_runtime.c software/runtime/start_multicore.S software/runtime/aster.h software/boot/link_multicore.ld Makefile | $(HELLO_DIR)
+	$(CC) $(filter-out -march=%,$(HELLO_CFLAGS)) -march=rv32ima \
+		-T software/boot/link_multicore.ld -Wl,-Map,$(HELLO_DIR)/atomic_runtime.map \
+		-o $@ software/runtime/start_multicore.S $<
+	$(OBJDUMP) -d $@ > $(HELLO_DIR)/atomic_runtime.dis
+
+$(ATOMIC_RUNTIME_BIN): $(ATOMIC_RUNTIME_ELF)
+	$(OBJCOPY) -O binary $< $@
+
+$(ATOMIC_RUNTIME_SIM): $(RTL_CORE) rtl/core/aster_pcpi_atomic.sv rtl/core/aster_atomic_hart.sv rtl/interconnect/aster_atomic_fabric.sv verification/soc/aster_atomic_probe.sv verification/soc/tb_aster_atomic_probe.cpp Makefile
+	mkdir -p $(ATOMIC_RUNTIME_DIR)
+	$(VERILATOR) --cc --exe --build --timing --Wall $(VERILATOR_VENDOR_LINT_FLAGS) \
+		--top-module aster_atomic_probe -GHART_COUNT=$(HART_COUNT) \
+		-CFLAGS '-DASTER_HART_COUNT=$(HART_COUNT)' --Mdir $(ATOMIC_RUNTIME_DIR)/obj -o $(abspath $@) \
+		$(addprefix $(ROOT)/,$(RTL_CORE)) $(ROOT)/rtl/core/aster_pcpi_atomic.sv \
+		$(ROOT)/rtl/core/aster_atomic_hart.sv $(ROOT)/rtl/interconnect/aster_atomic_fabric.sv \
+		$(ROOT)/verification/soc/aster_atomic_probe.sv $(ROOT)/verification/soc/tb_aster_atomic_probe.cpp
+
+atomic-runtime: $(ATOMIC_RUNTIME_SIM) $(ATOMIC_RUNTIME_BIN)
+	@$(ATOMIC_RUNTIME_SIM) $(ATOMIC_RUNTIME_BIN)
+
+atomic-runtime-matrix:
+	@set -e; for harts in 1 2; do $(MAKE) --no-print-directory atomic-runtime HART_COUNT=$$harts; done
+
 counters: $(PERF_SIM)
 	@$(PERF_SIM)
 
@@ -624,7 +665,7 @@ parallel-workloads:
 
 test: smoke phase1 hello bench cache uart fpga-sim linux-sim counters retirement arbiter shared-fabric multicore-runtime parallel
 
-check: tools smoke phase1 hello bench cache uart fpga-sim linux-sim linux-dual-sim counters retirement pcpi-probe arbiter shared-fabric multicore-runtime multicore-adversarial parallel
+check: tools smoke phase1 hello bench cache uart fpga-sim linux-sim linux-dual-sim counters retirement pcpi-probe atomic-fabric atomic-runtime arbiter shared-fabric multicore-runtime multicore-adversarial parallel
 
 clean:
 	rm -rf $(BUILD_DIR)

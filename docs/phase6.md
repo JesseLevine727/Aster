@@ -16,7 +16,7 @@ The Linux ARM host still loads bare-metal RISC-V programs through PYNQ/PCAP.
 Complete and commit/push these tested milestones in order:
 
 - [x] Architecture and acceptance contract written (this document).
-- [ ] Real PicoRV32 PCPI feasibility: operands, native memory/MUL/DIV overlap,
+- [x] Real PicoRV32 PCPI feasibility: operands, native memory/MUL/DIV overlap,
   exactly-once results/retirement, prolonged waits, faults and reset.
 - [ ] Full RV32A against a serialized uncached memory backend, including a
   reservation monitor and independent instruction-level reference checks.
@@ -199,6 +199,44 @@ backend supplies results and access-fault classifications: it does **not**
 prove actual permission decoding, atomic memory semantics, reservations,
 shared-port arbitration, cache coherence or safe warm-stop flushing. Those
 remain acceptance gates, not inferred from this checkpoint.
+
+### Uncached atomic bring-up checkpoint
+
+`aster_atomic_hart` now serializes native prefetch/data and PCPI requests onto
+one stable port. `aster_atomic_fabric` fairly selects a hart and keeps ownership
+through both AMO halves. It checks RAM ownership/alignment, implements all nine
+word AMOs, tracks independent word reservations and emits separate architectural
+store/atomic/SC outcome observations. It treats every ordering encoding with
+the same stronger completion order. It can later sit above a coherent cache
+service without mistaking that service's writebacks for new CPU stores.
+
+The following initial checks pass; caches and physical validation remain open:
+
+- `make atomic-fabric`: three seeds, four backing-latency policies, **171,415**
+  independently modeled operations. Coverage includes signed extrema, overflow,
+  every nonempty write mask, same-value ABA invalidation, nonoverlapping writes,
+  LR replacement, failed SC consumption, read-only progress, hart reservation
+  clear, memory-map boundaries/permissions, faulting SC without reservation,
+  malformed backend operations, fairness and contended AMO increments.
+- `make atomic-runtime-matrix`: real one-/two-core models, four latency policies
+  and two boots each (**16 boots / 48 jobs**). RAM starts nonzero and survives
+  subsequent uncached resets. The existing protected-stack startup runs C built
+  explicitly with `-march=rv32ima`; 32-bit C atomics are lock-free. All nine AMOs
+  with all ordering bits, LR/SC, byte-write invalidation, constrained LR/SC
+  increments, C11 compare-exchange and lock-protected counters/sums pass.
+- Each real-core A retirement is matched to a prior completed atomic command
+  and its read/write/SC outcome history. The host independently checks each
+  job's RAM-published counter/sum/epoch results; UART success text alone is not
+  acceptance. Every full-A operation appears in actual retirement observations.
+
+This is deliberately an uncached bring-up test top with a C++ backing-memory
+and minimal peripheral model, not a shipping Phase 6 SoC/bridge ABI. Full
+cache-enabled tests, adversarial warm-stop draining, stronger progress/litmus
+coverage, integrated negative programs, public reference ISA tests, benchmark
+provenance and FPGA evidence remain required before final full-A closeout.
+The expanded default `make -j2 check` passes with these additions, including
+the existing single-core, multicore, fault, parallel and Linux-bridge regressions.
+This is not yet a rerun of every historical configuration matrix.
 
 ## Runtime, reset and host contract
 

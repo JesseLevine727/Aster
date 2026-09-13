@@ -57,7 +57,9 @@ new bridge; `make fpga-linux-dual` builds its overlay. Original `fpga` and
 `fpga-linux` targets preserve the single-core map. Phase 6 is now in progress:
 the [coherence and full RV32A contract](docs/phase6.md) defines staged PCPI,
 atomic-memory, MSI-like cache, runtime, benchmark and physical acceptance gates.
-Existing builds remain RV32IM until the new implementation is verified.
+Production/board builds remain RV32IM. The new uncached RV32IMA bring-up passes
+independent atomic-fabric tests and compiled one-/two-core C runtime tests;
+coherent caches and Phase 6 hardware acceptance are still pending.
 
 Start here:
 
