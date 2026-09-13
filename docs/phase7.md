@@ -1,12 +1,9 @@
 # Phase 7: coherent memory-to-memory DMA
 
-Status: **coherent DMA, driver and one-/two-hart real-core integration verified
-in simulation, including the AXI/serial Linux shell, code publication and
-selective/global stop escalation; paired AsterBench v5 firmware/capture/study
-tools verified in development; complete size study, full regression closeout,
-full physical study/functional acceptance and immutable evidence pending;
-both clean routed FPGA builds and the first physical paired-copy pilot have
-passed their individual gates**.
+Status: **the clean 144-capture simulation and physical studies, eight separate
+physical functional boots, both routed/reset/HWH FPGA images, the complete
+22-target legacy regression and fresh-checkout verification pass. The final
+14-target DMA supplement and combined immutable acceptance remain pending**.
 Baseline: clean/pushed Phase 6 closeout
 `70a1b55b303786144aaa052b6cd8b9e8a4d75bf1`. Before any Phase 7 edits,
 `audit_phase6.py ... --current` passed all seven baseline acceptance gates.
@@ -41,14 +38,21 @@ in `verification/unit/` and `verification/soc/`, and provenance/audits in
 - [x] Independent DMA engine/register and fair-arbiter tests.
 - [x] Coherent device accesses, reservations, permissions and safe lifecycle.
 - [x] Compiled RISC-V driver/runtime plus directed/seeded integrated matrices.
-- [ ] Versioned AsterBench CPU/DMA sweep, independent oracles and provenance.
+- [x] Versioned AsterBench CPU/DMA sweep, independent oracles and provenance.
 - [ ] Full applicable Phase 1–7 regression run and clean routed FPGA signoff.
-- [ ] Real PYNQ Linux/PCAP DMA and CPU/DMA sweeps, repeated jobs/warm boots.
+- [x] Real PYNQ Linux/PCAP DMA and CPU/DMA sweeps, repeated jobs/warm boots.
 - [ ] Immutable evidence, mutation-tested requirement audit, fresh-checkout
   verification and clean/pushed closeout.
 
 Commit and push each verified milestone. A changed design must update this
 contract with its evidence before subsequent stages depend on it.
+
+The following milestone notes retain the evidence available at each step;
+their intermediate test totals are not the final suite totals. The
+[regression closeout](#regression-closeout-tooling), [physical report](phase7-physical.md)
+and [measured crossover](phase7-bench.md#measured-physical-crossover) track the
+combined result. The [current runtime guide](runtime.md) distinguishes legacy
+RV32IM startup from the coherent RV32IMA/DMA execution and ownership contract.
 
 The first implementation milestone is reproducible with `make dma-engine
 dma-arbiter`. Three seeds cross three engine response-latency policies (zero,
@@ -120,8 +124,9 @@ The new unit regression failed before the controller fix and now passes all
 two-hart/cache-on and cache-off synchronous runs additionally pass four
 selective/global escalation arrival points, preserving complete RAM through
 separate selective and global flushes (`dma-runtime`, 12 stop acknowledgments).
-The complete post-change 16-configuration runtime matrix remains a final
-regression gate, not inferred from those two runs.
+The final post-change 16-configuration matrix separately passes all 48 runtime
+boots, 80 in-flight global stops and 32 selective/global escalation trials;
+that result is not inferred from those two initial runs.
 
 `make linux-dma-bench` audits the actual ELF/ROM and checks v5 windows through
 AXI and bit-serial UART. It saves independent CPU/DMA event and payload
@@ -149,8 +154,8 @@ Clean cache-off/on FPGA builds at revision `888c24b` now pass actual generated
 reset, HWH, routing, setup/hold/pulse-width, DRC and methodology gates at
 31.25 MHz. See the [physical evidence contract](phase7-physical.md) for routed
 resources, safe Linux/PCAP deployment and independent physical audit rules.
-Physical execution and the combined full-regression/immutable closeout are
-still pending; FPGA builds alone do not complete the phase.
+At that milestone physical execution and the combined closeout were still
+pending; FPGA builds alone do not complete the phase.
 The tested physical collector adds seven mock-only safety/audit tests
 (**124 host tests total**), including failure cleanup, read-only prior-overlay
 guards, exact no-download reuse, changed-input rejection and raw evidence
@@ -162,7 +167,7 @@ all 42 reference counters and the host Git-provenance audit. CPU 1,204 versus
 DMA 1,443 cycles is a measured small-transfer slowdown, not a crossover claim.
 The board was independently rechecked safely STOPPED at 31.25 MHz. The full
 144-case physical study and functional runtime/code-publication acceptance
-remain pending.
+were separate gates and are now complete; the pilot alone did not prove them.
 
 `scripts/run_phase7_regressions.py` fixes a **14-target DMA supplement**:
 host validators, engine/arbiter/counters/stop units, cache matrices/boundaries,

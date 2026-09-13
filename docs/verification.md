@@ -330,7 +330,7 @@ wrong ABI/configuration or incomplete flush cannot reach firmware programming.
 
 ## Phase 7 DMA checkpoints
 
-[Phase 7](phase7.md) now has verified simulation foundations:
+[Phase 7](phase7.md) has independent unit, real-core, serial and physical gates:
 
 ```sh
 make dma-engine          # Byte-addressed full-RAM oracle, registers, abort/pause
@@ -338,9 +338,15 @@ make dma-arbiter         # Whole-CPU/AMO lock and completed-group fairness
 make dma-cache-matrix    # 216 device/cache/geometry/seed/latency scenarios
 make dma-cache-boundaries # Largest supported word/index widths, separately
 make dma-counters        # ABI 5 multi-increment/common-window/carry checks
+make dma-warm-stop       # 58 drain/settlement/selective/global escalation cases
 make dma-atomic-fabric   # Native DMA MMIO routing and all A/fetch denials
 make dma-runtime-matrix  # 16 actual-core hart/cache/memory configurations
 make dma-bench SYNC_MEMORY=1 # Paired CPU/DMA, full bytes/guards/RAM and 42 counters
+make dma-bench-cases     # 42 cache/size/alignment configurations
+make dma-bench-sensitivity # Nine alternate timing/geometry/seed/hart/job cases
+make linux-dma-matrix    # Runtime/publication, MMIO denial, split/held AXI, STOP
+make linux-dma-bench-cases # Ten paired bit-serial benchmark configurations
+make linux-dma-bench-baud  # Both caches at physical 115,200 baud
 ```
 
 The compiled [DMA driver](../software/drivers/README.md) runs on the actual
@@ -349,15 +355,33 @@ dirty-data visibility, same-value byte-write reservation invalidation,
 unaffected word reservations, primary-only MMIO control, source/destination
 ownership, timeout/abort semantics and selective reset pausing an active copy.
 The runtime matrix includes 48 complete warm boots, 192 selective resets and
-80 in-flight global-stop trials, with every acknowledged CPU/DMA byte checked
+80 in-flight global-stop trials and 32 selective/global escalation trials,
+with every acknowledged CPU/DMA byte checked
 against all 64 KiB of stopped RAM. Firmware snapshots match actual CPU/DMA
 event windows. Initial POR is distinct from these RAM-preserving stops.
 
 Keep DMA-disabled regressions and the immutable Phase 6 audit. Do not use
 `audit_phase6 --current` to certify changed Phase 7 RTL; the historical audit
-remains valid against its own recorded Git revision. The
-[AsterBench v5 tools](phase7-bench.md) have verified development captures and
-107 passing host tests, including C++/Python schema parity and saved-evidence
-mutations. Complete fixed-study collection, further adversarial/AXI coverage,
-clean routed FPGA gates, actual PYNQ copies and Phase 7 closeout are still
-separate pending acceptance work.
+remains valid against its own recorded Git revision. The clean new legacy run
+passes all 22 targets and 2,397 emitted scenarios. The fresh detached build
+passes `make check`, including 157 scenarios and 149 host tests. The final
+14-target DMA supplement and combined immutable closeout are separate gates,
+not implied by `check`.
+
+The [AsterBench v5 study](phase7-bench.md) passes all 144 simulation captures
+and the identical physical plan: 288 boots and 1,152 paired jobs in each.
+All 42 physical counters match the independent reference, full UART/output/
+guards/RAM pass, and six fresh repeats agree. Separate actual C runtime and
+DMA-copied code publication pass eight physical boots across both cache modes.
+Both 31.25 MHz FPGA images pass routed/reset/HWH gates, and the final independent
+board read confirms CPU/DMA safely STOPPED. See the [physical workflow and
+results](phase7-physical.md) and [runtime/driver guide](runtime.md).
+
+`scripts/audit_phase7_regressions.py` rechecks exact emitted DMA scenarios,
+ordered configurations/reset points, serial records, independent observations,
+source/toolchain and complete raw logs. `scripts/audit_phase7.py` additionally
+binds all seven requirements, nested inventories, implementation consistency,
+actual programming chain and final stopped-state probe. Host tests mutate
+full bytes, counters, ELF/ROM/source identities, missing/duplicate/reordered
+cases, unsafe host operations and rehashed invented summaries. Mock fixtures
+test the validators and never stand in for simulation or physical acceptance.
