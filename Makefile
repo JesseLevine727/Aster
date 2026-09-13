@@ -40,6 +40,21 @@ DMA_JOBS ?= 4
 DMA_SEED ?= 0x13570000
 DMA_BOOTS ?= 2
 DMA_UART_SEED ?= 0
+DOT8_WORKLOAD ?= dot
+DOT8_K ?= 64
+DOT8_ALIGNMENT ?= aligned
+DOT8_JOBS ?= 4
+DOT8_SEED ?= 0x13570000
+DOT8_BOOTS ?= 2
+DOT8_UART_SEED ?= 0
+ifeq ($(filter $(DOT8_WORKLOAD),dot fir gemm),)
+$(error DOT8_WORKLOAD must be dot, fir or gemm)
+endif
+ifeq ($(filter $(DOT8_ALIGNMENT),aligned unaligned),)
+$(error DOT8_ALIGNMENT must be aligned or unaligned)
+endif
+DOT8_KIND := $(if $(filter dot,$(DOT8_WORKLOAD)),0,$(if $(filter fir,$(DOT8_WORKLOAD)),1,2))
+DOT8_ALIGNMENT_ID := $(if $(filter aligned,$(DOT8_ALIGNMENT)),0,1)
 ifeq ($(filter $(DMA_ALIGNMENT),aligned same_offset different_offset),)
 $(error DMA_ALIGNMENT must be aligned, same_offset or different_offset)
 endif
@@ -122,6 +137,14 @@ DOT8_SOC_SIM := $(DOT8_SOC_DIR)/aster_dot8_soc_sim
 DOT8_RUNTIME_ELF := $(HELLO_DIR)/dot8_runtime.elf
 DOT8_RUNTIME_HEX := $(HELLO_DIR)/dot8_runtime.hex
 DOT8_STOP_HEX := $(HELLO_DIR)/dot8_stop_fixture.hex
+DOT8_BENCH_SIM := $(DOT8_SOC_DIR)/aster_dot8_bench_sim
+DOT8_FW_DIR := $(HELLO_DIR)/dot8_$(DOT8_WORKLOAD)_k$(DOT8_K)_a$(DOT8_ALIGNMENT)_j$(DOT8_JOBS)_s$(DOT8_SEED)
+DOT8_ELF := $(DOT8_FW_DIR)/dot8.elf
+DOT8_HEX := $(DOT8_FW_DIR)/dot8.hex
+DOT8_RAM_PREFIX ?= $(DOT8_FW_DIR)/observed_h$(HART_COUNT)_$(CONFIG_TAG)_u$(DOT8_UART_SEED)
+DOT8_CFLAGS = $(filter-out -march=%,$(HELLO_CFLAGS)) -march=rv32ima -Isoftware/drivers -Isoftware/benchmarks \
+	-fno-builtin -fno-tree-loop-distribute-patterns -DDOT8_KIND=$(DOT8_KIND) -DDOT8_K=$(DOT8_K) \
+	-DDOT8_ALIGNMENT=$(DOT8_ALIGNMENT_ID) -DDOT8_JOBS=$(DOT8_JOBS) -DDOT8_SEED=$(DOT8_SEED)
 DMA_ATOMIC_FABRIC_SIM := $(BUILD_DIR)/aster_dma_atomic_fabric_sim
 DMA_CACHE_DIR := $(BUILD_DIR)/dma_cache_l1$(ENABLE_L1)_w$(L1_LINE_WORDS)_n$(L1_LINE_COUNT)
 DMA_CACHE_SIM := $(DMA_CACHE_DIR)/aster_dma_cache_sim
@@ -983,6 +1006,36 @@ dot8-runtime: $(DOT8_SOC_SIM) $(DOT8_RUNTIME_HEX) $(DOT8_STOP_HEX)
 
 dot8-stops: $(DOT8_SOC_SIM) $(DOT8_STOP_HEX)
 	@$(DOT8_SOC_SIM) +ram_fill=a5a5a5a5 --stop-rom=$(DOT8_STOP_HEX) --stops-only
+
+.PHONY: dot8-firmware dot8-bench
+$(DOT8_ELF): software/benchmarks/dot8.c software/benchmarks/dot8_kernels.c software/benchmarks/dot8_kernels.h \
+	software/drivers/aster_dot8.h software/runtime/start_multicore.S software/runtime/aster.h software/boot/link_dot8_bench.ld Makefile
+	@mkdir -p $(DOT8_FW_DIR)
+	$(CC) $(DOT8_CFLAGS) -T software/boot/link_dot8_bench.ld -Wl,-Map,$(@:.elf=.map) -o $@ \
+		software/runtime/start_multicore.S software/benchmarks/dot8_kernels.c $<
+	$(OBJDUMP) -d $@ > $(@:.elf=.dis)
+
+$(DOT8_HEX): $(DOT8_ELF) scripts/elf_to_hex.py
+	$(PYTHON) scripts/elf_to_hex.py --rom-bytes 65536 $< $@
+
+dot8-firmware: $(DOT8_ELF) $(DOT8_HEX)
+
+$(DOT8_BENCH_SIM): $(RTL_COHERENT) verification/common/dot8_record.h verification/soc/tb_aster_dot8_bench.cpp Makefile
+	@mkdir -p $(DOT8_SOC_DIR)
+	$(VERILATOR) --cc --exe --build --timing --Wall $(VERILATOR_VENDOR_LINT_FLAGS) $(VERILATOR_COHERENT_FLAGS) \
+		--assert -DASTER_COHERENCE_ASSERT -DASTER_DOT8_ASSERT --top-module aster_coherent_soc \
+		-GHART_COUNT=$(HART_COUNT) "-GENABLE_L1=1'b$(ENABLE_L1)" "-GENABLE_DMA=1'b1" "-GENABLE_DOT8=1'b1" \
+		"-GSYNC_MEMORY=1'b$(SYNC_MEMORY)" -GMEMORY_WAIT_CYCLES=$(MEMORY_WAIT_CYCLES) "-GHOST_BOOT=1'b1" \
+		-GLINE_WORDS=$(L1_LINE_WORDS) -GLINE_COUNT=$(L1_LINE_COUNT) \
+		--Mdir $(DOT8_SOC_DIR)/bench_obj -o $(abspath $@) \
+		$(addprefix $(ROOT)/,$(RTL_COHERENT)) $(ROOT)/verification/soc/tb_aster_dot8_bench.cpp
+
+dot8-bench: $(DOT8_BENCH_SIM) $(DOT8_HEX)
+	@$(PYTHON) scripts/run_dot8_sim.py --simulator $(DOT8_BENCH_SIM) --elf $(DOT8_ELF) --firmware $(DOT8_HEX) \
+		--ram-prefix $(DOT8_RAM_PREFIX) --workload $(DOT8_WORKLOAD) --k $(DOT8_K) --alignment $(DOT8_ALIGNMENT_ID) \
+		--harts $(HART_COUNT) --jobs $(DOT8_JOBS) --seed $(DOT8_SEED) --l1 $(ENABLE_L1) --sync-memory $(SYNC_MEMORY) \
+		--memory-wait $(MEMORY_WAIT_CYCLES) --line-words $(L1_LINE_WORDS) --line-count $(L1_LINE_COUNT) \
+		--boots $(DOT8_BOOTS) --uart-seed $(DOT8_UART_SEED)
 
 $(DMA_RUNTIME_ELF): software/tests/dma_runtime.c software/drivers/aster_dma.c software/drivers/aster_dma.h software/runtime/start_multicore.S software/runtime/aster.h software/boot/link_multicore.ld Makefile | $(HELLO_DIR)
 	$(CC) $(filter-out -march=%,$(HELLO_CFLAGS)) -march=rv32ima -Isoftware/drivers \

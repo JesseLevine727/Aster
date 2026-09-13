@@ -265,7 +265,8 @@ regressions pass after integration with dot8 disabled.
 `make dot8-counters HART_COUNT=1` and `HART_COUNT=2` independently verify ABI 6:
 4,096 command/event combinations, 20,000 seeded steps, every byte offset,
 frozen state, command-edge exclusions, absent-hart zeros and 32/64-bit wrap.
-The new SoC counter bank/lifecycle connections still require full runtime tests.
+The new SoC connections are exercised below; the complete clean configuration
+matrix remains a separate acceptance gate.
 
 ### C/runtime and Linux-interface milestone
 
@@ -327,6 +328,9 @@ implementation and audit the exact committed bundle plus preserved historical
 evidence. Commit and push each verified milestone; complete only after all gates.
 
 ## Primary references
+
+The implemented v6 record/layout/observation contract is detailed in
+[Phase 8 AsterBench](phase8-bench.md).
 
 - [RISC-V 20260120 opcode map](https://docs.riscv.org/reference/isa/v20260120/unpriv/rv-32-64g.html):
   custom-0 is dedicated custom opcode space; do not borrow reserved standard opcodes.

@@ -8,13 +8,20 @@ import struct
 from asterbench_coherent import require
 
 
-def inspect_elf(data, *, profile="benchmark", dma_size=None, dma_jobs=None):
-    require(profile in ("benchmark", "runtime", "lifecycle", "dma_benchmark", "dma_runtime", "dma_publication", "dma_stop_fixture"), "unknown audited firmware profile")
+def inspect_elf(data, *, profile="benchmark", dma_size=None, dma_jobs=None, dot8_name=None, dot8_k=None, dot8_jobs=None):
+    require(profile in ("benchmark", "runtime", "lifecycle", "dma_benchmark", "dma_runtime", "dma_publication", "dma_stop_fixture",
+                        "dot8_benchmark", "dot8_runtime", "dot8_stop_fixture"), "unknown audited firmware profile")
     if profile == "dma_benchmark":
         require(type(dma_size) is int and 0 <= dma_size <= 8192 and type(dma_jobs) is int and 1 <= dma_jobs <= 8,
                 "DMA benchmark requires exact size/job symbol contract")
     else:
         require(dma_size is None and dma_jobs is None, "unexpected DMA benchmark arguments for another ELF profile")
+    if profile == "dot8_benchmark":
+        import asterbench_dot8 as dot8
+        dot8_dims = dot8.dimensions(dot8_name, dot8_k)
+        dot8.integer(dot8_jobs, 1, 8)
+    else:
+        require(dot8_name is None and dot8_k is None and dot8_jobs is None, "unexpected dot8 benchmark arguments for another ELF profile")
     require(type(data) is bytes and 52 <= len(data) <= 16*1024*1024, "invalid ELF length")
     h = struct.unpack_from("<16sHHIIIIIHHHHHH", data)
     require(h[0][:7] == b"\x7fELF\x01\x01\x01" and h[1:5] == (2, 243, 1, 0) and h[7] == 0,
@@ -70,6 +77,29 @@ def inspect_elf(data, *, profile="benchmark", dma_size=None, dma_jobs=None):
         wanted = {"main": (2, 0, 65536), "aster_secondary_main": (2, 0, 65536), "aster_dma_submit": (2, 0, 65536),
                   "source": (1, 0x10000000, 0x10008000), "destination": (1, 0x10000000, 0x10008000)}
         sizes = {"source": 384, "destination": 384}
+    elif profile == "dot8_benchmark":
+        a_size, b_size = dot8.allocation(dot8_dims["a_used"]), dot8.allocation(dot8_dims["b_used"])
+        wanted = {f"aster_dot8_{method}_{name}": (2, 0, 65536) for method in ("scalar", "custom") for name in dot8.NAMES}
+        wanted.update(aster_dot8_bench_a=(1, 0x10001000, 0x10001000+a_size),
+                      aster_dot8_bench_b=(1, 0x10003000, 0x10003000+b_size),
+                      aster_dot8_bench_y=(1, 0x10006000, 0x100060c0),
+                      aster_dot8_bench_results=(1, 0x10008000, 0x10008000+dot8_jobs*2*132*4))
+        sizes = dict(aster_dot8_bench_a=a_size, aster_dot8_bench_b=b_size,
+                     aster_dot8_bench_y=192, aster_dot8_bench_results=dot8_jobs*2*132*4)
+    elif profile == "dot8_runtime":
+        wanted = {name: (2, 0, 65536) for name in ("main", "aster_secondary_main", "aster_dma_submit", "aster_dma_copy")}
+        wanted.update({f"aster_dot8_{method}_{name}": (2, 0, 65536) for method in ("scalar", "custom") for name in ("dot", "fir", "gemm")})
+        sizes = dict(input_a=1024, input_b=1024, output=376, dma_source=512, dma_destination=512,
+                     directed_done=8, published=4, consumed=4, reservation_word=8,
+                     aster_dot8_runtime_results0=640, aster_dot8_runtime_results1=640)
+        for name in sizes:
+            low, high = ((0x10008000, 0x1000b000) if name.endswith("results0") else
+                         (0x1000c000, 0x1000f000) if name.endswith("results1") else (0x10000000, 0x10008000))
+            wanted[name] = (1, low, high)
+    elif profile == "dot8_stop_fixture":
+        wanted = {name: (2, 0, 65536) for name in ("main", "aster_secondary_main", "aster_dma_submit")}
+        sizes = dict(source=512, destination=512, progress=4, primary_steps=4, secondary_result=4)
+        wanted.update({name: (1, 0x10000000, 0x10008000) for name in sizes})
     elif profile != "benchmark":
         wanted = {"main": (2, 0, 65536), "aster_secondary_main": (2, 0, 65536)}
         sizes = ({"probe_results": 32, "directed_word": 4, "counter": 4, "cas_counter": 4,
@@ -113,8 +143,20 @@ def inspect_elf(data, *, profile="benchmark", dma_size=None, dma_jobs=None):
                 require(owner[2] & 1 and owner[1] == 8, "result/output must be writable NOLOAD RAM")
             found[text] = {"address": value, "size": size}
     require(set(found) == set(wanted), "missing actual ELF benchmark symbols")
-    if profile.startswith("dma_"):
+    if profile.startswith(("dma_", "dot8_")):
         allocations = sorted((found[name]["address"], found[name]["address"]+found[name]["size"])
                              for name, (kind, _low, _high) in wanted.items() if kind == 1)
-        require(all(left[1] <= right[0] for left, right in zip(allocations, allocations[1:])), "overlapping DMA firmware allocations")
+        require(all(left[1] <= right[0] for left, right in zip(allocations, allocations[1:])), "overlapping device firmware allocations")
+    if profile in ("dot8_benchmark", "dot8_runtime"):
+        for name, symbol in found.items():
+            if not name.startswith(("aster_dot8_scalar_", "aster_dot8_custom_")):
+                continue
+            code = image[symbol["address"]:symbol["address"]+symbol["size"]]
+            require(len(code) % 4 == 0, "non-RV32 kernel size")
+            instructions = [word[0] for word in struct.iter_unpack("<I", code)]
+            custom = [word for word in instructions if word & 0x7f in (0x0b, 0x2b, 0x5b, 0x7b)]
+            require(all(word & 0xfe00707f == 0x0b for word in custom), "unsupported kernel custom encoding")
+            require(bool(custom) == name.startswith("aster_dot8_custom_"), "scalar/custom ELF implementation mismatch")
+            require(any(word & 0xfe00707f == 0x02000033 for word in instructions), "missing ordinary scalar/tail multiplication")
+            require(not any(word & 0x7f == 0x2f for word in instructions), "kernel contains atomic instructions")
     return {"symbols": found, "image": bytes(image)}
