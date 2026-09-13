@@ -1,9 +1,11 @@
 # Phase 6: coherent RAM and full RV32A
 
-Status: **physical workload/full-A gates passed; final evidence/fresh-checkout acceptance pending**.
+Status: **complete — full RV32A, coherent RAM, physical acceptance and fresh-checkout evidence audited**.
 Baseline: clean Phase 5 closeout `29fbe34`, implementation `71e2570`.
 The Phase 5 evidence audit and directed retirement regression passed before
 Phase 6 changes. This document is the implementation and acceptance contract.
+The [final evidence bundle](results/phase6/closeout-215b2d0/README.md) supersedes
+open items in the historical implementation checkpoints recorded below.
 
 ## Scope and sequence
 
@@ -27,7 +29,7 @@ Complete and commit/push these tested milestones in order:
 - [x] Versioned AsterBench coherent/atomic experiments, validated per-hart
   measurements, independent results and clean-source reproducibility.
 - [x] Clean-source FPGA signoff and repeated real PYNQ jobs/boots over Linux.
-- [ ] Evidence audit, fresh-checkout verification and pushed final closeout.
+- [x] Evidence audit, fresh-checkout verification and pushed final closeout.
 
 A milestone may reveal a necessary design change. Update this contract with
 the evidence before building on it; never silently reduce full A to a subset.
@@ -804,9 +806,9 @@ controls, forbidden litmus outcomes and observer pairing. The complete current
 host suite passes **80 tests**. The original clean regression's host-test count
 remains its historical 55; later tests are not retroactively attributed to it.
 
-These completed physical and regression gates do not yet mark the phase closed:
-immutable committed evidence, final requirement-to-evidence/mutation audit,
-fresh-checkout verification and the dedicated pushed closeout remain required.
+At this intermediate checkpoint, immutable committed evidence, final
+requirement-to-evidence/mutation audit and fresh-checkout verification remained
+required. They are completed by the final closeout below.
 
 The final `scripts/audit_phase6.py` validator maps the seven acceptance
 requirements below to a fixed, self-contained package layout. It calls the
@@ -819,6 +821,28 @@ default complete-22-target audit. Final `audit_phase6.py audit <bundle>
 --current` additionally requires current tracked build/audit sources to match
 that fresh verification. Later documentation-only commits do not change the
 identified implementation or pretend the FPGA was rebuilt from them.
+
+## Final closeout
+
+[The self-contained acceptance bundle](results/phase6/closeout-215b2d0/README.md)
+retains 835 hash-checked raw artifacts and passes all seven requirement audits.
+It includes both actual bitstreams, complete 22-target regression evidence,
+57 simulation and physical benchmark captures, the full-A/lifecycle references
+and eight additional functional physical boots, plus the independent final
+STOPPED read. Fresh clean `9bf3bca` rebuilt `make check` in an empty isolated
+tree: 157 emitted RTL passing scenarios and all 84 host tests passed. Its
+actual source/toolchain/command/raw log are included; the full historical
+regression remains separately identified as clean `215b2d0`.
+
+```sh
+python3 scripts/audit_phase6.py audit docs/results/phase6/closeout-215b2d0 --current
+```
+
+The default audit without `--current` remains valid for this historical bundle
+after later development. The current-source option additionally binds the
+checked-out build/audit files to the final fresh verification. README Phase 7
+is now the next planned phase; no DMA or other Phase 7+ implementation is part
+of this closeout.
 
 ## Verification and closeout requirements
 

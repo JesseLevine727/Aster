@@ -1,0 +1,4352 @@
+{
+  "collector_revision": "3baae6a1f323f9740e59cdd85740f5321606c6bc",
+  "driver_files": {
+    "asterbench.py": "cead01e0343fb7cd03964a3d27dd7a75a91e02caacd746609bbd6de87404ddca",
+    "asterbench_coherent.py": "acdc3f70302f4b91e80f8a84033cdd540b2b728ad2ee59361df12a5e0684a1d9",
+    "bench_results.py": "d3872edd950bbbe3abc867a4cad2aeacc1fe3ee81c0974416d2d10ec80c32e0a",
+    "coherent_bridge.py": "409164f08f1ec6980455b8853cb46ea1b9ab0eb4eeb7241c82e293d9160b3ec0",
+    "coherent_elf.py": "699f3a83ed6a9c1c55fbe9a989b52714fbf34f3f0a3155bca63937be9b197904",
+    "coherent_overlay.py": "7ce1a60487e758a3b9e851449166a6092f5f56be27bcb754fc4f5671e976ee59",
+    "coherent_physical.py": "d65bc56ff680809e498662fc0c1ec4f748368aabf80a8733181105ce96c9c726",
+    "coherent_results.py": "ff25d3052e81170bb82f06e1b155735939e475e0592f33f703bd21ec9c16c134",
+    "coherent_study.py": "f1efdd650c2ac2481d813af1818e2705c739e4d5d207b146d7932ab4943d2b1a",
+    "pynq_coherent_study.py": "57843b9e5686a64bc91df170e211432819c38200c1e05f2ffe6b5f635cf6427f",
+    "pynq_handoff.py": "5a5e40f54347e5d3512d98bb1711200ed3ec774d5597790895a3a3e530e89817",
+    "run_coherent_sim.py": "9f7598de1203f3d5d7ef0846f7b9b9f7f3190e7d50a4f4ef59592c80ead4e1c7",
+    "run_pynq_coherent.py": "e186ecde60ee5939facfe26cfb625b29bd1eb683c7f29801c6dac3cb21fa2980"
+  },
+  "entries": [
+    {
+      "file": "atomic_add-i64-r4-p1-c1/physical.json",
+      "id": "atomic_add-i64-r4-p1-c1",
+      "sha256": "6fb903503a1b21c6d8683f2f52c9973044635b287ec98b1671f5cf71d8d697fc"
+    },
+    {
+      "file": "atomic_add-i64-r4-p2-c1/physical.json",
+      "id": "atomic_add-i64-r4-p2-c1",
+      "sha256": "ee9e7fa8684a332cdae9df92b7d87353e1002922f97b24f49127be5f54be3bb1"
+    },
+    {
+      "file": "lrsc_counter-i64-r4-p1-c1/physical.json",
+      "id": "lrsc_counter-i64-r4-p1-c1",
+      "sha256": "3259c144c2bd11f8857295489f04c8312d2c61879062b411af18504c9c7366b7"
+    },
+    {
+      "file": "lrsc_counter-i64-r4-p2-c1/physical.json",
+      "id": "lrsc_counter-i64-r4-p2-c1",
+      "sha256": "53a2e6c58d4d2586419588cd172e2b428f227f0a1f62b7bb5f4fbcd46e89d0ed"
+    },
+    {
+      "file": "cas_counter-i64-r4-p1-c1/physical.json",
+      "id": "cas_counter-i64-r4-p1-c1",
+      "sha256": "2957221ab90ed39c7b2684543e300ea553e402db79ab5973dfb007059a47ee5d"
+    },
+    {
+      "file": "cas_counter-i64-r4-p2-c1/physical.json",
+      "id": "cas_counter-i64-r4-p2-c1",
+      "sha256": "5f6d333fa15abe099ea8af8c69782ddf3ed557ba86ef3cc3129fb811407358f2"
+    },
+    {
+      "file": "lock_sum-i64-r4-p1-c1/physical.json",
+      "id": "lock_sum-i64-r4-p1-c1",
+      "sha256": "e03a23967f06d190d9e9e27909886cde275e0d14c72cbec554307e735c52f048"
+    },
+    {
+      "file": "lock_sum-i64-r4-p2-c1/physical.json",
+      "id": "lock_sum-i64-r4-p2-c1",
+      "sha256": "36f93ea27d7c7f8a0b95e0c4b931fedcddf2dcc834ba6d7b6a40618e367cc964"
+    },
+    {
+      "file": "false_shared-i64-r4-p1-c1/physical.json",
+      "id": "false_shared-i64-r4-p1-c1",
+      "sha256": "59f0de07dcd61ebb767fdeb9029fe37400445d0b7fd5afe7d176a9f082174b1f"
+    },
+    {
+      "file": "false_shared-i64-r4-p2-c1/physical.json",
+      "id": "false_shared-i64-r4-p2-c1",
+      "sha256": "e3335027e5fd199562447a21b70b964f3c5e024c3c1fd8b6cecf90330a2b9571"
+    },
+    {
+      "file": "padded-i64-r4-p1-c1/physical.json",
+      "id": "padded-i64-r4-p1-c1",
+      "sha256": "fdb43c5d4968c18b19798b394e86f99ec9e6819a0e471be3ce99abe49d0c9e70"
+    },
+    {
+      "file": "padded-i64-r4-p2-c1/physical.json",
+      "id": "padded-i64-r4-p2-c1",
+      "sha256": "a80b4f9bc478fe39a6ed22c3b50fcff9b43585c525f9cc8350e1645721b3b494"
+    },
+    {
+      "file": "ping_pong-i64-r4-p1-c1/physical.json",
+      "id": "ping_pong-i64-r4-p1-c1",
+      "sha256": "2f7c61dbe16c0d670e3d30fbe7fdba0610bc7e01287a6e6c90f4e2ea29074d85"
+    },
+    {
+      "file": "ping_pong-i64-r4-p2-c1/physical.json",
+      "id": "ping_pong-i64-r4-p2-c1",
+      "sha256": "6fa63af0184da1ac89ee2ee097b1865fa5034bf44c517ec7cbb92b8ff3788641"
+    },
+    {
+      "file": "spsc_queue-i64-r4-p1-c1/physical.json",
+      "id": "spsc_queue-i64-r4-p1-c1",
+      "sha256": "9eeff4c389282fdd49a383594e7f0d6ddf4ab34d7711637eb71bff702d84163b"
+    },
+    {
+      "file": "spsc_queue-i64-r4-p2-c1/physical.json",
+      "id": "spsc_queue-i64-r4-p2-c1",
+      "sha256": "6054fc0d81044d1b7a8d7ac095167d5b86569438f69a101fb0157bd6cf886e7a"
+    },
+    {
+      "file": "shared_mix-i64-r4-p1-c1/physical.json",
+      "id": "shared_mix-i64-r4-p1-c1",
+      "sha256": "6db5ae2440ff05acf17660128519d43a127b5c14efa17e777929de226dea6fa9"
+    },
+    {
+      "file": "shared_mix-i64-r4-p2-c1/physical.json",
+      "id": "shared_mix-i64-r4-p2-c1",
+      "sha256": "dbeb55a1b1ef7cf919990e9c56e3ee1e3dc1867eb35aa62fdd7280077574578f"
+    },
+    {
+      "file": "shared_mix-i2-r1-p1-c1/physical.json",
+      "id": "shared_mix-i2-r1-p1-c1",
+      "sha256": "206abd60288eb3ec6eb5b034f64f1a43bc29309de7fea28e75b0244887146a4d"
+    },
+    {
+      "file": "shared_mix-i2-r1-p2-c1/physical.json",
+      "id": "shared_mix-i2-r1-p2-c1",
+      "sha256": "1e4752fd11ac670367dbda36441dc66c95dcbf0077cde4dba07a92ad4c1f2f00"
+    },
+    {
+      "file": "shared_mix-i129-r16-p1-c1/physical.json",
+      "id": "shared_mix-i129-r16-p1-c1",
+      "sha256": "5078e5505bf41de67a4244d4f9750c7d43b64e43c7df0f4ea723abd3c6d78305"
+    },
+    {
+      "file": "shared_mix-i129-r16-p2-c1/physical.json",
+      "id": "shared_mix-i129-r16-p2-c1",
+      "sha256": "9c290321d6571e3237add0a0ec28b4c880065c93dfefe447da510fce511cc6a1"
+    },
+    {
+      "file": "shared_mix-i1024-r64-p1-c1/physical.json",
+      "id": "shared_mix-i1024-r64-p1-c1",
+      "sha256": "23fd9d77be9eb144ec7164466126d2493484160e2100d095c5e6abd7a3bba557"
+    },
+    {
+      "file": "shared_mix-i1024-r64-p2-c1/physical.json",
+      "id": "shared_mix-i1024-r64-p2-c1",
+      "sha256": "aaa9ee9691a6c6d5b05ff60180d7055f3ad6a301473004126e9e010e6fa4c53b"
+    },
+    {
+      "file": "ping_pong-i1024-r4-p1-c1/physical.json",
+      "id": "ping_pong-i1024-r4-p1-c1",
+      "sha256": "5e4591312e555f27b32dc490c14f2b623a55e4944a0ae1513ca137b5d81e4d28"
+    },
+    {
+      "file": "ping_pong-i1024-r4-p2-c1/physical.json",
+      "id": "ping_pong-i1024-r4-p2-c1",
+      "sha256": "c5b179b3db1fe40abd3f5ae3997c756dbd5addecffc00b51c1ff83fb103e3ae5"
+    },
+    {
+      "file": "spsc_queue-i1024-r4-p1-c1/physical.json",
+      "id": "spsc_queue-i1024-r4-p1-c1",
+      "sha256": "034e3c525aab31141f331e7cd48dbd24aee18fc18d2af73bb728ca8d6f617b64"
+    },
+    {
+      "file": "spsc_queue-i1024-r4-p2-c1/physical.json",
+      "id": "spsc_queue-i1024-r4-p2-c1",
+      "sha256": "5487c7778a34333e87b4a6466eb725ced35f4fdfbc151d9e677f902cd1062d1e"
+    },
+    {
+      "file": "shared_mix-i64-r4-p2-c1-repeat/physical.json",
+      "id": "shared_mix-i64-r4-p2-c1-repeat",
+      "sha256": "58ad37bd223046d03a9c959f1e44b786b820b711272f8fc26588ae561707ed0b"
+    },
+    {
+      "file": "atomic_add-i64-r4-p1-c0/physical.json",
+      "id": "atomic_add-i64-r4-p1-c0",
+      "sha256": "95823d6a7e2ab83da924b7fb5290216c7e8284b5a989db3f91b360aeb4694842"
+    },
+    {
+      "file": "atomic_add-i64-r4-p2-c0/physical.json",
+      "id": "atomic_add-i64-r4-p2-c0",
+      "sha256": "4e436f3a0fe13af5d92da88e11350180f0c46ae8626eafc1500a2714c0c5a576"
+    },
+    {
+      "file": "lrsc_counter-i64-r4-p1-c0/physical.json",
+      "id": "lrsc_counter-i64-r4-p1-c0",
+      "sha256": "410f2a5bae31dbdfd257da91db010686c3215ecb071ff8ed9b5e3bc693f444c5"
+    },
+    {
+      "file": "lrsc_counter-i64-r4-p2-c0/physical.json",
+      "id": "lrsc_counter-i64-r4-p2-c0",
+      "sha256": "1aab00f5f2b933eab84265b9d8740cb1712e4ce27af72a6d0f2eed8643bd2ad9"
+    },
+    {
+      "file": "cas_counter-i64-r4-p1-c0/physical.json",
+      "id": "cas_counter-i64-r4-p1-c0",
+      "sha256": "4f3e085ee9d79f935c5373f162117bd4a252c7f7ff1e6af00d85351039f0d788"
+    },
+    {
+      "file": "cas_counter-i64-r4-p2-c0/physical.json",
+      "id": "cas_counter-i64-r4-p2-c0",
+      "sha256": "8263ff288ebf4dad547200c6e1d1ce991bbd383a7c967a72fd836577856f9a68"
+    },
+    {
+      "file": "lock_sum-i64-r4-p1-c0/physical.json",
+      "id": "lock_sum-i64-r4-p1-c0",
+      "sha256": "6487fcf671c2b65d0c03c60c5d2846202edc9b96aa49244fb70664163a5c0244"
+    },
+    {
+      "file": "lock_sum-i64-r4-p2-c0/physical.json",
+      "id": "lock_sum-i64-r4-p2-c0",
+      "sha256": "572b883aaeb5883c44aaf8d93a5c238d0a781ebdfc6f20e0671e4ea78b481e5f"
+    },
+    {
+      "file": "false_shared-i64-r4-p1-c0/physical.json",
+      "id": "false_shared-i64-r4-p1-c0",
+      "sha256": "5ff1797d9f2bfb4143adba414f9d6644573488d5cb8282b32799f63b1a778ba6"
+    },
+    {
+      "file": "false_shared-i64-r4-p2-c0/physical.json",
+      "id": "false_shared-i64-r4-p2-c0",
+      "sha256": "f3775764a70afdfb0d510d577d640d4e8d7ddd24946af28125683049d3d83be3"
+    },
+    {
+      "file": "padded-i64-r4-p1-c0/physical.json",
+      "id": "padded-i64-r4-p1-c0",
+      "sha256": "ac25c639058d985e8e20a5e278ab9ccce2a1c2eb8163069dd1c98e8550c09e5c"
+    },
+    {
+      "file": "padded-i64-r4-p2-c0/physical.json",
+      "id": "padded-i64-r4-p2-c0",
+      "sha256": "d923caeeb7774a8a40ff199315ffeb5de1580d9006f67db9d3e329277dab1e54"
+    },
+    {
+      "file": "ping_pong-i64-r4-p1-c0/physical.json",
+      "id": "ping_pong-i64-r4-p1-c0",
+      "sha256": "fb22becc42ab1d7df21262dbfed2fbce2b0847f192b8d97a22d925aeea2d5e15"
+    },
+    {
+      "file": "ping_pong-i64-r4-p2-c0/physical.json",
+      "id": "ping_pong-i64-r4-p2-c0",
+      "sha256": "2ab3502d8450732e32c5d333b942e2ab40db4ac4105cae0898456073e531ad19"
+    },
+    {
+      "file": "spsc_queue-i64-r4-p1-c0/physical.json",
+      "id": "spsc_queue-i64-r4-p1-c0",
+      "sha256": "3893b48c94ef2410691b4d7fe9f615c3d757c56e842fa55250a31ea24062368b"
+    },
+    {
+      "file": "spsc_queue-i64-r4-p2-c0/physical.json",
+      "id": "spsc_queue-i64-r4-p2-c0",
+      "sha256": "5dbde86af82c826e5df2e606a15c3d5b130b4bf258f2bbb7932181fe19ccf3ab"
+    },
+    {
+      "file": "shared_mix-i64-r4-p1-c0/physical.json",
+      "id": "shared_mix-i64-r4-p1-c0",
+      "sha256": "3adae909e06afead8cb586aa163b2926316be124579d87b9f0ef6b38828ee7f8"
+    },
+    {
+      "file": "shared_mix-i64-r4-p2-c0/physical.json",
+      "id": "shared_mix-i64-r4-p2-c0",
+      "sha256": "c75823738bea04d36d1b40744cccc2ac9197c93a4ed0acc7d64c383f0c5767ae"
+    },
+    {
+      "file": "shared_mix-i2-r1-p1-c0/physical.json",
+      "id": "shared_mix-i2-r1-p1-c0",
+      "sha256": "01d654cd18f51a260e3401404c7b656051bdc246168ac1b7d5e60b77a67a7c0b"
+    },
+    {
+      "file": "shared_mix-i2-r1-p2-c0/physical.json",
+      "id": "shared_mix-i2-r1-p2-c0",
+      "sha256": "47487770f2292fc5f7ccd42761560b471eb8d815f329f34148cf1cae63e3a119"
+    },
+    {
+      "file": "shared_mix-i129-r16-p1-c0/physical.json",
+      "id": "shared_mix-i129-r16-p1-c0",
+      "sha256": "f5baecbd9baf9f37436b3c6cfbe3d6c1105e324f918a2f4813b648d7aa845d6b"
+    },
+    {
+      "file": "shared_mix-i129-r16-p2-c0/physical.json",
+      "id": "shared_mix-i129-r16-p2-c0",
+      "sha256": "c6b32ee352d597731bf548945fb919178aab6df36587d7e121b82828fce9c21c"
+    },
+    {
+      "file": "shared_mix-i1024-r64-p1-c0/physical.json",
+      "id": "shared_mix-i1024-r64-p1-c0",
+      "sha256": "e9166e16468b0c1d716c28f611552a9fd65b2834532ebae902864faa7b3e75d3"
+    },
+    {
+      "file": "shared_mix-i1024-r64-p2-c0/physical.json",
+      "id": "shared_mix-i1024-r64-p2-c0",
+      "sha256": "d6307162f26c0a567974929966176592cc3f3b518e675f7900fcdd7d33fd8745"
+    },
+    {
+      "file": "ping_pong-i1024-r4-p1-c0/physical.json",
+      "id": "ping_pong-i1024-r4-p1-c0",
+      "sha256": "29030204e20d07eaafc30737efc41960195ec324898e9fcb9ac1ec23d2f3dea7"
+    },
+    {
+      "file": "ping_pong-i1024-r4-p2-c0/physical.json",
+      "id": "ping_pong-i1024-r4-p2-c0",
+      "sha256": "abf5b827c7c43fc7d75f610f3ba95d5c046c1b9dcfd3c0b60c19bc68c9d6c19e"
+    },
+    {
+      "file": "spsc_queue-i1024-r4-p1-c0/physical.json",
+      "id": "spsc_queue-i1024-r4-p1-c0",
+      "sha256": "707481ef7a9f3d26d6321aec9679995ae63c5bce1914a0843d1afe0a4a47df67"
+    },
+    {
+      "file": "spsc_queue-i1024-r4-p2-c0/physical.json",
+      "id": "spsc_queue-i1024-r4-p2-c0",
+      "sha256": "c12478ec800fafdad3229f257e71b461ab7d9799295d8d99bc2bdaabc8cc4c39"
+    }
+  ],
+  "initial_bitstream": "/home/xilinx/aster_phase6_7d25898/overlay-c1/aster_linux.bit",
+  "overlay_paths": {
+    "0": "/home/xilinx/aster_phase6_7d25898/overlay-c0/overlay.json",
+    "1": "/home/xilinx/aster_phase6_7d25898/overlay-c1/overlay.json"
+  },
+  "overlay_sha256": {
+    "0": "3756872bb090605583cfed956c82db6d8f1c5da0ff45b57c25b609b392ebf988",
+    "1": "75d5ed58942a196ca82a2330830cef9a259f20d04ab3501ebc59cd909aa3fb26"
+  },
+  "plan": "phase6-default-size-communication-repeat-v1",
+  "reference_sha256": "b789652235bc6bd6ec8e063f621d5b353644bcf1f4a45f21b131bdf907c7cede",
+  "schema": "aster.coherent.physical-study.v1",
+  "status": "complete",
+  "summary": {
+    "boots": 114,
+    "cache_state": "primary reflects initialization/prior work; secondary cold-started each job; serialized private D-cache hits",
+    "captures": 57,
+    "comparisons": [
+      {
+        "baseline": "atomic_add-i64-r4-p1-c0",
+        "candidate": "atomic_add-i64-r4-p2-c0",
+        "cycle_ratio_baseline_over_candidate": 0.9434127157526764,
+        "kind": "worker_scaling",
+        "per_boot_job_ratios": [
+          [
+            0.9434127157526764,
+            0.9434127157526764,
+            0.9434127157526764
+          ],
+          [
+            0.9434127157526764,
+            0.9434127157526764,
+            0.9434127157526764
+          ]
+        ],
+        "summed_cycles": [
+          25908,
+          27462
+        ]
+      },
+      {
+        "baseline": "atomic_add-i64-r4-p1-c0",
+        "candidate": "atomic_add-i64-r4-p1-c1",
+        "cycle_ratio_baseline_over_candidate": 2.088007736943907,
+        "kind": "cache_effect",
+        "per_boot_job_ratios": [
+          [
+            2.088007736943907,
+            2.088007736943907,
+            2.088007736943907
+          ],
+          [
+            2.088007736943907,
+            2.088007736943907,
+            2.088007736943907
+          ]
+        ],
+        "summed_cycles": [
+          25908,
+          12408
+        ]
+      },
+      {
+        "baseline": "atomic_add-i64-r4-p2-c0",
+        "candidate": "atomic_add-i64-r4-p2-c1",
+        "cycle_ratio_baseline_over_candidate": 1.7603846153846154,
+        "kind": "cache_effect",
+        "per_boot_job_ratios": [
+          [
+            1.7603846153846154,
+            1.7603846153846154,
+            1.7603846153846154
+          ],
+          [
+            1.7603846153846154,
+            1.7603846153846154,
+            1.7603846153846154
+          ]
+        ],
+        "summed_cycles": [
+          27462,
+          15600
+        ]
+      },
+      {
+        "baseline": "atomic_add-i64-r4-p1-c1",
+        "candidate": "atomic_add-i64-r4-p2-c1",
+        "cycle_ratio_baseline_over_candidate": 0.7953846153846154,
+        "kind": "worker_scaling",
+        "per_boot_job_ratios": [
+          [
+            0.7953846153846154,
+            0.7953846153846154,
+            0.7953846153846154
+          ],
+          [
+            0.7953846153846154,
+            0.7953846153846154,
+            0.7953846153846154
+          ]
+        ],
+        "summed_cycles": [
+          12408,
+          15600
+        ]
+      },
+      {
+        "baseline": "lrsc_counter-i64-r4-p1-c0",
+        "candidate": "lrsc_counter-i64-r4-p2-c0",
+        "cycle_ratio_baseline_over_candidate": 1.0411830179678805,
+        "kind": "worker_scaling",
+        "per_boot_job_ratios": [
+          [
+            1.0411830179678805,
+            1.0411830179678805,
+            1.0411830179678805
+          ],
+          [
+            1.0411830179678805,
+            1.0411830179678805,
+            1.0411830179678805
+          ]
+        ],
+        "summed_cycles": [
+          39288,
+          37734
+        ]
+      },
+      {
+        "baseline": "lrsc_counter-i64-r4-p1-c0",
+        "candidate": "lrsc_counter-i64-r4-p1-c1",
+        "cycle_ratio_baseline_over_candidate": 2.233287858117326,
+        "kind": "cache_effect",
+        "per_boot_job_ratios": [
+          [
+            2.233287858117326,
+            2.233287858117326,
+            2.233287858117326
+          ],
+          [
+            2.233287858117326,
+            2.233287858117326,
+            2.233287858117326
+          ]
+        ],
+        "summed_cycles": [
+          39288,
+          17592
+        ]
+      },
+      {
+        "baseline": "lrsc_counter-i64-r4-p2-c0",
+        "candidate": "lrsc_counter-i64-r4-p2-c1",
+        "cycle_ratio_baseline_over_candidate": 1.599440488301119,
+        "kind": "cache_effect",
+        "per_boot_job_ratios": [
+          [
+            1.599440488301119,
+            1.599440488301119,
+            1.599440488301119
+          ],
+          [
+            1.599440488301119,
+            1.599440488301119,
+            1.599440488301119
+          ]
+        ],
+        "summed_cycles": [
+          37734,
+          23592
+        ]
+      },
+      {
+        "baseline": "lrsc_counter-i64-r4-p1-c1",
+        "candidate": "lrsc_counter-i64-r4-p2-c1",
+        "cycle_ratio_baseline_over_candidate": 0.745676500508647,
+        "kind": "worker_scaling",
+        "per_boot_job_ratios": [
+          [
+            0.745676500508647,
+            0.745676500508647,
+            0.745676500508647
+          ],
+          [
+            0.745676500508647,
+            0.745676500508647,
+            0.745676500508647
+          ]
+        ],
+        "summed_cycles": [
+          17592,
+          23592
+        ]
+      },
+      {
+        "baseline": "cas_counter-i64-r4-p1-c0",
+        "candidate": "cas_counter-i64-r4-p2-c0",
+        "cycle_ratio_baseline_over_candidate": 0.6150020721094074,
+        "kind": "worker_scaling",
+        "per_boot_job_ratios": [
+          [
+            0.6150020721094074,
+            0.6150020721094074,
+            0.6150020721094074
+          ],
+          [
+            0.6150020721094074,
+            0.6150020721094074,
+            0.6150020721094074
+          ]
+        ],
+        "summed_cycles": [
+          62328,
+          101346
+        ]
+      },
+      {
+        "baseline": "cas_counter-i64-r4-p1-c0",
+        "candidate": "cas_counter-i64-r4-p1-c1",
+        "cycle_ratio_baseline_over_candidate": 2.3079315707620527,
+        "kind": "cache_effect",
+        "per_boot_job_ratios": [
+          [
+            2.3079315707620527,
+            2.3079315707620527,
+            2.3079315707620527
+          ],
+          [
+            2.3079315707620527,
+            2.3079315707620527,
+            2.3079315707620527
+          ]
+        ],
+        "summed_cycles": [
+          62328,
+          27006
+        ]
+      },
+      {
+        "baseline": "cas_counter-i64-r4-p2-c0",
+        "candidate": "cas_counter-i64-r4-p2-c1",
+        "cycle_ratio_baseline_over_candidate": 3.097560975609756,
+        "kind": "cache_effect",
+        "per_boot_job_ratios": [
+          [
+            3.097560975609756,
+            3.097560975609756,
+            3.097560975609756
+          ],
+          [
+            3.097560975609756,
+            3.097560975609756,
+            3.097560975609756
+          ]
+        ],
+        "summed_cycles": [
+          101346,
+          32718
+        ]
+      },
+      {
+        "baseline": "cas_counter-i64-r4-p1-c1",
+        "candidate": "cas_counter-i64-r4-p2-c1",
+        "cycle_ratio_baseline_over_candidate": 0.8254172015404364,
+        "kind": "worker_scaling",
+        "per_boot_job_ratios": [
+          [
+            0.8254172015404364,
+            0.8254172015404364,
+            0.8254172015404364
+          ],
+          [
+            0.8254172015404364,
+            0.8254172015404364,
+            0.8254172015404364
+          ]
+        ],
+        "summed_cycles": [
+          27006,
+          32718
+        ]
+      },
+      {
+        "baseline": "lock_sum-i64-r4-p1-c0",
+        "candidate": "lock_sum-i64-r4-p2-c0",
+        "cycle_ratio_baseline_over_candidate": 0.7126472094214029,
+        "kind": "worker_scaling",
+        "per_boot_job_ratios": [
+          [
+            0.7126472094214029,
+            0.7126472094214029,
+            0.7126472094214029
+          ],
+          [
+            0.7126472094214029,
+            0.7126472094214029,
+            0.7126472094214029
+          ]
+        ],
+        "summed_cycles": [
+          83508,
+          117180
+        ]
+      },
+      {
+        "baseline": "lock_sum-i64-r4-p1-c0",
+        "candidate": "lock_sum-i64-r4-p1-c1",
+        "cycle_ratio_baseline_over_candidate": 2.0060536177572788,
+        "kind": "cache_effect",
+        "per_boot_job_ratios": [
+          [
+            2.0060536177572788,
+            2.0060536177572788,
+            2.0060536177572788
+          ],
+          [
+            2.0060536177572788,
+            2.0060536177572788,
+            2.0060536177572788
+          ]
+        ],
+        "summed_cycles": [
+          83508,
+          41628
+        ]
+      },
+      {
+        "baseline": "lock_sum-i64-r4-p2-c0",
+        "candidate": "lock_sum-i64-r4-p2-c1",
+        "cycle_ratio_baseline_over_candidate": 1.2057788479348028,
+        "kind": "cache_effect",
+        "per_boot_job_ratios": [
+          [
+            1.2057788479348028,
+            1.2057788479348028,
+            1.2057788479348028
+          ],
+          [
+            1.2057788479348028,
+            1.2057788479348028,
+            1.2057788479348028
+          ]
+        ],
+        "summed_cycles": [
+          117180,
+          97182
+        ]
+      },
+      {
+        "baseline": "lock_sum-i64-r4-p1-c1",
+        "candidate": "lock_sum-i64-r4-p2-c1",
+        "cycle_ratio_baseline_over_candidate": 0.42835092918441686,
+        "kind": "worker_scaling",
+        "per_boot_job_ratios": [
+          [
+            0.42835092918441686,
+            0.42835092918441686,
+            0.42835092918441686
+          ],
+          [
+            0.42835092918441686,
+            0.42835092918441686,
+            0.42835092918441686
+          ]
+        ],
+        "summed_cycles": [
+          41628,
+          97182
+        ]
+      },
+      {
+        "baseline": "false_shared-i64-r4-p1-c0",
+        "candidate": "false_shared-i64-r4-p2-c0",
+        "cycle_ratio_baseline_over_candidate": 0.9401262791204006,
+        "kind": "worker_scaling",
+        "per_boot_job_ratios": [
+          [
+            0.9401262791204006,
+            0.9401262791204006,
+            0.9401262791204006
+          ],
+          [
+            0.9401262791204006,
+            0.9401262791204006,
+            0.9401262791204006
+          ]
+        ],
+        "summed_cycles": [
+          25908,
+          27558
+        ]
+      },
+      {
+        "baseline": "false_shared-i64-r4-p1-c0",
+        "candidate": "false_shared-i64-r4-p1-c1",
+        "cycle_ratio_baseline_over_candidate": 2.0709832134292565,
+        "kind": "cache_effect",
+        "per_boot_job_ratios": [
+          [
+            2.0709832134292565,
+            2.0709832134292565,
+            2.0709832134292565
+          ],
+          [
+            2.0709832134292565,
+            2.0709832134292565,
+            2.0709832134292565
+          ]
+        ],
+        "summed_cycles": [
+          25908,
+          12510
+        ]
+      },
+      {
+        "baseline": "false_shared-i64-r4-p1-c0",
+        "candidate": "padded-i64-r4-p1-c0",
+        "cycle_ratio_baseline_over_candidate": 0.8691626409017713,
+        "kind": "padding_effect",
+        "per_boot_job_ratios": [
+          [
+            0.8691626409017713,
+            0.8691626409017713,
+            0.8691626409017713
+          ],
+          [
+            0.8691626409017713,
+            0.8691626409017713,
+            0.8691626409017713
+          ]
+        ],
+        "summed_cycles": [
+          25908,
+          29808
+        ]
+      },
+      {
+        "baseline": "false_shared-i64-r4-p2-c0",
+        "candidate": "false_shared-i64-r4-p2-c1",
+        "cycle_ratio_baseline_over_candidate": 1.8054245283018868,
+        "kind": "cache_effect",
+        "per_boot_job_ratios": [
+          [
+            1.8054245283018868,
+            1.8054245283018868,
+            1.8054245283018868
+          ],
+          [
+            1.8054245283018868,
+            1.8054245283018868,
+            1.8054245283018868
+          ]
+        ],
+        "summed_cycles": [
+          27558,
+          15264
+        ]
+      },
+      {
+        "baseline": "false_shared-i64-r4-p2-c0",
+        "candidate": "padded-i64-r4-p2-c0",
+        "cycle_ratio_baseline_over_candidate": 0.9896574014221073,
+        "kind": "padding_effect",
+        "per_boot_job_ratios": [
+          [
+            0.9896574014221073,
+            0.9896574014221073,
+            0.9896574014221073
+          ],
+          [
+            0.9896574014221073,
+            0.9896574014221073,
+            0.9896574014221073
+          ]
+        ],
+        "summed_cycles": [
+          27558,
+          27846
+        ]
+      },
+      {
+        "baseline": "false_shared-i64-r4-p1-c1",
+        "candidate": "false_shared-i64-r4-p2-c1",
+        "cycle_ratio_baseline_over_candidate": 0.8195754716981132,
+        "kind": "worker_scaling",
+        "per_boot_job_ratios": [
+          [
+            0.8195754716981132,
+            0.8195754716981132,
+            0.8195754716981132
+          ],
+          [
+            0.8195754716981132,
+            0.8195754716981132,
+            0.8195754716981132
+          ]
+        ],
+        "summed_cycles": [
+          12510,
+          15264
+        ]
+      },
+      {
+        "baseline": "false_shared-i64-r4-p1-c1",
+        "candidate": "padded-i64-r4-p1-c1",
+        "cycle_ratio_baseline_over_candidate": 0.9266666666666666,
+        "kind": "padding_effect",
+        "per_boot_job_ratios": [
+          [
+            0.9266666666666666,
+            0.9266666666666666,
+            0.9266666666666666
+          ],
+          [
+            0.9266666666666666,
+            0.9266666666666666,
+            0.9266666666666666
+          ]
+        ],
+        "summed_cycles": [
+          12510,
+          13500
+        ]
+      },
+      {
+        "baseline": "false_shared-i64-r4-p2-c1",
+        "candidate": "padded-i64-r4-p2-c1",
+        "cycle_ratio_baseline_over_candidate": 1.0729649936735555,
+        "kind": "padding_effect",
+        "per_boot_job_ratios": [
+          [
+            1.0729649936735555,
+            1.0729649936735555,
+            1.0729649936735555
+          ],
+          [
+            1.0729649936735555,
+            1.0729649936735555,
+            1.0729649936735555
+          ]
+        ],
+        "summed_cycles": [
+          15264,
+          14226
+        ]
+      },
+      {
+        "baseline": "padded-i64-r4-p1-c0",
+        "candidate": "padded-i64-r4-p2-c0",
+        "cycle_ratio_baseline_over_candidate": 1.070458952811894,
+        "kind": "worker_scaling",
+        "per_boot_job_ratios": [
+          [
+            1.070458952811894,
+            1.070458952811894,
+            1.070458952811894
+          ],
+          [
+            1.070458952811894,
+            1.070458952811894,
+            1.070458952811894
+          ]
+        ],
+        "summed_cycles": [
+          29808,
+          27846
+        ]
+      },
+      {
+        "baseline": "padded-i64-r4-p1-c0",
+        "candidate": "padded-i64-r4-p1-c1",
+        "cycle_ratio_baseline_over_candidate": 2.208,
+        "kind": "cache_effect",
+        "per_boot_job_ratios": [
+          [
+            2.208,
+            2.208,
+            2.208
+          ],
+          [
+            2.208,
+            2.208,
+            2.208
+          ]
+        ],
+        "summed_cycles": [
+          29808,
+          13500
+        ]
+      },
+      {
+        "baseline": "padded-i64-r4-p2-c0",
+        "candidate": "padded-i64-r4-p2-c1",
+        "cycle_ratio_baseline_over_candidate": 1.9574019401096583,
+        "kind": "cache_effect",
+        "per_boot_job_ratios": [
+          [
+            1.9574019401096583,
+            1.9574019401096583,
+            1.9574019401096583
+          ],
+          [
+            1.9574019401096583,
+            1.9574019401096583,
+            1.9574019401096583
+          ]
+        ],
+        "summed_cycles": [
+          27846,
+          14226
+        ]
+      },
+      {
+        "baseline": "padded-i64-r4-p1-c1",
+        "candidate": "padded-i64-r4-p2-c1",
+        "cycle_ratio_baseline_over_candidate": 0.9489666807254323,
+        "kind": "worker_scaling",
+        "per_boot_job_ratios": [
+          [
+            0.9489666807254323,
+            0.9489666807254323,
+            0.9489666807254323
+          ],
+          [
+            0.9489666807254323,
+            0.9489666807254323,
+            0.9489666807254323
+          ]
+        ],
+        "summed_cycles": [
+          13500,
+          14226
+        ]
+      },
+      {
+        "baseline": "ping_pong-i64-r4-p1-c0",
+        "candidate": "ping_pong-i64-r4-p2-c0",
+        "cycle_ratio_baseline_over_candidate": 0.8749012688009411,
+        "kind": "worker_scaling",
+        "per_boot_job_ratios": [
+          [
+            0.8749012688009411,
+            0.8749012688009411,
+            0.8749012688009411
+          ],
+          [
+            0.8749012688009411,
+            0.8749012688009411,
+            0.8749012688009411
+          ]
+        ],
+        "summed_cycles": [
+          312366,
+          357030
+        ]
+      },
+      {
+        "baseline": "ping_pong-i64-r4-p1-c0",
+        "candidate": "ping_pong-i64-r4-p1-c1",
+        "cycle_ratio_baseline_over_candidate": 1.5492500892750862,
+        "kind": "cache_effect",
+        "per_boot_job_ratios": [
+          [
+            1.5492500892750862,
+            1.5492500892750862,
+            1.5492500892750862
+          ],
+          [
+            1.5492500892750862,
+            1.5492500892750862,
+            1.5492500892750862
+          ]
+        ],
+        "summed_cycles": [
+          312366,
+          201624
+        ]
+      },
+      {
+        "baseline": "ping_pong-i64-r4-p2-c0",
+        "candidate": "ping_pong-i64-r4-p2-c1",
+        "cycle_ratio_baseline_over_candidate": 2.333346404203592,
+        "kind": "cache_effect",
+        "per_boot_job_ratios": [
+          [
+            2.333346404203592,
+            2.333346404203592,
+            2.333346404203592
+          ],
+          [
+            2.333346404203592,
+            2.333346404203592,
+            2.333346404203592
+          ]
+        ],
+        "summed_cycles": [
+          357030,
+          153012
+        ]
+      },
+      {
+        "baseline": "ping_pong-i64-r4-p1-c1",
+        "candidate": "ping_pong-i64-r4-p2-c1",
+        "cycle_ratio_baseline_over_candidate": 1.3177005725041173,
+        "kind": "worker_scaling",
+        "per_boot_job_ratios": [
+          [
+            1.3177005725041173,
+            1.3177005725041173,
+            1.3177005725041173
+          ],
+          [
+            1.3177005725041173,
+            1.3177005725041173,
+            1.3177005725041173
+          ]
+        ],
+        "summed_cycles": [
+          201624,
+          153012
+        ]
+      },
+      {
+        "baseline": "spsc_queue-i64-r4-p1-c0",
+        "candidate": "spsc_queue-i64-r4-p2-c0",
+        "cycle_ratio_baseline_over_candidate": 0.9564425557747761,
+        "kind": "worker_scaling",
+        "per_boot_job_ratios": [
+          [
+            0.9564425557747761,
+            0.9564425557747761,
+            0.9564425557747761
+          ],
+          [
+            0.9564425557747761,
+            0.9564425557747761,
+            0.9564425557747761
+          ]
+        ],
+        "summed_cycles": [
+          189060,
+          197670
+        ]
+      },
+      {
+        "baseline": "spsc_queue-i64-r4-p1-c0",
+        "candidate": "spsc_queue-i64-r4-p1-c1",
+        "cycle_ratio_baseline_over_candidate": 2.30302587341032,
+        "kind": "cache_effect",
+        "per_boot_job_ratios": [
+          [
+            2.30302587341032,
+            2.30302587341032,
+            2.30302587341032
+          ],
+          [
+            2.30302587341032,
+            2.30302587341032,
+            2.30302587341032
+          ]
+        ],
+        "summed_cycles": [
+          189060,
+          82092
+        ]
+      },
+      {
+        "baseline": "spsc_queue-i64-r4-p2-c0",
+        "candidate": "spsc_queue-i64-r4-p2-c1",
+        "cycle_ratio_baseline_over_candidate": 2.958157493041214,
+        "kind": "cache_effect",
+        "per_boot_job_ratios": [
+          [
+            2.958157493041214,
+            2.958157493041214,
+            2.958157493041214
+          ],
+          [
+            2.958157493041214,
+            2.958157493041214,
+            2.958157493041214
+          ]
+        ],
+        "summed_cycles": [
+          197670,
+          66822
+        ]
+      },
+      {
+        "baseline": "spsc_queue-i64-r4-p1-c1",
+        "candidate": "spsc_queue-i64-r4-p2-c1",
+        "cycle_ratio_baseline_over_candidate": 1.2285175540989495,
+        "kind": "worker_scaling",
+        "per_boot_job_ratios": [
+          [
+            1.2285175540989495,
+            1.2285175540989495,
+            1.2285175540989495
+          ],
+          [
+            1.2285175540989495,
+            1.2285175540989495,
+            1.2285175540989495
+          ]
+        ],
+        "summed_cycles": [
+          82092,
+          66822
+        ]
+      },
+      {
+        "baseline": "shared_mix-i64-r4-p1-c0",
+        "candidate": "shared_mix-i64-r4-p2-c0",
+        "cycle_ratio_baseline_over_candidate": 1.5007990996060776,
+        "kind": "worker_scaling",
+        "per_boot_job_ratios": [
+          [
+            1.5007990996060776,
+            1.5007990996060776,
+            1.5007990996060776
+          ],
+          [
+            1.5007990996060776,
+            1.5007990996060776,
+            1.5007990996060776
+          ]
+        ],
+        "summed_cycles": [
+          400038,
+          266550
+        ]
+      },
+      {
+        "baseline": "shared_mix-i64-r4-p1-c0",
+        "candidate": "shared_mix-i64-r4-p1-c1",
+        "cycle_ratio_baseline_over_candidate": 1.5355719846150302,
+        "kind": "cache_effect",
+        "per_boot_job_ratios": [
+          [
+            1.5355719846150302,
+            1.5355719846150302,
+            1.5355719846150302
+          ],
+          [
+            1.5355719846150302,
+            1.5355719846150302,
+            1.5355719846150302
+          ]
+        ],
+        "summed_cycles": [
+          400038,
+          260514
+        ]
+      },
+      {
+        "baseline": "shared_mix-i64-r4-p2-c0",
+        "candidate": "shared_mix-i64-r4-p2-c1",
+        "cycle_ratio_baseline_over_candidate": 1.9205827677143228,
+        "kind": "cache_effect",
+        "per_boot_job_ratios": [
+          [
+            1.9205827677143228,
+            1.9205827677143228,
+            1.9205827677143228
+          ],
+          [
+            1.9205827677143228,
+            1.9205827677143228,
+            1.9205827677143228
+          ]
+        ],
+        "summed_cycles": [
+          266550,
+          138786
+        ]
+      },
+      {
+        "baseline": "shared_mix-i64-r4-p1-c1",
+        "candidate": "shared_mix-i64-r4-p2-c1",
+        "cycle_ratio_baseline_over_candidate": 1.8770913492715404,
+        "kind": "worker_scaling",
+        "per_boot_job_ratios": [
+          [
+            1.8770913492715404,
+            1.8770913492715404,
+            1.8770913492715404
+          ],
+          [
+            1.8770913492715404,
+            1.8770913492715404,
+            1.8770913492715404
+          ]
+        ],
+        "summed_cycles": [
+          260514,
+          138786
+        ]
+      },
+      {
+        "baseline": "shared_mix-i2-r1-p1-c0",
+        "candidate": "shared_mix-i2-r1-p2-c0",
+        "cycle_ratio_baseline_over_candidate": 0.5050505050505051,
+        "kind": "worker_scaling",
+        "per_boot_job_ratios": [
+          [
+            0.5050505050505051,
+            0.5050505050505051,
+            0.5050505050505051
+          ],
+          [
+            0.5050505050505051,
+            0.5050505050505051,
+            0.5050505050505051
+          ]
+        ],
+        "summed_cycles": [
+          4800,
+          9504
+        ]
+      },
+      {
+        "baseline": "shared_mix-i2-r1-p1-c0",
+        "candidate": "shared_mix-i2-r1-p1-c1",
+        "cycle_ratio_baseline_over_candidate": 0.9864364981504316,
+        "kind": "cache_effect",
+        "per_boot_job_ratios": [
+          [
+            0.9864364981504316,
+            0.9864364981504316,
+            0.9864364981504316
+          ],
+          [
+            0.9864364981504316,
+            0.9864364981504316,
+            0.9864364981504316
+          ]
+        ],
+        "summed_cycles": [
+          4800,
+          4866
+        ]
+      },
+      {
+        "baseline": "shared_mix-i2-r1-p2-c0",
+        "candidate": "shared_mix-i2-r1-p2-c1",
+        "cycle_ratio_baseline_over_candidate": 0.88,
+        "kind": "cache_effect",
+        "per_boot_job_ratios": [
+          [
+            0.88,
+            0.88,
+            0.88
+          ],
+          [
+            0.88,
+            0.88,
+            0.88
+          ]
+        ],
+        "summed_cycles": [
+          9504,
+          10800
+        ]
+      },
+      {
+        "baseline": "shared_mix-i2-r1-p1-c1",
+        "candidate": "shared_mix-i2-r1-p2-c1",
+        "cycle_ratio_baseline_over_candidate": 0.45055555555555554,
+        "kind": "worker_scaling",
+        "per_boot_job_ratios": [
+          [
+            0.45055555555555554,
+            0.45055555555555554,
+            0.45055555555555554
+          ],
+          [
+            0.45055555555555554,
+            0.45055555555555554,
+            0.45055555555555554
+          ]
+        ],
+        "summed_cycles": [
+          4866,
+          10800
+        ]
+      },
+      {
+        "baseline": "shared_mix-i129-r16-p1-c0",
+        "candidate": "shared_mix-i129-r16-p2-c0",
+        "cycle_ratio_baseline_over_candidate": 1.5467617072961268,
+        "kind": "worker_scaling",
+        "per_boot_job_ratios": [
+          [
+            1.5467617072961268,
+            1.5467617072961268,
+            1.5467617072961268
+          ],
+          [
+            1.5467617072961268,
+            1.5467617072961268,
+            1.5467617072961268
+          ]
+        ],
+        "summed_cycles": [
+          3025800,
+          1956216
+        ]
+      },
+      {
+        "baseline": "shared_mix-i129-r16-p1-c0",
+        "candidate": "shared_mix-i129-r16-p1-c1",
+        "cycle_ratio_baseline_over_candidate": 1.472658143568838,
+        "kind": "cache_effect",
+        "per_boot_job_ratios": [
+          [
+            1.472658143568838,
+            1.472658143568838,
+            1.472658143568838
+          ],
+          [
+            1.472658143568838,
+            1.472658143568838,
+            1.472658143568838
+          ]
+        ],
+        "summed_cycles": [
+          3025800,
+          2054652
+        ]
+      },
+      {
+        "baseline": "shared_mix-i129-r16-p2-c0",
+        "candidate": "shared_mix-i129-r16-p2-c1",
+        "cycle_ratio_baseline_over_candidate": 1.92020825480588,
+        "kind": "cache_effect",
+        "per_boot_job_ratios": [
+          [
+            1.92020825480588,
+            1.92020825480588,
+            1.92020825480588
+          ],
+          [
+            1.92020825480588,
+            1.92020825480588,
+            1.92020825480588
+          ]
+        ],
+        "summed_cycles": [
+          1956216,
+          1018752
+        ]
+      },
+      {
+        "baseline": "shared_mix-i129-r16-p1-c1",
+        "candidate": "shared_mix-i129-r16-p2-c1",
+        "cycle_ratio_baseline_over_candidate": 2.0168323595929136,
+        "kind": "worker_scaling",
+        "per_boot_job_ratios": [
+          [
+            2.0168323595929136,
+            2.0168323595929136,
+            2.0168323595929136
+          ],
+          [
+            2.0168323595929136,
+            2.0168323595929136,
+            2.0168323595929136
+          ]
+        ],
+        "summed_cycles": [
+          2054652,
+          1018752
+        ]
+      },
+      {
+        "baseline": "shared_mix-i1024-r64-p1-c0",
+        "candidate": "shared_mix-i1024-r64-p2-c0",
+        "cycle_ratio_baseline_over_candidate": 1.5697253616406686,
+        "kind": "worker_scaling",
+        "per_boot_job_ratios": [
+          [
+            1.5697253616406686,
+            1.5697253616406686,
+            1.5697253616406686
+          ],
+          [
+            1.5697253616406686,
+            1.5697253616406686,
+            1.5697253616406686
+          ]
+        ],
+        "summed_cycles": [
+          94477638,
+          60187368
+        ]
+      },
+      {
+        "baseline": "shared_mix-i1024-r64-p1-c0",
+        "candidate": "shared_mix-i1024-r64-p1-c1",
+        "cycle_ratio_baseline_over_candidate": 1.466642927817848,
+        "kind": "cache_effect",
+        "per_boot_job_ratios": [
+          [
+            1.466642927817848,
+            1.466642927817848,
+            1.466642927817848
+          ],
+          [
+            1.466642927817848,
+            1.466642927817848,
+            1.466642927817848
+          ]
+        ],
+        "summed_cycles": [
+          94477638,
+          64417614
+        ]
+      },
+      {
+        "baseline": "shared_mix-i1024-r64-p2-c0",
+        "candidate": "shared_mix-i1024-r64-p2-c1",
+        "cycle_ratio_baseline_over_candidate": 1.867580371992107,
+        "kind": "cache_effect",
+        "per_boot_job_ratios": [
+          [
+            1.867580371992107,
+            1.867580371992107,
+            1.867580371992107
+          ],
+          [
+            1.867580371992107,
+            1.867580371992107,
+            1.867580371992107
+          ]
+        ],
+        "summed_cycles": [
+          60187368,
+          32227458
+        ]
+      },
+      {
+        "baseline": "shared_mix-i1024-r64-p1-c1",
+        "candidate": "shared_mix-i1024-r64-p2-c1",
+        "cycle_ratio_baseline_over_candidate": 1.9988425397994467,
+        "kind": "worker_scaling",
+        "per_boot_job_ratios": [
+          [
+            1.9988425397994467,
+            1.9988425397994467,
+            1.9988425397994467
+          ],
+          [
+            1.9988425397994467,
+            1.9988425397994467,
+            1.9988425397994467
+          ]
+        ],
+        "summed_cycles": [
+          64417614,
+          32227458
+        ]
+      },
+      {
+        "baseline": "ping_pong-i1024-r4-p1-c0",
+        "candidate": "ping_pong-i1024-r4-p2-c0",
+        "cycle_ratio_baseline_over_candidate": 0.8852608219031577,
+        "kind": "worker_scaling",
+        "per_boot_job_ratios": [
+          [
+            0.8852608219031577,
+            0.8852608219031577,
+            0.8852608219031577
+          ],
+          [
+            0.8852608219031577,
+            0.8852608219031577,
+            0.8852608219031577
+          ]
+        ],
+        "summed_cycles": [
+          4966446,
+          5610150
+        ]
+      },
+      {
+        "baseline": "ping_pong-i1024-r4-p1-c0",
+        "candidate": "ping_pong-i1024-r4-p1-c1",
+        "cycle_ratio_baseline_over_candidate": 1.579064740927552,
+        "kind": "cache_effect",
+        "per_boot_job_ratios": [
+          [
+            1.579064740927552,
+            1.579064740927552,
+            1.579064740927552
+          ],
+          [
+            1.579064740927552,
+            1.579064740927552,
+            1.579064740927552
+          ]
+        ],
+        "summed_cycles": [
+          4966446,
+          3145182
+        ]
+      },
+      {
+        "baseline": "ping_pong-i1024-r4-p2-c0",
+        "candidate": "ping_pong-i1024-r4-p2-c1",
+        "cycle_ratio_baseline_over_candidate": 2.468289270488233,
+        "kind": "cache_effect",
+        "per_boot_job_ratios": [
+          [
+            2.468289270488233,
+            2.468289270488233,
+            2.468289270488233
+          ],
+          [
+            2.468289270488233,
+            2.468289270488233,
+            2.468289270488233
+          ]
+        ],
+        "summed_cycles": [
+          5610150,
+          2272890
+        ]
+      },
+      {
+        "baseline": "ping_pong-i1024-r4-p1-c1",
+        "candidate": "ping_pong-i1024-r4-p2-c1",
+        "cycle_ratio_baseline_over_candidate": 1.3837810012803082,
+        "kind": "worker_scaling",
+        "per_boot_job_ratios": [
+          [
+            1.3837810012803082,
+            1.3837810012803082,
+            1.3837810012803082
+          ],
+          [
+            1.3837810012803082,
+            1.3837810012803082,
+            1.3837810012803082
+          ]
+        ],
+        "summed_cycles": [
+          3145182,
+          2272890
+        ]
+      },
+      {
+        "baseline": "spsc_queue-i1024-r4-p1-c0",
+        "candidate": "spsc_queue-i1024-r4-p2-c0",
+        "cycle_ratio_baseline_over_candidate": 0.9802103691772817,
+        "kind": "worker_scaling",
+        "per_boot_job_ratios": [
+          [
+            0.9802103691772817,
+            0.9802103691772817,
+            0.9802103691772817
+          ],
+          [
+            0.9802103691772817,
+            0.9802103691772817,
+            0.9802103691772817
+          ]
+        ],
+        "summed_cycles": [
+          2994180,
+          3054630
+        ]
+      },
+      {
+        "baseline": "spsc_queue-i1024-r4-p1-c0",
+        "candidate": "spsc_queue-i1024-r4-p1-c1",
+        "cycle_ratio_baseline_over_candidate": 2.426610389547238,
+        "kind": "cache_effect",
+        "per_boot_job_ratios": [
+          [
+            2.426610389547238,
+            2.426610389547238,
+            2.426610389547238
+          ],
+          [
+            2.426610389547238,
+            2.426610389547238,
+            2.426610389547238
+          ]
+        ],
+        "summed_cycles": [
+          2994180,
+          1233894
+        ]
+      },
+      {
+        "baseline": "spsc_queue-i1024-r4-p2-c0",
+        "candidate": "spsc_queue-i1024-r4-p2-c1",
+        "cycle_ratio_baseline_over_candidate": 3.3254405789906856,
+        "kind": "cache_effect",
+        "per_boot_job_ratios": [
+          [
+            3.3254405789906856,
+            3.3254405789906856,
+            3.3254405789906856
+          ],
+          [
+            3.3254405789906856,
+            3.3254405789906856,
+            3.3254405789906856
+          ]
+        ],
+        "summed_cycles": [
+          3054630,
+          918564
+        ]
+      },
+      {
+        "baseline": "spsc_queue-i1024-r4-p1-c1",
+        "candidate": "spsc_queue-i1024-r4-p2-c1",
+        "cycle_ratio_baseline_over_candidate": 1.3432858243954695,
+        "kind": "worker_scaling",
+        "per_boot_job_ratios": [
+          [
+            1.3432858243954695,
+            1.3432858243954695,
+            1.3432858243954695
+          ],
+          [
+            1.3432858243954695,
+            1.3432858243954695,
+            1.3432858243954695
+          ]
+        ],
+        "summed_cycles": [
+          1233894,
+          918564
+        ]
+      },
+      {
+        "baseline": "shared_mix-i64-r4-p2-c1",
+        "candidate": "shared_mix-i64-r4-p2-c1-repeat",
+        "cycle_ratio_baseline_over_candidate": 1.0,
+        "kind": "fresh_rebuild_repeat",
+        "per_boot_job_ratios": [
+          [
+            1.0,
+            1.0,
+            1.0
+          ],
+          [
+            1.0,
+            1.0,
+            1.0
+          ]
+        ],
+        "summed_cycles": [
+          138786,
+          138786
+        ]
+      }
+    ],
+    "interpretation": "Physical PYNQ UART/RAM/counter measurements. Ratio below 1 is a slowdown. No cross-workload aggregate speedup.",
+    "jobs": 342,
+    "reference_counter_match": true,
+    "statistics": {
+      "atomic_add-i64-r4-p1-c0": {
+        "cycles_per_item": 67.46875,
+        "per_boot_job_cycles": [
+          [
+            4318,
+            4318,
+            4318
+          ],
+          [
+            4318,
+            4318,
+            4318
+          ]
+        ],
+        "summed_counters": {
+          "h0_atomic": 384,
+          "h0_backing": 2814,
+          "h0_cycles": 25908,
+          "h0_d_access": 0,
+          "h0_d_miss": 0,
+          "h0_i_access": 0,
+          "h0_i_miss": 0,
+          "h0_intervention": 0,
+          "h0_invalidation": 0,
+          "h0_memory": 2436,
+          "h0_retired": 1650,
+          "h0_sc_failure": 0,
+          "h0_sc_success": 0,
+          "h0_writeback": 0,
+          "h1_atomic": 0,
+          "h1_backing": 0,
+          "h1_cycles": 25908,
+          "h1_d_access": 0,
+          "h1_d_miss": 0,
+          "h1_i_access": 0,
+          "h1_i_miss": 0,
+          "h1_intervention": 0,
+          "h1_invalidation": 0,
+          "h1_memory": 0,
+          "h1_retired": 0,
+          "h1_sc_failure": 0,
+          "h1_sc_success": 0,
+          "h1_writeback": 0
+        },
+        "summed_window_seconds": 0.000829056,
+        "work_unit": "update"
+      },
+      "atomic_add-i64-r4-p1-c1": {
+        "cycles_per_item": 32.3125,
+        "per_boot_job_cycles": [
+          [
+            2068,
+            2068,
+            2068
+          ],
+          [
+            2068,
+            2068,
+            2068
+          ]
+        ],
+        "summed_counters": {
+          "h0_atomic": 384,
+          "h0_backing": 216,
+          "h0_cycles": 12408,
+          "h0_d_access": 786,
+          "h0_d_miss": 6,
+          "h0_i_access": 2028,
+          "h0_i_miss": 42,
+          "h0_intervention": 0,
+          "h0_invalidation": 0,
+          "h0_memory": 2436,
+          "h0_retired": 1650,
+          "h0_sc_failure": 0,
+          "h0_sc_success": 0,
+          "h0_writeback": 24,
+          "h1_atomic": 0,
+          "h1_backing": 0,
+          "h1_cycles": 12408,
+          "h1_d_access": 0,
+          "h1_d_miss": 0,
+          "h1_i_access": 0,
+          "h1_i_miss": 0,
+          "h1_intervention": 0,
+          "h1_invalidation": 0,
+          "h1_memory": 0,
+          "h1_retired": 0,
+          "h1_sc_failure": 0,
+          "h1_sc_success": 0,
+          "h1_writeback": 0
+        },
+        "summed_window_seconds": 0.000397056,
+        "work_unit": "update"
+      },
+      "atomic_add-i64-r4-p2-c0": {
+        "cycles_per_item": 71.515625,
+        "per_boot_job_cycles": [
+          [
+            4577,
+            4577,
+            4577
+          ],
+          [
+            4577,
+            4577,
+            4577
+          ]
+        ],
+        "summed_counters": {
+          "h0_atomic": 192,
+          "h0_backing": 1782,
+          "h0_cycles": 27462,
+          "h0_d_access": 0,
+          "h0_d_miss": 0,
+          "h0_i_access": 0,
+          "h0_i_miss": 0,
+          "h0_intervention": 0,
+          "h0_invalidation": 0,
+          "h0_memory": 1602,
+          "h0_retired": 1098,
+          "h0_sc_failure": 0,
+          "h0_sc_success": 0,
+          "h0_writeback": 0,
+          "h1_atomic": 192,
+          "h1_backing": 1776,
+          "h1_cycles": 27462,
+          "h1_d_access": 0,
+          "h1_d_miss": 0,
+          "h1_i_access": 0,
+          "h1_i_miss": 0,
+          "h1_intervention": 0,
+          "h1_invalidation": 0,
+          "h1_memory": 1590,
+          "h1_retired": 1128,
+          "h1_sc_failure": 0,
+          "h1_sc_success": 0,
+          "h1_writeback": 0
+        },
+        "summed_window_seconds": 0.000878784,
+        "work_unit": "update"
+      },
+      "atomic_add-i64-r4-p2-c1": {
+        "cycles_per_item": 40.625,
+        "per_boot_job_cycles": [
+          [
+            2600,
+            2600,
+            2600
+          ],
+          [
+            2600,
+            2600,
+            2600
+          ]
+        ],
+        "summed_counters": {
+          "h0_atomic": 192,
+          "h0_backing": 1008,
+          "h0_cycles": 15600,
+          "h0_d_access": 558,
+          "h0_d_miss": 90,
+          "h0_i_access": 1836,
+          "h0_i_miss": 60,
+          "h0_intervention": 78,
+          "h0_invalidation": 78,
+          "h0_memory": 2214,
+          "h0_retired": 1506,
+          "h0_sc_failure": 0,
+          "h0_sc_success": 0,
+          "h0_writeback": 408,
+          "h1_atomic": 192,
+          "h1_backing": 1152,
+          "h1_cycles": 15600,
+          "h1_d_access": 438,
+          "h1_d_miss": 102,
+          "h1_i_access": 1470,
+          "h1_i_miss": 108,
+          "h1_intervention": 90,
+          "h1_invalidation": 90,
+          "h1_memory": 1722,
+          "h1_retired": 1254,
+          "h1_sc_failure": 0,
+          "h1_sc_success": 0,
+          "h1_writeback": 312
+        },
+        "summed_window_seconds": 0.0004992,
+        "work_unit": "update"
+      },
+      "cas_counter-i64-r4-p1-c0": {
+        "cycles_per_item": 162.3125,
+        "per_boot_job_cycles": [
+          [
+            10388,
+            10388,
+            10388
+          ],
+          [
+            10388,
+            10388,
+            10388
+          ]
+        ],
+        "summed_counters": {
+          "h0_atomic": 768,
+          "h0_backing": 6264,
+          "h0_cycles": 62328,
+          "h0_d_access": 0,
+          "h0_d_miss": 0,
+          "h0_i_access": 0,
+          "h0_i_miss": 0,
+          "h0_intervention": 0,
+          "h0_invalidation": 0,
+          "h0_memory": 6270,
+          "h0_retired": 4716,
+          "h0_sc_failure": 0,
+          "h0_sc_success": 384,
+          "h0_writeback": 0,
+          "h1_atomic": 0,
+          "h1_backing": 0,
+          "h1_cycles": 62328,
+          "h1_d_access": 0,
+          "h1_d_miss": 0,
+          "h1_i_access": 0,
+          "h1_i_miss": 0,
+          "h1_intervention": 0,
+          "h1_invalidation": 0,
+          "h1_memory": 0,
+          "h1_retired": 0,
+          "h1_sc_failure": 0,
+          "h1_sc_success": 0,
+          "h1_writeback": 0
+        },
+        "summed_window_seconds": 0.001994496,
+        "work_unit": "update"
+      },
+      "cas_counter-i64-r4-p1-c1": {
+        "cycles_per_item": 70.328125,
+        "per_boot_job_cycles": [
+          [
+            4501,
+            4501,
+            4501
+          ],
+          [
+            4501,
+            4501,
+            4501
+          ]
+        ],
+        "summed_counters": {
+          "h0_atomic": 768,
+          "h0_backing": 216,
+          "h0_cycles": 27006,
+          "h0_d_access": 1170,
+          "h0_d_miss": 6,
+          "h0_i_access": 5094,
+          "h0_i_miss": 42,
+          "h0_intervention": 0,
+          "h0_invalidation": 0,
+          "h0_memory": 6270,
+          "h0_retired": 4716,
+          "h0_sc_failure": 0,
+          "h0_sc_success": 384,
+          "h0_writeback": 24,
+          "h1_atomic": 0,
+          "h1_backing": 0,
+          "h1_cycles": 27006,
+          "h1_d_access": 0,
+          "h1_d_miss": 0,
+          "h1_i_access": 0,
+          "h1_i_miss": 0,
+          "h1_intervention": 0,
+          "h1_invalidation": 0,
+          "h1_memory": 0,
+          "h1_retired": 0,
+          "h1_sc_failure": 0,
+          "h1_sc_success": 0,
+          "h1_writeback": 0
+        },
+        "summed_window_seconds": 0.000864192,
+        "work_unit": "update"
+      },
+      "cas_counter-i64-r4-p2-c0": {
+        "cycles_per_item": 263.921875,
+        "per_boot_job_cycles": [
+          [
+            16891,
+            16891,
+            16891
+          ],
+          [
+            16891,
+            16891,
+            16891
+          ]
+        ],
+        "summed_counters": {
+          "h0_atomic": 384,
+          "h0_backing": 6384,
+          "h0_cycles": 101346,
+          "h0_d_access": 0,
+          "h0_d_miss": 0,
+          "h0_i_access": 0,
+          "h0_i_miss": 0,
+          "h0_intervention": 0,
+          "h0_invalidation": 0,
+          "h0_memory": 6396,
+          "h0_retired": 4548,
+          "h0_sc_failure": 0,
+          "h0_sc_success": 192,
+          "h0_writeback": 0,
+          "h1_atomic": 924,
+          "h1_backing": 6198,
+          "h1_cycles": 101346,
+          "h1_d_access": 0,
+          "h1_d_miss": 0,
+          "h1_i_access": 0,
+          "h1_i_miss": 0,
+          "h1_intervention": 0,
+          "h1_invalidation": 0,
+          "h1_memory": 6384,
+          "h1_retired": 4458,
+          "h1_sc_failure": 180,
+          "h1_sc_success": 192,
+          "h1_writeback": 0
+        },
+        "summed_window_seconds": 0.003243072,
+        "work_unit": "update"
+      },
+      "cas_counter-i64-r4-p2-c1": {
+        "cycles_per_item": 85.203125,
+        "per_boot_job_cycles": [
+          [
+            5453,
+            5453,
+            5453
+          ],
+          [
+            5453,
+            5453,
+            5453
+          ]
+        ],
+        "summed_counters": {
+          "h0_atomic": 384,
+          "h0_backing": 1128,
+          "h0_cycles": 32718,
+          "h0_d_access": 1116,
+          "h0_d_miss": 24,
+          "h0_i_access": 5196,
+          "h0_i_miss": 66,
+          "h0_intervention": 12,
+          "h0_invalidation": 168,
+          "h0_memory": 6324,
+          "h0_retired": 4500,
+          "h0_sc_failure": 0,
+          "h0_sc_success": 192,
+          "h0_writeback": 768,
+          "h1_atomic": 798,
+          "h1_backing": 1296,
+          "h1_cycles": 32718,
+          "h1_d_access": 912,
+          "h1_d_miss": 192,
+          "h1_i_access": 4866,
+          "h1_i_miss": 120,
+          "h1_intervention": 180,
+          "h1_invalidation": 24,
+          "h1_memory": 5916,
+          "h1_retired": 4218,
+          "h1_sc_failure": 132,
+          "h1_sc_success": 192,
+          "h1_writeback": 48
+        },
+        "summed_window_seconds": 0.001046976,
+        "work_unit": "update"
+      },
+      "false_shared-i64-r4-p1-c0": {
+        "cycles_per_item": 67.46875,
+        "per_boot_job_cycles": [
+          [
+            4318,
+            4318,
+            4318
+          ],
+          [
+            4318,
+            4318,
+            4318
+          ]
+        ],
+        "summed_counters": {
+          "h0_atomic": 384,
+          "h0_backing": 2814,
+          "h0_cycles": 25908,
+          "h0_d_access": 0,
+          "h0_d_miss": 0,
+          "h0_i_access": 0,
+          "h0_i_miss": 0,
+          "h0_intervention": 0,
+          "h0_invalidation": 0,
+          "h0_memory": 2436,
+          "h0_retired": 1650,
+          "h0_sc_failure": 0,
+          "h0_sc_success": 0,
+          "h0_writeback": 0,
+          "h1_atomic": 0,
+          "h1_backing": 0,
+          "h1_cycles": 25908,
+          "h1_d_access": 0,
+          "h1_d_miss": 0,
+          "h1_i_access": 0,
+          "h1_i_miss": 0,
+          "h1_intervention": 0,
+          "h1_invalidation": 0,
+          "h1_memory": 0,
+          "h1_retired": 0,
+          "h1_sc_failure": 0,
+          "h1_sc_success": 0,
+          "h1_writeback": 0
+        },
+        "summed_window_seconds": 0.000829056,
+        "work_unit": "update"
+      },
+      "false_shared-i64-r4-p1-c1": {
+        "cycles_per_item": 32.578125,
+        "per_boot_job_cycles": [
+          [
+            2085,
+            2085,
+            2085
+          ],
+          [
+            2085,
+            2085,
+            2085
+          ]
+        ],
+        "summed_counters": {
+          "h0_atomic": 384,
+          "h0_backing": 264,
+          "h0_cycles": 12510,
+          "h0_d_access": 786,
+          "h0_d_miss": 12,
+          "h0_i_access": 2028,
+          "h0_i_miss": 42,
+          "h0_intervention": 0,
+          "h0_invalidation": 0,
+          "h0_memory": 2436,
+          "h0_retired": 1650,
+          "h0_sc_failure": 0,
+          "h0_sc_success": 0,
+          "h0_writeback": 48,
+          "h1_atomic": 0,
+          "h1_backing": 0,
+          "h1_cycles": 12510,
+          "h1_d_access": 0,
+          "h1_d_miss": 0,
+          "h1_i_access": 0,
+          "h1_i_miss": 0,
+          "h1_intervention": 0,
+          "h1_invalidation": 0,
+          "h1_memory": 0,
+          "h1_retired": 0,
+          "h1_sc_failure": 0,
+          "h1_sc_success": 0,
+          "h1_writeback": 0
+        },
+        "summed_window_seconds": 0.00040032,
+        "work_unit": "update"
+      },
+      "false_shared-i64-r4-p2-c0": {
+        "cycles_per_item": 71.765625,
+        "per_boot_job_cycles": [
+          [
+            4593,
+            4593,
+            4593
+          ],
+          [
+            4593,
+            4593,
+            4593
+          ]
+        ],
+        "summed_counters": {
+          "h0_atomic": 192,
+          "h0_backing": 1788,
+          "h0_cycles": 27558,
+          "h0_d_access": 0,
+          "h0_d_miss": 0,
+          "h0_i_access": 0,
+          "h0_i_miss": 0,
+          "h0_intervention": 0,
+          "h0_invalidation": 0,
+          "h0_memory": 1608,
+          "h0_retired": 1104,
+          "h0_sc_failure": 0,
+          "h0_sc_success": 0,
+          "h0_writeback": 0,
+          "h1_atomic": 192,
+          "h1_backing": 1782,
+          "h1_cycles": 27558,
+          "h1_d_access": 0,
+          "h1_d_miss": 0,
+          "h1_i_access": 0,
+          "h1_i_miss": 0,
+          "h1_intervention": 0,
+          "h1_invalidation": 0,
+          "h1_memory": 1596,
+          "h1_retired": 1134,
+          "h1_sc_failure": 0,
+          "h1_sc_success": 0,
+          "h1_writeback": 0
+        },
+        "summed_window_seconds": 0.000881856,
+        "work_unit": "update"
+      },
+      "false_shared-i64-r4-p2-c1": {
+        "cycles_per_item": 39.75,
+        "per_boot_job_cycles": [
+          [
+            2544,
+            2544,
+            2544
+          ],
+          [
+            2544,
+            2544,
+            2544
+          ]
+        ],
+        "summed_counters": {
+          "h0_atomic": 192,
+          "h0_backing": 720,
+          "h0_cycles": 15264,
+          "h0_d_access": 588,
+          "h0_d_miss": 54,
+          "h0_i_access": 1992,
+          "h0_i_miss": 60,
+          "h0_intervention": 42,
+          "h0_invalidation": 36,
+          "h0_memory": 2400,
+          "h0_retired": 1632,
+          "h0_sc_failure": 0,
+          "h0_sc_success": 0,
+          "h0_writeback": 264,
+          "h1_atomic": 192,
+          "h1_backing": 864,
+          "h1_cycles": 15264,
+          "h1_d_access": 438,
+          "h1_d_miss": 60,
+          "h1_i_access": 1470,
+          "h1_i_miss": 114,
+          "h1_intervention": 54,
+          "h1_invalidation": 54,
+          "h1_memory": 1722,
+          "h1_retired": 1254,
+          "h1_sc_failure": 0,
+          "h1_sc_success": 0,
+          "h1_writeback": 168
+        },
+        "summed_window_seconds": 0.000488448,
+        "work_unit": "update"
+      },
+      "lock_sum-i64-r4-p1-c0": {
+        "cycles_per_item": 217.46875,
+        "per_boot_job_cycles": [
+          [
+            13918,
+            13918,
+            13918
+          ],
+          [
+            13918,
+            13918,
+            13918
+          ]
+        ],
+        "summed_counters": {
+          "h0_atomic": 384,
+          "h0_backing": 8574,
+          "h0_cycles": 83508,
+          "h0_d_access": 0,
+          "h0_d_miss": 0,
+          "h0_i_access": 0,
+          "h0_i_miss": 0,
+          "h0_intervention": 0,
+          "h0_invalidation": 0,
+          "h0_memory": 8196,
+          "h0_retired": 5490,
+          "h0_sc_failure": 0,
+          "h0_sc_success": 0,
+          "h0_writeback": 0,
+          "h1_atomic": 0,
+          "h1_backing": 0,
+          "h1_cycles": 83508,
+          "h1_d_access": 0,
+          "h1_d_miss": 0,
+          "h1_i_access": 0,
+          "h1_i_miss": 0,
+          "h1_intervention": 0,
+          "h1_invalidation": 0,
+          "h1_memory": 0,
+          "h1_retired": 0,
+          "h1_sc_failure": 0,
+          "h1_sc_success": 0,
+          "h1_writeback": 0
+        },
+        "summed_window_seconds": 0.002672256,
+        "work_unit": "update"
+      },
+      "lock_sum-i64-r4-p1-c1": {
+        "cycles_per_item": 108.40625,
+        "per_boot_job_cycles": [
+          [
+            6938,
+            6938,
+            6938
+          ],
+          [
+            6938,
+            6938,
+            6938
+          ]
+        ],
+        "summed_counters": {
+          "h0_atomic": 384,
+          "h0_backing": 336,
+          "h0_cycles": 41628,
+          "h0_d_access": 2706,
+          "h0_d_miss": 18,
+          "h0_i_access": 5868,
+          "h0_i_miss": 48,
+          "h0_intervention": 0,
+          "h0_invalidation": 0,
+          "h0_memory": 8196,
+          "h0_retired": 5490,
+          "h0_sc_failure": 0,
+          "h0_sc_success": 0,
+          "h0_writeback": 72,
+          "h1_atomic": 0,
+          "h1_backing": 0,
+          "h1_cycles": 41628,
+          "h1_d_access": 0,
+          "h1_d_miss": 0,
+          "h1_i_access": 0,
+          "h1_i_miss": 0,
+          "h1_intervention": 0,
+          "h1_invalidation": 0,
+          "h1_memory": 0,
+          "h1_retired": 0,
+          "h1_sc_failure": 0,
+          "h1_sc_success": 0,
+          "h1_writeback": 0
+        },
+        "summed_window_seconds": 0.001332096,
+        "work_unit": "update"
+      },
+      "lock_sum-i64-r4-p2-c0": {
+        "cycles_per_item": 305.15625,
+        "per_boot_job_cycles": [
+          [
+            19530,
+            19530,
+            19530
+          ],
+          [
+            19530,
+            19530,
+            19530
+          ]
+        ],
+        "summed_counters": {
+          "h0_atomic": 732,
+          "h0_backing": 7590,
+          "h0_cycles": 117180,
+          "h0_d_access": 0,
+          "h0_d_miss": 0,
+          "h0_i_access": 0,
+          "h0_i_miss": 0,
+          "h0_intervention": 0,
+          "h0_invalidation": 0,
+          "h0_memory": 6870,
+          "h0_retired": 4314,
+          "h0_sc_failure": 0,
+          "h0_sc_success": 0,
+          "h0_writeback": 0,
+          "h1_atomic": 738,
+          "h1_backing": 7590,
+          "h1_cycles": 117180,
+          "h1_d_access": 0,
+          "h1_d_miss": 0,
+          "h1_i_access": 0,
+          "h1_i_miss": 0,
+          "h1_intervention": 0,
+          "h1_invalidation": 0,
+          "h1_memory": 6858,
+          "h1_retired": 4344,
+          "h1_sc_failure": 0,
+          "h1_sc_success": 0,
+          "h1_writeback": 0
+        },
+        "summed_window_seconds": 0.00374976,
+        "work_unit": "update"
+      },
+      "lock_sum-i64-r4-p2-c1": {
+        "cycles_per_item": 253.078125,
+        "per_boot_job_cycles": [
+          [
+            16197,
+            16197,
+            16197
+          ],
+          [
+            16197,
+            16197,
+            16197
+          ]
+        ],
+        "summed_counters": {
+          "h0_atomic": 1026,
+          "h0_backing": 12336,
+          "h0_cycles": 97182,
+          "h0_d_access": 3174,
+          "h0_d_miss": 1500,
+          "h0_i_access": 6390,
+          "h0_i_miss": 72,
+          "h0_intervention": 1482,
+          "h0_invalidation": 1476,
+          "h0_memory": 8550,
+          "h0_retired": 5238,
+          "h0_sc_failure": 0,
+          "h0_sc_success": 0,
+          "h0_writeback": 6048,
+          "h1_atomic": 1020,
+          "h1_backing": 12480,
+          "h1_cycles": 97182,
+          "h1_d_access": 3054,
+          "h1_d_miss": 1506,
+          "h1_i_access": 6072,
+          "h1_i_miss": 126,
+          "h1_intervention": 1500,
+          "h1_invalidation": 1500,
+          "h1_memory": 8112,
+          "h1_retired": 5028,
+          "h1_sc_failure": 0,
+          "h1_sc_success": 0,
+          "h1_writeback": 5952
+        },
+        "summed_window_seconds": 0.003109824,
+        "work_unit": "update"
+      },
+      "lrsc_counter-i64-r4-p1-c0": {
+        "cycles_per_item": 102.3125,
+        "per_boot_job_cycles": [
+          [
+            6548,
+            6548,
+            6548
+          ],
+          [
+            6548,
+            6548,
+            6548
+          ]
+        ],
+        "summed_counters": {
+          "h0_atomic": 768,
+          "h0_backing": 3960,
+          "h0_cycles": 39288,
+          "h0_d_access": 0,
+          "h0_d_miss": 0,
+          "h0_i_access": 0,
+          "h0_i_miss": 0,
+          "h0_intervention": 0,
+          "h0_invalidation": 0,
+          "h0_memory": 3966,
+          "h0_retired": 2796,
+          "h0_sc_failure": 0,
+          "h0_sc_success": 384,
+          "h0_writeback": 0,
+          "h1_atomic": 0,
+          "h1_backing": 0,
+          "h1_cycles": 39288,
+          "h1_d_access": 0,
+          "h1_d_miss": 0,
+          "h1_i_access": 0,
+          "h1_i_miss": 0,
+          "h1_intervention": 0,
+          "h1_invalidation": 0,
+          "h1_memory": 0,
+          "h1_retired": 0,
+          "h1_sc_failure": 0,
+          "h1_sc_success": 0,
+          "h1_writeback": 0
+        },
+        "summed_window_seconds": 0.001257216,
+        "work_unit": "update"
+      },
+      "lrsc_counter-i64-r4-p1-c1": {
+        "cycles_per_item": 45.8125,
+        "per_boot_job_cycles": [
+          [
+            2932,
+            2932,
+            2932
+          ],
+          [
+            2932,
+            2932,
+            2932
+          ]
+        ],
+        "summed_counters": {
+          "h0_atomic": 768,
+          "h0_backing": 192,
+          "h0_cycles": 17592,
+          "h0_d_access": 786,
+          "h0_d_miss": 6,
+          "h0_i_access": 3174,
+          "h0_i_miss": 36,
+          "h0_intervention": 0,
+          "h0_invalidation": 0,
+          "h0_memory": 3966,
+          "h0_retired": 2796,
+          "h0_sc_failure": 0,
+          "h0_sc_success": 384,
+          "h0_writeback": 24,
+          "h1_atomic": 0,
+          "h1_backing": 0,
+          "h1_cycles": 17592,
+          "h1_d_access": 0,
+          "h1_d_miss": 0,
+          "h1_i_access": 0,
+          "h1_i_miss": 0,
+          "h1_intervention": 0,
+          "h1_invalidation": 0,
+          "h1_memory": 0,
+          "h1_retired": 0,
+          "h1_sc_failure": 0,
+          "h1_sc_success": 0,
+          "h1_writeback": 0
+        },
+        "summed_window_seconds": 0.000562944,
+        "work_unit": "update"
+      },
+      "lrsc_counter-i64-r4-p2-c0": {
+        "cycles_per_item": 98.265625,
+        "per_boot_job_cycles": [
+          [
+            6289,
+            6289,
+            6289
+          ],
+          [
+            6289,
+            6289,
+            6289
+          ]
+        ],
+        "summed_counters": {
+          "h0_atomic": 384,
+          "h0_backing": 2352,
+          "h0_cycles": 37734,
+          "h0_d_access": 0,
+          "h0_d_miss": 0,
+          "h0_i_access": 0,
+          "h0_i_miss": 0,
+          "h0_intervention": 0,
+          "h0_invalidation": 0,
+          "h0_memory": 2364,
+          "h0_retired": 1668,
+          "h0_sc_failure": 0,
+          "h0_sc_success": 192,
+          "h0_writeback": 0,
+          "h1_atomic": 384,
+          "h1_backing": 2346,
+          "h1_cycles": 37734,
+          "h1_d_access": 0,
+          "h1_d_miss": 0,
+          "h1_i_access": 0,
+          "h1_i_miss": 0,
+          "h1_intervention": 0,
+          "h1_invalidation": 0,
+          "h1_memory": 2352,
+          "h1_retired": 1698,
+          "h1_sc_failure": 0,
+          "h1_sc_success": 192,
+          "h1_writeback": 0
+        },
+        "summed_window_seconds": 0.001207488,
+        "work_unit": "update"
+      },
+      "lrsc_counter-i64-r4-p2-c1": {
+        "cycles_per_item": 61.4375,
+        "per_boot_job_cycles": [
+          [
+            3932,
+            3932,
+            3932
+          ],
+          [
+            3932,
+            3932,
+            3932
+          ]
+        ],
+        "summed_counters": {
+          "h0_atomic": 576,
+          "h0_backing": 1344,
+          "h0_cycles": 23592,
+          "h0_d_access": 702,
+          "h0_d_miss": 126,
+          "h0_i_access": 3126,
+          "h0_i_miss": 60,
+          "h0_intervention": 114,
+          "h0_invalidation": 126,
+          "h0_memory": 3936,
+          "h0_retired": 2652,
+          "h0_sc_failure": 96,
+          "h0_sc_success": 192,
+          "h0_writeback": 600,
+          "h1_atomic": 588,
+          "h1_backing": 1512,
+          "h1_cycles": 23592,
+          "h1_d_access": 540,
+          "h1_d_miss": 150,
+          "h1_i_access": 2562,
+          "h1_i_miss": 114,
+          "h1_intervention": 138,
+          "h1_invalidation": 126,
+          "h1_memory": 3210,
+          "h1_retired": 2244,
+          "h1_sc_failure": 102,
+          "h1_sc_success": 192,
+          "h1_writeback": 456
+        },
+        "summed_window_seconds": 0.000754944,
+        "work_unit": "update"
+      },
+      "padded-i64-r4-p1-c0": {
+        "cycles_per_item": 77.625,
+        "per_boot_job_cycles": [
+          [
+            4968,
+            4968,
+            4968
+          ],
+          [
+            4968,
+            4968,
+            4968
+          ]
+        ],
+        "summed_counters": {
+          "h0_atomic": 384,
+          "h0_backing": 3204,
+          "h0_cycles": 29808,
+          "h0_d_access": 0,
+          "h0_d_miss": 0,
+          "h0_i_access": 0,
+          "h0_i_miss": 0,
+          "h0_intervention": 0,
+          "h0_invalidation": 0,
+          "h0_memory": 2826,
+          "h0_retired": 2040,
+          "h0_sc_failure": 0,
+          "h0_sc_success": 0,
+          "h0_writeback": 0,
+          "h1_atomic": 0,
+          "h1_backing": 0,
+          "h1_cycles": 29808,
+          "h1_d_access": 0,
+          "h1_d_miss": 0,
+          "h1_i_access": 0,
+          "h1_i_miss": 0,
+          "h1_intervention": 0,
+          "h1_invalidation": 0,
+          "h1_memory": 0,
+          "h1_retired": 0,
+          "h1_sc_failure": 0,
+          "h1_sc_success": 0,
+          "h1_writeback": 0
+        },
+        "summed_window_seconds": 0.000953856,
+        "work_unit": "update"
+      },
+      "padded-i64-r4-p1-c1": {
+        "cycles_per_item": 35.15625,
+        "per_boot_job_cycles": [
+          [
+            2250,
+            2250,
+            2250
+          ],
+          [
+            2250,
+            2250,
+            2250
+          ]
+        ],
+        "summed_counters": {
+          "h0_atomic": 384,
+          "h0_backing": 240,
+          "h0_cycles": 13500,
+          "h0_d_access": 786,
+          "h0_d_miss": 12,
+          "h0_i_access": 2418,
+          "h0_i_miss": 36,
+          "h0_intervention": 0,
+          "h0_invalidation": 0,
+          "h0_memory": 2826,
+          "h0_retired": 2040,
+          "h0_sc_failure": 0,
+          "h0_sc_success": 0,
+          "h0_writeback": 48,
+          "h1_atomic": 0,
+          "h1_backing": 0,
+          "h1_cycles": 13500,
+          "h1_d_access": 0,
+          "h1_d_miss": 0,
+          "h1_i_access": 0,
+          "h1_i_miss": 0,
+          "h1_intervention": 0,
+          "h1_invalidation": 0,
+          "h1_memory": 0,
+          "h1_retired": 0,
+          "h1_sc_failure": 0,
+          "h1_sc_success": 0,
+          "h1_writeback": 0
+        },
+        "summed_window_seconds": 0.000432,
+        "work_unit": "update"
+      },
+      "padded-i64-r4-p2-c0": {
+        "cycles_per_item": 72.515625,
+        "per_boot_job_cycles": [
+          [
+            4641,
+            4641,
+            4641
+          ],
+          [
+            4641,
+            4641,
+            4641
+          ]
+        ],
+        "summed_counters": {
+          "h0_atomic": 192,
+          "h0_backing": 1806,
+          "h0_cycles": 27846,
+          "h0_d_access": 0,
+          "h0_d_miss": 0,
+          "h0_i_access": 0,
+          "h0_i_miss": 0,
+          "h0_intervention": 0,
+          "h0_invalidation": 0,
+          "h0_memory": 1626,
+          "h0_retired": 1122,
+          "h0_sc_failure": 0,
+          "h0_sc_success": 0,
+          "h0_writeback": 0,
+          "h1_atomic": 192,
+          "h1_backing": 1800,
+          "h1_cycles": 27846,
+          "h1_d_access": 0,
+          "h1_d_miss": 0,
+          "h1_i_access": 0,
+          "h1_i_miss": 0,
+          "h1_intervention": 0,
+          "h1_invalidation": 0,
+          "h1_memory": 1614,
+          "h1_retired": 1152,
+          "h1_sc_failure": 0,
+          "h1_sc_success": 0,
+          "h1_writeback": 0
+        },
+        "summed_window_seconds": 0.000891072,
+        "work_unit": "update"
+      },
+      "padded-i64-r4-p2-c1": {
+        "cycles_per_item": 37.046875,
+        "per_boot_job_cycles": [
+          [
+            2371,
+            2371,
+            2371
+          ],
+          [
+            2371,
+            2371,
+            2371
+          ]
+        ],
+        "summed_counters": {
+          "h0_atomic": 192,
+          "h0_backing": 504,
+          "h0_cycles": 14226,
+          "h0_d_access": 564,
+          "h0_d_miss": 24,
+          "h0_i_access": 1890,
+          "h0_i_miss": 66,
+          "h0_intervention": 6,
+          "h0_invalidation": 6,
+          "h0_memory": 2274,
+          "h0_retired": 1554,
+          "h0_sc_failure": 0,
+          "h0_sc_success": 0,
+          "h0_writeback": 144,
+          "h1_atomic": 192,
+          "h1_backing": 648,
+          "h1_cycles": 14226,
+          "h1_d_access": 438,
+          "h1_d_miss": 36,
+          "h1_i_access": 1488,
+          "h1_i_miss": 114,
+          "h1_intervention": 18,
+          "h1_invalidation": 18,
+          "h1_memory": 1740,
+          "h1_retired": 1272,
+          "h1_sc_failure": 0,
+          "h1_sc_success": 0,
+          "h1_writeback": 48
+        },
+        "summed_window_seconds": 0.000455232,
+        "work_unit": "update"
+      },
+      "ping_pong-i1024-r4-p1-c0": {
+        "cycles_per_item": 808.3408203125,
+        "per_boot_job_cycles": [
+          [
+            827741,
+            827741,
+            827741
+          ],
+          [
+            827741,
+            827741,
+            827741
+          ]
+        ],
+        "summed_counters": {
+          "h0_atomic": 0,
+          "h0_backing": 497868,
+          "h0_cycles": 4966446,
+          "h0_d_access": 0,
+          "h0_d_miss": 0,
+          "h0_i_access": 0,
+          "h0_i_miss": 0,
+          "h0_intervention": 0,
+          "h0_invalidation": 0,
+          "h0_memory": 497874,
+          "h0_retired": 411798,
+          "h0_sc_failure": 0,
+          "h0_sc_success": 0,
+          "h0_writeback": 0,
+          "h1_atomic": 0,
+          "h1_backing": 0,
+          "h1_cycles": 4966446,
+          "h1_d_access": 0,
+          "h1_d_miss": 0,
+          "h1_i_access": 0,
+          "h1_i_miss": 0,
+          "h1_intervention": 0,
+          "h1_invalidation": 0,
+          "h1_memory": 0,
+          "h1_retired": 0,
+          "h1_sc_failure": 0,
+          "h1_sc_success": 0,
+          "h1_writeback": 0
+        },
+        "summed_window_seconds": 0.158926272,
+        "work_unit": "request/reply handoff"
+      },
+      "ping_pong-i1024-r4-p1-c1": {
+        "cycles_per_item": 511.9111328125,
+        "per_boot_job_cycles": [
+          [
+            524197,
+            524197,
+            524197
+          ],
+          [
+            524197,
+            524197,
+            524197
+          ]
+        ],
+        "summed_counters": {
+          "h0_atomic": 0,
+          "h0_backing": 148128,
+          "h0_cycles": 3145182,
+          "h0_d_access": 73770,
+          "h0_d_miss": 18,
+          "h0_i_access": 424098,
+          "h0_i_miss": 36996,
+          "h0_intervention": 0,
+          "h0_invalidation": 0,
+          "h0_memory": 497874,
+          "h0_retired": 411798,
+          "h0_sc_failure": 0,
+          "h0_sc_success": 0,
+          "h0_writeback": 72,
+          "h1_atomic": 0,
+          "h1_backing": 0,
+          "h1_cycles": 3145182,
+          "h1_d_access": 0,
+          "h1_d_miss": 0,
+          "h1_i_access": 0,
+          "h1_i_miss": 0,
+          "h1_intervention": 0,
+          "h1_invalidation": 0,
+          "h1_memory": 0,
+          "h1_retired": 0,
+          "h1_sc_failure": 0,
+          "h1_sc_success": 0,
+          "h1_writeback": 0
+        },
+        "summed_window_seconds": 0.100645824,
+        "work_unit": "request/reply handoff"
+      },
+      "ping_pong-i1024-r4-p2-c0": {
+        "cycles_per_item": 913.1103515625,
+        "per_boot_job_cycles": [
+          [
+            935025,
+            935025,
+            935025
+          ],
+          [
+            935025,
+            935025,
+            935025
+          ]
+        ],
+        "summed_counters": {
+          "h0_atomic": 0,
+          "h0_backing": 350628,
+          "h0_cycles": 5610150,
+          "h0_d_access": 0,
+          "h0_d_miss": 0,
+          "h0_i_access": 0,
+          "h0_i_miss": 0,
+          "h0_intervention": 0,
+          "h0_invalidation": 0,
+          "h0_memory": 350640,
+          "h0_retired": 254268,
+          "h0_sc_failure": 0,
+          "h0_sc_success": 0,
+          "h0_writeback": 0,
+          "h1_atomic": 0,
+          "h1_backing": 350622,
+          "h1_cycles": 5610150,
+          "h1_d_access": 0,
+          "h1_d_miss": 0,
+          "h1_i_access": 0,
+          "h1_i_miss": 0,
+          "h1_intervention": 0,
+          "h1_invalidation": 0,
+          "h1_memory": 350628,
+          "h1_retired": 262506,
+          "h1_sc_failure": 0,
+          "h1_sc_success": 0,
+          "h1_writeback": 0
+        },
+        "summed_window_seconds": 0.1795248,
+        "work_unit": "request/reply handoff"
+      },
+      "ping_pong-i1024-r4-p2-c1": {
+        "cycles_per_item": 369.9365234375,
+        "per_boot_job_cycles": [
+          [
+            378815,
+            378815,
+            378815
+          ],
+          [
+            378815,
+            378815,
+            378815
+          ]
+        ],
+        "summed_counters": {
+          "h0_atomic": 0,
+          "h0_backing": 148128,
+          "h0_cycles": 2272890,
+          "h0_d_access": 73932,
+          "h0_d_miss": 18462,
+          "h0_i_access": 338976,
+          "h0_i_miss": 120,
+          "h0_intervention": 18450,
+          "h0_invalidation": 18432,
+          "h0_memory": 412920,
+          "h0_retired": 295788,
+          "h0_sc_failure": 0,
+          "h0_sc_success": 0,
+          "h0_writeback": 73800,
+          "h1_atomic": 0,
+          "h1_backing": 148272,
+          "h1_cycles": 2272890,
+          "h1_d_access": 73782,
+          "h1_d_miss": 18456,
+          "h1_i_access": 363114,
+          "h1_i_miss": 162,
+          "h1_intervention": 18432,
+          "h1_invalidation": 18444,
+          "h1_memory": 436902,
+          "h1_retired": 320082,
+          "h1_sc_failure": 0,
+          "h1_sc_success": 0,
+          "h1_writeback": 73800
+        },
+        "summed_window_seconds": 0.07273248,
+        "work_unit": "request/reply handoff"
+      },
+      "ping_pong-i64-r4-p1-c0": {
+        "cycles_per_item": 813.453125,
+        "per_boot_job_cycles": [
+          [
+            52061,
+            52061,
+            52061
+          ],
+          [
+            52061,
+            52061,
+            52061
+          ]
+        ],
+        "summed_counters": {
+          "h0_atomic": 0,
+          "h0_backing": 31308,
+          "h0_cycles": 312366,
+          "h0_d_access": 0,
+          "h0_d_miss": 0,
+          "h0_i_access": 0,
+          "h0_i_miss": 0,
+          "h0_intervention": 0,
+          "h0_invalidation": 0,
+          "h0_memory": 31314,
+          "h0_retired": 25878,
+          "h0_sc_failure": 0,
+          "h0_sc_success": 0,
+          "h0_writeback": 0,
+          "h1_atomic": 0,
+          "h1_backing": 0,
+          "h1_cycles": 312366,
+          "h1_d_access": 0,
+          "h1_d_miss": 0,
+          "h1_i_access": 0,
+          "h1_i_miss": 0,
+          "h1_intervention": 0,
+          "h1_invalidation": 0,
+          "h1_memory": 0,
+          "h1_retired": 0,
+          "h1_sc_failure": 0,
+          "h1_sc_success": 0,
+          "h1_writeback": 0
+        },
+        "summed_window_seconds": 0.009995712,
+        "work_unit": "request/reply handoff"
+      },
+      "ping_pong-i64-r4-p1-c1": {
+        "cycles_per_item": 525.0625,
+        "per_boot_job_cycles": [
+          [
+            33604,
+            33604,
+            33604
+          ],
+          [
+            33604,
+            33604,
+            33604
+          ]
+        ],
+        "summed_counters": {
+          "h0_atomic": 0,
+          "h0_backing": 9864,
+          "h0_cycles": 201624,
+          "h0_d_access": 4650,
+          "h0_d_miss": 18,
+          "h0_i_access": 26658,
+          "h0_i_miss": 2430,
+          "h0_intervention": 0,
+          "h0_invalidation": 0,
+          "h0_memory": 31314,
+          "h0_retired": 25878,
+          "h0_sc_failure": 0,
+          "h0_sc_success": 0,
+          "h0_writeback": 72,
+          "h1_atomic": 0,
+          "h1_backing": 0,
+          "h1_cycles": 201624,
+          "h1_d_access": 0,
+          "h1_d_miss": 0,
+          "h1_i_access": 0,
+          "h1_i_miss": 0,
+          "h1_intervention": 0,
+          "h1_invalidation": 0,
+          "h1_memory": 0,
+          "h1_retired": 0,
+          "h1_sc_failure": 0,
+          "h1_sc_success": 0,
+          "h1_writeback": 0
+        },
+        "summed_window_seconds": 0.006451968,
+        "work_unit": "request/reply handoff"
+      },
+      "ping_pong-i64-r4-p2-c0": {
+        "cycles_per_item": 929.765625,
+        "per_boot_job_cycles": [
+          [
+            59505,
+            59505,
+            59505
+          ],
+          [
+            59505,
+            59505,
+            59505
+          ]
+        ],
+        "summed_counters": {
+          "h0_atomic": 0,
+          "h0_backing": 22308,
+          "h0_cycles": 357030,
+          "h0_d_access": 0,
+          "h0_d_miss": 0,
+          "h0_i_access": 0,
+          "h0_i_miss": 0,
+          "h0_intervention": 0,
+          "h0_invalidation": 0,
+          "h0_memory": 22320,
+          "h0_retired": 16188,
+          "h0_sc_failure": 0,
+          "h0_sc_success": 0,
+          "h0_writeback": 0,
+          "h1_atomic": 0,
+          "h1_backing": 22302,
+          "h1_cycles": 357030,
+          "h1_d_access": 0,
+          "h1_d_miss": 0,
+          "h1_i_access": 0,
+          "h1_i_miss": 0,
+          "h1_intervention": 0,
+          "h1_invalidation": 0,
+          "h1_memory": 22308,
+          "h1_retired": 16746,
+          "h1_sc_failure": 0,
+          "h1_sc_success": 0,
+          "h1_writeback": 0
+        },
+        "summed_window_seconds": 0.01142496,
+        "work_unit": "request/reply handoff"
+      },
+      "ping_pong-i64-r4-p2-c1": {
+        "cycles_per_item": 398.46875,
+        "per_boot_job_cycles": [
+          [
+            25502,
+            25502,
+            25502
+          ],
+          [
+            25502,
+            25502,
+            25502
+          ]
+        ],
+        "summed_counters": {
+          "h0_atomic": 0,
+          "h0_backing": 9864,
+          "h0_cycles": 153012,
+          "h0_d_access": 4812,
+          "h0_d_miss": 1182,
+          "h0_i_access": 22176,
+          "h0_i_miss": 114,
+          "h0_intervention": 1170,
+          "h0_invalidation": 1152,
+          "h0_memory": 27000,
+          "h0_retired": 19308,
+          "h0_sc_failure": 0,
+          "h0_sc_success": 0,
+          "h0_writeback": 4680,
+          "h1_atomic": 0,
+          "h1_backing": 10032,
+          "h1_cycles": 153012,
+          "h1_d_access": 4662,
+          "h1_d_miss": 1176,
+          "h1_i_access": 23274,
+          "h1_i_miss": 162,
+          "h1_intervention": 1152,
+          "h1_invalidation": 1164,
+          "h1_memory": 27942,
+          "h1_retired": 20562,
+          "h1_sc_failure": 0,
+          "h1_sc_success": 0,
+          "h1_writeback": 4680
+        },
+        "summed_window_seconds": 0.004896384,
+        "work_unit": "request/reply handoff"
+      },
+      "shared_mix-i1024-r64-p1-c0": {
+        "cycles_per_item": 15377.2197265625,
+        "per_boot_job_cycles": [
+          [
+            15746273,
+            15746273,
+            15746273
+          ],
+          [
+            15746273,
+            15746273,
+            15746273
+          ]
+        ],
+        "summed_counters": {
+          "h0_atomic": 0,
+          "h0_backing": 7128396,
+          "h0_cycles": 94477638,
+          "h0_d_access": 0,
+          "h0_d_miss": 0,
+          "h0_i_access": 0,
+          "h0_i_miss": 0,
+          "h0_intervention": 0,
+          "h0_invalidation": 0,
+          "h0_memory": 7128402,
+          "h0_retired": 5936454,
+          "h0_sc_failure": 0,
+          "h0_sc_success": 0,
+          "h0_writeback": 0,
+          "h1_atomic": 0,
+          "h1_backing": 0,
+          "h1_cycles": 94477638,
+          "h1_d_access": 0,
+          "h1_d_miss": 0,
+          "h1_i_access": 0,
+          "h1_i_miss": 0,
+          "h1_intervention": 0,
+          "h1_invalidation": 0,
+          "h1_memory": 0,
+          "h1_retired": 0,
+          "h1_sc_failure": 0,
+          "h1_sc_success": 0,
+          "h1_writeback": 0
+        },
+        "summed_window_seconds": 3.023284416,
+        "work_unit": "element (all configured rounds)"
+      },
+      "shared_mix-i1024-r64-p1-c1": {
+        "cycles_per_item": 10484.6376953125,
+        "per_boot_job_cycles": [
+          [
+            10736269,
+            10736269,
+            10736269
+          ],
+          [
+            10736269,
+            10736269,
+            10736269
+          ]
+        ],
+        "summed_counters": {
+          "h0_atomic": 0,
+          "h0_backing": 796464,
+          "h0_cycles": 64417614,
+          "h0_d_access": 792594,
+          "h0_d_miss": 100242,
+          "h0_i_access": 6335802,
+          "h0_i_miss": 90,
+          "h0_intervention": 0,
+          "h0_invalidation": 0,
+          "h0_memory": 7128402,
+          "h0_retired": 5936454,
+          "h0_sc_failure": 0,
+          "h0_sc_success": 0,
+          "h0_writeback": 395136,
+          "h1_atomic": 0,
+          "h1_backing": 0,
+          "h1_cycles": 64417614,
+          "h1_d_access": 0,
+          "h1_d_miss": 0,
+          "h1_i_access": 0,
+          "h1_i_miss": 0,
+          "h1_intervention": 0,
+          "h1_invalidation": 0,
+          "h1_memory": 0,
+          "h1_retired": 0,
+          "h1_sc_failure": 0,
+          "h1_sc_success": 0,
+          "h1_writeback": 0
+        },
+        "summed_window_seconds": 2.061363648,
+        "work_unit": "element (all configured rounds)"
+      },
+      "shared_mix-i1024-r64-p2-c0": {
+        "cycles_per_item": 9796.12109375,
+        "per_boot_job_cycles": [
+          [
+            10031228,
+            10031228,
+            10031228
+          ],
+          [
+            10031228,
+            10031228,
+            10031228
+          ]
+        ],
+        "summed_counters": {
+          "h0_atomic": 0,
+          "h0_backing": 3565530,
+          "h0_cycles": 60187368,
+          "h0_d_access": 0,
+          "h0_d_miss": 0,
+          "h0_i_access": 0,
+          "h0_i_miss": 0,
+          "h0_intervention": 0,
+          "h0_invalidation": 0,
+          "h0_memory": 3565542,
+          "h0_retired": 2969466,
+          "h0_sc_failure": 0,
+          "h0_sc_success": 0,
+          "h0_writeback": 0,
+          "h1_atomic": 0,
+          "h1_backing": 3565512,
+          "h1_cycles": 60187368,
+          "h1_d_access": 0,
+          "h1_d_miss": 0,
+          "h1_i_access": 0,
+          "h1_i_miss": 0,
+          "h1_intervention": 0,
+          "h1_invalidation": 0,
+          "h1_memory": 3565518,
+          "h1_retired": 2969478,
+          "h1_sc_failure": 0,
+          "h1_sc_success": 0,
+          "h1_writeback": 0
+        },
+        "summed_window_seconds": 1.925995776,
+        "work_unit": "element (all configured rounds)"
+      },
+      "shared_mix-i1024-r64-p2-c1": {
+        "cycles_per_item": 5245.3544921875,
+        "per_boot_job_cycles": [
+          [
+            5371243,
+            5371243,
+            5371243
+          ],
+          [
+            5371243,
+            5371243,
+            5371243
+          ]
+        ],
+        "summed_counters": {
+          "h0_atomic": 0,
+          "h0_backing": 400320,
+          "h0_cycles": 32227458,
+          "h0_d_access": 396456,
+          "h0_d_miss": 50334,
+          "h0_i_access": 3169686,
+          "h0_i_miss": 102,
+          "h0_intervention": 6,
+          "h0_invalidation": 0,
+          "h0_memory": 3566154,
+          "h0_retired": 2969874,
+          "h0_sc_failure": 0,
+          "h0_sc_success": 0,
+          "h0_writeback": 198576,
+          "h1_atomic": 0,
+          "h1_backing": 400200,
+          "h1_cycles": 32227458,
+          "h1_d_access": 396342,
+          "h1_d_miss": 50340,
+          "h1_i_access": 3169224,
+          "h1_i_miss": 162,
+          "h1_intervention": 18,
+          "h1_invalidation": 18,
+          "h1_memory": 3565572,
+          "h1_retired": 2969526,
+          "h1_sc_failure": 0,
+          "h1_sc_success": 0,
+          "h1_writeback": 198192
+        },
+        "summed_window_seconds": 1.031278656,
+        "work_unit": "element (all configured rounds)"
+      },
+      "shared_mix-i129-r16-p1-c0": {
+        "cycles_per_item": 3909.3023255813955,
+        "per_boot_job_cycles": [
+          [
+            504300,
+            504300,
+            504300
+          ],
+          [
+            504300,
+            504300,
+            504300
+          ]
+        ],
+        "summed_counters": {
+          "h0_atomic": 0,
+          "h0_backing": 229584,
+          "h0_cycles": 3025800,
+          "h0_d_access": 0,
+          "h0_d_miss": 0,
+          "h0_i_access": 0,
+          "h0_i_miss": 0,
+          "h0_intervention": 0,
+          "h0_invalidation": 0,
+          "h0_memory": 229590,
+          "h0_retired": 190878,
+          "h0_sc_failure": 0,
+          "h0_sc_success": 0,
+          "h0_writeback": 0,
+          "h1_atomic": 0,
+          "h1_backing": 0,
+          "h1_cycles": 3025800,
+          "h1_d_access": 0,
+          "h1_d_miss": 0,
+          "h1_i_access": 0,
+          "h1_i_miss": 0,
+          "h1_intervention": 0,
+          "h1_invalidation": 0,
+          "h1_memory": 0,
+          "h1_retired": 0,
+          "h1_sc_failure": 0,
+          "h1_sc_success": 0,
+          "h1_writeback": 0
+        },
+        "summed_window_seconds": 0.0968256,
+        "work_unit": "element (all configured rounds)"
+      },
+      "shared_mix-i129-r16-p1-c1": {
+        "cycles_per_item": 2654.5891472868216,
+        "per_boot_job_cycles": [
+          [
+            342442,
+            342442,
+            342442
+          ],
+          [
+            342442,
+            342442,
+            342442
+          ]
+        ],
+        "summed_counters": {
+          "h0_atomic": 0,
+          "h0_backing": 26880,
+          "h0_cycles": 2054652,
+          "h0_d_access": 25560,
+          "h0_d_miss": 3372,
+          "h0_i_access": 204024,
+          "h0_i_miss": 90,
+          "h0_intervention": 0,
+          "h0_invalidation": 0,
+          "h0_memory": 229590,
+          "h0_retired": 190878,
+          "h0_sc_failure": 0,
+          "h0_sc_success": 0,
+          "h0_writeback": 13032,
+          "h1_atomic": 0,
+          "h1_backing": 0,
+          "h1_cycles": 2054652,
+          "h1_d_access": 0,
+          "h1_d_miss": 0,
+          "h1_i_access": 0,
+          "h1_i_miss": 0,
+          "h1_intervention": 0,
+          "h1_invalidation": 0,
+          "h1_memory": 0,
+          "h1_retired": 0,
+          "h1_sc_failure": 0,
+          "h1_sc_success": 0,
+          "h1_writeback": 0
+        },
+        "summed_window_seconds": 0.065748864,
+        "work_unit": "element (all configured rounds)"
+      },
+      "shared_mix-i129-r16-p2-c0": {
+        "cycles_per_item": 2527.4108527131784,
+        "per_boot_job_cycles": [
+          [
+            326036,
+            326036,
+            326036
+          ],
+          [
+            326036,
+            326036,
+            326036
+          ]
+        ],
+        "summed_counters": {
+          "h0_atomic": 0,
+          "h0_backing": 116064,
+          "h0_cycles": 1956216,
+          "h0_d_access": 0,
+          "h0_d_miss": 0,
+          "h0_i_access": 0,
+          "h0_i_miss": 0,
+          "h0_intervention": 0,
+          "h0_invalidation": 0,
+          "h0_memory": 116076,
+          "h0_retired": 96534,
+          "h0_sc_failure": 0,
+          "h0_sc_success": 0,
+          "h0_writeback": 0,
+          "h1_atomic": 0,
+          "h1_backing": 116454,
+          "h1_cycles": 1956216,
+          "h1_d_access": 0,
+          "h1_d_miss": 0,
+          "h1_i_access": 0,
+          "h1_i_miss": 0,
+          "h1_intervention": 0,
+          "h1_invalidation": 0,
+          "h1_memory": 116460,
+          "h1_retired": 97188,
+          "h1_sc_failure": 0,
+          "h1_sc_success": 0,
+          "h1_writeback": 0
+        },
+        "summed_window_seconds": 0.062598912,
+        "work_unit": "element (all configured rounds)"
+      },
+      "shared_mix-i129-r16-p2-c1": {
+        "cycles_per_item": 1316.2170542635658,
+        "per_boot_job_cycles": [
+          [
+            169792,
+            169792,
+            169792
+          ],
+          [
+            169792,
+            169792,
+            169792
+          ]
+        ],
+        "summed_counters": {
+          "h0_atomic": 0,
+          "h0_backing": 2976,
+          "h0_cycles": 1018752,
+          "h0_d_access": 12906,
+          "h0_d_miss": 342,
+          "h0_i_access": 103158,
+          "h0_i_miss": 102,
+          "h0_intervention": 114,
+          "h0_invalidation": 96,
+          "h0_memory": 116076,
+          "h0_retired": 96534,
+          "h0_sc_failure": 0,
+          "h0_sc_success": 0,
+          "h0_writeback": 1200,
+          "h1_atomic": 0,
+          "h1_backing": 2952,
+          "h1_cycles": 1018752,
+          "h1_d_access": 12726,
+          "h1_d_miss": 342,
+          "h1_i_access": 106614,
+          "h1_i_miss": 144,
+          "h1_intervention": 6,
+          "h1_invalidation": 18,
+          "h1_memory": 119346,
+          "h1_retired": 100068,
+          "h1_sc_failure": 0,
+          "h1_sc_success": 0,
+          "h1_writeback": 1008
+        },
+        "summed_window_seconds": 0.032600064,
+        "work_unit": "element (all configured rounds)"
+      },
+      "shared_mix-i2-r1-p1-c0": {
+        "cycles_per_item": 400.0,
+        "per_boot_job_cycles": [
+          [
+            800,
+            800,
+            800
+          ],
+          [
+            800,
+            800,
+            800
+          ]
+        ],
+        "summed_counters": {
+          "h0_atomic": 0,
+          "h0_backing": 402,
+          "h0_cycles": 4800,
+          "h0_d_access": 0,
+          "h0_d_miss": 0,
+          "h0_i_access": 0,
+          "h0_i_miss": 0,
+          "h0_intervention": 0,
+          "h0_invalidation": 0,
+          "h0_memory": 408,
+          "h0_retired": 342,
+          "h0_sc_failure": 0,
+          "h0_sc_success": 0,
+          "h0_writeback": 0,
+          "h1_atomic": 0,
+          "h1_backing": 0,
+          "h1_cycles": 4800,
+          "h1_d_access": 0,
+          "h1_d_miss": 0,
+          "h1_i_access": 0,
+          "h1_i_miss": 0,
+          "h1_intervention": 0,
+          "h1_invalidation": 0,
+          "h1_memory": 0,
+          "h1_retired": 0,
+          "h1_sc_failure": 0,
+          "h1_sc_success": 0,
+          "h1_writeback": 0
+        },
+        "summed_window_seconds": 0.0001536,
+        "work_unit": "element (all configured rounds)"
+      },
+      "shared_mix-i2-r1-p1-c1": {
+        "cycles_per_item": 405.5,
+        "per_boot_job_cycles": [
+          [
+            811,
+            811,
+            811
+          ],
+          [
+            811,
+            811,
+            811
+          ]
+        ],
+        "summed_counters": {
+          "h0_atomic": 0,
+          "h0_backing": 264,
+          "h0_cycles": 4866,
+          "h0_d_access": 54,
+          "h0_d_miss": 0,
+          "h0_i_access": 348,
+          "h0_i_miss": 66,
+          "h0_intervention": 0,
+          "h0_invalidation": 0,
+          "h0_memory": 408,
+          "h0_retired": 342,
+          "h0_sc_failure": 0,
+          "h0_sc_success": 0,
+          "h0_writeback": 0,
+          "h1_atomic": 0,
+          "h1_backing": 0,
+          "h1_cycles": 4866,
+          "h1_d_access": 0,
+          "h1_d_miss": 0,
+          "h1_i_access": 0,
+          "h1_i_miss": 0,
+          "h1_intervention": 0,
+          "h1_invalidation": 0,
+          "h1_memory": 0,
+          "h1_retired": 0,
+          "h1_sc_failure": 0,
+          "h1_sc_success": 0,
+          "h1_writeback": 0
+        },
+        "summed_window_seconds": 0.000155712,
+        "work_unit": "element (all configured rounds)"
+      },
+      "shared_mix-i2-r1-p2-c0": {
+        "cycles_per_item": 792.0,
+        "per_boot_job_cycles": [
+          [
+            1584,
+            1584,
+            1584
+          ],
+          [
+            1584,
+            1584,
+            1584
+          ]
+        ],
+        "summed_counters": {
+          "h0_atomic": 0,
+          "h0_backing": 582,
+          "h0_cycles": 9504,
+          "h0_d_access": 0,
+          "h0_d_miss": 0,
+          "h0_i_access": 0,
+          "h0_i_miss": 0,
+          "h0_intervention": 0,
+          "h0_invalidation": 0,
+          "h0_memory": 594,
+          "h0_retired": 450,
+          "h0_sc_failure": 0,
+          "h0_sc_success": 0,
+          "h0_writeback": 0,
+          "h1_atomic": 0,
+          "h1_backing": 576,
+          "h1_cycles": 9504,
+          "h1_d_access": 0,
+          "h1_d_miss": 0,
+          "h1_i_access": 0,
+          "h1_i_miss": 0,
+          "h1_intervention": 0,
+          "h1_invalidation": 0,
+          "h1_memory": 582,
+          "h1_retired": 480,
+          "h1_sc_failure": 0,
+          "h1_sc_success": 0,
+          "h1_writeback": 0
+        },
+        "summed_window_seconds": 0.000304128,
+        "work_unit": "element (all configured rounds)"
+      },
+      "shared_mix-i2-r1-p2-c1": {
+        "cycles_per_item": 900.0,
+        "per_boot_job_cycles": [
+          [
+            1800,
+            1800,
+            1800
+          ],
+          [
+            1800,
+            1800,
+            1800
+          ]
+        ],
+        "summed_counters": {
+          "h0_atomic": 0,
+          "h0_backing": 456,
+          "h0_cycles": 10800,
+          "h0_d_access": 204,
+          "h0_d_miss": 6,
+          "h0_i_access": 1062,
+          "h0_i_miss": 84,
+          "h0_intervention": 6,
+          "h0_invalidation": 6,
+          "h0_memory": 1278,
+          "h0_retired": 906,
+          "h0_sc_failure": 0,
+          "h0_sc_success": 0,
+          "h0_writeback": 96,
+          "h1_atomic": 0,
+          "h1_backing": 672,
+          "h1_cycles": 10800,
+          "h1_d_access": 72,
+          "h1_d_miss": 30,
+          "h1_i_access": 636,
+          "h1_i_miss": 132,
+          "h1_intervention": 24,
+          "h1_invalidation": 18,
+          "h1_memory": 714,
+          "h1_retired": 606,
+          "h1_sc_failure": 0,
+          "h1_sc_success": 0,
+          "h1_writeback": 24
+        },
+        "summed_window_seconds": 0.0003456,
+        "work_unit": "element (all configured rounds)"
+      },
+      "shared_mix-i64-r4-p1-c0": {
+        "cycles_per_item": 1041.765625,
+        "per_boot_job_cycles": [
+          [
+            66673,
+            66673,
+            66673
+          ],
+          [
+            66673,
+            66673,
+            66673
+          ]
+        ],
+        "summed_counters": {
+          "h0_atomic": 0,
+          "h0_backing": 30972,
+          "h0_cycles": 400038,
+          "h0_d_access": 0,
+          "h0_d_miss": 0,
+          "h0_i_access": 0,
+          "h0_i_miss": 0,
+          "h0_intervention": 0,
+          "h0_invalidation": 0,
+          "h0_memory": 30978,
+          "h0_retired": 25590,
+          "h0_sc_failure": 0,
+          "h0_sc_success": 0,
+          "h0_writeback": 0,
+          "h1_atomic": 0,
+          "h1_backing": 0,
+          "h1_cycles": 400038,
+          "h1_d_access": 0,
+          "h1_d_miss": 0,
+          "h1_i_access": 0,
+          "h1_i_miss": 0,
+          "h1_intervention": 0,
+          "h1_invalidation": 0,
+          "h1_memory": 0,
+          "h1_retired": 0,
+          "h1_sc_failure": 0,
+          "h1_sc_success": 0,
+          "h1_writeback": 0
+        },
+        "summed_window_seconds": 0.012801216,
+        "work_unit": "element (all configured rounds)"
+      },
+      "shared_mix-i64-r4-p1-c1": {
+        "cycles_per_item": 678.421875,
+        "per_boot_job_cycles": [
+          [
+            43419,
+            43419,
+            43419
+          ],
+          [
+            43419,
+            43419,
+            43419
+          ]
+        ],
+        "summed_counters": {
+          "h0_atomic": 0,
+          "h0_backing": 480,
+          "h0_cycles": 260514,
+          "h0_d_access": 3474,
+          "h0_d_miss": 18,
+          "h0_i_access": 27498,
+          "h0_i_miss": 84,
+          "h0_intervention": 0,
+          "h0_invalidation": 0,
+          "h0_memory": 30978,
+          "h0_retired": 25590,
+          "h0_sc_failure": 0,
+          "h0_sc_success": 0,
+          "h0_writeback": 72,
+          "h1_atomic": 0,
+          "h1_backing": 0,
+          "h1_cycles": 260514,
+          "h1_d_access": 0,
+          "h1_d_miss": 0,
+          "h1_i_access": 0,
+          "h1_i_miss": 0,
+          "h1_intervention": 0,
+          "h1_invalidation": 0,
+          "h1_memory": 0,
+          "h1_retired": 0,
+          "h1_sc_failure": 0,
+          "h1_sc_success": 0,
+          "h1_writeback": 0
+        },
+        "summed_window_seconds": 0.008336448,
+        "work_unit": "element (all configured rounds)"
+      },
+      "shared_mix-i64-r4-p2-c0": {
+        "cycles_per_item": 694.140625,
+        "per_boot_job_cycles": [
+          [
+            44425,
+            44425,
+            44425
+          ],
+          [
+            44425,
+            44425,
+            44425
+          ]
+        ],
+        "summed_counters": {
+          "h0_atomic": 0,
+          "h0_backing": 15912,
+          "h0_cycles": 266550,
+          "h0_d_access": 0,
+          "h0_d_miss": 0,
+          "h0_i_access": 0,
+          "h0_i_miss": 0,
+          "h0_intervention": 0,
+          "h0_invalidation": 0,
+          "h0_memory": 15924,
+          "h0_retired": 13122,
+          "h0_sc_failure": 0,
+          "h0_sc_success": 0,
+          "h0_writeback": 0,
+          "h1_atomic": 0,
+          "h1_backing": 15900,
+          "h1_cycles": 266550,
+          "h1_d_access": 0,
+          "h1_d_miss": 0,
+          "h1_i_access": 0,
+          "h1_i_miss": 0,
+          "h1_intervention": 0,
+          "h1_invalidation": 0,
+          "h1_memory": 15906,
+          "h1_retired": 13146,
+          "h1_sc_failure": 0,
+          "h1_sc_success": 0,
+          "h1_writeback": 0
+        },
+        "summed_window_seconds": 0.0085296,
+        "work_unit": "element (all configured rounds)"
+      },
+      "shared_mix-i64-r4-p2-c1": {
+        "cycles_per_item": 361.421875,
+        "per_boot_job_cycles": [
+          [
+            23131,
+            23131,
+            23131
+          ],
+          [
+            23131,
+            23131,
+            23131
+          ]
+        ],
+        "summed_counters": {
+          "h0_atomic": 0,
+          "h0_backing": 840,
+          "h0_cycles": 138786,
+          "h0_d_access": 1884,
+          "h0_d_miss": 30,
+          "h0_i_access": 14532,
+          "h0_i_miss": 102,
+          "h0_intervention": 6,
+          "h0_invalidation": 6,
+          "h0_memory": 16428,
+          "h0_retired": 13458,
+          "h0_sc_failure": 0,
+          "h0_sc_success": 0,
+          "h0_writeback": 312,
+          "h1_atomic": 0,
+          "h1_backing": 936,
+          "h1_cycles": 138786,
+          "h1_d_access": 1782,
+          "h1_d_miss": 78,
+          "h1_i_access": 14250,
+          "h1_i_miss": 144,
+          "h1_intervention": 60,
+          "h1_invalidation": 60,
+          "h1_memory": 16038,
+          "h1_retired": 13272,
+          "h1_sc_failure": 0,
+          "h1_sc_success": 0,
+          "h1_writeback": 48
+        },
+        "summed_window_seconds": 0.004441152,
+        "work_unit": "element (all configured rounds)"
+      },
+      "shared_mix-i64-r4-p2-c1-repeat": {
+        "cycles_per_item": 361.421875,
+        "per_boot_job_cycles": [
+          [
+            23131,
+            23131,
+            23131
+          ],
+          [
+            23131,
+            23131,
+            23131
+          ]
+        ],
+        "summed_counters": {
+          "h0_atomic": 0,
+          "h0_backing": 840,
+          "h0_cycles": 138786,
+          "h0_d_access": 1884,
+          "h0_d_miss": 30,
+          "h0_i_access": 14532,
+          "h0_i_miss": 102,
+          "h0_intervention": 6,
+          "h0_invalidation": 6,
+          "h0_memory": 16428,
+          "h0_retired": 13458,
+          "h0_sc_failure": 0,
+          "h0_sc_success": 0,
+          "h0_writeback": 312,
+          "h1_atomic": 0,
+          "h1_backing": 936,
+          "h1_cycles": 138786,
+          "h1_d_access": 1782,
+          "h1_d_miss": 78,
+          "h1_i_access": 14250,
+          "h1_i_miss": 144,
+          "h1_intervention": 60,
+          "h1_invalidation": 60,
+          "h1_memory": 16038,
+          "h1_retired": 13272,
+          "h1_sc_failure": 0,
+          "h1_sc_success": 0,
+          "h1_writeback": 48
+        },
+        "summed_window_seconds": 0.004441152,
+        "work_unit": "element (all configured rounds)"
+      },
+      "spsc_queue-i1024-r4-p1-c0": {
+        "cycles_per_item": 487.333984375,
+        "per_boot_job_cycles": [
+          [
+            499030,
+            499030,
+            499030
+          ],
+          [
+            499030,
+            499030,
+            499030
+          ]
+        ],
+        "summed_counters": {
+          "h0_atomic": 0,
+          "h0_backing": 301254,
+          "h0_cycles": 2994180,
+          "h0_d_access": 0,
+          "h0_d_miss": 0,
+          "h0_i_access": 0,
+          "h0_i_miss": 0,
+          "h0_intervention": 0,
+          "h0_invalidation": 0,
+          "h0_memory": 301260,
+          "h0_retired": 233646,
+          "h0_sc_failure": 0,
+          "h0_sc_success": 0,
+          "h0_writeback": 0,
+          "h1_atomic": 0,
+          "h1_backing": 0,
+          "h1_cycles": 2994180,
+          "h1_d_access": 0,
+          "h1_d_miss": 0,
+          "h1_i_access": 0,
+          "h1_i_miss": 0,
+          "h1_intervention": 0,
+          "h1_invalidation": 0,
+          "h1_memory": 0,
+          "h1_retired": 0,
+          "h1_sc_failure": 0,
+          "h1_sc_success": 0,
+          "h1_writeback": 0
+        },
+        "summed_window_seconds": 0.09581376,
+        "work_unit": "queue handoff"
+      },
+      "spsc_queue-i1024-r4-p1-c1": {
+        "cycles_per_item": 200.8291015625,
+        "per_boot_job_cycles": [
+          [
+            205649,
+            205649,
+            205649
+          ],
+          [
+            205649,
+            205649,
+            205649
+          ]
+        ],
+        "summed_counters": {
+          "h0_atomic": 0,
+          "h0_backing": 768,
+          "h0_cycles": 1233894,
+          "h0_d_access": 49182,
+          "h0_d_miss": 42,
+          "h0_i_access": 252072,
+          "h0_i_miss": 108,
+          "h0_intervention": 0,
+          "h0_invalidation": 0,
+          "h0_memory": 301260,
+          "h0_retired": 233646,
+          "h0_sc_failure": 0,
+          "h0_sc_success": 0,
+          "h0_writeback": 168,
+          "h1_atomic": 0,
+          "h1_backing": 0,
+          "h1_cycles": 1233894,
+          "h1_d_access": 0,
+          "h1_d_miss": 0,
+          "h1_i_access": 0,
+          "h1_i_miss": 0,
+          "h1_intervention": 0,
+          "h1_invalidation": 0,
+          "h1_memory": 0,
+          "h1_retired": 0,
+          "h1_sc_failure": 0,
+          "h1_sc_success": 0,
+          "h1_writeback": 0
+        },
+        "summed_window_seconds": 0.039484608,
+        "work_unit": "queue handoff"
+      },
+      "spsc_queue-i1024-r4-p2-c0": {
+        "cycles_per_item": 497.1728515625,
+        "per_boot_job_cycles": [
+          [
+            509105,
+            509105,
+            509105
+          ],
+          [
+            509105,
+            509105,
+            509105
+          ]
+        ],
+        "summed_counters": {
+          "h0_atomic": 0,
+          "h0_backing": 190908,
+          "h0_cycles": 3054630,
+          "h0_d_access": 0,
+          "h0_d_miss": 0,
+          "h0_i_access": 0,
+          "h0_i_miss": 0,
+          "h0_intervention": 0,
+          "h0_invalidation": 0,
+          "h0_memory": 190920,
+          "h0_retired": 145746,
+          "h0_sc_failure": 0,
+          "h0_sc_success": 0,
+          "h0_writeback": 0,
+          "h1_atomic": 0,
+          "h1_backing": 190902,
+          "h1_cycles": 3054630,
+          "h1_d_access": 0,
+          "h1_d_miss": 0,
+          "h1_i_access": 0,
+          "h1_i_miss": 0,
+          "h1_intervention": 0,
+          "h1_invalidation": 0,
+          "h1_memory": 190908,
+          "h1_retired": 153966,
+          "h1_sc_failure": 0,
+          "h1_sc_success": 0,
+          "h1_writeback": 0
+        },
+        "summed_window_seconds": 0.09774816,
+        "work_unit": "queue handoff"
+      },
+      "spsc_queue-i1024-r4-p2-c1": {
+        "cycles_per_item": 149.505859375,
+        "per_boot_job_cycles": [
+          [
+            153094,
+            153094,
+            153094
+          ],
+          [
+            153094,
+            153094,
+            153094
+          ]
+        ],
+        "summed_counters": {
+          "h0_atomic": 0,
+          "h0_backing": 65016,
+          "h0_cycles": 918564,
+          "h0_d_access": 24756,
+          "h0_d_miss": 6150,
+          "h0_i_access": 142212,
+          "h0_i_miss": 96,
+          "h0_intervention": 6114,
+          "h0_invalidation": 9930,
+          "h0_memory": 166980,
+          "h0_retired": 129786,
+          "h0_sc_failure": 0,
+          "h0_sc_success": 0,
+          "h0_writeback": 40032,
+          "h1_atomic": 0,
+          "h1_backing": 64944,
+          "h1_cycles": 918564,
+          "h1_d_access": 24630,
+          "h1_d_miss": 9978,
+          "h1_i_access": 166398,
+          "h1_i_miss": 144,
+          "h1_intervention": 9972,
+          "h1_invalidation": 6132,
+          "h1_memory": 191034,
+          "h1_retired": 154086,
+          "h1_sc_failure": 0,
+          "h1_sc_success": 0,
+          "h1_writeback": 24456
+        },
+        "summed_window_seconds": 0.029394048,
+        "work_unit": "queue handoff"
+      },
+      "spsc_queue-i64-r4-p1-c0": {
+        "cycles_per_item": 492.34375,
+        "per_boot_job_cycles": [
+          [
+            31510,
+            31510,
+            31510
+          ],
+          [
+            31510,
+            31510,
+            31510
+          ]
+        ],
+        "summed_counters": {
+          "h0_atomic": 0,
+          "h0_backing": 19014,
+          "h0_cycles": 189060,
+          "h0_d_access": 0,
+          "h0_d_miss": 0,
+          "h0_i_access": 0,
+          "h0_i_miss": 0,
+          "h0_intervention": 0,
+          "h0_invalidation": 0,
+          "h0_memory": 19020,
+          "h0_retired": 14766,
+          "h0_sc_failure": 0,
+          "h0_sc_success": 0,
+          "h0_writeback": 0,
+          "h1_atomic": 0,
+          "h1_backing": 0,
+          "h1_cycles": 189060,
+          "h1_d_access": 0,
+          "h1_d_miss": 0,
+          "h1_i_access": 0,
+          "h1_i_miss": 0,
+          "h1_intervention": 0,
+          "h1_invalidation": 0,
+          "h1_memory": 0,
+          "h1_retired": 0,
+          "h1_sc_failure": 0,
+          "h1_sc_success": 0,
+          "h1_writeback": 0
+        },
+        "summed_window_seconds": 0.00604992,
+        "work_unit": "queue handoff"
+      },
+      "spsc_queue-i64-r4-p1-c1": {
+        "cycles_per_item": 213.78125,
+        "per_boot_job_cycles": [
+          [
+            13682,
+            13682,
+            13682
+          ],
+          [
+            13682,
+            13682,
+            13682
+          ]
+        ],
+        "summed_counters": {
+          "h0_atomic": 0,
+          "h0_backing": 792,
+          "h0_cycles": 82092,
+          "h0_d_access": 3102,
+          "h0_d_miss": 42,
+          "h0_i_access": 15912,
+          "h0_i_miss": 114,
+          "h0_intervention": 0,
+          "h0_invalidation": 0,
+          "h0_memory": 19020,
+          "h0_retired": 14766,
+          "h0_sc_failure": 0,
+          "h0_sc_success": 0,
+          "h0_writeback": 168,
+          "h1_atomic": 0,
+          "h1_backing": 0,
+          "h1_cycles": 82092,
+          "h1_d_access": 0,
+          "h1_d_miss": 0,
+          "h1_i_access": 0,
+          "h1_i_miss": 0,
+          "h1_intervention": 0,
+          "h1_invalidation": 0,
+          "h1_memory": 0,
+          "h1_retired": 0,
+          "h1_sc_failure": 0,
+          "h1_sc_success": 0,
+          "h1_writeback": 0
+        },
+        "summed_window_seconds": 0.002626944,
+        "work_unit": "queue handoff"
+      },
+      "spsc_queue-i64-r4-p2-c0": {
+        "cycles_per_item": 514.765625,
+        "per_boot_job_cycles": [
+          [
+            32945,
+            32945,
+            32945
+          ],
+          [
+            32945,
+            32945,
+            32945
+          ]
+        ],
+        "summed_counters": {
+          "h0_atomic": 0,
+          "h0_backing": 12348,
+          "h0_cycles": 197670,
+          "h0_d_access": 0,
+          "h0_d_miss": 0,
+          "h0_i_access": 0,
+          "h0_i_miss": 0,
+          "h0_intervention": 0,
+          "h0_invalidation": 0,
+          "h0_memory": 12360,
+          "h0_retired": 9426,
+          "h0_sc_failure": 0,
+          "h0_sc_success": 0,
+          "h0_writeback": 0,
+          "h1_atomic": 0,
+          "h1_backing": 12342,
+          "h1_cycles": 197670,
+          "h1_d_access": 0,
+          "h1_d_miss": 0,
+          "h1_i_access": 0,
+          "h1_i_miss": 0,
+          "h1_intervention": 0,
+          "h1_invalidation": 0,
+          "h1_memory": 12348,
+          "h1_retired": 9966,
+          "h1_sc_failure": 0,
+          "h1_sc_success": 0,
+          "h1_writeback": 0
+        },
+        "summed_window_seconds": 0.00632544,
+        "work_unit": "queue handoff"
+      },
+      "spsc_queue-i64-r4-p2-c1": {
+        "cycles_per_item": 174.015625,
+        "per_boot_job_cycles": [
+          [
+            11137,
+            11137,
+            11137
+          ],
+          [
+            11137,
+            11137,
+            11137
+          ]
+        ],
+        "summed_counters": {
+          "h0_atomic": 0,
+          "h0_backing": 4536,
+          "h0_cycles": 66822,
+          "h0_d_access": 1716,
+          "h0_d_miss": 390,
+          "h0_i_access": 9732,
+          "h0_i_miss": 96,
+          "h0_intervention": 354,
+          "h0_invalidation": 570,
+          "h0_memory": 11460,
+          "h0_retired": 8826,
+          "h0_sc_failure": 0,
+          "h0_sc_success": 0,
+          "h0_writeback": 2592,
+          "h1_atomic": 0,
+          "h1_backing": 4464,
+          "h1_cycles": 66822,
+          "h1_d_access": 1590,
+          "h1_d_miss": 618,
+          "h1_i_access": 10878,
+          "h1_i_miss": 144,
+          "h1_intervention": 612,
+          "h1_invalidation": 372,
+          "h1_memory": 12474,
+          "h1_retired": 10086,
+          "h1_sc_failure": 0,
+          "h1_sc_success": 0,
+          "h1_writeback": 1416
+        },
+        "summed_window_seconds": 0.002138304,
+        "work_unit": "queue handoff"
+      }
+    },
+    "window": "dispatch_work_join includes secondary startup and synchronization; excludes initialization, UART and stop/flush"
+  }
+}

@@ -1,0 +1,18 @@
+{
+  "fclk0_mhz": 31.25,
+  "loaded_bitstream": "/home/xilinx/aster_phase6_7d25898/overlay-c1/aster_linux.bit",
+  "observed_utc": "2026-09-13T05:22:59.541864+00:00",
+  "registers": {
+    "abi": 393217,
+    "clock_hz": 31250000,
+    "control": 0,
+    "features": 3,
+    "fifo_count": 0,
+    "hart_status": 0,
+    "harts": 2,
+    "magic": 1095980114,
+    "status": 0,
+    "stop_status": 1
+  },
+  "schema": "aster.coherent.final-state.v1"
+}

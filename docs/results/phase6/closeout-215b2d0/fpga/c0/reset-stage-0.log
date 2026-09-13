@@ -1,0 +1,11 @@
+INFO: [VRFC 10-2263] Analyzing SystemVerilog file "/home/elfo/Documents/Aster/build/phase6-215b2d0/fpga/linux-h2-coherent-c0/aster_linux.gen/sources_1/bd/aster_linux/ip/aster_linux_reset_0/aster_linux_reset_0_sim_netlist.v" into library work
+INFO: [VRFC 10-311] analyzing module aster_linux_reset_0
+INFO: [VRFC 10-311] analyzing module aster_linux_reset_0_lpf
+INFO: [VRFC 10-311] analyzing module aster_linux_reset_0_proc_sys_reset
+INFO: [VRFC 10-311] analyzing module aster_linux_reset_0_sequence_psr
+INFO: [VRFC 10-311] analyzing module aster_linux_reset_0_upcnt_n
+INFO: [VRFC 10-311] analyzing module aster_linux_reset_0_xpm_cdc_single
+INFO: [VRFC 10-311] analyzing module aster_linux_reset_0_xpm_cdc_single__1
+INFO: [VRFC 10-311] analyzing module glbl
+INFO: [VRFC 10-2263] Analyzing SystemVerilog file "/tmp/aster-phase6-verify-PHy1Sn/verification/fpga/tb_linux_reset.sv" into library work
+INFO: [VRFC 10-311] analyzing module tb_linux_reset

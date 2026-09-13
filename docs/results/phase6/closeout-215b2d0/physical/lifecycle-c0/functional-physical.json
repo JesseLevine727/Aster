@@ -1,0 +1,152 @@
+{
+  "baud": 115200,
+  "board": "Pynq-Z1",
+  "boots": [
+    {
+      "after_stop": {
+        "control": 0,
+        "hart_status": 0,
+        "status": 0,
+        "stop_status": 1
+      },
+      "before_stop": {
+        "control": 1,
+        "faults": [
+          {
+            "address": 268435732,
+            "atomic_fault_valid": false,
+            "cause": 0,
+            "hart": 0,
+            "instruction": 416819247,
+            "pc": 192,
+            "trapped": false
+          },
+          {
+            "address": 0,
+            "atomic_fault_valid": false,
+            "cause": 0,
+            "hart": 1,
+            "instruction": 0,
+            "pc": 544,
+            "trapped": false
+          }
+        ],
+        "fifo_count": 0,
+        "hart_status": 1,
+        "lifetime_retired": [
+          684992,
+          5912
+        ],
+        "rx_bytes": 24,
+        "status": 1,
+        "stop_status": 0,
+        "tx_bytes": 24
+      },
+      "boot": 1,
+      "elapsed_seconds": 0.5070303440006683,
+      "ram": {
+        "bytes": 65536,
+        "file": "boot1.ram",
+        "sha256": "dd0e45ee3e95a18f114226b77fe5815c0a8531da306f000ae7ac940c0f6c57a6"
+      },
+      "status": "PASS",
+      "uart": {
+        "bytes": 24,
+        "file": "boot1.uart",
+        "sha256": "73379884f0eb1305cfe64f18f4a3323e27465221d0fb0c2bfb99523df20f5b5f"
+      }
+    },
+    {
+      "after_stop": {
+        "control": 0,
+        "hart_status": 0,
+        "status": 0,
+        "stop_status": 1
+      },
+      "before_stop": {
+        "control": 1,
+        "faults": [
+          {
+            "address": 268435732,
+            "atomic_fault_valid": false,
+            "cause": 0,
+            "hart": 0,
+            "instruction": 416819247,
+            "pc": 192,
+            "trapped": false
+          },
+          {
+            "address": 0,
+            "atomic_fault_valid": false,
+            "cause": 0,
+            "hart": 1,
+            "instruction": 0,
+            "pc": 544,
+            "trapped": false
+          }
+        ],
+        "fifo_count": 0,
+        "hart_status": 1,
+        "lifetime_retired": [
+          684774,
+          5912
+        ],
+        "rx_bytes": 24,
+        "status": 1,
+        "stop_status": 0,
+        "tx_bytes": 24
+      },
+      "boot": 2,
+      "elapsed_seconds": 0.5096169130010821,
+      "ram": {
+        "bytes": 65536,
+        "file": "boot2.ram",
+        "sha256": "dd0e45ee3e95a18f114226b77fe5815c0a8531da306f000ae7ac940c0f6c57a6"
+      },
+      "status": "PASS",
+      "uart": {
+        "bytes": 24,
+        "file": "boot2.uart",
+        "sha256": "73379884f0eb1305cfe64f18f4a3323e27465221d0fb0c2bfb99523df20f5b5f"
+      }
+    }
+  ],
+  "clock_mhz": 31.25,
+  "collector_files": {
+    "asterbench.py": "cead01e0343fb7cd03964a3d27dd7a75a91e02caacd746609bbd6de87404ddca",
+    "asterbench_coherent.py": "17a676ede32fffa9b28dd165bcb0ee31dbdfe2e24513c43b2e1cad05223a331e",
+    "bench_results.py": "d3872edd950bbbe3abc867a4cad2aeacc1fe3ee81c0974416d2d10ec80c32e0a",
+    "coherent_bridge.py": "409164f08f1ec6980455b8853cb46ea1b9ab0eb4eeb7241c82e293d9160b3ec0",
+    "coherent_elf.py": "13facb9e6f7a09d0802beee7e60986f3a84096958db2b61c73bb184db4261254",
+    "coherent_functional.py": "2038f0844fed0dcb8c838451d7a59c9dd8473dd6e1d3a44fb9e715b8aa71765d",
+    "coherent_overlay.py": "7ce1a60487e758a3b9e851449166a6092f5f56be27bcb754fc4f5671e976ee59",
+    "coherent_physical.py": "000bd38c201018d12e435a86e6c1e0f34b122feff16442e226f7964ad9d75f3a",
+    "coherent_results.py": "c8c6bc377adc6dbae02491094a4f91258c9c531695b3ea99af395d661b2d7f9b",
+    "functional_physical.py": "6473850172f2a41c8dc98d69e11ca38536194067bbbee814703ffbd63a9ef7d3",
+    "pynq_handoff.py": "5a5e40f54347e5d3512d98bb1711200ed3ec774d5597790895a3a3e530e89817",
+    "run_coherent_sim.py": "9f7598de1203f3d5d7ef0846f7b9b9f7f3190e7d50a4f4ef59592c80ead4e1c7",
+    "run_pynq_coherent.py": "e186ecde60ee5939facfe26cfb625b29bd1eb683c7f29801c6dac3cb21fa2980",
+    "run_pynq_functional.py": "e5722342a4d87887c4bcbe68f62fe61a648022b7a987c5d5e7c91732cb8d94f5"
+  },
+  "collector_revision": "ed8ab67358e0b649e0ab4b10e22958e7a4b65e18",
+  "downloaded": false,
+  "external_pmod_loopback": false,
+  "final_state": {
+    "control": 0,
+    "hart_status": 0,
+    "status": 0,
+    "stop_status": 1
+  },
+  "host_pause_seconds": 0.2,
+  "kernel": "6.6.10-xilinx-v2024.1-g916a1f7c7222",
+  "kind": "lifecycle",
+  "loaded_bitstream": "/home/xilinx/aster_phase6_7d25898/overlay-c0/aster_linux.bit",
+  "overlay_sha256": "3756872bb090605583cfed956c82db6d8f1c5da0ff45b57c25b609b392ebf988",
+  "previous_bitstream": "/home/xilinx/aster_phase6_7d25898/overlay-c0/aster_linux.bit",
+  "pynq_version": "3.1.1",
+  "reference_sha256": "97ff189aa48c6f09af28389cfd45d81c0b7375a03ff37808ea8ac3e5fc6e8cb6",
+  "schema": "aster.coherent.functional-physical.v1",
+  "status": "complete",
+  "timeout_seconds": 120,
+  "transport": "PYNQ Linux PCAP/AXI, FPGA UART TX-to-RX serial loopback"
+}

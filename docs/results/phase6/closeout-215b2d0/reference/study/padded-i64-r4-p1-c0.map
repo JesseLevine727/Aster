@@ -1,0 +1,109 @@
+
+Merging object attributes
+
+
+Discarded input sections
+
+ .riscv.attributes
+                0x00000000       0x40 /tmp/ccaj6B89.o
+ .comment       0x00000000       0x1a /tmp/ccvXth1H.o
+ .riscv.attributes
+                0x00000000       0x42 /tmp/ccvXth1H.o
+
+Memory Configuration
+
+Name             Origin             Length             Attributes
+ROM              0x00000000         0x00010000         xr
+SHARED           0x10000000         0x00008000         xrw
+PRIVATE0         0x10008000         0x00004000         xrw
+PRIVATE1         0x1000c000         0x00004000         xrw
+*default*        0x00000000         0xffffffff
+
+Linker script and memory map
+
+LOAD /tmp/ccaj6B89.o
+LOAD /tmp/ccvXth1H.o
+
+.text           0x00000000      0x8f4
+ *(.text.init)
+ .text.init     0x00000000       0xc4 /tmp/ccaj6B89.o
+                0x00000000                _start
+                0x00000100                        . = ALIGN (0x100)
+ *fill*         0x000000c4       0x3c 
+                0x00000100                        __benchmark_start = .
+ *(.text.benchmark)
+ .text.benchmark
+                0x00000100       0x4c /tmp/ccvXth1H.o
+                0x00000100                aster_coherent_kernel
+                0x0000014c                        __benchmark_end = .
+ *(.text*)
+ .text          0x0000014c        0x0 /tmp/ccaj6B89.o
+ .text          0x0000014c      0x14c /tmp/ccvXth1H.o
+                0x00000258                aster_secondary_main
+ .text.startup  0x00000298      0x65c /tmp/ccvXth1H.o
+                0x00000298                main
+
+.rodata         0x000008f4      0x23c
+ *(.rodata*)
+ .rodata.str1.4
+                0x000008f4      0x1ee /tmp/ccvXth1H.o
+ *fill*         0x00000ae2        0x2 
+ .rodata        0x00000ae4       0x4c /tmp/ccvXth1H.o
+
+.rela.dyn       0x00000b30        0x0
+ .rela.text.init
+                0x00000b30        0x0 /tmp/ccaj6B89.o
+
+.data           0x10000000        0x0 load address 0x00000b30
+                0x10000000                        __data_start = .
+ *(.data*)
+ .data          0x10000000        0x0 /tmp/ccaj6B89.o
+ .data          0x10000000        0x0 /tmp/ccvXth1H.o
+ *(.sdata*)
+                0x10000000                        . = ALIGN (0x4)
+                0x10000000                        __data_end = .
+                0x00000b30                        __data_load_start = LOADADDR (.data)
+
+.bss            0x10000000     0x4000 load address 0x00000b30
+                0x10000000                        __bss_start = .
+ *(.bss*)
+ .bss           0x10000000        0x0 /tmp/ccaj6B89.o
+ .bss           0x10000000     0x4000 /tmp/ccvXth1H.o
+                0x10001008                aster_coherent_output
+ *(.sbss*)
+ *(COMMON)
+                0x10004000                        . = ALIGN (0x4)
+                0x10004000                        __bss_end = .
+
+.private0       0x10008000       0x60
+                0x10008000                        __private0_start = .
+ *(.private0*)
+ .private0      0x10008000       0x60 /tmp/ccvXth1H.o
+                0x10008000                aster_coherent_results
+                0x10008060                        . = ALIGN (0x4)
+                0x10008060                        __private0_end = .
+
+.private1       0x1000c000        0x0
+                0x1000c000                        __private1_start = .
+ *(.private1*)
+                0x1000c000                        . = ALIGN (0x4)
+                0x1000c000                        __private1_end = .
+                0x00001000                        PROVIDE (__stack_size = 0x1000)
+                0x1000c000                        __stack0_top = (ORIGIN (PRIVATE0) + LENGTH (PRIVATE0))
+                0x10010000                        __stack1_top = (ORIGIN (PRIVATE1) + LENGTH (PRIVATE1))
+                0x1000b000                        __stack0_bottom = (__stack0_top - __stack_size)
+                0x1000f000                        __stack1_bottom = (__stack1_top - __stack_size)
+                0x00000001                        ASSERT (((__stack_size >= 0x10) && ((__stack_size % 0x10) == 0x0)), Aster multicore stacks must be 16-byte aligned)
+                0x00000001                        ASSERT (((__stack0_bottom >= ORIGIN (PRIVATE0)) && (__stack0_bottom >= __private0_end)), Aster hart 0 private RAM overflow into stack)
+                0x00000001                        ASSERT (((__stack1_bottom >= ORIGIN (PRIVATE1)) && (__stack1_bottom >= __private1_end)), Aster hart 1 private RAM overflow into stack)
+
+/DISCARD/
+ *(.comment)
+ *(.eh_frame)
+ *(.riscv.attributes)
+OUTPUT(/tmp/aster-coherent-study-kqa6r40k/software/coherent_padded_i64_r4_j3_p1_s324468736/coherent.elf elf32-littleriscv)
+
+.note.GNU-stack
+                0x00000000        0x0
+ .note.GNU-stack
+                0x00000000        0x0 /tmp/ccvXth1H.o

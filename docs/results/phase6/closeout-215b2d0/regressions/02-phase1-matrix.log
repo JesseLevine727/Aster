@@ -1,0 +1,594 @@
+mkdir -p /home/elfo/Documents/Aster/build/phase6-215b2d0/regressions/build/soc_l10_sync0_wait0_w4_n16
+verilator --cc --exe --build --timing --Wall --Wno-fatal \
+	-DRISCV_FORMAL --Wno-DECLFILENAME --Wno-GENUNNAMED --Wno-UNUSEDSIGNAL --Wno-BLKSEQ --top-module aster_minimal \
+	"-GENABLE_L1=1'b0" "-GSYNC_MEMORY=1'b0" \
+	-GMEMORY_WAIT_CYCLES=0 -GL1_LINE_WORDS=4 -GL1_LINE_COUNT=16 \
+	--Mdir /home/elfo/Documents/Aster/build/phase6-215b2d0/regressions/build/soc_l10_sync0_wait0_w4_n16/obj -o /home/elfo/Documents/Aster/build/phase6-215b2d0/regressions/build/soc_l10_sync0_wait0_w4_n16/aster_soc_sim \
+	/tmp/aster-phase6-verify-PHy1Sn/rtl/core/aster_picorv32.sv /tmp/aster-phase6-verify-PHy1Sn/vendor/picorv32/picorv32.v /tmp/aster-phase6-verify-PHy1Sn/rtl/cache/aster_l1_cache.sv /tmp/aster-phase6-verify-PHy1Sn/rtl/memory/aster_rom.sv /tmp/aster-phase6-verify-PHy1Sn/rtl/memory/aster_ram.sv /tmp/aster-phase6-verify-PHy1Sn/rtl/peripherals/aster_uart.sv /tmp/aster-phase6-verify-PHy1Sn/rtl/peripherals/aster_perf_counters.sv /tmp/aster-phase6-verify-PHy1Sn/rtl/core/aster_hart.sv /tmp/aster-phase6-verify-PHy1Sn/rtl/soc/aster_minimal.sv \
+	/tmp/aster-phase6-verify-PHy1Sn/verification/soc/tb_aster_soc.cpp
+test_board_output_validation_uses_strict_parser (test_asterbench.ResultProvenance.test_board_output_validation_uses_strict_parser) ... ok
+test_comparison_contract (test_asterbench.ResultProvenance.test_comparison_contract) ... ok
+test_required_provenance (test_asterbench.ResultProvenance.test_required_provenance) ... ok
+test_serial_and_typed_record_must_agree (test_asterbench.ResultProvenance.test_serial_and_typed_record_must_agree) ... ok
+test_common_corpus (test_asterbench.StrictRecords.test_common_corpus) ... make[2]: warning: jobserver unavailable: using -j1.  Add '+' to parent make rule.
+g++  -I.  -MMD -I/home/elfo/tools/verilator/root/include -I/home/elfo/tools/verilator/root/include/vltstd -DVM_COVERAGE=0 -DVM_SC=0 -DVM_TRACE=0 -DVM_TRACE_FST=0 -DVM_TRACE_VCD=0 -faligned-new -fcf-protection=none -Wno-bool-operation -Wno-overloaded-virtual -Wno-shadow -Wno-sign-compare -Wno-uninitialized -Wno-unused-but-set-parameter -Wno-unused-but-set-variable -Wno-unused-parameter -Wno-unused-variable       -Os -c -o tb_aster_soc.o /tmp/aster-phase6-verify-PHy1Sn/verification/soc/tb_aster_soc.cpp
+g++ -Os  -I.  -MMD -I/home/elfo/tools/verilator/root/include -I/home/elfo/tools/verilator/root/include/vltstd -DVM_COVERAGE=0 -DVM_SC=0 -DVM_TRACE=0 -DVM_TRACE_FST=0 -DVM_TRACE_VCD=0 -faligned-new -fcf-protection=none -Wno-bool-operation -Wno-overloaded-virtual -Wno-shadow -Wno-sign-compare -Wno-uninitialized -Wno-unused-but-set-parameter -Wno-unused-but-set-variable -Wno-unused-parameter -Wno-unused-variable       -c -o verilated.o /home/elfo/tools/verilator/root/include/verilated.cpp
+ok
+test_bad_options_and_known_references (test_cache_experiments.CacheExperiments.test_bad_options_and_known_references) ... ok
+test_missing_experiment_rejected (test_cache_experiments.CacheExperiments.test_missing_experiment_rejected) ... ok
+test_pattern_kernels_and_data_addresses_match (test_cache_experiments.CacheExperiments.test_pattern_kernels_and_data_addresses_match) ... make[2]: warning: jobserver unavailable: using -j1.  Add '+' to parent make rule.
+g++ -Os  -I.  -MMD -I/home/elfo/tools/verilator/root/include -I/home/elfo/tools/verilator/root/include/vltstd -DVM_COVERAGE=0 -DVM_SC=0 -DVM_TRACE=0 -DVM_TRACE_FST=0 -DVM_TRACE_VCD=0 -faligned-new -fcf-protection=none -Wno-bool-operation -Wno-overloaded-virtual -Wno-shadow -Wno-sign-compare -Wno-uninitialized -Wno-unused-but-set-parameter -Wno-unused-but-set-variable -Wno-unused-parameter -Wno-unused-variable       -c -o verilated_threads.o /home/elfo/tools/verilator/root/include/verilated_threads.cpp
+make[2]: warning: jobserver unavailable: using -j1.  Add '+' to parent make rule.
+make[2]: warning: jobserver unavailable: using -j1.  Add '+' to parent make rule.
+make[2]: warning: jobserver unavailable: using -j1.  Add '+' to parent make rule.
+make[2]: warning: jobserver unavailable: using -j1.  Add '+' to parent make rule.
+make[2]: warning: jobserver unavailable: using -j1.  Add '+' to parent make rule.
+/usr/bin/python3 /home/elfo/tools/verilator/root/bin/verilator_includer -DVL_INCLUDE_OPT=include Vaster_minimal.cpp Vaster_minimal___024root__DepSet_h32747b0f__0.cpp Vaster_minimal___024root__DepSet_h1d8fc093__0.cpp Vaster_minimal___024root__Slow.cpp Vaster_minimal___024root__DepSet_h32747b0f__0__Slow.cpp Vaster_minimal___024root__DepSet_h1d8fc093__0__Slow.cpp Vaster_minimal__Syms.cpp > Vaster_minimal__ALL.cpp
+g++ -Os  -I.  -MMD -I/home/elfo/tools/verilator/root/include -I/home/elfo/tools/verilator/root/include/vltstd -DVM_COVERAGE=0 -DVM_SC=0 -DVM_TRACE=0 -DVM_TRACE_FST=0 -DVM_TRACE_VCD=0 -faligned-new -fcf-protection=none -Wno-bool-operation -Wno-overloaded-virtual -Wno-shadow -Wno-sign-compare -Wno-uninitialized -Wno-unused-but-set-parameter -Wno-unused-but-set-variable -Wno-unused-parameter -Wno-unused-variable       -c -o Vaster_minimal__ALL.o Vaster_minimal__ALL.cpp
+make[2]: warning: jobserver unavailable: using -j1.  Add '+' to parent make rule.
+make[2]: warning: jobserver unavailable: using -j1.  Add '+' to parent make rule.
+make[2]: warning: jobserver unavailable: using -j1.  Add '+' to parent make rule.
+make[2]: warning: jobserver unavailable: using -j1.  Add '+' to parent make rule.
+make[2]: warning: jobserver unavailable: using -j1.  Add '+' to parent make rule.
+make[2]: warning: jobserver unavailable: using -j1.  Add '+' to parent make rule.
+make[2]: warning: jobserver unavailable: using -j1.  Add '+' to parent make rule.
+make[2]: warning: jobserver unavailable: using -j1.  Add '+' to parent make rule.
+make[2]: warning: jobserver unavailable: using -j1.  Add '+' to parent make rule.
+echo "" > Vaster_minimal__ALL.verilator_deplist.tmp
+Archive ar -rcs Vaster_minimal__ALL.a Vaster_minimal__ALL.o
+g++     tb_aster_soc.o verilated.o verilated_threads.o Vaster_minimal__ALL.a    -pthread -lpthread -latomic   -o /home/elfo/Documents/Aster/build/phase6-215b2d0/regressions/build/soc_l10_sync0_wait0_w4_n16/aster_soc_sim
+rm Vaster_minimal__ALL.verilator_deplist.tmp
+RV32IM PASS
+PASS: RV32IM PASS (1 boot(s))
+RUNTIME PASS
+RUNTIME PASS
+PASS: RUNTIME PASS (2 boot(s))
+make[2]: warning: jobserver unavailable: using -j1.  Add '+' to parent make rule.
+MEMORY MAP PASS
+PASS: MEMORY MAP PASS (1 boot(s))
+Trap case 0
+TRAP ARMED
+TRAP ARMED
+PASS: TRAP ARMED (2 boot(s))
+Trap case 1
+TRAP ARMED
+TRAP ARMED
+PASS: TRAP ARMED (2 boot(s))
+Trap case 2
+TRAP ARMED
+TRAP ARMED
+PASS: TRAP ARMED (2 boot(s))
+Trap case 3
+TRAP ARMED
+TRAP ARMED
+PASS: TRAP ARMED (2 boot(s))
+Trap case 4
+TRAP ARMED
+TRAP ARMED
+PASS: TRAP ARMED (2 boot(s))
+Trap case 5
+TRAP ARMED
+TRAP ARMED
+PASS: TRAP ARMED (2 boot(s))
+Trap case 6
+TRAP ARMED
+TRAP ARMED
+PASS: TRAP ARMED (2 boot(s))
+Trap case 7
+TRAP ARMED
+TRAP ARMED
+PASS: TRAP ARMED (2 boot(s))
+Trap case 8
+TRAP ARMED
+TRAP ARMED
+PASS: TRAP ARMED (2 boot(s))
+Trap case 9
+TRAP ARMED
+TRAP ARMED
+PASS: TRAP ARMED (2 boot(s))
+Trap case 10
+TRAP ARMED
+TRAP ARMED
+PASS: TRAP ARMED (2 boot(s))
+Trap case 11
+TRAP ARMED
+TRAP ARMED
+PASS: TRAP ARMED (2 boot(s))
+make[2]: warning: jobserver unavailable: using -j1.  Add '+' to parent make rule.
+make[2]: warning: jobserver unavailable: using -j1.  Add '+' to parent make rule.
+make[2]: warning: jobserver unavailable: using -j1.  Add '+' to parent make rule.
+make[2]: warning: jobserver unavailable: using -j1.  Add '+' to parent make rule.
+ok
+test_plan_covers_all_readme_experiments (test_cache_experiments.CacheExperiments.test_plan_covers_all_readme_experiments) ... ok
+test_study_audit_rejects_corruption (test_cache_experiments.CacheExperiments.test_study_audit_rejects_corruption) ... ok
+test_artifact_hashes_and_readonly_ram_oracle (test_coherent_bench.CoherentProvenance.test_artifact_hashes_and_readonly_ram_oracle) ... ok
+test_capture_envelope_mutations (test_coherent_bench.CoherentProvenance.test_capture_envelope_mutations) ... ok
+test_complete_revision_source_manifest (test_coherent_bench.CoherentProvenance.test_complete_revision_source_manifest) ... ok
+test_elf_binding_rejects_truncation_wrong_machine_and_symbols (test_coherent_bench.CoherentProvenance.test_elf_binding_rejects_truncation_wrong_machine_and_symbols) ... ok
+test_full_log_requires_observed_jobs_and_stop (test_coherent_bench.CoherentRecords.test_full_log_requires_observed_jobs_and_stop) ... ok
+test_observation_and_snapshot_mutations (test_coherent_bench.CoherentRecords.test_observation_and_snapshot_mutations) ... ok
+test_python_cpp_mutation_corpus (test_coherent_bench.CoherentRecords.test_python_cpp_mutation_corpus) ... ok
+test_stream_and_reference_scaling (test_coherent_bench.CoherentRecords.test_stream_and_reference_scaling) ... ok
+test_fault_diagnostics_and_lifetime_counter (test_coherent_bridge.CoherentHostProtocol.test_fault_diagnostics_and_lifetime_counter) ... ok
+test_identity_and_configuration_before_any_write (test_coherent_bridge.CoherentHostProtocol.test_identity_and_configuration_before_any_write) ... ok
+test_invalid_timeout_and_configuration (test_coherent_bridge.CoherentHostProtocol.test_invalid_timeout_and_configuration) ... ok
+test_load_drains_before_boot_words (test_coherent_bridge.CoherentHostProtocol.test_load_drains_before_boot_words) ... ok
+test_malformed_input_does_not_even_stop (test_coherent_bridge.CoherentHostProtocol.test_malformed_input_does_not_even_stop) ... ok
+test_ram_requires_acknowledgement_and_is_read_only (test_coherent_bridge.CoherentHostProtocol.test_ram_requires_acknowledgement_and_is_read_only) ... ok
+test_timeout_does_not_proceed_to_boot (test_coherent_bridge.CoherentHostProtocol.test_timeout_does_not_proceed_to_boot) ... ok
+test_each_private_region_cannot_overflow_its_stack (test_multicore_layout.MulticoreLayout.test_each_private_region_cannot_overflow_its_stack) ... ok
+test_rom_limit (test_multicore_layout.MulticoreLayout.test_rom_limit) ... ok
+test_shared_initialized_odd_bytes_have_rom_load_image (test_multicore_layout.MulticoreLayout.test_shared_initialized_odd_bytes_have_rom_load_image) ... ok
+test_shared_size_and_no_stack_alias (test_multicore_layout.MulticoreLayout.test_shared_size_and_no_stack_alias) ... ok
+test_stack_alignment_and_minimum (test_multicore_layout.MulticoreLayout.test_stack_alignment_and_minimum) ... ok
+test_comparison_refuses_different_work (test_parallel.ParallelProvenance.test_comparison_refuses_different_work) ... ok
+test_required_fields_and_raw_log_binding (test_parallel.ParallelProvenance.test_required_fields_and_raw_log_binding) ... ok
+test_complete_job_stream_and_independent_oracle (test_parallel.ParallelRecords.test_complete_job_stream_and_independent_oracle) ... ok
+test_python_cpp_malformed_corpus (test_parallel.ParallelRecords.test_python_cpp_malformed_corpus) ... ok
+test_known_corners (test_phase1.ArithmeticReference.test_known_corners) ... ok
+test_seed_reproducibility (test_phase1.ArithmeticReference.test_seed_reproducibility) ... ok
+test_initialized_byte_segment (test_phase1.FirmwareLayout.test_initialized_byte_segment) ... ok
+test_rom_overflow (test_phase1.FirmwareLayout.test_rom_overflow) ... ok
+test_stack_reservation (test_phase1.FirmwareLayout.test_stack_reservation) ... ok
+test_retained_physical_reports_and_mutations (test_phase5_evidence.Phase5Evidence.test_retained_physical_reports_and_mutations) ... ok
+test_complete_failed_and_changed_source_evidence (test_phase6_runner.Phase6Runner.test_complete_failed_and_changed_source_evidence) ... ok
+test_existing_output_and_dirty_source_are_nonmutating (test_phase6_runner.Phase6Runner.test_existing_output_and_dirty_source_are_nonmutating) ... ok
+test_plan_contains_every_historical_and_new_matrix (test_phase6_runner.Phase6Runner.test_plan_contains_every_historical_and_new_matrix) ... ok
+test_coherent_isa_cache_and_reset_abi_must_match (test_pynq_handoff.HandoffSafety.test_coherent_isa_cache_and_reset_abi_must_match) ... ok
+test_missing_and_duplicate_modules_parameters_ports (test_pynq_handoff.HandoffSafety.test_missing_and_duplicate_modules_parameters_ports) ... ok
+test_multicore_map_must_match_requested_harts (test_pynq_handoff.HandoffSafety.test_multicore_map_must_match_requested_harts) ... ok
+test_mutated_exports_fail_closed (test_pynq_handoff.HandoffSafety.test_mutated_exports_fail_closed) ... ok
+test_original_active_low_auxiliary_tied_zero_is_rejected (test_pynq_handoff.HandoffSafety.test_original_active_low_auxiliary_tied_zero_is_rejected) ... ok
+test_valid_export (test_pynq_handoff.HandoffSafety.test_valid_export) ... ok
+test_captured_reports_and_rejected_mutations (test_pynq_results.PhysicalResults.test_captured_reports_and_rejected_mutations) ... ok
+test_owned_environment_does_not_imply_privileged_core (test_riscv_reference.UpstreamReference.test_owned_environment_does_not_imply_privileged_core) ... ok
+test_pinned_complete_subset (test_riscv_reference.UpstreamReference.test_pinned_complete_subset) ... ok
+test_bad_cli_preflight_never_imports_board_api (test_run_pynq.CollectorChecks.test_bad_cli_preflight_never_imports_board_api) ... ok
+test_exact_runtime_and_complete_parallel_streams (test_run_pynq.CollectorChecks.test_exact_runtime_and_complete_parallel_streams) ... ok
+test_lifetime_counter_rollover (test_run_pynq.CollectorChecks.test_lifetime_counter_rollover) ... ok
+
+----------------------------------------------------------------------
+Ran 55 tests in 7.021s
+
+OK
+mkdir -p /home/elfo/Documents/Aster/build/phase6-215b2d0/regressions/build/soc_l10_sync1_wait1_w4_n16
+verilator --cc --exe --build --timing --Wall --Wno-fatal \
+	-DRISCV_FORMAL --Wno-DECLFILENAME --Wno-GENUNNAMED --Wno-UNUSEDSIGNAL --Wno-BLKSEQ --top-module aster_minimal \
+	"-GENABLE_L1=1'b0" "-GSYNC_MEMORY=1'b1" \
+	-GMEMORY_WAIT_CYCLES=1 -GL1_LINE_WORDS=4 -GL1_LINE_COUNT=16 \
+	--Mdir /home/elfo/Documents/Aster/build/phase6-215b2d0/regressions/build/soc_l10_sync1_wait1_w4_n16/obj -o /home/elfo/Documents/Aster/build/phase6-215b2d0/regressions/build/soc_l10_sync1_wait1_w4_n16/aster_soc_sim \
+	/tmp/aster-phase6-verify-PHy1Sn/rtl/core/aster_picorv32.sv /tmp/aster-phase6-verify-PHy1Sn/vendor/picorv32/picorv32.v /tmp/aster-phase6-verify-PHy1Sn/rtl/cache/aster_l1_cache.sv /tmp/aster-phase6-verify-PHy1Sn/rtl/memory/aster_rom.sv /tmp/aster-phase6-verify-PHy1Sn/rtl/memory/aster_ram.sv /tmp/aster-phase6-verify-PHy1Sn/rtl/peripherals/aster_uart.sv /tmp/aster-phase6-verify-PHy1Sn/rtl/peripherals/aster_perf_counters.sv /tmp/aster-phase6-verify-PHy1Sn/rtl/core/aster_hart.sv /tmp/aster-phase6-verify-PHy1Sn/rtl/soc/aster_minimal.sv \
+	/tmp/aster-phase6-verify-PHy1Sn/verification/soc/tb_aster_soc.cpp
+test_board_output_validation_uses_strict_parser (test_asterbench.ResultProvenance.test_board_output_validation_uses_strict_parser) ... ok
+test_comparison_contract (test_asterbench.ResultProvenance.test_comparison_contract) ... ok
+test_required_provenance (test_asterbench.ResultProvenance.test_required_provenance) ... ok
+test_serial_and_typed_record_must_agree (test_asterbench.ResultProvenance.test_serial_and_typed_record_must_agree) ... ok
+test_common_corpus (test_asterbench.StrictRecords.test_common_corpus) ... make[2]: warning: jobserver unavailable: using -j1.  Add '+' to parent make rule.
+g++  -I.  -MMD -I/home/elfo/tools/verilator/root/include -I/home/elfo/tools/verilator/root/include/vltstd -DVM_COVERAGE=0 -DVM_SC=0 -DVM_TRACE=0 -DVM_TRACE_FST=0 -DVM_TRACE_VCD=0 -faligned-new -fcf-protection=none -Wno-bool-operation -Wno-overloaded-virtual -Wno-shadow -Wno-sign-compare -Wno-uninitialized -Wno-unused-but-set-parameter -Wno-unused-but-set-variable -Wno-unused-parameter -Wno-unused-variable       -Os -c -o tb_aster_soc.o /tmp/aster-phase6-verify-PHy1Sn/verification/soc/tb_aster_soc.cpp
+g++ -Os  -I.  -MMD -I/home/elfo/tools/verilator/root/include -I/home/elfo/tools/verilator/root/include/vltstd -DVM_COVERAGE=0 -DVM_SC=0 -DVM_TRACE=0 -DVM_TRACE_FST=0 -DVM_TRACE_VCD=0 -faligned-new -fcf-protection=none -Wno-bool-operation -Wno-overloaded-virtual -Wno-shadow -Wno-sign-compare -Wno-uninitialized -Wno-unused-but-set-parameter -Wno-unused-but-set-variable -Wno-unused-parameter -Wno-unused-variable       -c -o verilated.o /home/elfo/tools/verilator/root/include/verilated.cpp
+g++ -Os  -I.  -MMD -I/home/elfo/tools/verilator/root/include -I/home/elfo/tools/verilator/root/include/vltstd -DVM_COVERAGE=0 -DVM_SC=0 -DVM_TRACE=0 -DVM_TRACE_FST=0 -DVM_TRACE_VCD=0 -faligned-new -fcf-protection=none -Wno-bool-operation -Wno-overloaded-virtual -Wno-shadow -Wno-sign-compare -Wno-uninitialized -Wno-unused-but-set-parameter -Wno-unused-but-set-variable -Wno-unused-parameter -Wno-unused-variable       -c -o verilated_threads.o /home/elfo/tools/verilator/root/include/verilated_threads.cpp
+ok
+test_bad_options_and_known_references (test_cache_experiments.CacheExperiments.test_bad_options_and_known_references) ... ok
+test_missing_experiment_rejected (test_cache_experiments.CacheExperiments.test_missing_experiment_rejected) ... ok
+test_pattern_kernels_and_data_addresses_match (test_cache_experiments.CacheExperiments.test_pattern_kernels_and_data_addresses_match) ... make[2]: warning: jobserver unavailable: using -j1.  Add '+' to parent make rule.
+make[2]: warning: jobserver unavailable: using -j1.  Add '+' to parent make rule.
+make[2]: warning: jobserver unavailable: using -j1.  Add '+' to parent make rule.
+make[2]: warning: jobserver unavailable: using -j1.  Add '+' to parent make rule.
+make[2]: warning: jobserver unavailable: using -j1.  Add '+' to parent make rule.
+/usr/bin/python3 /home/elfo/tools/verilator/root/bin/verilator_includer -DVL_INCLUDE_OPT=include Vaster_minimal.cpp Vaster_minimal___024root__DepSet_h32747b0f__0.cpp Vaster_minimal___024root__DepSet_h1d8fc093__0.cpp Vaster_minimal___024root__Slow.cpp Vaster_minimal___024root__DepSet_h32747b0f__0__Slow.cpp Vaster_minimal___024root__DepSet_h1d8fc093__0__Slow.cpp Vaster_minimal__Syms.cpp > Vaster_minimal__ALL.cpp
+make[2]: warning: jobserver unavailable: using -j1.  Add '+' to parent make rule.
+g++ -Os  -I.  -MMD -I/home/elfo/tools/verilator/root/include -I/home/elfo/tools/verilator/root/include/vltstd -DVM_COVERAGE=0 -DVM_SC=0 -DVM_TRACE=0 -DVM_TRACE_FST=0 -DVM_TRACE_VCD=0 -faligned-new -fcf-protection=none -Wno-bool-operation -Wno-overloaded-virtual -Wno-shadow -Wno-sign-compare -Wno-uninitialized -Wno-unused-but-set-parameter -Wno-unused-but-set-variable -Wno-unused-parameter -Wno-unused-variable       -c -o Vaster_minimal__ALL.o Vaster_minimal__ALL.cpp
+make[2]: warning: jobserver unavailable: using -j1.  Add '+' to parent make rule.
+make[2]: warning: jobserver unavailable: using -j1.  Add '+' to parent make rule.
+make[2]: warning: jobserver unavailable: using -j1.  Add '+' to parent make rule.
+make[2]: warning: jobserver unavailable: using -j1.  Add '+' to parent make rule.
+make[2]: warning: jobserver unavailable: using -j1.  Add '+' to parent make rule.
+make[2]: warning: jobserver unavailable: using -j1.  Add '+' to parent make rule.
+make[2]: warning: jobserver unavailable: using -j1.  Add '+' to parent make rule.
+make[2]: warning: jobserver unavailable: using -j1.  Add '+' to parent make rule.
+echo "" > Vaster_minimal__ALL.verilator_deplist.tmp
+Archive ar -rcs Vaster_minimal__ALL.a Vaster_minimal__ALL.o
+g++     tb_aster_soc.o verilated.o verilated_threads.o Vaster_minimal__ALL.a    -pthread -lpthread -latomic   -o /home/elfo/Documents/Aster/build/phase6-215b2d0/regressions/build/soc_l10_sync1_wait1_w4_n16/aster_soc_sim
+rm Vaster_minimal__ALL.verilator_deplist.tmp
+make[2]: warning: jobserver unavailable: using -j1.  Add '+' to parent make rule.
+RV32IM PASS
+PASS: RV32IM PASS (1 boot(s))
+RUNTIME PASS
+RUNTIME PASS
+PASS: RUNTIME PASS (2 boot(s))
+MEMORY MAP PASS
+PASS: MEMORY MAP PASS (1 boot(s))
+Trap case 0
+TRAP ARMED
+TRAP ARMED
+PASS: TRAP ARMED (2 boot(s))
+Trap case 1
+TRAP ARMED
+TRAP ARMED
+PASS: TRAP ARMED (2 boot(s))
+Trap case 2
+TRAP ARMED
+TRAP ARMED
+PASS: TRAP ARMED (2 boot(s))
+Trap case 3
+TRAP ARMED
+TRAP ARMED
+PASS: TRAP ARMED (2 boot(s))
+Trap case 4
+TRAP ARMED
+TRAP ARMED
+PASS: TRAP ARMED (2 boot(s))
+Trap case 5
+TRAP ARMED
+TRAP ARMED
+PASS: TRAP ARMED (2 boot(s))
+Trap case 6
+TRAP ARMED
+TRAP ARMED
+PASS: TRAP ARMED (2 boot(s))
+Trap case 7
+TRAP ARMED
+TRAP ARMED
+PASS: TRAP ARMED (2 boot(s))
+Trap case 8
+TRAP ARMED
+TRAP ARMED
+PASS: TRAP ARMED (2 boot(s))
+Trap case 9
+TRAP ARMED
+TRAP ARMED
+PASS: TRAP ARMED (2 boot(s))
+Trap case 10
+TRAP ARMED
+TRAP ARMED
+PASS: TRAP ARMED (2 boot(s))
+Trap case 11
+TRAP ARMED
+TRAP ARMED
+PASS: TRAP ARMED (2 boot(s))
+make[2]: warning: jobserver unavailable: using -j1.  Add '+' to parent make rule.
+make[2]: warning: jobserver unavailable: using -j1.  Add '+' to parent make rule.
+make[2]: warning: jobserver unavailable: using -j1.  Add '+' to parent make rule.
+make[2]: warning: jobserver unavailable: using -j1.  Add '+' to parent make rule.
+make[2]: warning: jobserver unavailable: using -j1.  Add '+' to parent make rule.
+ok
+test_plan_covers_all_readme_experiments (test_cache_experiments.CacheExperiments.test_plan_covers_all_readme_experiments) ... ok
+test_study_audit_rejects_corruption (test_cache_experiments.CacheExperiments.test_study_audit_rejects_corruption) ... ok
+test_artifact_hashes_and_readonly_ram_oracle (test_coherent_bench.CoherentProvenance.test_artifact_hashes_and_readonly_ram_oracle) ... ok
+test_capture_envelope_mutations (test_coherent_bench.CoherentProvenance.test_capture_envelope_mutations) ... ok
+test_complete_revision_source_manifest (test_coherent_bench.CoherentProvenance.test_complete_revision_source_manifest) ... ok
+test_elf_binding_rejects_truncation_wrong_machine_and_symbols (test_coherent_bench.CoherentProvenance.test_elf_binding_rejects_truncation_wrong_machine_and_symbols) ... ok
+test_full_log_requires_observed_jobs_and_stop (test_coherent_bench.CoherentRecords.test_full_log_requires_observed_jobs_and_stop) ... ok
+test_observation_and_snapshot_mutations (test_coherent_bench.CoherentRecords.test_observation_and_snapshot_mutations) ... ok
+test_python_cpp_mutation_corpus (test_coherent_bench.CoherentRecords.test_python_cpp_mutation_corpus) ... ok
+test_stream_and_reference_scaling (test_coherent_bench.CoherentRecords.test_stream_and_reference_scaling) ... ok
+test_fault_diagnostics_and_lifetime_counter (test_coherent_bridge.CoherentHostProtocol.test_fault_diagnostics_and_lifetime_counter) ... ok
+test_identity_and_configuration_before_any_write (test_coherent_bridge.CoherentHostProtocol.test_identity_and_configuration_before_any_write) ... ok
+test_invalid_timeout_and_configuration (test_coherent_bridge.CoherentHostProtocol.test_invalid_timeout_and_configuration) ... ok
+test_load_drains_before_boot_words (test_coherent_bridge.CoherentHostProtocol.test_load_drains_before_boot_words) ... ok
+test_malformed_input_does_not_even_stop (test_coherent_bridge.CoherentHostProtocol.test_malformed_input_does_not_even_stop) ... ok
+test_ram_requires_acknowledgement_and_is_read_only (test_coherent_bridge.CoherentHostProtocol.test_ram_requires_acknowledgement_and_is_read_only) ... ok
+test_timeout_does_not_proceed_to_boot (test_coherent_bridge.CoherentHostProtocol.test_timeout_does_not_proceed_to_boot) ... ok
+test_each_private_region_cannot_overflow_its_stack (test_multicore_layout.MulticoreLayout.test_each_private_region_cannot_overflow_its_stack) ... ok
+test_rom_limit (test_multicore_layout.MulticoreLayout.test_rom_limit) ... ok
+test_shared_initialized_odd_bytes_have_rom_load_image (test_multicore_layout.MulticoreLayout.test_shared_initialized_odd_bytes_have_rom_load_image) ... ok
+test_shared_size_and_no_stack_alias (test_multicore_layout.MulticoreLayout.test_shared_size_and_no_stack_alias) ... ok
+test_stack_alignment_and_minimum (test_multicore_layout.MulticoreLayout.test_stack_alignment_and_minimum) ... ok
+test_comparison_refuses_different_work (test_parallel.ParallelProvenance.test_comparison_refuses_different_work) ... ok
+test_required_fields_and_raw_log_binding (test_parallel.ParallelProvenance.test_required_fields_and_raw_log_binding) ... ok
+test_complete_job_stream_and_independent_oracle (test_parallel.ParallelRecords.test_complete_job_stream_and_independent_oracle) ... ok
+test_python_cpp_malformed_corpus (test_parallel.ParallelRecords.test_python_cpp_malformed_corpus) ... ok
+test_known_corners (test_phase1.ArithmeticReference.test_known_corners) ... ok
+test_seed_reproducibility (test_phase1.ArithmeticReference.test_seed_reproducibility) ... ok
+test_initialized_byte_segment (test_phase1.FirmwareLayout.test_initialized_byte_segment) ... ok
+test_rom_overflow (test_phase1.FirmwareLayout.test_rom_overflow) ... ok
+test_stack_reservation (test_phase1.FirmwareLayout.test_stack_reservation) ... ok
+test_retained_physical_reports_and_mutations (test_phase5_evidence.Phase5Evidence.test_retained_physical_reports_and_mutations) ... ok
+test_complete_failed_and_changed_source_evidence (test_phase6_runner.Phase6Runner.test_complete_failed_and_changed_source_evidence) ... ok
+test_existing_output_and_dirty_source_are_nonmutating (test_phase6_runner.Phase6Runner.test_existing_output_and_dirty_source_are_nonmutating) ... ok
+test_plan_contains_every_historical_and_new_matrix (test_phase6_runner.Phase6Runner.test_plan_contains_every_historical_and_new_matrix) ... ok
+test_coherent_isa_cache_and_reset_abi_must_match (test_pynq_handoff.HandoffSafety.test_coherent_isa_cache_and_reset_abi_must_match) ... ok
+test_missing_and_duplicate_modules_parameters_ports (test_pynq_handoff.HandoffSafety.test_missing_and_duplicate_modules_parameters_ports) ... ok
+test_multicore_map_must_match_requested_harts (test_pynq_handoff.HandoffSafety.test_multicore_map_must_match_requested_harts) ... ok
+test_mutated_exports_fail_closed (test_pynq_handoff.HandoffSafety.test_mutated_exports_fail_closed) ... ok
+test_original_active_low_auxiliary_tied_zero_is_rejected (test_pynq_handoff.HandoffSafety.test_original_active_low_auxiliary_tied_zero_is_rejected) ... ok
+test_valid_export (test_pynq_handoff.HandoffSafety.test_valid_export) ... ok
+test_captured_reports_and_rejected_mutations (test_pynq_results.PhysicalResults.test_captured_reports_and_rejected_mutations) ... ok
+test_owned_environment_does_not_imply_privileged_core (test_riscv_reference.UpstreamReference.test_owned_environment_does_not_imply_privileged_core) ... ok
+test_pinned_complete_subset (test_riscv_reference.UpstreamReference.test_pinned_complete_subset) ... ok
+test_bad_cli_preflight_never_imports_board_api (test_run_pynq.CollectorChecks.test_bad_cli_preflight_never_imports_board_api) ... ok
+test_exact_runtime_and_complete_parallel_streams (test_run_pynq.CollectorChecks.test_exact_runtime_and_complete_parallel_streams) ... ok
+test_lifetime_counter_rollover (test_run_pynq.CollectorChecks.test_lifetime_counter_rollover) ... ok
+
+----------------------------------------------------------------------
+Ran 55 tests in 6.766s
+
+OK
+RUNTIME PASS
+RUNTIME PASS
+PASS: RUNTIME PASS (2 boot(s))
+MEMORY MAP PASS
+PASS: MEMORY MAP PASS (1 boot(s))
+Trap case 0
+TRAP ARMED
+TRAP ARMED
+PASS: TRAP ARMED (2 boot(s))
+Trap case 1
+TRAP ARMED
+TRAP ARMED
+PASS: TRAP ARMED (2 boot(s))
+Trap case 2
+TRAP ARMED
+TRAP ARMED
+PASS: TRAP ARMED (2 boot(s))
+Trap case 3
+TRAP ARMED
+TRAP ARMED
+PASS: TRAP ARMED (2 boot(s))
+Trap case 4
+RV32IM PASS
+PASS: RV32IM PASS (1 boot(s))
+TRAP ARMED
+TRAP ARMED
+PASS: TRAP ARMED (2 boot(s))
+Trap case 5
+TRAP ARMED
+TRAP ARMED
+PASS: TRAP ARMED (2 boot(s))
+Trap case 6
+TRAP ARMED
+TRAP ARMED
+PASS: TRAP ARMED (2 boot(s))
+Trap case 7
+TRAP ARMED
+TRAP ARMED
+PASS: TRAP ARMED (2 boot(s))
+Trap case 8
+TRAP ARMED
+TRAP ARMED
+PASS: TRAP ARMED (2 boot(s))
+Trap case 9
+TRAP ARMED
+TRAP ARMED
+PASS: TRAP ARMED (2 boot(s))
+Trap case 10
+TRAP ARMED
+TRAP ARMED
+PASS: TRAP ARMED (2 boot(s))
+Trap case 11
+TRAP ARMED
+TRAP ARMED
+PASS: TRAP ARMED (2 boot(s))
+test_board_output_validation_uses_strict_parser (test_asterbench.ResultProvenance.test_board_output_validation_uses_strict_parser) ... ok
+test_comparison_contract (test_asterbench.ResultProvenance.test_comparison_contract) ... ok
+test_required_provenance (test_asterbench.ResultProvenance.test_required_provenance) ... ok
+test_serial_and_typed_record_must_agree (test_asterbench.ResultProvenance.test_serial_and_typed_record_must_agree) ... ok
+test_common_corpus (test_asterbench.StrictRecords.test_common_corpus) ... ok
+test_bad_options_and_known_references (test_cache_experiments.CacheExperiments.test_bad_options_and_known_references) ... ok
+test_missing_experiment_rejected (test_cache_experiments.CacheExperiments.test_missing_experiment_rejected) ... ok
+test_pattern_kernels_and_data_addresses_match (test_cache_experiments.CacheExperiments.test_pattern_kernels_and_data_addresses_match) ... make[2]: warning: jobserver unavailable: using -j1.  Add '+' to parent make rule.
+make[2]: warning: jobserver unavailable: using -j1.  Add '+' to parent make rule.
+make[2]: warning: jobserver unavailable: using -j1.  Add '+' to parent make rule.
+make[2]: warning: jobserver unavailable: using -j1.  Add '+' to parent make rule.
+make[2]: warning: jobserver unavailable: using -j1.  Add '+' to parent make rule.
+make[2]: warning: jobserver unavailable: using -j1.  Add '+' to parent make rule.
+make[2]: warning: jobserver unavailable: using -j1.  Add '+' to parent make rule.
+make[2]: warning: jobserver unavailable: using -j1.  Add '+' to parent make rule.
+make[2]: warning: jobserver unavailable: using -j1.  Add '+' to parent make rule.
+make[2]: warning: jobserver unavailable: using -j1.  Add '+' to parent make rule.
+make[2]: warning: jobserver unavailable: using -j1.  Add '+' to parent make rule.
+make[2]: warning: jobserver unavailable: using -j1.  Add '+' to parent make rule.
+make[2]: warning: jobserver unavailable: using -j1.  Add '+' to parent make rule.
+make[2]: warning: jobserver unavailable: using -j1.  Add '+' to parent make rule.
+make[2]: warning: jobserver unavailable: using -j1.  Add '+' to parent make rule.
+make[2]: warning: jobserver unavailable: using -j1.  Add '+' to parent make rule.
+make[2]: warning: jobserver unavailable: using -j1.  Add '+' to parent make rule.
+make[2]: warning: jobserver unavailable: using -j1.  Add '+' to parent make rule.
+make[2]: warning: jobserver unavailable: using -j1.  Add '+' to parent make rule.
+make[2]: warning: jobserver unavailable: using -j1.  Add '+' to parent make rule.
+ok
+test_plan_covers_all_readme_experiments (test_cache_experiments.CacheExperiments.test_plan_covers_all_readme_experiments) ... ok
+test_study_audit_rejects_corruption (test_cache_experiments.CacheExperiments.test_study_audit_rejects_corruption) ... ok
+test_artifact_hashes_and_readonly_ram_oracle (test_coherent_bench.CoherentProvenance.test_artifact_hashes_and_readonly_ram_oracle) ... ok
+test_capture_envelope_mutations (test_coherent_bench.CoherentProvenance.test_capture_envelope_mutations) ... ok
+test_complete_revision_source_manifest (test_coherent_bench.CoherentProvenance.test_complete_revision_source_manifest) ... ok
+test_elf_binding_rejects_truncation_wrong_machine_and_symbols (test_coherent_bench.CoherentProvenance.test_elf_binding_rejects_truncation_wrong_machine_and_symbols) ... ok
+test_full_log_requires_observed_jobs_and_stop (test_coherent_bench.CoherentRecords.test_full_log_requires_observed_jobs_and_stop) ... ok
+test_observation_and_snapshot_mutations (test_coherent_bench.CoherentRecords.test_observation_and_snapshot_mutations) ... ok
+test_python_cpp_mutation_corpus (test_coherent_bench.CoherentRecords.test_python_cpp_mutation_corpus) ... ok
+test_stream_and_reference_scaling (test_coherent_bench.CoherentRecords.test_stream_and_reference_scaling) ... ok
+test_fault_diagnostics_and_lifetime_counter (test_coherent_bridge.CoherentHostProtocol.test_fault_diagnostics_and_lifetime_counter) ... ok
+test_identity_and_configuration_before_any_write (test_coherent_bridge.CoherentHostProtocol.test_identity_and_configuration_before_any_write) ... ok
+test_invalid_timeout_and_configuration (test_coherent_bridge.CoherentHostProtocol.test_invalid_timeout_and_configuration) ... ok
+test_load_drains_before_boot_words (test_coherent_bridge.CoherentHostProtocol.test_load_drains_before_boot_words) ... ok
+test_malformed_input_does_not_even_stop (test_coherent_bridge.CoherentHostProtocol.test_malformed_input_does_not_even_stop) ... ok
+test_ram_requires_acknowledgement_and_is_read_only (test_coherent_bridge.CoherentHostProtocol.test_ram_requires_acknowledgement_and_is_read_only) ... ok
+test_timeout_does_not_proceed_to_boot (test_coherent_bridge.CoherentHostProtocol.test_timeout_does_not_proceed_to_boot) ... ok
+test_each_private_region_cannot_overflow_its_stack (test_multicore_layout.MulticoreLayout.test_each_private_region_cannot_overflow_its_stack) ... ok
+test_rom_limit (test_multicore_layout.MulticoreLayout.test_rom_limit) ... ok
+test_shared_initialized_odd_bytes_have_rom_load_image (test_multicore_layout.MulticoreLayout.test_shared_initialized_odd_bytes_have_rom_load_image) ... ok
+test_shared_size_and_no_stack_alias (test_multicore_layout.MulticoreLayout.test_shared_size_and_no_stack_alias) ... ok
+test_stack_alignment_and_minimum (test_multicore_layout.MulticoreLayout.test_stack_alignment_and_minimum) ... ok
+test_comparison_refuses_different_work (test_parallel.ParallelProvenance.test_comparison_refuses_different_work) ... ok
+test_required_fields_and_raw_log_binding (test_parallel.ParallelProvenance.test_required_fields_and_raw_log_binding) ... ok
+test_complete_job_stream_and_independent_oracle (test_parallel.ParallelRecords.test_complete_job_stream_and_independent_oracle) ... ok
+test_python_cpp_malformed_corpus (test_parallel.ParallelRecords.test_python_cpp_malformed_corpus) ... ok
+test_known_corners (test_phase1.ArithmeticReference.test_known_corners) ... ok
+test_seed_reproducibility (test_phase1.ArithmeticReference.test_seed_reproducibility) ... ok
+test_initialized_byte_segment (test_phase1.FirmwareLayout.test_initialized_byte_segment) ... ok
+test_rom_overflow (test_phase1.FirmwareLayout.test_rom_overflow) ... ok
+test_stack_reservation (test_phase1.FirmwareLayout.test_stack_reservation) ... ok
+test_retained_physical_reports_and_mutations (test_phase5_evidence.Phase5Evidence.test_retained_physical_reports_and_mutations) ... ok
+test_complete_failed_and_changed_source_evidence (test_phase6_runner.Phase6Runner.test_complete_failed_and_changed_source_evidence) ... ok
+test_existing_output_and_dirty_source_are_nonmutating (test_phase6_runner.Phase6Runner.test_existing_output_and_dirty_source_are_nonmutating) ... ok
+test_plan_contains_every_historical_and_new_matrix (test_phase6_runner.Phase6Runner.test_plan_contains_every_historical_and_new_matrix) ... ok
+test_coherent_isa_cache_and_reset_abi_must_match (test_pynq_handoff.HandoffSafety.test_coherent_isa_cache_and_reset_abi_must_match) ... ok
+test_missing_and_duplicate_modules_parameters_ports (test_pynq_handoff.HandoffSafety.test_missing_and_duplicate_modules_parameters_ports) ... ok
+test_multicore_map_must_match_requested_harts (test_pynq_handoff.HandoffSafety.test_multicore_map_must_match_requested_harts) ... ok
+test_mutated_exports_fail_closed (test_pynq_handoff.HandoffSafety.test_mutated_exports_fail_closed) ... ok
+test_original_active_low_auxiliary_tied_zero_is_rejected (test_pynq_handoff.HandoffSafety.test_original_active_low_auxiliary_tied_zero_is_rejected) ... ok
+test_valid_export (test_pynq_handoff.HandoffSafety.test_valid_export) ... ok
+test_captured_reports_and_rejected_mutations (test_pynq_results.PhysicalResults.test_captured_reports_and_rejected_mutations) ... ok
+test_owned_environment_does_not_imply_privileged_core (test_riscv_reference.UpstreamReference.test_owned_environment_does_not_imply_privileged_core) ... ok
+test_pinned_complete_subset (test_riscv_reference.UpstreamReference.test_pinned_complete_subset) ... ok
+test_bad_cli_preflight_never_imports_board_api (test_run_pynq.CollectorChecks.test_bad_cli_preflight_never_imports_board_api) ... ok
+test_exact_runtime_and_complete_parallel_streams (test_run_pynq.CollectorChecks.test_exact_runtime_and_complete_parallel_streams) ... ok
+test_lifetime_counter_rollover (test_run_pynq.CollectorChecks.test_lifetime_counter_rollover) ... ok
+
+----------------------------------------------------------------------
+Ran 55 tests in 6.560s
+
+OK
+mkdir -p /home/elfo/Documents/Aster/build/phase6-215b2d0/regressions/build/soc_l11_sync1_wait1_w4_n16
+verilator --cc --exe --build --timing --Wall --Wno-fatal \
+	-DRISCV_FORMAL --Wno-DECLFILENAME --Wno-GENUNNAMED --Wno-UNUSEDSIGNAL --Wno-BLKSEQ --top-module aster_minimal \
+	"-GENABLE_L1=1'b1" "-GSYNC_MEMORY=1'b1" \
+	-GMEMORY_WAIT_CYCLES=1 -GL1_LINE_WORDS=4 -GL1_LINE_COUNT=16 \
+	--Mdir /home/elfo/Documents/Aster/build/phase6-215b2d0/regressions/build/soc_l11_sync1_wait1_w4_n16/obj -o /home/elfo/Documents/Aster/build/phase6-215b2d0/regressions/build/soc_l11_sync1_wait1_w4_n16/aster_soc_sim \
+	/tmp/aster-phase6-verify-PHy1Sn/rtl/core/aster_picorv32.sv /tmp/aster-phase6-verify-PHy1Sn/vendor/picorv32/picorv32.v /tmp/aster-phase6-verify-PHy1Sn/rtl/cache/aster_l1_cache.sv /tmp/aster-phase6-verify-PHy1Sn/rtl/memory/aster_rom.sv /tmp/aster-phase6-verify-PHy1Sn/rtl/memory/aster_ram.sv /tmp/aster-phase6-verify-PHy1Sn/rtl/peripherals/aster_uart.sv /tmp/aster-phase6-verify-PHy1Sn/rtl/peripherals/aster_perf_counters.sv /tmp/aster-phase6-verify-PHy1Sn/rtl/core/aster_hart.sv /tmp/aster-phase6-verify-PHy1Sn/rtl/soc/aster_minimal.sv \
+	/tmp/aster-phase6-verify-PHy1Sn/verification/soc/tb_aster_soc.cpp
+test_board_output_validation_uses_strict_parser (test_asterbench.ResultProvenance.test_board_output_validation_uses_strict_parser) ... ok
+test_comparison_contract (test_asterbench.ResultProvenance.test_comparison_contract) ... ok
+test_required_provenance (test_asterbench.ResultProvenance.test_required_provenance) ... ok
+test_serial_and_typed_record_must_agree (test_asterbench.ResultProvenance.test_serial_and_typed_record_must_agree) ... ok
+test_common_corpus (test_asterbench.StrictRecords.test_common_corpus) ... make[2]: warning: jobserver unavailable: using -j1.  Add '+' to parent make rule.
+g++  -I.  -MMD -I/home/elfo/tools/verilator/root/include -I/home/elfo/tools/verilator/root/include/vltstd -DVM_COVERAGE=0 -DVM_SC=0 -DVM_TRACE=0 -DVM_TRACE_FST=0 -DVM_TRACE_VCD=0 -faligned-new -fcf-protection=none -Wno-bool-operation -Wno-overloaded-virtual -Wno-shadow -Wno-sign-compare -Wno-uninitialized -Wno-unused-but-set-parameter -Wno-unused-but-set-variable -Wno-unused-parameter -Wno-unused-variable       -Os -c -o tb_aster_soc.o /tmp/aster-phase6-verify-PHy1Sn/verification/soc/tb_aster_soc.cpp
+g++ -Os  -I.  -MMD -I/home/elfo/tools/verilator/root/include -I/home/elfo/tools/verilator/root/include/vltstd -DVM_COVERAGE=0 -DVM_SC=0 -DVM_TRACE=0 -DVM_TRACE_FST=0 -DVM_TRACE_VCD=0 -faligned-new -fcf-protection=none -Wno-bool-operation -Wno-overloaded-virtual -Wno-shadow -Wno-sign-compare -Wno-uninitialized -Wno-unused-but-set-parameter -Wno-unused-but-set-variable -Wno-unused-parameter -Wno-unused-variable       -c -o verilated.o /home/elfo/tools/verilator/root/include/verilated.cpp
+ok
+test_bad_options_and_known_references (test_cache_experiments.CacheExperiments.test_bad_options_and_known_references) ... ok
+test_missing_experiment_rejected (test_cache_experiments.CacheExperiments.test_missing_experiment_rejected) ... ok
+test_pattern_kernels_and_data_addresses_match (test_cache_experiments.CacheExperiments.test_pattern_kernels_and_data_addresses_match) ... make[2]: warning: jobserver unavailable: using -j1.  Add '+' to parent make rule.
+g++ -Os  -I.  -MMD -I/home/elfo/tools/verilator/root/include -I/home/elfo/tools/verilator/root/include/vltstd -DVM_COVERAGE=0 -DVM_SC=0 -DVM_TRACE=0 -DVM_TRACE_FST=0 -DVM_TRACE_VCD=0 -faligned-new -fcf-protection=none -Wno-bool-operation -Wno-overloaded-virtual -Wno-shadow -Wno-sign-compare -Wno-uninitialized -Wno-unused-but-set-parameter -Wno-unused-but-set-variable -Wno-unused-parameter -Wno-unused-variable       -c -o verilated_threads.o /home/elfo/tools/verilator/root/include/verilated_threads.cpp
+make[2]: warning: jobserver unavailable: using -j1.  Add '+' to parent make rule.
+make[2]: warning: jobserver unavailable: using -j1.  Add '+' to parent make rule.
+make[2]: warning: jobserver unavailable: using -j1.  Add '+' to parent make rule.
+make[2]: warning: jobserver unavailable: using -j1.  Add '+' to parent make rule.
+make[2]: warning: jobserver unavailable: using -j1.  Add '+' to parent make rule.
+/usr/bin/python3 /home/elfo/tools/verilator/root/bin/verilator_includer -DVL_INCLUDE_OPT=include Vaster_minimal.cpp Vaster_minimal___024root__DepSet_h32747b0f__0.cpp Vaster_minimal___024root__DepSet_h1d8fc093__0.cpp Vaster_minimal___024root__Slow.cpp Vaster_minimal___024root__DepSet_h32747b0f__0__Slow.cpp Vaster_minimal___024root__DepSet_h1d8fc093__0__Slow.cpp Vaster_minimal__Syms.cpp > Vaster_minimal__ALL.cpp
+g++ -Os  -I.  -MMD -I/home/elfo/tools/verilator/root/include -I/home/elfo/tools/verilator/root/include/vltstd -DVM_COVERAGE=0 -DVM_SC=0 -DVM_TRACE=0 -DVM_TRACE_FST=0 -DVM_TRACE_VCD=0 -faligned-new -fcf-protection=none -Wno-bool-operation -Wno-overloaded-virtual -Wno-shadow -Wno-sign-compare -Wno-uninitialized -Wno-unused-but-set-parameter -Wno-unused-but-set-variable -Wno-unused-parameter -Wno-unused-variable       -c -o Vaster_minimal__ALL.o Vaster_minimal__ALL.cpp
+make[2]: warning: jobserver unavailable: using -j1.  Add '+' to parent make rule.
+make[2]: warning: jobserver unavailable: using -j1.  Add '+' to parent make rule.
+make[2]: warning: jobserver unavailable: using -j1.  Add '+' to parent make rule.
+make[2]: warning: jobserver unavailable: using -j1.  Add '+' to parent make rule.
+make[2]: warning: jobserver unavailable: using -j1.  Add '+' to parent make rule.
+make[2]: warning: jobserver unavailable: using -j1.  Add '+' to parent make rule.
+make[2]: warning: jobserver unavailable: using -j1.  Add '+' to parent make rule.
+make[2]: warning: jobserver unavailable: using -j1.  Add '+' to parent make rule.
+make[2]: warning: jobserver unavailable: using -j1.  Add '+' to parent make rule.
+make[2]: warning: jobserver unavailable: using -j1.  Add '+' to parent make rule.
+echo "" > Vaster_minimal__ALL.verilator_deplist.tmp
+Archive ar -rcs Vaster_minimal__ALL.a Vaster_minimal__ALL.o
+g++     tb_aster_soc.o verilated.o verilated_threads.o Vaster_minimal__ALL.a    -pthread -lpthread -latomic   -o /home/elfo/Documents/Aster/build/phase6-215b2d0/regressions/build/soc_l11_sync1_wait1_w4_n16/aster_soc_sim
+rm Vaster_minimal__ALL.verilator_deplist.tmp
+make[2]: warning: jobserver unavailable: using -j1.  Add '+' to parent make rule.
+RV32IM PASS
+PASS: RV32IM PASS (1 boot(s))
+RUNTIME PASS
+RUNTIME PASS
+PASS: RUNTIME PASS (2 boot(s))
+MEMORY MAP PASS
+PASS: MEMORY MAP PASS (1 boot(s))
+Trap case 0
+TRAP ARMED
+TRAP ARMED
+PASS: TRAP ARMED (2 boot(s))
+Trap case 1
+TRAP ARMED
+TRAP ARMED
+PASS: TRAP ARMED (2 boot(s))
+Trap case 2
+TRAP ARMED
+TRAP ARMED
+PASS: TRAP ARMED (2 boot(s))
+Trap case 3
+TRAP ARMED
+TRAP ARMED
+PASS: TRAP ARMED (2 boot(s))
+Trap case 4
+TRAP ARMED
+TRAP ARMED
+PASS: TRAP ARMED (2 boot(s))
+Trap case 5
+TRAP ARMED
+TRAP ARMED
+PASS: TRAP ARMED (2 boot(s))
+Trap case 6
+TRAP ARMED
+TRAP ARMED
+PASS: TRAP ARMED (2 boot(s))
+Trap case 7
+TRAP ARMED
+TRAP ARMED
+PASS: TRAP ARMED (2 boot(s))
+Trap case 8
+TRAP ARMED
+TRAP ARMED
+PASS: TRAP ARMED (2 boot(s))
+Trap case 9
+TRAP ARMED
+TRAP ARMED
+PASS: TRAP ARMED (2 boot(s))
+Trap case 10
+make[2]: warning: jobserver unavailable: using -j1.  Add '+' to parent make rule.
+TRAP ARMED
+TRAP ARMED
+PASS: TRAP ARMED (2 boot(s))
+Trap case 11
+TRAP ARMED
+TRAP ARMED
+PASS: TRAP ARMED (2 boot(s))
+make[2]: warning: jobserver unavailable: using -j1.  Add '+' to parent make rule.
+make[2]: warning: jobserver unavailable: using -j1.  Add '+' to parent make rule.
+ok
+test_plan_covers_all_readme_experiments (test_cache_experiments.CacheExperiments.test_plan_covers_all_readme_experiments) ... ok
+test_study_audit_rejects_corruption (test_cache_experiments.CacheExperiments.test_study_audit_rejects_corruption) ... ok
+test_artifact_hashes_and_readonly_ram_oracle (test_coherent_bench.CoherentProvenance.test_artifact_hashes_and_readonly_ram_oracle) ... ok
+test_capture_envelope_mutations (test_coherent_bench.CoherentProvenance.test_capture_envelope_mutations) ... ok
+test_complete_revision_source_manifest (test_coherent_bench.CoherentProvenance.test_complete_revision_source_manifest) ... ok
+test_elf_binding_rejects_truncation_wrong_machine_and_symbols (test_coherent_bench.CoherentProvenance.test_elf_binding_rejects_truncation_wrong_machine_and_symbols) ... ok
+test_full_log_requires_observed_jobs_and_stop (test_coherent_bench.CoherentRecords.test_full_log_requires_observed_jobs_and_stop) ... ok
+test_observation_and_snapshot_mutations (test_coherent_bench.CoherentRecords.test_observation_and_snapshot_mutations) ... ok
+test_python_cpp_mutation_corpus (test_coherent_bench.CoherentRecords.test_python_cpp_mutation_corpus) ... ok
+test_stream_and_reference_scaling (test_coherent_bench.CoherentRecords.test_stream_and_reference_scaling) ... ok
+test_fault_diagnostics_and_lifetime_counter (test_coherent_bridge.CoherentHostProtocol.test_fault_diagnostics_and_lifetime_counter) ... ok
+test_identity_and_configuration_before_any_write (test_coherent_bridge.CoherentHostProtocol.test_identity_and_configuration_before_any_write) ... ok
+test_invalid_timeout_and_configuration (test_coherent_bridge.CoherentHostProtocol.test_invalid_timeout_and_configuration) ... ok
+test_load_drains_before_boot_words (test_coherent_bridge.CoherentHostProtocol.test_load_drains_before_boot_words) ... ok
+test_malformed_input_does_not_even_stop (test_coherent_bridge.CoherentHostProtocol.test_malformed_input_does_not_even_stop) ... ok
+test_ram_requires_acknowledgement_and_is_read_only (test_coherent_bridge.CoherentHostProtocol.test_ram_requires_acknowledgement_and_is_read_only) ... ok
+test_timeout_does_not_proceed_to_boot (test_coherent_bridge.CoherentHostProtocol.test_timeout_does_not_proceed_to_boot) ... ok
+test_each_private_region_cannot_overflow_its_stack (test_multicore_layout.MulticoreLayout.test_each_private_region_cannot_overflow_its_stack) ... ok
+test_rom_limit (test_multicore_layout.MulticoreLayout.test_rom_limit) ... ok
+test_shared_initialized_odd_bytes_have_rom_load_image (test_multicore_layout.MulticoreLayout.test_shared_initialized_odd_bytes_have_rom_load_image) ... ok
+test_shared_size_and_no_stack_alias (test_multicore_layout.MulticoreLayout.test_shared_size_and_no_stack_alias) ... ok
+test_stack_alignment_and_minimum (test_multicore_layout.MulticoreLayout.test_stack_alignment_and_minimum) ... ok
+test_comparison_refuses_different_work (test_parallel.ParallelProvenance.test_comparison_refuses_different_work) ... ok
+test_required_fields_and_raw_log_binding (test_parallel.ParallelProvenance.test_required_fields_and_raw_log_binding) ... ok
+test_complete_job_stream_and_independent_oracle (test_parallel.ParallelRecords.test_complete_job_stream_and_independent_oracle) ... ok
+test_python_cpp_malformed_corpus (test_parallel.ParallelRecords.test_python_cpp_malformed_corpus) ... ok
+test_known_corners (test_phase1.ArithmeticReference.test_known_corners) ... ok
+test_seed_reproducibility (test_phase1.ArithmeticReference.test_seed_reproducibility) ... ok
+test_initialized_byte_segment (test_phase1.FirmwareLayout.test_initialized_byte_segment) ... ok
+test_rom_overflow (test_phase1.FirmwareLayout.test_rom_overflow) ... ok
+test_stack_reservation (test_phase1.FirmwareLayout.test_stack_reservation) ... ok
+test_retained_physical_reports_and_mutations (test_phase5_evidence.Phase5Evidence.test_retained_physical_reports_and_mutations) ... ok
+test_complete_failed_and_changed_source_evidence (test_phase6_runner.Phase6Runner.test_complete_failed_and_changed_source_evidence) ... ok
+test_existing_output_and_dirty_source_are_nonmutating (test_phase6_runner.Phase6Runner.test_existing_output_and_dirty_source_are_nonmutating) ... ok
+test_plan_contains_every_historical_and_new_matrix (test_phase6_runner.Phase6Runner.test_plan_contains_every_historical_and_new_matrix) ... ok
+test_coherent_isa_cache_and_reset_abi_must_match (test_pynq_handoff.HandoffSafety.test_coherent_isa_cache_and_reset_abi_must_match) ... ok
+test_missing_and_duplicate_modules_parameters_ports (test_pynq_handoff.HandoffSafety.test_missing_and_duplicate_modules_parameters_ports) ... ok
+test_multicore_map_must_match_requested_harts (test_pynq_handoff.HandoffSafety.test_multicore_map_must_match_requested_harts) ... ok
+test_mutated_exports_fail_closed (test_pynq_handoff.HandoffSafety.test_mutated_exports_fail_closed) ... ok
+test_original_active_low_auxiliary_tied_zero_is_rejected (test_pynq_handoff.HandoffSafety.test_original_active_low_auxiliary_tied_zero_is_rejected) ... ok
+test_valid_export (test_pynq_handoff.HandoffSafety.test_valid_export) ... ok
+test_captured_reports_and_rejected_mutations (test_pynq_results.PhysicalResults.test_captured_reports_and_rejected_mutations) ... ok
+test_owned_environment_does_not_imply_privileged_core (test_riscv_reference.UpstreamReference.test_owned_environment_does_not_imply_privileged_core) ... ok
+test_pinned_complete_subset (test_riscv_reference.UpstreamReference.test_pinned_complete_subset) ... ok
+test_bad_cli_preflight_never_imports_board_api (test_run_pynq.CollectorChecks.test_bad_cli_preflight_never_imports_board_api) ... ok
+test_exact_runtime_and_complete_parallel_streams (test_run_pynq.CollectorChecks.test_exact_runtime_and_complete_parallel_streams) ... ok
+test_lifetime_counter_rollover (test_run_pynq.CollectorChecks.test_lifetime_counter_rollover) ... ok
+
+----------------------------------------------------------------------
+Ran 55 tests in 6.555s
+
+OK

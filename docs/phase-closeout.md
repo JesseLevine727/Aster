@@ -5,6 +5,8 @@ simulation, FPGA implementation and physical execution are recorded separately.
 The earlier Phase 4 completion claim was premature; the retained closeout
 below supersedes it. Phases 1–4 are verified. Phase 5's later closeout is in
 [its separate contract/audit](phase5.md) and [physical evidence](results/phase5/closeout-71e2570/README.md).
+Phase 6's full-A/coherent-memory closeout is documented in its
+[contract](phase6.md) and [self-contained evidence](results/phase6/closeout-215b2d0/README.md).
 The historical measurements below retain their original source revisions.
 
 | Phase | State | Evidence / remaining acceptance |

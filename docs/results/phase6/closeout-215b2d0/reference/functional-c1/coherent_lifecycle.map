@@ -1,0 +1,103 @@
+
+Merging object attributes
+
+
+Discarded input sections
+
+ .riscv.attributes
+                0x00000000       0x40 /tmp/cc7yfgKB.o
+ .comment       0x00000000       0x1a /tmp/cc0xmeQT.o
+ .riscv.attributes
+                0x00000000       0x42 /tmp/cc0xmeQT.o
+
+Memory Configuration
+
+Name             Origin             Length             Attributes
+ROM              0x00000000         0x00010000         xr
+SHARED           0x10000000         0x00008000         xrw
+PRIVATE0         0x10008000         0x00004000         xrw
+PRIVATE1         0x1000c000         0x00004000         xrw
+*default*        0x00000000         0xffffffff
+
+Linker script and memory map
+
+LOAD /tmp/cc7yfgKB.o
+LOAD /tmp/cc0xmeQT.o
+
+.text           0x00000000      0x464
+ *(.text.init)
+ .text.init     0x00000000       0xc4 /tmp/cc7yfgKB.o
+                0x00000000                _start
+                0x00000100                        . = ALIGN (0x100)
+ *fill*         0x000000c4       0x3c 
+                0x00000100                        __benchmark_start = .
+ *(.text.benchmark)
+                0x00000100                        __benchmark_end = .
+ *(.text*)
+ .text          0x00000100        0x0 /tmp/cc7yfgKB.o
+ .text          0x00000100      0x124 /tmp/cc0xmeQT.o
+                0x00000128                aster_secondary_main
+ .text.startup  0x00000224      0x240 /tmp/cc0xmeQT.o
+                0x00000224                main
+
+.rodata         0x00000464       0x35
+ *(.rodata*)
+ .rodata.str1.4
+                0x00000464       0x35 /tmp/cc0xmeQT.o
+
+.rela.dyn       0x0000049c        0x0
+ .rela.text.init
+                0x0000049c        0x0 /tmp/cc7yfgKB.o
+
+.data           0x10000000        0x0 load address 0x0000049c
+                0x10000000                        __data_start = .
+ *(.data*)
+ .data          0x10000000        0x0 /tmp/cc7yfgKB.o
+ .data          0x10000000        0x0 /tmp/cc0xmeQT.o
+ *(.sdata*)
+                0x10000000                        . = ALIGN (0x4)
+                0x10000000                        __data_end = .
+                0x0000049c                        __data_load_start = LOADADDR (.data)
+
+.bss            0x10000000      0x118 load address 0x0000049c
+                0x10000000                        __bss_start = .
+ *(.bss*)
+ .bss           0x10000000        0x0 /tmp/cc7yfgKB.o
+ .bss           0x10000000      0x118 /tmp/cc0xmeQT.o
+ *(.sbss*)
+ *(COMMON)
+                0x10000118                        . = ALIGN (0x4)
+                0x10000118                        __bss_end = .
+
+.private0       0x10008000       0x40
+                0x10008000                        __private0_start = .
+ *(.private0*)
+ .private0      0x10008000       0x40 /tmp/cc0xmeQT.o
+                0x10008040                        . = ALIGN (0x4)
+                0x10008040                        __private0_end = .
+
+.private1       0x1000c000       0x40
+                0x1000c000                        __private1_start = .
+ *(.private1*)
+ .private1      0x1000c000       0x40 /tmp/cc0xmeQT.o
+                0x1000c040                        . = ALIGN (0x4)
+                0x1000c040                        __private1_end = .
+                0x00001000                        PROVIDE (__stack_size = 0x1000)
+                0x1000c000                        __stack0_top = (ORIGIN (PRIVATE0) + LENGTH (PRIVATE0))
+                0x10010000                        __stack1_top = (ORIGIN (PRIVATE1) + LENGTH (PRIVATE1))
+                0x1000b000                        __stack0_bottom = (__stack0_top - __stack_size)
+                0x1000f000                        __stack1_bottom = (__stack1_top - __stack_size)
+                0x00000001                        ASSERT (((__stack_size >= 0x10) && ((__stack_size % 0x10) == 0x0)), Aster multicore stacks must be 16-byte aligned)
+                0x00000001                        ASSERT (((__stack0_bottom >= ORIGIN (PRIVATE0)) && (__stack0_bottom >= __private0_end)), Aster hart 0 private RAM overflow into stack)
+                0x00000001                        ASSERT (((__stack1_bottom >= ORIGIN (PRIVATE1)) && (__stack1_bottom >= __private1_end)), Aster hart 1 private RAM overflow into stack)
+
+/DISCARD/
+ *(.comment)
+ *(.eh_frame)
+ *(.riscv.attributes)
+OUTPUT(/tmp/aster-functional-reference-sx7n0dnk/software/coherent_lifecycle.elf elf32-littleriscv)
+
+.note.GNU-stack
+                0x00000000        0x0
+ .note.GNU-stack
+                0x00000000        0x0 /tmp/cc0xmeQT.o

@@ -1,6 +1,7 @@
 # AsterBench v4: coherent/atomic jobs
 
-Implementation checkpoint, **not yet final Phase 6 physical acceptance**.
+**Phase 6 physical acceptance complete**; see the
+[retained full study and acceptance audit](results/phase6/closeout-215b2d0/README.md).
 The actual Phase 6 SoC runs `software/benchmarks/coherent.c`, compiled with
 `-march=rv32ima -mabi=ilp32`, on protected independent stacks. No benchmark
 implementation changes the pinned PicoRV32 source or legacy v2/v3 records.
@@ -221,7 +222,8 @@ An unidentified bridge is never written. The versioned report fingerprints the
 reference, overlay and every collector dependency; the default read-only host
 audit checks them against Git, rejects partial/mutated evidence and verifies
 the final safe state. Host tests use a fake MMIO/PCAP boundary, not hardware
-measurements. Real board execution remains a separate acceptance requirement.
+measurements. Real board execution is a separate acceptance requirement,
+now passed by the complete 57-capture physical study and final evidence audit.
 
 `scripts/pynq_coherent_study.py` orchestrates the **entire same 57-case plan**
 on the board, not just a selected passing subset. All reference packages and

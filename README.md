@@ -54,7 +54,7 @@ legacy/multicore regression matrices. The default 64-word workload measures
 small-job overhead and cache-dependent scaling remain visible. Older captures
 retain their original source/timing meaning. `make linux-dual-sim` tests the
 new bridge; `make fpga-linux-dual` builds its overlay. Original `fpga` and
-`fpga-linux` targets preserve the single-core map. Phase 6 is now in progress:
+`fpga-linux` targets preserve the single-core map. Phase 6 is now complete:
 the [coherence and full RV32A contract](docs/phase6.md) defines staged PCPI,
 atomic-memory, MSI-like cache, runtime, benchmark and physical acceptance gates.
 Legacy builds remain RV32IM. The new RV32IMA bring-up passes
@@ -70,8 +70,10 @@ signoff. The complete physical Linux/PCAP study now passes all 57 captures,
 and stopped-RAM evidence. Full-A C runtime and selective-reset lifecycle tests
 also pass two physical boots each with caches off and on. The matching
 clean-source simulation study and strict 22-target regression audit pass.
-Immutable evidence packaging, final fresh-checkout verification and the
-Phase 6 requirement/closeout audit remain pending.
+The [self-contained Phase 6 evidence](docs/results/phase6/closeout-215b2d0/README.md)
+passes all seven requirement audits and a fresh clean rebuild with 84 host
+tests. Its 835 hash-checked artifacts include both actual bitstreams and full
+raw regression/firmware/physical records. README Phase 7 (DMA) is next.
 
 Start here:
 
@@ -278,6 +280,7 @@ Introduce a simple two-core snooping coherence protocol, such as MSI/MESI-like b
 The active [Phase 6 contract](docs/phase6.md) adds full RV32A (LR/SC and all word
 AMOs) through Aster-owned PicoRV32 integration. Shared L2 is deferred; coherent
 shared RAM, ordering/fault/reset correctness and physical validation are not.
+**Complete:** [full-A/coherence acceptance and reproducible physical evidence](docs/results/phase6/closeout-215b2d0/README.md).
 
 ## Phase 7 — DMA
 
