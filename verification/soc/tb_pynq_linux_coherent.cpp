@@ -4,10 +4,12 @@
 #include <array>
 #include <cstdint>
 #include <fstream>
+#include <fcntl.h>
 #include <iostream>
 #include <set>
 #include <string>
 #include <vector>
+#include <unistd.h>
 
 #ifndef ASTER_HART_COUNT
 #define ASTER_HART_COUNT 2
@@ -24,6 +26,16 @@ static std::uint32_t merge(std::uint32_t old, std::uint32_t data, unsigned mask)
         if (mask & (1u << b)) old = (old & ~(255u << (8*b))) | (data & (255u << (8*b)));
     return old;
 }
+static void evidence_file(const std::string& path, const std::vector<uint8_t>& data) {
+    const int fd = open(path.c_str(),O_WRONLY|O_CREAT|O_EXCL,0644);
+    require(fd >= 0,"functional evidence exists or cannot be created");
+    for (size_t offset = 0; offset < data.size();) {
+        const auto count = write(fd,data.data()+offset,data.size()-offset);
+        if (count <= 0) { close(fd); throw std::runtime_error("functional evidence write failed"); }
+        offset += count;
+    }
+    require(close(fd) == 0,"functional evidence close failed");
+}
 static std::uint64_t retired(Bus& b, unsigned h) {
     const unsigned base = 0x30 + h*8;
     for (;;) {
@@ -34,11 +46,12 @@ static std::uint64_t retired(Bus& b, unsigned h) {
 int main(int argc, char** argv) {
     try {
         Verilated::commandArgs(argc, argv); std::cout.setf(std::ios::unitbuf);
-        require(argc == 3, "usage: linux_coherent firmware.hex runtime|lifecycle|dma|publication");
+        require(argc == 3 || argc == 4, "usage: linux_coherent firmware.hex runtime|lifecycle|dma|publication [DMA-evidence-prefix]");
         const bool lifecycle = std::string(argv[2]) == "lifecycle";
         const bool dma = std::string(argv[2]) == "dma";
         const bool publication = std::string(argv[2]) == "publication";
         require(lifecycle || std::string(argv[2]) == "runtime" || (ASTER_DMA && (dma || publication)), "unknown firmware kind");
+        require(argc == 3 || (ASTER_DMA && (dma || publication) && argv[3][0]), "evidence prefix requires DMA functional firmware");
         std::ifstream file(argv[1]); require(bool(file), "cannot read firmware");
         std::vector<std::uint32_t> image;
         for (std::string word; file >> word;) image.push_back(std::stoul(word, nullptr, 16));
@@ -176,11 +189,14 @@ int main(int argc, char** argv) {
                     "serial count mismatch / trailing bytes");
             const auto h0 = retired(b, 0), h1 = retired(b, 1);
             require(h0 > 100 && (ASTER_HART_COUNT == 2 ? h1 > 100 : h1 == 0), "physical hart retirement missing");
+            uint64_t job_cycles = 0;
             if (dma || publication) {
                 require(starts == boot+1 && freezes == boot+1 && !counting &&
                     (publication ? payload_bytes == 64*(boot+1) : payload_bytes > 50000*(boot+1)), "missing actual DMA functional execution");
                 require(b.read(0x84) == 2 && b.read(0x88) == (publication ? 8u : 1024u) && b.read(0x8c) == 0 && b.read(0x98) == 0,
                         "wrong live terminal DMA diagnostics");
+                const auto lo = b.read(0x90), hi = b.read(0x94); job_cycles = (uint64_t(hi) << 32) | lo;
+                require(job_cycles == b.dut.rootp->aster_pynq_linux__DOT__dma_job_cycles,"host last-job cycles differ from actual engine");
                 for (unsigned i = 0; i < 14; ++i) {
                     const auto lo = b.read(0xa0+i*8), hi = b.read(0xa4+i*8);
                     require((uint64_t(hi) << 32 | lo) == frozen_dma[i], "host DMA counter differs from actual window");
@@ -225,6 +241,34 @@ int main(int argc, char** argv) {
             std::cout << "PASS: coherent AXI/serial " << argv[2] << " harts=" << ASTER_HART_COUNT
                       << " cache=" << ASTER_L1 << " boot=" << boot << " bytes=" << output.size()
                       << " retired=" << h0 << "," << h1 << " retained_RAM=65536\n";
+            if (argc == 4) {
+                const std::string prefix = std::string(argv[3])+".boot"+std::to_string(boot+1);
+                std::vector<uint8_t> ram;
+                for (unsigned i = 0; i < oracle.size(); ++i) {
+                    const auto word = b.read(0x20000+i*4);
+                    require(word == oracle[i],"functional evidence differs from architectural store oracle");
+                    for (unsigned byte = 0; byte < 4; ++byte) ram.push_back(word >> (byte*8));
+                }
+                evidence_file(prefix+".ram",ram);
+                evidence_file(prefix+".uart",std::vector<uint8_t>(output.begin(),output.end()));
+                std::cout << "DMA_FUNCTIONAL_OBS {\"boot\":" << boot+1 << ",\"kind\":\"" << argv[2]
+                          << "\",\"cpu\":[";
+                for (unsigned h = 0; h < 2; ++h) {
+                    std::cout << (h ? ",[" : "[");
+                    for (unsigned i = 0; i < 14; ++i) std::cout << (i ? "," : "") << frozen_cpu[h][i];
+                    std::cout << ']';
+                }
+                std::cout << "],\"dma\":[";
+                for (unsigned i = 0; i < 14; ++i) std::cout << (i ? "," : "") << frozen_dma[i];
+                std::cout << "],\"job_cycles\":" << job_cycles << ",\"ram_retired\":[" << ram_retired[0] << ',' << ram_retired[1]
+                          << "],\"ram_pcs\":[";
+                for (unsigned h = 0; h < 2; ++h) {
+                    std::cout << (h ? ",[" : "["); bool first = true;
+                    for (auto pc : ram_pcs[h]) { std::cout << (first ? "" : ",") << pc; first = false; }
+                    std::cout << ']';
+                }
+                std::cout << "]}\n";
+            }
         }
         if (dma) {
             // ARM requests a global STOP while a real transfer is in flight.

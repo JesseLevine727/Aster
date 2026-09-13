@@ -57,8 +57,9 @@ def inspect_elf(data, *, profile="benchmark", dma_size=None, dma_jobs=None):
                   "aster_dma_copy": (2, 0, 65536), "aster_dma_submit": (2, 0, 65536),
                   "aster_dma_poll": (2, 0, 65536), "aster_dma_abort_and_wait": (2, 0, 65536),
                   "source": (1, 0x10000000, 0x10008000), "destination": (1, 0x10000000, 0x10008000),
+                  "independent_work": (1, 0x10000000, 0x10008000),
                   "dma_results": (1, 0x10008000, 0x1000b000)}
-        sizes = {"source": 1152, "destination": 1152, "dma_results": 512}
+        sizes = {"source": 1152, "destination": 1152, "independent_work": 4, "dma_results": 512}
     elif profile == "dma_publication":
         wanted = {"main": (2, 0, 65536), "aster_secondary_main": (2, 0, 65536), "execute_code": (2, 0, 65536),
                   "aster_dma_copy": (2, 0, 65536), "aster_dma_submit": (2, 0, 65536), "aster_dma_poll": (2, 0, 65536),

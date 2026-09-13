@@ -113,3 +113,34 @@ per-capture audits, a valid programming chain, identical fresh-repeat records
 and a recomputed physical crossover/slowdown summary. Missing cases cannot be
 presented as a completed study. Physical measurements come from board UART/
 RAM/registers, not substituted simulation records or invented RTL observations.
+
+## Separate functional reference
+
+`scripts/dma_functional_results.py capture --output NEW_DIRECTORY [--no-cache]`
+builds the actual two-hart DMA Linux model and both existing C programs from
+clean committed source. Each runs twice. The optional testbench evidence
+prefix exclusively creates actual UART and complete AXI-read stopped RAM for
+each boot, plus independent CPU/DMA event observations and RAM instruction
+retirement PCs. It retains the real ELF, matching boot ROM, map, disassembly,
+compiler/model commands, complete source inventory and tool/header hashes.
+`audit NEW_DIRECTORY/functional.json` is read-only and verifies committed Git
+provenance; `--allow-dirty` capture is development-only, never physical proof.
+
+The runtime checks 320 directed size/alignment copies, six invalid descriptors,
+abort/restart, six LR/SC interactions, eight selective secondary resets and
+three release/acquire publication jobs. Its final 128-word result block,
+source/destination bytes and guards, shared independent-AMO result, both
+14-counter CPU banks and the DMA bank are independently checked. The code
+program requires eight real DMA jobs, exact executable bytes and guards,
+eight successful publication epochs, and actual retirement of 32/16 RAM
+instructions on the primary/secondary harts. Both programs preserve two warm
+boots; the runtime log additionally requires admitted-transfer STOP and actual
+MMIO atomic/instruction-fetch denial tests.
+
+Functional UART is 97 bytes for runtime and 14 bytes for code publication.
+These concurrent, serial-inclusive windows are correctness evidence, not the
+paired latency benchmark: physical cycles need not equal the 781,250-baud
+reference. Physical acceptance still requires the same independent RAM/count
+outcomes, frozen host DMA bank agreement, active execution of both harts,
+fault-free serial and acknowledged final CPU/DMA STOPPED. The separate physical
+functional collection and clean-reference acceptance remain pending.
