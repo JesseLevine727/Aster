@@ -223,6 +223,20 @@ audit checks them against Git, rejects partial/mutated evidence and verifies
 the final safe state. Host tests use a fake MMIO/PCAP boundary, not hardware
 measurements. Real board execution remains a separate acceptance requirement.
 
+`scripts/pynq_coherent_study.py` orchestrates the **entire same 57-case plan**
+on the board, not just a selected passing subset. All reference packages and
+both signed-off overlays pass offline preflight before PYNQ is imported.
+It runs the 29 cache-enabled cases (including the independent firmware rebuild)
+then the 28 cache-disabled cases, switching overlays only at that boundary when
+the initial cache-enabled image is already loaded. Every case retains two warm
+boots without another PCAP download. The batch manifest binds every physical
+report, the reference study, both overlays and the complete shipped collector
+dependency set. Failures preserve the partial batch and are not accepted as a
+complete study. The read-only host audit requires all 114 boots/342 jobs, checks
+the entire programming sequence and recomputes every aggregate from the physical
+records. Simulation source/tool metadata identifies the firmware; simulated
+measurements are never substituted into the physical aggregate.
+
 For Verilator 5.020, coherent targets explicitly raise loop unrolling limits
 to accommodate nonblocking reset-array assignments at 1024 lines. This follows
 the documented [BLKLOOPINIT limitation](https://verilator.org/guide/latest/warnings.html#blkloopinit);

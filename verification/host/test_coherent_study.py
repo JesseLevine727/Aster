@@ -75,7 +75,7 @@ class CoherentStudy(unittest.TestCase):
 
             def write(value): path.write_text(json.dumps(value))
 
-            def inner(target): return json.loads(target.read_text())
+            def inner(target, **_): return json.loads(target.read_text())
 
             write(original)
             with mock.patch.object(study.results, "load", side_effect=inner), \

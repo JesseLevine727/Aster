@@ -97,7 +97,7 @@ def build_directory(capture):
     return values[0]
 
 
-def audit(path):
+def audit(path, *, clean=True):
     """Read-only; never invokes executables or paths claimed by saved evidence."""
     bench.require(not path.is_symlink(), "study manifest is not self-contained")
     manifest = bench.json_record(path.read_text())
@@ -121,9 +121,10 @@ def audit(path):
         bench.require(not target.is_symlink() and not target.with_suffix(".log").is_symlink(), "symlink capture/log")
         results.digest(actual["sha256"])
         bench.require(sha(target) == actual["sha256"], "capture envelope changed")
-        capture = results.load(target)
+        capture = results.load(target, clean=clean)
         bench.require(results.typed_equal(capture["configuration"], expected["configuration"]), "capture differs from study configuration")
         meta = capture["metadata"]
+        bench.require(meta["dirty"] is False, "dirty capture cannot enter the complete study, including offline board preflight")
         bench.require(meta["revision"] == manifest["revision"] and meta["source_sha256"] == manifest["source_sha256"], "mixed source study")
         if tools is None:
             tools = capture["toolchain"]; shared_build = build_directory(capture)
