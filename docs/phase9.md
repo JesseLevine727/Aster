@@ -165,6 +165,11 @@ completes or aborts. The first accepted implementation may serialize NPU and
 DMA device offers through a fair arbiter, but it may not starve either master
 or fabricate coherence by reading stale cached data.
 
+The engine's `BYTES_READ` accounting is logical operand-byte accounting: each
+accepted A or B byte load contributes one, including repeated loads required by
+the independent 4×4 tile traversal. `BYTES_WRITTEN` counts exact C payload
+bytes, one per accepted byte-lane write.
+
 ## Reset and lifecycle
 
 The engine is idle after POR and after an acknowledged global warm STOP. A
@@ -231,7 +236,7 @@ cannot replace these 4×4 captures.
 - [x] README scope, Phase 8 baseline, memory ownership and Phase 9 arithmetic/control contract frozen.
 - [x] PE directed signed products, zero/extrema/cancellation and handshake/reset tests (`make npu-pe`; exhaustive 256×256 operands plus 10,000 randomized accumulators).
 - [x] 4×4 array edge masks, tile sequencing, K=0 and exact scalar-oracle tests (`make npu-array`; 3 seeds, 252 tiles/seed).
-- [ ] RAM master bounds, byte placement, stride, guard and malformed-descriptor tests.
+- [x] RAM master bounds, byte placement, stride, guard and malformed-descriptor tests (`make npu-engine`; 3 seeds, 1,115 reads and 588 writes/seed in the fixed mixed workload).
 - [ ] Actual CPU-controlled RAM-backed C GEMM on one/two harts, cache off/on and supported waits.
 - [ ] DMA publication/coherence, safe global STOP/ABORT, reset/error/timeout and disabled/legacy tests.
 - [ ] AsterBench v7 records, independent output/RAM/event/provenance audits, mutation tests and fresh repeats.

@@ -8,10 +8,11 @@ Implemented and verified modules:
 
 - `aster_int8_pe.sv`: signed INT8 × INT8 plus 32-bit modulo accumulator;
 - `aster_int8_array.sv`: sixteen PE tile accumulator with partial-edge masks;
+- `aster_npu_engine.sv`: descriptor validation, tile/K sequencing, RAM byte
+  loads, exact-lane output stores, and lifecycle/cycle counters;
 
 Remaining modules:
 
-- `aster_npu_engine.sv`: descriptor validation, tile/K sequencing and output;
 - `aster_npu_regs.sv`: ABI/status/counter/control register boundary.
 
 These modules must remain independently testable without PicoRV32 or PYNQ.

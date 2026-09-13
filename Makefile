@@ -129,6 +129,7 @@ DMA_PERF_SIM := $(BUILD_DIR)/aster_dma_perf_sim
 DOT8_UNIT_SIM := $(BUILD_DIR)/aster_pcpi_dot8_sim
 NPU_PE_SIM := $(BUILD_DIR)/aster_int8_pe_sim
 NPU_ARRAY_SIM := $(BUILD_DIR)/aster_int8_array_sim
+NPU_ENGINE_SIM := $(BUILD_DIR)/aster_npu_engine_sim
 DOT8_PROBE_ENABLE ?= 1
 DOT8_PROBE_CACHE ?= 0
 DOT8_PROBE_DIR := $(BUILD_DIR)/dot8_probe_e$(DOT8_PROBE_ENABLE)_c$(DOT8_PROBE_CACHE)
@@ -269,6 +270,7 @@ help:
 	@echo "  make dot8-unit / dot8-probe-matrix / dot8-counters  Phase 8 arithmetic, real-hart and ABI 6 tests"
 	@echo "  make npu-pe       Phase 9 signed INT8 processing-element unit test"
 	@echo "  make npu-array    Phase 9 4x4 INT8 tile-array unit test"
+	@echo "  make npu-engine   Phase 9 RAM-backed INT8 GEMM engine unit test"
 	@echo "  make atomic-fabric  Test serialized RV32A memory/reservation semantics"
 	@echo "  make atomic-runtime-matrix  Run compiled RV32IMA C on one/two real cores"
 	@echo "  make atomic-faults-matrix   Check real-core atomic faults with caches off/on"
@@ -754,7 +756,7 @@ retirement: $(RETIRE_SIM)
 	@$(RETIRE_SIM)
 
 .PHONY: pcpi-probe
-.PHONY: dot8-unit npu-pe npu-array
+.PHONY: dot8-unit npu-pe npu-array npu-engine
 $(DOT8_UNIT_SIM): rtl/core/aster_pcpi_dot8.sv verification/unit/tb_aster_pcpi_dot8.cpp Makefile | $(BUILD_DIR)
 	$(VERILATOR) --cc --exe --build --timing --Wall --assert -DASTER_DOT8_ASSERT \
 		--top-module aster_pcpi_dot8 --Mdir $(BUILD_DIR)/obj_dot8_unit -o $(abspath $@) \
@@ -780,6 +782,16 @@ $(NPU_ARRAY_SIM): rtl/accelerator/aster_int8_pe.sv rtl/accelerator/aster_int8_ar
 
 npu-array: $(NPU_ARRAY_SIM)
 	@set -e; for seed in 1 0xa57e8 0xc0ffee; do $(NPU_ARRAY_SIM) $$seed; done
+
+$(NPU_ENGINE_SIM): rtl/accelerator/aster_int8_pe.sv rtl/accelerator/aster_int8_array.sv \
+		rtl/accelerator/aster_npu_engine.sv verification/unit/tb_aster_npu_engine.cpp Makefile | $(BUILD_DIR)
+	$(VERILATOR) --cc --exe --build --timing --Wall --assert \
+		--top-module aster_npu_engine --Mdir $(BUILD_DIR)/obj_npu_engine -o $(abspath $@) \
+		$(ROOT)/rtl/accelerator/aster_int8_pe.sv $(ROOT)/rtl/accelerator/aster_int8_array.sv \
+		$(ROOT)/rtl/accelerator/aster_npu_engine.sv $(ROOT)/verification/unit/tb_aster_npu_engine.cpp
+
+npu-engine: $(NPU_ENGINE_SIM)
+	@set -e; for seed in 1 0xa57e8 0xc0ffee; do $(NPU_ENGINE_SIM) $$seed; done
 
 .PHONY: dot8-probe dot8-probe-matrix
 $(DOT8_PROBE_SIM): $(RTL_CORE) $(RTL_CACHE) rtl/core/aster_pcpi_atomic.sv rtl/core/aster_pcpi_dot8.sv \
@@ -1445,9 +1457,9 @@ parallel-workloads:
 		done; \
 	done
 
-test: smoke phase1 hello bench cache uart fpga-sim linux-sim counters retirement npu-pe npu-array arbiter shared-fabric multicore-runtime parallel
+test: smoke phase1 hello bench cache uart fpga-sim linux-sim counters retirement npu-pe npu-array npu-engine arbiter shared-fabric multicore-runtime parallel
 
-check: tools smoke phase1 hello bench cache uart fpga-sim linux-sim linux-dual-sim linux-coherent-sim counters retirement pcpi-probe dot8-unit npu-pe npu-array atomic-fabric atomic-runtime atomic-faults coherent-cache warm-stop coherent-counters coherent-soc coherent-bench riscv-reference riscv-reference-negative coherent-litmus arbiter shared-fabric multicore-runtime multicore-adversarial parallel
+check: tools smoke phase1 hello bench cache uart fpga-sim linux-sim linux-dual-sim linux-coherent-sim counters retirement pcpi-probe dot8-unit npu-pe npu-array npu-engine atomic-fabric atomic-runtime atomic-faults coherent-cache warm-stop coherent-counters coherent-soc coherent-bench riscv-reference riscv-reference-negative coherent-litmus arbiter shared-fabric multicore-runtime multicore-adversarial parallel
 
 clean:
 	rm -rf $(BUILD_DIR)
