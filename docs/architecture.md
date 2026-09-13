@@ -1,6 +1,6 @@
 # Aster architecture specification
 
-Status: Phases 1–7 complete and physically verified, 2026-09-13. Phase 8 not begun.
+Status: Phases 1–7 complete and physically verified, 2026-09-13. Phase 8 in progress.
 
 Phase 5 is implemented and physically verified in the `aster_multicore` top. Its
 [dual-hart contract](phase5.md) specifies the new memory ownership, runtime,
@@ -21,6 +21,10 @@ and [seven-gate closeout](results/phase7/closeout-888c24b/README.md). Both full
 regression plans, fresh-checkout rebuild and complete immutable evidence audit
 pass. Legacy maps, firmware/measurement ABIs and historical evidence remain
 separate and preserved.
+
+[Phase 8](phase8.md) now specifies the optional Xasterdot8 custom computation
+and its acceptance plan. The baseline is audited, but instruction RTL, v6
+measurements and new FPGA/physical acceptance are not yet claimed.
 
 This document is the executable contract for the first bring-up slice. It
 separates decisions that are fixed for the minimal system from features that
