@@ -1,5 +1,36 @@
 # Verification strategy
 
+## Phase 8 packed-compute checkpoints
+
+[The Phase 8 contract](phase8.md) freezes encoding/arithmetic, handshake,
+lifecycle, C API and the 174-capture scalar/custom study before implementation.
+The optional instruction is tested in Aster-owned RTL and on the unchanged
+pinned PicoRV32 alongside M and full A; unit arithmetic alone is not acceptance.
+
+The complete plan is the existing 22-target legacy run, 14-target DMA run and
+the new isolated 56-case supplement. The latter covers three exhaustive unit
+seeds, four enabled/disabled and I-cache real-core probes, both counter hart
+counts, twenty runtime/active-stop configurations, ten Linux map/serial cases
+and eighteen alternate benchmark configurations. `make check` does not replace
+those full runs. Keep each output tree new and preserve failures.
+
+`dot8_functional_results.py` retains actual ELF/ROM and two complete warm
+UART/RAM/event boots, with independent store/guard checks for every directed
+job and thirteen admitted-compute stop boundaries in the two-hart configuration.
+Its Python oracle independently checks final signed GEMM outputs, both buffers'
+guards, DMA publication, LR-dot-SC outcomes, private records and all 50 events.
+The [physical collector](phase8-physical.md) adds actual FPGA serial, stopped RAM
+and live diagnostics; it does not fabricate a physical RVFI trace.
+
+`audit_phase8.py` combines eight requirements: original pre-RTL spec, real-core
+ISA/software, coherence/lifecycle, preserved regressions/history, fixed v6
+study, routed/reset/HWH proof, physical hash/state chain and fresh-checkout
+verification. It pins the exact reviewed Makefile and optional exporter deltas;
+all other RTL/firmware/FPGA/hardware-test inputs must remain identical. Historical
+Phase 6/7 manifests are pinned and their own nested audits are rerun. The outer
+manifest cannot be created until all required physical and simulation evidence
+exists and passes. Host mutation fixtures test these gates, not the FPGA.
+
 The verification hierarchy follows the project roadmap:
 
 ```text

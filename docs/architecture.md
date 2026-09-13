@@ -22,9 +22,11 @@ regression plans, fresh-checkout rebuild and complete immutable evidence audit
 pass. Legacy maps, firmware/measurement ABIs and historical evidence remain
 separate and preserved.
 
-[Phase 8](phase8.md) now specifies the optional Xasterdot8 custom computation
-and its acceptance plan. The baseline is audited, but instruction RTL, v6
-measurements and new FPGA/physical acceptance are not yet claimed.
+[Phase 8](phase8.md) implements optional Xasterdot8 packed signed INT8
+computation in an Aster-owned PCPI unit. The pinned PicoRV32 and full-A path
+are unchanged; no compiler fork is required. Its fixed AsterBench v6 simulation
+study and routed/reset/HWH builds pass. Physical execution and final closeout
+are in progress under the [guarded workflow](phase8-physical.md).
 
 This document is the executable contract for the first bring-up slice. It
 separates decisions that are fixed for the minimal system from features that
@@ -69,8 +71,35 @@ loopback, not an external Pmod electrical test. See the
 The minimal-system baseline below retains RV32IM, the Phase 3 performance
 counter block and Phase 4 private I/D L1 pair. Its DMA/accelerator event sources
 remain disconnected. Phase 6 separately adds two RV32IMA harts and coherent
-private caches. Phase 7 adds optional coherent DMA; shared L2, custom packed INT8 instructions,
-the INT8 accelerator, interrupts and timers remain future work.
+private caches. Phase 7 adds optional coherent DMA and Phase 8 adds the optional
+packed INT8 instruction. Shared L2, the Phase 9 INT8 accelerator, interrupts and
+timers remain future work.
+
+### Optional Phase 8 computation
+
+`aster_pcpi_dot8` accepts custom-0 (`opcode=0x0b`, `funct3=0`, `funct7=0`).
+Two register operands each contain four signed 8-bit lanes, least-significant
+byte first. The exact four-product signed sum is returned in a 32-bit register;
+software explicitly accumulates modulo 2^32. There is no hidden accumulator,
+saturation, memory access or reservation effect. Invalid encodings and the
+disabled extension trap through the existing core path.
+
+Admission captures four signed 16-bit products; the following sum stage forms
+an 18-bit signed result, and the completed reply remains held until the PCPI
+request is released. This is not a one-cycle end-to-end retirement claim.
+DOT8 and full-A decoding are disjoint; builtin M remains in the pinned core.
+Global/selective warm STOP blocks new compute admission and drains admitted
+computation before resetting, alongside the existing memory/DMA/cache lifecycle.
+
+Native read-only DOT8 diagnostics occupy `0x20003200` with instruction ABI 1
+and counter ABI 6. Eight 64-bit accept/wait/complete/retired counters share
+the existing primary START/FREEZE/RESUME window, producing 50 total CPU/DMA/DOT8
+events in AsterBench v6. The explicit DMA/coherent Linux overlay has bridge ABI
+`0x80001`, feature bits 13/15 for cache off/on, and read-only DOT8 diagnostics at
+ARM bridge offsets `0x110–0x168`. Unsupported/unaligned ARM offsets and writes
+return SLVERR; RISC-V atomic and instruction fetches from the data-only bank
+are denied. See the [complete register contract](phase8.md#observation-abi-6-and-linux-identity).
+Default-off configurations retain the earlier maps and ABIs.
 
 ## Minimal-system block diagram (Phases 1–4)
 

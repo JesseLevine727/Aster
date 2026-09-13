@@ -398,6 +398,18 @@ failure, corrupted RAM/live counters and frozen-event mismatches. The
 [physical workflow](phase8-physical.md) describes deployment and read-only
 reproduction. Actual physical functional acceptance remains pending.
 
+### Combined acceptance audit milestone
+
+`scripts/audit_phase8.py` binds eight explicit requirements to complete nested
+evidence, original pre-RTL specification, exact reviewed source variants,
+historical Phase 6/7 audits, physical programming/hash chronology and final
+CPU/DMA/DOT8 STOPPED. Five outer-audit tests reject omitted/rehashed inventory,
+invented summaries, source drift, unreviewed Makefile/exporter changes, broken
+deployment chains, nonzero final state and incomplete physical logs. The full
+host suite passes 207 tests. A clean fresh-checkout rebuild and completed
+physical/reference/regression packages are still required before this auditor
+can create an accepted closeout manifest.
+
 ## Primary references
 
 The implemented v6 record/layout/observation contract is detailed in

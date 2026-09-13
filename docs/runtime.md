@@ -1,4 +1,4 @@
-# Bare-metal runtime through Phase 7
+# Bare-metal runtime through Phase 8
 
 The ARM runs PYNQ Linux; the RISC-V harts run freestanding C firmware. These
 are separate execution environments. Aster has fatal fault reporting, not a
@@ -11,6 +11,7 @@ privileged RISC-V operating system, exception dispatcher or interrupt runtime.
 | Minimal single hart, Phases 1–4 | RV32IM / ilp32 | `software/runtime/start.S`, legacy single-core linker/map |
 | Noncoherent multicore, Phase 5 | RV32IM / ilp32 | `start_multicore.S`, uncached shared RAM and private regions |
 | Coherent / DMA, Phases 6–7 | RV32IMA / ilp32 | Same multicore startup/ownership map, coherent shared RAM and full word atomics |
+| Optional packed compute, Phase 8 | RV32IMA + Xasterdot8 / ilp32 | Same RAM ownership/startup, explicit `.insn` helper and feature-matched image |
 
 The [original runtime README](../software/runtime/README.md) describes the
 legacy/Phase 5 variants. Its uncached-shared-memory and future-atomics notes
@@ -18,6 +19,12 @@ do not describe the separate Phase 6/7 coherent configuration. Linking a DMA
 driver or compiling with `-march=rv32ima` does not enable those features in a
 legacy bitstream. Match the actual bridge ABI, hart/cache/DMA configuration,
 ELF and ROM before running firmware.
+
+Phase 8 retains `-march=rv32ima`: its custom instruction is emitted explicitly
+by the helper rather than advertised as a standard RISC-V extension. A legacy
+image does not gain DOT8 by linking the header; the instruction traps when
+disabled. The explicit Linux image reports bridge ABI `0x80001`, DOT8 instruction
+ABI 1 and combined counter ABI 6.
 
 ## RAM initialization and ownership
 
@@ -63,6 +70,42 @@ acknowledges STOPPED before ROM writes or host RAM snapshots. Secondary reset
 pauses new DMA offers, preserves admitted effects, flushes the secondary and
 resumes the remaining copy. A transient global stop during that sequence is
 latched. These are RAM-preserving operations, distinct from initial POR.
+
+## Packed signed INT8 computation from C
+
+[`aster_dot8.h`](../software/drivers/aster_dot8.h) exposes
+`aster_dot8_packed(uint32_t a, uint32_t b)`: four signed byte products are summed
+exactly and returned as a 32-bit bit pattern. Lane zero is the least-significant
+byte. For example, two `0x80808080` operands produce `65536`, not a saturated
+8- or 16-bit result. Add results using `uint32_t` for defined modulo-2^32
+accumulation; the hardware holds no persistent accumulator.
+
+`aster_dot8_pack4` requires four remaining bytes in the source object. Its
+aligned bit-copy path and unaligned byte loads avoid aliasing and alignment
+undefined behavior. Handle the remaining zero to three bytes with scalar
+arithmetic; do not overread a tail. The independently tested shared kernels in
+[`dot8_kernels.c`](../software/benchmarks/dot8_kernels.c) implement dot product,
+eight-output FIR and 3×5 row-major GEMM with packing/gather inside the custom
+kernel, not in unmeasured preprocessing. Scalar kernels remain ordinary
+optimized signed byte loads and MUL instructions.
+
+DOT8 does not touch memory or LR/SC reservations. Normal release/acquire
+ownership is still required for shared buffers and DMA-produced inputs.
+`dot8_runtime.c` runs 736 scalar/custom pairs on each hart, all 16 input-byte
+alignment combinations, 16 LR-dot-SC trials per hart and three DMA-published
+GEMM jobs. A fourth copy overlaps register-only DOT8 work. It freezes all 50
+counters before emitting `DOT8 RUNTIME PASS`, then parks both harts. Its
+functional evidence is separate from the latency benchmark.
+
+```sh
+make dot8-runtime HART_COUNT=2 ENABLE_L1=1 SYNC_MEMORY=1
+make linux-dot8-sim HART_COUNT=2 ENABLE_L1=1 DOT8_LINUX_BAUD=115200
+python3 scripts/dot8_functional_results.py capture NEW_REFERENCE --l1 1
+```
+
+The reference collector retains both real warm boots, complete stopped RAM,
+actual UART and independent events, followed by the active-compute stop tests.
+See the [physical workflow](phase8-physical.md) for feature-matched FPGA runs.
 
 ## Existing programs and verification
 

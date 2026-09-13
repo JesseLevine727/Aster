@@ -92,6 +92,13 @@ make dma-bench-cases dma-bench-sensitivity  Run paired v5 size/configuration che
 make linux-dma-matrix  Check actual DMA runtime and RAM-code publication over AXI
 make linux-dma-bench-cases linux-dma-bench-baud  Check paired serial/physical-baud cases
 make fpga-linux-dma  Build the explicitly DMA-enabled coherent PCAP overlay
+make dot8-unit dot8-probe-matrix  Exhaust signed arithmetic/decode and real-core ISA cases
+make dot8-counters  Check instruction ABI 1 / counter ABI 6 events and wrap
+make dot8-runtime dot8-stops  Run real C and admitted-compute lifecycle scoreboards
+make linux-dot8-sim  Check full AXI map/RO offsets, actual serial and warm boots
+make dot8-firmware dot8-bench  Build/run paired scalar/custom AsterBench v6
+make dot8-bench-build dot8-config  Build-only and exact capture configuration hooks
+make fpga-linux-dot8  Build the explicitly DOT8/DMA/coherent Linux overlay
 make check       Run tool checks, directed tests and simulations
 make clean       Remove generated files under build/
 ```
@@ -129,6 +136,28 @@ exact source/tool identities. `run_phase6_regressions.py --check-only` is for
 a fresh `make check`, not a replacement for either full run. Never rebuild
 different configurations concurrently into the same `BUILD_DIR`. Failed or
 partial evidence is retained; accepted captures refuse existing output paths.
+
+Phase 8 adds a separate 56-case supplement; it does not replace either earlier
+plan. Its eight concurrent cases each own an isolated model and firmware tree.
+Two Linux cases use `DOT8_LINUX_BAUD=115200`; that selector is part of the model
+directory name to prevent reuse of a faster-baud build.
+
+```sh
+python3 scripts/run_phase8_regressions.py --output /new/path/dot8-regressions
+python3 scripts/audit_phase8_regressions.py /new/path/dot8-regressions/manifest.json
+python3 scripts/dot8_study.py plan
+python3 scripts/dot8_study.py capture --output /new/path/dot8-study
+python3 scripts/dot8_study.py audit /new/path/dot8-study/study.json
+```
+
+The custom helper uses GNU `.insn r`, with ordinary `-march=rv32ima -mabi=ilp32`
+and the same frozen O2 recipe for scalar/custom kernels. No compiler fork, LTO,
+auto-vectorization claim or automatic lowering is required. Captures bind all
+12 compiler/assembler/linker/Verilator/host-build identities and system headers,
+actual ELF/ROM/map/disassembly, model/build/run arguments and complete source
+hashes. [AsterBench v6](phase8-bench.md) retains all packing/tail/load/store costs.
+`fpga-linux-dot8 LINUX_CACHE=0|1` still uses 31.25 MHz. Only the
+[explicit guarded physical collector](phase8-physical.md) programs the board.
 
 `PARALLEL_WORDS=2..1024`, `PARALLEL_ROUNDS=1..64`, `PARALLEL_JOBS=1..16`,
 `PARALLEL_WORKERS=1|2` and `PARALLEL_SEED` configure the new workload. The default
