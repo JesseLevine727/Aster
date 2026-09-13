@@ -178,6 +178,28 @@ owners, never M plus peer S, never acknowledge stale data, never replace an
 unwritten dirty victim, never commit a denied access, never acknowledge an
 operation twice, and never lose an accepted transaction under backpressure.
 
+### PCPI boundary checkpoint
+
+`make pcpi-probe retirement` passes with the pinned vendor unchanged:
+
+- Real-core probe: 4,744 programs, 4,072 backend responses, 3,544 successful
+  exactly-once PCPI completions, 24 destructive component-reset probes and
+  84,791 cycles of simultaneous native instruction fetch and atomic request
+  (`0xa57e6` seed). Five latency policies include 19/65-cycle and random waits.
+- Adapter unit: 32,768 opcode/funct3/funct5 combinations and 44 legal
+  operation/order combinations stalled for 80 cycles and held completed for
+  40 cycles without duplicate backend requests or unstable results.
+- Native six-fault/four-latency retirement regression remains passing.
+
+The fault candidate works with the actual pinned core: local alignment faults
+and backend-supplied access faults preserve typed cause/address/instruction,
+do not retire or return PCPI ready, and reach a persistent core trap. Register
+writeback, `rd=x0`, aliases and native MUL/DIV continue to work. The test's mock
+backend supplies results and access-fault classifications: it does **not**
+prove actual permission decoding, atomic memory semantics, reservations,
+shared-port arbitration, cache coherence or safe warm-stop flushing. Those
+remain acceptance gates, not inferred from this checkpoint.
+
 ## Runtime, reset and host contract
 
 Keep the protected 16 KiB private regions and distinct 4 KiB stacks. Hart 0

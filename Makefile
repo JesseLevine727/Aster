@@ -68,6 +68,8 @@ CACHE_RANDOM_SIM := $(CACHE_RANDOM_DIR)/aster_cache_random_sim
 UART_SIM := $(BUILD_DIR)/aster_uart_tx_$(UART_FIFO_DEPTH)_sim
 UART_RX_SIM := $(BUILD_DIR)/aster_uart_rx_sim
 RETIRE_SIM := $(BUILD_DIR)/aster_retirement_sim
+PCPI_PROBE_SIM := $(BUILD_DIR)/aster_pcpi_probe_sim
+PCPI_ADAPTER_SIM := $(BUILD_DIR)/aster_pcpi_atomic_sim
 PERF_SIM := $(BUILD_DIR)/aster_perf_sim
 ARBITER_SIM := $(BUILD_DIR)/aster_arbiter2_sim
 FABRIC_DIR := $(BUILD_DIR)/fabric_h$(HART_COUNT)_$(CONFIG_TAG)
@@ -120,6 +122,7 @@ help:
 	@echo "  make firmware   Build the bare-metal Hello from Aster image"
 	@echo "  make smoke      Build and run the first Verilator smoke test"
 	@echo "  make directed   Run directed RV32IM instruction tests"
+	@echo "  make pcpi-probe Test real-core RV32A extension boundary (not full A yet)"
 	@echo "  make phase1     Run CPU, runtime, memory-map and trap regressions"
 	@echo "  make phase1-matrix  Test Phase 1 with L1 off/on, async/sync memory"
 	@echo "  make hello      Build and run Hello from Aster on the RTL CPU"
@@ -464,6 +467,23 @@ $(PERF_SIM): rtl/peripherals/aster_perf_counters.sv verification/unit/tb_aster_p
 retirement: $(RETIRE_SIM)
 	@$(RETIRE_SIM)
 
+.PHONY: pcpi-probe
+$(PCPI_PROBE_SIM): $(RTL_CORE) rtl/core/aster_pcpi_atomic.sv verification/unit/aster_pcpi_probe.sv verification/unit/tb_aster_pcpi_probe.cpp Makefile | $(BUILD_DIR)
+	$(VERILATOR) --cc --exe --build --timing --Wall \
+		$(VERILATOR_VENDOR_LINT_FLAGS) --top-module aster_pcpi_probe \
+		--Mdir $(BUILD_DIR)/obj_pcpi_probe -o $(abspath $@) \
+		$(addprefix $(ROOT)/,$(RTL_CORE)) $(ROOT)/rtl/core/aster_pcpi_atomic.sv \
+		$(ROOT)/verification/unit/aster_pcpi_probe.sv $(ROOT)/verification/unit/tb_aster_pcpi_probe.cpp
+
+$(PCPI_ADAPTER_SIM): rtl/core/aster_pcpi_atomic.sv verification/unit/tb_aster_pcpi_atomic.cpp Makefile | $(BUILD_DIR)
+	$(VERILATOR) --cc --exe --build --timing --Wall --Wno-UNUSEDSIGNAL \
+		--top-module aster_pcpi_atomic --Mdir $(BUILD_DIR)/obj_pcpi_atomic -o $(abspath $@) \
+		$(ROOT)/rtl/core/aster_pcpi_atomic.sv $(ROOT)/verification/unit/tb_aster_pcpi_atomic.cpp
+
+pcpi-probe: $(PCPI_PROBE_SIM) $(PCPI_ADAPTER_SIM)
+	@$(PCPI_PROBE_SIM)
+	@$(PCPI_ADAPTER_SIM)
+
 counters: $(PERF_SIM)
 	@$(PERF_SIM)
 
@@ -604,7 +624,7 @@ parallel-workloads:
 
 test: smoke phase1 hello bench cache uart fpga-sim linux-sim counters retirement arbiter shared-fabric multicore-runtime parallel
 
-check: tools smoke phase1 hello bench cache uart fpga-sim linux-sim linux-dual-sim counters retirement arbiter shared-fabric multicore-runtime multicore-adversarial parallel
+check: tools smoke phase1 hello bench cache uart fpga-sim linux-sim linux-dual-sim counters retirement pcpi-probe arbiter shared-fabric multicore-runtime multicore-adversarial parallel
 
 clean:
 	rm -rf $(BUILD_DIR)
