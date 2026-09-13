@@ -96,8 +96,24 @@ Every acknowledged STOP compares all 64 KiB against the architectural-store
 oracle and writes actual RAM bytes exclusively; `ASTERSTOP` binds the boot,
 record count, stores and lifetime retirement. The Python oracle independently
 rechecks row semantics, ordered observations, actual ELF instruction PCs and
-complete saved buffers/results. The later capture layer must additionally bind
-clean source/tool/build identity and all raw artifacts before acceptance.
+complete saved buffers/results. `scripts/dot8_results.py` additionally binds
+the complete clean Git source inventory, compiler/backend/binutils/Verilator/
+host-C++/Make identities and system headers, exact shared compiler flags,
+fixed build and execution arguments, separate build/simulator logs, ELF/ROM,
+map/disassembly, all observations and both complete stopped-RAM snapshots.
+Saved commands are never executed by an audit; kernel addresses and instruction
+words are independently checked against the actual ELF and disassembly.
+Dirty captures are explicitly development-only and rejected by default.
+
+`scripts/dot8_study.py` freezes all 174 cases, rejects subsets and mixed tools/
+sources, and gives each of the six repeats a separately fresh build root.
+It retains every paired scalar/custom cycle ratio and all 50 counters, reports
+first-any-win separately from first-all-win, and retains ties and later
+reversals. Crossover is sampled K, never interpolated or a universal threshold.
+Use `python3 scripts/dot8_study.py plan` to inspect the exact plan, `capture
+--output /new/directory` to run it from clean source, and `audit /path/study.json`
+for a read-only full check. Per-capture `dot8_results.py capture`/`audit` supports
+development cases without labeling them a completed study.
 
 Development verification includes zero K for all three workloads, scalar
 tails, aligned/unaligned inputs, maximum dot K=4096 and maximum FIR/GEMM K=64
@@ -108,5 +124,9 @@ Mutation tests cover every field/type, output digit, saved result word and
 input/output byte, actual ELF/ROM/profile/opcode corruption and PC evidence.
 Two early firmware compiler-warning failures (misleading indentation and
 unsigned K<0 in the zero-K reference loop) were retained and fixed with warnings
-still fatal. The final clean regression/study, routed FPGA and board gates
-remain required before Phase 8 closeout.
+still fatal. Two capture-test failures are also retained: the initial synthetic
+one-group PC fixture incorrectly selected both aligned and unaligned instruction
+sites; correcting the fixture preserved the exactly-once gate. The command
+mutation test then exposed an unbound compiler-prefix setting; the validator now
+requires the standard compiler command or its fingerprinted absolute path.
+The complete clean regression/study and physical board gates remain required.

@@ -307,7 +307,25 @@ retains ABI `0x70001` and denies the added bank. Both shells reject unsupported
 custom instructions, LR to the new MMIO bank and MMIO instruction fetches.
 HWH validation explicitly requires the dot8/coherence/DMA combination and
 rejects mismatched/missing/duplicated parameters; legacy return shapes remain
-unchanged. No Phase 8 bitstream or physical acceptance is claimed yet.
+unchanged. Physical acceptance is still pending.
+
+### Routed FPGA milestone
+
+Clean source `5b9c175` builds both explicit two-hart/DMA/dot8 Linux images.
+`scripts/dot8_overlay.py` retains the unchanged routed/reset signoff checks in
+a separately versioned Phase 8 package, requires the seven build arguments and
+explicit dot8 HWH parameters, and audits all artifacts against clean Git source.
+
+| Cache | Setup slack (ns) | Hold slack (ns) | LUTs | Registers | BRAM tiles | DSPs |
+|---|---:|---:|---:|---:|---:|---:|
+| Off | 4.544 | 0.041 | 17,221 | 12,782 | 32 | 0 |
+| On | 4.319 | 0.041 | 20,727 | 17,271 | 32 | 0 |
+
+Both are constrained to 31.25 MHz, pass pulse-width slack 14.750 ns, have zero
+unconstrained internal endpoints and zero routing/DRC/methodology findings,
+and pass all five generated-reset scenarios. The existing five asynchronous
+output-delay exceptions remain explicit. These are routed implementation
+results, not physical execution, an Fmax search or an instruction-speedup claim.
 
 Physical work requires clean source, generated reset simulation, routed setup/
 hold/pulse-width, routing/DRC/methodology/resources, full HWH and matched bitstream
