@@ -52,8 +52,12 @@ def validate_boot(boot,reference,directory):
     before = boot["before_stop"]
     bench.require(type(before) is dict and set(before) == set(physical.stopped_state())|{"tx_bytes","rx_bytes","fifo_count","lifetime_retired","faults"},"incomplete functional hardware observations")
     for key,value in dict(control=1,status=1,hart_status=3,stop_status=0,tx_bytes=len(functional.UART),rx_bytes=len(functional.UART),fifo_count=0,
-                          dma=functional.host_dma(values),dot8=functional.host_dot8(values)).items():
+                          dot8=functional.host_dot8(values)).items():
         bench.require(bench.typed_equal(before[key],value),"functional live hardware/RAM differs: "+key)
+    try:
+        functional.validate_host_dma(before["dma"], values)
+    except (KeyError, TypeError):
+        raise ValueError("functional live hardware/RAM differs: dma")
     lifetime = before["lifetime_retired"]
     bench.require(type(lifetime) is list and len(lifetime) == 2,"missing per-hart physical execution")
     for h,value in enumerate(lifetime): bench.integer(value,values["cpu"][h][1])

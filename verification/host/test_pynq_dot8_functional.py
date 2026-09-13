@@ -43,7 +43,9 @@ class FunctionalMMIO(MMIO):
             if address in (0x10,0x14): return len(self.payload)+(self.scenario == "trailing")
             if address == 0x28: return 3
             if address in (0x30,0x38): return 2000000
-            values = {a:0 for a in (0x84,0x88,0x8c,0x90,0x94,0x98,0x118,0x11c)}
+            # DMA ACK clears terminal status but retains the completed-byte
+            # prefix and last-job cycle accounting, per the driver contract.
+            values = {0x84:0,0x88:512,0x8c:0,0x90:1,0x94:0,0x98:0,0x118:0,0x11c:0}
             for base,counts in ((0xa0,self.counts[28:42]),(0x120,self.counts[42:])):
                 for i,value in enumerate(counts): values.update({base+8*i:value&0xffffffff,base+8*i+4:value>>32})
             if address in values:
@@ -145,6 +147,8 @@ class PynqDot8Functional(unittest.TestCase):
             for bank,n in (("dma",14),("dot8",8)):
                 for i in range(n):
                     bad = deepcopy(original); bad["boots"][0]["before_stop"][bank]["counters"][i] += 1; mutations.append(bad)
+            for key,value in (("bytes_done",511),("job_cycles",0)):
+                bad = deepcopy(original); bad["boots"][0]["before_stop"]["dma"][key] = value; mutations.append(bad)
             for i in range(50):
                 bad = deepcopy(original); bad["boots"][0]["reference_comparison"]["counter_deltas"][i] = 1; mutations.append(bad)
             for key in ("control","status","hart_status","stop_status"):

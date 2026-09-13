@@ -87,8 +87,18 @@ def validate_observation(observation,values,boot):
 
 
 def host_dma(values):
-    # The runtime explicitly acknowledges its final copy before FREEZE.
-    return dict(status=0,bytes_done=0,error_code=0,counting=0,job_cycles=0,counters=values["dma"])
+    # ACK clears terminal status, but the DMA contract deliberately retains
+    # completed-byte and last-job-cycle accounting until the next accepted
+    # START/reset.  The cycle count is checked as a live positive diagnostic
+    # by the physical proof because it depends on the hardware memory path.
+    return dict(status=0,bytes_done=values["dma"][2],error_code=0,counting=0,counters=values["dma"])
+
+
+def validate_host_dma(snapshot, values):
+    expected = host_dma(values)
+    for key in ("status", "bytes_done", "error_code", "counting", "counters"):
+        bench.require(bench.typed_equal(snapshot[key], expected[key]), "functional DMA acknowledgement/accounting differs")
+    bench.integer(snapshot["job_cycles"], 1)
 
 
 def host_dot8(values):
