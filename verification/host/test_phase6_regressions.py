@@ -59,6 +59,26 @@ def v4_fixture():
 
 
 class Phase6Regressions(unittest.TestCase):
+    def test_exact_parallel_unittest_prefix_preserves_strict_gates(self):
+        lines = [f"PASS: cache scoreboard words=4 lines=16 seed={s} completed=5092 aborted=5 stalls=35198 reads=8537 writes=1642"
+                 for s in audit.SEEDS]
+        prefix = "test_fixed_plan_and_honest_slowdown_aggregation (test_coherent_study.CoherentStudy.test_fixed_plan_and_honest_slowdown_aggregation) ... "
+        raw = prefix+"\n".join(lines)+"\n"
+        log = audit.Log(raw); self.assertEqual(log.raw, raw)
+        audit.cache(log, [(4, 16)]); log.finish(3)
+        for bad_prefix in ("arbitrary prose ", prefix.replace("...", ".."), prefix.replace("test_", "check_", 1),
+                           prefix.replace("(test_coherent", "((test_coherent"), " "+prefix):
+            with self.subTest(prefix=bad_prefix), self.assertRaises(ValueError):
+                audit.cache(audit.Log(bad_prefix+"\n".join(lines)+"\n"), [(4, 16)])
+        for old, new in (("seed=1 ", "seed=2 "), ("completed=5092", "completed=5091"), ("aborted=5", "aborted=4")):
+            with self.subTest(metric=old), self.assertRaises(ValueError):
+                audit.cache(audit.Log(raw.replace(old, new, 1)), [(4, 16)])
+        for tail in (prefix+lines[0]+"\n", prefix+"PASS: invented proof\n"):
+            with self.subTest(tail=tail), self.assertRaises(ValueError):
+                log = audit.Log(raw+tail); audit.cache(log, [(4, 16)]); log.finish(3)
+        for failure in ("FAIL: hidden failure", "ERROR: hidden failure", "FAILED (failures=1)", "Traceback (most recent call last):"):
+            with self.subTest(failure=failure), self.assertRaises(ValueError): audit.Log(raw+prefix+failure+"\n")
+
     def test_fresh_check_only_cannot_pass_as_complete_regressions(self):
         with tempfile.TemporaryDirectory(prefix="aster-fresh-check-") as directory:
             root = Path(directory); original = manifest(root)

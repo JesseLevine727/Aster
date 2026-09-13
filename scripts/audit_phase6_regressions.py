@@ -40,7 +40,14 @@ class Log:
         require(type(raw) is str and raw.endswith("\n") and "\x00" not in raw, "invalid/truncated regression log")
         require(not re.search(r"(?m)(^FAIL:|^ERROR:|^FAILED\b|^Traceback|%Error|make[^\n]*\*\*\*)", raw), "failed regression log")
         self.raw = raw
-        self.lines = [line for line in raw.splitlines() if line.startswith("PASS:")]
+        # unittest writes its progress prefix without a newline. Parallel make
+        # can append a complete harness gate there, just like the trap markers
+        # handled below. Strip only that exact prefix; retain the untouched raw
+        # capture and all subsequent scenario/order/metric checks.
+        lines = [re.sub(r"^test_\w+ \([^\n()]+\) \.\.\. (?=PASS:|FAIL:|ERROR:|FAILED\b|Traceback)", "", line)
+                 for line in raw.splitlines()]
+        require(not any(re.match(r"FAIL:|ERROR:|FAILED\b|Traceback", line) for line in lines), "failed regression log")
+        self.lines = [line for line in lines if line.startswith("PASS:")]
         self.used = set()
 
     def rows(self, prefix, pattern):
