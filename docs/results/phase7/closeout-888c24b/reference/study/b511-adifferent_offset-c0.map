@@ -1,0 +1,142 @@
+
+Merging object attributes
+
+
+Discarded input sections
+
+ .riscv.attributes
+                0x00000000       0x40 /tmp/ccL7SupK.o
+ .comment       0x00000000       0x1a /tmp/cc5QrmLC.o
+ .riscv.attributes
+                0x00000000       0x42 /tmp/cc5QrmLC.o
+ .comment       0x00000000       0x1a /tmp/ccVTEOGr.o
+ .riscv.attributes
+                0x00000000       0x42 /tmp/ccVTEOGr.o
+
+Memory Configuration
+
+Name             Origin             Length             Attributes
+ROM              0x00000000         0x00010000         xr
+SHARED           0x10000000         0x00001000         xrw
+DMA_SOURCE       0x10001000         0x00002100         rw
+DMA_DESTINATION  0x10005080         0x00002100         rw
+PRIVATE0         0x10008000         0x00004000         xrw
+PRIVATE1         0x1000c000         0x00004000         xrw
+*default*        0x00000000         0xffffffff
+
+Linker script and memory map
+
+LOAD /tmp/ccL7SupK.o
+LOAD /tmp/cc5QrmLC.o
+LOAD /tmp/ccVTEOGr.o
+
+.text           0x00000000     0x11a0
+ *(.text.init)
+ .text.init     0x00000000       0xc4 /tmp/ccL7SupK.o
+                0x00000000                _start
+                0x00000100                        . = ALIGN (0x100)
+ *fill*         0x000000c4       0x3c 
+                0x00000100                        __benchmark_start = .
+ *(.text.benchmark)
+ .text.benchmark
+                0x00000100       0xfc /tmp/ccVTEOGr.o
+                0x00000100                aster_dma_cpu_memcpy
+                0x000001fc                        __benchmark_end = .
+ *(.text*)
+ .text          0x000001fc        0x0 /tmp/ccL7SupK.o
+ .text          0x000001fc      0x3c0 /tmp/cc5QrmLC.o
+                0x000001fc                aster_dma_status
+                0x00000208                aster_dma_bytes_done
+                0x00000214                aster_dma_error_code
+                0x00000220                aster_dma_job_cycles
+                0x00000244                aster_dma_poll
+                0x000002fc                aster_dma_submit
+                0x00000364                aster_dma_wait
+                0x000003d8                aster_dma_abort_and_wait
+                0x00000480                aster_dma_acknowledge
+                0x000004f0                aster_dma_copy
+ .text          0x000005bc      0x110 /tmp/ccVTEOGr.o
+                0x000006c8                aster_secondary_main
+ .text.startup  0x000006cc      0xad4 /tmp/ccVTEOGr.o
+                0x000006cc                main
+
+.rodata         0x000011a0      0x410
+ *(.rodata*)
+ .rodata.str1.4
+                0x000011a0      0x38a /tmp/ccVTEOGr.o
+                                0x3a2 (size before relaxing)
+ *fill*         0x0000152a        0x2 
+ .rodata        0x0000152c       0x84 /tmp/ccVTEOGr.o
+
+.rela.dyn       0x000015b0        0x0
+ .rela.text.init
+                0x000015b0        0x0 /tmp/ccL7SupK.o
+
+.data           0x10000000        0x0 load address 0x000015b0
+                0x10000000                        __data_start = .
+ *(.data*)
+ .data          0x10000000        0x0 /tmp/ccL7SupK.o
+ .data          0x10000000        0x0 /tmp/cc5QrmLC.o
+ .data          0x10000000        0x0 /tmp/ccVTEOGr.o
+ *(.sdata*)
+                0x10000000                        . = ALIGN (0x4)
+                0x10000000                        __data_end = .
+                0x000015b0                        __data_load_start = LOADADDR (.data)
+
+.bss            0x10000000        0x0 load address 0x000015b0
+                0x10000000                        __bss_start = .
+ *(.bss*)
+ .bss           0x10000000        0x0 /tmp/ccL7SupK.o
+ .bss           0x10000000        0x0 /tmp/cc5QrmLC.o
+ .bss           0x10000000        0x0 /tmp/ccVTEOGr.o
+ *(.sbss*)
+ *(COMMON)
+                0x10000000                        . = ALIGN (0x4)
+                0x10000000                        __bss_end = .
+
+.dma_source     0x10001000      0x2c0
+ *(.dma_source)
+ .dma_source    0x10001000      0x2c0 /tmp/ccVTEOGr.o
+                0x10001000                aster_dma_bench_source
+
+.dma_destination
+                0x10005080      0x2c0
+ *(.dma_destination)
+ .dma_destination
+                0x10005080      0x2c0 /tmp/ccVTEOGr.o
+                0x10005080                aster_dma_bench_destination
+
+.private0       0x10008000      0xd80
+                0x10008000                        __private0_start = .
+ *(.private0*)
+ .private0      0x10008000      0xd80 /tmp/ccVTEOGr.o
+                0x10008000                aster_dma_bench_results
+                0x10008d80                        . = ALIGN (0x4)
+                0x10008d80                        __private0_end = .
+
+.private1       0x1000c000        0x0
+                0x1000c000                        __private1_start = .
+ *(.private1*)
+                0x1000c000                        . = ALIGN (0x4)
+                0x1000c000                        __private1_end = .
+                0x00001000                        PROVIDE (__stack_size = 0x1000)
+                0x1000c000                        __stack0_top = (ORIGIN (PRIVATE0) + LENGTH (PRIVATE0))
+                0x10010000                        __stack1_top = (ORIGIN (PRIVATE1) + LENGTH (PRIVATE1))
+                0x1000b000                        __stack0_bottom = (__stack0_top - __stack_size)
+                0x1000f000                        __stack1_bottom = (__stack1_top - __stack_size)
+                0x00000001                        ASSERT (((__stack_size >= 0x10) && ((__stack_size % 0x10) == 0x0)), Aster DMA benchmark stacks must be 16-byte aligned)
+                0x00000001                        ASSERT (((__stack0_bottom >= ORIGIN (PRIVATE0)) && (__stack0_bottom >= __private0_end)), Aster DMA benchmark results/private0 overflow into stack)
+                0x00000001                        ASSERT (((__stack1_bottom >= ORIGIN (PRIVATE1)) && (__stack1_bottom >= __private1_end)), Aster DMA benchmark private1 overflow into stack)
+
+/DISCARD/
+ *(.comment)
+ *(.eh_frame)
+ *(.riscv.attributes)
+OUTPUT(/tmp/aster-dma-study-tq2v2ssm/software/dma_b511_adifferent_offset_j4_s324468736/dma.elf elf32-littleriscv)
+
+.note.GNU-stack
+                0x00000000        0x0
+ .note.GNU-stack
+                0x00000000        0x0 /tmp/cc5QrmLC.o
+ .note.GNU-stack
+                0x00000000        0x0 /tmp/ccVTEOGr.o

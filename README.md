@@ -73,9 +73,15 @@ clean-source simulation study and strict 22-target regression audit pass.
 The [self-contained Phase 6 evidence](docs/results/phase6/closeout-215b2d0/README.md)
 passes all seven requirement audits and a fresh clean rebuild with 84 host
 tests. Its 835 hash-checked artifacts include both actual bitstreams and full
-raw regression/firmware/physical records. Phase 7 (DMA) is now in progress;
-its [architecture and acceptance contract](docs/phase7.md) preserves that
-baseline while adding coherent hardware copies and CPU/DMA size experiments.
+raw regression/firmware/physical records. Phase 7 (DMA) is also complete:
+coherent autonomous copies, a RAM-backed C driver and AsterBench v5 size
+experiments pass all seven [acceptance gates](docs/results/phase7/closeout-888c24b/README.md).
+The 2,003-artifact bundle retains all 22 legacy and 14 DMA regression targets,
+144 physical benchmark captures, eight additional functional board boots,
+both routed 31.25 MHz overlays and a fresh rebuild with 149 host tests.
+The [current runtime guide](docs/runtime.md) covers the coherent RV32IMA/DMA
+configuration separately from the preserved legacy maps. Phase 8 is next;
+it has not begun.
 
 Start here:
 
@@ -290,7 +296,8 @@ Build a memory-to-memory DMA engine with source, destination, length, start/stat
 
 **Experiment:** CPU `memcpy` vs DMA across increasing transfer sizes to identify the crossover point.
 
-**In progress:** [Phase 7 contract](docs/phase7.md). DMA uses the reserved
+**Complete:** [seven-gate acceptance and immutable evidence](docs/results/phase7/closeout-888c24b/README.md).
+The [Phase 7 contract](docs/phase7.md) implements DMA in the reserved
 `0x3000_0000` register page, participates in coherent shared-RAM access and
 retains the verified 31.25 MHz baseline. Completion is pollable; interrupts,
 shared L2 and Phase 8+ remain outside this phase.
@@ -301,14 +308,20 @@ study passes 144 captures / 288 warm boots / 1,152 paired jobs, and both
 captures pass the complete physical/Git audit with exact reference counters.
 Eight separate functional board boots also pass directed runtime, atomic/reset
 interactions and DMA-copied RAM-code publication. The final independent read
-confirms safely stopped CPUs/DMA and Linux available. Full DMA regression and
-immutable/fresh-checkout closeout gates remain pending.
+confirms safely stopped CPUs/DMA and Linux available. All 22 legacy and 14 DMA
+regression targets pass their scenario/provenance audits, and the fresh rebuild
+passes 157 emitted scenarios and 149 host tests. All seven combined requirements
+pass against 2,003 hash-checked artifacts.
 The DMA-enabled Linux shell also passes actual-core AXI/serial runtime,
 RAM-code publication and safe-stop tests; its v5 benchmark has separate
 freeze-time CPU/DMA observations and physical-baud simulation coverage.
 Clean cache-off/on functional references retain actual ELF/ROM/UART/RAM and
 independent event/retirement evidence for both C programs over eight warm boots.
 The [physical workflow](docs/phase7-physical.md) uses guarded Linux/PCAP only.
+At 8 KiB with caches enabled, measured CPU cycles / DMA cycles is **1.104×
+aligned** and **1.623× with different offsets**. Small transfers can be slower
+with DMA; the report retains alignment/cache-specific sampled crossover points
+and reversals. Polling does not demonstrate freed CPU time.
 
 ## Phase 8 — Custom compute instruction
 

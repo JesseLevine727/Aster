@@ -364,9 +364,11 @@ Keep DMA-disabled regressions and the immutable Phase 6 audit. Do not use
 `audit_phase6 --current` to certify changed Phase 7 RTL; the historical audit
 remains valid against its own recorded Git revision. The clean new legacy run
 passes all 22 targets and 2,397 emitted scenarios. The fresh detached build
-passes `make check`, including 157 scenarios and 149 host tests. The final
-14-target DMA supplement and combined immutable closeout are separate gates,
-not implied by `check`.
+passes `make check`, including 157 scenarios and 149 host tests. The separate
+14-target DMA supplement passes 569 emitted scenarios and its recorded
+130-test host suite. The [2,003-artifact closeout](results/phase7/closeout-888c24b/README.md)
+passes all seven combined requirements; these full runs are not implied by
+`check` alone.
 
 The [AsterBench v5 study](phase7-bench.md) passes all 144 simulation captures
 and the identical physical plan: 288 boots and 1,152 paired jobs in each.

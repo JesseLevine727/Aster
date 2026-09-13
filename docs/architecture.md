@@ -1,6 +1,6 @@
 # Aster architecture specification
 
-Status: Phases 1–6 physically verified; Phase 7 DMA in progress, 2026-09-13.
+Status: Phases 1–7 complete and physically verified, 2026-09-13. Phase 8 not begun.
 
 Phase 5 is implemented and physically verified in the `aster_multicore` top. Its
 [dual-hart contract](phase5.md) specifies the new memory ownership, runtime,
@@ -16,8 +16,11 @@ units and one-/two-hart SoC runtime tests are verified in simulation. The fixed
 AsterBench v5 CPU/DMA study passes 144 physical captures, and separate runtime
 and DMA-copied RAM-code tests pass eight physical warm boots. Both DMA overlays
 retain 31.25 MHz and pass routed/reset/HWH signoff. See the
-[physical contract and results](phase7-physical.md); final full-regression,
-immutable-evidence and fresh-checkout closure remains in progress.
+[physical contract and results](phase7-physical.md), [current runtime](runtime.md)
+and [seven-gate closeout](results/phase7/closeout-888c24b/README.md). Both full
+regression plans, fresh-checkout rebuild and complete immutable evidence audit
+pass. Legacy maps, firmware/measurement ABIs and historical evidence remain
+separate and preserved.
 
 This document is the executable contract for the first bring-up slice. It
 separates decisions that are fixed for the minimal system from features that
@@ -62,7 +65,7 @@ loopback, not an external Pmod electrical test. See the
 The minimal-system baseline below retains RV32IM, the Phase 3 performance
 counter block and Phase 4 private I/D L1 pair. Its DMA/accelerator event sources
 remain disconnected. Phase 6 separately adds two RV32IMA harts and coherent
-private caches. Phase 7 targets DMA; shared L2, custom packed INT8 instructions,
+private caches. Phase 7 adds optional coherent DMA; shared L2, custom packed INT8 instructions,
 the INT8 accelerator, interrupts and timers remain future work.
 
 ## Minimal-system block diagram (Phases 1–4)

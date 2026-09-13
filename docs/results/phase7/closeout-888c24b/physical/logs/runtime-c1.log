@@ -1,0 +1,5 @@
+PYNQ7_FUNCTIONAL: complete ELF/ROM/source/reset/signoff preflight passed
+PYNQ7_FUNCTIONAL: downloading verified DMA overlay through Linux/PCAP
+PASS: physical Pynq-Z1 DMA runtime cache=1 boot=1 serial_bytes=97 retained_RAM=65536 independent_functional_oracle
+PASS: physical Pynq-Z1 DMA runtime cache=1 boot=2 serial_bytes=97 retained_RAM=65536 independent_functional_oracle
+PASS: physical DMA functional package audited and CPU/DMA safely STOPPED, /home/xilinx/aster_phase7_functional_6899989/runtime-c1/functional-physical.json

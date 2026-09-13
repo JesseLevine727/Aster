@@ -34,8 +34,9 @@ Each image passes five actual generated-reset scenarios and has zero
 unconstrained internal endpoints. The existing five asynchronous output ports
 without output delays remain explicit exceptions, not hidden constraints.
 Positive slack at this clock is **not** a measured higher operating frequency.
-Raw package hashes and final immutable packaging remain separate acceptance
-items; these routed results alone do not close Phase 7.
+Raw package hashes and immutable packaging are separately audited in the
+[complete Phase 7 closeout](results/phase7/closeout-888c24b/README.md); routed
+results alone are not physical execution proof.
 
 ## Deployment and collection
 
@@ -85,7 +86,7 @@ provenance audit.
 The collectors and their PCAP/MMIO fixtures are host-tested before deployment.
 Fixtures deliberately test failure paths and are never stored as physical
 acceptance results. The fixed study and separate DMA/code-publication physical
-proof now pass; final regression/immutable closeout remains required by
+proof now pass, as do the separate full-regression/immutable gates required by
 [the phase contract](phase7.md).
 
 ## First physical run and full-study schedule
@@ -196,5 +197,6 @@ The final independent read at **2026-09-13 17:20:50 UTC** confirms ABI
 `CONTROL/STATUS/HART_STATUS/STOP_STATUS = 0/0/0/1`, and zero DMA status, bytes,
 job cycles, counting flag and all 14 counters. Linux remained available and
 the root SSH session closed normally. No JTAG, ARM reset or unrelated work
-was touched. Immutable bundle/fresh-checkout/full-regression closure remains
-pending; the board runs alone do not declare Phase 7 complete.
+was touched. The [immutable bundle](results/phase7/closeout-888c24b/README.md)
+also passes complete legacy/DMA regression and fresh-checkout verification;
+all seven combined gates close Phase 7, not the board runs alone.

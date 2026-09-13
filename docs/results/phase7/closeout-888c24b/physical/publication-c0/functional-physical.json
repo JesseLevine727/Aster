@@ -1,0 +1,419 @@
+{
+  "baud": 115200,
+  "board": "Pynq-Z1",
+  "boots": [
+    {
+      "after_stop": {
+        "control": 0,
+        "dma": {
+          "bytes_done": 0,
+          "counters": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+          ],
+          "counting": 0,
+          "error_code": 0,
+          "job_cycles": 0,
+          "status": 0
+        },
+        "hart_status": 0,
+        "status": 0,
+        "stop_status": 1
+      },
+      "before_stop": {
+        "control": 1,
+        "dma": {
+          "bytes_done": 8,
+          "counters": [
+            432,
+            368,
+            16,
+            16,
+            64,
+            16,
+            16,
+            0,
+            0,
+            0,
+            8,
+            0,
+            0,
+            0
+          ],
+          "counting": 0,
+          "error_code": 0,
+          "job_cycles": 54,
+          "status": 2
+        },
+        "faults": [
+          {
+            "address": 0,
+            "atomic_fault_valid": false,
+            "cause": 0,
+            "hart": 0,
+            "instruction": 0,
+            "pc": 192,
+            "trapped": false
+          },
+          {
+            "address": 0,
+            "atomic_fault_valid": false,
+            "cause": 0,
+            "hart": 1,
+            "instruction": 0,
+            "pc": 1484,
+            "trapped": false
+          }
+        ],
+        "fifo_count": 0,
+        "hart_status": 3,
+        "lifetime_retired": [
+          386081,
+          385291
+        ],
+        "rx_bytes": 14,
+        "status": 1,
+        "stop_status": 0,
+        "tx_bytes": 14
+      },
+      "boot": 1,
+      "elapsed_seconds": 0.5096670140046626,
+      "ram": {
+        "bytes": 65536,
+        "file": "boot1.ram",
+        "sha256": "71b7a661fc201a19d3319f5315a98c3e26dfa9fd45ac23528f6322a75a79ac32"
+      },
+      "ram_values": {
+        "cpu": [
+          [
+            94800,
+            4066,
+            5262,
+            0,
+            0,
+            0,
+            0,
+            5196,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+          ],
+          [
+            94800,
+            3683,
+            5257,
+            0,
+            0,
+            0,
+            0,
+            5256,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+          ]
+        ],
+        "dma": [
+          432,
+          368,
+          16,
+          16,
+          64,
+          16,
+          16,
+          0,
+          0,
+          0,
+          8,
+          0,
+          0,
+          0
+        ],
+        "metadata": [
+          8,
+          0,
+          288,
+          312,
+          312,
+          268435456,
+          2,
+          8,
+          5,
+          31250000,
+          6,
+          268435584,
+          0,
+          0,
+          0,
+          0
+        ]
+      },
+      "status": "PASS",
+      "uart": {
+        "bytes": 14,
+        "file": "boot1.uart",
+        "sha256": "93dc1fdb8c1893c0efcee9c92cb724e6884a1d595efe953b934aae991f07a995"
+      }
+    },
+    {
+      "after_stop": {
+        "control": 0,
+        "dma": {
+          "bytes_done": 0,
+          "counters": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+          ],
+          "counting": 0,
+          "error_code": 0,
+          "job_cycles": 0,
+          "status": 0
+        },
+        "hart_status": 0,
+        "status": 0,
+        "stop_status": 1
+      },
+      "before_stop": {
+        "control": 1,
+        "dma": {
+          "bytes_done": 8,
+          "counters": [
+            432,
+            368,
+            16,
+            16,
+            64,
+            16,
+            16,
+            0,
+            0,
+            0,
+            8,
+            0,
+            0,
+            0
+          ],
+          "counting": 0,
+          "error_code": 0,
+          "job_cycles": 54,
+          "status": 2
+        },
+        "faults": [
+          {
+            "address": 0,
+            "atomic_fault_valid": false,
+            "cause": 0,
+            "hart": 0,
+            "instruction": 0,
+            "pc": 192,
+            "trapped": false
+          },
+          {
+            "address": 0,
+            "atomic_fault_valid": false,
+            "cause": 0,
+            "hart": 1,
+            "instruction": 0,
+            "pc": 1484,
+            "trapped": false
+          }
+        ],
+        "fifo_count": 0,
+        "hart_status": 3,
+        "lifetime_retired": [
+          385837,
+          385045
+        ],
+        "rx_bytes": 14,
+        "status": 1,
+        "stop_status": 0,
+        "tx_bytes": 14
+      },
+      "boot": 2,
+      "elapsed_seconds": 0.5044200670090504,
+      "ram": {
+        "bytes": 65536,
+        "file": "boot2.ram",
+        "sha256": "9846ea6d8f23cd1746f72a72f09e6d5af319a62de5b056b28d40afe4f68cef77"
+      },
+      "ram_values": {
+        "cpu": [
+          [
+            94800,
+            4066,
+            5262,
+            0,
+            0,
+            0,
+            0,
+            5196,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+          ],
+          [
+            94800,
+            3683,
+            5257,
+            0,
+            0,
+            0,
+            0,
+            5256,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+          ]
+        ],
+        "dma": [
+          432,
+          368,
+          16,
+          16,
+          64,
+          16,
+          16,
+          0,
+          0,
+          0,
+          8,
+          0,
+          0,
+          0
+        ],
+        "metadata": [
+          8,
+          0,
+          288,
+          312,
+          312,
+          268435456,
+          2,
+          8,
+          5,
+          31250000,
+          6,
+          268435584,
+          0,
+          0,
+          0,
+          0
+        ]
+      },
+      "status": "PASS",
+      "uart": {
+        "bytes": 14,
+        "file": "boot2.uart",
+        "sha256": "93dc1fdb8c1893c0efcee9c92cb724e6884a1d595efe953b934aae991f07a995"
+      }
+    }
+  ],
+  "clock_mhz": 31.25,
+  "collector_files": {
+    "asterbench.py": "cead01e0343fb7cd03964a3d27dd7a75a91e02caacd746609bbd6de87404ddca",
+    "asterbench_coherent.py": "17a676ede32fffa9b28dd165bcb0ee31dbdfe2e24513c43b2e1cad05223a331e",
+    "asterbench_dma.py": "d44658f0a015d2990df12d8a0356162266cf3f6bca224d60fba12b2e78dd203f",
+    "bench_results.py": "d3872edd950bbbe3abc867a4cad2aeacc1fe3ee81c0974416d2d10ec80c32e0a",
+    "coherent_bridge.py": "409164f08f1ec6980455b8853cb46ea1b9ab0eb4eeb7241c82e293d9160b3ec0",
+    "coherent_elf.py": "bf2e32ddec3c38037a63744454050224212bbddb8bb0b131563763f60eb5648a",
+    "coherent_overlay.py": "7ce1a60487e758a3b9e851449166a6092f5f56be27bcb754fc4f5671e976ee59",
+    "coherent_results.py": "c8c6bc377adc6dbae02491094a4f91258c9c531695b3ea99af395d661b2d7f9b",
+    "dma_bridge.py": "c3ffdfc623e0f7c1c577f998f83ad663a531ffb75855bf227342f766cdf371ba",
+    "dma_functional.py": "f64f7e9be6ceb46f134049d7fbe68198e2973093f639da53b8b9dbb33a4f092f",
+    "dma_functional_physical.py": "54e35ba8dc6a0454fe6e411c1c42eb650da7a8509d4e5e178f2cc6026b85ec8c",
+    "dma_functional_results.py": "3b307036f6026c0e24f5f1c82df4bcc44617e0c4c6a91efaad121b9db0fc2d25",
+    "dma_overlay.py": "2e1fdea27eb8800f048090440432840353d74ed99157a8db345e013c39930d25",
+    "dma_physical.py": "440668fb4562168bd80639f689a8242ab86d5a83febb61a293ce05666b505228",
+    "dma_results.py": "f84a9eea634b0afdfb36f5c545d26e685a011714c9fbdda64da9de7bd083becb",
+    "pynq_handoff.py": "46c7aeda5ad6b935ee65f2ad3ce3d32cfe9807e8eb46f75bc6144d884b717ace",
+    "run_coherent_sim.py": "9f7598de1203f3d5d7ef0846f7b9b9f7f3190e7d50a4f4ef59592c80ead4e1c7",
+    "run_pynq_dma.py": "45ece9fea570498c3fb6a1537fe8a2a6ee687f33225b3820a897ff83abe5b70d",
+    "run_pynq_dma_functional.py": "7e9338c2493c94198d76e5549e28baa3704ece9895f86c24ac5949e272c8284d"
+  },
+  "collector_revision": "68999899972e98b92b0e60baf1c9dd4d0e44d81c",
+  "downloaded": false,
+  "external_pmod_loopback": false,
+  "final_state": {
+    "control": 0,
+    "dma": {
+      "bytes_done": 0,
+      "counters": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "counting": 0,
+      "error_code": 0,
+      "job_cycles": 0,
+      "status": 0
+    },
+    "hart_status": 0,
+    "status": 0,
+    "stop_status": 1
+  },
+  "host_pause_seconds": 0.2,
+  "kernel": "6.6.10-xilinx-v2024.1-g916a1f7c7222",
+  "kind": "publication",
+  "loaded_bitstream": "/home/xilinx/aster_phase7_functional_6899989/overlay-c0/aster_linux.bit",
+  "overlay_sha256": "89f7cfb8c29dacd46b5fb84627bebefdd9d2b547af9f180f84de2d19941bfd65",
+  "previous_bitstream": "/home/xilinx/aster_phase7_functional_6899989/overlay-c0/aster_linux.bit",
+  "previous_bitstream_sha256": "ebff6f704b96d87230a37f0bbc443167762dbe3ce7632d716070af29b9eaf299",
+  "previous_state": {
+    "control": 0,
+    "hart_status": 0,
+    "status": 0,
+    "stop_status": 1
+  },
+  "pynq_version": "3.1.1",
+  "reference_sha256": "4c2a8c42d9c5da45ad76e22070799d64a2c9626c9a7f075d2d9bf173df5a81b5",
+  "schema": "aster.dma.functional-physical.v1",
+  "status": "complete",
+  "timeout_seconds": 120.0,
+  "transport": "PYNQ Linux PCAP/AXI, FPGA UART TX-to-RX serial loopback"
+}

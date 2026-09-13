@@ -2,8 +2,9 @@
 
 Status: the complete clean simulation and physical PYNQ studies pass all
 144 captures / 288 warm boots / 1,152 paired jobs each, with exact physical
-reference counters and independent UART/RAM/Git audits. Final immutable
-packaging and full phase closeout are still pending.
+reference counters and independent UART/RAM/Git audits. All seven requirements
+pass in the [immutable Phase 7 closeout](results/phase7/closeout-888c24b/README.md),
+including complete regressions and fresh-checkout verification.
 The [Phase 7 contract](phase7.md) and README remain the
 acceptance authority. Preserve all v2/v3/v4 record and capture interfaces.
 

@@ -1,9 +1,11 @@
 # Phase 7: coherent memory-to-memory DMA
 
-Status: **the clean 144-capture simulation and physical studies, eight separate
-physical functional boots, both routed/reset/HWH FPGA images, the complete
-22-target legacy regression and fresh-checkout verification pass. The final
-14-target DMA supplement and combined immutable acceptance remain pending**.
+Status: **complete**. All seven requirements pass against the
+[2,003-artifact immutable closeout](results/phase7/closeout-888c24b/README.md):
+144-capture simulation and physical studies, eight separate physical functional
+boots, both routed/reset/HWH images, all 22 legacy and 14 DMA regression targets,
+and a fresh rebuild with 149 host tests. Clock remains 31.25 MHz; Phase 8 is
+not part of this implementation.
 Baseline: clean/pushed Phase 6 closeout
 `70a1b55b303786144aaa052b6cd8b9e8a4d75bf1`. Before any Phase 7 edits,
 `audit_phase6.py ... --current` passed all seven baseline acceptance gates.
@@ -39,9 +41,9 @@ in `verification/unit/` and `verification/soc/`, and provenance/audits in
 - [x] Coherent device accesses, reservations, permissions and safe lifecycle.
 - [x] Compiled RISC-V driver/runtime plus directed/seeded integrated matrices.
 - [x] Versioned AsterBench CPU/DMA sweep, independent oracles and provenance.
-- [ ] Full applicable Phase 1–7 regression run and clean routed FPGA signoff.
+- [x] Full applicable Phase 1–7 regression run and clean routed FPGA signoff.
 - [x] Real PYNQ Linux/PCAP DMA and CPU/DMA sweeps, repeated jobs/warm boots.
-- [ ] Immutable evidence, mutation-tested requirement audit, fresh-checkout
+- [x] Immutable evidence, mutation-tested requirement audit, fresh-checkout
   verification and clean/pushed closeout.
 
 Commit and push each verified milestone. A changed design must update this
@@ -512,8 +514,11 @@ coverage, reordered warm boots, damaged UART/counter evidence and false hashes.
 
 The new clean Phase 1–6 run on DMA-capable source `888c24b` has passed its
 independent 22-target / 2,397-scenario audit. The complete DMA supplement from
-`694ae0e` is still running; completed unit logs and earlier Linux matrices pass
-the new scenario parser. This is progress evidence, not final phase acceptance.
+`694ae0e` passes all 14 targets / 569 emitted scenarios, with 130 host tests at
+that revision. The final clean `b592cdc` rebuild passes 157 emitted scenarios
+and 149 host tests. All actual logs pass their semantic audits; 66 damaged
+legacy versions and 42 damaged DMA versions (missing, duplicate and late-failure
+gates) are independently rejected without modifying the original captures.
 
 `scripts/audit_phase7.py` is the outer seven-requirement audit. It binds the
 complete nested artifact inventory, both regression manifests, routed overlays,
@@ -525,8 +530,18 @@ is invoked. After `888c24b`, the only allowed hardware-test change is the
 optional UART/RAM/event exporter in `tb_pynq_linux_coherent.cpp`, explicitly
 bound to both clean functional reference builds and the fresh checkout. Every
 other RTL, firmware, vendor, FPGA, Makefile and hardware-test input must agree.
-Later host validators do not imply a later FPGA build. The self-contained
-bundle and final acceptance remain pending until those checks all pass.
+Later host validators do not imply a later FPGA build. The
+[self-contained bundle](results/phase7/closeout-888c24b/README.md) passes all
+seven combined gates. Reproduce the read-only acceptance audit from the root:
+
+```sh
+python3 scripts/audit_phase7.py audit docs/results/phase7/closeout-888c24b
+```
+
+Only Python 3 and complete repository Git history are required to audit saved
+evidence; no board or recorded tool executable is invoked. `--current` also
+requires present build/audit inputs to match the fresh verification. Omit that
+flag when auditing this historical bundle after later source changes.
 
 ## References and basis
 
