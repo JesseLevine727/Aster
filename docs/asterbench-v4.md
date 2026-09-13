@@ -129,6 +129,50 @@ Ratios below one are slowdowns. Raw per-job/per-boot values remain available;
 warm boots are not silently collapsed or required to be identical. Physical
 serial/PCAP integration and the final versioned study/audit are separate gates.
 
+## Fixed simulation study
+
+`scripts/coherent_study.py` captures and audits the versioned
+`phase6-default-size-communication-repeat-v1` plan. Its 57 captures retain
+114 warm boots and 342 measured jobs, always two physical harts, synchronous
+one-cycle backing RAM, four-word/sixteen-line geometry and no extra UART stalls:
+
+- All nine workloads at 64 items/four rounds, crossed with one/two workers and
+  cache-off/on (36 captures).
+- `shared_mix` at 2/1, 129/16 and 1024/64 items/rounds with the same cross
+  (12 captures). Seeds are respectively 0, 1 and `0xc0ffee`.
+- Ping-pong and the wrapping queue at 1024 items, seed `0xffffffff`, with the
+  same cross (eight captures).
+- An independently rebuilt repeat of the default two-worker cached mix.
+
+```
+python3 scripts/coherent_study.py plan
+python3 scripts/coherent_study.py capture --output build/v4-study
+python3 scripts/coherent_study.py audit build/v4-study/study.json
+```
+
+The output directory must not exist. The first 56 captures share one freshly
+created isolated build tree; configuration-specific firmware/model paths avoid
+cross-configuration reuse. The repeat uses a second fresh tree. Each capture
+checks its complete clean source and toolchain before/after building; the batch
+rejects changes between captures. Failures preserve raw logs and a failed
+manifest, which cannot pass the complete-study audit.
+
+The read-only auditor requires the exact ordered plan and every full capture
+package, revalidates actual ELF/ROM, serial observations and RAM, rejects extra
+files, and recalculates the whole summary. The fresh repeat must have identical
+ROM, records, per-hart observations, stops, symbols and full stopped RAM. Debug
+paths/map/disassembly files are retained independently; their hashes are not
+required to match across fresh build directories.
+
+Results retain all 28 summed counters plus per-boot/job cycles. There are 28
+worker-scaling, 28 cache-effect, four adjacent-versus-padded and one fresh-repeat
+comparisons. Ratios are baseline cycles divided by candidate cycles, so values
+below one remain slowdowns. Cycles per item include all configured mix rounds;
+communication items mean complete handoffs. The study does not combine distinct
+workloads into an overall speedup or turn this simulation study into a physical
+timing claim. Small jobs expose dispatch/synchronization overhead rather than
+subtracting it; exact cache-state/window caveats above apply to every result.
+
 For Verilator 5.020, coherent targets explicitly raise loop unrolling limits
 to accommodate nonblocking reset-array assignments at 1024 lines. This follows
 the documented [BLKLOOPINIT limitation](https://verilator.org/guide/latest/warnings.html#blkloopinit);

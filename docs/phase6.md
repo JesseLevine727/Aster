@@ -608,6 +608,21 @@ input. A complete final run and its evidence audit are still required.
 The expanded `make -j2 check` passes, including all 55 host tests, the ordering
 suite, public ISA cases and every existing default regression.
 
+### Fixed AsterBench study checkpoint
+
+`scripts/coherent_study.py` defines the complete versioned simulation study:
+all nine workloads, worker/cache cross, small/odd/large mix jobs, longer
+communication jobs, and one independent clean rebuild. Its fixed 57 captures
+retain 114 boots/342 jobs, all 28 counters and 61 controlled comparisons. The
+collector keeps failure evidence; the auditor rejects missing/changed cases,
+mixed source/toolchains, altered aggregates, symlink/unlisted artifacts and a
+repeat that reused the original build directory. Three batch-level test groups
+add plan, negative-manifest, fresh-build and failure-preservation coverage to
+the independently tested per-capture ELF/ROM/serial/RAM validators.
+See [the study plan and measurement caveats](asterbench-v4.md#fixed-simulation-study).
+This implementation checkpoint does not claim the full study or physical
+acceptance has run; their final raw evidence and audits remain required.
+
 ## Verification and closeout requirements
 
 1. Real-core PCPI probe, adapter unit tests and independent full-A reference:
