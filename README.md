@@ -342,7 +342,10 @@ retains the raw records and provenance. Phase 9's NPU remains separate.
 
 ## Phase 9 — Matrix accelerator / NPU
 
-Build from small verified pieces: processing element → array → 4×4 MAC array → memory/control interface → optional 8×8 configuration.
+**In progress:** [Phase 9 contract](docs/phase9.md). Build from small verified
+pieces: processing element → array → 4×4 MAC array → memory/control interface
+→ optional 8×8 configuration. AsterBench remains mandatory; Phase 9 adds a
+strict accelerator/GEMM record version while preserving v2–v6.
 
 Start with INT8 GEMM only. CNN support comes later.
 
