@@ -297,6 +297,8 @@ make atomic-runtime-matrix   # One/two real cores, uncached compiled RV32IMA C
 make coherent-cache-matrix   # 18 cache configurations × 3 seeds × 4 latencies
 make coherent-runtime-matrix # One/two real cores, private I$ + coherent D$
 make atomic-faults-matrix    # Actual-core fatal fault isolation, cache off/on
+make coherent-soc-matrix     # Real memories, warm-stop/RAM snapshots, secondary reset
+make coherent-counters       # ABI 4 fourteen-event scoreboard and 32/64-bit carry
 ```
 
 The RV32IMA fixture uses the protected-stack runtime, all word AMOs, LR/SC and
@@ -311,4 +313,7 @@ identity and absence of cache/backing/MMIO side effects, not just a trap bit.
 Recursive configuration matrices should run separately or in independent build
 roots. A geometry passing simulation does not imply it meets FPGA resources or
 timing. A quiescent probe flush is not yet a general host-controlled warm-stop
-implementation; no new Phase 6 board ABI or hardware acceptance is claimed.
+implementation. The newer `coherent-soc` tests exercise the actual warm-stop
+controller, full 64 KiB RAM retention and repeated selective resets across
+16 hart/cache/async/sync timing configurations. AXI loader/board integration
+and physical acceptance are still separate, unfinished gates.

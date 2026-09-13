@@ -20,7 +20,7 @@ Complete and commit/push these tested milestones in order:
   exactly-once results/retirement, prolonged waits, faults and reset.
 - [x] Full RV32A against a serialized uncached memory backend, including a
   reservation monitor and independent instruction-level reference checks.
-- [ ] Two private coherent D-cache banks, ownership/dirty-data/reset rules,
+- [x] Two private coherent D-cache banks, ownership/dirty-data/reset rules,
   coherent instruction reads from RAM and coherent atomic transactions.
 - [ ] Dual-hart RAM-backed C runtime and compiled atomic workloads; complete
   directed, randomized, progress, latency, reset and compatibility matrices.
@@ -318,6 +318,91 @@ must not guess compatibility. Keep the legacy single-hart and Phase 5 overlays
 available. Inspect board users/jobs before download, deploy in a new dedicated
 directory over verified SSH/PYNQ Linux, preserve other projects, and end held
 safely stopped. No JTAG, ARM halt/reset or SD/QSPI writes are authorized here.
+
+### Warm-stop implementation details
+
+`aster_warm_stop` gates **new fabric admissions**, never an already captured
+transaction's backing port. A selective secondary stop temporarily stalls both
+harts' memory admissions, but does not reset the primary. After the fabric
+reports idle, two quiet edges allow its response to pass through the PCPI
+completion handshake. Unadmitted requests may then be canceled by the selected
+core reset. A stable flush request/mask remains asserted until completion;
+only that completion clears the selected RUN bits/reservations/mailboxes.
+Global stop arriving during selective flush finishes it and then drains/flushes
+the remaining core. A new RUN request cannot cancel an in-progress flush.
+
+An explicit global stop cancels remaining console output: the UART elastic
+slot is allowed to drain to a discard sink while memory completes. This avoids
+deadlock if the host requests STOP with its receive FIFO already full. The
+serial path resets only when the cluster reaches STOPPED. This deliberate
+console cancellation must not cancel an accepted RAM/atomic operation. Normal
+run and secondary reset retain normal UART backpressure and primary state.
+
+`aster_coherent_soc` integrates the lifecycle controller, real cores, snooping
+cache, atomic fabric, ROM/RAM and peripherals. It separates destructive `resetn`
+from RAM-preserving `host_run`. ROM programming is accepted only when STOPPED
+and RUN is false. A read-only host RAM port likewise becomes available only
+when stopped; its consumer must honor synchronous RAM read latency.
+
+Hart-control offset `0x004` now reads requested secondary RUN, not an immediate
+reset wire. Effective RUN/trap bits remain at `0x00c`; firmware polls bit 1 clear
+before treating the worker as stopped. Offset `0x018` reports STOPPED bit 0,
+stop-busy bit 1 and flush-active bit 2. Own-hart fatal-atomic diagnostics occupy
+`0x020` (cause bits 3:0, valid bit 4), `0x024` (address), `0x028` (instruction).
+Mailboxes clear at completed secondary/global stop, not at the initial request.
+
+The lifecycle checkpoint passes `make coherent-soc-matrix`: 16 combinations of
+one/two cores, caches off/on and async/0, async/7, sync/1, sync/7 memory timing.
+Each runs the atomic C program through three complete warm boots plus targeted
+early/fill/writeback/atomic-read/atomic-write/reservation/byte-store/blocked-UART
+stops (and secondary-atomic or stalled-RAM triggers where applicable). Every
+stop compares **all 64 KiB** of physical RAM against a history of acknowledged
+architectural stores, without destructive reset after initial POR. Attempts to
+program a poisoned reset vector during RUN/drain are rejected and subsequent
+warm boots still execute the correct firmware.
+
+The second firmware runs three boots per configuration. With two cores it
+resets/restarts hart 1 eight times per boot, checking published payloads, private
+BSS startup, primary stack/private state, mailbox clearing and preservation of
+the primary's LR reservation; the secondary reservation is cleared. The host
+also checks the primary enters its reset vector only once per boot. One-core
+configurations check that secondary release remains ignored. The separate
+34-case sequencer unit covers held flush responses, stop escalation and a
+restart request arriving during an uncancelable flush.
+
+These prove the SoC's direct host-run contract in simulation. AXI bridge/loader
+integration, arbitrary-phase expanded adversarial coverage, benchmark-level
+validation and physical deployment remain separate gates.
+The expanded default `make -j2 check` passes with the warm-stop, coherent SoC
+and ABI 4 counter tests included. Across the 16-configuration SoC matrix there
+are 244 checked global stops and 192 completed secondary resets; every global
+stop is followed by a full RAM snapshot comparison. ABI 4's independent unit
+scoreboard also checks frozen reads, command edges, metadata and 32/64-bit carry.
+
+### Phase 6 performance-register contract (ABI 4)
+
+Keep 256-byte per-hart banks at `0x20003000` and `0x20003100`. ABI 4 is distinct
+from old v2/v3 layouts. Fourteen little-endian 64-bit counters occupy offsets
+`0x00` through `0x6c`, in this order: cycles, retired instructions, architectural
+memory transactions, I$ accesses, I$ misses, D$ data accesses, D$ data misses,
+backing transactions, completed A instructions, successful SC, failed SC,
+dirty interventions, invalidations, writeback words. SC attempts are success
+plus failure. Faulting A instructions do not count as completed. Cache service
+writebacks do not increment architectural stores or invalidate reservations.
+
+Control at `0x80` accepts START=1/FREEZE=2/RESUME=4 from hart 0 bank 0 only,
+on byte lane 0, broadcasting a common edge to both banks. As before, START
+clears without counting that edge, FREEZE excludes its edge, and reads after
+FREEZE are stable. Metadata: `0x84` ABI=4, `0x88` clock Hz, `0x8c` flags
+(bit 0 caches, bit 1 synchronous memory), `0x90` line words, `0x94` line count,
+`0x98` backing wait cycles, `0x9c` counter count=14. Unknown reads return zero.
+
+Cycles measure a common interval even for a held worker. Other events use
+actual per-hart observations. Dirty interventions/invalidations belong to the
+requesting hart; backing/writeback words belong to their physical port owner
+(the dirty bank's hart for maintenance). D$ access/miss counts exclude RAM
+instruction reads, which still consult coherent data. The benchmark schema
+must spell out these boundaries and retain raw per-hart values.
 
 ## Verification and closeout requirements
 
