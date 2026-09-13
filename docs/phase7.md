@@ -1,6 +1,7 @@
 # Phase 7: coherent memory-to-memory DMA
 
-Status: **architecture contract; implementation and acceptance pending**.
+Status: **engine/arbitration unit milestone verified; coherent integration,
+real-core, measurement and physical acceptance pending**.
 Baseline: clean/pushed Phase 6 closeout
 `70a1b55b303786144aaa052b6cd8b9e8a4d75bf1`. Before any Phase 7 edits,
 `audit_phase6.py ... --current` passed all seven baseline acceptance gates.
@@ -32,7 +33,7 @@ in `verification/unit/` and `verification/soc/`, and provenance/audits in
 ## Milestones and exit evidence
 
 - [x] Audit the Phase 6 baseline and specify this contract before RTL changes.
-- [ ] Independent DMA engine/register and fair-arbiter tests.
+- [x] Independent DMA engine/register and fair-arbiter tests.
 - [ ] Coherent device accesses, reservations, permissions and safe lifecycle.
 - [ ] Compiled RISC-V driver/runtime plus directed/seeded integrated matrices.
 - [ ] Versioned AsterBench CPU/DMA sweep, independent oracles and provenance.
@@ -43,6 +44,17 @@ in `verification/unit/` and `verification/soc/`, and provenance/audits in
 
 Commit and push each verified milestone. A changed design must update this
 contract with its evidence before subsequent stages depend on it.
+
+The first implementation milestone is reproducible with `make dma-engine
+dma-arbiter`. Three seeds cross three engine response-latency policies (zero,
+seven, randomized), with **67,401 test scenarios / 27,882 accepted descriptors**,
+complete byte-addressed RAM/guard oracles, all register lanes/unsupported
+offsets, every short-transfer abort/pause edge, 1,025-cycle stalled drains and
+testbench-deposited 64-bit carry/rollover. Arbiter tests cross three seeds and
+four latencies, including zero-/one-/two-operation CPU groups, 129-cycle AMO
+gaps, delayed settlement, random arrivals and a completed-group fairness bound.
+Assertions are enabled and warnings are fatal for both owned RTL units. These
+results prove units, **not** cache coherence, a real-core DMA copy or board DMA.
 
 ## Architecture and coherent serialization
 

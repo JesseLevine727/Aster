@@ -95,6 +95,8 @@ PCPI_ADAPTER_SIM := $(BUILD_DIR)/aster_pcpi_atomic_sim
 ATOMIC_FABRIC_SIM := $(BUILD_DIR)/aster_atomic_fabric_sim
 WARM_STOP_SIM := $(BUILD_DIR)/aster_warm_stop_sim
 COHERENT_PERF_SIM := $(BUILD_DIR)/aster_coherent_perf_sim
+DMA_ENGINE_SIM := $(BUILD_DIR)/aster_dma_engine_sim
+DMA_ARBITER_SIM := $(BUILD_DIR)/aster_dma_arbiter_sim
 ATOMIC_CACHE ?= 0
 ATOMIC_RUNTIME_DIR := $(BUILD_DIR)/atomic_h$(HART_COUNT)_c$(ATOMIC_CACHE)_w$(L1_LINE_WORDS)_n$(L1_LINE_COUNT)
 ATOMIC_RUNTIME_SIM := $(ATOMIC_RUNTIME_DIR)/aster_atomic_probe_sim
@@ -188,6 +190,8 @@ help:
 	@echo "  make coherent-runtime-matrix  Run RV32IMA C with private I$/coherent D$"
 	@echo "  make coherent-soc-matrix  Test safe warm-stop, full RAM retention and secondary resets"
 	@echo "  make coherent-counters   Check ABI 4 counter windows and 64-bit carry"
+	@echo "  make dma-engine          Test Phase 7 descriptor/copy/abort against a full-byte oracle"
+	@echo "  make dma-arbiter         Test whole-CPU/AMO locking and fair DMA arbitration"
 	@echo "  make linux-coherent-matrix  Test Phase 6 AXI/serial/RAM/stop protocol"
 	@echo "  make fpga-linux-coherent   Build the dual-core RV32IMA coherent PYNQ overlay"
 	@echo "  make coherent-bench       AsterBench v4 atomic/coherent C workload with exact per-hart counters"
@@ -589,6 +593,24 @@ $(ATOMIC_FABRIC_SIM): rtl/interconnect/aster_atomic_fabric.sv verification/unit/
 
 atomic-fabric: $(ATOMIC_FABRIC_SIM)
 	@set -e; for seed in 1 0xa57e6 0xc0ffee; do $(ATOMIC_FABRIC_SIM) $$seed; done
+
+.PHONY: dma-engine
+$(DMA_ENGINE_SIM): rtl/dma/aster_dma_engine.sv verification/unit/tb_aster_dma_engine.cpp Makefile | $(BUILD_DIR)
+	$(VERILATOR) --cc --exe --build --timing --Wall --assert --top-module aster_dma_engine \
+		--Mdir $(BUILD_DIR)/obj_dma_engine -o $(abspath $@) \
+		$(ROOT)/rtl/dma/aster_dma_engine.sv $(ROOT)/verification/unit/tb_aster_dma_engine.cpp
+
+dma-engine: $(DMA_ENGINE_SIM)
+	@set -e; for seed in 1 0xa57e7 0xc0ffee; do $(DMA_ENGINE_SIM) $$seed; done
+
+.PHONY: dma-arbiter
+$(DMA_ARBITER_SIM): rtl/interconnect/aster_dma_arbiter.sv verification/unit/tb_aster_dma_arbiter.cpp Makefile | $(BUILD_DIR)
+	$(VERILATOR) --cc --exe --build --timing --Wall --assert --top-module aster_dma_arbiter \
+		--Mdir $(BUILD_DIR)/obj_dma_arbiter -o $(abspath $@) \
+		$(ROOT)/rtl/interconnect/aster_dma_arbiter.sv $(ROOT)/verification/unit/tb_aster_dma_arbiter.cpp
+
+dma-arbiter: $(DMA_ARBITER_SIM)
+	@set -e; for seed in 1 0xa57e7 0xc0ffee; do $(DMA_ARBITER_SIM) $$seed; done
 
 .PHONY: warm-stop
 $(WARM_STOP_SIM): rtl/soc/aster_warm_stop.sv verification/unit/tb_aster_warm_stop.cpp Makefile | $(BUILD_DIR)
