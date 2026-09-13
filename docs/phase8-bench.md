@@ -130,3 +130,29 @@ sites; correcting the fixture preserved the exactly-once gate. The command
 mutation test then exposed an unbound compiler-prefix setting; the validator now
 requires the standard compiler command or its fingerprinted absolute path.
 The complete clean regression/study and physical board gates remain required.
+
+## Physical capture boundary
+
+`dot8_bridge.py` accepts only the explicit Phase 8 bridge, instruction and
+counter identities. Its inherited writes are limited to RUN/STOP and stopped
+ROM loading; no ARM DMA descriptor, custom-compute or data-RAM write API exists.
+It reads idle/frozen DMA and dot8 diagnostics and requires all state to reset
+after acknowledged STOP. Older host helpers still reject the Phase 8 identity.
+
+`run_pynq_dot8.py` validates the reference ELF/ROM/captures and routed overlay
+before importing PYNQ. It then checks the exact currently loaded path/hash,
+known HWH/map, board identity, clock and idle state, and repeats these guards
+before explicit PCAP download. Each real boot retains UART, full stopped RAM,
+frozen device/compute diagnostics, all 50 measured counters and exact reference
+deltas. Failures preserve partial files and drain/stop a successfully identified
+new bridge; an unknown identity is never written. Offline audits do not execute
+saved commands, and host audits additionally check collector/source Git blobs.
+
+`pynq_dot8_study.py` requires all 174 independently audited reference captures
+and both compatible images before any board write. It executes 87 captures in
+each cache mode, including the three separately rebuilt repeats, recording the
+exact prior/loaded bitstream hash chain. Warm boots do not reprogram the PL.
+This collector and its mutation/isolated-import tests are implemented; physical
+study execution is still pending. A first physical-test fixture accidentally
+escaped its synthetic ROM newlines; that failure was retained and the fixture
+corrected without altering the canonical-ROM or board-preflight gates.

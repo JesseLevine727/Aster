@@ -346,6 +346,11 @@ unconstrained internal endpoints and zero routing/DRC/methodology findings,
 and pass all five generated-reset scenarios. The existing five asynchronous
 output-delay exceptions remain explicit. These are routed implementation
 results, not physical execution, an Fmax search or an instruction-speedup claim.
+Both images were then rebuilt from study source `6a0449c` to match the complete
+study Makefile/source fingerprint, with the same routed metrics. Their bitstream
+SHA-256 values are `e937fd874aa3f3a6728e5498da25538d1ea4731194cd321df4fcbed4aa7a86d8`
+(cache off) and `84a556203d8e1ab9bb876110bce6bd946f36b7e52022dfea6df691f482caaaff`
+(cache on). The first image pair remains retained as earlier build evidence.
 
 Physical work requires clean source, generated reset simulation, routed setup/
 hold/pulse-width, routing/DRC/methodology/resources, full HWH and matched bitstream
