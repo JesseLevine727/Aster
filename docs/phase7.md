@@ -510,6 +510,19 @@ independent 22-target / 2,397-scenario audit. The complete DMA supplement from
 `694ae0e` is still running; completed unit logs and earlier Linux matrices pass
 the new scenario parser. This is progress evidence, not final phase acceptance.
 
+`scripts/audit_phase7.py` is the outer seven-requirement audit. It binds the
+complete nested artifact inventory, both regression manifests, routed overlays,
+the full physical/simulation study, functional references/board runs, raw board
+logs, the independent final stopped-state probe and a fresh `make check`.
+Its manifest command refuses incomplete evidence or an existing manifest.
+The audit resolves actual recorded Git blobs; no board or recorded executable
+is invoked. After `888c24b`, the only allowed hardware-test change is the
+optional UART/RAM/event exporter in `tb_pynq_linux_coherent.cpp`, explicitly
+bound to both clean functional reference builds and the fresh checkout. Every
+other RTL, firmware, vendor, FPGA, Makefile and hardware-test input must agree.
+Later host validators do not imply a later FPGA build. The self-contained
+bundle and final acceptance remain pending until those checks all pass.
+
 ## References and basis
 
 - [RISC-V A v2.1, LR/SC device-store requirement](https://docs.riscv.org/reference/isa/v20240411/unpriv/a-st-ext.html):

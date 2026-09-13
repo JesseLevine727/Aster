@@ -12,8 +12,12 @@ noncoherent. The separate [Phase 6 contract](phase6.md) and
 RV32IMA front end, coherent cache, safe lifecycle and physical AsterBench v4
 baseline; they do not silently change either legacy map or ABI.
 [Phase 7](phase7.md) adds optional coherent shared-RAM DMA. Engine/cache/counter
-units and the one-/two-hart SoC runtime matrix are verified in simulation;
-AsterBench, full closeout and physical acceptance remain in progress.
+units and one-/two-hart SoC runtime tests are verified in simulation. The fixed
+AsterBench v5 CPU/DMA study passes 144 physical captures, and separate runtime
+and DMA-copied RAM-code tests pass eight physical warm boots. Both DMA overlays
+retain 31.25 MHz and pass routed/reset/HWH signoff. See the
+[physical contract and results](phase7-physical.md); final full-regression,
+immutable-evidence and fresh-checkout closure remains in progress.
 
 This document is the executable contract for the first bring-up slice. It
 separates decisions that are fixed for the minimal system from features that

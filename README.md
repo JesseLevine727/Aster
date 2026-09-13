@@ -298,8 +298,11 @@ The [paired AsterBench v5 tools](docs/phase7-bench.md) now verify actual CPU/DMA
 copies, full outputs, counters and saved provenance. The clean fixed simulation
 study passes 144 captures / 288 warm boots / 1,152 paired jobs, and both
 31.25 MHz DMA overlays pass routed/reset/HWH signoff. All 144 physical benchmark
-captures have passed per-capture UART/RAM/counter checks; the complete physical
-study audit, separate functional board proof and immutable closeout remain pending.
+captures pass the complete physical/Git audit with exact reference counters.
+Eight separate functional board boots also pass directed runtime, atomic/reset
+interactions and DMA-copied RAM-code publication. The final independent read
+confirms safely stopped CPUs/DMA and Linux available. Full DMA regression and
+immutable/fresh-checkout closeout gates remain pending.
 The DMA-enabled Linux shell also passes actual-core AXI/serial runtime,
 RAM-code publication and safe-stop tests; its v5 benchmark has separate
 freeze-time CPU/DMA observations and physical-baud simulation coverage.

@@ -84,9 +84,9 @@ provenance audit.
 
 The collectors and their PCAP/MMIO fixtures are host-tested before deployment.
 Fixtures deliberately test failure paths and are never stored as physical
-acceptance results. The complete fixed study, repeated physical sweeps,
-functional DMA/code-publication proof and final regression/immutable closeout
-are still required by [the phase contract](phase7.md).
+acceptance results. The fixed study and separate DMA/code-publication physical
+proof now pass; final regression/immutable closeout remains required by
+[the phase contract](phase7.md).
 
 ## First physical run and full-study schedule
 
@@ -143,7 +143,7 @@ paired latency benchmark: physical cycles need not equal the 781,250-baud
 reference. Physical acceptance still requires the same independent RAM/count
 outcomes, frozen host DMA bank agreement, active execution of both harts,
 fault-free serial and acknowledged final CPU/DMA STOPPED. The separate physical
-functional collection and clean-reference acceptance remain pending.
+functional collection and clean-reference acceptance are recorded below.
 
 `scripts/run_pynq_dma_functional.py` collects either `--kind runtime` or
 `--kind publication`, always with two boots and the exact cache-matched
@@ -162,4 +162,39 @@ failure as well. `scripts/dma_functional_physical.py REPORT --reference REF
 against their Git revision without importing PYNQ or executing saved commands.
 Host fixtures exercise both programs/cache modes, warm reuse, no-overwrite,
 identity/input races and failure cleanup; synthetic fixtures are not physical
-evidence. Deployment of this separate functional proof remains pending.
+evidence.
+
+## Completed physical study and functional proof
+
+The complete fixed study passes **144 captures / 288 boots / 1,152 paired jobs
+/ 2,304 method records**, both on-board and in the host Git/raw-artifact audit.
+It uses clean `888c24b` hardware/reference firmware and `694ae0e` collectors.
+All 42 counters match the independent reference, every source/destination
+guard and RAM-published record passes, and all six fresh-repeat records are
+identical. The [benchmark report](phase7-bench.md#measured-physical-crossover)
+retains first wins, boundary reversals and DMA slowdowns.
+
+Clean `6bed91b` functional references and committed `6899989` collectors then
+pass both programs, both cache modes and two warm boots each. The four runtime
+boots cover **1,280 directed copies, 24 LR/SC interactions, 32 selective-reset
+epochs and 12 two-hart publication jobs**. Every runtime boot records 339
+successful DMA descriptors, one bounded-prefix abort and six invalid-descriptor
+errors. The four code boots add **32 eight-byte DMA publication
+epochs**, exact executable instructions/guards and successful execution by
+both real harts. These are separate correctness runs, not benchmark pairs.
+Physical UART is 97/14 bytes per runtime/code boot, and every stopped snapshot
+contains the complete 64 KiB RAM. The host audit rechecks independent results,
+both CPU banks and the host-frozen DMA bank; serial-inclusive functional timing
+is not required to equal faster-baud simulation.
+
+After the benchmark study, a separate read-only probe confirmed idle cache-on
+DMA hardware. The functional sequence explicitly downloaded cache-off hardware,
+ran runtime then code without another download, then did the same with
+cache-on hardware. Every transition guarded the exact previous path and hash.
+The final independent read at **2026-09-13 17:20:50 UTC** confirms ABI
+`0x00070001`, two harts, 31.25 MHz, features 7, empty UART FIFO,
+`CONTROL/STATUS/HART_STATUS/STOP_STATUS = 0/0/0/1`, and zero DMA status, bytes,
+job cycles, counting flag and all 14 counters. Linux remained available and
+the root SSH session closed normally. No JTAG, ARM reset or unrelated work
+was touched. Immutable bundle/fresh-checkout/full-regression closure remains
+pending; the board runs alone do not declare Phase 7 complete.

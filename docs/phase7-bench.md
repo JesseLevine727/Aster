@@ -1,8 +1,9 @@
 # AsterBench v5 DMA experiment contract
 
-Status: paired firmware, actual-core scoreboard and saved-capture/study audits
-have passed development verification. Complete fixed-study collection and
-physical acceptance are pending. No complete study or board results claimed here.
+Status: the complete clean simulation and physical PYNQ studies pass all
+144 captures / 288 warm boots / 1,152 paired jobs each, with exact physical
+reference counters and independent UART/RAM/Git audits. Final immutable
+packaging and full phase closeout are still pending.
 The [Phase 7 contract](phase7.md) and README remain the
 acceptance authority. Preserve all v2/v3/v4 record and capture interfaces.
 
@@ -155,3 +156,29 @@ mixed source/toolchains and non-independent repeats, and recomputes every
 summary. It reports any-pair and all-pairs first wins separately, subsequent
 reversals, and a sustained win only through the **largest tested** size. It
 does not interpolate a universal crossover or suppress negative ratios.
+
+## Measured physical crossover
+
+The fixed study uses clean `888c24b` firmware/hardware and committed `694ae0e`
+physical collectors at **31.25 MHz**. All six freshly rebuilt 1 KiB repeats
+produce identical physical records. CPU/DMA ratios below one mean DMA is
+slower; polling still occupies the primary CPU, so these are latency results,
+not a CPU-availability or overlap speedup claim.
+
+| Alignment / caches | First all-pairs DMA win | Later sampled reversal | All sampled sizes win from, through 8 KiB | CPU cycles / DMA cycles at 8 KiB |
+|---|---:|---:|---:|---:|
+| Aligned / off | 63 B | 64 B | 127 B | 1.645768× |
+| Aligned / on | 255 B | 256 B | 511 B | 1.103809× |
+| Same byte offset / off | 31 B | None | 31 B | 1.653920× |
+| Same byte offset / on | 128 B | None | 128 B | 1.109817× |
+| Different byte offsets / off | 8 B | None | 8 B | 3.967321× |
+| Different byte offsets / on | 63 B | None | 63 B | 1.622970× |
+
+First-any-pair and first-all-pairs wins coincide in this study. These are
+sampled boundaries, not claims about untested intermediate lengths. CPU word
+copying and its 16-byte unroll change the relative cost at exact boundaries;
+the 63/64 and 255/256 reversals are retained, not smoothed away. Cache-enabled
+CPU copying makes DMA's relative advantage smaller. Setup, polling, coherent
+forwarding/dirty maintenance and completion are all included as specified
+above; the raw 64-byte aligned cache-off pilot, for example, records CPU
+1,204 cycles versus DMA 1,443 cycles (0.834373×), a genuine DMA slowdown.
