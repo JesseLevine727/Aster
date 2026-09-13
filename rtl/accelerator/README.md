@@ -10,10 +10,12 @@ Implemented and verified modules:
 - `aster_int8_array.sv`: sixteen PE tile accumulator with partial-edge masks;
 - `aster_npu_engine.sv`: descriptor validation, tile/K sequencing, RAM byte
   loads, exact-lane output stores, and lifecycle/cycle counters;
+- `aster_npu_regs.sv`: ABI-1 descriptor registers, control/status boundary, and
+  engine accounting readback;
 
 Remaining modules:
 
-- `aster_npu_regs.sv`: ABI/status/counter/control register boundary.
+- SoC/interconnect integration, the RAM-backed C driver, and AsterBench v7.
 
 These modules must remain independently testable without PicoRV32 or PYNQ.
 The optional 8×8 configuration is deferred until the 4×4 exit gate passes.

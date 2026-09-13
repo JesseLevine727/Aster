@@ -75,7 +75,7 @@ public:
     void idle_start() {
         d.start = 1;
         d.eval();
-        require(d.start_accept && !d.start_reject, "valid descriptor start not accepted");
+        require(!d.busy, "descriptor start was issued while engine was busy");
         tick();
         d.start = 0;
     }

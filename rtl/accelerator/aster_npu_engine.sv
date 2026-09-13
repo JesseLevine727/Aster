@@ -18,8 +18,7 @@ module aster_npu_engine (
     input  logic [31:0]        start_k,
     input  logic               pause,
     input  logic               abort_request,
-    output logic               start_accept,
-    output logic               start_reject,
+    input  logic               ack,
     output logic               busy,
     output logic               done,
     output logic               error,
@@ -65,6 +64,7 @@ module aster_npu_engine (
     logic abort_pending, request_held;
 
     logic done_flag, error_flag, aborted_flag;
+    logic start_accept;
     logic [31:0] descriptor_error;
     logic [63:0] a_byte_address, b_byte_address, c_byte_address;
     logic [63:0] load_index_ext, output_index_ext, output_byte_ext;
@@ -116,7 +116,6 @@ module aster_npu_engine (
     assign aborted = resetn && aborted_flag;
     assign status = {busy, aborted, error, done, busy};
     assign start_accept = resetn && start && state == IDLE && !pause && !abort_request;
-    assign start_reject = resetn && start && !start_accept;
 
     // Request payload is derived only from captured state. request_held keeps a
     // stalled offer alive through pause/abort, as required by the device port.
@@ -248,6 +247,12 @@ module aster_npu_engine (
 
             case (state)
                 IDLE: begin
+                    if (ack && !busy) begin
+                        done_flag <= 0;
+                        error_flag <= 0;
+                        aborted_flag <= 0;
+                        error_code <= 0;
+                    end
                     if (start_accept) begin
                         a_base <= start_a_base; b_base <= start_b_base; c_base <= start_c_base;
                         a_stride <= start_a_stride; b_stride <= start_b_stride; c_stride <= start_c_stride;
