@@ -72,9 +72,10 @@ RTL_SOC := rtl/core/aster_hart.sv rtl/soc/aster_minimal.sv
 RTL_FABRIC := rtl/interconnect/aster_arbiter2.sv rtl/soc/aster_shared_fabric.sv
 RTL_MULTICORE := $(RTL_FABRIC) rtl/core/aster_hart.sv rtl/soc/aster_multicore.sv
 RTL_COHERENT := $(RTL_CORE) $(RTL_CACHE) $(RTL_MEMORY) rtl/core/aster_pcpi_atomic.sv \
-	rtl/core/aster_atomic_hart.sv rtl/cache/aster_coherent_cache.sv rtl/interconnect/aster_atomic_fabric.sv \
+	rtl/core/aster_pcpi_dot8.sv rtl/core/aster_atomic_hart.sv rtl/cache/aster_coherent_cache.sv rtl/interconnect/aster_atomic_fabric.sv \
 	rtl/soc/aster_warm_stop.sv rtl/peripherals/aster_uart.sv rtl/peripherals/aster_coherent_perf.sv \
-	rtl/dma/aster_dma_engine.sv rtl/interconnect/aster_dma_arbiter.sv rtl/peripherals/aster_dma_perf.sv rtl/soc/aster_coherent_soc.sv
+	rtl/dma/aster_dma_engine.sv rtl/interconnect/aster_dma_arbiter.sv rtl/peripherals/aster_dma_perf.sv \
+	rtl/peripherals/aster_dot8_perf.sv rtl/soc/aster_coherent_soc.sv
 RTL_FPGA := rtl/peripherals/aster_uart_tx.sv rtl/soc/aster_pynq_z1.sv
 
 HELLO_DIR := $(BUILD_DIR)/software
@@ -111,6 +112,11 @@ DMA_ENGINE_SIM := $(BUILD_DIR)/aster_dma_engine_sim
 DMA_ARBITER_SIM := $(BUILD_DIR)/aster_dma_arbiter_sim
 DMA_PERF_SIM := $(BUILD_DIR)/aster_dma_perf_sim
 DOT8_UNIT_SIM := $(BUILD_DIR)/aster_pcpi_dot8_sim
+DOT8_PROBE_ENABLE ?= 1
+DOT8_PROBE_CACHE ?= 0
+DOT8_PROBE_DIR := $(BUILD_DIR)/dot8_probe_e$(DOT8_PROBE_ENABLE)_c$(DOT8_PROBE_CACHE)
+DOT8_PROBE_SIM := $(DOT8_PROBE_DIR)/aster_dot8_probe_sim
+DOT8_PERF_SIM := $(BUILD_DIR)/aster_dot8_perf_h$(HART_COUNT)_sim
 DMA_ATOMIC_FABRIC_SIM := $(BUILD_DIR)/aster_dma_atomic_fabric_sim
 DMA_CACHE_DIR := $(BUILD_DIR)/dma_cache_l1$(ENABLE_L1)_w$(L1_LINE_WORDS)_n$(L1_LINE_COUNT)
 DMA_CACHE_SIM := $(DMA_CACHE_DIR)/aster_dma_cache_sim
@@ -221,6 +227,7 @@ help:
 	@echo "  make smoke      Build and run the first Verilator smoke test"
 	@echo "  make directed   Run directed RV32IM instruction tests"
 	@echo "  make pcpi-probe Test real-core RV32A extension boundary (not full A yet)"
+	@echo "  make dot8-unit / dot8-probe-matrix / dot8-counters  Phase 8 arithmetic, real-hart and ABI 6 tests"
 	@echo "  make atomic-fabric  Test serialized RV32A memory/reservation semantics"
 	@echo "  make atomic-runtime-matrix  Run compiled RV32IMA C on one/two real cores"
 	@echo "  make atomic-faults-matrix   Check real-core atomic faults with caches off/on"
@@ -691,6 +698,35 @@ $(DOT8_UNIT_SIM): rtl/core/aster_pcpi_dot8.sv verification/unit/tb_aster_pcpi_do
 
 dot8-unit: $(DOT8_UNIT_SIM)
 	@set -e; for seed in 1 0xa57e8 0xc0ffee; do $(DOT8_UNIT_SIM) $$seed; done
+
+.PHONY: dot8-probe dot8-probe-matrix
+$(DOT8_PROBE_SIM): $(RTL_CORE) $(RTL_CACHE) rtl/core/aster_pcpi_atomic.sv rtl/core/aster_pcpi_dot8.sv \
+	rtl/core/aster_atomic_hart.sv verification/unit/aster_dot8_probe.sv verification/unit/tb_aster_dot8_probe.cpp Makefile
+	@mkdir -p $(DOT8_PROBE_DIR)
+	$(VERILATOR) --cc --exe --build --timing --Wall --assert -DASTER_DOT8_ASSERT \
+		$(VERILATOR_VENDOR_LINT_FLAGS) --top-module aster_dot8_probe \
+		"-GENABLE_DOT8=1'b$(DOT8_PROBE_ENABLE)" "-GENABLE_ICACHE=1'b$(DOT8_PROBE_CACHE)" \
+		-CFLAGS '-DASTER_DOT8_ENABLE=$(DOT8_PROBE_ENABLE) -DASTER_ICACHE_ENABLE=$(DOT8_PROBE_CACHE)' \
+		--Mdir $(DOT8_PROBE_DIR)/obj -o $(abspath $@) \
+		$(addprefix $(ROOT)/,$(RTL_CORE) $(RTL_CACHE) rtl/core/aster_pcpi_atomic.sv rtl/core/aster_pcpi_dot8.sv rtl/core/aster_atomic_hart.sv) \
+		$(ROOT)/verification/unit/aster_dot8_probe.sv $(ROOT)/verification/unit/tb_aster_dot8_probe.cpp
+
+dot8-probe: $(DOT8_PROBE_SIM)
+	@$(DOT8_PROBE_SIM)
+
+dot8-probe-matrix:
+	@set -e; for enabled in 0 1; do for cache in 0 1; do \
+		$(MAKE) dot8-probe DOT8_PROBE_ENABLE=$$enabled DOT8_PROBE_CACHE=$$cache; done; done
+
+.PHONY: dot8-counters
+$(DOT8_PERF_SIM): rtl/peripherals/aster_dot8_perf.sv verification/unit/tb_aster_dot8_perf.cpp Makefile | $(BUILD_DIR)
+	$(VERILATOR) --cc --exe --build --timing --Wall --assert --top-module aster_dot8_perf \
+		-GHART_COUNT=$(HART_COUNT) -CFLAGS '-DASTER_HARTS=$(HART_COUNT)' \
+		--Mdir $(BUILD_DIR)/obj_dot8_perf_h$(HART_COUNT) -o $(abspath $@) \
+		$(ROOT)/rtl/peripherals/aster_dot8_perf.sv $(ROOT)/verification/unit/tb_aster_dot8_perf.cpp
+
+dot8-counters: $(DOT8_PERF_SIM)
+	@$(DOT8_PERF_SIM)
 
 $(PCPI_PROBE_SIM): $(RTL_CORE) rtl/core/aster_pcpi_atomic.sv verification/unit/aster_pcpi_probe.sv verification/unit/tb_aster_pcpi_probe.cpp Makefile | $(BUILD_DIR)
 	$(VERILATOR) --cc --exe --build --timing --Wall \

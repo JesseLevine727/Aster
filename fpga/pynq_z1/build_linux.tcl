@@ -24,10 +24,11 @@ set rtl_files [list rtl/core/aster_picorv32.sv vendor/picorv32/picorv32.v \
     rtl/peripherals/aster_uart_rx.sv rtl/peripherals/aster_perf_counters.sv \
     rtl/core/aster_hart.sv rtl/soc/aster_minimal.sv rtl/soc/aster_pynq_linux.sv \
     rtl/interconnect/aster_arbiter2.sv rtl/soc/aster_shared_fabric.sv rtl/soc/aster_multicore.sv \
-    rtl/core/aster_pcpi_atomic.sv rtl/core/aster_atomic_hart.sv rtl/interconnect/aster_atomic_fabric.sv \
+    rtl/core/aster_pcpi_atomic.sv rtl/core/aster_pcpi_dot8.sv rtl/core/aster_atomic_hart.sv rtl/interconnect/aster_atomic_fabric.sv \
     rtl/cache/aster_coherent_cache.sv rtl/soc/aster_warm_stop.sv \
     rtl/peripherals/aster_coherent_perf.sv rtl/dma/aster_dma_engine.sv \
-    rtl/interconnect/aster_dma_arbiter.sv rtl/peripherals/aster_dma_perf.sv rtl/soc/aster_coherent_soc.sv]
+    rtl/interconnect/aster_dma_arbiter.sv rtl/peripherals/aster_dma_perf.sv \
+    rtl/peripherals/aster_dot8_perf.sv rtl/soc/aster_coherent_soc.sv]
 foreach relative $rtl_files { read_verilog -sv [file join $repo_root $relative] }
 read_verilog [file join $repo_root rtl/soc/aster_linux_ip.v]
 

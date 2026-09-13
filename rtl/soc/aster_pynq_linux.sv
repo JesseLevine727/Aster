@@ -350,6 +350,7 @@ module aster_pynq_linux #(
             .dma_request_data(dma_request_data), .dma_request_rdata(dma_request_rdata), .dma_request_mask(dma_request_mask),
             .dma_status(dma_status), .dma_bytes_done(dma_bytes_done), .dma_error_code(dma_error_code), .dma_job_cycles(dma_job_cycles),
             .dma_store_commit(dma_store_commit), .dma_events(dma_events), .dma_counters(dma_counters), .dma_counting(dma_counting),
+            .dot8_busy(), .dot8_events(), .dot8_counters(), .dot8_counting(),
             .boot_we(boot_we), .boot_addr(awaddr[15:0]), .boot_wdata(wdata), .boot_wstrb(wstrb),
             .host_ram_addr(host_ram_addr), .host_ram_rdata(host_ram_rdata)
         );

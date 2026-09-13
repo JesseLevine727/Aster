@@ -57,6 +57,7 @@ module aster_atomic_probe #(
         if (h < HART_COUNT) begin : g_present
             aster_atomic_hart #(.ENABLE_ICACHE(ENABLE_CACHE), .LINE_WORDS(LINE_WORDS), .LINE_COUNT(LINE_COUNT)) hart (
                 .clk(clk), .resetn(resetn && hart_run[h]), .trap(hart_trap[h]),
+                .dot8_admit(1'b1), .dot8_busy(), .dot8_events(),
                 .instr_retired(retired[h]), .retired_pc(retired_pc[h]), .retired_insn(retired_insn[h]),
                 .fault_valid(fault_valid[h]), .fault_cause(fault_cause[h]),
                 .fault_addr(fault_addr[h]), .fault_insn(fault_insn[h]),

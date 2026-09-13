@@ -1,6 +1,6 @@
 # Phase 8: packed signed INT8 dot-product instruction
 
-Status: **contract established; implementation and acceptance pending**.
+Status: **arithmetic/real-core feasibility verified; runtime and full acceptance in progress**.
 Baseline: clean/pushed Phase 7 `370ea20c3bbf91e06546a1f634e793755a053267`.
 Before source changes, the complete Phase 7 audit with `--current` and the
 historical Phase 6 audit both passed. This document precedes Phase 8 RTL.
@@ -223,7 +223,7 @@ exactly-once events and four destructive-reset stages. This is not yet
 real-core, runtime, FPGA or performance acceptance.
 
 - [x] Audit the baseline; specify instruction, integration and fair study before RTL.
-- [ ] Arithmetic/PCPI unit oracles and real-core feasibility, including M/A coexistence.
+- [x] Arithmetic/PCPI unit oracles and real-core feasibility, including M/A coexistence.
 - [ ] C API/runtime, full-core encoding/fault/alias tests and lifecycle/coherence/DMA matrices.
 - [ ] ABI 6/v6 counter, record, ELF/RAM and mutation-tested capture tools.
 - [ ] Complete applicable 22-target legacy and 14-target DMA regressions plus the new supplement.
@@ -239,6 +239,33 @@ Full C runtime covers both harts, all 16 input-byte alignment pairs, tails,
 dirty shared data, publication, genuine DMA-produced inputs and active DMA
 with unrelated custom work, LR/SC preservation and selective/global escalation.
 Require complete RAM/store/guard oracles and exact independent events.
+
+### Real-core feasibility milestone
+
+`make dot8-probe-matrix` uses the production `aster_atomic_hart` with the
+unmodified core, observing actual RVFI register writeback and instruction
+identity. Its independent interpreter checks every retired instruction and
+the complete mock RAM, across all 32,768 rd/rs1/rs2 combinations, five lower
+memory latency policies, all 1,023 unsupported custom-0 function combinations
+and the other three custom opcode spaces. Cache off/on and extension off/on
+total 135,242 programs. Enabled runs each retire 426,413 dot8 instructions and
+complete 98,403 LR/SC/AMO commands; disabled runs trap before any custom or
+following atomic side effect. Mixed sequences include all eight RV32M operations,
+consecutive/aliased dot8 and LR-dot8-SC reservation preservation. Each enabled
+cache configuration also passes 32 destructive reset probes and a 1,025-cycle
+admission pause.
+
+Measured acceptance-to-RVFI-retirement separation in this adversarial mock
+backend is 4..81 edges cache-off and 4..303 cache-on. This includes outstanding
+instruction fetch/refill delays and is not a kernel CPI or board measurement.
+The mock does not establish SoC permissions, coherence or warm-stop acceptance;
+those remain runtime gates. Existing PCPI, warm-stop, ABI 4 and coherent-SoC
+regressions pass after integration with dot8 disabled.
+
+`make dot8-counters HART_COUNT=1` and `HART_COUNT=2` independently verify ABI 6:
+4,096 command/event combinations, 20,000 seeded steps, every byte offset,
+frozen state, command-edge exclusions, absent-hart zeros and 32/64-bit wrap.
+The new SoC counter bank/lifecycle connections still require full runtime tests.
 
 Physical work requires clean source, generated reset simulation, routed setup/
 hold/pulse-width, routing/DRC/methodology/resources, full HWH and matched bitstream

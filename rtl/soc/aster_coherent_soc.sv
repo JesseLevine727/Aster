@@ -8,6 +8,7 @@ module aster_coherent_soc #(
     parameter int unsigned MEMORY_WAIT_CYCLES = SYNC_MEMORY ? 1 : 0,
     parameter bit ENABLE_L1 = 1'b1,
     parameter bit ENABLE_DMA = 1'b0,
+    parameter bit ENABLE_DOT8 = 1'b0,
     parameter bit HOST_BOOT = 1'b0,
     parameter int unsigned CLOCK_HZ = 31_250_000,
     parameter int unsigned LINE_WORDS = 4,
@@ -76,7 +77,11 @@ module aster_coherent_soc #(
     output logic dma_store_commit,
     output logic [2:0] dma_events [0:13],
     output logic [63:0] dma_counters [0:13],
-    output logic dma_counting
+    output logic dma_counting,
+    output logic [1:0] dot8_busy,
+    output logic [3:0] dot8_events [0:1],
+    output logic [63:0] dot8_counters [0:7],
+    output logic dot8_counting
 );
     logic secondary_run;
     logic [31:0] to_hart1, to_hart0;
@@ -103,6 +108,7 @@ module aster_coherent_soc #(
     logic device_forward, device_writeback;
     logic [1:0] device_invalidations;
     logic [31:0] dma_rdata;
+    logic [31:0] dot8_rdata;
     logic [31:0] rom_rdata, ram_rdata, control_rdata, uart_rdata, perf_rdata [0:1];
     logic uart_write_ready, uart_slot_valid;
     wire peripheral_resetn = resetn && !stopped;
@@ -140,7 +146,7 @@ module aster_coherent_soc #(
         if (MEMORY_WAIT_CYCLES < (SYNC_MEMORY ? 1 : 0) || MEMORY_WAIT_CYCLES > 1024)
             $error("invalid coherent SoC memory wait");
     end
-    aster_warm_stop #(.HART_COUNT(HART_COUNT), .LATCH_GLOBAL_STOP(ENABLE_DMA)) lifecycle (
+    aster_warm_stop #(.HART_COUNT(HART_COUNT), .LATCH_GLOBAL_STOP(ENABLE_DMA || ENABLE_DOT8)) lifecycle (
         .clk(clk), .resetn(resetn), .host_run(host_run), .secondary_run(secondary_run),
         .fabric_busy(fabric_busy), .flush_ready(flush_ready), .hart_run(hart_run), .admit(admit),
         .flush_valid(flush_active), .flush_mask(flush_mask), .stop_commit(stop_commit),
@@ -149,8 +155,10 @@ module aster_coherent_soc #(
     /* verilator lint_off PINCONNECTEMPTY */
     for (genvar h = 0; h < 2; h++) begin : g_hart
         if (h < HART_COUNT) begin : g_present
-            aster_atomic_hart #(.ENABLE_ICACHE(ENABLE_L1), .LINE_WORDS(LINE_WORDS), .LINE_COUNT(LINE_COUNT)) hart (
+            aster_atomic_hart #(.ENABLE_ICACHE(ENABLE_L1), .ENABLE_DOT8(ENABLE_DOT8),
+                .LINE_WORDS(LINE_WORDS), .LINE_COUNT(LINE_COUNT)) hart (
                 .clk(clk), .resetn(hart_run[h]), .trap(hart_trap[h]),
+                .dot8_admit(admit[h]), .dot8_busy(dot8_busy[h]), .dot8_events(dot8_events[h]),
                 .instr_retired(retired[h]), .retired_pc(retired_pc[h]), .retired_insn(retired_insn[h]),
                 .fault_valid(fault_valid[h]), .fault_cause(fault_cause[h]),
                 .fault_addr(fault_addr[h]), .fault_insn(fault_insn[h]),
@@ -179,6 +187,8 @@ module aster_coherent_soc #(
             assign memory_event[h] = 0;
             assign icache_access[h] = 0;
             assign icache_miss[h] = 0;
+            assign dot8_busy[h] = 0;
+            assign dot8_events[h] = 0;
         end
     end
     for (genvar h = 0; h < 2; h++) begin : g_reservation_clear
@@ -208,7 +218,7 @@ module aster_coherent_soc #(
         end
         // A selective flush waits only for an offered request, not the entire
         // paused job. Global STOP must also drain cooperative abort to idle.
-        assign fabric_busy = cpu_busy || arb_busy || (global_abort && dma_busy);
+        assign fabric_busy = cpu_busy || arb_busy || (global_abort && dma_busy) || |dot8_busy;
         assign dma_request_pending = valid;
         assign dma_request_ready = ready;
         assign dma_request_addr = address;
@@ -255,7 +265,7 @@ module aster_coherent_soc #(
         );
     end else begin : g_no_dma
         assign cpu_admit = 1;
-        assign fabric_busy = cpu_busy;
+        assign fabric_busy = cpu_busy || |dot8_busy;
         assign c_valid = f_valid; assign c_owner = f_owner; assign c_instr = f_instr;
         assign c_addr = f_addr; assign c_wdata = f_wdata; assign c_mask = f_mask; assign c_device = 0;
         assign f_ready = c_ready; assign f_rdata = c_rdata;
@@ -362,6 +372,17 @@ module aster_coherent_soc #(
             .resume_counting(perf_resume), .events(perf_events[h]), .addr(m_addr), .rdata(perf_rdata[h])
         );
     end
+    if (ENABLE_DOT8) begin : g_dot8_perf
+        aster_dot8_perf #(.HART_COUNT(HART_COUNT), .CLOCK_HZ(CLOCK_HZ)) perf (
+            .clk(clk), .resetn(peripheral_resetn), .start(perf_start), .freeze(perf_freeze),
+            .resume_counting(perf_resume), .events({dot8_events[1], dot8_events[0]}),
+            .addr(m_addr[11:0]), .rdata(dot8_rdata), .running(dot8_counting), .counters(dot8_counters)
+        );
+    end else begin : g_no_dot8_perf
+        assign dot8_rdata = 0;
+        assign dot8_counting = 0;
+        for (genvar i = 0; i < 8; i++) assign dot8_counters[i] = 0;
+    end
     always_comb begin
         m_rdata = 0;
         if (rom_access) m_rdata = rom_rdata;
@@ -371,5 +392,6 @@ module aster_coherent_soc #(
         else if (dma_access) m_rdata = dma_rdata;
         else if (!m_instr && m_addr[31:8] == 24'h200030) m_rdata = perf_rdata[0];
         else if (!m_instr && m_addr[31:8] == 24'h200031) m_rdata = perf_rdata[1];
+        else if (!m_instr && m_addr[31:8] == 24'h200032) m_rdata = dot8_rdata;
     end
 endmodule
