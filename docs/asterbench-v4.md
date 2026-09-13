@@ -173,6 +173,52 @@ workloads into an overall speedup or turn this simulation study into a physical
 timing claim. Small jobs expose dispatch/synchronization overhead rather than
 subtracting it; exact cache-state/window caveats above apply to every result.
 
+The complete study captured from clean `26e18cb` passes its independent audit
+under `build/phase6-26e18cb/study/`. At the default 64-item cache-enabled size,
+one-/two-worker summed-cycle ratios are 0.795385 (atomic add), 0.745677 (LR/SC),
+0.825417 (CAS), 0.428351 (lock), 0.819575 (adjacent words), 0.948967 (padded),
+1.317701 (ping-pong), 1.228518 (queue) and 1.877091 (mix). These are **simulation
+measurements**, including dispatch/work/join; the small contended updates do
+not scale. All underlying per-job counters and the independent fresh-repeat
+proof are retained, not replaced by these rounded ratios.
+
+## Physical collector and reference gate
+
+`scripts/run_pynq_coherent.py` consumes a full audited v4 reference and a
+`coherent_overlay.py` package. The board-side preflight checks their complete
+artifacts, clean-source claims, actual ELF/ROM, routed/reset/HWH gates and
+identical RTL/vendor/FPGA/build/reset input fingerprints before importing PYNQ.
+The final host auditor additionally resolves source and collector files against
+their actual Git revisions; the board itself need not contain a Git repository.
+Firmware/host tools may have a later revision than the bitstream, but changed
+hardware/build inputs are rejected.
+
+Download requires `--download`; `--expected-loaded` must exactly match PYNQ's
+current overlay path. Otherwise the runner refuses before PCAP/MMIO writes.
+It never resets/halts ARM, uses JTAG or writes SD/QSPI images. It verifies the
+Phase 6 runtime identity before register writes, drains/stops before loading
+ROM, loads once and repeats the reference's warm-boot count without downloading
+again. Every job travels through actual PL UART TX-to-RX and the AXI receive
+FIFO. Raw `.uart` bytes are retained separately; TX/RX/FIFO/error counts and
+independent lifetime retirements are captured before stop clears state.
+
+After every boot the runner requires acknowledged STOPPED and captures all
+64 KiB of RAM. Independent host math checks every saved job result and the
+complete output array using actual ELF symbols. The initial physical gate
+requires all 28 measured counters to match the corresponding direct-SoC
+reference exactly; any difference is saved and fails acceptance pending an
+independently reproduced explanation. There is no silent tolerance or result
+substitution. Full snapshots are retained, but unallocated/unused physical RAM
+bytes are not claimed to match the simulator's initialization pattern.
+
+The output must be a new directory. Partial UART/report evidence is preserved
+on error, and an identified Phase 6 bridge is always safely stopped in cleanup.
+An unidentified bridge is never written. The versioned report fingerprints the
+reference, overlay and every collector dependency; the default read-only host
+audit checks them against Git, rejects partial/mutated evidence and verifies
+the final safe state. Host tests use a fake MMIO/PCAP boundary, not hardware
+measurements. Real board execution remains a separate acceptance requirement.
+
 For Verilator 5.020, coherent targets explicitly raise loop unrolling limits
 to accommodate nonblocking reset-array assignments at 1024 lines. This follows
 the documented [BLKLOOPINIT limitation](https://verilator.org/guide/latest/warnings.html#blkloopinit);
