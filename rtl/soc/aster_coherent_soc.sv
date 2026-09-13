@@ -161,6 +161,8 @@ module aster_coherent_soc #(
     );
     aster_coherent_cache #(.ENABLE_CACHE(ENABLE_L1), .LINE_WORDS(LINE_WORDS), .LINE_COUNT(LINE_COUNT)) cache (
         .clk(clk), .resetn(resetn), .s_valid(f_valid), .s_owner(f_owner), .s_instr(f_instr),
+        .s_device(1'b0), .m_device(), .device_store_commit(), .device_read_forward(),
+        .device_writeback(), .device_invalidations(),
         .s_addr(f_addr), .s_wdata(f_wdata), .s_wstrb(f_mask), .s_ready(f_ready), .s_rdata(f_rdata),
         .flush_valid(flush_active), .flush_mask(flush_mask), .flush_ready(flush_ready), .busy(),
         .m_valid(m_valid), .m_owner(m_owner), .m_instr(m_instr), .m_addr(m_addr),

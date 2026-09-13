@@ -1,10 +1,11 @@
 // Two private write-back/write-allocate D$ banks with centralized snooping MSI.
-// Input operations are already globally serialized by aster_atomic_fabric,
-// which retains ownership across AMO read+write and monitors CPU stores.
+// Input operations are already globally serialized by aster_atomic_fabric
+// (plus the optional outer DMA arbiter). CPU ownership covers AMO read+write.
 // This service's writebacks are maintenance, not new architectural stores.
 `timescale 1 ns / 1 ps
 module aster_coherent_cache #(
     parameter bit ENABLE_CACHE = 1'b1,
+    parameter bit ENABLE_DMA = 1'b0,
     parameter int unsigned LINE_WORDS = 4,
     parameter int unsigned LINE_COUNT = 16
 ) (
@@ -13,6 +14,7 @@ module aster_coherent_cache #(
     input logic s_valid,
     input logic s_owner,
     input logic s_instr,
+    input logic s_device,
     input logic [31:0] s_addr,
     input logic [31:0] s_wdata,
     input logic [3:0] s_wstrb,
@@ -29,6 +31,7 @@ module aster_coherent_cache #(
     output logic m_valid,
     output logic m_owner,
     output logic m_instr,
+    output logic m_device,
     output logic [31:0] m_addr,
     output logic [31:0] m_wdata,
     output logic [3:0] m_wstrb,
@@ -40,6 +43,10 @@ module aster_coherent_cache #(
     output logic intervention_event,
     output logic invalidation_event,
     output logic writeback_event,
+    output logic device_store_commit,
+    output logic device_read_forward,
+    output logic device_writeback,
+    output logic [1:0] device_invalidations,
     // Observation-only arrays; unused ports disappear in the FPGA shell.
     output logic [1:0] observed_state [0:2*LINE_COUNT-1],
     output logic [31:0] observed_tag [0:2*LINE_COUNT-1],
@@ -52,13 +59,14 @@ module aster_coherent_cache #(
     localparam logic [1:0] I = 0, S = 1, M = 2;
     typedef enum logic [3:0] {
         IDLE, LOOKUP, SNOOP, VICTIM_WRITE, PEER_WRITE, FILL, ACCESS,
-        RESPONSE, BYPASS, FLUSH_SCAN, FLUSH_WRITE, FLUSH_DONE
+        RESPONSE, BYPASS, FLUSH_SCAN, FLUSH_WRITE, FLUSH_DONE,
+        DEVICE_LOOKUP, DEVICE_WRITEBACK, DEVICE_INVALIDATE
     } controller_t;
     controller_t state;
     logic [1:0] lines [0:1][0:LINE_COUNT-1];
     logic [31:0] tags [0:1][0:LINE_COUNT-1];
     logic [31:0] data [0:1][0:LINE_COUNT-1][0:LINE_WORDS-1];
-    logic owner, instr;
+    logic owner, instr, device, device_dirty_owner;
     logic [31:0] address, operand, result;
     logic [3:0] mask;
     logic [WORD_BITS-1:0] transfer_word;
@@ -89,20 +97,26 @@ module aster_coherent_cache #(
     assign s_rdata = result;
     assign flush_ready = resetn && state == FLUSH_DONE;
     assign busy = resetn && state != IDLE;
-    assign access_event = resetn && state == LOOKUP && cacheable && !instr;
+    assign access_event = resetn && state == LOOKUP && cacheable && !instr && !device;
     assign miss_event = access_event && !own_hit;
     assign intervention_event = resetn && state == SNOOP && peer_hit && lines[!owner][index] == M;
-    assign invalidation_event = resetn && |mask &&
+    assign invalidation_event = resetn && !device && |mask &&
         ((state == LOOKUP && own_hit && peer_hit) ||
          (state == SNOOP && peer_hit && lines[!owner][index] == S) ||
          (state == PEER_WRITE && m_ready && transfer_word == WORD_BITS'(LINE_WORDS-1)));
     assign writeback_event = m_valid && m_ready && |m_wstrb &&
         (state == VICTIM_WRITE || state == PEER_WRITE || state == FLUSH_WRITE);
+    assign device_store_commit = m_valid && m_ready && state == BYPASS && device && |mask;
+    assign device_read_forward = resetn && state == DEVICE_LOOKUP && mask == 0 && (own_hit || peer_hit);
+    assign device_writeback = m_valid && m_ready && state == DEVICE_WRITEBACK;
+    assign device_invalidations = resetn && state == DEVICE_INVALIDATE
+        ? {1'b0, own_hit} + {1'b0, peer_hit} : 2'd0;
 
     always_comb begin
         m_valid = 0;
         m_owner = owner;
         m_instr = 0;
+        m_device = 0;
         m_addr = address;
         m_wdata = operand;
         m_wstrb = 0;
@@ -110,6 +124,7 @@ module aster_coherent_cache #(
             case (state)
                 BYPASS: begin
                     m_valid = 1;
+                    m_device = device;
                     m_instr = instr;
                     m_wstrb = instr ? 4'b0 : mask;
                 end
@@ -122,6 +137,14 @@ module aster_coherent_cache #(
                     m_owner = state == PEER_WRITE ? !owner : owner;
                     m_addr = tags[m_owner][index] + 32'(transfer_word)*4;
                     m_wdata = data[m_owner][index][transfer_word];
+                    m_wstrb = 4'hf;
+                end
+                DEVICE_WRITEBACK: begin
+                    m_valid = 1;
+                    m_device = 1;
+                    m_owner = device_dirty_owner;
+                    m_addr = tags[device_dirty_owner][index] + 32'(transfer_word)*4;
+                    m_wdata = data[device_dirty_owner][index][transfer_word];
                     m_wstrb = 4'hf;
                 end
                 FLUSH_WRITE: begin
@@ -150,6 +173,8 @@ module aster_coherent_cache #(
             state <= IDLE;
             owner <= 0;
             instr <= 0;
+            device <= 0;
+            device_dirty_owner <= 0;
             address <= 0;
             operand <= 0;
             mask <= 0;
@@ -167,12 +192,14 @@ module aster_coherent_cache #(
                 IDLE: begin
                     transfer_word <= 0;
                     if (flush_valid) begin
+                        device <= 0;
                         selected_flush <= flush_mask;
                         flush_position <= 0;
                         state <= FLUSH_SCAN;
                     end else if (s_valid) begin
                         owner <= s_owner;
                         instr <= s_instr;
+                        device <= ENABLE_DMA && s_device;
                         address <= s_addr;
                         operand <= s_wdata;
                         mask <= s_instr ? 4'b0 : s_wstrb;
@@ -181,6 +208,7 @@ module aster_coherent_cache #(
                 end
                 LOOKUP: begin
                     if (!cacheable) state <= BYPASS;
+                    else if (device) state <= DEVICE_LOOKUP;
                     else if (own_hit) begin
                         if (|mask && peer_hit) lines[!owner][index] <= I;
                         state <= ACCESS;
@@ -238,6 +266,35 @@ module aster_coherent_cache #(
                     result <= m_rdata;
                     state <= RESPONSE;
                 end
+                DEVICE_LOOKUP: begin
+                    if (mask == 0) begin
+                        if (own_hit || peer_hit) begin
+                            // An uncached consumer retains no line. Its read does
+                            // not require downgrading/writing back an M owner.
+                            result <= data[own_hit ? owner : !owner][index][word_index];
+                            state <= RESPONSE;
+                        end else state <= BYPASS;
+                    end else if (own_hit && lines[owner][index] == M) begin
+                        device_dirty_owner <= owner;
+                        state <= DEVICE_WRITEBACK;
+                    end else if (peer_hit && lines[!owner][index] == M) begin
+                        device_dirty_owner <= !owner;
+                        state <= DEVICE_WRITEBACK;
+                    end else state <= DEVICE_INVALIDATE;
+                end
+                DEVICE_WRITEBACK: if (m_ready) begin
+                    // Drain the whole M line before invalidating or applying a
+                    // partial destination store. Untouched dirty bytes survive.
+                    if (transfer_word == WORD_BITS'(LINE_WORDS-1)) begin
+                        transfer_word <= 0;
+                        state <= DEVICE_INVALIDATE;
+                    end else transfer_word <= transfer_word + 1'b1;
+                end
+                DEVICE_INVALIDATE: begin
+                    if (own_hit) lines[owner][index] <= I;
+                    if (peer_hit) lines[!owner][index] <= I;
+                    state <= BYPASS;
+                end
                 RESPONSE: state <= IDLE;
                 FLUSH_SCAN: begin
                     if (flush_position == SCAN_BITS'(2*LINE_COUNT)) state <= FLUSH_DONE;
@@ -265,6 +322,9 @@ module aster_coherent_cache #(
 `ifdef ASTER_COHERENCE_ASSERT
     // Simulated continuously, including fills, interventions and flush stalls.
     always_ff @(posedge clk) if (resetn) begin
+        if (ENABLE_DMA && state == IDLE && s_valid && s_device && !flush_valid)
+            assert (!s_instr && s_addr >= 32'h1000_0000 && s_addr < 32'h1000_8000 && s_addr[1:0] == 0)
+                else $fatal(1, "coherent device offer escaped shared aligned data RAM");
         for (int n = 0; n < LINE_COUNT; n++) begin
             assert (lines[0][n] != 3 && lines[1][n] != 3);
             if (lines[0][n] != I && lines[1][n] != I && tags[0][n] == tags[1][n]) begin

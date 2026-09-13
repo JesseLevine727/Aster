@@ -36,7 +36,7 @@ public:
 
     Bench(unsigned seed, int delay) : rng(seed), latency(delay) {
         for (unsigned i = 0; i < ram.size(); ++i) ram[i] = oracle[i] = rng();
-        d.resetn = d.s_valid = d.flush_valid = d.m_ready = 0;
+        d.resetn = d.s_valid = d.s_device = d.flush_valid = d.m_ready = 0;
         d.clk = 0; d.eval(); d.clk = 1; d.eval(); d.resetn = 1;
     }
     static unsigned index(std::uint32_t addr) { return (addr - 0x10000000)/4; }

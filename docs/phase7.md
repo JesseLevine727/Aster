@@ -1,7 +1,8 @@
 # Phase 7: coherent memory-to-memory DMA
 
-Status: **engine/arbitration unit milestone verified; coherent integration,
-real-core, measurement and physical acceptance pending**.
+Status: **engine/arbitration, coherent-device cache and DMA-counter units
+verified; SoC integration/lifecycle, real-core, measurement and physical
+acceptance pending**.
 Baseline: clean/pushed Phase 6 closeout
 `70a1b55b303786144aaa052b6cd8b9e8a4d75bf1`. Before any Phase 7 edits,
 `audit_phase6.py ... --current` passed all seven baseline acceptance gates.
@@ -55,6 +56,20 @@ four latencies, including zero-/one-/two-operation CPU groups, 129-cycle AMO
 gaps, delayed settlement, random arrivals and a completed-group fairness bound.
 Assertions are enabled and warnings are fatal for both owned RTL units. These
 results prove units, **not** cache coherence, a real-core DMA copy or board DMA.
+
+The next unit milestone adds `make dma-cache-matrix` (216 seed/cache/geometry/
+latency scenarios) and `make dma-counters`. The device-cache oracle checks
+complete RAM, every cache state/tag/data word, exact dirty-drain/destination
+backing history, both M owners, two S copies, all store strobes, no allocation,
+RAM instruction visibility and overlapping flush requests. DMA-disabled
+`make coherent-cache-matrix` still passes 54 seeded configurations (four
+latencies each). Counter tests cover independent multi-increment accounting,
+common-window command priority/exclusion, all offsets and 32-/64-bit carry.
+Whole-SoC reservation/lifecycle and actual-core DMA proofs remain separate gates.
+`make dma-cache-boundaries` also passes 24 scenarios at 1x1024 and 1024x1,
+covering the largest supported index and line-word widths independently.
+DMA-disabled real-core `atomic-runtime ATOMIC_CACHE=1` and `coherent-soc` pass
+their compiled atomic and RAM-preserving lifecycle checks with the new cache.
 
 ## Architecture and coherent serialization
 
@@ -220,11 +235,28 @@ primary state, DMA progress and unaffected reservations.
 Retain both fourteen-counter CPU banks at their existing addresses. Add the
 separate DMA bank, with START/FREEZE/RESUME driven by the same primary-only
 common-window command at `0x2000_3080`. All counters are 64-bit, freeze together
-and exclude command edges, as in Phase 6. Planned DMA fields are busy cycles,
-request-wait cycles, completed read/write transactions, committed payload
-bytes, backing reads/writes, cache-read forwards, dirty writeback words,
-invalidated lines, successful completions, aborts, descriptor errors and
-rejected commands. Byte increments are the actual destination strobe popcount;
+and exclude command edges, as in Phase 6. The DMA bank has this fixed ABI 5
+order (each offset is its low word; the following word is its high half):
+
+| Index | Offset | Field |
+| --- | --- | --- |
+| 0 | `0x100` | busy cycles |
+| 1 | `0x108` | offered-request wait cycles |
+| 2 | `0x110` | completed coherent read transactions |
+| 3 | `0x118` | completed coherent write transactions |
+| 4 | `0x120` | committed payload bytes |
+| 5 | `0x128` | actual backing read transactions |
+| 6 | `0x130` | actual backing write transactions (including dirty drains) |
+| 7 | `0x138` | cache-read forwards |
+| 8 | `0x140` | dirty writeback words |
+| 9 | `0x148` | invalidated CPU cache lines |
+| 10 | `0x150` | successful completions |
+| 11 | `0x158` | cooperative abort completions |
+| 12 | `0x160` | rejected-descriptor error completions |
+| 13 | `0x168` | rejected control/configuration commands |
+
+Metadata flags at `0x18c` have cache bit 0, synchronous-memory bit 1 and
+DMA-present bit 2. Byte increments are the actual destination strobe popcount;
 dirty writeback bytes are not payload bytes. Cross-check every reported field
 against independently observed RTL events, including carry and reset edges.
 

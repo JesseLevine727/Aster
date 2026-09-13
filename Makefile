@@ -97,6 +97,9 @@ WARM_STOP_SIM := $(BUILD_DIR)/aster_warm_stop_sim
 COHERENT_PERF_SIM := $(BUILD_DIR)/aster_coherent_perf_sim
 DMA_ENGINE_SIM := $(BUILD_DIR)/aster_dma_engine_sim
 DMA_ARBITER_SIM := $(BUILD_DIR)/aster_dma_arbiter_sim
+DMA_PERF_SIM := $(BUILD_DIR)/aster_dma_perf_sim
+DMA_CACHE_DIR := $(BUILD_DIR)/dma_cache_l1$(ENABLE_L1)_w$(L1_LINE_WORDS)_n$(L1_LINE_COUNT)
+DMA_CACHE_SIM := $(DMA_CACHE_DIR)/aster_dma_cache_sim
 ATOMIC_CACHE ?= 0
 ATOMIC_RUNTIME_DIR := $(BUILD_DIR)/atomic_h$(HART_COUNT)_c$(ATOMIC_CACHE)_w$(L1_LINE_WORDS)_n$(L1_LINE_COUNT)
 ATOMIC_RUNTIME_SIM := $(ATOMIC_RUNTIME_DIR)/aster_atomic_probe_sim
@@ -192,6 +195,8 @@ help:
 	@echo "  make coherent-counters   Check ABI 4 counter windows and 64-bit carry"
 	@echo "  make dma-engine          Test Phase 7 descriptor/copy/abort against a full-byte oracle"
 	@echo "  make dma-arbiter         Test whole-CPU/AMO locking and fair DMA arbitration"
+	@echo "  make dma-cache-matrix    Test coherent DMA snoops/dirty writes across cache geometries"
+	@echo "  make dma-counters       Test the separate AsterBench v5 DMA common-window bank"
 	@echo "  make linux-coherent-matrix  Test Phase 6 AXI/serial/RAM/stop protocol"
 	@echo "  make fpga-linux-coherent   Build the dual-core RV32IMA coherent PYNQ overlay"
 	@echo "  make coherent-bench       AsterBench v4 atomic/coherent C workload with exact per-hart counters"
@@ -612,6 +617,15 @@ $(DMA_ARBITER_SIM): rtl/interconnect/aster_dma_arbiter.sv verification/unit/tb_a
 dma-arbiter: $(DMA_ARBITER_SIM)
 	@set -e; for seed in 1 0xa57e7 0xc0ffee; do $(DMA_ARBITER_SIM) $$seed; done
 
+.PHONY: dma-counters
+$(DMA_PERF_SIM): rtl/peripherals/aster_dma_perf.sv verification/unit/tb_aster_dma_perf.cpp Makefile | $(BUILD_DIR)
+	$(VERILATOR) --cc --exe --build --timing --Wall --assert --top-module aster_dma_perf \
+		--Mdir $(BUILD_DIR)/obj_dma_perf -o $(abspath $@) \
+		$(ROOT)/rtl/peripherals/aster_dma_perf.sv $(ROOT)/verification/unit/tb_aster_dma_perf.cpp
+
+dma-counters: $(DMA_PERF_SIM)
+	@$(DMA_PERF_SIM)
+
 .PHONY: warm-stop
 $(WARM_STOP_SIM): rtl/soc/aster_warm_stop.sv verification/unit/tb_aster_warm_stop.cpp Makefile | $(BUILD_DIR)
 	$(VERILATOR) --cc --exe --build --timing --Wall --top-module aster_warm_stop \
@@ -685,6 +699,28 @@ atomic-faults: $(ATOMIC_FAULT_SIM)
 
 atomic-faults-matrix:
 	@set -e; for cache in 0 1; do $(MAKE) --no-print-directory atomic-faults ATOMIC_CACHE=$$cache; done
+
+.PHONY: dma-cache dma-cache-matrix dma-cache-boundaries
+$(DMA_CACHE_SIM): rtl/cache/aster_coherent_cache.sv verification/unit/tb_aster_dma_cache.cpp Makefile
+	mkdir -p $(DMA_CACHE_DIR)
+	$(VERILATOR) --cc --exe --build --timing --Wall $(VERILATOR_COHERENT_FLAGS) --assert -DASTER_COHERENCE_ASSERT \
+		--top-module aster_coherent_cache "-GENABLE_CACHE=1'b$(ENABLE_L1)" "-GENABLE_DMA=1'b1" \
+		-GLINE_WORDS=$(L1_LINE_WORDS) -GLINE_COUNT=$(L1_LINE_COUNT) \
+		-CFLAGS '-DASTER_CACHE_ENABLE=$(ENABLE_L1) -DASTER_LINE_WORDS=$(L1_LINE_WORDS) -DASTER_LINE_COUNT=$(L1_LINE_COUNT)' \
+		--Mdir $(DMA_CACHE_DIR)/obj -o $(abspath $@) \
+		$(ROOT)/rtl/cache/aster_coherent_cache.sv $(ROOT)/verification/unit/tb_aster_dma_cache.cpp
+
+dma-cache: $(DMA_CACHE_SIM)
+	@set -e; for seed in 1 0xa57e7 0xc0ffee; do $(DMA_CACHE_SIM) $$seed; done
+
+dma-cache-matrix:
+	@set -e; for enabled in 0 1; do for words in 1 4 8; do for lines in 1 4 16; do \
+		$(MAKE) --no-print-directory dma-cache ENABLE_L1=$$enabled L1_LINE_WORDS=$$words L1_LINE_COUNT=$$lines; \
+	done; done; done
+
+dma-cache-boundaries:
+	@$(MAKE) --no-print-directory dma-cache ENABLE_L1=1 L1_LINE_WORDS=1 L1_LINE_COUNT=1024
+	@$(MAKE) --no-print-directory dma-cache ENABLE_L1=1 L1_LINE_WORDS=1024 L1_LINE_COUNT=1
 
 .PHONY: coherent-cache coherent-cache-matrix
 $(COHERENT_CACHE_SIM): rtl/cache/aster_coherent_cache.sv verification/unit/tb_aster_coherent_cache.cpp Makefile
