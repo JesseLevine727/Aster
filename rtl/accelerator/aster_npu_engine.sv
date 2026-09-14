@@ -72,6 +72,7 @@ module aster_npu_engine (
     logic current_a_active, current_b_active, current_c_active;
     logic memory_state, memory_accept;
     logic read_accept, write_accept;
+    logic tile_write_started, abort_drain_tile;
 
     logic array_resetn;
     logic array_start, array_start_ready, array_start_accept;
@@ -122,7 +123,8 @@ module aster_npu_engine (
     assign memory_state = state == LOAD_A || state == LOAD_B || state == WRITE_C;
     assign m_write = state == WRITE_C;
     assign m_valid = resetn && memory_state &&
-        (request_held || (!pause && !abort_pending && !abort_request)) &&
+        (request_held || (!pause && !abort_pending && !abort_request) ||
+         (abort_drain_tile && state == WRITE_C)) &&
         (state == LOAD_A ? current_a_active :
          state == LOAD_B ? current_b_active : current_c_active);
     assign memory_accept = m_valid && m_ready;
@@ -227,6 +229,7 @@ module aster_npu_engine (
             tile_row <= 0; tile_col <= 0; k_index <= 0;
             load_index <= 0; output_index <= 0; output_byte <= 0;
             abort_pending <= 0; request_held <= 0;
+            tile_write_started <= 0; abort_drain_tile <= 0;
             done_flag <= 0; error_flag <= 0; aborted_flag <= 0; error_code <= 0;
             bytes_read <= 0; bytes_written <= 0; job_cycles <= 0;
             compute_cycles <= 0; tiles <= 0;
@@ -262,6 +265,7 @@ module aster_npu_engine (
                         abort_pending <= 0; done_flag <= 0; error_flag <= 0; aborted_flag <= 0;
                         error_code <= 0; bytes_read <= 0; bytes_written <= 0;
                         job_cycles <= 0; compute_cycles <= 0; tiles <= 0;
+                        tile_write_started <= 0; abort_drain_tile <= 0;
                         if (descriptor_error != 0) begin
                             state <= IDLE; done_flag <= 1; error_flag <= 1;
                             error_code <= descriptor_error;
@@ -275,6 +279,8 @@ module aster_npu_engine (
                 end
                 ARRAY_START: if (array_start_accept) begin
                     load_index <= 0;
+                    tile_write_started <= 0;
+                    abort_drain_tile <= 0;
                     if (reduction == 0) state <= ARRAY_FINISH;
                     else state <= LOAD_A;
                 end
@@ -336,6 +342,7 @@ module aster_npu_engine (
                         output_index <= output_index + 1;
                         output_byte <= 0;
                     end else if (write_accept) begin
+                        tile_write_started <= 1;
                         if (output_byte == 3) begin
                             output_byte <= 0;
                             output_index <= output_index + 1;
@@ -348,13 +355,20 @@ module aster_npu_engine (
             endcase
 
             // ABORT is cooperative: an already-offered memory transaction is
-            // allowed to settle; no later offer is made. The array is reset by
-            // the transition to IDLE and no completion is claimed.
+            // allowed to settle. If C emission has begun, the current tile is
+            // drained so an abort cannot expose a partial output tile; no next
+            // tile is started and no full result is claimed.
             if (busy && (abort_pending || abort_request) && (!m_valid || m_ready)) begin
-                state <= IDLE;
-                done_flag <= 1;
-                aborted_flag <= 1;
-                abort_pending <= 0;
+                if (state == WRITE_C && output_index < 16 &&
+                    (tile_write_started || write_accept)) begin
+                    abort_drain_tile <= 1;
+                end else begin
+                    state <= IDLE;
+                    done_flag <= 1;
+                    aborted_flag <= 1;
+                    abort_pending <= 0;
+                    abort_drain_tile <= 0;
+                end
             end
         end
     end

@@ -129,6 +129,41 @@ public:
             }
         require(memory == expected_memory, "GEMM modified an input, stride gap, or guard byte");
     }
+
+    void abort_after_first_output_byte() {
+        const uint32_t a = base + 12000, b = base + 12100, c = base + 12203;
+        const uint32_t m = 4, n = 4, k = 1, as = 1, bs = 4, cs = 20;
+        for (unsigned i = 0; i < 4; ++i) memory[a - base + i] = static_cast<uint8_t>(i + 1);
+        for (unsigned i = 0; i < 4; ++i) memory[b - base + i] = static_cast<uint8_t>(i + 2);
+        for (unsigned i = 0; i < 4; ++i)
+            for (unsigned j = 0; j < 4; ++j)
+                for (unsigned byte = 0; byte < 4; ++byte)
+                    memory[c - base + i * cs + 4 * j + byte] = 0xa5;
+        d.start_a_base = a; d.start_b_base = b; d.start_c_base = c;
+        d.start_a_stride = as; d.start_b_stride = bs; d.start_c_stride = cs;
+        d.start_m = m; d.start_n = n; d.start_k = k;
+        idle_start();
+        const unsigned writes_before = writes;
+        while (d.busy && !(d.m_valid && d.m_write)) tick();
+        require(d.m_valid && d.m_write, "abort fixture never reached C-byte emission");
+        tick();
+        require(writes == writes_before + 1, "abort fixture did not accept exactly one first output byte");
+        d.abort_request = 1;
+        for (unsigned guard = 0; guard < 1000000 && d.busy; ++guard) tick();
+        d.abort_request = 0;
+        require(!d.busy && d.done && d.aborted && !d.error,
+                "abort did not terminate with an acknowledged aborted job");
+        require(writes == writes_before + 16 * 4 && d.bytes_written == 16 * 4,
+                "abort left a partially written active output tile");
+        for (unsigned i = 0; i < 4; ++i)
+            for (unsigned j = 0; j < 4; ++j) {
+                const uint32_t expected = uint32_t(i + 1) * uint32_t(j + 2);
+                for (unsigned byte = 0; byte < 4; ++byte)
+                    require(memory[c - base + i * cs + 4 * j + byte] ==
+                                static_cast<uint8_t>(expected >> (8 * byte)),
+                            "tile-safe abort output differs from the completed tile oracle");
+            }
+    }
 };
 
 static void invalid_descriptor(Bench& bench, uint32_t a, uint32_t b, uint32_t c,
@@ -151,6 +186,7 @@ int main(int argc, char** argv) {
         bench.run(base + 1024, base + 2048, base + 3073, 4, 5, 19, 1, 1, 1);
         bench.run(base + 4096, base + 4609, base + 5003, 8, 6, 17, 7, 3, 0);
         bench.run(base + 8193, base + 9002, base + 10007, 19, 11, 41, 9, 10, 17);
+        bench.abort_after_first_output_byte();
         invalid_descriptor(bench, base, base + 512, base + 1024, 1, 1, 4, 1, 1, 1025, 1);
         invalid_descriptor(bench, base, base + 512, base + 1024, 0, 1, 4, 2, 2, 1, 2);
         invalid_descriptor(bench, base - 1, base + 512, base + 1024, 1, 1, 4, 1, 1, 1, 3);

@@ -54,7 +54,10 @@ module aster_npu_regs (
                                req_addr == 12'h01c || req_addr == 12'h020 || req_addr == 12'h024 ||
                                req_addr == 12'h028 || req_addr == 12'h02c || req_addr == 12'h030);
     assign control_write = request_fire && req_write && req_addr == 12'h000;
-    assign control_valid = control_write && req_wstrb == 4'b0001 && req_wdata[31:8] == 0;
+    // PicoRV32 replicates an SB value across all data lanes while its byte
+    // strobe identifies the selected lane. CONTROL is lane-0 only, so reject
+    // upper strobes but decode the lane-0 byte rather than its replicated copy.
+    assign control_valid = control_write && req_wstrb == 4'b0001;
     assign command_start = control_valid && req_wdata[7:0] == 8'd1;
     assign command_abort = control_valid && req_wdata[7:0] == 8'd2;
     assign command_ack = control_valid && req_wdata[7:0] == 8'd4;

@@ -35,6 +35,13 @@ SECTIONS
         . = ALIGN(4);
         __bss_end = .;
     } > SHARED
+    .npu_summary (NOLOAD) : ALIGN(16)
+    {
+        __npu_summary_start = .;
+        KEEP(*(.npu_summary*))
+        . = ALIGN(4);
+        __npu_summary_end = .;
+    } > SHARED
     .private0 (NOLOAD) : ALIGN(16)
     {
         __private0_start = .;

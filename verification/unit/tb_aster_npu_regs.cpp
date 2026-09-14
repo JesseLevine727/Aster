@@ -132,6 +132,13 @@ static void run_gemm(Rig& rig) {
     rig.write(0x00, 4, 1);
     require(rig.read(0x04) == 0 && rig.read(0x38) == old_read && rig.read(0x40) == old_cycles,
             "ACK did not clear status while retaining accounting");
+
+    // PicoRV32 presents an SB as replicated data with only the selected lane
+    // strobed. Lane-0 CONTROL must accept that legal encoding.
+    rig.write(0x00, 0x01010101u, 1);
+    for (unsigned guard = 0; guard < 1000000 && rig.d.busy; ++guard) rig.clock();
+    require(rig.d.done && !rig.d.error && !rig.d.aborted,
+            "replicated PicoRV32 SB command was rejected");
 }
 
 int main(int argc, char** argv) {
