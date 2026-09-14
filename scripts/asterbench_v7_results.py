@@ -9,6 +9,7 @@ run before anything is accepted into a capture or study envelope.
 from __future__ import annotations
 
 import argparse
+from contextlib import ExitStack
 from datetime import datetime, timezone
 import hashlib
 import json
@@ -17,6 +18,7 @@ import platform
 import re
 import shutil
 import subprocess
+import sys
 import tempfile
 from typing import Any
 
@@ -331,11 +333,13 @@ def capture_study(output: Path, *, riscv_prefix: str = "riscv32-unknown-elf-", a
     manifest_path.write_text(json.dumps(manifest, indent=2, sort_keys=True) + "\n", encoding="utf-8")
     captures: dict[str, dict[str, Any]] = {}
     try:
-        with tempfile.TemporaryDirectory(prefix="asterbench-v7-study-") as shared_name:
-            shared_build = Path(shared_name)
+        with ExitStack() as stack:
+            shared_build = Path(stack.enter_context(tempfile.TemporaryDirectory(prefix="asterbench-v7-study-")))
             for index, entry in enumerate(_repeat_plan(), 1):
                 print(f"ASTERBENCH v7 STUDY {index}/100: {entry['id']}", flush=True)
-                build = shared_build if entry["fresh_repeat_of"] is None else Path(tempfile.mkdtemp(prefix="asterbench-v7-repeat-"))
+                build = shared_build if entry["fresh_repeat_of"] is None else Path(
+                    stack.enter_context(tempfile.TemporaryDirectory(prefix="asterbench-v7-repeat-"))
+                )
                 path = output / f"{entry['id']}.json"
                 envelope = capture(entry["configuration"], path, riscv_prefix=riscv_prefix,
                                    build_directory=build, allow_dirty=allow_dirty)
