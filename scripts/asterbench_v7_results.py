@@ -381,8 +381,12 @@ def audit_study(path: Path, *, require_clean: bool = True) -> dict[str, Any]:
             base = captures[wanted["fresh_repeat_of"]]
             _require(audited["records"] == base["records"] and audited["stop"] == base["stop"],
                      f"fresh repeat changed execution: {actual['id']}")
-            _require(audited["metadata"]["toolchain"]["firmware_elf_sha256"] ==
-                     base["metadata"]["toolchain"]["firmware_elf_sha256"], "fresh repeat firmware differs")
+            # GCC may place a random temporary assembly-object basename in
+            # the ELF string table.  Compare the emitted ROM and executable
+            # views instead; the raw ELF hash remains preserved provenance.
+            for artifact in ("firmware_hex", "firmware_map", "firmware_disassembly", "simulator"):
+                _require(audited["artifacts"][artifact]["sha256"] == base["artifacts"][artifact]["sha256"],
+                         f"fresh repeat {artifact} differs")
             _require(audited["artifacts"]["ram"]["sha256"] == base["artifacts"]["ram"]["sha256"], "fresh repeat RAM differs")
     _require(manifest.get("summary") == _study_summary(captures), "study summary is not reproducible")
     return manifest
