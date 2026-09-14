@@ -342,14 +342,17 @@ retains the raw records and provenance. Phase 9's NPU remains separate.
 
 ## Phase 9 — Matrix accelerator / NPU
 
-**In progress:** [Phase 9 contract](docs/phase9.md). Build from small verified
+**Complete:** [Phase 9 contract and results](docs/phase9.md). Build from small verified
 pieces: processing element → array → 4×4 MAC array → memory/control interface
-→ optional 8×8 configuration. AsterBench remains mandatory; Phase 9 adds a
-strict accelerator/GEMM record version while preserving v2–v6.
+→ coherent SoC integration → RAM-backed C runtime → guarded PYNQ Linux/PCAP.
+AsterBench v7 remains mandatory; it adds a strict accelerator/GEMM record
+version while preserving v2–v6. The [self-contained Phase 9 evidence bundle](docs/results/phase9/closeout-2493435/README.md)
+retains the 100-capture study, fresh repeats, routed artifacts, physical
+cache-mode boots, independent audits and full regressions.
 
 Start with INT8 GEMM only. CNN support comes later.
 
-**Exit:** accelerator GEMM is bit-correct against a software reference over randomized test cases.
+**Exit:** accelerator GEMM is bit-correct against a software reference over randomized test cases, with routed and physical acceptance evidence.
 
 ## Phase 10 — CPU vs multicore vs ISA vs NPU
 

@@ -1,0 +1,239 @@
+{
+  "bitstream_sha256": "f696afcc5223ea23f50069782727e4d59d889ac3a9912dfda0af9134dd35a369",
+  "board": "Pynq-Z1",
+  "boots": [
+    {
+      "after_stop": {
+        "control": 0,
+        "faults": [
+          {
+            "address": 0,
+            "atomic_fault_valid": false,
+            "cause": 0,
+            "hart": 0,
+            "instruction": 0,
+            "pc": 192,
+            "trapped": false
+          },
+          {
+            "address": 0,
+            "atomic_fault_valid": false,
+            "cause": 0,
+            "hart": 1,
+            "instruction": 0,
+            "pc": 0,
+            "trapped": false
+          }
+        ],
+        "fifo_count": 0,
+        "hart_status": 0,
+        "lifetime_retired": [
+          0,
+          0
+        ],
+        "rx_bytes": 0,
+        "status": 0,
+        "stop_status": 1,
+        "tx_bytes": 0
+      },
+      "before_stop": {
+        "control": 1,
+        "faults": [
+          {
+            "address": 0,
+            "atomic_fault_valid": false,
+            "cause": 0,
+            "hart": 0,
+            "instruction": 0,
+            "pc": 192,
+            "trapped": false
+          },
+          {
+            "address": 0,
+            "atomic_fault_valid": false,
+            "cause": 0,
+            "hart": 1,
+            "instruction": 0,
+            "pc": 0,
+            "trapped": false
+          }
+        ],
+        "fifo_count": 0,
+        "hart_status": 1,
+        "lifetime_retired": [
+          480161,
+          0
+        ],
+        "rx_bytes": 55,
+        "status": 1,
+        "stop_status": 0,
+        "tx_bytes": 55
+      },
+      "boot": 1,
+      "elapsed_seconds": 0.5193379490001462,
+      "ram": {
+        "bytes": 65536,
+        "file": "boot1.ram",
+        "sha256": "dfa7a1f174828c279a343366ce6ad165c2d5c75c122d29761dd8179f3b13d2b3"
+      },
+      "status": "PASS",
+      "summary_address": 268464192,
+      "uart": {
+        "bytes": 55,
+        "file": "boot1.uart",
+        "sha256": "aef8968b49d4c759cc93a8aeb88e4ee7da7ca3dd18a3b8b137695614522fe612"
+      },
+      "uart_output": "NPU RUNTIME PASS jobs=9 checks=2985 summary=0x10007040\n"
+    },
+    {
+      "after_stop": {
+        "control": 0,
+        "faults": [
+          {
+            "address": 0,
+            "atomic_fault_valid": false,
+            "cause": 0,
+            "hart": 0,
+            "instruction": 0,
+            "pc": 192,
+            "trapped": false
+          },
+          {
+            "address": 0,
+            "atomic_fault_valid": false,
+            "cause": 0,
+            "hart": 1,
+            "instruction": 0,
+            "pc": 0,
+            "trapped": false
+          }
+        ],
+        "fifo_count": 0,
+        "hart_status": 0,
+        "lifetime_retired": [
+          0,
+          0
+        ],
+        "rx_bytes": 0,
+        "status": 0,
+        "stop_status": 1,
+        "tx_bytes": 0
+      },
+      "before_stop": {
+        "control": 1,
+        "faults": [
+          {
+            "address": 0,
+            "atomic_fault_valid": false,
+            "cause": 0,
+            "hart": 0,
+            "instruction": 0,
+            "pc": 192,
+            "trapped": false
+          },
+          {
+            "address": 0,
+            "atomic_fault_valid": false,
+            "cause": 0,
+            "hart": 1,
+            "instruction": 0,
+            "pc": 0,
+            "trapped": false
+          }
+        ],
+        "fifo_count": 0,
+        "hart_status": 1,
+        "lifetime_retired": [
+          479462,
+          0
+        ],
+        "rx_bytes": 55,
+        "status": 1,
+        "stop_status": 0,
+        "tx_bytes": 55
+      },
+      "boot": 2,
+      "elapsed_seconds": 0.5155922589999591,
+      "ram": {
+        "bytes": 65536,
+        "file": "boot2.ram",
+        "sha256": "dfa7a1f174828c279a343366ce6ad165c2d5c75c122d29761dd8179f3b13d2b3"
+      },
+      "status": "PASS",
+      "summary_address": 268464192,
+      "uart": {
+        "bytes": 55,
+        "file": "boot2.uart",
+        "sha256": "aef8968b49d4c759cc93a8aeb88e4ee7da7ca3dd18a3b8b137695614522fe612"
+      },
+      "uart_output": "NPU RUNTIME PASS jobs=9 checks=2985 summary=0x10007040\n"
+    }
+  ],
+  "cache": false,
+  "clock_mhz": 31.25,
+  "downloaded": true,
+  "external_pmod_loopback": false,
+  "final_state": {
+    "control": 0,
+    "faults": [
+      {
+        "address": 0,
+        "atomic_fault_valid": false,
+        "cause": 0,
+        "hart": 0,
+        "instruction": 0,
+        "pc": 192,
+        "trapped": false
+      },
+      {
+        "address": 0,
+        "atomic_fault_valid": false,
+        "cause": 0,
+        "hart": 1,
+        "instruction": 0,
+        "pc": 0,
+        "trapped": false
+      }
+    ],
+    "fifo_count": 0,
+    "hart_status": 0,
+    "lifetime_retired": [
+      0,
+      0
+    ],
+    "rx_bytes": 0,
+    "status": 0,
+    "stop_status": 1,
+    "tx_bytes": 0
+  },
+  "firmware_sha256": "5258740f582763ca895590707ba1cada208f17eaf07dde3258af33711f46f0dd",
+  "handoff_preflight": {
+    "auxiliary_reset_active_high": true,
+    "axi_base": 1073741824,
+    "axi_span": 262144,
+    "bridge_version": 589825,
+    "caches": false,
+    "clock_hz": 31250000,
+    "coherent": true,
+    "dma": true,
+    "dma_abi": 1,
+    "dma_counter_abi": 5,
+    "external_reset_active_high": false,
+    "hart_count": 2,
+    "isa": "rv32ima",
+    "npu": true,
+    "npu_abi": 1,
+    "npu_counter_abi": 1,
+    "safe_warm_stop": true
+  },
+  "hart_count": 2,
+  "hwh_sha256": "d4d3dec3f98975b8cfe3b8c6d5428db168937e447a8754218f454bd50467a811",
+  "kernel": "6.6.10-xilinx-v2024.1-g916a1f7c7222",
+  "loaded_bitstream": "/home/xilinx/aster_phase9_npu_9d6cf59/cache-off/aster_linux.bit",
+  "previous_bitstream": "/home/xilinx/aster_phase9_npu_9d6cf59/aster_linux.bit",
+  "pynq_version": "3.1.1",
+  "schema": "aster.npu.physical.v1",
+  "source_revision": "35588db000000000000000000000000000000000",
+  "status": "complete",
+  "transport": "PYNQ Linux PCAP/AXI, FPGA UART TX-to-RX serial loopback"
+}

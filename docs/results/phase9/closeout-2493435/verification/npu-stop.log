@@ -1,0 +1,1 @@
+PASS: Phase 9 actual-core NPU runtime harts=2 cache=1 wait=0 starts=7 max_tiles=4 max_bytes_written=256 max_job_cycles=14906 device_transactions=4845 RAM snapshot=65536 bytes hash=0x3bfea5b55b0af0f

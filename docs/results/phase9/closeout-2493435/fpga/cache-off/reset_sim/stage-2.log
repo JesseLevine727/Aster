@@ -1,0 +1,17 @@
+
+****** xsim v2025.1 (64-bit)
+  **** SW Build 6140274 on Wed May 21 22:58:25 MDT 2025
+  **** IP Build 6138677 on Thu May 22 03:10:11 MDT 2025
+  **** SharedData Build 6139179 on Tue May 20 17:58:58 MDT 2025
+  **** Start of session at: Sun Sep 13 21:39:27 2026
+    ** Copyright 1986-2022 Xilinx, Inc. All Rights Reserved.
+    ** Copyright 2022-2025 Advanced Micro Devices, Inc. All Rights Reserved.
+
+source xsim.dir/aster_reset_test/xsim_script.tcl
+# xsim {aster_reset_test} -autoloadwcfg -runall
+Time resolution is 1 ps
+run -all
+PASS: generated PYNQ reset netlist, five assert/release scenarios
+$finish called at time : 51200 ns : File "/home/elfo/Documents/Aster/verification/fpga/tb_linux_reset.sv" Line 57
+exit
+INFO: [Common 17-206] Exiting xsim at Sun Sep 13 21:39:29 2026...

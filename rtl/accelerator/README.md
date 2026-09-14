@@ -13,9 +13,10 @@ Implemented and verified modules:
 - `aster_npu_regs.sv`: ABI-1 descriptor registers, control/status boundary, and
   engine accounting readback;
 
-Remaining modules:
+Completed integration:
 
-- SoC/interconnect integration, the RAM-backed C driver, and AsterBench v7.
+- SoC/interconnect integration, the RAM-backed C driver, AsterBench v7, and
+  guarded PYNQ Linux/PCAP execution are accepted in the Phase 9 closeout.
 
 These modules must remain independently testable without PicoRV32 or PYNQ.
 The optional 8×8 configuration is deferred until the 4×4 exit gate passes.

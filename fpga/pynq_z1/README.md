@@ -153,6 +153,44 @@ between metadata parsing, PCAP download, clock configuration and AXI access.
 Keep the matching bit/HWH pair together: metadata validation cannot establish
 the contents of an arbitrary replacement bitstream.
 
+### Phase 9 NPU overlay
+
+The accepted Phase 9 image is a coherent, DMA-enabled, 4×4 signed-INT8 NPU
+configuration. Build both supported cache variants from the repository root:
+
+```sh
+make fpga-linux-npu
+make LINUX_CACHE=0 fpga-linux-npu
+```
+
+The outputs are `build/fpga/pynq_z1/linux-h2-coherent-c1-dma-npu/` and
+`linux-h2-coherent-c0-dma-npu/`. Each directory contains the matched
+`aster_linux.bit`/`.hwh` pair, routed checkpoint, timing/route/DRC/methodology/
+utilization reports, and generated reset-netlist proof. The HWH must report
+`rv32ima`, two harts, coherent+DMA+NPU enabled, bridge version `0x90001`, NPU
+ABI 1, counter ABI 1, and the established 31.25 MHz clock.
+
+Physical acceptance uses PYNQ Linux/PCAP over SSH. Log into the board's root
+PYNQ environment (`ssh xilinx@BOARD_IP`, then `sudo -i`), transfer the matched
+overlay, `npu_runtime.hex`, `run_pynq_npu.py`, `npu_bridge.py`, and
+`pynq_handoff.py`, and run:
+
+```sh
+python3 run_pynq_npu.py --bitstream aster_linux.bit --firmware npu_runtime.hex \
+  --output physical-cache-on --revision SOURCE_REVISION \
+  --expected-loaded none --boots 2 --timeout 120
+python3 run_pynq_npu.py --bitstream aster_linux.bit --firmware npu_runtime.hex \
+  --output physical-cache-off --revision SOURCE_REVISION --expected-loaded \
+  /path/to/previous/aster_linux.bit --no-cache --boots 2 --timeout 120
+```
+
+The runner validates files and HWH before importing PYNQ, uses Linux/PCAP for
+the download, runs two warm boots, captures UART and the full stopped 64 KiB
+RAM image, and leaves the NPU/CPU in acknowledged STOPPED state. The
+read-only `scripts/audit_pynq_npu.py` checks the resulting `physical.json`
+without touching the board. No JTAG, SD/QSPI, ARM halt, or host-written NPU
+payload/result is part of this workflow.
+
 ### ARM AXI bridge map
 
 This map is in the ARM physical address space, not the RV32IM memory map.

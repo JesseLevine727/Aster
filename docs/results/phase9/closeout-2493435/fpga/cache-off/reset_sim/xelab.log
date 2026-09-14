@@ -1,0 +1,34 @@
+Vivado Simulator v2025.1.0
+Copyright 1986-2022 Xilinx, Inc. All Rights Reserved.
+Copyright 2022-2025 Advanced Micro Devices, Inc. All Rights Reserved.
+Running: /home/elfo/Documents/2025.1/Vivado/bin/unwrapped/lnx64.o/xelab tb_linux_reset glbl -L unisims_ver -L secureip -s aster_reset_test 
+Multi-threading is on. Using 30 slave threads.
+WARNING: [XSIM 43-3431] One or more environment variables have been detected which affect the operation of the C compiler. These are typically not set in standard installations and are not tested by AMD, however they may be appropriate for your system, so the flow will attempt to continue.  If errors occur, try running xelab with the "-mt off -v 1" switches to see more information from the C compiler. The following environment variables have been detected:
+Starting static elaboration
+Pass Through NonSizing Optimizer
+Completed static elaboration
+Starting simulation data flow analysis
+Completed simulation data flow analysis
+Time Resolution for simulation is 1ps
+Compiling module unisims_ver.FDRE_default
+Compiling module work.aster_linux_reset_0_xpm_cdc_sing...
+Compiling module work.aster_linux_reset_0_xpm_cdc_sing...
+Compiling module unisims_ver.x_lut2_mux4
+Compiling module unisims_ver.LUT2
+Compiling module unisims_ver.SRL16E(INIT=16'b1111111111111111...
+Compiling module unisims_ver.LUT5
+Compiling module unisims_ver.LUT4
+Compiling module work.aster_linux_reset_0_lpf
+Compiling module unisims_ver.x_lut1_mux2
+Compiling module unisims_ver.LUT1
+Compiling module unisims_ver.FDSE_default
+Compiling module unisims_ver.x_lut3_mux8
+Compiling module unisims_ver.LUT3(INIT=8'b01111000)
+Compiling module unisims_ver.LUT6(INIT=64'b011111111111111111...
+Compiling module work.aster_linux_reset_0_upcnt_n
+Compiling module work.aster_linux_reset_0_sequence_psr
+Compiling module work.aster_linux_reset_0_proc_sys_res...
+Compiling module work.aster_linux_reset_0
+Compiling module work.tb_linux_reset
+Compiling module work.glbl
+Built simulation snapshot aster_reset_test

@@ -1,0 +1,31 @@
+#-----------------------------------------------------------
+# xsim v2025.1 (64-bit)
+# SW Build 6140274 on Wed May 21 22:58:25 MDT 2025
+# IP Build 6138677 on Thu May 22 03:10:11 MDT 2025
+# SharedData Build 6139179 on Tue May 20 17:58:58 MDT 2025
+# Start of session at: Sun Sep 13 21:12:56 2026
+# Process ID         : 2910897
+# Current directory  : /home/elfo/Documents/Aster/build/fpga/pynq_z1/linux-h2-coherent-c1-dma-npu/reset_sim
+# Command line       : xsim -mode tcl -source {xsim.dir/aster_reset_test/xsim_script.tcl}
+# Log file           : /home/elfo/Documents/Aster/build/fpga/pynq_z1/linux-h2-coherent-c1-dma-npu/reset_sim/xsim.log
+# Journal file       : /home/elfo/Documents/Aster/build/fpga/pynq_z1/linux-h2-coherent-c1-dma-npu/reset_sim/xsim.jou
+# Running On         : gondor
+# Platform           : Ubuntu
+# Operating System   : Ubuntu 24.04.3 LTS
+# Processor Detail   : AMD Ryzen 9 9950X 16-Core Processor
+# CPU Frequency      : 5620.270 MHz
+# CPU Physical cores : 16
+# CPU Logical cores  : 32
+# Host memory        : 64914 MB
+# Swap memory        : 8589 MB
+# Total Virtual      : 73504 MB
+# Available Virtual  : 53770 MB
+#-----------------------------------------------------------
+source xsim.dir/aster_reset_test/xsim_script.tcl
+# xsim {aster_reset_test} -autoloadwcfg -runall
+Time resolution is 1 ps
+run -all
+PASS: generated PYNQ reset netlist, five assert/release scenarios
+$finish called at time : 51200 ns : File "/home/elfo/Documents/Aster/verification/fpga/tb_linux_reset.sv" Line 57
+exit
+INFO: [Common 17-206] Exiting xsim at Sun Sep 13 21:12:58 2026...
