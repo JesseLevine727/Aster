@@ -9,6 +9,7 @@ module aster_coherent_soc #(
     parameter bit ENABLE_L1 = 1'b1,
     parameter bit ENABLE_DMA = 1'b0,
     parameter bit ENABLE_DOT8 = 1'b0,
+    parameter bit ENABLE_NPU = 1'b0,
     parameter bit HOST_BOOT = 1'b0,
     parameter int unsigned CLOCK_HZ = 31_250_000,
     parameter int unsigned LINE_WORDS = 4,
@@ -81,7 +82,18 @@ module aster_coherent_soc #(
     output logic [1:0] dot8_busy,
     output logic [3:0] dot8_events [0:1],
     output logic [63:0] dot8_counters [0:7],
-    output logic dot8_counting
+    output logic dot8_counting,
+    output logic npu_busy,
+    output logic npu_done,
+    output logic npu_error,
+    output logic npu_aborted,
+    output logic [4:0] npu_status,
+    output logic [31:0] npu_error_code,
+    output logic [31:0] npu_bytes_read,
+    output logic [31:0] npu_bytes_written,
+    output logic [63:0] npu_job_cycles,
+    output logic [63:0] npu_compute_cycles,
+    output logic [31:0] npu_tiles
 );
     logic secondary_run;
     logic [31:0] to_hart1, to_hart0;
@@ -109,6 +121,12 @@ module aster_coherent_soc #(
     logic [1:0] device_invalidations;
     logic [31:0] dma_rdata;
     logic [31:0] dot8_rdata;
+    logic [31:0] npu_register_rdata;
+    logic npu_register_ready;
+    logic npu_m_valid, npu_m_write, npu_m_ready;
+    logic [31:0] npu_m_addr, npu_m_wdata;
+    logic [3:0] npu_m_wstrb;
+    logic [31:0] npu_m_rdata;
     logic [31:0] rom_rdata, ram_rdata, control_rdata, uart_rdata, perf_rdata [0:1];
     logic uart_write_ready, uart_slot_valid;
     wire peripheral_resetn = resetn && !stopped;
@@ -118,6 +136,8 @@ module aster_coherent_soc #(
     wire uart_access = !m_instr && m_addr[31:12] == 20'h20000;
     wire control_access = !m_instr && m_addr[31:12] == 20'h20002;
     wire dma_access = ENABLE_DMA && !m_instr && !m_device && m_addr[31:12] == 20'h30000;
+    wire npu_access = ENABLE_NPU && !m_instr && !m_device && m_addr[31:12] == 20'h40000;
+    wire npu_global_abort = stop_busy || stopped || !host_run || !hart_run[0];
     wire uart_request = uart_access && !m_owner && m_addr[11:0] == 0 && m_mask[0];
     wire accepted = resetn && m_valid && m_ready;
     wire control_write = accepted && control_access && |m_mask;
@@ -145,8 +165,10 @@ module aster_coherent_soc #(
     initial begin
         if (MEMORY_WAIT_CYCLES < (SYNC_MEMORY ? 1 : 0) || MEMORY_WAIT_CYCLES > 1024)
             $error("invalid coherent SoC memory wait");
+        if (ENABLE_NPU && !ENABLE_DMA)
+            $error("Phase 9 NPU integration requires ENABLE_DMA=1");
     end
-    aster_warm_stop #(.HART_COUNT(HART_COUNT), .LATCH_GLOBAL_STOP(ENABLE_DMA || ENABLE_DOT8)) lifecycle (
+    aster_warm_stop #(.HART_COUNT(HART_COUNT), .LATCH_GLOBAL_STOP(ENABLE_DMA || ENABLE_DOT8 || ENABLE_NPU)) lifecycle (
         .clk(clk), .resetn(resetn), .host_run(host_run), .secondary_run(secondary_run),
         .fabric_busy(fabric_busy), .flush_ready(flush_ready), .hart_run(hart_run), .admit(admit),
         .flush_valid(flush_active), .flush_mask(flush_mask), .stop_commit(stop_commit),
@@ -195,7 +217,7 @@ module aster_coherent_soc #(
         assign reservation_clear[h] = !hart_run[h] || stop_commit[h] ||
             (dma_store_commit && reservation_addr[h][31:2] == m_addr[31:2]);
     end
-    aster_atomic_fabric #(.HART_COUNT(HART_COUNT), .ENABLE_DMA(ENABLE_DMA)) fabric (
+    aster_atomic_fabric #(.HART_COUNT(HART_COUNT), .ENABLE_DMA(ENABLE_DMA), .ENABLE_NPU(ENABLE_NPU)) fabric (
         .clk(clk), .resetn(resetn), .reservation_clear(reservation_clear),
         .s_valid(s_valid & admit & {2{cpu_admit}}), .s_atomic(s_atomic), .s_instr(s_instr),
         .s_addr(s_addr), .s_wdata(s_wdata), .s_wstrb(s_wstrb), .s_op(s_op),
@@ -205,6 +227,41 @@ module aster_coherent_soc #(
         .busy(cpu_busy), .reserved(reservations), .reservation_addr(reservation_addr), .store_commit(store_commit),
         .atomic_complete(atomic_complete), .sc_success(sc_success), .sc_failure(sc_failure)
     );
+    if (ENABLE_NPU) begin : g_npu
+        aster_npu_regs npu (
+            .clk(clk), .resetn(peripheral_resetn), .global_stop(npu_global_abort),
+            .req_valid(m_valid && npu_access), .req_write(|m_mask), .req_addr(m_addr[11:0]),
+            .req_wdata(m_wdata), .req_wstrb(m_mask), .req_ready(npu_register_ready),
+            .req_rdata(npu_register_rdata), .busy(npu_busy), .done(npu_done),
+            .error(npu_error), .aborted(npu_aborted), .status(npu_status),
+            .error_code(npu_error_code), .bytes_read(npu_bytes_read),
+            .bytes_written(npu_bytes_written), .job_cycles(npu_job_cycles),
+            .compute_cycles(npu_compute_cycles), .tiles(npu_tiles),
+            .m_valid(npu_m_valid), .m_write(npu_m_write), .m_addr(npu_m_addr),
+            .m_wdata(npu_m_wdata), .m_wstrb(npu_m_wstrb), .m_ready(npu_m_ready),
+            .m_rdata(npu_m_rdata)
+        );
+    end else begin : g_no_npu
+        assign npu_register_ready = 0;
+        assign npu_register_rdata = 0;
+        assign npu_m_valid = 0;
+        assign npu_m_write = 0;
+        assign npu_m_addr = 0;
+        assign npu_m_wdata = 0;
+        assign npu_m_wstrb = 0;
+        assign npu_m_rdata = 0;
+        assign npu_busy = 0;
+        assign npu_done = 0;
+        assign npu_error = 0;
+        assign npu_aborted = 0;
+        assign npu_status = 0;
+        assign npu_error_code = 0;
+        assign npu_bytes_read = 0;
+        assign npu_bytes_written = 0;
+        assign npu_job_cycles = 0;
+        assign npu_compute_cycles = 0;
+        assign npu_tiles = 0;
+    end
     if (ENABLE_DMA) begin : g_dma
         logic valid, ready, arb_busy, global_stop_pending;
         logic [31:0] address, data_out, data_in, engine_rdata, counter_rdata;
@@ -218,7 +275,8 @@ module aster_coherent_soc #(
         end
         // A selective flush waits only for an offered request, not the entire
         // paused job. Global STOP must also drain cooperative abort to idle.
-        assign fabric_busy = cpu_busy || arb_busy || (global_abort && dma_busy) || |dot8_busy;
+        assign fabric_busy = cpu_busy || arb_busy || (global_abort && dma_busy) ||
+                             (npu_global_abort && npu_busy) || npu_busy || |dot8_busy;
         assign dma_request_pending = valid;
         assign dma_request_ready = ready;
         assign dma_request_addr = address;
@@ -235,14 +293,27 @@ module aster_coherent_soc #(
             .error_code(dma_error_code), .job_cycles(dma_job_cycles), .event_read(read_event), .event_write(write_event),
             .event_success(success_event), .event_abort(abort_event), .event_error(error_event), .event_reject(reject_event)
         );
-        aster_dma_arbiter arbiter (
-            .clk(clk), .resetn(resetn), .cpu_request(|(s_valid & admit)), .cpu_admit(cpu_admit),
-            .cpu_busy(cpu_busy), .cpu_valid(f_valid), .cpu_owner(f_owner), .cpu_instr(f_instr),
-            .cpu_addr(f_addr), .cpu_wdata(f_wdata), .cpu_wstrb(f_mask), .cpu_ready(f_ready), .cpu_rdata(f_rdata),
-            .dma_valid(valid), .dma_addr(address), .dma_wdata(data_out), .dma_wstrb(mask), .dma_ready(ready), .dma_rdata(data_in),
-            .m_valid(c_valid), .m_device(c_device), .m_owner(c_owner), .m_instr(c_instr),
-            .m_addr(c_addr), .m_wdata(c_wdata), .m_wstrb(c_mask), .m_ready(c_ready), .m_rdata(c_rdata), .busy(arb_busy)
-        );
+        if (ENABLE_NPU) begin : g_dma_npu_arbiter
+            aster_device_arbiter arbiter (
+                .clk(clk), .resetn(resetn), .cpu_request(|(s_valid & admit)), .cpu_admit(cpu_admit),
+                .cpu_busy(cpu_busy), .cpu_valid(f_valid), .cpu_owner(f_owner), .cpu_instr(f_instr),
+                .cpu_addr(f_addr), .cpu_wdata(f_wdata), .cpu_wstrb(f_mask), .cpu_ready(f_ready), .cpu_rdata(f_rdata),
+                .dma_valid(valid), .dma_addr(address), .dma_wdata(data_out), .dma_wstrb(mask), .dma_ready(ready), .dma_rdata(data_in),
+                .npu_valid(npu_m_valid), .npu_addr(npu_m_addr), .npu_wdata(npu_m_wdata), .npu_wstrb(npu_m_wstrb),
+                .npu_ready(npu_m_ready), .npu_rdata(npu_m_rdata),
+                .m_valid(c_valid), .m_device(c_device), .m_owner(c_owner), .m_instr(c_instr),
+                .m_addr(c_addr), .m_wdata(c_wdata), .m_wstrb(c_mask), .m_ready(c_ready), .m_rdata(c_rdata), .busy(arb_busy)
+            );
+        end else begin : g_dma_only_arbiter
+            aster_dma_arbiter arbiter (
+                .clk(clk), .resetn(resetn), .cpu_request(|(s_valid & admit)), .cpu_admit(cpu_admit),
+                .cpu_busy(cpu_busy), .cpu_valid(f_valid), .cpu_owner(f_owner), .cpu_instr(f_instr),
+                .cpu_addr(f_addr), .cpu_wdata(f_wdata), .cpu_wstrb(f_mask), .cpu_ready(f_ready), .cpu_rdata(f_rdata),
+                .dma_valid(valid), .dma_addr(address), .dma_wdata(data_out), .dma_wstrb(mask), .dma_ready(ready), .dma_rdata(data_in),
+                .m_valid(c_valid), .m_device(c_device), .m_owner(c_owner), .m_instr(c_instr),
+                .m_addr(c_addr), .m_wdata(c_wdata), .m_wstrb(c_mask), .m_ready(c_ready), .m_rdata(c_rdata), .busy(arb_busy)
+            );
+        end
         assign dma_events[0] = {2'b0, dma_busy};
         assign dma_events[1] = {2'b0, valid && !ready};
         assign dma_events[2] = {2'b0, read_event};
@@ -265,13 +336,17 @@ module aster_coherent_soc #(
         );
     end else begin : g_no_dma
         assign cpu_admit = 1;
-        assign fabric_busy = cpu_busy || |dot8_busy;
+        assign fabric_busy = cpu_busy || npu_busy || |dot8_busy;
         assign c_valid = f_valid; assign c_owner = f_owner; assign c_instr = f_instr;
         assign c_addr = f_addr; assign c_wdata = f_wdata; assign c_mask = f_mask; assign c_device = 0;
         assign f_ready = c_ready; assign f_rdata = c_rdata;
         assign dma_rdata = 0; assign dma_busy = 0; assign dma_request_pending = 0;
         assign dma_request_ready = 0; assign dma_request_addr = 0; assign dma_request_data = 0;
         assign dma_request_rdata = 0; assign dma_request_mask = 0;
+        assign npu_m_ready = 0;
+        if (ENABLE_NPU) begin : g_npu_without_dma
+            assign npu_m_rdata = 0;
+        end
         assign dma_status = 0; assign dma_bytes_done = 0; assign dma_error_code = 0; assign dma_job_cycles = 0;
         assign dma_counting = 0;
         for (genvar n = 0; n < 14; n++) begin : g_counters
@@ -298,7 +373,8 @@ module aster_coherent_soc #(
         else wait_count <= wait_count + 1'b1;
     end
     assign m_ready = resetn && m_valid && (memory_access
-        ? wait_count == WAIT_BITS'(MEMORY_WAIT_CYCLES) : !uart_request || uart_write_ready);
+        ? wait_count == WAIT_BITS'(MEMORY_WAIT_CYCLES) :
+          npu_access ? npu_register_ready : !uart_request || uart_write_ready);
     aster_rom #(.MEM_INIT_FILE(MEM_INIT_FILE), .SYNC_READ(SYNC_MEMORY), .ENABLE_PROGRAM(HOST_BOOT)) rom (
         .clk(clk), .addr(m_addr), .rdata(rom_rdata),
         .program_we(HOST_BOOT && stopped && !host_run && boot_we), .program_addr(boot_addr),
@@ -390,6 +466,7 @@ module aster_coherent_soc #(
         else if (uart_access) m_rdata = uart_rdata;
         else if (control_access) m_rdata = control_rdata;
         else if (dma_access) m_rdata = dma_rdata;
+        else if (npu_access) m_rdata = npu_register_rdata;
         else if (!m_instr && m_addr[31:8] == 24'h200030) m_rdata = perf_rdata[0];
         else if (!m_instr && m_addr[31:8] == 24'h200031) m_rdata = perf_rdata[1];
         else if (!m_instr && m_addr[31:8] == 24'h200032) m_rdata = dot8_rdata;

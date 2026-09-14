@@ -8,6 +8,7 @@ module aster_pynq_linux #(
     parameter bit COHERENT_L1 = 1'b1,
     parameter bit ENABLE_DMA = 1'b0,
     parameter bit ENABLE_DOT8 = 1'b0,
+    parameter bit ENABLE_NPU = 1'b0,
     parameter int unsigned CLK_HZ = 31_250_000,
     parameter int unsigned BAUD = 115_200,
     parameter int unsigned RX_DEPTH = 512
@@ -86,6 +87,10 @@ module aster_pynq_linux #(
     logic [3:0] dot8_events [0:1];
     logic [63:0] dot8_counters [0:7];
     logic dot8_counting;
+    logic npu_busy, npu_done, npu_error, npu_aborted;
+    logic [4:0] npu_status;
+    logic [31:0] npu_error_code, npu_bytes_read, npu_bytes_written, npu_tiles;
+    logic [63:0] npu_job_cycles, npu_compute_cycles;
     logic ram_read_pending;
     logic [15:0] ram_read_addr;
     wire [15:0] host_ram_addr = ram_read_pending ? ram_read_addr : s_axi_araddr[15:0];
@@ -357,7 +362,7 @@ module aster_pynq_linux #(
     end else if (ENABLE_COHERENCE) begin : g_coherent
         /* verilator lint_off PINCONNECTEMPTY */
         aster_coherent_soc #(.HART_COUNT(HART_COUNT), .SYNC_MEMORY(1'b1), .HOST_BOOT(1'b1),
-                            .ENABLE_L1(COHERENT_L1), .ENABLE_DMA(ENABLE_DMA), .ENABLE_DOT8(ENABLE_DOT8), .CLOCK_HZ(CLK_HZ)) soc (
+                            .ENABLE_L1(COHERENT_L1), .ENABLE_DMA(ENABLE_DMA), .ENABLE_DOT8(ENABLE_DOT8), .ENABLE_NPU(ENABLE_NPU), .CLOCK_HZ(CLK_HZ)) soc (
             .clk(aclk), .resetn(aresetn), .host_run(run && run_pipe[1]),
             .stopped(coherent_stopped), .stop_busy(coherent_stop_busy), .flush_active(coherent_flush),
             .uart_tx_valid(core_tx_valid), .uart_tx_data(core_tx_data), .uart_tx_ready(core_tx_ready),
@@ -377,6 +382,10 @@ module aster_pynq_linux #(
             .dma_status(dma_status), .dma_bytes_done(dma_bytes_done), .dma_error_code(dma_error_code), .dma_job_cycles(dma_job_cycles),
             .dma_store_commit(dma_store_commit), .dma_events(dma_events), .dma_counters(dma_counters), .dma_counting(dma_counting),
             .dot8_busy(dot8_busy), .dot8_events(dot8_events), .dot8_counters(dot8_counters), .dot8_counting(dot8_counting),
+            .npu_busy(npu_busy), .npu_done(npu_done), .npu_error(npu_error), .npu_aborted(npu_aborted),
+            .npu_status(npu_status), .npu_error_code(npu_error_code), .npu_bytes_read(npu_bytes_read),
+            .npu_bytes_written(npu_bytes_written), .npu_job_cycles(npu_job_cycles),
+            .npu_compute_cycles(npu_compute_cycles), .npu_tiles(npu_tiles),
             .boot_we(boot_we), .boot_addr(awaddr[15:0]), .boot_wdata(wdata), .boot_wstrb(wstrb),
             .host_ram_addr(host_ram_addr), .host_ram_rdata(host_ram_rdata)
         );

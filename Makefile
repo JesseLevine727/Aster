@@ -12,6 +12,7 @@ OBJDUMP := $(RISCV_PREFIX)objdump
 RISCV_MARCH ?= rv32im
 RISCV_MABI ?= ilp32
 ENABLE_L1 ?= 1
+ENABLE_NPU ?= 0
 HART_COUNT ?= 2
 SYNC_MEMORY ?= 0
 L1_LINE_WORDS ?= 4
@@ -88,6 +89,8 @@ RTL_FABRIC := rtl/interconnect/aster_arbiter2.sv rtl/soc/aster_shared_fabric.sv
 RTL_MULTICORE := $(RTL_FABRIC) rtl/core/aster_hart.sv rtl/soc/aster_multicore.sv
 RTL_COHERENT := $(RTL_CORE) $(RTL_CACHE) $(RTL_MEMORY) rtl/core/aster_pcpi_atomic.sv \
 	rtl/core/aster_pcpi_dot8.sv rtl/core/aster_atomic_hart.sv rtl/cache/aster_coherent_cache.sv rtl/interconnect/aster_atomic_fabric.sv \
+	rtl/interconnect/aster_device_arbiter.sv rtl/accelerator/aster_int8_pe.sv rtl/accelerator/aster_int8_array.sv \
+	rtl/accelerator/aster_npu_engine.sv rtl/accelerator/aster_npu_regs.sv \
 	rtl/soc/aster_warm_stop.sv rtl/peripherals/aster_uart.sv rtl/peripherals/aster_coherent_perf.sv \
 	rtl/dma/aster_dma_engine.sv rtl/interconnect/aster_dma_arbiter.sv rtl/peripherals/aster_dma_perf.sv \
 	rtl/peripherals/aster_dot8_perf.sv rtl/soc/aster_coherent_soc.sv
@@ -131,6 +134,7 @@ NPU_PE_SIM := $(BUILD_DIR)/aster_int8_pe_sim
 NPU_ARRAY_SIM := $(BUILD_DIR)/aster_int8_array_sim
 NPU_ENGINE_SIM := $(BUILD_DIR)/aster_npu_engine_sim
 NPU_REGS_SIM := $(BUILD_DIR)/aster_npu_regs_sim
+DEVICE_ARBITER_SIM := $(BUILD_DIR)/aster_device_arbiter_sim
 DOT8_PROBE_ENABLE ?= 1
 DOT8_PROBE_CACHE ?= 0
 DOT8_PROBE_DIR := $(BUILD_DIR)/dot8_probe_e$(DOT8_PROBE_ENABLE)_c$(DOT8_PROBE_CACHE)
@@ -759,7 +763,7 @@ retirement: $(RETIRE_SIM)
 	@$(RETIRE_SIM)
 
 .PHONY: pcpi-probe
-.PHONY: dot8-unit npu-pe npu-array npu-engine npu-regs
+.PHONY: dot8-unit npu-pe npu-array npu-engine npu-regs device-arbiter
 $(DOT8_UNIT_SIM): rtl/core/aster_pcpi_dot8.sv verification/unit/tb_aster_pcpi_dot8.cpp Makefile | $(BUILD_DIR)
 	$(VERILATOR) --cc --exe --build --timing --Wall --assert -DASTER_DOT8_ASSERT \
 		--top-module aster_pcpi_dot8 --Mdir $(BUILD_DIR)/obj_dot8_unit -o $(abspath $@) \
@@ -811,6 +815,14 @@ npu-regs: $(NPU_REGS_SIM)
 .PHONY: npu-driver
 npu-driver: software/drivers/aster_npu.c software/drivers/aster_npu.h
 	$(CC) $(HELLO_CFLAGS) -Isoftware/drivers -Isoftware/runtime -fsyntax-only software/drivers/aster_npu.c
+
+$(DEVICE_ARBITER_SIM): rtl/interconnect/aster_device_arbiter.sv verification/unit/tb_aster_device_arbiter.cpp Makefile | $(BUILD_DIR)
+	$(VERILATOR) --cc --exe --build --timing --Wall --assert \
+		--top-module aster_device_arbiter --Mdir $(BUILD_DIR)/obj_device_arbiter -o $(abspath $@) \
+		$(ROOT)/rtl/interconnect/aster_device_arbiter.sv $(ROOT)/verification/unit/tb_aster_device_arbiter.cpp
+
+device-arbiter: $(DEVICE_ARBITER_SIM)
+	@$(DEVICE_ARBITER_SIM)
 
 .PHONY: dot8-probe dot8-probe-matrix
 $(DOT8_PROBE_SIM): $(RTL_CORE) $(RTL_CACHE) rtl/core/aster_pcpi_atomic.sv rtl/core/aster_pcpi_dot8.sv \
@@ -1176,6 +1188,7 @@ $(COHERENT_SOC_SIM): $(RTL_COHERENT) verification/soc/tb_aster_coherent_soc.cpp 
 	mkdir -p $(COHERENT_SOC_DIR)
 	$(VERILATOR) --cc --exe --build --timing --Wall $(VERILATOR_VENDOR_LINT_FLAGS) $(VERILATOR_COHERENT_FLAGS) --assert -DASTER_COHERENCE_ASSERT \
 		--top-module aster_coherent_soc -GHART_COUNT=$(HART_COUNT) "-GENABLE_L1=1'b$(ENABLE_L1)" \
+		"-GENABLE_DMA=1'b$(ENABLE_DMA)" "-GENABLE_NPU=1'b$(ENABLE_NPU)" \
 		"-GSYNC_MEMORY=1'b$(SYNC_MEMORY)" -GMEMORY_WAIT_CYCLES=$(MEMORY_WAIT_CYCLES) "-GHOST_BOOT=1'b1" \
 		-GLINE_WORDS=$(L1_LINE_WORDS) -GLINE_COUNT=$(L1_LINE_COUNT) \
 		-CFLAGS '-DASTER_HART_COUNT=$(HART_COUNT) -DASTER_L1=$(ENABLE_L1) -DASTER_MEMORY_WAIT=$(MEMORY_WAIT_CYCLES)' \
@@ -1206,6 +1219,7 @@ $(COHERENT_BENCH_SIM): $(RTL_COHERENT) verification/soc/tb_aster_coherent_bench.
 	mkdir -p $(COHERENT_SOC_DIR)
 	$(VERILATOR) --cc --exe --build --timing --Wall $(VERILATOR_VENDOR_LINT_FLAGS) $(VERILATOR_COHERENT_FLAGS) --assert -DASTER_COHERENCE_ASSERT \
 		--top-module aster_coherent_soc -GHART_COUNT=$(HART_COUNT) "-GENABLE_L1=1'b$(ENABLE_L1)" \
+		"-GENABLE_NPU=1'b$(ENABLE_NPU)" \
 		"-GSYNC_MEMORY=1'b$(SYNC_MEMORY)" -GMEMORY_WAIT_CYCLES=$(MEMORY_WAIT_CYCLES) "-GHOST_BOOT=1'b1" \
 		-GLINE_WORDS=$(L1_LINE_WORDS) -GLINE_COUNT=$(L1_LINE_COUNT) \
 		--Mdir $(COHERENT_SOC_DIR)/bench_obj -o $(abspath $@) \
