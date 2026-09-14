@@ -200,7 +200,7 @@ module aster_pynq_linux #(
                     18'h10: s_axi_rdata <= transmitted;
                     18'h14: s_axi_rdata <= received;
                     18'h18: s_axi_rdata <= 32'h41535452; // ASTR
-                    18'h1c: s_axi_rdata <= ENABLE_DOT8 ? 32'h00080001 : ENABLE_DMA ? 32'h00070001 : ENABLE_COHERENCE ? 32'h00060001 :
+                    18'h1c: s_axi_rdata <= ENABLE_NPU ? 32'h00090001 : ENABLE_DOT8 ? 32'h00080001 : ENABLE_DMA ? 32'h00070001 : ENABLE_COHERENCE ? 32'h00060001 :
                         HART_COUNT == 0 ? 32'h00020001 : 32'h00050001;
                     18'h20: s_axi_rdata <= CLK_HZ;
                     18'h24, 18'h28, 18'h30, 18'h34, 18'h38, 18'h3c: begin
@@ -220,7 +220,7 @@ module aster_pynq_linux #(
                         if (!ENABLE_COHERENCE) begin s_axi_rdata <= 0; s_axi_rresp <= 2'b10; end
                         else case (s_axi_araddr)
                             18'h40: s_axi_rdata <= {29'b0, coherent_flush, coherent_stop_busy, coherent_stopped};
-                            18'h44: s_axi_rdata <= {28'b0, ENABLE_DOT8, ENABLE_DMA, COHERENT_L1, 1'b1};
+                            18'h44: s_axi_rdata <= {27'b0, ENABLE_NPU, ENABLE_DOT8, ENABLE_DMA, COHERENT_L1, 1'b1};
                             18'h50, 18'h60: s_axi_rdata <= {27'b0, atomic_fault_valid[s_axi_araddr[5]], atomic_fault_cause[s_axi_araddr[5]]};
                             18'h54, 18'h64: s_axi_rdata <= atomic_fault_addr[s_axi_araddr[5]];
                             18'h58, 18'h68: s_axi_rdata <= atomic_fault_insn[s_axi_araddr[5]];

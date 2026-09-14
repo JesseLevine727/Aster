@@ -214,6 +214,42 @@ class HandoffSafety(unittest.TestCase):
         self.assertEqual(validate_handoff(self.save(root)), before)
         with self.assertRaises(ValueError): validate_handoff(self.path, expected_dot8=1)
 
+    def test_npu_is_explicit_and_requires_coherent_dma_image(self):
+        root = fixture()
+        params = root.find(".//MODULE[@INSTANCE='aster']/PARAMETERS")
+        for name, value in (("HART_COUNT", 2), ("ENABLE_COHERENCE", 1),
+                            ("COHERENT_L1", 1), ("ENABLE_DMA", 1), ("ENABLE_NPU", 1)):
+            ET.SubElement(params, "PARAMETER", NAME=name, VALUE=str(value))
+        options = dict(expected_coherent=True, expected_cache=True,
+                       expected_dma=True, expected_npu=True)
+        result = validate_handoff(self.save(root), 2, **options)
+        self.assertEqual(result["bridge_version"], 0x90001)
+        self.assertEqual(result["npu_abi"], 1)
+        self.assertEqual(result["npu_counter_abi"], 1)
+        self.assertTrue(result["npu"])
+        with self.assertRaisesRegex(ValueError, "NPU"):
+            validate_handoff(self.path, 2, expected_coherent=True,
+                             expected_cache=True, expected_dma=True, expected_npu=False)
+        for name in ("HART_COUNT", "ENABLE_COHERENCE", "COHERENT_L1", "ENABLE_DMA", "ENABLE_NPU"):
+            for action in ("remove", "duplicate", "wrong", "empty"):
+                changed = deepcopy(root)
+                parent = changed.find(".//MODULE[@INSTANCE='aster']/PARAMETERS")
+                node = parent.find(f"PARAMETER[@NAME='{name}']")
+                if action == "remove":
+                    parent.remove(node)
+                elif action == "duplicate":
+                    parent.append(deepcopy(node))
+                elif action == "empty":
+                    node.attrib.pop("VALUE")
+                else:
+                    node.set("VALUE", "0")
+                with self.subTest(name=name, action=action), self.assertRaises(ValueError):
+                    validate_handoff(self.save(changed), 2, **options)
+        with self.assertRaises(ValueError):
+            validate_handoff(self.save(root), 2, expected_coherent=True,
+                             expected_cache=True, expected_dma=True, expected_dot8=True,
+                             expected_npu=True)
+
 
 if __name__ == "__main__":
     unittest.main()

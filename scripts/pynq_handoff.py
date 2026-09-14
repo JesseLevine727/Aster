@@ -11,10 +11,12 @@ from pathlib import Path
 import xml.etree.ElementTree as ET
 
 
-def validate_handoff(path, expected_harts=0, *, expected_coherent=False, expected_cache=True, expected_dma=False, expected_dot8=False):
+def validate_handoff(path, expected_harts=0, *, expected_coherent=False, expected_cache=True,
+                     expected_dma=False, expected_dot8=False, expected_npu=False):
     if type(expected_harts) is not int or expected_harts not in (0, 1, 2):
         raise ValueError("invalid expected Linux hart configuration")
-    if any(type(value) is not bool for value in (expected_coherent, expected_cache, expected_dma, expected_dot8)):
+    if any(type(value) is not bool for value in
+           (expected_coherent, expected_cache, expected_dma, expected_dot8, expected_npu)):
         raise ValueError("coherence/cache expectations must be boolean")
     if expected_coherent and not expected_harts:
         raise ValueError("coherent Linux needs one or two harts")
@@ -22,6 +24,8 @@ def validate_handoff(path, expected_harts=0, *, expected_coherent=False, expecte
         raise ValueError("DMA Linux requires coherent memory")
     if expected_dot8 and not (expected_coherent and expected_dma):
         raise ValueError("dot8 Linux requires coherence and DMA")
+    if expected_npu and not (expected_coherent and expected_dma):
+        raise ValueError("NPU Linux requires coherence and DMA")
     root = ET.parse(path).getroot()
 
     def require(condition, message):
@@ -77,6 +81,12 @@ def validate_handoff(path, expected_harts=0, *, expected_coherent=False, expecte
     dot8 = int(dot8_parameters[0].get("VALUE", "-1"), 0) if dot8_parameters else 0
     require(dot8 in (0, 1) and bool(dot8) == expected_dot8 and (not dot8 or (coherent and dma)),
             "wrong dot8 instruction / counter / host ABI")
+    npu_parameters = modules["aster"].findall("./PARAMETERS/PARAMETER[@NAME='ENABLE_NPU']")
+    require(len(npu_parameters) <= 1, "duplicate NPU configuration")
+    npu = int(npu_parameters[0].get("VALUE", "-1"), 0) if npu_parameters else 0
+    require(npu in (0, 1) and bool(npu) == expected_npu and (not npu or (coherent and dma)),
+            "wrong NPU / coherent accelerator configuration")
+    require(not (npu and dot8), "NPU and dot8 physical images are separate configurations")
 
     def driven(module, name, driver, output):
         sink, source = port(module, name), port(driver, output)
@@ -135,6 +145,8 @@ def validate_handoff(path, expected_harts=0, *, expected_coherent=False, expecte
         result.update(dma=True, bridge_version=0x00070001, dma_abi=1, dma_counter_abi=5)
     if dot8:
         result.update(dot8=True, bridge_version=0x00080001, dot8_abi=1, dot8_counter_abi=6)
+    if npu:
+        result.update(npu=True, bridge_version=0x00090001, npu_abi=1, npu_counter_abi=1)
     return result
 
 
@@ -146,6 +158,7 @@ if __name__ == "__main__":
     parser.add_argument("--no-cache", action="store_true")
     parser.add_argument("--dma", action="store_true")
     parser.add_argument("--dot8", action="store_true")
+    parser.add_argument("--npu", action="store_true")
     args = parser.parse_args()
     if args.no_cache and not args.coherent:
         parser.error("--no-cache requires --coherent")
@@ -153,6 +166,10 @@ if __name__ == "__main__":
         parser.error("--dma requires --coherent")
     if args.dot8 and not (args.coherent and args.dma):
         parser.error("--dot8 requires --coherent and --dma")
+    if args.npu and not (args.coherent and args.dma):
+        parser.error("--npu requires --coherent and --dma")
+    if args.npu and args.dot8:
+        parser.error("--npu and --dot8 are separate images")
     print("PASS: Aster Linux clock/reset/address handoff", validate_handoff(
         args.handoff, args.harts, expected_coherent=args.coherent, expected_cache=not args.no_cache,
-        expected_dma=args.dma, expected_dot8=args.dot8))
+        expected_dma=args.dma, expected_dot8=args.dot8, expected_npu=args.npu))

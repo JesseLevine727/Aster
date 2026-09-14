@@ -256,13 +256,17 @@ LINUX_COHERENCE ?= 0
 LINUX_CACHE ?= 1
 LINUX_DMA ?= 0
 LINUX_DOT8 ?= 0
+LINUX_NPU ?= 0
 ifeq ($(filter $(LINUX_DMA),0 1),)
 $(error LINUX_DMA must be 0 or 1)
 endif
 ifeq ($(filter $(LINUX_DOT8),0 1),)
 $(error LINUX_DOT8 must be 0 or 1)
 endif
-LINUX_BUILD_DIR = $(FPGA_BUILD_DIR)/linux$(if $(filter 0,$(LINUX_HART_COUNT)),,-h$(LINUX_HART_COUNT))$(if $(filter 1,$(LINUX_COHERENCE)),-coherent-c$(LINUX_CACHE),)$(if $(filter 1,$(LINUX_DMA)),-dma,)$(if $(filter 1,$(LINUX_DOT8)),-dot8,)
+ifeq ($(filter $(LINUX_NPU),0 1),)
+$(error LINUX_NPU must be 0 or 1)
+endif
+LINUX_BUILD_DIR = $(FPGA_BUILD_DIR)/linux$(if $(filter 0,$(LINUX_HART_COUNT)),,-h$(LINUX_HART_COUNT))$(if $(filter 1,$(LINUX_COHERENCE)),-coherent-c$(LINUX_CACHE),)$(if $(filter 1,$(LINUX_DMA)),-dma,)$(if $(filter 1,$(LINUX_DOT8)),-dot8,)$(if $(filter 1,$(LINUX_NPU)),-npu,)
 SOC_TEST_DIR := $(BUILD_DIR)/soc_$(CONFIG_TAG)
 SOC_SIM := $(SOC_TEST_DIR)/aster_soc_sim
 TRAP_CASES := 0 1 2 3 4 5 6 7 8 9 10 11
@@ -324,6 +328,7 @@ help:
 	@echo "  make linux-dma-bench-cases  Paired zero/small/large and alignment checks through real AXI/serial"
 	@echo "  make linux-dma-bench-baud   Cache-off/on paired benchmark at physical 115200 baud"
 	@echo "  make fpga-linux-dma     Build the explicitly DMA-enabled PYNQ Linux overlay (no JTAG)"
+	@echo "  make fpga-linux-npu     Build the explicitly NPU-enabled PYNQ Linux overlay (no JTAG)"
 	@echo "  make linux-coherent-matrix  Test Phase 6 AXI/serial/RAM/stop protocol"
 	@echo "  make fpga-linux-coherent   Build the dual-core RV32IMA coherent PYNQ overlay"
 	@echo "  make coherent-bench       AsterBench v4 atomic/coherent C workload with exact per-hart counters"
@@ -544,7 +549,7 @@ fpga-linux:
 	@mkdir -p $(LINUX_BUILD_DIR)
 	$(VIVADO) -mode batch -nojournal -nolog -notrace \
 		-source $(ROOT)/fpga/pynq_z1/build_linux.tcl \
-		-tclargs $(ROOT) $(LINUX_BUILD_DIR) $(LINUX_HART_COUNT) $(LINUX_COHERENCE) $(LINUX_CACHE) $(if $(filter 1,$(LINUX_DMA)),1,$(if $(filter 1,$(LINUX_DOT8)),0,)) $(if $(filter 1,$(LINUX_DOT8)),1,)
+		-tclargs $(ROOT) $(LINUX_BUILD_DIR) $(LINUX_HART_COUNT) $(LINUX_COHERENCE) $(LINUX_CACHE) $(LINUX_DMA) $(LINUX_DOT8) $(LINUX_NPU)
 
 .PHONY: fpga-linux-dual
 fpga-linux-dual:
@@ -561,6 +566,10 @@ fpga-linux-dma:
 .PHONY: fpga-linux-dot8
 fpga-linux-dot8:
 	$(MAKE) LINUX_HART_COUNT=2 LINUX_COHERENCE=1 LINUX_DMA=1 LINUX_DOT8=1 fpga-linux
+
+.PHONY: fpga-linux-npu
+fpga-linux-npu:
+	$(MAKE) LINUX_HART_COUNT=2 LINUX_COHERENCE=1 LINUX_DMA=1 LINUX_NPU=1 fpga-linux
 
 $(LINUX_SIM): $(RTL_CORE) $(RTL_CACHE) $(RTL_MEMORY) $(RTL_PERIPHERALS) $(RTL_SOC) $(RTL_MULTICORE) $(RTL_COHERENT) \
 		rtl/peripherals/aster_uart_tx.sv rtl/peripherals/aster_uart_rx.sv \
