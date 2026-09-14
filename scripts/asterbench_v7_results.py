@@ -47,6 +47,14 @@ def sha(path: Path) -> str:
     return digest.hexdigest()
 
 
+def normalized_text_sha(path: Path) -> str:
+    """Hash text after removing compiler/build-root names only."""
+    text = path.read_text(encoding="utf-8")
+    text = re.sub(r"/tmp/cc[A-Za-z0-9]+\.o", "/tmp/cc.o", text)
+    text = re.sub(r"/tmp/asterbench-v7(?:-repeat)?-[^/]+", "/tmp/asterbench-v7-build", text)
+    return hashlib.sha256(text.encode()).hexdigest()
+
+
 def source_state() -> tuple[dict[str, str], str]:
     names = subprocess.check_output(
         ["git", "ls-files", "-z", "--cached", "--others", "--exclude-standard"], cwd=ROOT
@@ -384,9 +392,14 @@ def audit_study(path: Path, *, require_clean: bool = True) -> dict[str, Any]:
             # GCC may place a random temporary assembly-object basename in
             # the ELF string table.  Compare the emitted ROM and executable
             # views instead; the raw ELF hash remains preserved provenance.
-            for artifact in ("firmware_hex", "firmware_map", "firmware_disassembly", "simulator"):
+            for artifact in ("firmware_hex", "simulator"):
                 _require(audited["artifacts"][artifact]["sha256"] == base["artifacts"][artifact]["sha256"],
                          f"fresh repeat {artifact} differs")
+            for artifact in ("firmware_map", "firmware_disassembly"):
+                current_path = path.parent / audited["artifacts"][artifact]["file"]
+                base_path = path.parent / base["artifacts"][artifact]["file"]
+                _require(normalized_text_sha(current_path) == normalized_text_sha(base_path),
+                         f"fresh repeat {artifact} differs after path normalization")
             _require(audited["artifacts"]["ram"]["sha256"] == base["artifacts"]["ram"]["sha256"], "fresh repeat RAM differs")
     _require(manifest.get("summary") == _study_summary(captures), "study summary is not reproducible")
     return manifest
