@@ -206,6 +206,21 @@ NPU_RUNTIME_SIM := $(NPU_RUNTIME_DIR)/aster_npu_runtime_sim
 NPU_CFLAGS = $(filter-out -march=% -mabi=%,$(HELLO_CFLAGS)) -march=rv32ima -mabi=ilp32 \
 	-Isoftware/drivers -fno-builtin -fno-tree-loop-distribute-patterns
 NPU_LDFLAGS = -T software/boot/link_multicore.ld -Wl,-Map,$(HELLO_DIR)/npu_runtime.map
+NPU_BENCH_M ?= 1
+NPU_BENCH_N ?= 1
+NPU_BENCH_K ?= 1
+NPU_BENCH_PLACEMENT ?= 0
+NPU_BENCH_SEED ?= 0x9e3779b9
+NPU_BENCH_CAPTURE ?= 1
+NPU_BENCH_FW_DIR := $(HELLO_DIR)/npu_bench_m$(NPU_BENCH_M)_n$(NPU_BENCH_N)_k$(NPU_BENCH_K)_p$(NPU_BENCH_PLACEMENT)_c$(NPU_BENCH_CAPTURE)_s$(NPU_BENCH_SEED)
+NPU_BENCH_ELF := $(NPU_BENCH_FW_DIR)/npu_gemm.elf
+NPU_BENCH_HEX := $(NPU_BENCH_FW_DIR)/npu_gemm.hex
+NPU_BENCH_SOC_DIR := $(BUILD_DIR)/npu_bench_h$(HART_COUNT)_l$(ENABLE_L1)_sync$(SYNC_MEMORY)_wait$(MEMORY_WAIT_CYCLES)_w$(L1_LINE_WORDS)_n$(L1_LINE_COUNT)
+NPU_BENCH_SIM := $(NPU_BENCH_SOC_DIR)/aster_npu_bench_sim
+NPU_BENCH_CFLAGS = $(NPU_CFLAGS) -DNPU_BENCH_M=$(NPU_BENCH_M) -DNPU_BENCH_N=$(NPU_BENCH_N) \
+	-DNPU_BENCH_K=$(NPU_BENCH_K) -DNPU_BENCH_PLACEMENT=$(NPU_BENCH_PLACEMENT) \
+	-DNPU_BENCH_SEED=$(NPU_BENCH_SEED) -DNPU_BENCH_CAPTURE=$(NPU_BENCH_CAPTURE)
+NPU_BENCH_LDFLAGS = -T software/boot/link_multicore.ld -Wl,-Map,$(NPU_BENCH_FW_DIR)/npu_gemm.map
 PERF_SIM := $(BUILD_DIR)/aster_perf_sim
 ARBITER_SIM := $(BUILD_DIR)/aster_arbiter2_sim
 FABRIC_DIR := $(BUILD_DIR)/fabric_h$(HART_COUNT)_$(CONFIG_TAG)
@@ -289,6 +304,7 @@ help:
 	@echo "  make npu-runtime  Phase 9 actual-core RAM-backed INT8 GEMM and coherence acceptance"
 	@echo "  make npu-stop     Phase 9 global STOP/ABORT and warm-restart acceptance"
 	@echo "  make npu-runtime-matrix  Phase 9 one/two-hart cache/timing runtime matrix"
+	@echo "  make npu-bench    AsterBench v7 paired scalar/NPU GEMM capture"
 	@echo "  make atomic-fabric  Test serialized RV32A memory/reservation semantics"
 	@echo "  make atomic-runtime-matrix  Run compiled RV32IMA C on one/two real cores"
 	@echo "  make atomic-faults-matrix   Check real-core atomic faults with caches off/on"
@@ -954,7 +970,7 @@ $(COHERENT_PERF_SIM): rtl/peripherals/aster_coherent_perf.sv verification/unit/t
 coherent-counters: $(COHERENT_PERF_SIM)
 	@$(COHERENT_PERF_SIM)
 
-.PHONY: atomic-runtime atomic-runtime-matrix npu-runtime npu-stop npu-runtime-matrix
+.PHONY: atomic-runtime atomic-runtime-matrix npu-runtime npu-stop npu-runtime-matrix npu-bench
 $(ATOMIC_RUNTIME_ELF): software/tests/atomic_runtime.c software/runtime/start_multicore.S software/runtime/aster.h software/boot/link_multicore.ld Makefile | $(HELLO_DIR)
 	$(CC) $(filter-out -march=%,$(HELLO_CFLAGS)) -march=rv32ima \
 		-T software/boot/link_multicore.ld -Wl,-Map,$(HELLO_DIR)/atomic_runtime.map \
@@ -977,6 +993,19 @@ $(NPU_RUNTIME_ELF): software/tests/npu_runtime.c software/drivers/aster_npu.c so
 	$(OBJDUMP) -d $@ > $(@:.elf=.dis)
 
 $(NPU_RUNTIME_HEX): $(NPU_RUNTIME_ELF) scripts/elf_to_hex.py
+	$(PYTHON) scripts/elf_to_hex.py --rom-bytes 65536 $< $@
+
+$(NPU_BENCH_FW_DIR):
+	mkdir -p $@
+
+$(NPU_BENCH_ELF): software/benchmarks/npu_gemm.c software/drivers/aster_npu.c software/drivers/aster_npu.h \
+		software/drivers/aster_dma.c software/drivers/aster_dma.h software/runtime/start_multicore.S \
+		software/runtime/aster.h software/boot/link_multicore.ld Makefile | $(NPU_BENCH_FW_DIR)
+	$(CC) $(NPU_BENCH_CFLAGS) $(NPU_BENCH_LDFLAGS) -o $@ \
+		software/runtime/start_multicore.S software/drivers/aster_dma.c software/drivers/aster_npu.c $<
+	$(OBJDUMP) -d $@ > $(@:.elf=.dis)
+
+$(NPU_BENCH_HEX): $(NPU_BENCH_ELF) scripts/elf_to_hex.py
 	$(PYTHON) scripts/elf_to_hex.py --rom-bytes 65536 $< $@
 
 $(ATOMIC_RUNTIME_SIM): $(RTL_CORE) $(RTL_CACHE) rtl/cache/aster_coherent_cache.sv rtl/core/aster_pcpi_atomic.sv rtl/core/aster_atomic_hart.sv rtl/interconnect/aster_atomic_fabric.sv verification/soc/aster_atomic_probe.sv verification/soc/tb_aster_atomic_probe.cpp Makefile
@@ -1249,6 +1278,20 @@ npu-runtime-matrix:
 		$(MAKE) --no-print-directory npu-runtime HART_COUNT=$$harts ENABLE_L1=$$cache \
 			SYNC_MEMORY=$$sync MEMORY_WAIT_CYCLES=$$wait_cycles; \
 	done; done; done
+
+$(NPU_BENCH_SIM): $(RTL_COHERENT) verification/soc/tb_aster_npu_bench.cpp Makefile
+	mkdir -p $(NPU_BENCH_SOC_DIR)
+	$(VERILATOR) --cc --exe --build --timing --Wall $(VERILATOR_VENDOR_LINT_FLAGS) $(VERILATOR_COHERENT_FLAGS) \
+		--assert -DASTER_COHERENCE_ASSERT --top-module aster_coherent_soc \
+		-GHART_COUNT=$(HART_COUNT) "-GENABLE_L1=1'b$(ENABLE_L1)" "-GENABLE_DMA=1'b1" "-GENABLE_NPU=1'b1" \
+		"-GSYNC_MEMORY=1'b$(SYNC_MEMORY)" -GMEMORY_WAIT_CYCLES=$(MEMORY_WAIT_CYCLES) "-GHOST_BOOT=1'b1" \
+		-GLINE_WORDS=$(L1_LINE_WORDS) -GLINE_COUNT=$(L1_LINE_COUNT) \
+		-CFLAGS '-DASTER_HART_COUNT=$(HART_COUNT) -DASTER_L1=$(ENABLE_L1) -DASTER_MEMORY_WAIT=$(MEMORY_WAIT_CYCLES)' \
+		--Mdir $(NPU_BENCH_SOC_DIR)/obj -o $(abspath $@) \
+		$(addprefix $(ROOT)/,$(RTL_COHERENT)) $(ROOT)/verification/soc/tb_aster_npu_bench.cpp
+
+npu-bench: $(NPU_BENCH_SIM) $(NPU_BENCH_HEX)
+	@$(NPU_BENCH_SIM) +rom=$(NPU_BENCH_HEX) +ram_fill=a5a5a5a5
 
 .PHONY: coherent-bench coherent-firmware coherent-config coherent-bench-workloads coherent-bench-matrix coherent-bench-boundaries coherent-bench-sizes
 $(COHERENT_ELF): software/benchmarks/coherent.c software/runtime/start_multicore.S software/runtime/aster.h software/boot/link_multicore.ld Makefile
