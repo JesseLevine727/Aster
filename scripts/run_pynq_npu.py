@@ -129,7 +129,6 @@ def run(args):
                                expected_cache=not args.no_cache, expected_dma=True, expected_npu=True)
     firmware = args.firmware.resolve(strict=True)
     words = read_firmware(firmware)
-    expected_loaded = args.expected_loaded
     print("PYNQ9: NPU overlay/handoff/firmware preflight passed", flush=True)
 
     import pynq
