@@ -287,6 +287,7 @@ help:
 	@echo "  make npu-regs     Phase 9 NPU ABI/control register unit test"
 	@echo "  make npu-driver   Phase 9 RV32 driver/scalar-model compile check"
 	@echo "  make npu-runtime  Phase 9 actual-core RAM-backed INT8 GEMM and coherence acceptance"
+	@echo "  make npu-stop     Phase 9 global STOP/ABORT and warm-restart acceptance"
 	@echo "  make npu-runtime-matrix  Phase 9 one/two-hart cache/timing runtime matrix"
 	@echo "  make atomic-fabric  Test serialized RV32A memory/reservation semantics"
 	@echo "  make atomic-runtime-matrix  Run compiled RV32IMA C on one/two real cores"
@@ -953,7 +954,7 @@ $(COHERENT_PERF_SIM): rtl/peripherals/aster_coherent_perf.sv verification/unit/t
 coherent-counters: $(COHERENT_PERF_SIM)
 	@$(COHERENT_PERF_SIM)
 
-.PHONY: atomic-runtime atomic-runtime-matrix npu-runtime npu-runtime-matrix
+.PHONY: atomic-runtime atomic-runtime-matrix npu-runtime npu-stop npu-runtime-matrix
 $(ATOMIC_RUNTIME_ELF): software/tests/atomic_runtime.c software/runtime/start_multicore.S software/runtime/aster.h software/boot/link_multicore.ld Makefile | $(HELLO_DIR)
 	$(CC) $(filter-out -march=%,$(HELLO_CFLAGS)) -march=rv32ima \
 		-T software/boot/link_multicore.ld -Wl,-Map,$(HELLO_DIR)/atomic_runtime.map \
@@ -1238,6 +1239,9 @@ $(NPU_RUNTIME_SIM): $(RTL_COHERENT) verification/soc/tb_aster_npu_runtime.cpp Ma
 
 npu-runtime: $(NPU_RUNTIME_SIM) $(NPU_RUNTIME_HEX)
 	@$(NPU_RUNTIME_SIM) +rom=$(NPU_RUNTIME_HEX) +ram_fill=a5a5a5a5
+
+npu-stop: $(NPU_RUNTIME_SIM) $(NPU_RUNTIME_HEX)
+	@$(NPU_RUNTIME_SIM) +rom=$(NPU_RUNTIME_HEX) +ram_fill=a5a5a5a5 --global-stop-abort
 
 npu-runtime-matrix:
 	@set -e; for harts in 1 2; do for cache in 0 1; do for timing in '0 0' '0 7' '1 1' '1 7'; do \
@@ -1531,9 +1535,9 @@ parallel-workloads:
 		done; \
 	done
 
-test: smoke phase1 hello bench cache uart fpga-sim linux-sim counters retirement npu-pe npu-array npu-engine npu-regs npu-driver npu-runtime arbiter shared-fabric multicore-runtime parallel
+test: smoke phase1 hello bench cache uart fpga-sim linux-sim counters retirement npu-pe npu-array npu-engine npu-regs npu-driver npu-runtime npu-stop arbiter shared-fabric multicore-runtime parallel
 
-check: tools smoke phase1 hello bench cache uart fpga-sim linux-sim linux-dual-sim linux-coherent-sim counters retirement pcpi-probe dot8-unit npu-pe npu-array npu-engine npu-regs npu-driver npu-runtime atomic-fabric atomic-runtime atomic-faults coherent-cache warm-stop coherent-counters coherent-soc coherent-bench riscv-reference riscv-reference-negative coherent-litmus arbiter shared-fabric multicore-runtime multicore-adversarial parallel
+check: tools smoke phase1 hello bench cache uart fpga-sim linux-sim linux-dual-sim linux-coherent-sim counters retirement pcpi-probe dot8-unit npu-pe npu-array npu-engine npu-regs npu-driver npu-runtime npu-stop atomic-fabric atomic-runtime atomic-faults coherent-cache warm-stop coherent-counters coherent-soc coherent-bench riscv-reference riscv-reference-negative coherent-litmus arbiter shared-fabric multicore-runtime multicore-adversarial parallel
 
 clean:
 	rm -rf $(BUILD_DIR)

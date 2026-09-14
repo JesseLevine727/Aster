@@ -30,9 +30,12 @@ public:
     bool previous_npu_busy = false;
     bool npu_seen = false;
     bool pass = false;
+    bool aborting = false;
     std::uint64_t device_transactions = 0;
     std::uint64_t npu_device_transactions = 0;
     std::uint64_t ram_snapshot_hash = 2166136261u;
+    bool saw_npu_output = false;
+    bool saw_npu_abort = false;
 
     NpuRuntime() {
         d.resetn = 0;
@@ -73,10 +76,12 @@ public:
                 if (d.backing_mask == 0u)
                     ++device_transactions;
                 else {
-                    if (d.npu_busy && !d.dma_busy)
-                        require((d.backing_mask & (d.backing_mask - 1u)) == 0u,
-                                "NPU store used multiple byte lanes");
-                    ++device_transactions;
+                if (d.npu_busy && !d.dma_busy)
+                    require((d.backing_mask & (d.backing_mask - 1u)) == 0u,
+                            "NPU store used multiple byte lanes");
+                if (d.npu_busy && !d.dma_busy && d.backing_mask != 0u)
+                    saw_npu_output = true;
+                ++device_transactions;
                 }
                 if (d.npu_busy) ++npu_device_transactions;
             }
@@ -101,8 +106,10 @@ public:
             if (d.npu_tiles > max_tiles) max_tiles = d.npu_tiles;
             if (d.npu_bytes_written > max_bytes_written) max_bytes_written = d.npu_bytes_written;
             if (d.npu_job_cycles > max_job_cycles) max_job_cycles = d.npu_job_cycles;
-            require(!d.npu_error && !d.npu_aborted, "NPU reported terminal error/abort during runtime");
+            require(!d.npu_error && (aborting || !d.npu_aborted),
+                    "NPU reported terminal error/abort during normal runtime");
         }
+        saw_npu_abort = saw_npu_abort || d.npu_aborted;
     }
 
     void consume_line(const std::string& value) {
@@ -135,6 +142,40 @@ public:
                 "coherent device path observed no accepted NPU/DMA traffic");
     }
 
+    void run_global_stop_abort() {
+        aborting = true;
+        bool stop_requested = false;
+        for (unsigned cycle = 0; cycle < 50000000u && !stop_requested; ++cycle) {
+            tick();
+            if (saw_npu_output) {
+                d.host_run = 0;
+                stop_requested = true;
+            }
+        }
+        require(stop_requested, "global STOP fixture never reached NPU C-byte output");
+        stop_and_snapshot(false);
+        require(saw_npu_abort, "global STOP did not report cooperative NPU abort");
+
+        // A warm restart must reset the NPU lifecycle while retaining RAM; the
+        // firmware then repopulates and revalidates every owned buffer.
+        pass = false;
+        line.clear();
+        summary_addr = 0;
+        summary_checks = 0;
+        npu_starts = 0;
+        max_tiles = 0;
+        max_bytes_written = 0;
+        max_job_cycles = 0;
+        previous_npu_busy = false;
+        npu_seen = false;
+        saw_npu_output = false;
+        saw_npu_abort = false;
+        aborting = false;
+        d.host_run = 1;
+        run();
+        stop_and_snapshot(true);
+    }
+
     std::uint32_t read_word(std::uint16_t byte_address) {
         d.host_ram_addr = byte_address;
         tick();
@@ -144,7 +185,7 @@ public:
         return d.host_ram_rdata;
     }
 
-    void stop_and_snapshot() {
+    void stop_and_snapshot(bool require_summary = true) {
         d.host_run = 0;
         unsigned cycles = 0;
         while (!d.stopped && cycles++ < 1000000u) tick();
@@ -156,12 +197,14 @@ public:
             ram_snapshot_hash ^= value;
             ram_snapshot_hash *= 16777619u;
         }
-        require(read_word(static_cast<std::uint16_t>(summary_addr)) == 0x4e505539u,
-                "shared NPU summary magic was not retained through STOP");
-        require(read_word(static_cast<std::uint16_t>(summary_addr + 4u)) == summary_checks,
-                "shared NPU summary check count was not retained through STOP");
-        require(read_word(static_cast<std::uint16_t>(summary_addr + 8u)) == 9u,
-                "shared NPU summary job count was not retained through STOP");
+        if (require_summary) {
+            require(read_word(static_cast<std::uint16_t>(summary_addr)) == 0x4e505539u,
+                    "shared NPU summary magic was not retained through STOP");
+            require(read_word(static_cast<std::uint16_t>(summary_addr + 4u)) == summary_checks,
+                    "shared NPU summary check count was not retained through STOP");
+            require(read_word(static_cast<std::uint16_t>(summary_addr + 8u)) == 9u,
+                    "shared NPU summary job count was not retained through STOP");
+        }
     }
 };
 
@@ -169,8 +212,14 @@ int main(int argc, char** argv) {
     try {
         Verilated::commandArgs(argc, argv);
         NpuRuntime runtime;
-        runtime.run();
-        runtime.stop_and_snapshot();
+        bool stop_abort = false;
+        for (int i = 1; i < argc; ++i)
+            if (std::string(argv[i]) == "--global-stop-abort") stop_abort = true;
+        if (stop_abort) runtime.run_global_stop_abort();
+        else {
+            runtime.run();
+            runtime.stop_and_snapshot();
+        }
         std::cout << "PASS: Phase 9 actual-core NPU runtime harts=" << ASTER_HART_COUNT
                   << " cache=" << ASTER_L1 << " wait=" << ASTER_MEMORY_WAIT
                   << " starts=" << runtime.npu_starts
