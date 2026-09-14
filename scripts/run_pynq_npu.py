@@ -115,8 +115,9 @@ def run(args):
         raise ValueError("physical output already exists; evidence is never overwritten")
     if type(args.revision) is not str or not re.fullmatch(r"[0-9a-f]{40}", args.revision):
         raise ValueError("revision must be a committed 40-character Git revision")
-    if not args.expected_loaded.startswith("/"):
-        raise ValueError("expected loaded overlay must be an absolute path")
+    if args.expected_loaded != "none" and not args.expected_loaded.startswith("/"):
+        raise ValueError("expected loaded overlay must be an absolute path or 'none'")
+    expected_loaded = None if args.expected_loaded == "none" else args.expected_loaded
     if not 1 <= args.boots <= 4 or not 1 <= args.timeout <= 120 or not 0 <= args.host_pause < args.timeout:
         raise ValueError("invalid boot/timing options")
     bitstream = args.bitstream.resolve(strict=True)
@@ -209,7 +210,8 @@ def main():
     parser.add_argument("--firmware", type=Path, required=True)
     parser.add_argument("--output", type=Path, required=True)
     parser.add_argument("--revision", required=True)
-    parser.add_argument("--expected-loaded", required=True)
+    parser.add_argument("--expected-loaded", required=True,
+                        help="absolute prior overlay path, or 'none' when PL is unloaded")
     parser.add_argument("--harts", type=int, choices=(1, 2), default=2)
     parser.add_argument("--no-cache", action="store_true")
     parser.add_argument("--no-download", action="store_true")
