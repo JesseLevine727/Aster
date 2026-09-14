@@ -37,6 +37,20 @@ def read_firmware(path):
     return words
 
 
+def lifecycle_state(bridge):
+    return {
+        "control": bridge.mmio.read(0),
+        "status": bridge.mmio.read(4),
+        "hart_status": bridge.mmio.read(0x28),
+        "stop_status": bridge.mmio.read(0x40),
+        "tx_bytes": bridge.mmio.read(0x10),
+        "rx_bytes": bridge.mmio.read(0x14),
+        "fifo_count": bridge.mmio.read(0x0C),
+        "lifetime_retired": bridge.lifetime_retired(),
+        "faults": bridge.faults(),
+    }
+
+
 def capture_boot(bridge, output, index, timeout, host_pause):
     uart_path = output / f"boot{index}.uart"
     started = time.monotonic()
@@ -68,17 +82,7 @@ def capture_boot(bridge, output, index, timeout, host_pause):
             raise TimeoutError("physical Phase 9 NPU runtime timed out")
 
     time.sleep(0.02)
-    before = {
-        "control": bridge.mmio.read(0),
-        "status": bridge.mmio.read(4),
-        "hart_status": bridge.mmio.read(0x28),
-        "stop_status": bridge.mmio.read(0x40),
-        "tx_bytes": bridge.mmio.read(0x10),
-        "rx_bytes": bridge.mmio.read(0x14),
-        "fifo_count": bridge.mmio.read(0x0C),
-        "lifetime_retired": bridge.lifetime_retired(),
-        "faults": bridge.faults(),
-    }
+    before = lifecycle_state(bridge)
     if (before["control"], before["status"], before["hart_status"], before["stop_status"],
             before["tx_bytes"], before["rx_bytes"], before["fifo_count"]) != (1, 1, 1, 0, len(payload), len(payload), 0):
         raise RuntimeError("NPU runtime serial/core state mismatch before STOP")
@@ -96,13 +100,17 @@ def capture_boot(bridge, output, index, timeout, host_pause):
     offset = summary - 0x10000000
     if struct.unpack_from("<III", ram, offset) != (0x4E505539, int(re.search(rb"checks=([0-9]+)", payload).group(1)), 9):
         raise RuntimeError("stopped RAM does not retain the NPU runtime summary")
+    after = lifecycle_state(bridge)
+    if (after["control"], after["status"], after["hart_status"], after["stop_status"],
+            after["fifo_count"]) != (0, 0, 0, 1, 0):
+        raise RuntimeError("NPU runtime serial/core state mismatch after STOP")
     return {
         "boot": index,
         "status": "PASS",
         "uart": artifact(uart_path),
         "ram": artifact(ram_path),
         "before_stop": before,
-        "after_stop": {"control": 0, "status": 0, "hart_status": 0, "stop_status": 1},
+        "after_stop": after,
         "uart_output": payload.decode("ascii"),
         "summary_address": summary,
         "elapsed_seconds": time.monotonic() - started,
@@ -184,13 +192,13 @@ def run(args):
             report_path.write_text(json.dumps(report, indent=2, sort_keys=True) + "\n")
             print(f"PASS: physical Pynq-Z1 NPU boot={index} serial_bytes={entry['uart']['bytes']} retained_RAM=65536", flush=True)
         bridge.stop()
-        report["final_state"] = {"control": 0, "status": 0, "hart_status": 0, "stop_status": 1}
+        report["final_state"] = lifecycle_state(bridge)
         report["status"] = "complete"
         report_path.write_text(json.dumps(report, indent=2, sort_keys=True) + "\n")
     except BaseException as error:
         try:
             bridge.stop()
-            report["final_state"] = {"control": 0, "status": 0, "hart_status": 0, "stop_status": 1}
+            report["final_state"] = lifecycle_state(bridge)
         except BaseException as stop_error:
             report["stop_error"] = str(stop_error)
         report["status"] = "failed"
