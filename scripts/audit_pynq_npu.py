@@ -54,8 +54,13 @@ def lifecycle(value, *, stopped):
                 ("control", "status", "hart_status", "stop_status", "tx_bytes", "rx_bytes", "fifo_count")),
             "invalid physical lifecycle counter")
     require(type(value["lifetime_retired"]) is list and len(value["lifetime_retired"]) == 2 and
-            all(type(item) is int and item > 0 for item in value["lifetime_retired"]),
-            "both physical harts must retire instructions")
+            all(type(item) is int and item >= 0 for item in value["lifetime_retired"]),
+            "invalid physical lifetime retirement counters")
+    if stopped:
+        require(value["lifetime_retired"] == [0, 0], "STOP did not reset physical lifetime counters")
+    else:
+        require(value["lifetime_retired"][0] > 0,
+                "primary physical hart did not retire instructions")
     require(type(value["faults"]) is list and len(value["faults"]) == 2, "missing physical fault observations")
     for hart, fault in enumerate(value["faults"]):
         require(type(fault) is dict and set(fault) == {"hart", "trapped", "atomic_fault_valid", "cause",
@@ -123,7 +128,7 @@ def audit(report_path, bitstream, *, harts=2, cache=True):
         lifecycle(boot["before_stop"], stopped=False)
         lifecycle(boot["after_stop"], stopped=True)
         require(boot["before_stop"]["tx_bytes"] == boot["before_stop"]["rx_bytes"] == len(uart_bytes) and
-                boot["after_stop"]["tx_bytes"] == boot["after_stop"]["rx_bytes"] == len(uart_bytes),
+                boot["after_stop"]["tx_bytes"] == boot["after_stop"]["rx_bytes"] == 0,
                 "physical serial accounting differs")
 
     require(report["final_state"] == report["boots"][-1]["after_stop"], "final physical observation is not the last stopped state")

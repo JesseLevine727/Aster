@@ -24,8 +24,8 @@ class PynqNpuPhysicalAudit(unittest.TestCase):
                    "address": 0, "instruction": 0, "pc": 0} for h in range(2)]
         before = {"control": 1, "status": 1, "hart_status": 1, "stop_status": 0, "tx_bytes": len(uart),
                   "rx_bytes": len(uart), "fifo_count": 0, "lifetime_retired": [10, 20], "faults": faults}
-        after = {"control": 0, "status": 0, "hart_status": 0, "stop_status": 1, "tx_bytes": len(uart),
-                 "rx_bytes": len(uart), "fifo_count": 0, "lifetime_retired": [10, 20], "faults": faults}
+        after = {"control": 0, "status": 0, "hart_status": 0, "stop_status": 1, "tx_bytes": 0,
+                 "rx_bytes": 0, "fifo_count": 0, "lifetime_retired": [0, 0], "faults": faults}
         (directory / "boot1.uart").write_bytes(uart)
         (directory / "boot2.uart").write_bytes(uart)
         (directory / "boot1.ram").write_bytes(ram)
