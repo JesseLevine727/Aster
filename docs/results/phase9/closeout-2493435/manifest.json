@@ -3782,7 +3782,7 @@
     },
     "source/source-state.json": {
       "bytes": 34101,
-      "sha256": "6cb08a21a15a1fb7905d6947ffccc5c68c2404e563325b75315cbbd17d6b66ee"
+      "sha256": "2d60dba2c602bff89285255e796caadcce168be88fcb0cbaf51cb8b16b8176db"
     },
     "spec/phase9.md": {
       "bytes": 15201,
@@ -3919,7 +3919,7 @@
       }
     },
     "source_revision": "7a76ab431835713ee8240dc66e8f9a407d9e39a8",
-    "source_sha256": "7a718823fb2dfc436bba32063efbd77197081e596868dac3647a49aeeee3890e",
+    "source_sha256": "298bec2988eb6d62ccc90b8da38da4314b0e2cb23bb9f6419fd424312682c45c",
     "verification": {
       "host_tests": 216,
       "npu_runtime_matrix": 16,

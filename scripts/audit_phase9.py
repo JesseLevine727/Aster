@@ -67,7 +67,18 @@ def source_state():
         if name == "Makefile" or name.startswith(("rtl/", "software/", "vendor/", "scripts/", "verification/", "fpga/")):
             files[name] = sha(path)
     fingerprint = hashlib.sha256(json.dumps(files, sort_keys=True).encode()).hexdigest()
-    revision = subprocess.check_output(["git", "rev-parse", "HEAD"], text=True).strip()
+    # Evidence and audit-document commits must not make an unchanged
+    # implementation appear stale.  The file hashes above still cover every
+    # relevant input, while this revision identifies the latest commit that
+    # changed the implementation/toolchain inputs themselves.  Keep the
+    # closeout auditor out of this selector so its own maintenance does not
+    # invalidate an otherwise unchanged hardware/software source snapshot.
+    revision = subprocess.check_output(
+        ["git", "log", "-1", "--format=%H", "--", "Makefile", "rtl/", "software/",
+         "vendor/", "verification/", "fpga/"],
+        text=True,
+    ).strip()
+    require(revision, "implementation source revision is unavailable")
     return {"schema": "aster.phase9.source.v1", "revision": revision, "files": files, "sha256": fingerprint}
 
 
