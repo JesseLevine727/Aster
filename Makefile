@@ -305,6 +305,7 @@ help:
 	@echo "  make npu-stop     Phase 9 global STOP/ABORT and warm-restart acceptance"
 	@echo "  make npu-runtime-matrix  Phase 9 one/two-hart cache/timing runtime matrix"
 	@echo "  make npu-bench    AsterBench v7 paired scalar/NPU GEMM capture"
+	@echo "  make npu-bench-validate  Run and independently validate one v7 capture"
 	@echo "  make atomic-fabric  Test serialized RV32A memory/reservation semantics"
 	@echo "  make atomic-runtime-matrix  Run compiled RV32IMA C on one/two real cores"
 	@echo "  make atomic-faults-matrix   Check real-core atomic faults with caches off/on"
@@ -970,7 +971,7 @@ $(COHERENT_PERF_SIM): rtl/peripherals/aster_coherent_perf.sv verification/unit/t
 coherent-counters: $(COHERENT_PERF_SIM)
 	@$(COHERENT_PERF_SIM)
 
-.PHONY: atomic-runtime atomic-runtime-matrix npu-runtime npu-stop npu-runtime-matrix npu-bench
+.PHONY: atomic-runtime atomic-runtime-matrix npu-runtime npu-stop npu-runtime-matrix npu-bench npu-bench-validate
 $(ATOMIC_RUNTIME_ELF): software/tests/atomic_runtime.c software/runtime/start_multicore.S software/runtime/aster.h software/boot/link_multicore.ld Makefile | $(HELLO_DIR)
 	$(CC) $(filter-out -march=%,$(HELLO_CFLAGS)) -march=rv32ima \
 		-T software/boot/link_multicore.ld -Wl,-Map,$(HELLO_DIR)/atomic_runtime.map \
@@ -1293,6 +1294,9 @@ $(NPU_BENCH_SIM): $(RTL_COHERENT) verification/soc/tb_aster_npu_bench.cpp Makefi
 npu-bench: $(NPU_BENCH_SIM) $(NPU_BENCH_HEX)
 	@$(NPU_BENCH_SIM) +rom=$(NPU_BENCH_HEX) +ram_fill=a5a5a5a5
 
+npu-bench-validate: $(NPU_BENCH_SIM) $(NPU_BENCH_HEX)
+	@set -o pipefail; $(NPU_BENCH_SIM) +rom=$(NPU_BENCH_HEX) +ram_fill=a5a5a5a5 | $(PYTHON) scripts/asterbench_v7.py validate
+
 .PHONY: coherent-bench coherent-firmware coherent-config coherent-bench-workloads coherent-bench-matrix coherent-bench-boundaries coherent-bench-sizes
 $(COHERENT_ELF): software/benchmarks/coherent.c software/runtime/start_multicore.S software/runtime/aster.h software/boot/link_multicore.ld Makefile
 	mkdir -p $(COHERENT_FW_DIR)
@@ -1578,9 +1582,9 @@ parallel-workloads:
 		done; \
 	done
 
-test: smoke phase1 hello bench cache uart fpga-sim linux-sim counters retirement npu-pe npu-array npu-engine npu-regs npu-driver npu-runtime npu-stop arbiter shared-fabric multicore-runtime parallel
+test: smoke phase1 hello bench cache uart fpga-sim linux-sim counters retirement npu-pe npu-array npu-engine npu-regs npu-driver npu-runtime npu-stop npu-bench-validate arbiter shared-fabric multicore-runtime parallel
 
-check: tools smoke phase1 hello bench cache uart fpga-sim linux-sim linux-dual-sim linux-coherent-sim counters retirement pcpi-probe dot8-unit npu-pe npu-array npu-engine npu-regs npu-driver npu-runtime npu-stop atomic-fabric atomic-runtime atomic-faults coherent-cache warm-stop coherent-counters coherent-soc coherent-bench riscv-reference riscv-reference-negative coherent-litmus arbiter shared-fabric multicore-runtime multicore-adversarial parallel
+check: tools smoke phase1 hello bench cache uart fpga-sim linux-sim linux-dual-sim linux-coherent-sim counters retirement pcpi-probe dot8-unit npu-pe npu-array npu-engine npu-regs npu-driver npu-runtime npu-stop npu-bench-validate atomic-fabric atomic-runtime atomic-faults coherent-cache warm-stop coherent-counters coherent-soc coherent-bench riscv-reference riscv-reference-negative coherent-litmus arbiter shared-fabric multicore-runtime multicore-adversarial parallel
 
 clean:
 	rm -rf $(BUILD_DIR)
