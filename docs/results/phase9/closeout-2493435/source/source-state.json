@@ -312,7 +312,7 @@
     "verification/unit/tb_aster_uart_tx.cpp": "6cb17cf0e6a6b0890aabd7660e01dd98ff2076b2b4be5b291f6a89c2e8cfca0e",
     "verification/unit/tb_aster_warm_stop.cpp": "5e5e2f325eb2f6483828a8825d264b8bbf17653dc3327a6346eb035aac35ac2b"
   },
-  "revision": "249343503dce1f2c5ff943f05dbef768163db346",
+  "revision": "7a76ab431835713ee8240dc66e8f9a407d9e39a8",
   "schema": "aster.phase9.source.v1",
   "sha256": "7a718823fb2dfc436bba32063efbd77197081e596868dac3647a49aeeee3890e"
 }

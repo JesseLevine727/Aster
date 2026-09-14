@@ -61,7 +61,7 @@
         "fifo_count": 0,
         "hart_status": 1,
         "lifetime_retired": [
-          1502612,
+          1502673,
           0
         ],
         "rx_bytes": 55,
@@ -70,7 +70,7 @@
         "tx_bytes": 55
       },
       "boot": 1,
-      "elapsed_seconds": 0.5086479119997875,
+      "elapsed_seconds": 0.5105097870000463,
       "ram": {
         "bytes": 65536,
         "file": "boot1.ram",
@@ -144,7 +144,7 @@
         "fifo_count": 0,
         "hart_status": 1,
         "lifetime_retired": [
-          1477021,
+          1477637,
           0
         ],
         "rx_bytes": 55,
@@ -153,7 +153,7 @@
         "tx_bytes": 55
       },
       "boot": 2,
-      "elapsed_seconds": 0.5028646989999288,
+      "elapsed_seconds": 0.5064339979999204,
       "ram": {
         "bytes": 65536,
         "file": "boot2.ram",
@@ -233,7 +233,7 @@
   "previous_bitstream": "/home/xilinx/aster_phase9_npu_9d6cf59/cache-off/aster_linux.bit",
   "pynq_version": "3.1.1",
   "schema": "aster.npu.physical.v1",
-  "source_revision": "35588db000000000000000000000000000000000",
+  "source_revision": "249343503dce1f2c5ff943f05dbef768163db346",
   "status": "complete",
   "transport": "PYNQ Linux PCAP/AXI, FPGA UART TX-to-RX serial loopback"
 }
