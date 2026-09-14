@@ -59,8 +59,8 @@ module aster_npu_engine (
     logic [31:0] tile_row, tile_col, k_index;
     logic [4:0] load_index, output_index;
     logic [2:0] output_byte;
-    logic [7:0] a_values [0:3];
-    logic [7:0] b_values [0:3];
+    logic signed [7:0] a_values [0:3];
+    logic signed [7:0] b_values [0:3];
     logic abort_pending, request_held;
 
     logic done_flag, error_flag, aborted_flag;
