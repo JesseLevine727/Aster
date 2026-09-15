@@ -99,6 +99,8 @@ make linux-dot8-sim  Check full AXI map/RO offsets, actual serial and warm boots
 make dot8-firmware dot8-bench  Build/run paired scalar/custom AsterBench v6
 make dot8-bench-build dot8-config  Build-only and exact capture configuration hooks
 make fpga-linux-dot8  Build the explicitly DOT8/DMA/coherent Linux overlay
+make xe-bench-validate  Run one AsterBench v8 cross-engine capture on the all-engine SoC
+make xe-matrix      Run the 3 kernels x 4 methods cross-engine matrix
 make check       Run tool checks, directed tests and simulations
 make clean       Remove generated files under build/
 ```

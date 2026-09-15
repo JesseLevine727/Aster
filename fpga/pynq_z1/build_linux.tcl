@@ -1,5 +1,5 @@
 # AXI host bridge and real serial loopback, loaded through PYNQ Linux/PCAP.
-if {$argc < 2 || $argc > 8} { error "usage: build_linux.tcl <repo-root> <output-dir> ?harts(0=legacy,1,2)? ?coherent(0,1)? ?caches(0,1)? ?dma(0,1)? ?dot8(0,1)? ?npu(0,1)?" }
+if {$argc < 2 || $argc > 9} { error "usage: build_linux.tcl <repo-root> <output-dir> ?harts(0=legacy,1,2)? ?coherent(0,1)? ?caches(0,1)? ?dma(0,1)? ?dot8(0,1)? ?npu(0,1)? ?impl(0,1)?" }
 set repo_root [file normalize [lindex $argv 0]]
 set output_dir [file normalize [lindex $argv 1]]
 set harts 0
@@ -15,12 +15,13 @@ if {$argc >= 6} { set dma [lindex $argv 5] }
 if {$argc >= 7} { set dot8 [lindex $argv 6] }
 set npu 0
 if {$argc >= 8} { set npu [lindex $argv 7] }
+set impl 1
+if {$argc >= 9} { set impl [lindex $argv 8] }
 if {$coherent ni {0 1} || $caches ni {0 1} || $dma ni {0 1} || ($coherent && !$harts) || (!$coherent && (!$caches || $dma))} {
     error "invalid coherent Linux configuration"
 }
 if {$dot8 ni {0 1} || ($dot8 && (!$coherent || !$dma))} { error "dot8 Linux requires coherence and DMA" }
 if {$npu ni {0 1} || ($npu && (!$coherent || !$dma))} { error "NPU Linux requires coherence and DMA" }
-if {$npu && $dot8} { error "NPU and dot8 Linux images are separate configurations" }
 set part xc7z020clg400-1
 file mkdir $output_dir
 create_project aster_linux $output_dir -part $part -force
@@ -118,6 +119,11 @@ set reset_netlist [file join $output_dir aster_linux.gen sources_1 bd aster_linu
 puts [exec python3 [file join $repo_root scripts/check_pynq_reset.py] \
     --netlist $reset_netlist --output-dir [file join $output_dir reset_sim]]
 write_checkpoint -force [file join $output_dir aster_linux_synth.dcp]
+report_utilization -file [file join $output_dir utilization_synth.rpt]
+if {!$impl} {
+    puts "ASTER_LINUX_UTIL complete: [file join $output_dir utilization_synth.rpt]"
+    exit 0
+}
 opt_design
 place_design
 route_design

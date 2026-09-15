@@ -221,6 +221,38 @@ NPU_BENCH_CFLAGS = $(NPU_CFLAGS) -DNPU_BENCH_M=$(NPU_BENCH_M) -DNPU_BENCH_N=$(NP
 	-DNPU_BENCH_K=$(NPU_BENCH_K) -DNPU_BENCH_PLACEMENT=$(NPU_BENCH_PLACEMENT) \
 	-DNPU_BENCH_SEED=$(NPU_BENCH_SEED) -DNPU_BENCH_CAPTURE=$(NPU_BENCH_CAPTURE)
 NPU_BENCH_LDFLAGS = -T software/boot/link_multicore.ld -Wl,-Map,$(NPU_BENCH_FW_DIR)/npu_gemm.map
+XE_KERNEL ?= gemm
+XE_METHOD ?= scalar
+XE_M ?= 4
+XE_N ?= 4
+XE_K ?= 16
+XE_TAPS ?= 8
+XE_PLACEMENT ?= 0
+XE_SEED ?= 0x13570000
+XE_JOBS ?= 2
+XE_CAPTURE ?= 1
+ifeq ($(filter $(XE_KERNEL),dot fir gemm),)
+$(error XE_KERNEL must be dot, fir or gemm)
+endif
+ifeq ($(filter $(XE_METHOD),scalar multicore dot8 npu),)
+$(error XE_METHOD must be scalar, multicore, dot8 or npu)
+endif
+ifeq ($(filter $(XE_PLACEMENT),0 1 2 3),)
+$(error XE_PLACEMENT must be 0..3)
+endif
+XE_KERNEL_ID := $(if $(filter dot,$(XE_KERNEL)),0,$(if $(filter fir,$(XE_KERNEL)),1,2))
+XE_METHOD_ID := $(if $(filter scalar,$(XE_METHOD)),0,$(if $(filter multicore,$(XE_METHOD)),1,$(if $(filter dot8,$(XE_METHOD)),2,3)))
+XE_FW_DIR := $(HELLO_DIR)/xe_$(XE_KERNEL)_$(XE_METHOD)_m$(XE_M)_n$(XE_N)_k$(XE_K)_t$(XE_TAPS)_p$(XE_PLACEMENT)_s$(XE_SEED)_c$(XE_CAPTURE)
+XE_ELF := $(XE_FW_DIR)/xe.elf
+XE_HEX := $(XE_FW_DIR)/xe.hex
+XE_SOC_DIR := $(BUILD_DIR)/xe_soc_h$(HART_COUNT)_$(CONFIG_TAG)
+XE_SIM := $(XE_SOC_DIR)/aster_xe_sim
+XE_CFLAGS = $(filter-out -march=% -mabi=%,$(HELLO_CFLAGS)) -march=rv32ima -mabi=ilp32 \
+	-Isoftware/drivers -Isoftware/benchmarks -fno-builtin -fno-tree-loop-distribute-patterns \
+	-DXE_KERNEL=$(XE_KERNEL_ID) -DXE_METHOD=$(XE_METHOD_ID) -DXE_M=$(XE_M) -DXE_N=$(XE_N) \
+	-DXE_K=$(XE_K) -DXE_TAPS=$(XE_TAPS) -DXE_PLACEMENT=$(XE_PLACEMENT) -DXE_SEED=$(XE_SEED) \
+	-DXE_JOBS=$(XE_JOBS) -DXE_CAPTURE=$(XE_CAPTURE)
+XE_LDFLAGS = -T software/boot/link_xe_bench.ld -Wl,-Map,$(XE_FW_DIR)/xe.map
 PERF_SIM := $(BUILD_DIR)/aster_perf_sim
 ARBITER_SIM := $(BUILD_DIR)/aster_arbiter2_sim
 FABRIC_DIR := $(BUILD_DIR)/fabric_h$(HART_COUNT)_$(CONFIG_TAG)
@@ -570,6 +602,10 @@ fpga-linux-dot8:
 .PHONY: fpga-linux-npu
 fpga-linux-npu:
 	$(MAKE) LINUX_HART_COUNT=2 LINUX_COHERENCE=1 LINUX_DMA=1 LINUX_NPU=1 fpga-linux
+
+.PHONY: fpga-linux-xe
+fpga-linux-xe:
+	$(MAKE) LINUX_HART_COUNT=2 LINUX_COHERENCE=1 LINUX_DMA=1 LINUX_DOT8=1 LINUX_NPU=1 fpga-linux
 
 $(LINUX_SIM): $(RTL_CORE) $(RTL_CACHE) $(RTL_MEMORY) $(RTL_PERIPHERALS) $(RTL_SOC) $(RTL_MULTICORE) $(RTL_COHERENT) \
 		rtl/peripherals/aster_uart_tx.sv rtl/peripherals/aster_uart_rx.sv \
@@ -1306,6 +1342,46 @@ npu-bench: $(NPU_BENCH_SIM) $(NPU_BENCH_HEX)
 npu-bench-validate: $(NPU_BENCH_SIM) $(NPU_BENCH_HEX)
 	@set -o pipefail; $(NPU_BENCH_SIM) +rom=$(NPU_BENCH_HEX) +ram_fill=a5a5a5a5 | $(PYTHON) scripts/asterbench_v7.py validate
 
+.PHONY: xe-firmware xe-bench xe-bench-validate xe-config xe-matrix
+$(XE_ELF): software/benchmarks/cross_engine.c software/benchmarks/xe_kernels.c software/benchmarks/xe_kernels.h \
+		software/runtime/start_multicore.S software/drivers/aster_npu.c software/drivers/aster_npu.h \
+		software/boot/link_xe_bench.ld Makefile
+	mkdir -p $(XE_FW_DIR)
+	$(CC) $(XE_CFLAGS) $(XE_LDFLAGS) -o $@ \
+		software/runtime/start_multicore.S software/benchmarks/cross_engine.c \
+		software/benchmarks/xe_kernels.c software/drivers/aster_npu.c
+
+$(XE_HEX): $(XE_ELF) scripts/elf_to_hex.py
+	$(PYTHON) scripts/elf_to_hex.py --rom-bytes 65536 $< $@
+
+xe-firmware: $(XE_HEX)
+
+$(XE_SIM): $(RTL_COHERENT) verification/soc/tb_aster_xe_bench.cpp Makefile
+	mkdir -p $(XE_SOC_DIR)
+	$(VERILATOR) --cc --exe --build --timing --Wall $(VERILATOR_VENDOR_LINT_FLAGS) $(VERILATOR_COHERENT_FLAGS) \
+		--assert -DASTER_COHERENCE_ASSERT --top-module aster_coherent_soc \
+		-GHART_COUNT=$(HART_COUNT) "-GENABLE_L1=1'b$(ENABLE_L1)" "-GENABLE_DMA=1'b1" "-GENABLE_DOT8=1'b1" "-GENABLE_NPU=1'b1" \
+		"-GSYNC_MEMORY=1'b$(SYNC_MEMORY)" -GMEMORY_WAIT_CYCLES=$(MEMORY_WAIT_CYCLES) "-GHOST_BOOT=1'b1" \
+		-GLINE_WORDS=$(L1_LINE_WORDS) -GLINE_COUNT=$(L1_LINE_COUNT) \
+		-CFLAGS '-DASTER_HART_COUNT=$(HART_COUNT) -DASTER_L1=$(ENABLE_L1) -DASTER_MEMORY_WAIT=$(MEMORY_WAIT_CYCLES)' \
+		--Mdir $(XE_SOC_DIR)/obj -o $(abspath $@) \
+		$(addprefix $(ROOT)/,$(RTL_COHERENT)) $(ROOT)/verification/soc/tb_aster_xe_bench.cpp
+
+xe-bench: $(XE_SIM) $(XE_HEX)
+	@$(XE_SIM) +rom=$(XE_HEX) +ram_fill=a5a5a5a5 --method $(XE_METHOD) --records $(XE_JOBS)
+
+xe-bench-validate: $(XE_SIM) $(XE_HEX)
+	@set -o pipefail; $(XE_SIM) +rom=$(XE_HEX) +ram_fill=a5a5a5a5 --method $(XE_METHOD) --records $(XE_JOBS) | $(PYTHON) scripts/asterbench_v8.py validate --method $(XE_METHOD) --kernel $(XE_KERNEL) --jobs $(XE_JOBS)
+
+xe-config:
+	@$(PYTHON) -c 'import json,sys; print(json.dumps(dict(zip(("compiler","cflags","ldflags","verilator","simulator","firmware","elf"), sys.argv[1:])),sort_keys=True))' \
+		'$(CC)' '$(XE_CFLAGS)' '$(XE_LDFLAGS)' '$(VERILATOR)' '$(XE_SIM)' '$(XE_HEX)' '$(XE_ELF)'
+
+xe-matrix:
+	@set -e; for kernel in dot fir gemm; do for method in scalar multicore dot8 npu; do \
+		$(MAKE) --no-print-directory xe-bench-validate XE_KERNEL=$$kernel XE_METHOD=$$method XE_M=3 XE_N=5 XE_K=8; \
+	done; done
+
 .PHONY: coherent-bench coherent-firmware coherent-config coherent-bench-workloads coherent-bench-matrix coherent-bench-boundaries coherent-bench-sizes
 $(COHERENT_ELF): software/benchmarks/coherent.c software/runtime/start_multicore.S software/runtime/aster.h software/boot/link_multicore.ld Makefile
 	mkdir -p $(COHERENT_FW_DIR)
@@ -1593,7 +1669,7 @@ parallel-workloads:
 
 test: smoke phase1 hello bench cache uart fpga-sim linux-sim counters retirement npu-pe npu-array npu-engine npu-regs npu-driver npu-runtime npu-stop npu-bench-validate arbiter shared-fabric multicore-runtime parallel
 
-check: tools smoke phase1 hello bench cache uart fpga-sim linux-sim linux-dual-sim linux-coherent-sim counters retirement pcpi-probe dot8-unit npu-pe npu-array npu-engine npu-regs npu-driver npu-runtime npu-stop npu-bench-validate atomic-fabric atomic-runtime atomic-faults coherent-cache warm-stop coherent-counters coherent-soc coherent-bench riscv-reference riscv-reference-negative coherent-litmus arbiter shared-fabric multicore-runtime multicore-adversarial parallel
+check: tools smoke phase1 hello bench cache uart fpga-sim linux-sim linux-dual-sim linux-coherent-sim counters retirement pcpi-probe dot8-unit npu-pe npu-array npu-engine npu-regs npu-driver npu-runtime npu-stop npu-bench-validate xe-bench-validate atomic-fabric atomic-runtime atomic-faults coherent-cache warm-stop coherent-counters coherent-soc coherent-bench riscv-reference riscv-reference-negative coherent-litmus arbiter shared-fabric multicore-runtime multicore-adversarial parallel
 
 clean:
 	rm -rf $(BUILD_DIR)

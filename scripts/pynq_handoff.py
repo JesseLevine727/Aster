@@ -86,7 +86,6 @@ def validate_handoff(path, expected_harts=0, *, expected_coherent=False, expecte
     npu = int(npu_parameters[0].get("VALUE", "-1"), 0) if npu_parameters else 0
     require(npu in (0, 1) and bool(npu) == expected_npu and (not npu or (coherent and dma)),
             "wrong NPU / coherent accelerator configuration")
-    require(not (npu and dot8), "NPU and dot8 physical images are separate configurations")
 
     def driven(module, name, driver, output):
         sink, source = port(module, name), port(driver, output)
@@ -168,8 +167,6 @@ if __name__ == "__main__":
         parser.error("--dot8 requires --coherent and --dma")
     if args.npu and not (args.coherent and args.dma):
         parser.error("--npu requires --coherent and --dma")
-    if args.npu and args.dot8:
-        parser.error("--npu and --dot8 are separate images")
     print("PASS: Aster Linux clock/reset/address handoff", validate_handoff(
         args.handoff, args.harts, expected_coherent=args.coherent, expected_cache=not args.no_cache,
         expected_dma=args.dma, expected_dot8=args.dot8, expected_npu=args.npu))

@@ -1,0 +1,80 @@
+{
+  "bitstream_sha256": "381c225eeb4a02017048f96ec150d7a2e0e5afefcf624dbac0d856205fd4a63f",
+  "board": "pynq",
+  "boots": [
+    {
+      "after_stop": {
+        "control": 0,
+        "fifo_count": 0,
+        "hart_status": 0,
+        "status": 0,
+        "stop_status": 1
+      },
+      "before_stop": {
+        "control": 1,
+        "fifo_count": 0,
+        "hart_status": 1,
+        "status": 1,
+        "stop_status": 0
+      },
+      "boot": 1,
+      "elapsed_seconds": 0.7683684049989097,
+      "kernel": "gemm",
+      "method": "multicore",
+      "ram": {
+        "bytes": 65536,
+        "file": "boot1.ram",
+        "sha256": "b19af333888cbe9d6c9058fd895fc58bc55c74f45eae3b2d6c513dac54de262b"
+      },
+      "status": "PASS",
+      "uart": {
+        "bytes": 6354,
+        "file": "boot1.uart",
+        "sha256": "bca6dcdfe1cd35fa73493f57a1f678afcd39b8e7eb7460034f12aa10407b6417"
+      },
+      "uart_output": "ASTERBENCH,version=8,name=gemm,window=cpu_command_to_result_visible,policy=prepared_reinitialize,status=PASS,method=multicore,placement=aligned,capture=1,job=1,jobs=2,m=4,n=4,k=16,taps=8,outputs=16,a_stride=16,b_stride=4,c_stride=16,a_offset=0,b_offset=0,c_offset=0,a_allocation_bytes=128,b_allocation_bytes=128,c_allocation_bytes=128,seed=0x8d6079b9,harts=2,workers=2,a_addr=0x10001000,b_addr=0x10002000,c_addr=0x10003000,errors=0,cpu_abi=4,dma_abi=1,dma_counter_abi=5,dot8_instruction_abi=1,dot8_counter_abi=6,npu_descriptor_abi=1,npu_counter_abi=1,clock_hz=31250000,l1=1,sync_memory=1,line_words=4,line_count=16,memory_wait=1,npu_active=0,npu_status=0,npu_error_code=0,npu_bytes_read=0,npu_bytes_written=0,npu_job_cycles=0x0000000000000000,npu_compute_cycles=0x0000000000000000,npu_tiles=0,h0_cycles=0x00000000000042bc,h0_retired=0x0000000000000558,h0_memory=0x000000000000079e,h0_i_access=0x00000000000005fe,h0_i_miss=0x000000000000001a,h0_d_access=0x0000000000000196,h0_d_miss=0x000000000000005c,h0_backing=0x0000000000000224,h0_atomic=0x0000000000000000,h0_sc_success=0x0000000000000000,h0_sc_failure=0x0000000000000000,h0_intervention=0x0000000000000001,h0_invalidation=0x0000000000000000,h0_writeback=0x0000000000000044,h1_cycles=0x00000000000042bc,h1_retired=0x0000000000000539,h1_memory=0x0000000000000750,h1_i_access=0x00000000000005d5,h1_i_miss=0x0000000000000020,h1_d_access=0x0000000000000174,h1_d_miss=0x0000000000000058,h1_backing=0x0000000000000206,h1_atomic=0x0000000000000000,h1_sc_success=0x0000000000000000,h1_sc_failure=0x0000000000000000,h1_intervention=0x0000000000000003,h1_invalidation=0x0000000000000001,h1_writeback=0x0000000000000020,dma_busy=0x0000000000000000,dma_wait=0x0000000000000000,dma_reads=0x0000000000000000,dma_writes=0x0000000000000000,dma_bytes=0x0000000000000000,dma_backing_reads=0x0000000000000000,dma_backing_writes=0x0000000000000000,dma_forwards=0x0000000000000000,dma_dirty_words=0x0000000000000000,dma_invalidations=0x0000000000000000,dma_success=0x0000000000000000,dma_aborts=0x0000000000000000,dma_errors=0x0000000000000000,dma_rejected=0x0000000000000000,h0_dot8_accept=0x0000000000000000,h0_dot8_wait=0x0000000000000000,h0_dot8_complete=0x0000000000000000,h0_dot8_retired=0x0000000000000000,h1_dot8_accept=0x0000000000000000,h1_dot8_wait=0x0000000000000000,h1_dot8_complete=0x0000000000000000,h1_dot8_retired=0x0000000000000000,a_hex=bb044d96e02972bb054e97e02a7380054f98e12a74bd064f99e27f74be075099e32c75be08519ae32d76bf80529be42d77c009529ce52e77c17f539ce62f78c1a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5,b_hex=f714804f6d8aa8c5e3001e3b597694b1cfec0a274562809dbb80f613314e6c89a77fe2ff1d3a587593b0ceeb09264461809cbad7f512304d6b88a6c3e1fe1c39a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5,output_hex=6e9effffefefffff6a7d0000a48b0000520500000be1ffffc2210000741a0000e2f8ffff972b0000e2ebffffd0f3ffff7f540000c501000012daffffd1d8ffffa5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5\nASTERBENCH,version=8,name=gemm,window=cpu_command_to_result_visible,policy=prepared_reinitialize,status=PASS,method=multicore,placement=aligned,capture=1,job=2,jobs=2,m=4,n=4,k=16,taps=8,outputs=16,a_stride=16,b_stride=4,c_stride=16,a_offset=0,b_offset=0,c_offset=0,a_allocation_bytes=128,b_allocation_bytes=128,c_allocation_bytes=128,seed=0x2f39f372,harts=2,workers=2,a_addr=0x10001000,b_addr=0x10002000,c_addr=0x10003000,errors=0,cpu_abi=4,dma_abi=1,dma_counter_abi=5,dot8_instruction_abi=1,dot8_counter_abi=6,npu_descriptor_abi=1,npu_counter_abi=1,clock_hz=31250000,l1=1,sync_memory=1,line_words=4,line_count=16,memory_wait=1,npu_active=0,npu_status=0,npu_error_code=0,npu_bytes_read=0,npu_bytes_written=0,npu_job_cycles=0x0000000000000000,npu_compute_cycles=0x0000000000000000,npu_tiles=0,h0_cycles=0x00000000000042bc,h0_retired=0x0000000000000558,h0_memory=0x000000000000079e,h0_i_access=0x00000000000005fe,h0_i_miss=0x000000000000001a,h0_d_access=0x0000000000000196,h0_d_miss=0x000000000000005c,h0_backing=0x0000000000000224,h0_atomic=0x0000000000000000,h0_sc_success=0x0000000000000000,h0_sc_failure=0x0000000000000000,h0_intervention=0x0000000000000001,h0_invalidation=0x0000000000000000,h0_writeback=0x0000000000000044,h1_cycles=0x00000000000042bc,h1_retired=0x0000000000000539,h1_memory=0x0000000000000750,h1_i_access=0x00000000000005d5,h1_i_miss=0x0000000000000020,h1_d_access=0x0000000000000174,h1_d_miss=0x0000000000000058,h1_backing=0x0000000000000206,h1_atomic=0x0000000000000000,h1_sc_success=0x0000000000000000,h1_sc_failure=0x0000000000000000,h1_intervention=0x0000000000000003,h1_invalidation=0x0000000000000001,h1_writeback=0x0000000000000020,dma_busy=0x0000000000000000,dma_wait=0x0000000000000000,dma_reads=0x0000000000000000,dma_writes=0x0000000000000000,dma_bytes=0x0000000000000000,dma_backing_reads=0x0000000000000000,dma_backing_writes=0x0000000000000000,dma_forwards=0x0000000000000000,dma_dirty_words=0x0000000000000000,dma_invalidations=0x0000000000000000,dma_success=0x0000000000000000,dma_aborts=0x0000000000000000,dma_errors=0x0000000000000000,dma_rejected=0x0000000000000000,h0_dot8_accept=0x0000000000000000,h0_dot8_wait=0x0000000000000000,h0_dot8_complete=0x0000000000000000,h0_dot8_retired=0x0000000000000000,h1_dot8_accept=0x0000000000000000,h1_dot8_wait=0x0000000000000000,h1_dot8_complete=0x0000000000000000,h1_dot8_retired=0x0000000000000000,a_hex=76bf08519be42d76c009529b802e77c00a539ce52f7fc10a549de62f79c20b549ee73079c30c559ee8807ac30d569fe8327bc40d7fa0e9327cc50e57a1ea337ca5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5,b_hex=ee0b294664819fbcdaf71532506d8ba8c6e3011e805977947fcfed0a284563809ebbd9f614314f6c8aa7c580001d3b587693b1ceec092744627f9dbad8f51330a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5,output_hex=7330000059c10000230200003e91ffff15d6ffffc7b5ffffb9e2ffffa87fffff55e3ffff77a5ffff597effff0897ffffade4ffffd0c2ffffa0b2ffff7c090000a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5\n"
+    }
+  ],
+  "cache": true,
+  "clock_mhz": 31.25,
+  "final_state": {
+    "control": 0,
+    "fifo_count": 0,
+    "hart_status": 0,
+    "status": 0,
+    "stop_status": 1
+  },
+  "firmware_sha256": "373dfca0cd66326ec407b0c0c4dfb0efd80938fe7a6ef821d28eeceab1d776da",
+  "handoff_preflight": {
+    "auxiliary_reset_active_high": true,
+    "axi_base": 1073741824,
+    "axi_span": 262144,
+    "bridge_version": 589825,
+    "caches": true,
+    "clock_hz": 31250000,
+    "coherent": true,
+    "dma": true,
+    "dma_abi": 1,
+    "dma_counter_abi": 5,
+    "dot8": true,
+    "dot8_abi": 1,
+    "dot8_counter_abi": 6,
+    "external_reset_active_high": false,
+    "hart_count": 2,
+    "isa": "rv32ima",
+    "npu": true,
+    "npu_abi": 1,
+    "npu_counter_abi": 1,
+    "safe_warm_stop": true
+  },
+  "hart_count": 2,
+  "hwh_sha256": "0163b39f7e6c5b4f1c0943cb3bb83dddfc3cd3c57f7858009f8b9c747a9c3e27",
+  "jobs": 2,
+  "kernel": "gemm",
+  "method": "multicore",
+  "programmed": false,
+  "schema": "aster.xe.physical-mem.v1",
+  "source_revision": "9240993bc612de644ffc20c913596797c301ded7",
+  "status": "complete",
+  "transport": "fpga_manager PL load + /dev/mem AXI, FPGA UART TX-to-RX loopback"
+}

@@ -1,8 +1,9 @@
 # Aster architecture specification
 
-Status: Phases 1–8 complete and physically verified, 2026-09-13. See the
-[Phase 8 closeout](results/phase8/closeout-5b9c175/README.md) for the immutable
-acceptance bundle.
+Status: Phases 1–10 complete and physically verified, 2026-09-15. See the
+[Phase 9 closeout](results/phase9/closeout-2493435/README.md) and
+[Phase 10 results](results/phase10/README.md) for the immutable acceptance
+bundles.
 
 Phase 5 is implemented and physically verified in the `aster_multicore` top. Its
 [dual-hart contract](phase5.md) specifies the new memory ownership, runtime,
@@ -74,9 +75,11 @@ loopback, not an external Pmod electrical test. See the
 The minimal-system baseline below retains RV32IM, the Phase 3 performance
 counter block and Phase 4 private I/D L1 pair. Its DMA/accelerator event sources
 remain disconnected. Phase 6 separately adds two RV32IMA harts and coherent
-private caches. Phase 7 adds optional coherent DMA and Phase 8 adds the optional
-packed INT8 instruction. Shared L2, the Phase 9 INT8 accelerator, interrupts and
-timers remain future work.
+private caches. Phase 7 adds optional coherent DMA, Phase 8 adds the optional
+packed INT8 instruction and Phase 9 adds the optional 4×4 INT8 GEMM accelerator.
+Phase 10 runs identical dot/FIR/GEMM kernels through the scalar, dual-hart,
+Xasterdot8 and NPU paths without changing any map or ABI. Shared L2, interrupts
+and timers remain future work.
 
 ### Optional Phase 8 computation
 

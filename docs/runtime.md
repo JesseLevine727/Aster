@@ -1,4 +1,4 @@
-# Bare-metal runtime through Phase 8
+# Bare-metal runtime through Phase 10
 
 The ARM runs PYNQ Linux; the RISC-V harts run freestanding C firmware. These
 are separate execution environments. Aster has fatal fault reporting, not a
@@ -12,6 +12,8 @@ privileged RISC-V operating system, exception dispatcher or interrupt runtime.
 | Noncoherent multicore, Phase 5 | RV32IM / ilp32 | `start_multicore.S`, uncached shared RAM and private regions |
 | Coherent / DMA, Phases 6–7 | RV32IMA / ilp32 | Same multicore startup/ownership map, coherent shared RAM and full word atomics |
 | Optional packed compute, Phase 8 | RV32IMA + Xasterdot8 / ilp32 | Same RAM ownership/startup, explicit `.insn` helper and feature-matched image |
+| Optional matrix accelerator, Phase 9 | RV32IMA + Xasterdot8 / ilp32 | Same RAM ownership/startup, NPU descriptor API at `0x40000000` |
+| Cross-engine study, Phase 10 | RV32IMA + Xasterdot8 / ilp32 | Same image enables harts, caches, DMA, DOT8 and NPU together |
 
 The [original runtime README](../software/runtime/README.md) describes the
 legacy/Phase 5 variants. Its uncached-shared-memory and future-atomics notes
@@ -106,6 +108,31 @@ python3 scripts/dot8_functional_results.py capture NEW_REFERENCE --l1 1
 The reference collector retains both real warm boots, complete stopped RAM,
 actual UART and independent events, followed by the active-compute stop tests.
 See the [physical workflow](phase8-physical.md) for feature-matched FPGA runs.
+
+## Matrix accelerator and cross-engine kernels from C
+
+[`aster_npu.h`](../software/drivers/aster_npu.h) exposes
+`aster_npu_submit`/`poll`/`wait`/`abort_and_wait` for the Phase 9 4×4 INT8 GEMM
+accelerator. A and B are signed INT8 with byte strides; C is 32-bit
+two's-complement written modulo 2^32. The driver validates dimensions, strides,
+shared-RAM bounds and non-overlap before touching CONTROL, and fences descriptor
+publication and result consumption. `aster_npu_scalar_gemm` is the independent
+scalar reference used by firmware and the AsterBench pair. `A_STRIDE >= K`,
+`B_STRIDE >= N` and `C_STRIDE >= 4*N`; `K=0` writes zeros without reading.
+
+Phase 10 uses one shared descriptor shape for its cross-engine kernels
+([`xe_kernels.c`](../software/benchmarks/xe_kernels.c)): signed-INT8 dot, FIR and
+GEMM through the scalar CPU, two coherent harts, Xasterdot8 or the NPU. The
+multicore path splits output rows (or the K reduction for dot) and publishes
+results with the same release/acquire ownership contract as the other shared-RAM
+workloads. The NPU FIR path materializes a `TAPS × K` Toeplitz input because the
+descriptor requires `A_STRIDE >= K`.
+
+```sh
+make xe-bench-validate XE_KERNEL=gemm XE_METHOD=npu XE_M=4 XE_N=4 XE_K=16
+make xe-matrix
+python3 scripts/xe_study.py capture --output build/xe_study
+```
 
 ## Existing programs and verification
 

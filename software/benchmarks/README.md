@@ -240,3 +240,41 @@ captures/audits clean-source ELF/ROM/UART/RAM/event/toolchain evidence;
 slowdowns and sampled crossovers. V2/v3/v4 remain distinct and compatible.
 Development verification is complete; the full size study and PYNQ physical
 acceptance are not yet claimed.
+
+## Phase 10 cross-engine dot/FIR/GEMM (v8)
+
+[Phase 10](../../docs/phase10.md) adds a new strict schema/version; v2–v7 are
+unchanged. `software/benchmarks/cross_engine.c` compiles one `(kernel, method,
+shape, placement)` capture selected by `XE_KERNEL` (`dot`, `fir`, `gemm`),
+`XE_METHOD` (`scalar`, `multicore`, `dot8`, `npu`), `XE_M`/`XE_N`/`XE_K`/
+`XE_TAPS`, `XE_PLACEMENT` (0–3) and `XE_SEED`. The three kernels share signed
+INT8 byte-stride semantics: dot is `M=1,N=1,K`; FIR is `M=TAPS,N=1,K` with a
+sliding window; GEMM is `M,N,K`. The `npu` FIR path materializes a Toeplitz input
+because the Phase 9 descriptor requires `A_STRIDE >= K`.
+
+The scalar and DOT8 paths use `software/benchmarks/xe_kernels.c`; the multicore
+path splits output rows (or the K reduction for dot) across the two coherent
+harts with the existing release/acquire mailbox handoff. Each method fully
+reinitializes and re-poisons its buffers before the measured window, which
+starts at the method command edge and ends when the result is visible. Method
+setup, descriptor traffic, data movement and completion are all inside the
+window; UART formatting and global STOP are outside.
+
+The SoC image enables `HART_COUNT=2`, `ENABLE_L1=0/1`, `ENABLE_DMA=1`,
+`ENABLE_DOT8=1` and `ENABLE_NPU=1`, so the same RTL hosts every method.
+
+```sh
+make xe-bench-validate XE_KERNEL=gemm XE_METHOD=npu XE_M=4 XE_N=4 XE_K=16
+make xe-matrix                 # 3 kernels x 4 methods, small shapes
+python3 scripts/xe_study.py plan
+python3 scripts/xe_study.py capture --output build/xe_study
+python3 scripts/xe_study.py audit build/xe_study/study.json
+```
+
+The v8 record emits the complete A/B allocations and output so
+`scripts/asterbench_v8.py` recomputes every signed result independently. It
+binds both 14-counter CPU banks, the 14-counter DMA bank, the 8 DOT8 counters,
+the NPU read/write/compute/job cycles and tiles, all ABIs, cache geometry and
+provenance. Non-applicable counters must be exactly zero. `make check` runs a
+representative v8 capture and the v8 host tests; `scripts/xe_study.py` covers the
+frozen 288-capture primary study plus fresh repeats.

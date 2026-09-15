@@ -83,7 +83,22 @@ The [current runtime guide](docs/runtime.md) covers the coherent RV32IMA/DMA
 configuration separately from the preserved legacy maps. Phase 8 is complete:
 the packed signed INT8 instruction, RAM-backed runtime, full regressions, routed
 overlays and guarded PYNQ Linux acceptance all pass the [immutable closeout
-audit](docs/results/phase8/closeout-5b9c175/README.md).
+audit](docs/results/phase8/closeout-5b9c175/README.md). Phase 9 is complete: the
+4×4 signed-INT8 GEMM matrix accelerator runs a RAM-backed C runtime on the
+coherent RV32IMA/DMA SoC, passes AsterBench v7 with an independent oracle, and is
+physically verified through PYNQ Linux/PCAP in both cache modes at 31.25 MHz.
+The [Phase 9 contract](docs/phase9.md) and [immutable evidence
+bundle](docs/results/phase9/closeout-2493435/README.md) retain the 16-case
+actual-core matrix, routed overlays and physical records.
+
+Phase 10 (CPU vs multicore vs ISA vs NPU) is complete under the
+[Phase 10 contract](docs/phase10.md): identical signed-INT8 dot, FIR and GEMM
+kernels run through the scalar CPU, two coherent harts, the Xasterdot8
+instruction and the NPU on one all-engine SoC image. The fixed 288-capture
+AsterBench v8 study passes with two fresh repeats, per-engine FPGA utilization
+and routed timing are measured, and six physical Pynq-Z1 captures at 31.25 MHz
+match the simulation ratios. See the
+[results bundle](docs/results/phase10/README.md).
 
 Start here:
 
@@ -359,6 +374,13 @@ Start with INT8 GEMM only. CNN support comes later.
 Run identical kernels through all execution paths and measure cycles, latency, instructions, cache behavior, memory traffic, accelerator utilization, FPGA resources and maximum clock.
 
 This is one of Aster's central experiments.
+
+**Complete:** the [Phase 10 contract](docs/phase10.md) fixes signed-INT8 dot,
+FIR and GEMM semantics and runs them through all four engines on one all-engine
+SoC image with AsterBench v8 and an independent oracle. The 288-capture study
+plus two fresh repeats, per-engine FPGA utilization/routed timing and six
+physical Pynq-Z1 captures are retained in the
+[results bundle](docs/results/phase10/README.md).
 
 ## Phase 11 — Quantized ML inference
 

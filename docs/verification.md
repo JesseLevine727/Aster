@@ -208,7 +208,31 @@ make bench
 3. Maintain the Phase 4 randomized/stall/reset/configuration and experiment regressions.
 4. Integrate a full external architectural reference suite where practical.
 5. Add coherence/cache-maintenance tests when those protocols are introduced.
-6. Add a reference-model comparison for the future NPU.
+6. Maintain the Phase 9 NPU reference-model/oracle and the Phase 10 cross-engine contract.
+
+## Phase 10 cross-engine verification
+
+- `make xe-bench-validate`: builds one AsterBench v8 firmware for a selected
+  `(kernel, method, shape, placement)` and runs it on the coherent all-engine SoC
+  (`HART_COUNT=2`, `ENABLE_L1=0/1`, `ENABLE_DMA=1`, `ENABLE_DOT8=1`,
+  `ENABLE_NPU=1`). The RTL testbench captures actual UART records, checks the
+  stopped/quiesced state, counts coherent device traffic and rejects any device
+  traffic outside shared RAM. `scripts/asterbench_v8.py` then recomputes every
+  signed-INT8 output independently, checks the A/B allocations against the
+  seeded inputs, verifies the guard bytes, both CPU counter banks, the DMA and
+  DOT8 banks, the NPU read/write/compute/job cycles and tiles, all ABIs and the
+  cache geometry. Non-applicable counters must be exactly zero.
+- `make xe-matrix`: the 3 kernels × 4 methods cross-engine regression on small
+  shapes.
+- `scripts/xe_study.py capture|audit`: the frozen 288-capture primary study
+  (dot/FIR/GEMM × scalar/multicore/DOT8/NPU × aligned/unaligned × cache off/on)
+  with independent recomputation of every ratio during audit.
+- Host tests `verification/host/test_asterbench_v8.py` freeze the study plan and
+  reject truncated, duplicated, mutated and noncanonical records. `make check`
+  runs a representative v8 capture plus the host tests.
+
+FPGA resource/clock and physical warm-boot results are the board-backed
+remainder of Phase 10 and are not inferred from simulation.
 
 ## Phase 3 measurement verification
 
