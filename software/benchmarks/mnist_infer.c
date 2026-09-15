@@ -132,6 +132,7 @@ int main(void) {
 
         aster_puts("ASTERBENCH,version=9,name=mnist_mlp,method=npu,status=");
         aster_puts(logit_ok ? "PASS" : "FAIL");
+        aster_puts(",model="); aster_puts(PHASE11_MODEL_HASH);
         decimal("image", image); decimal("label", label); decimal("class", (uint32_t)best);
         decimal("expected", expected); decimal("logit_match", logit_ok);
         logits_hex(io.logits);
@@ -140,6 +141,8 @@ int main(void) {
         hex64("npu_job_cycles", status1.job_cycles + status2.job_cycles);
         hex64("npu_compute_cycles", status1.compute_cycles + status2.compute_cycles);
         decimal("npu_tiles", status1.tiles + status2.tiles);
+        decimal("npu_bytes_read", status1.bytes_read + status2.bytes_read);
+        decimal("npu_bytes_written", status1.bytes_written + status2.bytes_written);
         decimal("clock_hz", REG(0x20003088u));
         decimal("l1", REG(0x2000308cu) & 1u);
         decimal("sync_memory", (REG(0x2000308cu) >> 1) & 1u);

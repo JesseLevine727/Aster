@@ -74,6 +74,7 @@ def main() -> int:
         f"#define PHASE11_FC1_SHIFT {fc1['requant']['shift']}",
         f"#define PHASE11_FC2_MULT {fc2['requant']['mult']}",
         f"#define PHASE11_FC2_SHIFT {fc2['requant']['shift']}",
+        f'#define PHASE11_MODEL_HASH "{model["hash"]}"',
         "",
         c_int8("phase11_fc1_weights", fc1["weights"]),
         "",

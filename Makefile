@@ -1423,6 +1423,11 @@ $(PHASE11_SIM): $(RTL_COHERENT) verification/soc/tb_aster_mnist_infer.cpp Makefi
 phase11-infer: $(PHASE11_SIM) $(PHASE11_HEX)
 	@$(PHASE11_SIM) +rom=$(PHASE11_HEX) +ram_fill=a5a5a5a5
 
+.PHONY: phase11-infer-validate
+phase11-infer-validate: $(PHASE11_SIM) $(PHASE11_HEX)
+	@set -o pipefail; $(PHASE11_SIM) +rom=$(PHASE11_HEX) +ram_fill=a5a5a5a5 | \
+		$(PYTHON) scripts/asterbench_v9.py validate --model docs/results/phase11/model.json --method npu --complete
+
 .PHONY: coherent-bench coherent-firmware coherent-config coherent-bench-workloads coherent-bench-matrix coherent-bench-boundaries coherent-bench-sizes
 $(COHERENT_ELF): software/benchmarks/coherent.c software/runtime/start_multicore.S software/runtime/aster.h software/boot/link_multicore.ld Makefile
 	mkdir -p $(COHERENT_FW_DIR)

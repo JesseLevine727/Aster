@@ -12,6 +12,7 @@
 #define PHASE11_FC1_SHIFT 40
 #define PHASE11_FC2_MULT 1297802448
 #define PHASE11_FC2_SHIFT 37
+#define PHASE11_MODEL_HASH "63c352eb252cf17a27067632187c41b4359a8d7d238a948a24eca3cf180356c5"
 
 static const int8_t phase11_fc1_weights[25088] = {
     -6, 7, -8, 6, 4, 2, 0, 2, -6, -7, 8, -7, -4, -4, 3, 7,
