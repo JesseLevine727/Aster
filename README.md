@@ -101,6 +101,16 @@ match the simulation ratios. The [self-contained closeout
 bundle](docs/results/phase10/closeout-8371c3d/README.md) retains the raw records,
 routed reports and physical evidence and passes `scripts/audit_phase10.py`.
 
+Phase 11 (quantized ML inference) is complete under the
+[Phase 11 contract](docs/phase11.md): a frozen INT8 MLP `784→32→10` runs end to
+end on the coherent RV32IMA/NPU SoC with the CPU owning control,
+requantization, activation and classification and the NPU owning the matrix
+multiply. All four execution paths (scalar, multicore, DOT8, NPU) are bit-exact
+against an independent integer reference, and the four-path study and physical
+captures agree (NPU ≈4.5× the scalar baseline). The [closeout
+bundle](docs/results/phase11/closeout-ff56683/README.md) passes
+`scripts/audit_phase11.py`.
+
 Start here:
 
 ```sh
@@ -388,6 +398,12 @@ physical Pynq-Z1 captures are retained in the
 Deploy a small INT8 model beginning with MNIST. Map supported operations to the NPU while the CPU handles control and unsupported operations.
 
 **Experiment:** scalar CPU vs multicore vs custom ISA vs NPU inference, including offload overhead.
+
+**Complete:** the [Phase 11 contract](docs/phase11.md) deploys a frozen INT8 MLP
+on MNIST through all four paths with an independent integer reference and
+AsterBench v9. The [closeout bundle](docs/results/phase11/closeout-ff56683/README.md)
+retains the model, the four-path study with repeats, the routed overlay and the
+physical captures (NPU ≈4.5× scalar, DOT8 ≈2.3×, two harts ≈1.95×).
 
 ## Phase 12 — Real-time heterogeneous demo
 

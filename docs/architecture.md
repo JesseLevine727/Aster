@@ -1,8 +1,9 @@
 # Aster architecture specification
 
-Status: Phases 1–10 complete and physically verified, 2026-09-15. See the
-[Phase 9 closeout](results/phase9/closeout-2493435/README.md) and
-[Phase 10 results](results/phase10/README.md) for the immutable acceptance
+Status: Phases 1–11 complete and physically verified, 2026-09-15. See the
+[Phase 9 closeout](results/phase9/closeout-2493435/README.md),
+[Phase 10 results](results/phase10/README.md) and
+[Phase 11 results](results/phase11/README.md) for the immutable acceptance
 bundles.
 
 Phase 5 is implemented and physically verified in the `aster_multicore` top. Its
