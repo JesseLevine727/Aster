@@ -1497,6 +1497,46 @@ coremark: $(WORKLOAD_SIM) $(COREMARK_HEX)
 	@$(WORKLOAD_SIM) +rom=$(COREMARK_HEX) +ram_fill=a5a5a5a5 > $(BUILD_DIR)/coremark.record
 	@$(PYTHON) scripts/asterbench_v10.py validate --name coremark < $(BUILD_DIR)/coremark.record
 
+DHRY_ITERS ?= 1000
+DHRY_FW_DIR := $(HELLO_DIR)/dhrystone_i$(DHRY_ITERS)
+DHRY_ELF := $(DHRY_FW_DIR)/dhrystone.elf
+DHRY_HEX := $(DHRY_FW_DIR)/dhrystone.hex
+DHRY_VENDOR_CFLAGS = $(filter-out -march=% -mabi=% -Werror,$(HELLO_CFLAGS)) -march=rv32im -mabi=ilp32 \
+	-Isoftware/benchmarks/dhrystone_port -Ivendor/dhrystone -std=gnu89 -DTIME -DDHRY_ITERS=$(DHRY_ITERS) -Dfloat=long \
+	-Wno-old-style-definition -Wno-implicit-int -Wno-strict-prototypes -Wno-implicit-function-declaration \
+	-Wno-return-type -Wno-missing-prototypes -Wno-missing-parameter-type -Wno-implicit-fallthrough
+DHRY_CFLAGS = $(filter-out -march=% -mabi=%,$(HELLO_CFLAGS)) -march=rv32im -mabi=ilp32 \
+	-Isoftware/benchmarks/dhrystone_port -Ivendor/dhrystone -Isoftware/runtime -Isoftware/benchmarks \
+	-DTIME -DDHRY_ITERS=$(DHRY_ITERS)
+
+.PHONY: dhrystone dhrystone-firmware
+$(DHRY_FW_DIR)/dhry_1.o: vendor/dhrystone/dhry_1.c vendor/dhrystone/dhry.h software/benchmarks/dhrystone_port/stdio.h Makefile
+	mkdir -p $(DHRY_FW_DIR)
+	$(CC) $(DHRY_VENDOR_CFLAGS) -c -o $@ $<
+
+$(DHRY_FW_DIR)/dhry_2.o: vendor/dhrystone/dhry_2.c vendor/dhrystone/dhry.h software/benchmarks/dhrystone_port/stdio.h Makefile
+	mkdir -p $(DHRY_FW_DIR)
+	$(CC) $(DHRY_VENDOR_CFLAGS) -c -o $@ $<
+
+$(DHRY_FW_DIR)/dhry_port.o: software/benchmarks/dhrystone_port/dhry_port.c vendor/dhrystone/dhry.h \
+		software/benchmarks/dhrystone_port/stdio.h software/benchmarks/workload.h Makefile
+	mkdir -p $(DHRY_FW_DIR)
+	$(CC) $(DHRY_CFLAGS) -c -o $@ $<
+
+$(DHRY_ELF): $(DHRY_FW_DIR)/dhry_1.o $(DHRY_FW_DIR)/dhry_2.o $(DHRY_FW_DIR)/dhry_port.o \
+		software/runtime/start.S software/boot/link.ld Makefile
+	$(CC) $(DHRY_CFLAGS) -T software/boot/link.ld -o $@ software/runtime/start.S \
+		$(DHRY_FW_DIR)/dhry_1.o $(DHRY_FW_DIR)/dhry_2.o $(DHRY_FW_DIR)/dhry_port.o -lgcc
+
+$(DHRY_HEX): $(DHRY_ELF) scripts/elf_to_hex.py
+	$(PYTHON) scripts/elf_to_hex.py --rom-bytes 65536 $< $@
+
+dhrystone-firmware: $(DHRY_HEX)
+
+dhrystone: $(WORKLOAD_SIM) $(DHRY_HEX)
+	@$(WORKLOAD_SIM) +rom=$(DHRY_HEX) +ram_fill=a5a5a5a5 > $(BUILD_DIR)/dhrystone.record
+	@$(PYTHON) scripts/asterbench_v10.py validate --name dhrystone < $(BUILD_DIR)/dhrystone.record
+
 .PHONY: coherent-bench coherent-firmware coherent-config coherent-bench-workloads coherent-bench-matrix coherent-bench-boundaries coherent-bench-sizes
 $(COHERENT_ELF): software/benchmarks/coherent.c software/runtime/start_multicore.S software/runtime/aster.h software/boot/link_multicore.ld Makefile
 	mkdir -p $(COHERENT_FW_DIR)
