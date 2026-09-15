@@ -171,7 +171,7 @@ accuracy on the retained subset is reported alongside cycles, not instead of it.
 
 - [x] Feasibility spike committed; model and memory map frozen.
 - [x] Training/export is reproducible and hash-bound; the independent integer reference matches the exported artifact.
-- [ ] Firmware inference is bit-exact against the reference for every retained image on the all-engine SoC.
+- [x] Firmware inference is bit-exact against the reference for every retained image on the all-engine SoC.
 - [ ] AsterBench v9 record and independent validator with malformed-corpus host tests.
 - [ ] Four-path measurement study with fresh repeats; accuracy and cycles both retained.
 - [ ] Applicable Phase 1–10 regressions and `make check` remain green.

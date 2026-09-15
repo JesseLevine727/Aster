@@ -253,6 +253,14 @@ XE_CFLAGS = $(filter-out -march=% -mabi=%,$(HELLO_CFLAGS)) -march=rv32ima -mabi=
 	-DXE_K=$(XE_K) -DXE_TAPS=$(XE_TAPS) -DXE_PLACEMENT=$(XE_PLACEMENT) -DXE_SEED=$(XE_SEED) \
 	-DXE_JOBS=$(XE_JOBS) -DXE_CAPTURE=$(XE_CAPTURE)
 XE_LDFLAGS = -T software/boot/link_xe_bench.ld -Wl,-Map,$(XE_FW_DIR)/xe.map
+PHASE11_CFLAGS = $(filter-out -march=% -mabi=%,$(HELLO_CFLAGS)) -march=rv32ima -mabi=ilp32 \
+	-Isoftware/drivers -Isoftware/benchmarks -fno-builtin -fno-tree-loop-distribute-patterns
+PHASE11_FW_DIR := $(HELLO_DIR)/phase11
+PHASE11_ELF := $(PHASE11_FW_DIR)/mnist_infer.elf
+PHASE11_HEX := $(PHASE11_FW_DIR)/mnist_infer.hex
+PHASE11_SOC_DIR := $(BUILD_DIR)/phase11_soc_h$(HART_COUNT)_$(CONFIG_TAG)
+PHASE11_SIM := $(PHASE11_SOC_DIR)/aster_mnist_infer_sim
+PHASE11_LDFLAGS = -T software/boot/link_phase11.ld -Wl,-Map,$(PHASE11_FW_DIR)/mnist_infer.map
 PERF_SIM := $(BUILD_DIR)/aster_perf_sim
 ARBITER_SIM := $(BUILD_DIR)/aster_arbiter2_sim
 FABRIC_DIR := $(BUILD_DIR)/fabric_h$(HART_COUNT)_$(CONFIG_TAG)
@@ -1388,6 +1396,33 @@ phase11-model:
 	$(PYTHON) scripts/phase11_reference.py build/phase11/model.json --output build/phase11/reference.json
 	$(PYTHON) scripts/phase11_export.py build/phase11/model.json
 
+.PHONY: phase11-firmware phase11-infer
+$(PHASE11_ELF): software/benchmarks/mnist_infer.c software/benchmarks/phase11_model.h \
+		software/benchmarks/phase11_images.h software/runtime/start_multicore.S \
+		software/drivers/aster_npu.c software/drivers/aster_npu.h software/boot/link_phase11.ld Makefile
+	mkdir -p $(PHASE11_FW_DIR)
+	$(CC) $(PHASE11_CFLAGS) $(PHASE11_LDFLAGS) -o $@ software/runtime/start_multicore.S \
+		software/benchmarks/mnist_infer.c software/drivers/aster_npu.c
+
+$(PHASE11_HEX): $(PHASE11_ELF) scripts/elf_to_hex.py
+	$(PYTHON) scripts/elf_to_hex.py --rom-bytes 65536 $< $@
+
+phase11-firmware: $(PHASE11_HEX)
+
+$(PHASE11_SIM): $(RTL_COHERENT) verification/soc/tb_aster_mnist_infer.cpp Makefile
+	mkdir -p $(PHASE11_SOC_DIR)
+	$(VERILATOR) --cc --exe --build --timing --Wall $(VERILATOR_VENDOR_LINT_FLAGS) $(VERILATOR_COHERENT_FLAGS) \
+		--assert -DASTER_COHERENCE_ASSERT --top-module aster_coherent_soc \
+		-GHART_COUNT=$(HART_COUNT) "-GENABLE_L1=1'b$(ENABLE_L1)" "-GENABLE_DMA=1'b1" "-GENABLE_DOT8=1'b1" "-GENABLE_NPU=1'b1" \
+		"-GSYNC_MEMORY=1'b$(SYNC_MEMORY)" -GMEMORY_WAIT_CYCLES=$(MEMORY_WAIT_CYCLES) "-GHOST_BOOT=1'b1" \
+		-GLINE_WORDS=$(L1_LINE_WORDS) -GLINE_COUNT=$(L1_LINE_COUNT) \
+		-CFLAGS '-DASTER_HART_COUNT=$(HART_COUNT) -DASTER_L1=$(ENABLE_L1) -DASTER_MEMORY_WAIT=$(MEMORY_WAIT_CYCLES)' \
+		--Mdir $(PHASE11_SOC_DIR)/obj -o $(abspath $@) \
+		$(addprefix $(ROOT)/,$(RTL_COHERENT)) $(ROOT)/verification/soc/tb_aster_mnist_infer.cpp
+
+phase11-infer: $(PHASE11_SIM) $(PHASE11_HEX)
+	@$(PHASE11_SIM) +rom=$(PHASE11_HEX) +ram_fill=a5a5a5a5
+
 .PHONY: coherent-bench coherent-firmware coherent-config coherent-bench-workloads coherent-bench-matrix coherent-bench-boundaries coherent-bench-sizes
 $(COHERENT_ELF): software/benchmarks/coherent.c software/runtime/start_multicore.S software/runtime/aster.h software/boot/link_multicore.ld Makefile
 	mkdir -p $(COHERENT_FW_DIR)
@@ -1675,7 +1710,7 @@ parallel-workloads:
 
 test: smoke phase1 hello bench cache uart fpga-sim linux-sim counters retirement npu-pe npu-array npu-engine npu-regs npu-driver npu-runtime npu-stop npu-bench-validate arbiter shared-fabric multicore-runtime parallel
 
-check: tools smoke phase1 hello bench cache uart fpga-sim linux-sim linux-dual-sim linux-coherent-sim counters retirement pcpi-probe dot8-unit npu-pe npu-array npu-engine npu-regs npu-driver npu-runtime npu-stop npu-bench-validate xe-bench-validate atomic-fabric atomic-runtime atomic-faults coherent-cache warm-stop coherent-counters coherent-soc coherent-bench riscv-reference riscv-reference-negative coherent-litmus arbiter shared-fabric multicore-runtime multicore-adversarial parallel
+check: tools smoke phase1 hello bench cache uart fpga-sim linux-sim linux-dual-sim linux-coherent-sim counters retirement pcpi-probe dot8-unit npu-pe npu-array npu-engine npu-regs npu-driver npu-runtime npu-stop npu-bench-validate xe-bench-validate phase11-infer atomic-fabric atomic-runtime atomic-faults coherent-cache warm-stop coherent-counters coherent-soc coherent-bench riscv-reference riscv-reference-negative coherent-litmus arbiter shared-fabric multicore-runtime multicore-adversarial parallel
 
 clean:
 	rm -rf $(BUILD_DIR)
