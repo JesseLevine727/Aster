@@ -26,7 +26,8 @@ DECIMAL_FIELDS = {
     "version", "image", "label", "class", "expected", "logit_match",
     "npu_tiles", "npu_bytes_read", "npu_bytes_written", "clock_hz", "l1", "sync_memory",
 }
-HEX64_FIELDS = {"h0_cycles", "h0_retired", "npu_job_cycles", "npu_compute_cycles"}
+HEX64_FIELDS = {"h0_cycles", "h0_retired", "h1_cycles", "h1_retired",
+                "npu_job_cycles", "npu_compute_cycles"}
 ALL_FIELDS = STRING_FIELDS | DECIMAL_FIELDS | HEX64_FIELDS
 NPU_FIELDS = {"npu_tiles", "npu_bytes_read", "npu_bytes_written", "npu_job_cycles", "npu_compute_cycles"}
 
@@ -153,6 +154,13 @@ def validate_line(line: str, model: dict, *, method: str | None = None) -> dict[
 
     require(_hex64(fields, "h0_cycles") > 0 and _hex64(fields, "h0_retired") > 0,
             "primary hart recorded no work")
+    if got_method == "multicore":
+        require(_hex64(fields, "h1_cycles") > 0 and _hex64(fields, "h1_retired") > 0,
+                "secondary hart recorded no work")
+    else:
+        require(_hex64(fields, "h1_retired") == 0, "inactive secondary hart retired instructions")
+        require(_hex64(fields, "h1_cycles") == _hex64(fields, "h0_cycles"),
+                "secondary cycle counter disagrees with the common window")
     require(_int(fields, "clock_hz") == CLOCK_HZ, "clock_hz is not the configured fabric clock")
     require(_int(fields, "l1") in (0, 1) and _int(fields, "sync_memory") in (0, 1),
             "invalid cache configuration")

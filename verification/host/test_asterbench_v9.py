@@ -22,6 +22,8 @@ def make_fields(model, image=0, method="npu"):
         "version": 9, "image": image, "label": model["test"]["labels"][image],
         "class": best, "expected": model["test"]["reference_classes"][image], "logit_match": 1,
         "h0_cycles": f"0x{400000:016x}", "h0_retired": f"0x{60000:016x}",
+        "h1_cycles": f"0x{200000:016x}" if method == "multicore" else f"0x{400000:016x}",
+        "h1_retired": f"0x{30000:016x}" if method == "multicore" else "0x" + "0" * 16,
         "clock_hz": 31_250_000, "l1": 1, "sync_memory": 0,
     }
     if method == "npu":
@@ -49,6 +51,22 @@ class AsterBenchV9(unittest.TestCase):
     def test_valid_non_npu_record(self):
         result = bench.validate_line(render(make_fields(self.model, method="scalar")), self.model)
         self.assertEqual(result["method"], "scalar")
+
+    def test_valid_multicore_record(self):
+        result = bench.validate_line(render(make_fields(self.model, method="multicore")), self.model)
+        self.assertEqual(result["method"], "multicore")
+
+    def test_multicore_without_secondary_work_is_rejected(self):
+        fields = make_fields(self.model, method="multicore")
+        fields["h1_retired"] = "0x" + "0" * 16
+        with self.assertRaises(bench.ValidationError):
+            bench.validate_line(render(fields), self.model)
+
+    def test_single_hart_with_secondary_work_is_rejected(self):
+        fields = make_fields(self.model, method="scalar")
+        fields["h1_cycles"] = f"0x{1:016x}"
+        with self.assertRaises(bench.ValidationError):
+            bench.validate_line(render(fields), self.model)
 
     def test_complete_stream(self):
         count = len(self.model["test"]["labels"])

@@ -253,9 +253,15 @@ XE_CFLAGS = $(filter-out -march=% -mabi=%,$(HELLO_CFLAGS)) -march=rv32ima -mabi=
 	-DXE_K=$(XE_K) -DXE_TAPS=$(XE_TAPS) -DXE_PLACEMENT=$(XE_PLACEMENT) -DXE_SEED=$(XE_SEED) \
 	-DXE_JOBS=$(XE_JOBS) -DXE_CAPTURE=$(XE_CAPTURE)
 XE_LDFLAGS = -T software/boot/link_xe_bench.ld -Wl,-Map,$(XE_FW_DIR)/xe.map
+PHASE11_METHOD ?= npu
+ifeq ($(filter $(PHASE11_METHOD),scalar multicore dot8 npu),)
+$(error PHASE11_METHOD must be scalar, multicore, dot8 or npu)
+endif
+PHASE11_METHOD_ID := $(if $(filter scalar,$(PHASE11_METHOD)),0,$(if $(filter multicore,$(PHASE11_METHOD)),1,$(if $(filter dot8,$(PHASE11_METHOD)),2,3)))
 PHASE11_CFLAGS = $(filter-out -march=% -mabi=%,$(HELLO_CFLAGS)) -march=rv32ima -mabi=ilp32 \
-	-Isoftware/drivers -Isoftware/benchmarks -fno-builtin -fno-tree-loop-distribute-patterns
-PHASE11_FW_DIR := $(HELLO_DIR)/phase11
+	-Isoftware/drivers -Isoftware/benchmarks -fno-builtin -fno-tree-loop-distribute-patterns \
+	-DP11_METHOD=$(PHASE11_METHOD_ID)
+PHASE11_FW_DIR := $(HELLO_DIR)/phase11_$(PHASE11_METHOD)
 PHASE11_ELF := $(PHASE11_FW_DIR)/mnist_infer.elf
 PHASE11_HEX := $(PHASE11_FW_DIR)/mnist_infer.hex
 PHASE11_SOC_DIR := $(BUILD_DIR)/phase11_soc_h$(HART_COUNT)_$(CONFIG_TAG)
@@ -1398,11 +1404,12 @@ phase11-model:
 
 .PHONY: phase11-firmware phase11-infer
 $(PHASE11_ELF): software/benchmarks/mnist_infer.c software/benchmarks/phase11_model.h \
-		software/benchmarks/phase11_images.h software/runtime/start_multicore.S \
-		software/drivers/aster_npu.c software/drivers/aster_npu.h software/boot/link_phase11.ld Makefile
+		software/benchmarks/phase11_images.h software/benchmarks/xe_kernels.c software/benchmarks/xe_kernels.h \
+		software/runtime/start_multicore.S software/drivers/aster_npu.c software/drivers/aster_npu.h \
+		software/boot/link_phase11.ld Makefile
 	mkdir -p $(PHASE11_FW_DIR)
 	$(CC) $(PHASE11_CFLAGS) $(PHASE11_LDFLAGS) -o $@ software/runtime/start_multicore.S \
-		software/benchmarks/mnist_infer.c software/drivers/aster_npu.c
+		software/benchmarks/mnist_infer.c software/benchmarks/xe_kernels.c software/drivers/aster_npu.c
 
 $(PHASE11_HEX): $(PHASE11_ELF) scripts/elf_to_hex.py
 	$(PYTHON) scripts/elf_to_hex.py --rom-bytes 65536 $< $@
@@ -1426,7 +1433,7 @@ phase11-infer: $(PHASE11_SIM) $(PHASE11_HEX)
 .PHONY: phase11-infer-validate
 phase11-infer-validate: $(PHASE11_SIM) $(PHASE11_HEX)
 	@set -o pipefail; $(PHASE11_SIM) +rom=$(PHASE11_HEX) +ram_fill=a5a5a5a5 | \
-		$(PYTHON) scripts/asterbench_v9.py validate --model docs/results/phase11/model.json --method npu --complete
+		$(PYTHON) scripts/asterbench_v9.py validate --model docs/results/phase11/model.json --method $(PHASE11_METHOD) --complete
 
 .PHONY: coherent-bench coherent-firmware coherent-config coherent-bench-workloads coherent-bench-matrix coherent-bench-boundaries coherent-bench-sizes
 $(COHERENT_ELF): software/benchmarks/coherent.c software/runtime/start_multicore.S software/runtime/aster.h software/boot/link_multicore.ld Makefile

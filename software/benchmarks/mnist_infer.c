@@ -1,19 +1,28 @@
-// Phase 11 quantized INT8 MNIST inference through the 4x4 NPU.
+// Phase 11 quantized INT8 MNIST inference across four execution paths.
 //
-// The CPU stages the frozen weights into shared RAM, drives one NPU GEMM per
-// fully-connected layer, requantizes and ReLUs on the CPU, and emits an
-// AsterBench v9 record per retained image. The integer arithmetic must match
-// scripts/phase11_reference.py exactly.
+// P11_METHOD selects scalar (0), multicore (1), dot8 (2) or npu (3). The CPU
+// stages the frozen weights into shared RAM and owns staging, requantization,
+// ReLU and argmax; only the matmul engine differs. Every path must match
+// scripts/phase11_reference.py bit-for-bit.
 #include "aster.h"
 #include "aster_npu.h"
+#include "aster_dot8.h"
+#include "xe_kernels.h"
 #include "phase11_model.h"
 #include "phase11_images.h"
+#include <stdatomic.h>
+
+#ifndef P11_METHOD
+#define P11_METHOD 3
+#endif
 
 #define REG(address) (*(volatile uint32_t *)(uintptr_t)(address))
 #define P11_PERF_CONTROL 0x20003080u
 #define P11_CPU_ABI 0x20003084u
 #define P11_NPU_ABI 0x40000008u
+#define P11_RELEASE 0x20002004u
 
+_Static_assert(P11_METHOD >= 0 && P11_METHOD <= 3, "unknown Phase 11 method");
 _Static_assert(PHASE11_FC1_IN == 784u && PHASE11_FC1_OUT == 32u, "frozen fc1 geometry");
 _Static_assert(PHASE11_FC2_IN == 32u && PHASE11_FC2_OUT == 10u, "frozen fc2 geometry");
 _Static_assert(PHASE11_TEST_COUNT == 32u, "frozen test subset");
@@ -29,9 +38,38 @@ struct p11_io {
 };
 static struct p11_io io __attribute__((section(".p11_io"), aligned(64)));
 
+static const char *const method_names[] = {"scalar", "multicore", "dot8", "npu"};
+#if P11_METHOD == 1
+static _Atomic uint32_t p11_epoch, p11_done;
+static struct aster_npu_gemm p11_job;
+static uint32_t p11_next_epoch;
+#endif
+#if P11_METHOD == 3
+static struct aster_npu_status npu_status;
+#endif
+
 static void fence_io(void) { __asm__ volatile ("fence iorw,iorw" ::: "memory"); }
 
-void aster_secondary_main(void) { for (;;) __asm__ volatile ("" ::: "memory"); }
+void aster_secondary_main(void) {
+#if P11_METHOD == 1
+    uint32_t last = 0;
+    for (;;) {
+        const uint32_t epoch = atomic_load_explicit(&p11_epoch, memory_order_acquire);
+        if (epoch != 0 && epoch != last) {
+            last = epoch;
+            struct aster_npu_gemm job = p11_job;
+            const uint32_t split = (job.m + 1u) / 2u;
+            job.a = (const int8_t *)((const uint8_t *)job.a + (uint64_t)split * job.a_stride);
+            job.c = (int32_t *)((uint8_t *)job.c + (uint64_t)split * job.c_stride);
+            job.m = job.m - split;
+            xe_scalar_gemm(&job);
+            atomic_store_explicit(&p11_done, epoch, memory_order_release);
+        }
+    }
+#else
+    for (;;) __asm__ volatile ("" ::: "memory");
+#endif
+}
 
 static void copy_bytes(int8_t *destination, const int8_t *source, uint32_t length) {
     for (uint32_t i = 0; i < length; ++i) destination[i] = source[i];
@@ -49,6 +87,32 @@ static int8_t requant(int32_t accumulator, int32_t mult, int shift, int32_t bias
     if (value < -128) value = -128;
     if (value > 127) value = 127;
     return (int8_t)value;
+}
+
+static void run_layer(const int8_t *a, const int8_t *b, int32_t *c,
+                      uint32_t m, uint32_t n, uint32_t k) {
+    struct aster_npu_gemm job = {a, b, c, k, n, 4u * n, m, n, k};
+#if P11_METHOD == 3
+    enum aster_npu_result result = aster_npu_submit(&job);
+    if (result == ASTER_NPU_PENDING) result = aster_npu_wait(8000000u, &npu_status);
+    else aster_npu_poll(&npu_status);
+    if (result != ASTER_NPU_OK) { aster_puts("MNIST INFER NPU FAIL\n"); __asm__ volatile ("ebreak"); for (;;) {} }
+#elif P11_METHOD == 2
+    xe_dot8_gemm(&job);
+#elif P11_METHOD == 0
+    xe_scalar_gemm(&job);
+#else
+    const uint32_t split = (m + 1u) / 2u;
+    p11_job = job;  // full descriptor; the secondary splits it itself
+    atomic_store_explicit(&p11_done, 0u, memory_order_relaxed);
+    atomic_store_explicit(&p11_epoch, ++p11_next_epoch, memory_order_release);
+    fence_io();
+    struct aster_npu_gemm local = job;
+    local.m = split;
+    xe_scalar_gemm(&local);
+    while (atomic_load_explicit(&p11_done, memory_order_acquire) != p11_next_epoch) {}
+    fence_io();
+#endif
 }
 
 static uint64_t read_counter(uint32_t address) {
@@ -76,21 +140,15 @@ static void logits_hex(const int8_t *logits) {
     }
 }
 
-static int run_npu_layer(const int8_t *a, const int8_t *b, int32_t *c,
-                         uint32_t m, uint32_t n, uint32_t k,
-                         struct aster_npu_status *status) {
-    struct aster_npu_gemm job = {a, b, c, k, n, 4u * n, m, n, k};
-    enum aster_npu_result result = aster_npu_submit(&job);
-    if (result == ASTER_NPU_PENDING) result = aster_npu_wait(8000000u, status);
-    else aster_npu_poll(status);
-    return result == ASTER_NPU_OK ? 0 : -1;
-}
-
 int main(void) {
     if (REG(P11_CPU_ABI) != 4u || REG(P11_NPU_ABI) != ASTER_NPU_ABI ||
         REG(0x4000000cu) != ASTER_NPU_COUNTER_ABI) {
         aster_puts("MNIST INFER BAD ABI\n"); __asm__ volatile ("ebreak"); for (;;) {}
     }
+#if P11_METHOD == 1
+    REG(P11_RELEASE) = 1u;  // release the secondary worker once
+    fence_io();
+#endif
     copy_bytes(w1, phase11_fc1_weights, sizeof w1);
     copy_bytes(w2, phase11_fc2_weights, sizeof w2);
     fence_io();
@@ -102,17 +160,12 @@ int main(void) {
         REG(P11_PERF_CONTROL) = 1u;
         fence_io();
 
-        struct aster_npu_status status1, status2;
-        if (run_npu_layer(w1, io.input, io.acc1, PHASE11_FC1_OUT, 1u, PHASE11_FC1_IN, &status1)) {
-            aster_puts("MNIST INFER L1 FAIL\n"); __asm__ volatile ("ebreak"); for (;;) {}
-        }
+        run_layer(w1, io.input, io.acc1, PHASE11_FC1_OUT, 1u, PHASE11_FC1_IN);
         for (uint32_t o = 0; o < PHASE11_FC1_OUT; ++o) {
             int8_t value = requant(io.acc1[o], PHASE11_FC1_MULT, PHASE11_FC1_SHIFT, phase11_fc1_bias_q[o]);
             io.hidden[o] = value > 0 ? value : 0;
         }
-        if (run_npu_layer(w2, io.hidden, io.acc2, PHASE11_FC2_OUT, 1u, PHASE11_FC2_IN, &status2)) {
-            aster_puts("MNIST INFER L2 FAIL\n"); __asm__ volatile ("ebreak"); for (;;) {}
-        }
+        run_layer(w2, io.hidden, io.acc2, PHASE11_FC2_OUT, 1u, PHASE11_FC2_IN);
         int best = 0;
         for (uint32_t o = 0; o < PHASE11_FC2_OUT; ++o) {
             io.logits[o] = requant(io.acc2[o], PHASE11_FC2_MULT, PHASE11_FC2_SHIFT, phase11_fc2_bias_q[o]);
@@ -130,19 +183,27 @@ int main(void) {
         if ((uint32_t)best == expected) ++class_correct; else ++class_mismatch;
         if (!logit_ok) ++logit_mismatch;
 
-        aster_puts("ASTERBENCH,version=9,name=mnist_mlp,method=npu,status=");
-        aster_puts(logit_ok ? "PASS" : "FAIL");
+        aster_puts("ASTERBENCH,version=9,name=mnist_mlp,method=");
+        aster_puts(method_names[P11_METHOD]);
+        aster_puts(",status="); aster_puts(logit_ok ? "PASS" : "FAIL");
         aster_puts(",model="); aster_puts(PHASE11_MODEL_HASH);
         decimal("image", image); decimal("label", label); decimal("class", (uint32_t)best);
         decimal("expected", expected); decimal("logit_match", logit_ok);
         logits_hex(io.logits);
         hex64("h0_cycles", read_counter(0x20003000u));
         hex64("h0_retired", read_counter(0x20003010u));
-        hex64("npu_job_cycles", status1.job_cycles + status2.job_cycles);
-        hex64("npu_compute_cycles", status1.compute_cycles + status2.compute_cycles);
-        decimal("npu_tiles", status1.tiles + status2.tiles);
-        decimal("npu_bytes_read", status1.bytes_read + status2.bytes_read);
-        decimal("npu_bytes_written", status1.bytes_written + status2.bytes_written);
+        hex64("h1_cycles", read_counter(0x20003100u));
+        hex64("h1_retired", read_counter(0x20003110u));
+#if P11_METHOD == 3
+        hex64("npu_job_cycles", npu_status.job_cycles);
+        hex64("npu_compute_cycles", npu_status.compute_cycles);
+        decimal("npu_tiles", npu_status.tiles);
+        decimal("npu_bytes_read", npu_status.bytes_read);
+        decimal("npu_bytes_written", npu_status.bytes_written);
+#else
+        hex64("npu_job_cycles", 0u); hex64("npu_compute_cycles", 0u);
+        decimal("npu_tiles", 0u); decimal("npu_bytes_read", 0u); decimal("npu_bytes_written", 0u);
+#endif
         decimal("clock_hz", REG(0x20003088u));
         decimal("l1", REG(0x2000308cu) & 1u);
         decimal("sync_memory", (REG(0x2000308cu) >> 1) & 1u);

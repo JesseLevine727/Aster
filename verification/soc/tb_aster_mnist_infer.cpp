@@ -36,6 +36,7 @@ public:
     std::string ram_dump;
     std::uint64_t device_transactions = 0;
     std::uint64_t npu_transactions = 0;
+    std::string method;
     bool summary_pass = false;
 
     Bench() {
@@ -55,6 +56,9 @@ public:
                     "v9 record class differs from the expected class");
             require(fields.count("logit_match") && fields["logit_match"] == "1",
                     "v9 record logits differ from the reference");
+            require(fields.count("method"), "v9 record has no method");
+            if (method.empty()) method = fields["method"];
+            require(fields["method"] == method, "v9 records mix methods");
             std::cout << text << '\n';
             records.push_back(text);
         } else if (text.rfind("MNIST INFER ", 0) == 0) {
@@ -115,8 +119,11 @@ int main(int argc, char** argv) {
         for (unsigned cycle = 0; cycle < 400000000u && !bench.summary_pass; ++cycle) bench.tick();
         require(bench.summary_pass, "MNIST inference did not emit a PASS summary");
         require(bench.records.size() == 32u, "MNIST inference did not emit 32 image records");
-        require(bench.npu_transactions > 0u && bench.device_transactions > 0u,
-                "MNIST inference observed no NPU coherent device traffic");
+        if (bench.method == "npu")
+            require(bench.npu_transactions > 0u && bench.device_transactions > 0u,
+                    "NPU inference observed no coherent device traffic");
+        else
+            require(bench.device_transactions == 0u, "non-NPU inference observed device traffic");
         bench.stop_and_dump();
         std::cout << "ASTERSTOP,records=" << bench.records.size()
                   << ",device_transactions=" << bench.device_transactions
