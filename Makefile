@@ -267,6 +267,15 @@ PHASE11_HEX := $(PHASE11_FW_DIR)/mnist_infer.hex
 PHASE11_SOC_DIR := $(BUILD_DIR)/phase11_soc_h$(HART_COUNT)_$(CONFIG_TAG)
 PHASE11_SIM := $(PHASE11_SOC_DIR)/aster_mnist_infer_sim
 PHASE11_LDFLAGS = -T software/boot/link_phase11.ld -Wl,-Map,$(PHASE11_FW_DIR)/mnist_infer.map
+WORKLOAD ?= strided
+WORKLOAD_REPETITIONS ?= 4
+WORKLOAD_SEED ?= 0x13570000
+WORKLOAD_CFLAGS = $(HELLO_CFLAGS) -Isoftware/benchmarks \
+	-DBENCHMARK_REPETITIONS=$(WORKLOAD_REPETITIONS) -DBENCHMARK_SEED=$(WORKLOAD_SEED)
+WORKLOAD_FW_DIR := $(HELLO_DIR)/workload_$(WORKLOAD)_r$(WORKLOAD_REPETITIONS)_s$(WORKLOAD_SEED)
+WORKLOAD_ELF := $(WORKLOAD_FW_DIR)/workload.elf
+WORKLOAD_HEX := $(WORKLOAD_FW_DIR)/workload.hex
+WORKLOAD_SIM := $(BUILD_DIR)/aster_workload_sim
 PERF_SIM := $(BUILD_DIR)/aster_perf_sim
 ARBITER_SIM := $(BUILD_DIR)/aster_arbiter2_sim
 FABRIC_DIR := $(BUILD_DIR)/fabric_h$(HART_COUNT)_$(CONFIG_TAG)
@@ -1434,6 +1443,32 @@ phase11-infer: $(PHASE11_SIM) $(PHASE11_HEX)
 phase11-infer-validate: $(PHASE11_SIM) $(PHASE11_HEX)
 	@set -o pipefail; $(PHASE11_SIM) +rom=$(PHASE11_HEX) +ram_fill=a5a5a5a5 | \
 		$(PYTHON) scripts/asterbench_v9.py validate --model docs/results/phase11/model.json --method $(PHASE11_METHOD) --complete
+
+.PHONY: workload workload-firmware
+$(WORKLOAD_ELF): software/benchmarks/workload_$(WORKLOAD).c software/benchmarks/workload.h \
+		software/benchmarks/asterbench.h software/runtime/start.S software/runtime/aster.h \
+		software/boot/link.ld Makefile
+	mkdir -p $(WORKLOAD_FW_DIR)
+	$(CC) $(WORKLOAD_CFLAGS) -T software/boot/link.ld -o $@ software/runtime/start.S software/benchmarks/workload_$(WORKLOAD).c
+
+$(WORKLOAD_HEX): $(WORKLOAD_ELF) scripts/elf_to_hex.py
+	$(PYTHON) scripts/elf_to_hex.py --rom-bytes 65536 $< $@
+
+workload-firmware: $(WORKLOAD_HEX)
+
+$(WORKLOAD_SIM): $(RTL_CORE) $(RTL_CACHE) $(RTL_MEMORY) $(RTL_PERIPHERALS) $(RTL_SOC) verification/soc/tb_aster_workload.cpp Makefile
+	$(VERILATOR) --cc --exe --build --timing --Wall --Wno-fatal \
+		$(VERILATOR_VENDOR_LINT_FLAGS) --top-module aster_minimal \
+		"-GENABLE_L1=1'b$(ENABLE_L1)" "-GSYNC_MEMORY=1'b$(SYNC_MEMORY)" \
+		-GMEMORY_WAIT_CYCLES=$(MEMORY_WAIT_CYCLES) -GL1_LINE_WORDS=$(L1_LINE_WORDS) -GL1_LINE_COUNT=$(L1_LINE_COUNT) \
+		--Mdir $(BUILD_DIR)/obj_workload -o $(abspath $@) \
+		$(addprefix $(ROOT)/,$(RTL_CORE) $(RTL_CACHE) $(RTL_MEMORY) $(RTL_PERIPHERALS) $(RTL_SOC)) \
+		$(ROOT)/verification/soc/tb_aster_workload.cpp
+
+workload: $(WORKLOAD_SIM) $(WORKLOAD_HEX)
+	@$(WORKLOAD_SIM) +rom=$(WORKLOAD_HEX) +ram_fill=a5a5a5a5 > $(BUILD_DIR)/workload_$(WORKLOAD).record
+	@$(PYTHON) scripts/asterbench_v10.py validate --name $(WORKLOAD) < $(BUILD_DIR)/workload_$(WORKLOAD).record
+	@$(PYTHON) scripts/workload_reference.py verify --name $(WORKLOAD) < $(BUILD_DIR)/workload_$(WORKLOAD).record
 
 .PHONY: coherent-bench coherent-firmware coherent-config coherent-bench-workloads coherent-bench-matrix coherent-bench-boundaries coherent-bench-sizes
 $(COHERENT_ELF): software/benchmarks/coherent.c software/runtime/start_multicore.S software/runtime/aster.h software/boot/link_multicore.ld Makefile
