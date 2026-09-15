@@ -49,6 +49,15 @@ accumulation and is an explicit non-goal of the first exit.
 - Reference: `scripts/phase11_train.py` + `scripts/phase11_reference.py` must
   agree bit-for-bit with the firmware on all 32 images.
 
+The first training run is retained at
+[docs/results/phase11/model.json](results/phase11/model.json) with model hash
+`63c352eb252cf17a27067632187c41b4359a8d7d238a948a24eca3cf180356c5`; training is
+deterministic across repeated GPU runs. The exported headers
+(`software/benchmarks/phase11_model.h`, `phase11_images.h`) reproduce the
+reference exactly in C. The immutable data footprint is 50,728 B, leaving
+2,520 B of the 64 KiB ROM for the inference firmware, so the code must stay
+small; the 784→16→10 fallback remains available if it does not.
+
 ## Model and quantization contract
 
 The network is a two-layer MLP over a 28×28 grayscale input flattened to 784
@@ -160,8 +169,8 @@ accuracy on the retained subset is reported alongside cycles, not instead of it.
 
 ## Verification and acceptance gates
 
-- [ ] Feasibility spike committed; model and memory map frozen.
-- [ ] Training/export is reproducible and hash-bound; the independent integer reference matches the exported artifact.
+- [x] Feasibility spike committed; model and memory map frozen.
+- [x] Training/export is reproducible and hash-bound; the independent integer reference matches the exported artifact.
 - [ ] Firmware inference is bit-exact against the reference for every retained image on the all-engine SoC.
 - [ ] AsterBench v9 record and independent validator with malformed-corpus host tests.
 - [ ] Four-path measurement study with fresh repeats; accuracy and cycles both retained.

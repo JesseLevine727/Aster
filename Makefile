@@ -1382,6 +1382,12 @@ xe-matrix:
 		$(MAKE) --no-print-directory xe-bench-validate XE_KERNEL=$$kernel XE_METHOD=$$method XE_M=3 XE_N=5 XE_K=8; \
 	done; done
 
+.PHONY: phase11-model
+phase11-model:
+	$(PYTHON) scripts/phase11_train.py
+	$(PYTHON) scripts/phase11_reference.py build/phase11/model.json --output build/phase11/reference.json
+	$(PYTHON) scripts/phase11_export.py build/phase11/model.json
+
 .PHONY: coherent-bench coherent-firmware coherent-config coherent-bench-workloads coherent-bench-matrix coherent-bench-boundaries coherent-bench-sizes
 $(COHERENT_ELF): software/benchmarks/coherent.c software/runtime/start_multicore.S software/runtime/aster.h software/boot/link_multicore.ld Makefile
 	mkdir -p $(COHERENT_FW_DIR)
