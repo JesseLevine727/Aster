@@ -101,6 +101,8 @@ def main() -> int:
         "",
         c_u8("phase11_test_classes", test["reference_classes"]),
         "",
+        c_int8("phase11_test_logits", [value for row in test["reference_logits"] for value in row]),
+        "",
         "#endif",
         "",
     ]
