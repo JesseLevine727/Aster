@@ -1470,6 +1470,33 @@ workload: $(WORKLOAD_SIM) $(WORKLOAD_HEX)
 	@$(PYTHON) scripts/asterbench_v10.py validate --name $(WORKLOAD) < $(BUILD_DIR)/workload_$(WORKLOAD).record
 	@$(PYTHON) scripts/workload_reference.py verify --name $(WORKLOAD) < $(BUILD_DIR)/workload_$(WORKLOAD).record
 
+COREMARK_ITERATIONS ?= 1
+COREMARK_FW_DIR := $(HELLO_DIR)/coremark_i$(COREMARK_ITERATIONS)
+COREMARK_ELF := $(COREMARK_FW_DIR)/coremark.elf
+COREMARK_HEX := $(COREMARK_FW_DIR)/coremark.hex
+COREMARK_CFLAGS = $(filter-out -march=% -mabi=%,$(HELLO_CFLAGS)) -march=rv32im -mabi=ilp32 \
+	-Isoftware/benchmarks/coremark_port -Ivendor/coremark -Isoftware/runtime -Isoftware/benchmarks \
+	-DFLAGS_STR=\"aster-rv32im-o2\" -DITERATIONS=$(COREMARK_ITERATIONS)
+
+.PHONY: coremark coremark-firmware
+$(COREMARK_ELF): vendor/coremark/core_main.c vendor/coremark/core_list_join.c vendor/coremark/core_matrix.c \
+		vendor/coremark/core_state.c vendor/coremark/core_util.c vendor/coremark/coremark.h \
+		software/benchmarks/coremark_port/core_portme.c software/benchmarks/coremark_port/core_portme.h \
+		software/benchmarks/workload.h software/runtime/start.S software/boot/link.ld Makefile
+	mkdir -p $(COREMARK_FW_DIR)
+	$(CC) $(COREMARK_CFLAGS) -T software/boot/link.ld -o $@ software/runtime/start.S \
+		vendor/coremark/core_main.c vendor/coremark/core_list_join.c vendor/coremark/core_matrix.c \
+		vendor/coremark/core_state.c vendor/coremark/core_util.c software/benchmarks/coremark_port/core_portme.c
+
+$(COREMARK_HEX): $(COREMARK_ELF) scripts/elf_to_hex.py
+	$(PYTHON) scripts/elf_to_hex.py --rom-bytes 65536 $< $@
+
+coremark-firmware: $(COREMARK_HEX)
+
+coremark: $(WORKLOAD_SIM) $(COREMARK_HEX)
+	@$(WORKLOAD_SIM) +rom=$(COREMARK_HEX) +ram_fill=a5a5a5a5 > $(BUILD_DIR)/coremark.record
+	@$(PYTHON) scripts/asterbench_v10.py validate --name coremark < $(BUILD_DIR)/coremark.record
+
 .PHONY: coherent-bench coherent-firmware coherent-config coherent-bench-workloads coherent-bench-matrix coherent-bench-boundaries coherent-bench-sizes
 $(COHERENT_ELF): software/benchmarks/coherent.c software/runtime/start_multicore.S software/runtime/aster.h software/boot/link_multicore.ld Makefile
 	mkdir -p $(COHERENT_FW_DIR)
