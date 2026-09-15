@@ -1,0 +1,112 @@
+{
+  "bitstream_sha256": "381c225eeb4a02017048f96ec150d7a2e0e5afefcf624dbac0d856205fd4a63f",
+  "board": "pynq",
+  "boots": [
+    {
+      "after_stop": {
+        "control": 0,
+        "fifo_count": 0,
+        "hart_status": 0,
+        "status": 0,
+        "stop_status": 1
+      },
+      "before_stop": {
+        "control": 1,
+        "fifo_count": 0,
+        "hart_status": 1,
+        "status": 1,
+        "stop_status": 0
+      },
+      "boot": 1,
+      "elapsed_seconds": 0.7981323949934449,
+      "kernel": "fir",
+      "method": "multicore",
+      "ram": {
+        "bytes": 65536,
+        "file": "boot1.ram",
+        "sha256": "45aab0c56da6bbc18479a1a4f54a22b35bb23b66b232da4a4879acd0a7af82f9"
+      },
+      "status": "PASS",
+      "uart": {
+        "bytes": 6602,
+        "file": "boot1.uart",
+        "sha256": "c2360bdb17ca906bee8eb30fc186a735639ea344654b48ea9da4c0ed2041ba7f"
+      },
+      "uart_output": "ASTERBENCH,version=8,name=fir,window=cpu_command_to_result_visible,policy=prepared_reinitialize,status=PASS,method=multicore,placement=aligned,capture=1,job=1,jobs=2,m=8,n=1,k=64,taps=8,outputs=8,a_stride=1,b_stride=1,c_stride=4,a_offset=0,b_offset=0,c_offset=0,a_allocation_bytes=192,b_allocation_bytes=128,c_allocation_bytes=128,seed=0x8d6079b9,harts=2,workers=2,a_addr=0x10001000,b_addr=0x10002000,c_addr=0x10003000,errors=0,cpu_abi=4,dma_abi=1,dma_counter_abi=5,dot8_instruction_abi=1,dot8_counter_abi=6,npu_descriptor_abi=1,npu_counter_abi=1,clock_hz=31250000,l1=1,sync_memory=1,line_words=4,line_count=16,memory_wait=1,npu_active=0,npu_status=0,npu_error_code=0,npu_bytes_read=0,npu_bytes_written=0,npu_job_cycles=0x0000000000000000,npu_compute_cycles=0x0000000000000000,npu_tiles=0,h0_cycles=0x00000000000076da,h0_retired=0x000000000000080c,h0_memory=0x0000000000000b7d,h0_i_access=0x000000000000091c,h0_i_miss=0x000000000000001b,h0_d_access=0x0000000000000257,h0_d_miss=0x00000000000001ea,h0_backing=0x0000000000000858,h0_atomic=0x0000000000000000,h0_sc_success=0x0000000000000000,h0_sc_failure=0x0000000000000000,h0_intervention=0x0000000000000001,h0_invalidation=0x0000000000000000,h0_writeback=0x000000000000003c,h1_cycles=0x00000000000076da,h1_retired=0x0000000000000817,h1_memory=0x0000000000000b78,h1_i_access=0x0000000000000927,h1_i_miss=0x0000000000000021,h1_d_access=0x000000000000024a,h1_d_miss=0x000000000000015d,h1_backing=0x000000000000060e,h1_atomic=0x0000000000000000,h1_sc_success=0x0000000000000000,h1_sc_failure=0x0000000000000000,h1_intervention=0x0000000000000001,h1_invalidation=0x0000000000000000,h1_writeback=0x0000000000000010,dma_busy=0x0000000000000000,dma_wait=0x0000000000000000,dma_reads=0x0000000000000000,dma_writes=0x0000000000000000,dma_bytes=0x0000000000000000,dma_backing_reads=0x0000000000000000,dma_backing_writes=0x0000000000000000,dma_forwards=0x0000000000000000,dma_dirty_words=0x0000000000000000,dma_invalidations=0x0000000000000000,dma_success=0x0000000000000000,dma_aborts=0x0000000000000000,dma_errors=0x0000000000000000,dma_rejected=0x0000000000000000,h0_dot8_accept=0x0000000000000000,h0_dot8_wait=0x0000000000000000,h0_dot8_complete=0x0000000000000000,h0_dot8_retired=0x0000000000000000,h1_dot8_accept=0x0000000000000000,h1_dot8_wait=0x0000000000000000,h1_dot8_complete=0x0000000000000000,h1_dot8_retired=0x0000000000000000,a_hex=bb044d96e02972bb054e97e02a7380054f98e12a74bd064f99e27f74be075099e32c75be08519ae32d76bf80529be42d77c009529ce52e77c17f539ce62f78c10b549de63079c2a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5,b_hex=f714804f6d8aa8c5e3001e3b597694b1cfec0a274562809dbb80f613314e6c89a77fe2ff1d3a587593b0ceeb09264461809cbad7f512304d6b88a6c3e1fe1c39a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5,output_hex=c9b4ffff4268000024c3000030eeffff3542ffff8e7dffff90d7ffff9cb4ffffa5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5\nASTERBENCH,version=8,name=fir,window=cpu_command_to_result_visible,policy=prepared_reinitialize,status=PASS,method=multicore,placement=aligned,capture=1,job=2,jobs=2,m=8,n=1,k=64,taps=8,outputs=8,a_stride=1,b_stride=1,c_stride=4,a_offset=0,b_offset=0,c_offset=0,a_allocation_bytes=192,b_allocation_bytes=128,c_allocation_bytes=128,seed=0x2f39f372,harts=2,workers=2,a_addr=0x10001000,b_addr=0x10002000,c_addr=0x10003000,errors=0,cpu_abi=4,dma_abi=1,dma_counter_abi=5,dot8_instruction_abi=1,dot8_counter_abi=6,npu_descriptor_abi=1,npu_counter_abi=1,clock_hz=31250000,l1=1,sync_memory=1,line_words=4,line_count=16,memory_wait=1,npu_active=0,npu_status=0,npu_error_code=0,npu_bytes_read=0,npu_bytes_written=0,npu_job_cycles=0x0000000000000000,npu_compute_cycles=0x0000000000000000,npu_tiles=0,h0_cycles=0x00000000000076da,h0_retired=0x000000000000080c,h0_memory=0x0000000000000b7d,h0_i_access=0x000000000000091c,h0_i_miss=0x000000000000001b,h0_d_access=0x0000000000000257,h0_d_miss=0x00000000000001ea,h0_backing=0x0000000000000858,h0_atomic=0x0000000000000000,h0_sc_success=0x0000000000000000,h0_sc_failure=0x0000000000000000,h0_intervention=0x0000000000000001,h0_invalidation=0x0000000000000000,h0_writeback=0x000000000000003c,h1_cycles=0x00000000000076da,h1_retired=0x0000000000000817,h1_memory=0x0000000000000b78,h1_i_access=0x0000000000000927,h1_i_miss=0x0000000000000021,h1_d_access=0x000000000000024a,h1_d_miss=0x000000000000015d,h1_backing=0x000000000000060e,h1_atomic=0x0000000000000000,h1_sc_success=0x0000000000000000,h1_sc_failure=0x0000000000000000,h1_intervention=0x0000000000000001,h1_invalidation=0x0000000000000000,h1_writeback=0x0000000000000010,dma_busy=0x0000000000000000,dma_wait=0x0000000000000000,dma_reads=0x0000000000000000,dma_writes=0x0000000000000000,dma_bytes=0x0000000000000000,dma_backing_reads=0x0000000000000000,dma_backing_writes=0x0000000000000000,dma_forwards=0x0000000000000000,dma_dirty_words=0x0000000000000000,dma_invalidations=0x0000000000000000,dma_success=0x0000000000000000,dma_aborts=0x0000000000000000,dma_errors=0x0000000000000000,dma_rejected=0x0000000000000000,h0_dot8_accept=0x0000000000000000,h0_dot8_wait=0x0000000000000000,h0_dot8_complete=0x0000000000000000,h0_dot8_retired=0x0000000000000000,h1_dot8_accept=0x0000000000000000,h1_dot8_wait=0x0000000000000000,h1_dot8_complete=0x0000000000000000,h1_dot8_retired=0x0000000000000000,a_hex=76bf08519be42d76c009529b802e77c00a539ce52f7fc10a549de62f79c20b549ee73079c30c559ee8807ac30d569fe8327bc40d7fa0e9327cc50e57a1ea337cc60f58a1eb3480a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5,b_hex=ee0b294664819fbcdaf71532506d8ba8c6e3011e805977947fcfed0a284563809ebbd9f614314f6c8aa7c580001d3b587693b1ceec092744627f9dbad8f51330a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5,output_hex=32cdffff6bd3ffffebbcfffffa0b0000b703000014c2ffff70a500000fceffffa5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5\n"
+    },
+    {
+      "after_stop": {
+        "control": 0,
+        "fifo_count": 0,
+        "hart_status": 0,
+        "status": 0,
+        "stop_status": 1
+      },
+      "before_stop": {
+        "control": 1,
+        "fifo_count": 0,
+        "hart_status": 1,
+        "status": 1,
+        "stop_status": 0
+      },
+      "boot": 2,
+      "elapsed_seconds": 0.7992909130116459,
+      "kernel": "fir",
+      "method": "multicore",
+      "ram": {
+        "bytes": 65536,
+        "file": "boot2.ram",
+        "sha256": "45aab0c56da6bbc18479a1a4f54a22b35bb23b66b232da4a4879acd0a7af82f9"
+      },
+      "status": "PASS",
+      "uart": {
+        "bytes": 6602,
+        "file": "boot2.uart",
+        "sha256": "c2360bdb17ca906bee8eb30fc186a735639ea344654b48ea9da4c0ed2041ba7f"
+      },
+      "uart_output": "ASTERBENCH,version=8,name=fir,window=cpu_command_to_result_visible,policy=prepared_reinitialize,status=PASS,method=multicore,placement=aligned,capture=1,job=1,jobs=2,m=8,n=1,k=64,taps=8,outputs=8,a_stride=1,b_stride=1,c_stride=4,a_offset=0,b_offset=0,c_offset=0,a_allocation_bytes=192,b_allocation_bytes=128,c_allocation_bytes=128,seed=0x8d6079b9,harts=2,workers=2,a_addr=0x10001000,b_addr=0x10002000,c_addr=0x10003000,errors=0,cpu_abi=4,dma_abi=1,dma_counter_abi=5,dot8_instruction_abi=1,dot8_counter_abi=6,npu_descriptor_abi=1,npu_counter_abi=1,clock_hz=31250000,l1=1,sync_memory=1,line_words=4,line_count=16,memory_wait=1,npu_active=0,npu_status=0,npu_error_code=0,npu_bytes_read=0,npu_bytes_written=0,npu_job_cycles=0x0000000000000000,npu_compute_cycles=0x0000000000000000,npu_tiles=0,h0_cycles=0x00000000000076da,h0_retired=0x000000000000080c,h0_memory=0x0000000000000b7d,h0_i_access=0x000000000000091c,h0_i_miss=0x000000000000001b,h0_d_access=0x0000000000000257,h0_d_miss=0x00000000000001ea,h0_backing=0x0000000000000858,h0_atomic=0x0000000000000000,h0_sc_success=0x0000000000000000,h0_sc_failure=0x0000000000000000,h0_intervention=0x0000000000000001,h0_invalidation=0x0000000000000000,h0_writeback=0x000000000000003c,h1_cycles=0x00000000000076da,h1_retired=0x0000000000000817,h1_memory=0x0000000000000b78,h1_i_access=0x0000000000000927,h1_i_miss=0x0000000000000021,h1_d_access=0x000000000000024a,h1_d_miss=0x000000000000015d,h1_backing=0x000000000000060e,h1_atomic=0x0000000000000000,h1_sc_success=0x0000000000000000,h1_sc_failure=0x0000000000000000,h1_intervention=0x0000000000000001,h1_invalidation=0x0000000000000000,h1_writeback=0x0000000000000010,dma_busy=0x0000000000000000,dma_wait=0x0000000000000000,dma_reads=0x0000000000000000,dma_writes=0x0000000000000000,dma_bytes=0x0000000000000000,dma_backing_reads=0x0000000000000000,dma_backing_writes=0x0000000000000000,dma_forwards=0x0000000000000000,dma_dirty_words=0x0000000000000000,dma_invalidations=0x0000000000000000,dma_success=0x0000000000000000,dma_aborts=0x0000000000000000,dma_errors=0x0000000000000000,dma_rejected=0x0000000000000000,h0_dot8_accept=0x0000000000000000,h0_dot8_wait=0x0000000000000000,h0_dot8_complete=0x0000000000000000,h0_dot8_retired=0x0000000000000000,h1_dot8_accept=0x0000000000000000,h1_dot8_wait=0x0000000000000000,h1_dot8_complete=0x0000000000000000,h1_dot8_retired=0x0000000000000000,a_hex=bb044d96e02972bb054e97e02a7380054f98e12a74bd064f99e27f74be075099e32c75be08519ae32d76bf80529be42d77c009529ce52e77c17f539ce62f78c10b549de63079c2a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5,b_hex=f714804f6d8aa8c5e3001e3b597694b1cfec0a274562809dbb80f613314e6c89a77fe2ff1d3a587593b0ceeb09264461809cbad7f512304d6b88a6c3e1fe1c39a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5,output_hex=c9b4ffff4268000024c3000030eeffff3542ffff8e7dffff90d7ffff9cb4ffffa5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5\nASTERBENCH,version=8,name=fir,window=cpu_command_to_result_visible,policy=prepared_reinitialize,status=PASS,method=multicore,placement=aligned,capture=1,job=2,jobs=2,m=8,n=1,k=64,taps=8,outputs=8,a_stride=1,b_stride=1,c_stride=4,a_offset=0,b_offset=0,c_offset=0,a_allocation_bytes=192,b_allocation_bytes=128,c_allocation_bytes=128,seed=0x2f39f372,harts=2,workers=2,a_addr=0x10001000,b_addr=0x10002000,c_addr=0x10003000,errors=0,cpu_abi=4,dma_abi=1,dma_counter_abi=5,dot8_instruction_abi=1,dot8_counter_abi=6,npu_descriptor_abi=1,npu_counter_abi=1,clock_hz=31250000,l1=1,sync_memory=1,line_words=4,line_count=16,memory_wait=1,npu_active=0,npu_status=0,npu_error_code=0,npu_bytes_read=0,npu_bytes_written=0,npu_job_cycles=0x0000000000000000,npu_compute_cycles=0x0000000000000000,npu_tiles=0,h0_cycles=0x00000000000076da,h0_retired=0x000000000000080c,h0_memory=0x0000000000000b7d,h0_i_access=0x000000000000091c,h0_i_miss=0x000000000000001b,h0_d_access=0x0000000000000257,h0_d_miss=0x00000000000001ea,h0_backing=0x0000000000000858,h0_atomic=0x0000000000000000,h0_sc_success=0x0000000000000000,h0_sc_failure=0x0000000000000000,h0_intervention=0x0000000000000001,h0_invalidation=0x0000000000000000,h0_writeback=0x000000000000003c,h1_cycles=0x00000000000076da,h1_retired=0x0000000000000817,h1_memory=0x0000000000000b78,h1_i_access=0x0000000000000927,h1_i_miss=0x0000000000000021,h1_d_access=0x000000000000024a,h1_d_miss=0x000000000000015d,h1_backing=0x000000000000060e,h1_atomic=0x0000000000000000,h1_sc_success=0x0000000000000000,h1_sc_failure=0x0000000000000000,h1_intervention=0x0000000000000001,h1_invalidation=0x0000000000000000,h1_writeback=0x0000000000000010,dma_busy=0x0000000000000000,dma_wait=0x0000000000000000,dma_reads=0x0000000000000000,dma_writes=0x0000000000000000,dma_bytes=0x0000000000000000,dma_backing_reads=0x0000000000000000,dma_backing_writes=0x0000000000000000,dma_forwards=0x0000000000000000,dma_dirty_words=0x0000000000000000,dma_invalidations=0x0000000000000000,dma_success=0x0000000000000000,dma_aborts=0x0000000000000000,dma_errors=0x0000000000000000,dma_rejected=0x0000000000000000,h0_dot8_accept=0x0000000000000000,h0_dot8_wait=0x0000000000000000,h0_dot8_complete=0x0000000000000000,h0_dot8_retired=0x0000000000000000,h1_dot8_accept=0x0000000000000000,h1_dot8_wait=0x0000000000000000,h1_dot8_complete=0x0000000000000000,h1_dot8_retired=0x0000000000000000,a_hex=76bf08519be42d76c009529b802e77c00a539ce52f7fc10a549de62f79c20b549ee73079c30c559ee8807ac30d569fe8327bc40d7fa0e9327cc50e57a1ea337cc60f58a1eb3480a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5,b_hex=ee0b294664819fbcdaf71532506d8ba8c6e3011e805977947fcfed0a284563809ebbd9f614314f6c8aa7c580001d3b587693b1ceec092744627f9dbad8f51330a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5,output_hex=32cdffff6bd3ffffebbcfffffa0b0000b703000014c2ffff70a500000fceffffa5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5\n"
+    }
+  ],
+  "cache": true,
+  "clock_mhz": 31.25,
+  "final_state": {
+    "control": 0,
+    "fifo_count": 0,
+    "hart_status": 0,
+    "status": 0,
+    "stop_status": 1
+  },
+  "firmware_sha256": "8c5bd061e9084f89817364d4642a64ce1894bd385bd10861d7d76da45e35420f",
+  "handoff_preflight": {
+    "auxiliary_reset_active_high": true,
+    "axi_base": 1073741824,
+    "axi_span": 262144,
+    "bridge_version": 589825,
+    "caches": true,
+    "clock_hz": 31250000,
+    "coherent": true,
+    "dma": true,
+    "dma_abi": 1,
+    "dma_counter_abi": 5,
+    "dot8": true,
+    "dot8_abi": 1,
+    "dot8_counter_abi": 6,
+    "external_reset_active_high": false,
+    "hart_count": 2,
+    "isa": "rv32ima",
+    "npu": true,
+    "npu_abi": 1,
+    "npu_counter_abi": 1,
+    "safe_warm_stop": true
+  },
+  "hart_count": 2,
+  "hwh_sha256": "0163b39f7e6c5b4f1c0943cb3bb83dddfc3cd3c57f7858009f8b9c747a9c3e27",
+  "jobs": 2,
+  "kernel": "fir",
+  "method": "multicore",
+  "programmed": true,
+  "schema": "aster.xe.physical-mem.v1",
+  "source_revision": "8371c3d66bca995db95147a3eac81a072d5b6283",
+  "status": "complete",
+  "transport": "fpga_manager PL load + /dev/mem AXI, FPGA UART TX-to-RX loopback"
+}

@@ -1,7 +1,10 @@
 # Phase 10: CPU vs multicore vs ISA vs NPU — simulation results
 
-Status: **primary simulation study complete; fresh repeats and board-backed
-results remain.** The contract is [`docs/phase10.md`](../../phase10.md).
+Status: **complete**. The immutable closeout bundle for commit `8371c3d` is at
+[closeout-8371c3d/](closeout-8371c3d/README.md); it passes
+`python3 scripts/audit_phase10.py audit docs/results/phase10/closeout-8371c3d`.
+The contract is [`docs/phase10.md`](../../phase10.md). The files in this
+directory are a convenience summary of the retained bundle.
 
 This directory retains the first full AsterBench v8 primary study: 288 captures
 covering three signed-INT8 kernels (dot, FIR, GEMM) across four execution paths

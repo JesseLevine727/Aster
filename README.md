@@ -97,8 +97,9 @@ kernels run through the scalar CPU, two coherent harts, the Xasterdot8
 instruction and the NPU on one all-engine SoC image. The fixed 288-capture
 AsterBench v8 study passes with two fresh repeats, per-engine FPGA utilization
 and routed timing are measured, and six physical Pynq-Z1 captures at 31.25 MHz
-match the simulation ratios. See the
-[results bundle](docs/results/phase10/README.md).
+match the simulation ratios. The [self-contained closeout
+bundle](docs/results/phase10/closeout-8371c3d/README.md) retains the raw records,
+routed reports and physical evidence and passes `scripts/audit_phase10.py`.
 
 Start here:
 

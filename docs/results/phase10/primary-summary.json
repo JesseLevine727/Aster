@@ -1,9 +1,9 @@
 {
   "primary_captures": 288,
   "provenance": {
-    "dirty": true,
+    "dirty": false,
     "jobs": 2,
-    "revision": "9240993bc612de644ffc20c913596797c301ded7",
+    "revision": "8371c3d66bca995db95147a3eac81a072d5b6283",
     "seed": "0x13570000"
   },
   "ratios": [

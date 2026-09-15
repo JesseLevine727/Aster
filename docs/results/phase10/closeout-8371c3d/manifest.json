@@ -1,0 +1,260 @@
+{
+  "files": {
+    "fpga/aster_linux.bit": {
+      "bytes": 4045695,
+      "sha256": "381c225eeb4a02017048f96ec150d7a2e0e5afefcf624dbac0d856205fd4a63f"
+    },
+    "fpga/aster_linux.hwh": {
+      "bytes": 139988,
+      "sha256": "0163b39f7e6c5b4f1c0943cb3bb83dddfc3cd3c57f7858009f8b9c747a9c3e27"
+    },
+    "fpga/bitstream.sha256": {
+      "bytes": 164,
+      "sha256": "386d445880b58f08b5d7bb2e4088be332b0b1eabdb5fdd6ebccf562ed0557dac"
+    },
+    "fpga/drc.rpt": {
+      "bytes": 48016,
+      "sha256": "fff38876aeb3e46e97197daa7453cbb372ae038c95f668caae4df49e3f0abdeb"
+    },
+    "fpga/methodology.rpt": {
+      "bytes": 1363,
+      "sha256": "015eb60694002f821bb4e3b5e943ecb7a32ad1012ceb8c52e7231bba74d6f823"
+    },
+    "fpga/route_status.rpt": {
+      "bytes": 651,
+      "sha256": "b10292bc16a6121de2a63092908832f41eb6f4231182b0d67d0c8131f8917922"
+    },
+    "fpga/timing_summary.rpt": {
+      "bytes": 28313,
+      "sha256": "5dfa90121812ddfa583a0166cecf3c2cfe24a0a81caf3e288a3469775314af7c"
+    },
+    "fpga/utilization_routed.rpt": {
+      "bytes": 11956,
+      "sha256": "9f5df1aeba568bfb63afdb5a1b085357e2598388ddef763a586c55a5544d196c"
+    },
+    "fpga/utilization_synth_base.rpt": {
+      "bytes": 9348,
+      "sha256": "71f459f6d697ec22a04d92b7b37e462ebf2afe3599248ae7bb2cca7fec28e7f0"
+    },
+    "fpga/utilization_synth_dma.rpt": {
+      "bytes": 9347,
+      "sha256": "6cf7cc7fb73de0298f2bfd665313e0bf3bb6de208ec53228883e9e755cef5419"
+    },
+    "fpga/utilization_synth_dot8.rpt": {
+      "bytes": 9348,
+      "sha256": "a430293909f7336e13d3bbbbbf225867af2efcd82f19dd19ac4755e71194149e"
+    },
+    "fpga/utilization_synth_npu.rpt": {
+      "bytes": 9483,
+      "sha256": "fe6d8776327bece29981dc67a110439df5cda4aa7b4ea85ddb42f857bd501367"
+    },
+    "physical/dot_npu/boot1.ram": {
+      "bytes": 65536,
+      "sha256": "6619ee512e4a60f302eb3470ebed1e1a19f98dc59967d0ea0e2b003afe0fdb67"
+    },
+    "physical/dot_npu/boot1.uart": {
+      "bytes": 6340,
+      "sha256": "a00052a1c13f447ed543a1eb41ccada7c73992b5ed6525534ee4690d7ef613b4"
+    },
+    "physical/dot_npu/boot2.ram": {
+      "bytes": 65536,
+      "sha256": "6619ee512e4a60f302eb3470ebed1e1a19f98dc59967d0ea0e2b003afe0fdb67"
+    },
+    "physical/dot_npu/boot2.uart": {
+      "bytes": 6340,
+      "sha256": "a00052a1c13f447ed543a1eb41ccada7c73992b5ed6525534ee4690d7ef613b4"
+    },
+    "physical/dot_npu/physical.json": {
+      "bytes": 15560,
+      "sha256": "0825ceb214c7e4e392247496ed4cbcb1340ff615329da51b46360d3eb90567f6"
+    },
+    "physical/fir_multicore/boot1.ram": {
+      "bytes": 65536,
+      "sha256": "45aab0c56da6bbc18479a1a4f54a22b35bb23b66b232da4a4879acd0a7af82f9"
+    },
+    "physical/fir_multicore/boot1.uart": {
+      "bytes": 6602,
+      "sha256": "c2360bdb17ca906bee8eb30fc186a735639ea344654b48ea9da4c0ed2041ba7f"
+    },
+    "physical/fir_multicore/boot2.ram": {
+      "bytes": 65536,
+      "sha256": "45aab0c56da6bbc18479a1a4f54a22b35bb23b66b232da4a4879acd0a7af82f9"
+    },
+    "physical/fir_multicore/boot2.uart": {
+      "bytes": 6602,
+      "sha256": "c2360bdb17ca906bee8eb30fc186a735639ea344654b48ea9da4c0ed2041ba7f"
+    },
+    "physical/fir_multicore/physical.json": {
+      "bytes": 16102,
+      "sha256": "3365fb4171392eb8576476b13519ea4645c3760fd037c69c7f3c8eb8d7475d79"
+    },
+    "physical/gemm_dot8/boot1.ram": {
+      "bytes": 65536,
+      "sha256": "d9d5be5f9c767fe95239e91bcc5777306f7af352ae2dc877c1bc56a0d406e845"
+    },
+    "physical/gemm_dot8/boot1.uart": {
+      "bytes": 6344,
+      "sha256": "cff2616ecdda3c5bfe8a888069b17a934060b8ef687545ae70cea63a029ab839"
+    },
+    "physical/gemm_dot8/boot2.ram": {
+      "bytes": 65536,
+      "sha256": "d9d5be5f9c767fe95239e91bcc5777306f7af352ae2dc877c1bc56a0d406e845"
+    },
+    "physical/gemm_dot8/boot2.uart": {
+      "bytes": 6344,
+      "sha256": "cff2616ecdda3c5bfe8a888069b17a934060b8ef687545ae70cea63a029ab839"
+    },
+    "physical/gemm_dot8/physical.json": {
+      "bytes": 15574,
+      "sha256": "c8d95bbbbf3864bc04fe70c3eee54a4858de339475efd780fd494c1581943785"
+    },
+    "physical/gemm_multicore/boot1.ram": {
+      "bytes": 65536,
+      "sha256": "6ee16edd5f37bb1d428619d302b1ba34d41961a539bda541ab54283387e8047f"
+    },
+    "physical/gemm_multicore/boot1.uart": {
+      "bytes": 6354,
+      "sha256": "bca6dcdfe1cd35fa73493f57a1f678afcd39b8e7eb7460034f12aa10407b6417"
+    },
+    "physical/gemm_multicore/boot2.ram": {
+      "bytes": 65536,
+      "sha256": "6ee16edd5f37bb1d428619d302b1ba34d41961a539bda541ab54283387e8047f"
+    },
+    "physical/gemm_multicore/boot2.uart": {
+      "bytes": 6354,
+      "sha256": "bca6dcdfe1cd35fa73493f57a1f678afcd39b8e7eb7460034f12aa10407b6417"
+    },
+    "physical/gemm_multicore/physical.json": {
+      "bytes": 15609,
+      "sha256": "5ac5e6b7de48327c86c96604d7e26ba78c49b7f992a61f82f7498f2cba3871e8"
+    },
+    "physical/gemm_npu/boot1.ram": {
+      "bytes": 65536,
+      "sha256": "8ef0c7a7ce264639ccf5a14e4b92df504f5171d4dc418cdaa98495e76ab96176"
+    },
+    "physical/gemm_npu/boot1.uart": {
+      "bytes": 6348,
+      "sha256": "ff4fbc3ef4bf9059b5be77a5ed07d2d93b095f3a8eae649b787f17a18af0af2c"
+    },
+    "physical/gemm_npu/boot2.ram": {
+      "bytes": 65536,
+      "sha256": "8ef0c7a7ce264639ccf5a14e4b92df504f5171d4dc418cdaa98495e76ab96176"
+    },
+    "physical/gemm_npu/boot2.uart": {
+      "bytes": 6348,
+      "sha256": "ff4fbc3ef4bf9059b5be77a5ed07d2d93b095f3a8eae649b787f17a18af0af2c"
+    },
+    "physical/gemm_npu/physical.json": {
+      "bytes": 15579,
+      "sha256": "ed3d19d1c015e328b0d65092ed065a2efb2b3e00807705182a799e801871431e"
+    },
+    "physical/gemm_scalar/boot1.ram": {
+      "bytes": 65536,
+      "sha256": "1f0e1dfa68633f33aa3cc942ac5e30630b05ef0982ad168f63837974aa8fcd8c"
+    },
+    "physical/gemm_scalar/boot1.uart": {
+      "bytes": 6348,
+      "sha256": "7419270540b0426a197724c5243ffc1e9bafca159f867a4f6b9fbfb7a12c373c"
+    },
+    "physical/gemm_scalar/boot2.ram": {
+      "bytes": 65536,
+      "sha256": "1f0e1dfa68633f33aa3cc942ac5e30630b05ef0982ad168f63837974aa8fcd8c"
+    },
+    "physical/gemm_scalar/boot2.uart": {
+      "bytes": 6348,
+      "sha256": "7419270540b0426a197724c5243ffc1e9bafca159f867a4f6b9fbfb7a12c373c"
+    },
+    "physical/gemm_scalar/physical.json": {
+      "bytes": 15588,
+      "sha256": "75cc7a2dbe7b84cb97a882880d7fcd3ce79e78365985484b80f0ffd090ba9f02"
+    },
+    "simulation/compare.log": {
+      "bytes": 158,
+      "sha256": "acd8083a73812f9ee6b15e9813b50dcf4aa9cd992ffd89727c41a447bc78527a"
+    },
+    "simulation/primary/study.json": {
+      "bytes": 2973690,
+      "sha256": "3b4d873efac2532f879ee4e30baf1a4ba5100f9c1e8311dee880500a23d3e138"
+    },
+    "simulation/repeat1/study.json": {
+      "bytes": 2973690,
+      "sha256": "3b4d873efac2532f879ee4e30baf1a4ba5100f9c1e8311dee880500a23d3e138"
+    },
+    "simulation/repeat2/study.json": {
+      "bytes": 2973690,
+      "sha256": "3b4d873efac2532f879ee4e30baf1a4ba5100f9c1e8311dee880500a23d3e138"
+    },
+    "source/source-state.json": {
+      "bytes": 35253,
+      "sha256": "2f2bcb1b549387366ba26c8c65797607a5947db1eea88728939018e1523b6095"
+    },
+    "spec/phase10.md": {
+      "bytes": 11070,
+      "sha256": "489a64f0caa12accd2140159ffcdce1d29fc8469a0bd8418ad0ae3df88cc18f9"
+    },
+    "verification/make-check.log": {
+      "bytes": 138924,
+      "sha256": "735675af46afb0c75b5ef75fa1ba44dceacba71843900f3c3f0c272ad9b00047"
+    }
+  },
+  "requirements": {
+    "01-contract-and-cross-engine-scope": [
+      "spec/phase10.md"
+    ],
+    "02-full-regressions-and-host-tests": [
+      "verification/make-check.log"
+    ],
+    "03-cross-engine-study-and-fresh-repeats": [
+      "simulation/primary/study.json",
+      "simulation/repeat1/study.json",
+      "simulation/repeat2/study.json",
+      "simulation/compare.log"
+    ],
+    "04-fpga-resource-and-routed-timing": [
+      "fpga/aster_linux.bit",
+      "fpga/aster_linux.hwh",
+      "fpga/timing_summary.rpt",
+      "fpga/drc.rpt",
+      "fpga/methodology.rpt",
+      "fpga/route_status.rpt",
+      "fpga/utilization_routed.rpt",
+      "fpga/utilization_synth_base.rpt",
+      "fpga/utilization_synth_dma.rpt",
+      "fpga/utilization_synth_dot8.rpt",
+      "fpga/utilization_synth_npu.rpt"
+    ],
+    "05-physical-pynq-acceptance": [
+      "physical/gemm_scalar/physical.json",
+      "physical/gemm_multicore/physical.json",
+      "physical/gemm_dot8/physical.json",
+      "physical/gemm_npu/physical.json",
+      "physical/dot_npu/physical.json",
+      "physical/fir_multicore/physical.json"
+    ],
+    "06-clean-source-and-immutable-mapping": [
+      "source/source-state.json"
+    ]
+  },
+  "schema": "aster.phase10.closeout.v1",
+  "status": "complete",
+  "summary": {
+    "fpga": {
+      "bridge_version": "0x90001"
+    },
+    "physical": {
+      "boots": 12,
+      "packages": 6
+    },
+    "simulation": {
+      "captures": 288,
+      "ratios": 288,
+      "rows": 576
+    },
+    "source_revision": "8371c3d66bca995db95147a3eac81a072d5b6283",
+    "source_sha256": "fbd0e188209f93ed3d4871ded94424e1a997147500b0226c4ba7d2c8fd75da97",
+    "verification": {
+      "host_test_runs": 1,
+      "host_tests_last": 222
+    }
+  }
+}

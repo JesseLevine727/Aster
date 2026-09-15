@@ -28,7 +28,9 @@ The setup slack implies a timing-implied maximum of about
 `1 / (32 - 4.177) ns ≈ 35.9 MHz` for this placed-and-routed image. This is an
 implied bound from one implementation, not a swept maximum-frequency result.
 
-DRC `Checks found: 0`, methodology `Checks found: 0`, routing errors `0`.
+DRC contains 79 advisory DSP-pipelining warnings (31 `DPIP-1`, 24 `DPOP-1`,
+24 `DPOP-2`) and **no errors**; methodology `Checks found: 0`; routing errors
+`0`. The DSP advisories are recorded rather than hidden, as in Phase 9.
 The generated vendor reset netlist passes all five assert/release scenarios and
 the HWH handoff passes with `dot8=true`, `npu=true`, `bridge_version=0x00090001`.
 
