@@ -22,6 +22,9 @@ class WorkloadReference(unittest.TestCase):
     def test_conv2d_checksum_matches_firmware(self):
         self.assertEqual(reference.conv2d_checksum(1024, 4, 5, 0x13570000), 0x07DF8000)
 
+    def test_reduce_checksum_matches_firmware(self):
+        self.assertEqual(reference.reduce_checksum(4096, 4, 2, 0x13570000), 0x5C808000)
+
     def test_unknown_workload_rejected(self):
         with self.assertRaises(Exception):
             reference.expected_checksum("nope", 4, 1, 1, 0)

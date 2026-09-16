@@ -1537,6 +1537,44 @@ dhrystone: $(WORKLOAD_SIM) $(DHRY_HEX)
 	@$(WORKLOAD_SIM) +rom=$(DHRY_HEX) +ram_fill=a5a5a5a5 > $(BUILD_DIR)/dhrystone.record
 	@$(PYTHON) scripts/asterbench_v10.py validate --name dhrystone < $(BUILD_DIR)/dhrystone.record
 
+REDUCE_WORKERS ?= 2
+REDUCE_WORDS ?= 1024
+REDUCE_ITERATIONS ?= 4
+REDUCE_NAME := $(if $(filter 2,$(REDUCE_WORKERS)),reduce_parallel,reduce_scalar)
+REDUCE_FW_DIR := $(HELLO_DIR)/$(REDUCE_NAME)_w$(REDUCE_WORDS)_i$(REDUCE_ITERATIONS)
+REDUCE_ELF := $(REDUCE_FW_DIR)/reduce.elf
+REDUCE_HEX := $(REDUCE_FW_DIR)/reduce.hex
+REDUCE_SIM := $(BUILD_DIR)/aster_workload_coherent_sim
+REDUCE_CFLAGS = $(filter-out -march=% -mabi=%,$(HELLO_CFLAGS)) -march=rv32ima -mabi=ilp32 \
+	-Isoftware/drivers -Isoftware/benchmarks -Isoftware/runtime \
+	-DREDUCE_WORKERS=$(REDUCE_WORKERS) -DREDUCE_WORDS=$(REDUCE_WORDS) -DREDUCE_ITERATIONS=$(REDUCE_ITERATIONS)
+
+.PHONY: reduce reduce-firmware
+$(REDUCE_ELF): software/benchmarks/workload_reduce.c software/benchmarks/workload_coh.h \
+		software/runtime/start_multicore.S software/runtime/aster.h software/boot/link_multicore.ld Makefile
+	mkdir -p $(REDUCE_FW_DIR)
+	$(CC) $(REDUCE_CFLAGS) -T software/boot/link_multicore.ld -o $@ \
+		software/runtime/start_multicore.S software/benchmarks/workload_reduce.c
+
+$(REDUCE_HEX): $(REDUCE_ELF) scripts/elf_to_hex.py
+	$(PYTHON) scripts/elf_to_hex.py --rom-bytes 65536 $< $@
+
+reduce-firmware: $(REDUCE_HEX)
+
+$(REDUCE_SIM): $(RTL_COHERENT) verification/soc/tb_aster_workload_coherent.cpp Makefile
+	$(VERILATOR) --cc --exe --build --timing --Wall $(VERILATOR_VENDOR_LINT_FLAGS) $(VERILATOR_COHERENT_FLAGS) \
+		--assert -DASTER_COHERENCE_ASSERT --top-module aster_coherent_soc \
+		-GHART_COUNT=$(HART_COUNT) "-GENABLE_L1=1'b$(ENABLE_L1)" "-GENABLE_DMA=1'b1" "-GENABLE_DOT8=1'b1" "-GENABLE_NPU=1'b1" \
+		"-GSYNC_MEMORY=1'b$(SYNC_MEMORY)" -GMEMORY_WAIT_CYCLES=$(MEMORY_WAIT_CYCLES) "-GHOST_BOOT=1'b1" \
+		-GLINE_WORDS=$(L1_LINE_WORDS) -GLINE_COUNT=$(L1_LINE_COUNT) \
+		--Mdir $(BUILD_DIR)/obj_reduce -o $(abspath $@) \
+		$(addprefix $(ROOT)/,$(RTL_COHERENT)) $(ROOT)/verification/soc/tb_aster_workload_coherent.cpp
+
+reduce: $(REDUCE_SIM) $(REDUCE_HEX)
+	@$(REDUCE_SIM) +rom=$(REDUCE_HEX) +ram_fill=a5a5a5a5 > $(BUILD_DIR)/$(REDUCE_NAME).record
+	@$(PYTHON) scripts/asterbench_v10.py validate --name $(REDUCE_NAME) < $(BUILD_DIR)/$(REDUCE_NAME).record
+	@$(PYTHON) scripts/workload_reference.py verify --name $(REDUCE_NAME) < $(BUILD_DIR)/$(REDUCE_NAME).record
+
 .PHONY: coherent-bench coherent-firmware coherent-config coherent-bench-workloads coherent-bench-matrix coherent-bench-boundaries coherent-bench-sizes
 $(COHERENT_ELF): software/benchmarks/coherent.c software/runtime/start_multicore.S software/runtime/aster.h software/boot/link_multicore.ld Makefile
 	mkdir -p $(COHERENT_FW_DIR)

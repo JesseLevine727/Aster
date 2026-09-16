@@ -121,6 +121,17 @@ def conv2d_checksum(size: int, iterations: int, param: int, seed: int) -> int:
     return checksum
 
 
+def reduce_checksum(size: int, iterations: int, param: int, seed: int) -> int:
+    words = size // 4
+    checksum = 0
+    for _ in range(iterations):
+        total = 0
+        for index in range(words):
+            total = (total + (seed ^ ((index * 0x1021) & MASK))) & MASK
+        checksum = ((checksum * 33) ^ total) & MASK
+    return checksum
+
+
 def expected_checksum(name: str, size: int, iterations: int, param: int, seed: int) -> int:
     if name == "strided":
         return strided_checksum(size, iterations, param, seed)
@@ -130,6 +141,8 @@ def expected_checksum(name: str, size: int, iterations: int, param: int, seed: i
         return fft_checksum(size, iterations, param, seed)
     if name == "conv2d":
         return conv2d_checksum(size, iterations, param, seed)
+    if name in ("reduce_parallel", "reduce_scalar"):
+        return reduce_checksum(size, iterations, param, seed)
     raise bench.ValidationError(f"no checksum reference for workload {name!r}")
 
 
