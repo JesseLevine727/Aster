@@ -16,6 +16,7 @@ extern Boolean Bool_Glob;
 extern char  Ch_1_Glob, Ch_2_Glob;
 extern int   Arr_1_Glob[50];
 extern int   Arr_2_Glob[50][50];
+extern Rec_Pointer Ptr_Glob, Next_Ptr_Glob;
 
 static char     heap[8192];
 static unsigned heap_used;
@@ -64,14 +65,25 @@ static void emit_record(void) {
     *ASTER_PERF_CONTROL = 2u;
     struct aster_perf_snapshot snapshot;
     aster_perf_snapshot(&snapshot);
-    uint32_t checksum = (uint32_t)Int_Glob;
-    checksum = checksum * 33u ^ (uint32_t)Bool_Glob;
-    checksum = checksum * 33u ^ (uint32_t)(unsigned char)Ch_1_Glob;
-    checksum = checksum * 33u ^ (uint32_t)(unsigned char)Ch_2_Glob;
-    checksum = checksum * 33u ^ (uint32_t)Arr_1_Glob[8];
-    checksum = checksum * 33u ^ (uint32_t)Arr_2_Glob[8][7];
+    // Dhrystone 2.1 canonical final values; a mismatch fails the run and
+    // changes the checksum, so the host oracle detects corruption.
+    uint32_t pass = 1;
+    uint32_t checksum = 0;
+#define CHECK(condition, value) do { if (!(condition)) pass = 0; checksum = checksum * 33u ^ (uint32_t)(value); } while (0)
+    CHECK(Int_Glob == 5, Int_Glob);
+    CHECK(Bool_Glob == 1, Bool_Glob);
+    CHECK(Ch_1_Glob == 'A', (unsigned char)Ch_1_Glob);
+    CHECK(Ch_2_Glob == 'B', (unsigned char)Ch_2_Glob);
+    CHECK(Arr_1_Glob[8] == 7, Arr_1_Glob[8]);
+    CHECK(Arr_2_Glob[8][7] == DHRY_ITERS + 10, Arr_2_Glob[8][7]);
+    CHECK(Ptr_Glob->Discr == 0, Ptr_Glob->Discr);
+    CHECK(Ptr_Glob->variant.var_1.Enum_Comp == 2, Ptr_Glob->variant.var_1.Enum_Comp);
+    CHECK(Ptr_Glob->variant.var_1.Int_Comp == 17, Ptr_Glob->variant.var_1.Int_Comp);
+    for (const char *c = Ptr_Glob->variant.var_1.Str_Comp; *c != '\0'; ++c)
+        checksum = checksum * 33u ^ (uint32_t)(unsigned char)*c;
+#undef CHECK
     aster_workload_emit("dhrystone", "cpu", sizeof Arr_2_Glob, DHRY_ITERS, 1u, 0u,
-                        checksum, 1u, &snapshot);
+                        checksum, pass, &snapshot);
     for (;;) { }
 }
 

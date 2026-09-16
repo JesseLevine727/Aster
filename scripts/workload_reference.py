@@ -132,6 +132,18 @@ def reduce_checksum(size: int, iterations: int, param: int, seed: int) -> int:
     return checksum
 
 
+DHRYSTONE_STRING = "DHRYSTONE PROGRAM, SOME STRING"
+
+
+def dhrystone_checksum(iterations: int) -> int:
+    checksum = 0
+    for value in (5, 1, ord("A"), ord("B"), 7, iterations + 10, 0, 2, 17):
+        checksum = ((checksum * 33) ^ (value & MASK)) & MASK
+    for character in DHRYSTONE_STRING:
+        checksum = ((checksum * 33) ^ ord(character)) & MASK
+    return checksum
+
+
 def expected_checksum(name: str, size: int, iterations: int, param: int, seed: int) -> int:
     if name == "strided":
         return strided_checksum(size, iterations, param, seed)
@@ -139,10 +151,12 @@ def expected_checksum(name: str, size: int, iterations: int, param: int, seed: i
         return sort_checksum(size, iterations, seed)
     if name == "fft":
         return fft_checksum(size, iterations, param, seed)
-    if name == "conv2d":
+    if name == "conv2d" or name in ("conv2d_npu", "conv2d_dot8"):
         return conv2d_checksum(size, iterations, param, seed)
     if name in ("reduce_parallel", "reduce_scalar"):
         return reduce_checksum(size, iterations, param, seed)
+    if name == "dhrystone":
+        return dhrystone_checksum(iterations)
     raise bench.ValidationError(f"no checksum reference for workload {name!r}")
 
 

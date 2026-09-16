@@ -1536,6 +1536,7 @@ dhrystone-firmware: $(DHRY_HEX)
 dhrystone: $(WORKLOAD_SIM) $(DHRY_HEX)
 	@$(WORKLOAD_SIM) +rom=$(DHRY_HEX) +ram_fill=a5a5a5a5 > $(BUILD_DIR)/dhrystone.record
 	@$(PYTHON) scripts/asterbench_v10.py validate --name dhrystone < $(BUILD_DIR)/dhrystone.record
+	@$(PYTHON) scripts/workload_reference.py verify --name dhrystone < $(BUILD_DIR)/dhrystone.record
 
 REDUCE_WORKERS ?= 2
 REDUCE_WORDS ?= 1024
@@ -1574,6 +1575,43 @@ reduce: $(REDUCE_SIM) $(REDUCE_HEX)
 	@$(REDUCE_SIM) +rom=$(REDUCE_HEX) +ram_fill=a5a5a5a5 > $(BUILD_DIR)/$(REDUCE_NAME).record
 	@$(PYTHON) scripts/asterbench_v10.py validate --name $(REDUCE_NAME) < $(BUILD_DIR)/$(REDUCE_NAME).record
 	@$(PYTHON) scripts/workload_reference.py verify --name $(REDUCE_NAME) < $(BUILD_DIR)/$(REDUCE_NAME).record
+
+CONV_ENGINE ?= npu
+CONV_ENGINE_ID := $(if $(filter npu,$(CONV_ENGINE)),1,0)
+CONV_NAME := conv2d_$(CONV_ENGINE)
+CONV_FW_DIR := $(HELLO_DIR)/$(CONV_NAME)_i4
+CONV_ELF := $(CONV_FW_DIR)/conv.elf
+CONV_HEX := $(CONV_FW_DIR)/conv.hex
+CONV_CFLAGS = $(filter-out -march=% -mabi=%,$(HELLO_CFLAGS)) -march=rv32ima -mabi=ilp32 \
+	-Isoftware/drivers -Isoftware/benchmarks -Isoftware/runtime -DCONV_ENGINE=$(CONV_ENGINE_ID)
+
+.PHONY: conv-engine conv-engine-firmware
+$(CONV_ELF): software/benchmarks/workload_conv2d_engine.c software/benchmarks/workload_coh.h \
+		software/benchmarks/xe_kernels.c software/benchmarks/xe_kernels.h software/drivers/aster_npu.c \
+		software/runtime/start_multicore.S software/boot/link_multicore.ld Makefile
+	mkdir -p $(CONV_FW_DIR)
+	$(CC) $(CONV_CFLAGS) -T software/boot/link_multicore.ld -o $@ software/runtime/start_multicore.S \
+		software/benchmarks/workload_conv2d_engine.c software/benchmarks/xe_kernels.c software/drivers/aster_npu.c
+
+$(CONV_HEX): $(CONV_ELF) scripts/elf_to_hex.py
+	$(PYTHON) scripts/elf_to_hex.py --rom-bytes 65536 $< $@
+
+conv-engine-firmware: $(CONV_HEX)
+
+conv-engine: $(REDUCE_SIM) $(CONV_HEX)
+	@$(REDUCE_SIM) +rom=$(CONV_HEX) +ram_fill=a5a5a5a5 > $(BUILD_DIR)/$(CONV_NAME).record
+	@$(PYTHON) scripts/asterbench_v10.py validate --name $(CONV_NAME) < $(BUILD_DIR)/$(CONV_NAME).record
+	@$(PYTHON) scripts/workload_reference.py verify --name $(CONV_NAME) < $(BUILD_DIR)/$(CONV_NAME).record
+
+.PHONY: workloads
+workloads:
+	@set -e; for w in strided sort_search fft conv2d; do $(MAKE) --no-print-directory workload WORKLOAD=$$w; done
+	@$(MAKE) --no-print-directory coremark
+	@$(MAKE) --no-print-directory dhrystone
+	@$(MAKE) --no-print-directory reduce REDUCE_WORKERS=1
+	@$(MAKE) --no-print-directory reduce REDUCE_WORKERS=2
+	@$(MAKE) --no-print-directory conv-engine CONV_ENGINE=dot8
+	@$(MAKE) --no-print-directory conv-engine CONV_ENGINE=npu
 
 .PHONY: coherent-bench coherent-firmware coherent-config coherent-bench-workloads coherent-bench-matrix coherent-bench-boundaries coherent-bench-sizes
 $(COHERENT_ELF): software/benchmarks/coherent.c software/runtime/start_multicore.S software/runtime/aster.h software/boot/link_multicore.ld Makefile
@@ -1862,7 +1900,7 @@ parallel-workloads:
 
 test: smoke phase1 hello bench cache uart fpga-sim linux-sim counters retirement npu-pe npu-array npu-engine npu-regs npu-driver npu-runtime npu-stop npu-bench-validate arbiter shared-fabric multicore-runtime parallel
 
-check: tools smoke phase1 hello bench cache uart fpga-sim linux-sim linux-dual-sim linux-coherent-sim counters retirement pcpi-probe dot8-unit npu-pe npu-array npu-engine npu-regs npu-driver npu-runtime npu-stop npu-bench-validate xe-bench-validate phase11-infer atomic-fabric atomic-runtime atomic-faults coherent-cache warm-stop coherent-counters coherent-soc coherent-bench riscv-reference riscv-reference-negative coherent-litmus arbiter shared-fabric multicore-runtime multicore-adversarial parallel
+check: tools smoke phase1 hello bench cache uart fpga-sim linux-sim linux-dual-sim linux-coherent-sim counters retirement pcpi-probe dot8-unit npu-pe npu-array npu-engine npu-regs npu-driver npu-runtime npu-stop npu-bench-validate xe-bench-validate phase11-infer workloads atomic-fabric atomic-runtime atomic-faults coherent-cache warm-stop coherent-counters coherent-soc coherent-bench riscv-reference riscv-reference-negative coherent-litmus arbiter shared-fabric multicore-runtime multicore-adversarial parallel
 
 clean:
 	rm -rf $(BUILD_DIR)
