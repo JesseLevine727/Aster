@@ -1603,6 +1603,36 @@ conv-engine: $(REDUCE_SIM) $(CONV_HEX)
 	@$(PYTHON) scripts/asterbench_v10.py validate --name $(CONV_NAME) < $(BUILD_DIR)/$(CONV_NAME).record
 	@$(PYTHON) scripts/workload_reference.py verify --name $(CONV_NAME) < $(BUILD_DIR)/$(CONV_NAME).record
 
+ECG_CHUNKS ?= 16
+ECG_CHUNK ?= 64
+ECG_COEF ?= 16
+ECG_FW_DIR := $(HELLO_DIR)/streaming_ecg_c$(ECG_CHUNKS)_n$(ECG_CHUNK)_k$(ECG_COEF)
+ECG_ELF := $(ECG_FW_DIR)/ecg.elf
+ECG_HEX := $(ECG_FW_DIR)/ecg.hex
+ECG_CFLAGS = $(filter-out -march=% -mabi=%,$(HELLO_CFLAGS)) -march=rv32ima -mabi=ilp32 \
+	-Isoftware/drivers -Isoftware/benchmarks -Isoftware/runtime \
+	-DECG_CHUNKS=$(ECG_CHUNKS) -DECG_CHUNK=$(ECG_CHUNK) -DECG_COEF=$(ECG_COEF)
+
+.PHONY: ecg ecg-firmware
+$(ECG_ELF): software/benchmarks/workload_ecg.c software/benchmarks/workload_coh.h \
+		software/benchmarks/xe_kernels.c software/benchmarks/xe_kernels.h software/drivers/aster_npu.c \
+		software/drivers/aster_dma.c software/drivers/aster_dma.h software/runtime/start_multicore.S \
+		software/boot/link_multicore.ld Makefile
+	mkdir -p $(ECG_FW_DIR)
+	$(CC) $(ECG_CFLAGS) -T software/boot/link_multicore.ld -o $@ software/runtime/start_multicore.S \
+		software/benchmarks/workload_ecg.c software/benchmarks/xe_kernels.c \
+		software/drivers/aster_npu.c software/drivers/aster_dma.c
+
+$(ECG_HEX): $(ECG_ELF) scripts/elf_to_hex.py
+	$(PYTHON) scripts/elf_to_hex.py --rom-bytes 65536 $< $@
+
+ecg-firmware: $(ECG_HEX)
+
+ecg: $(REDUCE_SIM) $(ECG_HEX)
+	@$(REDUCE_SIM) +rom=$(ECG_HEX) +ram_fill=a5a5a5a5 > $(BUILD_DIR)/streaming_ecg.record
+	@$(PYTHON) scripts/asterbench_v10.py validate --name streaming_ecg < $(BUILD_DIR)/streaming_ecg.record
+	@$(PYTHON) scripts/workload_reference.py verify --name streaming_ecg < $(BUILD_DIR)/streaming_ecg.record
+
 .PHONY: workloads
 workloads:
 	@set -e; for w in strided sort_search fft conv2d; do $(MAKE) --no-print-directory workload WORKLOAD=$$w; done
@@ -1612,6 +1642,7 @@ workloads:
 	@$(MAKE) --no-print-directory reduce REDUCE_WORKERS=2
 	@$(MAKE) --no-print-directory conv-engine CONV_ENGINE=dot8
 	@$(MAKE) --no-print-directory conv-engine CONV_ENGINE=npu
+	@$(MAKE) --no-print-directory ecg
 
 .PHONY: coherent-bench coherent-firmware coherent-config coherent-bench-workloads coherent-bench-matrix coherent-bench-boundaries coherent-bench-sizes
 $(COHERENT_ELF): software/benchmarks/coherent.c software/runtime/start_multicore.S software/runtime/aster.h software/boot/link_multicore.ld Makefile

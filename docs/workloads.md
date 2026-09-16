@@ -42,6 +42,7 @@ make workloads                      # all of the above; part of make check
 | `conv2d_npu` | dsp | NPU | im2col GEMM via the 4×4 array | checksum oracle |
 | `reduce_scalar` | cpu | 1 hart | sum of a shared-RAM array | checksum oracle |
 | `reduce_parallel` | cpu | 2 harts | split sum, partial published | checksum oracle |
+| `streaming_ecg` | system | CPU + DMA + DOT8 + NPU | per chunk: stage, DMA, DOT8 FIR, features, NPU classify | checksum oracle |
 
 `conv2d`, `conv2d_dot8` and `conv2d_npu` must all produce the same output and
 therefore the same checksum; that equality is the cross-engine correctness check.
@@ -66,6 +67,14 @@ therefore the same checksum; that equality is the cross-engine correctness check
 - **Conv2D** engine variants materialize an im2col matrix in shared RAM; the
   materialization cost is inside the measured window and is why `conv2d_dot8`
   is slower than scalar for this shape.
+- **Streaming ECG** is the heterogeneous demo (Phase 12). Each of the 16 chunks
+  of 64 samples is staged by the CPU, moved by DMA, filtered by Xasterdot8, and
+  classified by the NPU while the primary hart orchestrates and the secondary
+  runs the FIR. The sample source is a deterministic synthetic ECG-like
+  waveform (a real PhysioNet segment can be substituted); "real time" means
+  sustained per-chunk throughput, not hard deadlines, because there are no
+  interrupts or timers. The record's `dma_bytes` is the DMA engine's byte-event
+  count and `accelerator_cycles` is the last NPU job's active-array cycles.
 
 ## Provenance
 

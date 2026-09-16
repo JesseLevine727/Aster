@@ -19,12 +19,16 @@ static inline uint32_t coh_reg(uint32_t address) {
     return *(volatile uint32_t *)(uintptr_t)address;
 }
 
-static inline uint64_t coh_counter(uint32_t event) {
-    volatile uint32_t *low = (volatile uint32_t *)(uintptr_t)(0x20003000u + event * 8u);
+static inline uint64_t coh_read64(uint32_t address) {
+    volatile uint32_t *low = (volatile uint32_t *)(uintptr_t)address;
     volatile uint32_t *high = low + 1;
     uint32_t first, value, last;
     do { first = *high; value = *low; last = *high; } while (first != last);
     return ((uint64_t)last << 32) | value;
+}
+
+static inline uint64_t coh_counter(uint32_t event) {
+    return coh_read64(0x20003000u + event * 8u);
 }
 
 static inline void coh_field(const char *key, uint32_t value) {
@@ -60,8 +64,8 @@ static inline void aster_workload_emit_coh(const char *name, const char *categor
     coh_hex64("backing_transactions", coh_counter(7));
     coh_hex64("cache_accesses", coh_counter(3) + coh_counter(5));
     coh_hex64("cache_misses", coh_counter(4) + coh_counter(6));
-    coh_hex64("dma_bytes", 0u);
-    coh_hex64("accelerator_cycles", 0u);
+    coh_hex64("dma_bytes", coh_read64(0x30000120u));
+    coh_hex64("accelerator_cycles", coh_read64(0x40000048u));
     aster_putc('\n');
 }
 #endif

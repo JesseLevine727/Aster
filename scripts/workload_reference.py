@@ -144,6 +144,63 @@ def dhrystone_checksum(iterations: int) -> int:
     return checksum
 
 
+def _trunc_div(value: int, divisor: int) -> int:
+    quotient = abs(value) // divisor
+    return -quotient if value < 0 else quotient
+
+
+def _clamp8(value: int) -> int:
+    return max(-128, min(127, value))
+
+
+def _ecg_sample(t: int) -> int:
+    phase = t % 32
+    if phase == 0:
+        return 120
+    if phase in (1, 31):
+        return 40
+    if phase in (2, 30):
+        return -20
+    return ((t * 7) % 9) - 4
+
+
+def ecg_checksum(size: int, iterations: int, param: int, seed: int) -> int:
+    chunk, chunks, coef_len = size, iterations, param
+    fout = chunk - coef_len + 1
+    coef = [signed8((seed ^ ((i * 0x9E3779B9) & MASK)) & 0xFF) for i in range(coef_len)]
+    weights = [[signed8((seed ^ ((c * 0x85EBCA6B) & MASK) ^ ((f * 0x1021) & MASK)) & 0xFF)
+                for f in range(4)] for c in range(3)]
+    checksum = 0
+    for chunk_index in range(chunks):
+        dma = [_ecg_sample(chunk_index * chunk + i) for i in range(chunk)]
+        filtered = [sum(dma[r + k] * coef[k] for k in range(coef_len)) for r in range(fout)]
+        peak = sum_scaled = abs_sum = previous_sign = zero_crossings = 0
+        for value in filtered:
+            scaled = value >> 8
+            sum_scaled += scaled
+            magnitude = -scaled if scaled < 0 else scaled
+            abs_sum += magnitude
+            if magnitude > peak:
+                peak = magnitude
+            sign = 1 if value > 0 else (-1 if value < 0 else 0)
+            if previous_sign and sign and sign != previous_sign:
+                zero_crossings += 1
+            if sign:
+                previous_sign = sign
+        features = [_clamp8(peak >> 4), _clamp8(_trunc_div(abs_sum, fout) >> 4),
+                    _clamp8(zero_crossings), _clamp8(_trunc_div(sum_scaled, fout) >> 4)]
+        scores = [sum(weights[c][f] * features[f] for f in range(4)) for c in range(3)]
+        best = max(range(3), key=lambda c: scores[c])
+        checksum = ((checksum * 33) ^ (filtered[0] & MASK)) & MASK
+        checksum = ((checksum * 33) ^ (filtered[fout - 1] & MASK)) & MASK
+        for feature in features:
+            checksum = ((checksum * 33) ^ (feature & 0xFF)) & MASK
+        for score in scores:
+            checksum = ((checksum * 33) ^ (score & MASK)) & MASK
+        checksum = ((checksum * 33) ^ best) & MASK
+    return checksum
+
+
 def expected_checksum(name: str, size: int, iterations: int, param: int, seed: int) -> int:
     if name == "strided":
         return strided_checksum(size, iterations, param, seed)
@@ -157,6 +214,8 @@ def expected_checksum(name: str, size: int, iterations: int, param: int, seed: i
         return reduce_checksum(size, iterations, param, seed)
     if name == "dhrystone":
         return dhrystone_checksum(iterations)
+    if name == "streaming_ecg":
+        return ecg_checksum(size, iterations, param, seed)
     raise bench.ValidationError(f"no checksum reference for workload {name!r}")
 
 
