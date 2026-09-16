@@ -1633,6 +1633,35 @@ ecg: $(REDUCE_SIM) $(ECG_HEX)
 	@$(PYTHON) scripts/asterbench_v10.py validate --name streaming_ecg < $(BUILD_DIR)/streaming_ecg.record
 	@$(PYTHON) scripts/workload_reference.py verify --name streaming_ecg < $(BUILD_DIR)/streaming_ecg.record
 
+CIFAR_FW_DIR := $(HELLO_DIR)/cifar_cnn
+CIFAR_ELF := $(CIFAR_FW_DIR)/cifar.elf
+CIFAR_HEX := $(CIFAR_FW_DIR)/cifar.hex
+CIFAR_CFLAGS = $(filter-out -march=% -mabi=%,$(HELLO_CFLAGS)) -march=rv32ima -mabi=ilp32 \
+	-Isoftware/drivers -Isoftware/benchmarks -Isoftware/runtime
+
+.PHONY: cifar cifar-firmware cifar-model
+cifar-model:
+	$(PYTHON) scripts/cifar_train.py
+	$(PYTHON) scripts/cifar_reference.py build/cifar/model.json
+	$(PYTHON) scripts/cifar_export.py build/cifar/model.json
+
+$(CIFAR_ELF): software/benchmarks/workload_cifar.c software/benchmarks/cifar_model.h \
+		software/benchmarks/cifar_images.h software/benchmarks/workload_coh.h \
+		software/drivers/aster_npu.c software/runtime/start_multicore.S software/boot/link_multicore.ld Makefile
+	mkdir -p $(CIFAR_FW_DIR)
+	$(CC) $(CIFAR_CFLAGS) -T software/boot/link_multicore.ld -o $@ software/runtime/start_multicore.S \
+		software/benchmarks/workload_cifar.c software/drivers/aster_npu.c
+
+$(CIFAR_HEX): $(CIFAR_ELF) scripts/elf_to_hex.py
+	$(PYTHON) scripts/elf_to_hex.py --rom-bytes 65536 $< $@
+
+cifar-firmware: $(CIFAR_HEX)
+
+cifar: $(REDUCE_SIM) $(CIFAR_HEX)
+	@$(REDUCE_SIM) +rom=$(CIFAR_HEX) +ram_fill=a5a5a5a5 > $(BUILD_DIR)/cifar_cnn.record
+	@$(PYTHON) scripts/asterbench_v10.py validate --name cifar_cnn < $(BUILD_DIR)/cifar_cnn.record
+	@$(PYTHON) scripts/cifar_reference.py docs/results/phase12/cifar_model.json --record $(BUILD_DIR)/cifar_cnn.record
+
 .PHONY: workloads
 workloads:
 	@set -e; for w in strided sort_search fft conv2d; do $(MAKE) --no-print-directory workload WORKLOAD=$$w; done
@@ -1643,6 +1672,7 @@ workloads:
 	@$(MAKE) --no-print-directory conv-engine CONV_ENGINE=dot8
 	@$(MAKE) --no-print-directory conv-engine CONV_ENGINE=npu
 	@$(MAKE) --no-print-directory ecg
+	@$(MAKE) --no-print-directory cifar
 
 .PHONY: coherent-bench coherent-firmware coherent-config coherent-bench-workloads coherent-bench-matrix coherent-bench-boundaries coherent-bench-sizes
 $(COHERENT_ELF): software/benchmarks/coherent.c software/runtime/start_multicore.S software/runtime/aster.h software/boot/link_multicore.ld Makefile

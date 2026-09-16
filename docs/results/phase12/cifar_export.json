@@ -1,0 +1,15 @@
+{
+  "headers": {
+    "cifar_images.h": "9d1583dd8f268ed6bb475412f63ce67739535425197e19ad86c6a1c356d16dc8",
+    "cifar_model.h": "b50df83c62d00d832f189c74cd08e62a47ce5d507c48a69b14b8b6dd2253b489"
+  },
+  "model_hash": "858b480876edb2dca2c17c8a40078fb091d73cf5fb2b57dc9d746f162cf3f814",
+  "reference": {
+    "accuracy": 0.5,
+    "correct": 10,
+    "images": 20,
+    "model_hash": "858b480876edb2dca2c17c8a40078fb091d73cf5fb2b57dc9d746f162cf3f814"
+  },
+  "schema": "aster.cifar.export.v1",
+  "test_count": 20
+}
