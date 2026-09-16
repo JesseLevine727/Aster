@@ -43,7 +43,7 @@ make workloads                      # all of the above; part of make check
 | `reduce_scalar` | cpu | 1 hart | sum of a shared-RAM array | checksum oracle |
 | `reduce_parallel` | cpu | 2 harts | split sum, partial published | checksum oracle |
 | `streaming_ecg` | system | CPU + DMA + DOT8 + NPU | per chunk: stage, DMA, DOT8 FIR, features, NPU classify | checksum oracle |
-| `cifar_cnn` | ml | NPU | 16×16 tiny CNN: conv 3→16, ReLU, 2×2 pool, fc 784→10 | artifact reference |
+| `cifar_cnn` | ml | NPU | 16×16 tiny CNN: conv 3→16, conv 16→32, ReLU/pool, fc 128→10 | artifact reference |
 
 `conv2d`, `conv2d_dot8` and `conv2d_npu` must all produce the same output and
 therefore the same checksum; that equality is the cross-engine correctness check.
@@ -79,12 +79,13 @@ therefore the same checksum; that equality is the cross-engine correctness check
   record's `dma_bytes` is the DMA engine's byte-event count and
   `accelerator_cycles` is the last NPU job's active-array cycles.
 - **CIFAR-10** is a tiny quantized CNN: the 32×32 RGB input is downscaled 2×2
-  to 16×16 to fit the 32 KiB NPU-visible RAM, and the network is one 3×3
-  convolution (3→16), ReLU, 2×2 max pool and a 784→10 fully connected layer.
-  Weights and activations are per-tensor INT8 with frozen requantization. On
-  the 20-image balanced subset the integer model matches the floating-point
-  model's 10/20; this is a small CNN demonstration, not a competitive
-  CIFAR-10 result. `scripts/cifar_train.py` retrains, `cifar_reference.py`
+  to 16×16 to fit the 32 KiB NPU-visible RAM, and the network is two 3×3
+  convolutions (3→16, 16→32), each with ReLU and 2×2 max pool, and a 128→10
+  fully connected layer.
+  Weights and activations are per-tensor INT8 with frozen requantization. The full CIFAR-10 test
+  accuracy is 58.1% and the integer model matches the float model on the
+  20-image balanced subset; this is a small CNN demonstration, not a
+  competitive CIFAR-10 result. `scripts/cifar_train.py` retrains, `cifar_reference.py`
   recomputes the integer network, and `cifar_export.py` emits the headers.
 
 ## Provenance

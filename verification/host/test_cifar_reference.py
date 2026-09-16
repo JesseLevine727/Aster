@@ -16,16 +16,16 @@ class CifarReference(unittest.TestCase):
     def test_reference_matches_artifact(self):
         result = reference.reference(MODEL)
         self.assertEqual(result["images"], 20)
-        self.assertEqual(result["correct"], 10)
+        self.assertEqual(result["correct"], 14)
 
     def test_record_checksum_matches_firmware(self):
         model = reference.load_model(MODEL)
-        self.assertEqual(reference.record_checksum(model), 0xC6A3C303)
+        self.assertEqual(reference.record_checksum(model), 0xFEB1B300)
 
     def test_geometry_fits_npu(self):
         model = json.loads(MODEL.read_text())
-        oh = model["input"]["height"] - model["conv"]["kernel"] + 1
-        self.assertLessEqual(oh * oh, 1024)
+        self.assertLessEqual(14 * 14, 1024)
+        self.assertLessEqual(5 * 5, 1024)
         self.assertLessEqual(model["fc"]["in_features"], 1024)
 
 

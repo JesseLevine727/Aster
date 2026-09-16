@@ -1,15 +1,15 @@
 {
   "headers": {
-    "cifar_images.h": "9d1583dd8f268ed6bb475412f63ce67739535425197e19ad86c6a1c356d16dc8",
-    "cifar_model.h": "b50df83c62d00d832f189c74cd08e62a47ce5d507c48a69b14b8b6dd2253b489"
+    "cifar_images.h": "1489788a508e37990dd564d84a4aba8f8d924330e5fdd1dbac7967879e08a289",
+    "cifar_model.h": "d5a074aff50957ae003bbaf6be8c98ae4faf525e008d77b2f80ccdb2a002820e"
   },
-  "model_hash": "858b480876edb2dca2c17c8a40078fb091d73cf5fb2b57dc9d746f162cf3f814",
+  "model_hash": "c6188ab478e8256c5a55304de12cd64107460622a6d8eebcd1842ac9cf48cb54",
   "reference": {
-    "accuracy": 0.5,
-    "correct": 10,
+    "accuracy": 0.7,
+    "correct": 14,
     "images": 20,
-    "model_hash": "858b480876edb2dca2c17c8a40078fb091d73cf5fb2b57dc9d746f162cf3f814"
+    "model_hash": "c6188ab478e8256c5a55304de12cd64107460622a6d8eebcd1842ac9cf48cb54"
   },
-  "schema": "aster.cifar.export.v1",
+  "schema": "aster.cifar.export.v2",
   "test_count": 20
 }
