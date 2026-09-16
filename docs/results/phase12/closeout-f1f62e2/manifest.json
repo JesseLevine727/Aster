@@ -54,7 +54,7 @@
     },
     "physical/physical.json": {
       "bytes": 3800,
-      "sha256": "da7a16537ca6395ffae79760a690deb94d44fb7da74f2b56caa926c6335aa9d0"
+      "sha256": "06e527577d5acbb4551a7a546c5aed7c37a2b82464d1f87bb0fe9951e09c97fe"
     },
     "simulation/study.json": {
       "bytes": 1653,
@@ -62,7 +62,7 @@
     },
     "source/source-state.json": {
       "bytes": 41751,
-      "sha256": "3502bfd3783ab3c49a130d6c3661460c451f3fa3644137afb8f7898e16be95c0"
+      "sha256": "3441830fcb7235fb4a4f66424a016550d90f34cd5e51ef1a14c213c7ff78b730"
     },
     "spec/phase12.md": {
       "bytes": 4380,
@@ -118,8 +118,8 @@
       "cycles": 1434468,
       "repeats": 3
     },
-    "source_revision": "847740bb7bf4f3d99d057801e9af3b1903ed8af9",
-    "source_sha256": "5f8cec98f1715e6d9239eb33609f55a9da50ce8f15a41dd9651dfbee2190c861",
+    "source_revision": "f1f62e2b327d34b2212045396585c8e86a84a6f3",
+    "source_sha256": "0e64e8c4427089f90d5bbc5a7e601d36762f4cfed5c1e4f2b5539906c133fe4c",
     "verification": {
       "host_tests_last": 253
     }

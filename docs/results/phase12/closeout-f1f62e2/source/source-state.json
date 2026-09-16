@@ -58,7 +58,7 @@
     "scripts/asterbench_v9.py": "153013615d8b2f7aa90db337ae920b01fddef7472d2f7af6d162531568df252c",
     "scripts/audit_phase10.py": "c32688d1f1b8c126ccb556624fc8ee1dbd08e685b8c47ee1ab98dd9ae6b360e9",
     "scripts/audit_phase11.py": "4f39f513cbd33bcfc679a9be99bf148f216fb9790e9b6482626f869f912dc4b2",
-    "scripts/audit_phase12.py": "f6ca863833b44e3d9f102fb9f7a91a463941f7d29a93efa593342758151d173c",
+    "scripts/audit_phase12.py": "98319922103e0d1856d313615bf45184704ee90c5a7c627b881f00fda4f134f7",
     "scripts/audit_phase5.py": "eaf957471feead521a4b8d3bbb62e84f173ae1e7ca0032436ddba94f6ea6e634",
     "scripts/audit_phase6.py": "3d20e229af9051096e15109795ae32c25ed3b8f164fe49832c7c33c260ff07a7",
     "scripts/audit_phase6_regressions.py": "940adad119361761f17aff435256b47163477d0ee7ef389c271ff65db4d83bf5",
@@ -383,7 +383,7 @@
     "verification/unit/tb_aster_uart_tx.cpp": "6cb17cf0e6a6b0890aabd7660e01dd98ff2076b2b4be5b291f6a89c2e8cfca0e",
     "verification/unit/tb_aster_warm_stop.cpp": "5e5e2f325eb2f6483828a8825d264b8bbf17653dc3327a6346eb035aac35ac2b"
   },
-  "revision": "847740bb7bf4f3d99d057801e9af3b1903ed8af9",
+  "revision": "f1f62e2b327d34b2212045396585c8e86a84a6f3",
   "schema": "aster.phase12.source.v1",
-  "sha256": "5f8cec98f1715e6d9239eb33609f55a9da50ce8f15a41dd9651dfbee2190c861"
+  "sha256": "0e64e8c4427089f90d5bbc5a7e601d36762f4cfed5c1e4f2b5539906c133fe4c"
 }

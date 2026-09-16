@@ -117,7 +117,7 @@ with the CPU, moves it with DMA, filters it with Xasterdot8 on the secondary
 hart, extracts features on the CPU and classifies them on the NPU, using real
 PhysioNet MIT-BIH data. The pipeline is bit-exact against an independent oracle,
 three fresh simulation repeats and two physical warm boots reproduce the record,
-and the [closeout bundle](docs/results/phase12/closeout-847740b/README.md) passes
+and the [closeout bundle](docs/results/phase12/closeout-f1f62e2/README.md) passes
 `scripts/audit_phase12.py`. "Real time" means sustained per-chunk throughput;
 interrupts and timers remain future work.
 
@@ -422,7 +422,7 @@ Use a streaming dataset such as ECG and exercise CPU, DMA, DSP/custom instructio
 **Exit:** Aster sustains the target stream in real time while reporting utilization/performance counters.
 
 **Complete:** the [Phase 12 contract](docs/phase12.md) and
-[closeout bundle](docs/results/phase12/closeout-847740b/README.md) run a real
+[closeout bundle](docs/results/phase12/closeout-f1f62e2/README.md) run a real
 PhysioNet MIT-BIH ECG stream through the CPU, DMA, Xasterdot8 and NPU together,
 bit-exact against an independent oracle and reproduced in simulation and on the
 Pynq-Z1. Sustained per-chunk throughput is demonstrated; hard deadlines,

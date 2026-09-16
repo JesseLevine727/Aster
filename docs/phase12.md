@@ -67,7 +67,7 @@ The README Phase 12 exit is satisfied at commit `847740b` plus the retained
 closeout documentation: the streaming ECG pipeline is bit-exact against the
 independent oracle, three fresh simulation repeats and two physical warm boots
 reproduce the record, and the [self-contained closeout
-bundle](results/phase12/closeout-847740b/README.md) passes
+bundle](results/phase12/closeout-f1f62e2/README.md) passes
 `scripts/audit_phase12.py`.
 
 ## Explicit non-goals

@@ -13,7 +13,7 @@ not alter the Phase 1–11 closeouts.
 From the repository root:
 
 ```sh
-python3 scripts/audit_phase12.py audit docs/results/phase12/closeout-847740b
+python3 scripts/audit_phase12.py audit docs/results/phase12/closeout-f1f62e2
 ```
 
 The audit never connects to the board. It inventories and hashes every artifact,
@@ -56,7 +56,7 @@ guarantee: Aster still has no interrupts or timers.
 ## Provenance and limitations
 
 Every capture binds the clean committed revision
-`847740bb7bf4f3d99d057801e9af3b1903ed8af9`. The sample source is PhysioNet
+`f1f62e2b327d34b2212045396585c8e86a84a6f3`. The sample source is PhysioNet
 MIT-BIH record 100 (MLII); the transport is the FPGA UART TX-to-RX serial
 loopback read over AXI/Linux, not an external Pmod loopback. This phase does not
 claim hard real-time scheduling, interrupts or timers; those remain later work.

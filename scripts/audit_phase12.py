@@ -25,7 +25,7 @@ except ImportError:
 
 SCHEMA = "aster.phase12.closeout.v1"
 SOURCE_SCHEMA = "aster.phase12.source.v1"
-REVISION = "847740bb7bf4f3d99d057801e9af3b1903ed8af9"
+REVISION = "f1f62e2b327d34b2212045396585c8e86a84a6f3"
 NAME = "streaming_ecg"
 TOP = {"spec", "input", "simulation", "fpga", "physical", "source", "verification"}
 REQUIREMENTS = {
