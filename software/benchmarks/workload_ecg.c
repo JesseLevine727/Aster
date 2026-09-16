@@ -11,6 +11,7 @@
 #include "aster_dot8.h"
 #include "xe_kernels.h"
 #include "workload_coh.h"
+#include "workload_ecg_data.h"
 
 #ifndef ECG_CHUNKS
 #define ECG_CHUNKS 16u
@@ -31,6 +32,7 @@
 
 _Static_assert(ECG_CHUNK > ECG_COEF, "chunk must exceed the filter length");
 _Static_assert(ECG_FOUT <= 1024u && ECG_COEF <= 1024u, "pipeline exceeds the NPU bound");
+_Static_assert(ECG_CHUNKS * ECG_CHUNK <= ECG_DATA_COUNT, "stream exceeds the baked ECG segment");
 
 static int8_t raw[ECG_CHUNK];
 static int8_t dma_buf[ECG_CHUNK];
@@ -41,14 +43,6 @@ static int8_t weights[ECG_CLASSES * ECG_FEATURES];
 static int32_t scores[ECG_CLASSES];
 
 static _Atomic uint32_t ecg_epoch, ecg_done;
-
-static int8_t sample(uint32_t t) {
-    const uint32_t p = t % 32u;
-    if (p == 0u) return 120;
-    if (p == 1u || p == 31u) return 40;
-    if (p == 2u || p == 30u) return -20;
-    return (int8_t)((int32_t)((t * 7u) % 9u) - 4);
-}
 
 void aster_secondary_main(void) {
     uint32_t last = 0;
@@ -89,7 +83,7 @@ int main(void) {
 
     uint32_t checksum = 0;
     for (uint32_t chunk = 0; chunk < ECG_CHUNKS; ++chunk) {
-        for (uint32_t i = 0; i < ECG_CHUNK; ++i) raw[i] = sample(chunk * ECG_CHUNK + i);
+        for (uint32_t i = 0; i < ECG_CHUNK; ++i) raw[i] = ecg_samples[chunk * ECG_CHUNK + i];
         __asm__ volatile ("fence rw,rw" ::: "memory");
         if (aster_dma_copy(dma_buf, raw, ECG_CHUNK, 8000000u) != ASTER_DMA_OK) {
             aster_puts("ECG DMA FAIL\n"); __asm__ volatile ("ebreak"); for (;;) {}

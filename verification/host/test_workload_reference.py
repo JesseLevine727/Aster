@@ -25,6 +25,15 @@ class WorkloadReference(unittest.TestCase):
     def test_reduce_checksum_matches_firmware(self):
         self.assertEqual(reference.reduce_checksum(4096, 4, 2, 0x13570000), 0x5C808000)
 
+    def test_ecg_checksum_matches_firmware(self):
+        self.assertEqual(reference.ecg_checksum(64, 16, 16, 0x13570000), 0x19B26EA4)
+
+    def test_ecg_segment_is_committed_physionet_data(self):
+        segment = reference.json.loads(reference.ECG_SEGMENT.read_text())
+        self.assertEqual(segment["record"], "100")
+        self.assertEqual(segment["count"], 1024)
+        self.assertEqual(len(segment["samples"]), 1024)
+
     def test_unknown_workload_rejected(self):
         with self.assertRaises(Exception):
             reference.expected_checksum("nope", 4, 1, 1, 0)

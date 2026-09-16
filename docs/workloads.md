@@ -70,11 +70,13 @@ therefore the same checksum; that equality is the cross-engine correctness check
 - **Streaming ECG** is the heterogeneous demo (Phase 12). Each of the 16 chunks
   of 64 samples is staged by the CPU, moved by DMA, filtered by Xasterdot8, and
   classified by the NPU while the primary hart orchestrates and the secondary
-  runs the FIR. The sample source is a deterministic synthetic ECG-like
-  waveform (a real PhysioNet segment can be substituted); "real time" means
-  sustained per-chunk throughput, not hard deadlines, because there are no
-  interrupts or timers. The record's `dma_bytes` is the DMA engine's byte-event
-  count and `accelerator_cycles` is the last NPU job's active-array cycles.
+  runs the FIR. The samples are a real PhysioNet MIT-BIH Arrhythmia Database
+  record 100 MLII segment (samples 0–1023, ADC zero 1024, scale 4), baked by
+  `scripts/gen_ecg_data.py` into `software/benchmarks/workload_ecg_data.h` and
+  `docs/results/phase12/ecg_segment.json`. "Real time" means sustained per-chunk
+  throughput, not hard deadlines, because there are no interrupts or timers. The
+  record's `dma_bytes` is the DMA engine's byte-event count and
+  `accelerator_cycles` is the last NPU job's active-array cycles.
 
 ## Provenance
 

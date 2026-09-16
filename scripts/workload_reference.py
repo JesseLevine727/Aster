@@ -9,12 +9,15 @@ from __future__ import annotations
 
 import argparse
 import bisect
+import json
 import math
+from pathlib import Path
 import sys
 
 import asterbench_v10 as bench
 
 MASK = 0xFFFFFFFF
+ECG_SEGMENT = Path(__file__).resolve().parents[1] / "docs" / "results" / "phase12" / "ecg_segment.json"
 
 
 def round_half_away(value: float) -> int:
@@ -153,26 +156,26 @@ def _clamp8(value: int) -> int:
     return max(-128, min(127, value))
 
 
-def _ecg_sample(t: int) -> int:
-    phase = t % 32
-    if phase == 0:
-        return 120
-    if phase in (1, 31):
-        return 40
-    if phase in (2, 30):
-        return -20
-    return ((t * 7) % 9) - 4
+def _ecg_samples() -> list[int]:
+    segment = json.loads(ECG_SEGMENT.read_text())
+    samples = segment["samples"]
+    if len(samples) != segment["count"]:
+        raise bench.ValidationError("ECG segment length disagrees with its count")
+    return samples
 
 
 def ecg_checksum(size: int, iterations: int, param: int, seed: int) -> int:
+    samples = _ecg_samples()
     chunk, chunks, coef_len = size, iterations, param
     fout = chunk - coef_len + 1
+    if len(samples) < chunks * chunk:
+        raise bench.ValidationError("ECG segment is shorter than the requested stream")
     coef = [signed8((seed ^ ((i * 0x9E3779B9) & MASK)) & 0xFF) for i in range(coef_len)]
     weights = [[signed8((seed ^ ((c * 0x85EBCA6B) & MASK) ^ ((f * 0x1021) & MASK)) & 0xFF)
                 for f in range(4)] for c in range(3)]
     checksum = 0
     for chunk_index in range(chunks):
-        dma = [_ecg_sample(chunk_index * chunk + i) for i in range(chunk)]
+        dma = samples[chunk_index * chunk:(chunk_index + 1) * chunk]
         filtered = [sum(dma[r + k] * coef[k] for k in range(coef_len)) for r in range(fout)]
         peak = sum_scaled = abs_sum = previous_sign = zero_crossings = 0
         for value in filtered:
