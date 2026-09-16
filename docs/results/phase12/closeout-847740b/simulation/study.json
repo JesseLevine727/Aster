@@ -1,0 +1,13 @@
+{
+  "name": "streaming_ecg",
+  "provenance": {
+    "dirty": false,
+    "revision": "710e4af8d1b84fe94771b94008e505c1cdf13235"
+  },
+  "repeats": [
+    "ASTERBENCH,version=10,name=streaming_ecg,category=system,status=PASS,size=64,iterations=16,param=16,seed=0x13570000,checksum=0x19b26ea4,clock_hz=31250000,l1=1,sync_memory=0,line_words=4,line_count=16,memory_wait=0,cycles=0x000000000015e364,retired=0x0000000000033bcb,memory_transactions=0x000000000004cac3,backing_transactions=0x00000000000033a4,cache_accesses=0x000000000004c662,cache_misses=0x0000000000000bac,dma_bytes=0x00000000000004c0,accelerator_cycles=0x0000000000000004\n",
+    "ASTERBENCH,version=10,name=streaming_ecg,category=system,status=PASS,size=64,iterations=16,param=16,seed=0x13570000,checksum=0x19b26ea4,clock_hz=31250000,l1=1,sync_memory=0,line_words=4,line_count=16,memory_wait=0,cycles=0x000000000015e364,retired=0x0000000000033bcb,memory_transactions=0x000000000004cac3,backing_transactions=0x00000000000033a4,cache_accesses=0x000000000004c662,cache_misses=0x0000000000000bac,dma_bytes=0x00000000000004c0,accelerator_cycles=0x0000000000000004\n",
+    "ASTERBENCH,version=10,name=streaming_ecg,category=system,status=PASS,size=64,iterations=16,param=16,seed=0x13570000,checksum=0x19b26ea4,clock_hz=31250000,l1=1,sync_memory=0,line_words=4,line_count=16,memory_wait=0,cycles=0x000000000015e364,retired=0x0000000000033bcb,memory_transactions=0x000000000004cac3,backing_transactions=0x00000000000033a4,cache_accesses=0x000000000004c662,cache_misses=0x0000000000000bac,dma_bytes=0x00000000000004c0,accelerator_cycles=0x0000000000000004\n"
+  ],
+  "schema": "aster.phase12.study.v1"
+}

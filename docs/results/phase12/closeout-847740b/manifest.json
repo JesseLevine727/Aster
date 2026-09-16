@@ -1,0 +1,127 @@
+{
+  "files": {
+    "fpga/aster_linux.bit": {
+      "bytes": 4045695,
+      "sha256": "50f07f1521157c7753b2e9ff0503b4eea22b326e6fd3f51a7bcd6c5271fb209b"
+    },
+    "fpga/aster_linux.hwh": {
+      "bytes": 139988,
+      "sha256": "36d385040e056e0508f050363d693fa9825bf2f1145f86c184cbf2a3aeee71b6"
+    },
+    "fpga/bitstream.sha256": {
+      "bytes": 164,
+      "sha256": "72fb0ac3bc671c2a7deabecc801eaa0ea535de46b414e2e441f0e56b691b2810"
+    },
+    "fpga/drc.rpt": {
+      "bytes": 47996,
+      "sha256": "e75ae9bf6ba55b8c397d3dba402887e08592df5240ccee2507acbe2a8c26391b"
+    },
+    "fpga/methodology.rpt": {
+      "bytes": 1343,
+      "sha256": "6b9717c443527fbecf39b99160d60ba5f6f6d1a4e56637a780528eb5979a9642"
+    },
+    "fpga/route_status.rpt": {
+      "bytes": 651,
+      "sha256": "b10292bc16a6121de2a63092908832f41eb6f4231182b0d67d0c8131f8917922"
+    },
+    "fpga/timing_summary.rpt": {
+      "bytes": 28253,
+      "sha256": "fa216463e59512bb53cb7d22bcc614875dc37ee96ca06d86fe37ad4046e54719"
+    },
+    "fpga/utilization_routed.rpt": {
+      "bytes": 11928,
+      "sha256": "90161a9200dc9d63c0c0795179d9dbf2b4c0465bc0b7f42c63fd085a53b363eb"
+    },
+    "input/ecg_segment.json": {
+      "bytes": 9534,
+      "sha256": "cbc51ee94c9eb19f927cd178ed07838f792942e24f5547eebc1c522ae7020cc9"
+    },
+    "physical/boot1.ram": {
+      "bytes": 65536,
+      "sha256": "8f604f240121762b501ccbbef87c555db7c61f0bd31a612394951a1498f0d432"
+    },
+    "physical/boot1.uart": {
+      "bytes": 479,
+      "sha256": "fe2985cb1dabd191ef803c3ca3ef6ad1d427740358fccb11bece9b4a2b869502"
+    },
+    "physical/boot2.ram": {
+      "bytes": 65536,
+      "sha256": "1edbd95753cbb005451905a0b610336fd8538de0ae4026057f752b887636e0f5"
+    },
+    "physical/boot2.uart": {
+      "bytes": 479,
+      "sha256": "fe2985cb1dabd191ef803c3ca3ef6ad1d427740358fccb11bece9b4a2b869502"
+    },
+    "physical/physical.json": {
+      "bytes": 3800,
+      "sha256": "da7a16537ca6395ffae79760a690deb94d44fb7da74f2b56caa926c6335aa9d0"
+    },
+    "simulation/study.json": {
+      "bytes": 1653,
+      "sha256": "763140f323916d2be4aa44f14c4caf2c58280b9c58d3c025580e728b6efbb08e"
+    },
+    "source/source-state.json": {
+      "bytes": 41751,
+      "sha256": "3502bfd3783ab3c49a130d6c3661460c451f3fa3644137afb8f7898e16be95c0"
+    },
+    "spec/phase12.md": {
+      "bytes": 4380,
+      "sha256": "351d5a7d82ab0adeb0d9314b2ce1d0782280b2898b998b2b1ab3e4c646496f27"
+    },
+    "verification/make-check.log": {
+      "bytes": 192678,
+      "sha256": "01184bc58418c2d3218c8e45aa2df1c3f37c121cec96acdfdfdcb4f87ae0f899"
+    }
+  },
+  "requirements": {
+    "01-contract-and-sample-provenance": [
+      "spec/phase12.md",
+      "input/ecg_segment.json"
+    ],
+    "02-full-regressions-and-host-tests": [
+      "verification/make-check.log"
+    ],
+    "03-streaming-study-and-fresh-repeats": [
+      "simulation/study.json"
+    ],
+    "04-routed-fpga-overlay": [
+      "fpga/aster_linux.bit",
+      "fpga/aster_linux.hwh",
+      "fpga/timing_summary.rpt",
+      "fpga/drc.rpt",
+      "fpga/methodology.rpt",
+      "fpga/route_status.rpt",
+      "fpga/utilization_routed.rpt"
+    ],
+    "05-physical-pynq-acceptance": [
+      "physical/physical.json"
+    ],
+    "06-clean-source-and-immutable-mapping": [
+      "source/source-state.json"
+    ]
+  },
+  "schema": "aster.phase12.closeout.v1",
+  "status": "complete",
+  "summary": {
+    "fpga": {
+      "bridge_version": "0x90001"
+    },
+    "input": {
+      "count": 1024,
+      "record": "100"
+    },
+    "physical": {
+      "boots": 2
+    },
+    "simulation": {
+      "checksum": 431124132,
+      "cycles": 1434468,
+      "repeats": 3
+    },
+    "source_revision": "847740bb7bf4f3d99d057801e9af3b1903ed8af9",
+    "source_sha256": "5f8cec98f1715e6d9239eb33609f55a9da50ce8f15a41dd9651dfbee2190c861",
+    "verification": {
+      "host_tests_last": 253
+    }
+  }
+}

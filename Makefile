@@ -1660,7 +1660,7 @@ cifar-firmware: $(CIFAR_HEX)
 cifar: $(REDUCE_SIM) $(CIFAR_HEX)
 	@$(REDUCE_SIM) +rom=$(CIFAR_HEX) +ram_fill=a5a5a5a5 > $(BUILD_DIR)/cifar_cnn.record
 	@$(PYTHON) scripts/asterbench_v10.py validate --name cifar_cnn < $(BUILD_DIR)/cifar_cnn.record
-	@$(PYTHON) scripts/cifar_reference.py docs/results/phase12/cifar_model.json --record $(BUILD_DIR)/cifar_cnn.record
+	@$(PYTHON) scripts/cifar_reference.py docs/results/workloads/cifar_model.json --record $(BUILD_DIR)/cifar_cnn.record
 
 .PHONY: workloads
 workloads:

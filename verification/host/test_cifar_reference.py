@@ -9,7 +9,7 @@ ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(ROOT / "scripts"))
 import cifar_reference as reference
 
-MODEL = ROOT / "docs" / "results" / "phase12" / "cifar_model.json"
+MODEL = ROOT / "docs" / "results" / "workloads" / "cifar_model.json"
 
 
 class CifarReference(unittest.TestCase):

@@ -1,0 +1,107 @@
+{
+  "bitstream_sha256": "50f07f1521157c7753b2e9ff0503b4eea22b326e6fd3f51a7bcd6c5271fb209b",
+  "board": "pynq",
+  "boots": [
+    {
+      "after_stop": {
+        "control": 0,
+        "fifo_count": 0,
+        "hart_status": 0,
+        "status": 0,
+        "stop_status": 1
+      },
+      "before_stop": {
+        "control": 1,
+        "fifo_count": 0,
+        "hart_status": 3,
+        "status": 1,
+        "stop_status": 0
+      },
+      "boot": 1,
+      "elapsed_seconds": 0.2779027340002358,
+      "name": "streaming_ecg",
+      "ram": {
+        "bytes": 65536,
+        "file": "boot1.ram",
+        "sha256": "8f604f240121762b501ccbbef87c555db7c61f0bd31a612394951a1498f0d432"
+      },
+      "status": "PASS",
+      "uart": {
+        "bytes": 479,
+        "file": "boot1.uart",
+        "sha256": "fe2985cb1dabd191ef803c3ca3ef6ad1d427740358fccb11bece9b4a2b869502"
+      },
+      "uart_output": "ASTERBENCH,version=10,name=streaming_ecg,category=system,status=PASS,size=64,iterations=16,param=16,seed=0x13570000,checksum=0x19b26ea4,clock_hz=31250000,l1=1,sync_memory=1,line_words=4,line_count=16,memory_wait=1,cycles=0x0000000000169aee,retired=0x0000000000033bcb,memory_transactions=0x000000000004cac3,backing_transactions=0x00000000000033a4,cache_accesses=0x000000000004c662,cache_misses=0x0000000000000bac,dma_bytes=0x00000000000004c0,accelerator_cycles=0x0000000000000004\n"
+    },
+    {
+      "after_stop": {
+        "control": 0,
+        "fifo_count": 0,
+        "hart_status": 0,
+        "status": 0,
+        "stop_status": 1
+      },
+      "before_stop": {
+        "control": 1,
+        "fifo_count": 0,
+        "hart_status": 3,
+        "status": 1,
+        "stop_status": 0
+      },
+      "boot": 2,
+      "elapsed_seconds": 0.2752947990084067,
+      "name": "streaming_ecg",
+      "ram": {
+        "bytes": 65536,
+        "file": "boot2.ram",
+        "sha256": "1edbd95753cbb005451905a0b610336fd8538de0ae4026057f752b887636e0f5"
+      },
+      "status": "PASS",
+      "uart": {
+        "bytes": 479,
+        "file": "boot2.uart",
+        "sha256": "fe2985cb1dabd191ef803c3ca3ef6ad1d427740358fccb11bece9b4a2b869502"
+      },
+      "uart_output": "ASTERBENCH,version=10,name=streaming_ecg,category=system,status=PASS,size=64,iterations=16,param=16,seed=0x13570000,checksum=0x19b26ea4,clock_hz=31250000,l1=1,sync_memory=1,line_words=4,line_count=16,memory_wait=1,cycles=0x0000000000169aee,retired=0x0000000000033bcb,memory_transactions=0x000000000004cac3,backing_transactions=0x00000000000033a4,cache_accesses=0x000000000004c662,cache_misses=0x0000000000000bac,dma_bytes=0x00000000000004c0,accelerator_cycles=0x0000000000000004\n"
+    }
+  ],
+  "clock_mhz": 31.25,
+  "final_state": {
+    "control": 0,
+    "fifo_count": 0,
+    "hart_status": 0,
+    "status": 0,
+    "stop_status": 1
+  },
+  "firmware_sha256": "35c3463cc69217891b5b35ff55a9bbba8d77dc60e081e1792db09c4a83cf0603",
+  "handoff_preflight": {
+    "auxiliary_reset_active_high": true,
+    "axi_base": 1073741824,
+    "axi_span": 262144,
+    "bridge_version": 589825,
+    "caches": true,
+    "clock_hz": 31250000,
+    "coherent": true,
+    "dma": true,
+    "dma_abi": 1,
+    "dma_counter_abi": 5,
+    "dot8": true,
+    "dot8_abi": 1,
+    "dot8_counter_abi": 6,
+    "external_reset_active_high": false,
+    "hart_count": 2,
+    "isa": "rv32ima",
+    "npu": true,
+    "npu_abi": 1,
+    "npu_counter_abi": 1,
+    "safe_warm_stop": true
+  },
+  "hwh_sha256": "36d385040e056e0508f050363d693fa9825bf2f1145f86c184cbf2a3aeee71b6",
+  "kernel": "6.6.10-xilinx-v2024.1-g916a1f7c7222",
+  "name": "streaming_ecg",
+  "programmed": true,
+  "schema": "aster.phase12.physical-mem.v1",
+  "source_revision": "847740bb7bf4f3d99d057801e9af3b1903ed8af9",
+  "status": "complete",
+  "transport": "fpga_manager PL load + /dev/mem AXI, FPGA UART TX-to-RX loopback"
+}

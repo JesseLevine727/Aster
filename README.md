@@ -111,6 +111,16 @@ captures agree (NPU ≈4.5× the scalar baseline). The [closeout
 bundle](docs/results/phase11/closeout-ff56683/README.md) passes
 `scripts/audit_phase11.py`.
 
+Phase 12 (real-time heterogeneous demo) is complete under the
+[Phase 12 contract](docs/phase12.md): a streaming ECG pipeline stages each chunk
+with the CPU, moves it with DMA, filters it with Xasterdot8 on the secondary
+hart, extracts features on the CPU and classifies them on the NPU, using real
+PhysioNet MIT-BIH data. The pipeline is bit-exact against an independent oracle,
+three fresh simulation repeats and two physical warm boots reproduce the record,
+and the [closeout bundle](docs/results/phase12/closeout-847740b/README.md) passes
+`scripts/audit_phase12.py`. "Real time" means sustained per-chunk throughput;
+interrupts and timers remain future work.
+
 Start here:
 
 ```sh
@@ -410,6 +420,13 @@ physical captures (NPU ≈4.5× scalar, DOT8 ≈2.3×, two harts ≈1.95×).
 Use a streaming dataset such as ECG and exercise CPU, DMA, DSP/custom instructions and NPU together.
 
 **Exit:** Aster sustains the target stream in real time while reporting utilization/performance counters.
+
+**Complete:** the [Phase 12 contract](docs/phase12.md) and
+[closeout bundle](docs/results/phase12/closeout-847740b/README.md) run a real
+PhysioNet MIT-BIH ECG stream through the CPU, DMA, Xasterdot8 and NPU together,
+bit-exact against an independent oracle and reproduced in simulation and on the
+Pynq-Z1. Sustained per-chunk throughput is demonstrated; hard deadlines,
+interrupts and timers are out of scope.
 
 ## Phase 13 — Freeze Aster v1
 
