@@ -51,10 +51,29 @@ Only byte lane 0 of `ENABLE0/1`, `PENDING` and `RAISE` is meaningful. Sources:
   timer's own pending, otherwise the next compare cannot produce a new edge.
 - Reset clears `ENABLE0/1` and `PENDING`, and deasserts both `irqN`. The
   controller resets with `peripheral_resetn` (held while STOPPED).
-- The PicoRV32 core keeps `ENABLE_IRQ=1`, `ENABLE_IRQ_QREGS=1` and
+- The PicoRV32 core keeps `ENABLE_IRQ=1`, `ENABLE_IRQ_QREGS=0` and
   `ENABLE_IRQ_TIMER=0`. `MASKED_IRQ` masks the upstream ebreak/buserror IRQ
-  bits so `ebreak` continues to trap. The IRQ vector is the upstream fixed
-  `PROGADDR_IRQ = 0x10`.
+  bits so `ebreak` continues to trap. `LATCHED_IRQ=0` makes the input
+  level-sensitive. The IRQ vector is the upstream fixed `PROGADDR_IRQ = 0x10`.
+
+## Implementation notes
+
+- `ENABLE_IRQ_QREGS` must stay off. With it on, PicoRV32 decodes custom-0
+  `funct7=0` as `getq`, which shadows the Phase 8 Xasterdot8 instruction (also
+  custom-0 `funct7=0`) and silently corrupts every dot8 kernel. With it off the
+  core aliases q0/q1 onto `gp`/`tp`; Aster firmware leaves `gp` unused and only
+  uses `tp` for the startup hart id before interrupts are enabled, so the alias
+  is safe.
+- `LATCHED_IRQ=0` is required because the controller holds each source as a
+  level. Edge-latching the line would re-assert the CPU pending bit during the
+  handler and cause one spurious re-entry after the source is cleared.
+- The handler saves all caller-saved registers around a C dispatch. Each of the
+  sixteen stack accesses crosses the coherent fabric, so the measured
+  match-to-handler latency is ~594 cycles in simulation and ~662 on the board;
+  the firmware bound is 8192 cycles.
+- The atomic fabric permits the controller page `0x20004` for both harts, and
+  the fixed `0x10` vector is placed in `.text.init` ahead of the startup code in
+  both `start.S` and `start_multicore.S`, with a weak trap default dispatch.
 
 ## Verification and acceptance gates
 
