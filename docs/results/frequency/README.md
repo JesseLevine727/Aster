@@ -71,6 +71,72 @@ Two things are clear:
    the silicon runs at 100 MHz at room temperature, but the slow corner (used
    for signoff) closes at ~48 MHz.
 
+## What it takes to close at 100 MHz
+
+At the 10 ns constraint (after timing-driven placement) the critical paths
+cluster into a small number of classes. The full report is in
+[`closure-100mhz/top_paths.rpt`](closure-100mhz/top_paths.rpt); the classes are:
+
+| Delay | Route | Levels | Endpoints | Path class |
+| ---: | ---: | ---: | ---: | --- |
+| 20.57 ns | 43% | 28 | 1 | NPU `rows` → engine `state` |
+| 20.36 ns | 42% | 28 | 32 | NPU `rows` → `a_values` |
+| 20.34 ns | 42% | 28 | 32 | NPU `rows` → `b_values` |
+| 20.16 ns | 44% | 27 | 70 | NPU `tile_row` → `address` |
+| 19.98 ns | 41% | 28 | 1 | NPU `rows` → `done_flag` |
+| 19.66 ns | 39% | 28 | 2 | NPU `reduction` → `error_code` |
+| 19.64 ns | **81%** | 22 | 1 704 | cache `flush_position` → `data` |
+| 19.62 ns | 70% | 34 | 124 | cache `flush_position` → `counters` |
+| 19.60 ns | 75% | 27 | 32 | cache `flush_position` → `write_data` |
+
+Two clusters, with different fixes:
+
+### 1. NPU descriptor/engine path (~20.5 ns, ~42% route, 27–28 levels)
+
+The captured descriptor (`rows`, `cols`, `reduction`) drives the engine state,
+the `a_values`/`b_values` load index, the address generation and the descriptor
+error decode in one combinational cone. **Fix: pipeline the descriptor decode
+and the tile-address generation.** Register the captured descriptor and the
+tile/row/column counters before they feed the address arithmetic, splitting the
+28 levels into two ~14-level halves. This is the same class of change already
+proven safe in v1.2 (the engine is a self-contained block with a start/done
+handshake), but it changes the per-tile cycle count and must be re-verified
+against the oracle and the tile/edge/abort tests.
+
+### 2. Cache flush-scan path (~19.6 ns, 70–81% route, 22–34 levels)
+
+`flush_position` fans out to the flush scan's data array, counters and write
+data. This is **route-dominated**, so part of the fix is physical (placement,
+fanout) rather than logical: register/replicate the flush scan address so the
+scan's data and counter cones are driven by a local register. **Risk: the flush
+FSM is part of the coherence and warm-stop lifecycle**, so pipelining it needs
+careful re-verification of flush/warm-stop/reservation behaviour, not just the
+workload oracle.
+
+### 3. Performance-counter events (from the 31.25 MHz analysis)
+
+`state`/event → perf counter is the worst path at the loose constraint.
+**Fix: register the event signals before the counters.** Measurement-only, so a
+one-cycle event latency changes no functional behaviour or ABI — the cheapest
+and safest of the three.
+
+## Estimate and recommendation
+
+Closing the slow corner at 100 MHz means roughly **2× on all three clusters**.
+That is a real, bounded RTL phase (call it v1.3):
+
+1. Register the perf-counter events (low risk).
+2. Pipeline the NPU descriptor/tile-address cone (moderate risk, self-contained).
+3. Pipeline/replicate the cache flush-scan cone (highest risk — coherence and
+   warm-stop re-verification).
+4. Re-close static timing, re-run `make check`, rebuild the overlay and
+   re-capture physically.
+
+The alternative, which banks a safe 1.5× for almost no RTL risk, is the
+**~48 MHz re-baseline**: tighten the constraint, let placement close, and
+re-verify. I would do that first, then decide whether the remaining 2× is worth
+the flush-FSM risk.
+
 ## What this says for RTL optimization
 
 - **The functional data path has large margin.** The design runs the full

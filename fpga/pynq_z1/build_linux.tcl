@@ -145,9 +145,11 @@ if {!$impl} {
 opt_design
 place_design
 route_design
+# Write the routed checkpoint before signoff so a failing build is still
+# inspectable for its critical paths.
+write_checkpoint -force [file join $output_dir aster_linux_routed.dcp]
 source [file join $repo_root fpga/pynq_z1/signoff.tcl]
 aster_signoff $output_dir
-write_checkpoint -force [file join $output_dir aster_linux_routed.dcp]
 write_bitstream -force [file join $output_dir aster_linux.bit]
 file copy -force $handoff [file join $output_dir aster_linux.hwh]
 puts "ASTER_LINUX_BUILD complete: [file join $output_dir aster_linux.bit]"
