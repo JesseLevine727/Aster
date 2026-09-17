@@ -164,6 +164,14 @@ utilization, area and performance" is that the **4×4 default is the sweet spot*
 the 8×8 buys 2.7% throughput for +13 percentage points of LUTs and a lower Fmax,
 and is 24% worse per unit area.
 
+**Aster v1.3 closes the slow corner at 50 MHz.** The [v1.3 contract](docs/v1.3.md)
+and [closeout bundle](docs/results/v1.3/closeout-b3954ce/README.md) pipeline the
+perf-event inputs, the cache flush-scan target and the NPU descriptor check, and
+build with timing-driven place/route/phys-opt. The all-engine coherent overlay
+now signs off at a 20 ns constraint with **WNS +0.191 ns and zero failing
+endpoints** (up from the 31.25 MHz baseline) and runs `reduce_parallel` at
+50 MHz on the Pynq-Z1 with the oracle checksum on two warm boots.
+
 Start here:
 
 ```sh
@@ -538,7 +546,11 @@ reduction; and the Xasterdot8 convolution is **0.59×** the scalar baseline
 (`area/`) shows the L2 is the better area investment than a second hart: +8.1 pp
 LUTs and no Fmax cost for up to 1.98×, versus +10.8 pp and −1.61 ns for 1.30×.
 The accelerator-dimensions axis (2×2/4×4/8×8) is scoped as the
-[v1.2 contract](docs/npu-geometry.md).
+[v1.2 contract](docs/npu-geometry.md), and the FPGA-frequency axis is closed for
+the 50 MHz operating point by the [v1.3 contract](docs/v1.3.md) and
+[closeout bundle](docs/results/v1.3/closeout-b3954ce/README.md): the all-engine
+overlay signs off at a 20 ns constraint (WNS +0.191 ns, zero failing endpoints)
+and runs `reduce_parallel` at 50 MHz on hardware.
 
 ## Phase 15 — Learn SKY130 on a minimal configuration
 
