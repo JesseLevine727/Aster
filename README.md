@@ -138,6 +138,15 @@ interrupt test, a routed all-engine overlay and two physical warm boots. The
 [closeout bundle](docs/results/phase12.6/closeout-c24d2bf/README.md) passes
 `scripts/audit_interrupts.py`.
 
+**Aster v1.0 is frozen.** The authoritative contract for every address,
+register, ABI and instruction encoding is [`docs/v1.md`](docs/v1.md), with
+deliberate boundaries in [`docs/known-limitations.md`](docs/known-limitations.md)
+and the freeze decision in [`docs/phase13.md`](docs/phase13.md). The frozen
+interface is guarded by `make freeze-interfaces`. Shared L2 is intentionally a
+v2 / Phase 14 axis; the
+[Phase 14 plan](docs/phase14-plan.md) maps the frozen knobs to the research
+questions below.
+
 Start here:
 
 ```sh
@@ -478,7 +487,15 @@ PicoRV32 `QREGS` off preserves the Xasterdot8 instruction encoding.
 
 Stop feature development and stabilize the architecture, software, documentation and tests.
 
-Likely freeze point: 2× RV32IM + L1s + shared L2/coherence + DMA + DOT8 + INT8 NPU + UART/timer/interrupts/performance counters.
+**Complete:** the [Phase 13 contract](docs/phase13.md) freezes
+[`docs/v1.md`](docs/v1.md) — 2× RV32IMA + L1s + MSI-like coherence over shared
+RAM + DMA + Xasterdot8 + 4×4 INT8 NPU + UART/timer/interrupts/performance
+counters — and records shared L2 as a deliberate v2 / Phase 14 axis in
+[`docs/known-limitations.md`](docs/known-limitations.md). The frozen interface is
+guarded by `scripts/freeze_interfaces.py` (`make freeze-interfaces`), the frozen
+revision is tagged `v1.0`, and the [closeout
+bundle](docs/results/phase13/closeout-v1.0/README.md) passes
+`scripts/audit_v1.py`.
 
 ## Phase 14 — Design-space exploration
 

@@ -325,18 +325,23 @@ Reads have `mem_wstrb == 0`; stores use `mem_wstrb[n]` to control byte `n` of
 the addressed 32-bit word. The decoder routes writes to RAM or UART and
 ignores writes to reserved windows.
 
-## Decisions still open
+## Decisions resolved for v1.0
 
-These items must be resolved before the corresponding roadmap phase, not
-silently assumed by Phase 0:
+The Phase 0 open decisions are resolved for v1.0 in
+[`docs/v1.md`](v1.md). Shared L2 remains a deliberate v2 / Phase 14 axis:
 
-- shared L2 organization and refill protocol;
-- coherence protocol and atomic-memory implementation;
-- system interconnect transaction format and arbitration;
-- custom instruction encoding and toolchain support;
-- NPU register/DMA interface, tiling format and saturation rules;
-- interrupt priority and semantics;
-- SKY130 macro strategy and SRAM availability.
+- shared L2 organization and refill protocol — **deferred to v2**; v1.0
+  coherently shares RAM;
+- coherence protocol and atomic-memory implementation — MSI-like snooping D$
+  with the atomic fabric/PCPI A path;
+- system interconnect transaction format and arbitration — atomic fabric +
+  coherent cache;
+- custom instruction encoding and toolchain support — Xasterdot8, custom-0
+  `opcode=0x0b`, `funct3=0`, `funct7=0`;
+- NPU register/DMA interface, tiling format and saturation rules — 4×4 signed
+  INT8 with byte strides and modulo-2³² accumulation;
+- interrupt priority and semantics — per-hart level, no priority or nesting;
+- SKY130 macro strategy and SRAM availability — **open (Phase 15)**.
 
 ## Phase 2 FPGA contract
 
