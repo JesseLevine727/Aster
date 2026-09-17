@@ -9,6 +9,9 @@ module aster_pynq_linux #(
     parameter bit ENABLE_DMA = 1'b0,
     parameter bit ENABLE_DOT8 = 1'b0,
     parameter bit ENABLE_NPU = 1'b0,
+    parameter bit ENABLE_L2 = 1'b0,
+    parameter int unsigned L2_LINE_WORDS = 4,
+    parameter int unsigned L2_LINE_COUNT = 64,
     parameter int unsigned CLK_HZ = 31_250_000,
     parameter int unsigned BAUD = 115_200,
     parameter int unsigned RX_DEPTH = 512
@@ -362,7 +365,8 @@ module aster_pynq_linux #(
     end else if (ENABLE_COHERENCE) begin : g_coherent
         /* verilator lint_off PINCONNECTEMPTY */
         aster_coherent_soc #(.HART_COUNT(HART_COUNT), .SYNC_MEMORY(1'b1), .HOST_BOOT(1'b1),
-                            .ENABLE_L1(COHERENT_L1), .ENABLE_DMA(ENABLE_DMA), .ENABLE_DOT8(ENABLE_DOT8), .ENABLE_NPU(ENABLE_NPU), .CLOCK_HZ(CLK_HZ)) soc (
+                            .ENABLE_L1(COHERENT_L1), .ENABLE_DMA(ENABLE_DMA), .ENABLE_DOT8(ENABLE_DOT8), .ENABLE_NPU(ENABLE_NPU), .CLOCK_HZ(CLK_HZ),
+                            .ENABLE_L2(ENABLE_L2), .L2_LINE_WORDS(L2_LINE_WORDS), .L2_LINE_COUNT(L2_LINE_COUNT)) soc (
             .clk(aclk), .resetn(aresetn), .host_run(run && run_pipe[1]),
             .stopped(coherent_stopped), .stop_busy(coherent_stop_busy), .flush_active(coherent_flush),
             .uart_tx_valid(core_tx_valid), .uart_tx_data(core_tx_data), .uart_tx_ready(core_tx_ready),

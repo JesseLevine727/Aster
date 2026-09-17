@@ -1,5 +1,5 @@
 # AXI host bridge and real serial loopback, loaded through PYNQ Linux/PCAP.
-if {$argc < 2 || $argc > 9} { error "usage: build_linux.tcl <repo-root> <output-dir> ?harts(0=legacy,1,2)? ?coherent(0,1)? ?caches(0,1)? ?dma(0,1)? ?dot8(0,1)? ?npu(0,1)? ?impl(0,1)?" }
+if {$argc < 2 || $argc > 10} { error "usage: build_linux.tcl <repo-root> <output-dir> ?harts(0=legacy,1,2)? ?coherent(0,1)? ?caches(0,1)? ?dma(0,1)? ?dot8(0,1)? ?npu(0,1)? ?l2(0,1)? ?impl(0,1)?" }
 set repo_root [file normalize [lindex $argv 0]]
 set output_dir [file normalize [lindex $argv 1]]
 set harts 0
@@ -15,13 +15,16 @@ if {$argc >= 6} { set dma [lindex $argv 5] }
 if {$argc >= 7} { set dot8 [lindex $argv 6] }
 set npu 0
 if {$argc >= 8} { set npu [lindex $argv 7] }
+set l2 0
+if {$argc >= 9} { set l2 [lindex $argv 8] }
 set impl 1
-if {$argc >= 9} { set impl [lindex $argv 8] }
+if {$argc >= 10} { set impl [lindex $argv 9] }
 if {$coherent ni {0 1} || $caches ni {0 1} || $dma ni {0 1} || ($coherent && !$harts) || (!$coherent && (!$caches || $dma))} {
     error "invalid coherent Linux configuration"
 }
 if {$dot8 ni {0 1} || ($dot8 && (!$coherent || !$dma))} { error "dot8 Linux requires coherence and DMA" }
 if {$npu ni {0 1} || ($npu && (!$coherent || !$dma))} { error "NPU Linux requires coherence and DMA" }
+if {$l2 ni {0 1} || ($l2 && (!$coherent || !$dma))} { error "L2 Linux requires coherence and DMA" }
 set part xc7z020clg400-1
 file mkdir $output_dir
 create_project aster_linux $output_dir -part $part -force
@@ -58,6 +61,7 @@ set_property CONFIG.COHERENT_L1 $caches [get_bd_cells aster]
 set_property CONFIG.ENABLE_DMA $dma [get_bd_cells aster]
 set_property CONFIG.ENABLE_DOT8 $dot8 [get_bd_cells aster]
 set_property CONFIG.ENABLE_NPU $npu [get_bd_cells aster]
+set_property CONFIG.ENABLE_L2 $l2 [get_bd_cells aster]
 create_bd_cell -type ip -vlnv xilinx.com:ip:axi_interconnect:2.1 fabric
 set_property CONFIG.NUM_MI 1 [get_bd_cells fabric]
 create_bd_cell -type ip -vlnv xilinx.com:ip:proc_sys_reset:5.0 reset
