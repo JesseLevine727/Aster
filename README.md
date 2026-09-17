@@ -509,6 +509,17 @@ Sweep parameters rather than adding features:
 
 The goal is to discover **crossovers and bottlenecks**, not simply build the largest configuration.
 
+**First campaign complete:** the [Phase 14 contract](docs/phase14.md) and
+[closeout bundle](docs/results/phase14/closeout-b050a81/README.md) sweep memory
+latency, L1 geometry, core scaling and compute placement on the frozen v1.0
+design, validating every record against its independent oracle. Headline
+results: `strided` degrades **9.34×** from `wait0` to `wait64` while `conv2d`
+degrades only **1.62×**; the L1 is a **net slowdown** on every workload and
+geometry in the minimal SoC; two workers give **1.30×** on the memory-bound
+reduction; and the Xasterdot8 convolution is **0.59×** the scalar baseline
+(im2col overhead dominates) while the NPU is only **1.24×**. The accelerator
+dimensions (2×2/4×4/8×8) and per-config routed timing are deferred to 14.5/14.6.
+
 ## Phase 15 — Learn SKY130 on a minimal configuration
 
 Take a tiny Aster configuration through the complete open ASIC flow first:

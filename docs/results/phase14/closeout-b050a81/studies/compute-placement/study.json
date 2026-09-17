@@ -1,0 +1,67 @@
+{
+  "configs": [
+    {
+      "id": "xe",
+      "records": {
+        "conv2d": "ASTERBENCH,version=10,name=conv2d,category=dsp,status=PASS,size=1024,iterations=4,param=5,seed=0x13570000,checksum=0x07df8000,clock_hz=31250000,l1=1,sync_memory=0,line_words=4,line_count=16,memory_wait=0,cycles=0x000000000057f654,retired=0x00000000000abf5a,memory_transactions=0x00000000000e9bad,backing_transactions=0x000000000000da98,cache_accesses=0x00000000000e9bad,cache_misses=0x0000000000004c26,dma_bytes=0x0000000000000000,accelerator_cycles=0x0000000000000000\n",
+        "conv2d_dot8": "ASTERBENCH,version=10,name=conv2d_dot8,category=dsp,status=PASS,size=1024,iterations=4,param=5,seed=0x13570000,checksum=0x07df8000,clock_hz=31250000,l1=1,sync_memory=0,line_words=4,line_count=16,memory_wait=0,cycles=0x00000000009552fc,retired=0x0000000000117982,memory_transactions=0x000000000017961e,backing_transactions=0x000000000004d314,cache_accesses=0x00000000001795f9,cache_misses=0x000000000001150c,dma_bytes=0x0000000000000000,accelerator_cycles=0x0000000000000000\n",
+        "conv2d_npu": "ASTERBENCH,version=10,name=conv2d_npu,category=dsp,status=PASS,size=1024,iterations=4,param=5,seed=0x13570000,checksum=0x07df8000,clock_hz=31250000,l1=1,sync_memory=0,line_words=4,line_count=16,memory_wait=0,cycles=0x000000000046c03d,retired=0x0000000000081c25,memory_transactions=0x00000000000be721,backing_transactions=0x00000000000174f4,cache_accesses=0x00000000000b6f50,cache_misses=0x00000000000043e4,dma_bytes=0x0000000000003100,accelerator_cycles=0x0000000000001324\n"
+      },
+      "vars": {}
+    }
+  ],
+  "provenance": {
+    "dirty": false,
+    "revision": "9622d97d90a6dd6dd04abc0dbf5cda0b5a11c75c"
+  },
+  "question": "When is a custom instruction enough and when is a separate accelerator justified?",
+  "schema": "aster.phase14.study.v1",
+  "summary": [
+    {
+      "accelerator_cycles": 0,
+      "backing_transactions": 55960,
+      "cache_accesses": 957357,
+      "cache_misses": 19494,
+      "checksum": "0x07df8000",
+      "config": "xe",
+      "cycles": 5764692,
+      "dma_bytes": 0,
+      "iterations": 4,
+      "memory_transactions": 957357,
+      "retired": 704346,
+      "size": 1024,
+      "workload": "conv2d"
+    },
+    {
+      "accelerator_cycles": 0,
+      "backing_transactions": 316180,
+      "cache_accesses": 1545721,
+      "cache_misses": 70924,
+      "checksum": "0x07df8000",
+      "config": "xe",
+      "cycles": 9786108,
+      "dma_bytes": 0,
+      "iterations": 4,
+      "memory_transactions": 1545758,
+      "retired": 1145218,
+      "size": 1024,
+      "workload": "conv2d_dot8"
+    },
+    {
+      "accelerator_cycles": 4900,
+      "backing_transactions": 95476,
+      "cache_accesses": 749392,
+      "cache_misses": 17380,
+      "checksum": "0x07df8000",
+      "config": "xe",
+      "cycles": 4636733,
+      "dma_bytes": 12544,
+      "iterations": 4,
+      "memory_transactions": 780065,
+      "retired": 531493,
+      "size": 1024,
+      "workload": "conv2d_npu"
+    }
+  ],
+  "sweep": "compute-placement"
+}

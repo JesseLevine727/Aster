@@ -1,0 +1,91 @@
+{
+  "files": {
+    "analysis.md": {
+      "bytes": 4768,
+      "sha256": "7688cabce962d9c578a577138d4ffa4f9dc7717c24d4d1b50cced39bf2347aed"
+    },
+    "source/source-state.json": {
+      "bytes": 43352,
+      "sha256": "ccae600fb613c2dac38d1d37d86c22f04e3aca9f51b651ec7347354a7f995334"
+    },
+    "spec/phase14.md": {
+      "bytes": 4986,
+      "sha256": "5aa330e5b06111338c186868379b8a056449a9a02e1a93940007144eb3b72bb6"
+    },
+    "studies/cache-geometry/study.json": {
+      "bytes": 18368,
+      "sha256": "8e6fab77395946549fe72028748f675072b87f4f7b80e0668cf41f327494c8a2"
+    },
+    "studies/compute-placement/study.json": {
+      "bytes": 3026,
+      "sha256": "656317bb289bb41127d7bfaec915ab51f12941571aa914a68e257d52286e3c42"
+    },
+    "studies/core-scaling/study.json": {
+      "bytes": 3151,
+      "sha256": "74d36e61e4dae47709579d68b7d0c861dd0322c6c7db97d89fd7ed9fe864c7d7"
+    },
+    "studies/memory-latency/study.json": {
+      "bytes": 18331,
+      "sha256": "464d16df2206bea7b0ccf4b20cb89a83f5c97c04c2278282ed581397626381d8"
+    },
+    "verification/make-check.log": {
+      "bytes": 150624,
+      "sha256": "36c3c688760c7878571d6bffe4dfbd478d9f4acdb031b3d1bceac4beab9e9ea4"
+    }
+  },
+  "requirements": {
+    "01-contract": [
+      "spec/phase14.md"
+    ],
+    "02-memory-latency": [
+      "studies/memory-latency/study.json"
+    ],
+    "03-cache-geometry": [
+      "studies/cache-geometry/study.json"
+    ],
+    "04-core-scaling": [
+      "studies/core-scaling/study.json"
+    ],
+    "05-compute-placement": [
+      "studies/compute-placement/study.json"
+    ],
+    "06-analysis": [
+      "analysis.md"
+    ],
+    "07-frozen-clean-check": [
+      "verification/make-check.log"
+    ],
+    "08-frozen-source": [
+      "source/source-state.json"
+    ]
+  },
+  "schema": "aster.phase14.closeout.v1",
+  "status": "complete",
+  "summary": {
+    "analysis": {
+      "sections": 5
+    },
+    "source_revision": "b050a81e6586f586a8a14e9bb642710cc2d19ebc",
+    "studies": {
+      "cache-geometry": {
+        "configs": 5,
+        "records": 20
+      },
+      "compute-placement": {
+        "configs": 1,
+        "records": 3
+      },
+      "core-scaling": {
+        "configs": 2,
+        "records": 3
+      },
+      "memory-latency": {
+        "configs": 5,
+        "records": 20
+      }
+    },
+    "verification": {
+      "host_tests_last": 253
+    }
+  }
+}

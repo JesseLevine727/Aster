@@ -1,0 +1,77 @@
+{
+  "configs": [
+    {
+      "id": "h1",
+      "records": {
+        "reduce_scalar": "ASTERBENCH,version=10,name=reduce_scalar,category=cpu,status=PASS,size=4096,iterations=4,param=1,seed=0x13570000,checksum=0x5c808000,clock_hz=31250000,l1=1,sync_memory=0,line_words=4,line_count=16,memory_wait=0,cycles=0x00000000000469e3,retired=0x000000000000d033,memory_transactions=0x000000000001102f,backing_transactions=0x0000000000003060,cache_accesses=0x000000000001102e,cache_misses=0x0000000000000808,dma_bytes=0x0000000000000000,accelerator_cycles=0x0000000000000000\n"
+      },
+      "vars": {
+        "HART_COUNT": "1"
+      }
+    },
+    {
+      "id": "h2",
+      "records": {
+        "reduce_parallel": "ASTERBENCH,version=10,name=reduce_parallel,category=cpu,status=PASS,size=4096,iterations=4,param=2,seed=0x13570000,checksum=0x5c808000,clock_hz=31250000,l1=1,sync_memory=0,line_words=4,line_count=16,memory_wait=0,cycles=0x00000000000364a6,retired=0x000000000000a097,memory_transactions=0x000000000000d0bb,backing_transactions=0x00000000000028e8,cache_accesses=0x000000000000d0ba,cache_misses=0x000000000000061e,dma_bytes=0x0000000000000000,accelerator_cycles=0x0000000000000000\n",
+        "reduce_scalar": "ASTERBENCH,version=10,name=reduce_scalar,category=cpu,status=PASS,size=4096,iterations=4,param=1,seed=0x13570000,checksum=0x5c808000,clock_hz=31250000,l1=1,sync_memory=0,line_words=4,line_count=16,memory_wait=0,cycles=0x00000000000469e3,retired=0x000000000000d033,memory_transactions=0x000000000001102f,backing_transactions=0x0000000000003060,cache_accesses=0x000000000001102e,cache_misses=0x0000000000000808,dma_bytes=0x0000000000000000,accelerator_cycles=0x0000000000000000\n"
+      },
+      "vars": {
+        "HART_COUNT": "2"
+      }
+    }
+  ],
+  "provenance": {
+    "dirty": false,
+    "revision": "3ecbccf33634fbcd607ebf917b915e9934576429"
+  },
+  "question": "How well does performance scale from one to two cores?",
+  "schema": "aster.phase14.study.v1",
+  "summary": [
+    {
+      "accelerator_cycles": 0,
+      "backing_transactions": 12384,
+      "cache_accesses": 69678,
+      "cache_misses": 2056,
+      "checksum": "0x5c808000",
+      "config": "h1",
+      "cycles": 289251,
+      "dma_bytes": 0,
+      "iterations": 4,
+      "memory_transactions": 69679,
+      "retired": 53299,
+      "size": 4096,
+      "workload": "reduce_scalar"
+    },
+    {
+      "accelerator_cycles": 0,
+      "backing_transactions": 10472,
+      "cache_accesses": 53434,
+      "cache_misses": 1566,
+      "checksum": "0x5c808000",
+      "config": "h2",
+      "cycles": 222374,
+      "dma_bytes": 0,
+      "iterations": 4,
+      "memory_transactions": 53435,
+      "retired": 41111,
+      "size": 4096,
+      "workload": "reduce_parallel"
+    },
+    {
+      "accelerator_cycles": 0,
+      "backing_transactions": 12384,
+      "cache_accesses": 69678,
+      "cache_misses": 2056,
+      "checksum": "0x5c808000",
+      "config": "h2",
+      "cycles": 289251,
+      "dma_bytes": 0,
+      "iterations": 4,
+      "memory_transactions": 69679,
+      "retired": 53299,
+      "size": 4096,
+      "workload": "reduce_scalar"
+    }
+  ],
+  "sweep": "core-scaling"
+}

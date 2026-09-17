@@ -1,0 +1,916 @@
+OK   verilator                      /home/elfo/tools/verilator/root/bin/verilator
+OK   python3                        /usr/bin/python3
+OK   make                           /usr/bin/make
+OK   riscv32-unknown-elf-gcc        /home/elfo/tools/riscv/bin/riscv32-unknown-elf-gcc
+OK   riscv32-unknown-elf-objcopy    /home/elfo/tools/riscv/bin/riscv32-unknown-elf-objcopy
+OK   riscv32-unknown-elf-objdump    /home/elfo/tools/riscv/bin/riscv32-unknown-elf-objdump
+Aster Phase 0 toolchain is available.
+PASS: Aster Verilator smoke test (16 cycles)
+RV32IM PASS
+PASS: RV32IM PASS (1 boot(s))
+RUNTIME PASS
+RUNTIME PASS
+PASS: RUNTIME PASS (2 boot(s))
+MEMORY MAP PASS
+PASS: MEMORY MAP PASS (1 boot(s))
+Trap case 0
+TRAP ARMED
+TRAP ARMED
+PASS: TRAP ARMED (2 boot(s))
+Trap case 1
+TRAP ARMED
+TRAP ARMED
+PASS: TRAP ARMED (2 boot(s))
+Trap case 2
+TRAP ARMED
+TRAP ARMED
+PASS: TRAP ARMED (2 boot(s))
+Trap case 3
+TRAP ARMED
+TRAP ARMED
+PASS: TRAP ARMED (2 boot(s))
+Trap case 4
+TRAP ARMED
+TRAP ARMED
+PASS: TRAP ARMED (2 boot(s))
+Trap case 5
+TRAP ARMED
+TRAP ARMED
+PASS: TRAP ARMED (2 boot(s))
+Trap case 6
+TRAP ARMED
+TRAP ARMED
+PASS: TRAP ARMED (2 boot(s))
+Trap case 7
+TRAP ARMED
+TRAP ARMED
+PASS: TRAP ARMED (2 boot(s))
+Trap case 8
+TRAP ARMED
+TRAP ARMED
+PASS: TRAP ARMED (2 boot(s))
+Trap case 9
+TRAP ARMED
+TRAP ARMED
+PASS: TRAP ARMED (2 boot(s))
+Trap case 10
+TRAP ARMED
+TRAP ARMED
+PASS: TRAP ARMED (2 boot(s))
+Trap case 11
+TRAP ARMED
+TRAP ARMED
+PASS: TRAP ARMED (2 boot(s))
+test_board_output_validation_uses_strict_parser (test_asterbench.ResultProvenance.test_board_output_validation_uses_strict_parser) ... ok
+test_comparison_contract (test_asterbench.ResultProvenance.test_comparison_contract) ... ok
+test_required_provenance (test_asterbench.ResultProvenance.test_required_provenance) ... ok
+test_serial_and_typed_record_must_agree (test_asterbench.ResultProvenance.test_serial_and_typed_record_must_agree) ... ok
+test_common_corpus (test_asterbench.StrictRecords.test_common_corpus) ... ok
+test_counter_and_payload_maintenance_mutations (test_asterbench_dma.DmaRecordTests.test_counter_and_payload_maintenance_mutations) ... ok
+test_fixed_sizes_alignments_caches_pairs (test_asterbench_dma.DmaRecordTests.test_fixed_sizes_alignments_caches_pairs) ... ok
+test_full_stream_order_configuration_and_ack_history (test_asterbench_dma.DmaRecordTests.test_full_stream_order_configuration_and_ack_history) ... ok
+test_independent_cpp_python_parity_mutation_corpus (test_asterbench_dma.DmaRecordTests.test_independent_cpp_python_parity_mutation_corpus) ... ok
+test_independent_known_bytes_and_chunk_counts (test_asterbench_dma.DmaRecordTests.test_independent_known_bytes_and_chunk_counts) ... ok
+test_missing_unknown_duplicate_and_truncated_fields (test_asterbench_dma.DmaRecordTests.test_missing_unknown_duplicate_and_truncated_fields) ... ok
+test_numeric_domain_and_typed_boolean_rejection (test_asterbench_dma.DmaRecordTests.test_numeric_domain_and_typed_boolean_rejection) ... ok
+test_output_and_guard_corruption (test_asterbench_dma.DmaRecordTests.test_output_and_guard_corruption) ... ok
+test_slowdowns_and_zero_bandwidth_not_hidden (test_asterbench_dma.DmaRecordTests.test_slowdowns_and_zero_bandwidth_not_hidden) ... ok
+test_wrong_identity_topology_abi_buffers_and_driver (test_asterbench_dma.DmaRecordTests.test_wrong_identity_topology_abi_buffers_and_driver) ... ok
+test_all_predeclared_sizes_alignments_orders_and_slowdowns (test_asterbench_dot8.Dot8Records.test_all_predeclared_sizes_alignments_orders_and_slowdowns) ... ok
+test_each_saved_word_and_full_buffers_are_bound (test_asterbench_dot8.Dot8Records.test_each_saved_word_and_full_buffers_are_bound) ... ok
+test_every_required_field_missing_duplicate_wrong_type (test_asterbench_dot8.Dot8Records.test_every_required_field_missing_duplicate_wrong_type) ... ok
+test_exact_events_metadata_and_payload_mutations (test_asterbench_dot8.Dot8Records.test_exact_events_metadata_and_payload_mutations) ... ok
+test_frozen_study_shape_count (test_asterbench_dot8.Dot8Records.test_frozen_study_shape_count) ... ok
+test_raw_stream_boundaries_and_legacy_rejection (test_asterbench_dot8.Dot8Records.test_raw_stream_boundaries_and_legacy_rejection) ... ok
+test_reference_against_signed_struct_unpack_and_matrix_indices (test_asterbench_dot8.Dot8Records.test_reference_against_signed_struct_unpack_and_matrix_indices) ... ok
+test_simulation_full_sequence_and_each_line_removal_reorder_repeat (test_asterbench_dot8.Dot8Records.test_simulation_full_sequence_and_each_line_removal_reorder_repeat) ... ok
+test_stop_exact_fields_types_counts_and_json_duplicates (test_asterbench_dot8.Dot8Records.test_stop_exact_fields_types_counts_and_json_duplicates) ... ok
+test_duplicate_and_missing_fields (test_asterbench_v10.AsterBenchV10.test_duplicate_and_missing_fields) ... ok
+test_parser_rejects_truncation_and_unknown_fields (test_asterbench_v10.AsterBenchV10.test_parser_rejects_truncation_and_unknown_fields) ... ok
+test_valid_record (test_asterbench_v10.AsterBenchV10.test_valid_record) ... ok
+test_validator_rejects_mutations (test_asterbench_v10.AsterBenchV10.test_validator_rejects_mutations) ... ok
+test_parser_rejects_truncation_and_unknown_fields (test_asterbench_v7.AsterBenchV7Plan.test_parser_rejects_truncation_and_unknown_fields) ... ok
+test_primary_plan_is_frozen (test_asterbench_v7.AsterBenchV7Plan.test_primary_plan_is_frozen) ... ok
+test_parser_rejects_truncation_and_unknown_fields (test_asterbench_v8.AsterBenchV8Plan.test_parser_rejects_truncation_and_unknown_fields) ... ok
+test_primary_plan_is_frozen (test_asterbench_v8.AsterBenchV8Plan.test_primary_plan_is_frozen) ... ok
+test_valid_npu_and_multicore_records (test_asterbench_v8.AsterBenchV8Plan.test_valid_npu_and_multicore_records) ... ok
+test_valid_record_round_trips (test_asterbench_v8.AsterBenchV8Plan.test_valid_record_round_trips) ... ok
+test_validator_rejects_duplicate_and_missing_fields (test_asterbench_v8.AsterBenchV8Plan.test_validator_rejects_duplicate_and_missing_fields) ... ok
+test_validator_rejects_mutations (test_asterbench_v8.AsterBenchV8Plan.test_validator_rejects_mutations) ... ok
+test_complete_rejects_missing_image (test_asterbench_v9.AsterBenchV9.test_complete_rejects_missing_image) ... ok
+test_complete_stream (test_asterbench_v9.AsterBenchV9.test_complete_stream) ... ok
+test_duplicate_and_missing_fields (test_asterbench_v9.AsterBenchV9.test_duplicate_and_missing_fields) ... ok
+test_multicore_without_secondary_work_is_rejected (test_asterbench_v9.AsterBenchV9.test_multicore_without_secondary_work_is_rejected) ... ok
+test_non_npu_with_npu_activity_is_rejected (test_asterbench_v9.AsterBenchV9.test_non_npu_with_npu_activity_is_rejected) ... ok
+test_npu_without_activity_is_rejected (test_asterbench_v9.AsterBenchV9.test_npu_without_activity_is_rejected) ... ok
+test_parser_rejects_truncation_and_unknown_fields (test_asterbench_v9.AsterBenchV9.test_parser_rejects_truncation_and_unknown_fields) ... ok
+test_single_hart_with_secondary_work_is_rejected (test_asterbench_v9.AsterBenchV9.test_single_hart_with_secondary_work_is_rejected) ... ok
+test_valid_multicore_record (test_asterbench_v9.AsterBenchV9.test_valid_multicore_record) ... ok
+test_valid_non_npu_record (test_asterbench_v9.AsterBenchV9.test_valid_non_npu_record) ... ok
+test_valid_npu_record (test_asterbench_v9.AsterBenchV9.test_valid_npu_record) ... ok
+test_validator_rejects_mutations (test_asterbench_v9.AsterBenchV9.test_validator_rejects_mutations) ... ok
+test_accepts_complete_cache_modes (test_audit_pynq_npu.PynqNpuPhysicalAudit.test_accepts_complete_cache_modes) ... ok
+test_rejects_failed_report (test_audit_pynq_npu.PynqNpuPhysicalAudit.test_rejects_failed_report) ... ok
+test_rejects_mutated_ram (test_audit_pynq_npu.PynqNpuPhysicalAudit.test_rejects_mutated_ram) ... ok
+test_bad_options_and_known_references (test_cache_experiments.CacheExperiments.test_bad_options_and_known_references) ... ok
+test_missing_experiment_rejected (test_cache_experiments.CacheExperiments.test_missing_experiment_rejected) ... ok
+test_pattern_kernels_and_data_addresses_match (test_cache_experiments.CacheExperiments.test_pattern_kernels_and_data_addresses_match) ... ok
+test_plan_covers_all_readme_experiments (test_cache_experiments.CacheExperiments.test_plan_covers_all_readme_experiments) ... ok
+test_study_audit_rejects_corruption (test_cache_experiments.CacheExperiments.test_study_audit_rejects_corruption) ... ok
+test_geometry_fits_npu (test_cifar_reference.CifarReference.test_geometry_fits_npu) ... ok
+test_record_checksum_matches_firmware (test_cifar_reference.CifarReference.test_record_checksum_matches_firmware) ... ok
+test_reference_matches_artifact (test_cifar_reference.CifarReference.test_reference_matches_artifact) ... ok
+test_artifact_hashes_and_readonly_ram_oracle (test_coherent_bench.CoherentProvenance.test_artifact_hashes_and_readonly_ram_oracle) ... ok
+test_capture_envelope_mutations (test_coherent_bench.CoherentProvenance.test_capture_envelope_mutations) ... ok
+test_complete_revision_source_manifest (test_coherent_bench.CoherentProvenance.test_complete_revision_source_manifest) ... ok
+test_elf_binding_rejects_truncation_wrong_machine_and_symbols (test_coherent_bench.CoherentProvenance.test_elf_binding_rejects_truncation_wrong_machine_and_symbols) ... ok
+test_boot_invariants_reuse_validated_streams (test_coherent_bench.CoherentRecords.test_boot_invariants_reuse_validated_streams) ... ok
+test_full_log_requires_observed_jobs_and_stop (test_coherent_bench.CoherentRecords.test_full_log_requires_observed_jobs_and_stop) ... ok
+test_observation_and_snapshot_mutations (test_coherent_bench.CoherentRecords.test_observation_and_snapshot_mutations) ... ok
+test_python_cpp_mutation_corpus (test_coherent_bench.CoherentRecords.test_python_cpp_mutation_corpus) ... ok
+test_stream_and_reference_scaling (test_coherent_bench.CoherentRecords.test_stream_and_reference_scaling) ... ok
+test_fault_diagnostics_and_lifetime_counter (test_coherent_bridge.CoherentHostProtocol.test_fault_diagnostics_and_lifetime_counter) ... ok
+test_identity_and_configuration_before_any_write (test_coherent_bridge.CoherentHostProtocol.test_identity_and_configuration_before_any_write) ... ok
+test_invalid_timeout_and_configuration (test_coherent_bridge.CoherentHostProtocol.test_invalid_timeout_and_configuration) ... ok
+test_load_drains_before_boot_words (test_coherent_bridge.CoherentHostProtocol.test_load_drains_before_boot_words) ... ok
+test_malformed_input_does_not_even_stop (test_coherent_bridge.CoherentHostProtocol.test_malformed_input_does_not_even_stop) ... ok
+test_ram_requires_acknowledgement_and_is_read_only (test_coherent_bridge.CoherentHostProtocol.test_ram_requires_acknowledgement_and_is_read_only) ... ok
+test_timeout_does_not_proceed_to_boot (test_coherent_bridge.CoherentHostProtocol.test_timeout_does_not_proceed_to_boot) ... ok
+test_capture_refuses_dirty_or_existing_output_without_changes (test_coherent_functional.FunctionalReference.test_capture_refuses_dirty_or_existing_output_without_changes) ... ok
+test_complete_artifact_and_semantic_mutations (test_coherent_functional.FunctionalReference.test_complete_artifact_and_semantic_mutations) ... ok
+test_profiles_and_every_independent_ram_word (test_coherent_functional.FunctionalReference.test_profiles_and_every_independent_ram_word) ... ok
+test_full_offline_package_and_manifest_mutations (test_coherent_overlay.CoherentOverlay.test_full_offline_package_and_manifest_mutations) ... ok
+test_routed_reset_signoff_and_rehashed_failures (test_coherent_overlay.CoherentOverlay.test_routed_reset_signoff_and_rehashed_failures) ... ok
+test_capture_fresh_repeat_failure_and_no_overwrite (test_coherent_study.CoherentStudy.test_capture_fresh_repeat_failure_and_no_overwrite) ... ok
+test_fixed_plan_and_honest_slowdown_aggregation (test_coherent_study.CoherentStudy.test_fixed_plan_and_honest_slowdown_aggregation) ... ok
+test_readonly_audit_rejects_batch_mutations (test_coherent_study.CoherentStudy.test_readonly_audit_rejects_batch_mutations) ... ok
+test_busy_counting_mutation_and_stopped_residue (test_dma_bridge.DmaHostTests.test_busy_counting_mutation_and_stopped_residue) ... ok
+test_complete_identity_before_any_write (test_dma_bridge.DmaHostTests.test_complete_identity_before_any_write) ... ok
+test_hwh_explicit_dma_identity_preserves_old_results (test_dma_bridge.DmaHostTests.test_hwh_explicit_dma_identity_preserves_old_results) ... ok
+test_idle_frozen_snapshot_actual_64bit_values (test_dma_bridge.DmaHostTests.test_idle_frozen_snapshot_actual_64bit_values) ... ok
+test_inherited_lifecycle_and_no_descriptor_writes (test_dma_bridge.DmaHostTests.test_inherited_lifecycle_and_no_descriptor_writes) ... ok
+test_actual_functional_layout_and_distinct_profiles (test_dma_firmware.DmaFirmware.test_actual_functional_layout_and_distinct_profiles) ... ok
+test_linux_runner_uses_audited_elf_and_canonical_rom (test_dma_firmware.DmaFirmware.test_linux_runner_uses_audited_elf_and_canonical_rom) ... ok
+test_capture_safety (test_dma_functional.DmaFunctional.test_capture_safety) ... ok
+test_complete_package_and_rehashed_mutations (test_dma_functional.DmaFunctional.test_complete_package_and_rehashed_mutations) ... ok
+test_every_payload_guard_metadata_and_event_word (test_dma_functional.DmaFunctional.test_every_payload_guard_metadata_and_event_word) ... ok
+test_independent_totals_and_profiles (test_dma_functional.DmaFunctional.test_independent_totals_and_profiles) ... ok
+test_explicit_dma_package_and_unchanged_legacy_gate (test_dma_overlay.DmaOverlay.test_explicit_dma_package_and_unchanged_legacy_gate) ... ok
+test_rehashed_dma_identity_and_signoff_mutations (test_dma_overlay.DmaOverlay.test_rehashed_dma_identity_and_signoff_mutations) ... ok
+test_symlinks_and_missing_artifacts_rejected (test_dma_overlay.DmaOverlay.test_symlinks_and_missing_artifacts_rejected) ... ok
+test_all_raw_events_and_implementation_ownership_mutations (test_dma_results.DmaCaptureTests.test_all_raw_events_and_implementation_ownership_mutations) ... ok
+test_capture_missing_extra_and_typed_mutations (test_dma_results.DmaCaptureTests.test_capture_missing_extra_and_typed_mutations) ... ok
+test_complete_artifacts_hashes_elf_rom_ram_and_safe_paths (test_dma_results.DmaCaptureTests.test_complete_artifacts_hashes_elf_rom_ram_and_safe_paths) ... ok
+test_elf_profiles_and_runner_use_actual_typed_symbols_and_bytes (test_dma_results.DmaCaptureTests.test_elf_profiles_and_runner_use_actual_typed_symbols_and_bytes) ... ok
+test_log_order_truncation_failure_and_duplicate_json (test_dma_results.DmaCaptureTests.test_log_order_truncation_failure_and_duplicate_json) ... ok
+test_ram_all_metadata_counter_words_and_buffer_bytes (test_dma_results.DmaCaptureTests.test_ram_all_metadata_counter_words_and_buffer_bytes) ... ok
+test_real_shape_and_fixed_boundary_configs (test_dma_results.DmaCaptureTests.test_real_shape_and_fixed_boundary_configs) ... ok
+test_toolchain_build_and_symbol_mutations (test_dma_results.DmaCaptureTests.test_toolchain_build_and_symbol_mutations) ... ok
+test_crossover_keeps_mixed_pairs_slowdowns_ties_reversals (test_dma_study.DmaStudyTests.test_crossover_keeps_mixed_pairs_slowdowns_ties_reversals) ... ok
+test_frozen_full_coverage_and_independent_repeat_selection (test_dma_study.DmaStudyTests.test_frozen_full_coverage_and_independent_repeat_selection) ... ok
+test_full_read_only_audit_and_manifest_mutations (test_dma_study.DmaStudyTests.test_full_read_only_audit_and_manifest_mutations) ... ok
+test_mixed_capture_source_tools_geometry_and_builds (test_dma_study.DmaStudyTests.test_mixed_capture_source_tools_geometry_and_builds) ... ok
+test_repeat_must_not_reuse_another_repeat_build (test_dma_study.DmaStudyTests.test_repeat_must_not_reuse_another_repeat_build) ... ok
+test_all_identity_fields_before_any_write_and_legacy_rejection (test_dot8_bridge.Dot8BridgeTests.test_all_identity_fields_before_any_write_and_legacy_rejection) ... ok
+test_busy_running_invalid_words_changing_bank_and_stop_residue (test_dot8_bridge.Dot8BridgeTests.test_busy_running_invalid_words_changing_bank_and_stop_residue) ... ok
+test_frozen_full_64bit_bank_and_absent_hart (test_dot8_bridge.Dot8BridgeTests.test_frozen_full_64bit_bank_and_absent_hart) ... ok
+test_inherited_warm_lifecycle_no_descriptor_or_compute_writes (test_dot8_bridge.Dot8BridgeTests.test_inherited_warm_lifecycle_no_descriptor_or_compute_writes) ... ok
+test_actual_zero_tail_max_elf_rom_and_kernel_encoding (test_dot8_firmware.Dot8Firmware.test_actual_zero_tail_max_elf_rom_and_kernel_encoding) ... ok
+test_elf_header_profile_load_and_opcode_mutations (test_dot8_firmware.Dot8Firmware.test_elf_header_profile_load_and_opcode_mutations) ... ok
+test_pc_evidence_binds_actual_function_and_custom_instruction (test_dot8_firmware.Dot8Firmware.test_pc_evidence_binds_actual_function_and_custom_instruction) ... ok
+test_wrong_rom_and_dimensions_rejected_before_execution (test_dot8_firmware.Dot8Firmware.test_wrong_rom_and_dimensions_rejected_before_execution) ... ok
+test_all_meaningful_ram_bytes_and_independent_counters (test_dot8_functional.Dot8Functional.test_all_meaningful_ram_bytes_and_independent_counters) ... ok
+test_complete_package_read_only_and_every_field (test_dot8_functional.Dot8Functional.test_complete_package_read_only_and_every_field) ... ok
+test_failure_before_build_and_no_overwrite (test_dot8_functional.Dot8Functional.test_failure_before_build_and_no_overwrite) ... ok
+test_rehashed_rom_disassembly_map_ram_log_and_command_mutations (test_dot8_functional.Dot8Functional.test_rehashed_rom_disassembly_map_ram_log_and_command_mutations) ... ok
+test_explicit_dot8_package_and_unchanged_legacy_gate (test_dot8_overlay.Dot8Overlay.test_explicit_dot8_package_and_unchanged_legacy_gate) ... ok
+test_rehashed_dot8_identity_and_signoff_mutations (test_dot8_overlay.Dot8Overlay.test_rehashed_dot8_identity_and_signoff_mutations) ... ok
+test_symlinks_and_missing_artifacts_rejected (test_dot8_overlay.Dot8Overlay.test_symlinks_and_missing_artifacts_rejected) ... ok
+test_actual_artifacts_rehashed_corruption_and_path_aliases (test_dot8_results.Dot8Capture.test_actual_artifacts_rehashed_corruption_and_path_aliases) ... ok
+test_complete_real_executable_package_read_only (test_dot8_results.Dot8Capture.test_complete_real_executable_package_read_only) ... ok
+test_missing_fields_metadata_configuration_symbols_and_commands (test_dot8_results.Dot8Capture.test_missing_fields_metadata_configuration_symbols_and_commands) ... ok
+test_preflight_invalid_config_or_existing_evidence_does_not_execute (test_dot8_results.Dot8Capture.test_preflight_invalid_config_or_existing_evidence_does_not_execute) ... ok
+test_raw_events_and_rehashed_sequence_still_bound (test_dot8_results.Dot8Capture.test_raw_events_and_rehashed_sequence_still_bound) ... ok
+test_crossover_keeps_mixed_pairs_slowdowns_ties_reversals (test_dot8_study.Dot8StudyTests.test_crossover_keeps_mixed_pairs_slowdowns_ties_reversals) ... ok
+test_frozen_full_coverage_and_independent_repeat_selection (test_dot8_study.Dot8StudyTests.test_frozen_full_coverage_and_independent_repeat_selection) ... ok
+test_full_read_only_audit_and_manifest_mutations (test_dot8_study.Dot8StudyTests.test_full_read_only_audit_and_manifest_mutations) ... ok
+test_mixed_capture_source_tools_geometry_and_builds (test_dot8_study.Dot8StudyTests.test_mixed_capture_source_tools_geometry_and_builds) ... ok
+test_repeat_must_not_reuse_another_repeat_build (test_dot8_study.Dot8StudyTests.test_repeat_must_not_reuse_another_repeat_build) ... ok
+test_each_private_region_cannot_overflow_its_stack (test_multicore_layout.MulticoreLayout.test_each_private_region_cannot_overflow_its_stack) ... ok
+test_rom_limit (test_multicore_layout.MulticoreLayout.test_rom_limit) ... ok
+test_shared_initialized_odd_bytes_have_rom_load_image (test_multicore_layout.MulticoreLayout.test_shared_initialized_odd_bytes_have_rom_load_image) ... ok
+test_shared_size_and_no_stack_alias (test_multicore_layout.MulticoreLayout.test_shared_size_and_no_stack_alias) ... ok
+test_stack_alignment_and_minimum (test_multicore_layout.MulticoreLayout.test_stack_alignment_and_minimum) ... ok
+test_accepts_npu_identity_and_cache_modes (test_npu_bridge.NpuBridgeIdentity.test_accepts_npu_identity_and_cache_modes) ... ok
+test_rejects_wrong_npu_identity (test_npu_bridge.NpuBridgeIdentity.test_rejects_wrong_npu_identity) ... ok
+test_stopped_requires_lifecycle_ack (test_npu_bridge.NpuBridgeIdentity.test_stopped_requires_lifecycle_ack) ... ok
+test_comparison_refuses_different_work (test_parallel.ParallelProvenance.test_comparison_refuses_different_work) ... ok
+test_required_fields_and_raw_log_binding (test_parallel.ParallelProvenance.test_required_fields_and_raw_log_binding) ... ok
+test_complete_job_stream_and_independent_oracle (test_parallel.ParallelRecords.test_complete_job_stream_and_independent_oracle) ... ok
+test_python_cpp_malformed_corpus (test_parallel.ParallelRecords.test_python_cpp_malformed_corpus) ... ok
+test_known_corners (test_phase1.ArithmeticReference.test_known_corners) ... ok
+test_seed_reproducibility (test_phase1.ArithmeticReference.test_seed_reproducibility) ... ok
+test_initialized_byte_segment (test_phase1.FirmwareLayout.test_initialized_byte_segment) ... ok
+test_rom_overflow (test_phase1.FirmwareLayout.test_rom_overflow) ... ok
+test_stack_reservation (test_phase1.FirmwareLayout.test_stack_reservation) ... ok
+test_exported_headers_match_manifest (test_phase11_reference.Phase11Reference.test_exported_headers_match_manifest) ... ok
+test_reference_matches_artifact (test_phase11_reference.Phase11Reference.test_reference_matches_artifact) ... ok
+test_reference_rejects_tampering (test_phase11_reference.Phase11Reference.test_reference_rejects_tampering) ... ok
+test_rom_budget_fits (test_phase11_reference.Phase11Reference.test_rom_budget_fits) ... ok
+test_retained_physical_reports_and_mutations (test_phase5_evidence.Phase5Evidence.test_retained_physical_reports_and_mutations) ... ok
+test_cross_package_sources_and_physical_programming_chain (test_phase6_closeout.Phase6Closeout.test_cross_package_sources_and_physical_programming_chain) ... ok
+test_final_stopped_state_is_exact_and_typed (test_phase6_closeout.Phase6Closeout.test_final_stopped_state_is_exact_and_typed) ... ok
+test_requirement_inventory_and_outer_summary_mutations (test_phase6_closeout.Phase6Closeout.test_requirement_inventory_and_outer_summary_mutations) ... ok
+test_all_reference_operations_and_original_negative_control (test_phase6_regressions.Phase6Regressions.test_all_reference_operations_and_original_negative_control) ... ok
+test_atomic_runtime_and_cache_cross_product (test_phase6_regressions.Phase6Regressions.test_atomic_runtime_and_cache_cross_product) ... ok
+test_benchmark_plan_and_raw_paired_observers (test_phase6_regressions.Phase6Regressions.test_benchmark_plan_and_raw_paired_observers) ... ok
+test_exact_parallel_unittest_prefix_preserves_strict_gates (test_phase6_regressions.Phase6Regressions.test_exact_parallel_unittest_prefix_preserves_strict_gates) ... ok
+test_fresh_check_only_cannot_pass_as_complete_regressions (test_phase6_regressions.Phase6Regressions.test_fresh_check_only_cannot_pass_as_complete_regressions) ... ok
+test_litmus_histogram_forbidden_outcomes_progress_and_retry_totals (test_phase6_regressions.Phase6Regressions.test_litmus_histogram_forbidden_outcomes_progress_and_retry_totals) ... ok
+test_manifest_mutations_and_default_git_validation (test_phase6_regressions.Phase6Regressions.test_manifest_mutations_and_default_git_validation) ... ok
+test_complete_failed_and_changed_source_evidence (test_phase6_runner.Phase6Runner.test_complete_failed_and_changed_source_evidence) ... ok
+test_existing_output_and_dirty_source_are_nonmutating (test_phase6_runner.Phase6Runner.test_existing_output_and_dirty_source_are_nonmutating) ... ok
+test_plan_contains_every_historical_and_new_matrix (test_phase6_runner.Phase6Runner.test_plan_contains_every_historical_and_new_matrix) ... ok
+test_exact_final_cpu_dma_clock_identity_and_post_study (test_phase7_closeout.Phase7Closeout.test_exact_final_cpu_dma_clock_identity_and_post_study) ... ok
+test_exact_implementation_reference_exporter_and_physical_programming_chain (test_phase7_closeout.Phase7Closeout.test_exact_implementation_reference_exporter_and_physical_programming_chain) ... ok
+test_raw_board_log_schedule_boots_stops_and_missing_completion (test_phase7_closeout.Phase7Closeout.test_raw_board_log_schedule_boots_stops_and_missing_completion) ... ok
+test_requirement_inventory_manifest_summary_and_no_overwrite (test_phase7_closeout.Phase7Closeout.test_requirement_inventory_manifest_summary_and_no_overwrite) ... ok
+test_envelope_source_tools_hashes_plan_and_no_saved_command_execution (test_phase7_regressions.DmaRegressionAudit.test_envelope_source_tools_hashes_plan_and_no_saved_command_execution) ... ok
+test_host_test_names_counts_no_skips_and_completion (test_phase7_regressions.DmaRegressionAudit.test_host_test_names_counts_no_skips_and_completion) ... ok
+test_linux_runtime_programs_serial_boots_and_denials (test_phase7_regressions.DmaRegressionAudit.test_linux_runtime_programs_serial_boots_and_denials) ... ok
+test_raw_paired_benchmarks_and_fixed_plans (test_phase7_regressions.DmaRegressionAudit.test_raw_paired_benchmarks_and_fixed_plans) ... ok
+test_real_hart_runtime_reset_sequence_and_totals (test_phase7_regressions.DmaRegressionAudit.test_real_hart_runtime_reset_sequence_and_totals) ... ok
+test_unit_seed_geometry_protocol_and_carry_gates (test_phase7_regressions.DmaRegressionAudit.test_unit_seed_geometry_protocol_and_carry_gates) ... ok
+test_dirty_existing_and_symlink_targets_are_nonmutating (test_phase7_runner.Phase7Runner.test_dirty_existing_and_symlink_targets_are_nonmutating) ... ok
+test_fixed_supplement_does_not_replace_historical_plan (test_phase7_runner.Phase7Runner.test_fixed_supplement_does_not_replace_historical_plan) ... ok
+test_success_failure_silent_failure_source_and_tool_changes (test_phase7_runner.Phase7Runner.test_success_failure_silent_failure_source_and_tool_changes) ... ok
+test_every_final_state_field_and_live_bank (test_phase8_closeout.Phase8Closeout.test_every_final_state_field_and_live_bank) ... ok
+test_exact_reviewed_build_and_exporter_variants (test_phase8_closeout.Phase8Closeout.test_exact_reviewed_build_and_exporter_variants) ... ok
+test_nested_composition_source_drift_chain_and_current_source (test_phase8_closeout.Phase8Closeout.test_nested_composition_source_drift_chain_and_current_source) ... ok
+test_outer_inventory_requirements_summary_and_no_overwrite (test_phase8_closeout.Phase8Closeout.test_outer_inventory_requirements_summary_and_no_overwrite) ... ok
+test_raw_physical_schedule_boots_functional_and_linux_logs (test_phase8_closeout.Phase8Closeout.test_raw_physical_schedule_boots_functional_and_linux_logs) ... ok
+test_complete_manifest_and_rehashed_plan_provenance_mutations (test_phase8_regressions.Phase8Regressions.test_complete_manifest_and_rehashed_plan_provenance_mutations) ... ok
+test_missing_duplicate_reordered_truncated_or_failed_scenarios (test_phase8_regressions.Phase8Regressions.test_missing_duplicate_reordered_truncated_or_failed_scenarios) ... ok
+test_plan_and_all_scenario_positive_controls (test_phase8_regressions.Phase8Regressions.test_plan_and_all_scenario_positive_controls) ... ok
+test_runner_parallel_build_isolation_and_retained_failure (test_phase8_regressions.Phase8Regressions.test_runner_parallel_build_isolation_and_retained_failure) ... ok
+test_capture_warm_boot_stop_and_failure_preservation (test_pynq_coherent.PhysicalCollector.test_capture_warm_boot_stop_and_failure_preservation) ... ok
+test_invalid_inputs_are_nonmutating_before_pynq_import (test_pynq_coherent.PhysicalCollector.test_invalid_inputs_are_nonmutating_before_pynq_import) ... ok
+test_isolated_shipping_manifest_contains_transitive_imports (test_pynq_coherent.PhysicalCollector.test_isolated_shipping_manifest_contains_transitive_imports) ... ok
+test_loaded_overlay_guard_and_firmware_recheck_before_writes (test_pynq_coherent.PhysicalCollector.test_loaded_overlay_guard_and_firmware_recheck_before_writes) ... ok
+test_reference_hardware_compatibility (test_pynq_coherent.PhysicalCollector.test_reference_hardware_compatibility) ... ok
+test_batch_audit_mutations (test_pynq_coherent_study.PhysicalStudy.test_batch_audit_mutations) ... ok
+test_capture_failure_no_overwrite_and_pcapi_sequence (test_pynq_coherent_study.PhysicalStudy.test_capture_failure_no_overwrite_and_pcapi_sequence) ... ok
+test_isolated_package_and_one_switch_schedule (test_pynq_coherent_study.PhysicalStudy.test_isolated_package_and_one_switch_schedule) ... ok
+test_changed_preflight_inputs_and_second_guard_are_nonmutating (test_pynq_dma.PynqDma.test_changed_preflight_inputs_and_second_guard_are_nonmutating) ... ok
+test_invalid_inputs_do_not_import_board_api (test_pynq_dma.PynqDma.test_invalid_inputs_do_not_import_board_api) ... ok
+test_isolated_shipping_closure_never_imports_pynq (test_pynq_dma.PynqDma.test_isolated_shipping_closure_never_imports_pynq) ... ok
+test_no_download_reuses_only_exact_idle_dma_image (test_pynq_dma.PynqDma.test_no_download_reuses_only_exact_idle_dma_image) ... ok
+test_physical_configuration_and_hardware_source_contract (test_pynq_dma.PynqDma.test_physical_configuration_and_hardware_source_contract) ... ok
+test_previous_guard_rejects_changes_without_writes_or_download (test_pynq_dma.PynqDma.test_previous_guard_rejects_changes_without_writes_or_download) ... ok
+test_real_boot_flow_frozen_dma_and_safe_failure_cleanup (test_pynq_dma.PynqDma.test_real_boot_flow_frozen_dma_and_safe_failure_cleanup) ... ok
+test_both_programs_cache_modes_boots_and_failure_cleanup (test_pynq_dma_functional.PhysicalDmaFunctional.test_both_programs_cache_modes_boots_and_failure_cleanup) ... ok
+test_guard_and_recheck_prevent_unrelated_writes (test_pynq_dma_functional.PhysicalDmaFunctional.test_guard_and_recheck_prevent_unrelated_writes) ... ok
+test_offline_preflight_and_isolated_source_closure (test_pynq_dma_functional.PhysicalDmaFunctional.test_offline_preflight_and_isolated_source_closure) ... ok
+test_reuse_same_idle_image_and_no_overwrite (test_pynq_dma_functional.PhysicalDmaFunctional.test_reuse_same_idle_image_and_no_overwrite) ... ok
+test_audit_coverage_summary_hashes_and_rehashed_sequence_mutations (test_pynq_dma_study.PhysicalDmaStudy.test_audit_coverage_summary_hashes_and_rehashed_sequence_mutations) ... ok
+test_capture_all_cases_hash_chain_and_partial_failure_retention (test_pynq_dma_study.PhysicalDmaStudy.test_capture_all_cases_hash_chain_and_partial_failure_retention) ... ok
+test_full_plan_and_isolated_imports (test_pynq_dma_study.PhysicalDmaStudy.test_full_plan_and_isolated_imports) ... ok
+test_changed_preflight_inputs_and_second_guard_are_nonmutating (test_pynq_dot8.PynqDot8.test_changed_preflight_inputs_and_second_guard_are_nonmutating) ... ok
+test_invalid_inputs_do_not_import_board_api (test_pynq_dot8.PynqDot8.test_invalid_inputs_do_not_import_board_api) ... ok
+test_isolated_shipping_closure_never_imports_pynq (test_pynq_dot8.PynqDot8.test_isolated_shipping_closure_never_imports_pynq) ... ok
+test_no_download_reuses_only_exact_idle_dot8_image (test_pynq_dot8.PynqDot8.test_no_download_reuses_only_exact_idle_dot8_image) ... ok
+test_physical_configuration_and_hardware_source_contract (test_pynq_dot8.PynqDot8.test_physical_configuration_and_hardware_source_contract) ... ok
+test_previous_guard_rejects_changes_without_writes_or_download (test_pynq_dot8.PynqDot8.test_previous_guard_rejects_changes_without_writes_or_download) ... ok
+test_real_boot_flow_frozen_dot8_and_safe_failure_cleanup (test_pynq_dot8.PynqDot8.test_real_boot_flow_frozen_dot8_and_safe_failure_cleanup) ... ok
+test_complete_both_cache_modes_and_safe_failure_cleanup (test_pynq_dot8_functional.PynqDot8Functional.test_complete_both_cache_modes_and_safe_failure_cleanup) ... ok
+test_offline_closure_and_incompatible_reference (test_pynq_dot8_functional.PynqDot8Functional.test_offline_closure_and_incompatible_reference) ... ok
+test_rehashed_physical_manifest_fields_and_every_live_counter (test_pynq_dot8_functional.PynqDot8Functional.test_rehashed_physical_manifest_fields_and_every_live_counter) ... ok
+test_second_guard_and_bad_inputs_never_touch_another_project (test_pynq_dot8_functional.PynqDot8Functional.test_second_guard_and_bad_inputs_never_touch_another_project) ... ok
+test_audit_coverage_summary_hashes_and_rehashed_sequence_mutations (test_pynq_dot8_study.PhysicalDot8Study.test_audit_coverage_summary_hashes_and_rehashed_sequence_mutations) ... ok
+test_capture_all_cases_hash_chain_and_partial_failure_retention (test_pynq_dot8_study.PhysicalDot8Study.test_capture_all_cases_hash_chain_and_partial_failure_retention) ... ok
+test_full_plan_and_isolated_imports (test_pynq_dot8_study.PhysicalDot8Study.test_full_plan_and_isolated_imports) ... ok
+test_both_programs_caches_boots_cleanup_and_failures (test_pynq_functional.FunctionalCollector.test_both_programs_caches_boots_cleanup_and_failures) ... ok
+test_invalid_options_and_preflight_do_not_import_pynq (test_pynq_functional.FunctionalCollector.test_invalid_options_and_preflight_do_not_import_pynq) ... ok
+test_isolated_functional_package (test_pynq_functional.FunctionalCollector.test_isolated_functional_package) ... ok
+test_coherent_isa_cache_and_reset_abi_must_match (test_pynq_handoff.HandoffSafety.test_coherent_isa_cache_and_reset_abi_must_match) ... ok
+test_dot8_is_explicit_and_legacy_loaders_reject_it (test_pynq_handoff.HandoffSafety.test_dot8_is_explicit_and_legacy_loaders_reject_it) ... ok
+test_missing_and_duplicate_modules_parameters_ports (test_pynq_handoff.HandoffSafety.test_missing_and_duplicate_modules_parameters_ports) ... ok
+test_multicore_map_must_match_requested_harts (test_pynq_handoff.HandoffSafety.test_multicore_map_must_match_requested_harts) ... ok
+test_mutated_exports_fail_closed (test_pynq_handoff.HandoffSafety.test_mutated_exports_fail_closed) ... ok
+test_npu_is_explicit_and_requires_coherent_dma_image (test_pynq_handoff.HandoffSafety.test_npu_is_explicit_and_requires_coherent_dma_image) ... ok
+test_original_active_low_auxiliary_tied_zero_is_rejected (test_pynq_handoff.HandoffSafety.test_original_active_low_auxiliary_tied_zero_is_rejected) ... ok
+test_valid_export (test_pynq_handoff.HandoffSafety.test_valid_export) ... ok
+test_captured_reports_and_rejected_mutations (test_pynq_results.PhysicalResults.test_captured_reports_and_rejected_mutations) ... ok
+test_owned_environment_does_not_imply_privileged_core (test_riscv_reference.UpstreamReference.test_owned_environment_does_not_imply_privileged_core) ... ok
+test_pinned_complete_subset (test_riscv_reference.UpstreamReference.test_pinned_complete_subset) ... ok
+test_bad_cli_preflight_never_imports_board_api (test_run_pynq.CollectorChecks.test_bad_cli_preflight_never_imports_board_api) ... ok
+test_exact_runtime_and_complete_parallel_streams (test_run_pynq.CollectorChecks.test_exact_runtime_and_complete_parallel_streams) ... ok
+test_lifetime_counter_rollover (test_run_pynq.CollectorChecks.test_lifetime_counter_rollover) ... ok
+test_conv2d_checksum_matches_firmware (test_workload_reference.WorkloadReference.test_conv2d_checksum_matches_firmware) ... ok
+test_ecg_checksum_matches_firmware (test_workload_reference.WorkloadReference.test_ecg_checksum_matches_firmware) ... ok
+test_ecg_segment_is_committed_physionet_data (test_workload_reference.WorkloadReference.test_ecg_segment_is_committed_physionet_data) ... ok
+test_fft_checksum_matches_firmware (test_workload_reference.WorkloadReference.test_fft_checksum_matches_firmware) ... ok
+test_reduce_checksum_matches_firmware (test_workload_reference.WorkloadReference.test_reduce_checksum_matches_firmware) ... ok
+test_sort_checksum_matches_firmware (test_workload_reference.WorkloadReference.test_sort_checksum_matches_firmware) ... ok
+test_strided_checksum_matches_firmware (test_workload_reference.WorkloadReference.test_strided_checksum_matches_firmware) ... ok
+test_unknown_workload_rejected (test_workload_reference.WorkloadReference.test_unknown_workload_rejected) ... ok
+
+----------------------------------------------------------------------
+Ran 253 tests in 66.233s
+
+OK
+Hello from Aster
+PASS: Hello from Aster reached the simulated UART
+ASTERBENCH,version=2,name=memcpy,bytes=256,repetitions=4,seed=0x13570000,status=PASS,checksum=0xc4be3200,clock_hz=31250000,l1=1,sync_memory=0,line_words=4,line_count=16,memory_wait=0,cycles=0x0000000000001e90,retired=0x0000000000000611,memory_transactions=0x0000000000000910,backing_transactions=0x000000000000014c,cache_accesses=0x0000000000000910,cache_misses=0x0000000000000113,dma_bytes=0x0000000000000000,accelerator_cycles=0x0000000000000000
+PASS: strict AsterBench v2 record
+PASS: cache scoreboard words=4 lines=16 seed=1 completed=5092 aborted=5 stalls=35198 reads=8537 writes=1642
+PASS: cache scoreboard words=4 lines=16 seed=42366 completed=5092 aborted=5 stalls=34509 reads=8100 writes=1740
+PASS: cache scoreboard words=4 lines=16 seed=12648430 completed=5092 aborted=5 stalls=35790 reads=8549 writes=1672
+PASS: L1 cache refill, hit, byte-write, eviction and bypass tests
+PASS: UART FIFO backpressure, wraparound, all byte values and mid-frame reset
+PASS: UART RX false starts, framing errors, reset and all 256 bytes
+PASS: PYNQ-Z1 UART serial decode (17 bytes)
+PASS: PYNQ-Z1 UART serial decode (17 bytes)
+PASS: PYNQ-Z1 UART serial decode (1060 bytes)
+PASS: PYNQ-Z1 UART serial decode (1060 bytes)
+PASS: PYNQ-Z1 UART serial decode (448 bytes)
+PASS: PYNQ-Z1 UART serial decode (448 bytes)
+verilator --cc --exe --build --timing --Wall --Wno-fatal \
+	-DRISCV_FORMAL --Wno-DECLFILENAME --Wno-GENUNNAMED --Wno-UNUSEDSIGNAL --Wno-BLKSEQ --top-module aster_pynq_linux \
+	-GCLK_HZ=400 -GBAUD=10 -GRX_DEPTH=128 \
+	--Mdir /home/elfo/Documents/Aster/build/obj_linux -o /home/elfo/Documents/Aster/build/aster_pynq_linux_sim \
+	/home/elfo/Documents/Aster/rtl/accelerator/aster_int8_array.sv /home/elfo/Documents/Aster/rtl/accelerator/aster_int8_pe.sv /home/elfo/Documents/Aster/rtl/accelerator/aster_npu_engine.sv /home/elfo/Documents/Aster/rtl/accelerator/aster_npu_regs.sv /home/elfo/Documents/Aster/rtl/cache/aster_coherent_cache.sv /home/elfo/Documents/Aster/rtl/cache/aster_l1_cache.sv /home/elfo/Documents/Aster/rtl/core/aster_atomic_hart.sv /home/elfo/Documents/Aster/rtl/core/aster_hart.sv /home/elfo/Documents/Aster/rtl/core/aster_pcpi_atomic.sv /home/elfo/Documents/Aster/rtl/core/aster_pcpi_dot8.sv /home/elfo/Documents/Aster/rtl/core/aster_picorv32.sv /home/elfo/Documents/Aster/rtl/dma/aster_dma_engine.sv /home/elfo/Documents/Aster/rtl/interconnect/aster_arbiter2.sv /home/elfo/Documents/Aster/rtl/interconnect/aster_atomic_fabric.sv /home/elfo/Documents/Aster/rtl/interconnect/aster_device_arbiter.sv /home/elfo/Documents/Aster/rtl/interconnect/aster_dma_arbiter.sv /home/elfo/Documents/Aster/rtl/memory/aster_ram.sv /home/elfo/Documents/Aster/rtl/memory/aster_rom.sv /home/elfo/Documents/Aster/rtl/peripherals/aster_coherent_perf.sv /home/elfo/Documents/Aster/rtl/peripherals/aster_dma_perf.sv /home/elfo/Documents/Aster/rtl/peripherals/aster_dot8_perf.sv /home/elfo/Documents/Aster/rtl/peripherals/aster_interrupt_controller.sv /home/elfo/Documents/Aster/rtl/peripherals/aster_perf_counters.sv /home/elfo/Documents/Aster/rtl/peripherals/aster_timer.sv /home/elfo/Documents/Aster/rtl/peripherals/aster_uart.sv /home/elfo/Documents/Aster/rtl/soc/aster_coherent_soc.sv /home/elfo/Documents/Aster/rtl/soc/aster_minimal.sv /home/elfo/Documents/Aster/rtl/soc/aster_multicore.sv /home/elfo/Documents/Aster/rtl/soc/aster_shared_fabric.sv /home/elfo/Documents/Aster/rtl/soc/aster_warm_stop.sv /home/elfo/Documents/Aster/vendor/picorv32/picorv32.v \
+	/home/elfo/Documents/Aster/rtl/peripherals/aster_uart_tx.sv /home/elfo/Documents/Aster/rtl/peripherals/aster_uart_rx.sv \
+	/home/elfo/Documents/Aster/rtl/soc/aster_pynq_linux.sv /home/elfo/Documents/Aster/verification/soc/tb_pynq_linux.cpp
+make[1]: Entering directory '/home/elfo/Documents/Aster/build/obj_linux'
+make[1]: Nothing to be done for 'default'.
+make[1]: Leaving directory '/home/elfo/Documents/Aster/build/obj_linux'
+PASS: Linux AXI boot + UART serial capture (17 bytes)
+PASS: Linux AXI boot + UART serial capture (17 bytes)
+PASS: Linux AXI boot + UART serial capture (1060 bytes)
+PASS: Linux AXI boot + UART serial capture (1060 bytes)
+PASS: Linux AXI boot + UART serial capture (443 bytes)
+PASS: Linux AXI boot + UART serial capture (443 bytes)
+verilator --cc --exe --build --timing --Wall -DRISCV_FORMAL --Wno-DECLFILENAME --Wno-GENUNNAMED --Wno-UNUSEDSIGNAL --Wno-BLKSEQ \
+	--top-module aster_pynq_linux -GHART_COUNT=2 -GCLK_HZ=400 -GBAUD=10 -GRX_DEPTH=128 \
+	--Mdir /home/elfo/Documents/Aster/build/obj_linux_dual -o /home/elfo/Documents/Aster/build/aster_pynq_linux_dual_sim \
+	/home/elfo/Documents/Aster/rtl/accelerator/aster_int8_array.sv /home/elfo/Documents/Aster/rtl/accelerator/aster_int8_pe.sv /home/elfo/Documents/Aster/rtl/accelerator/aster_npu_engine.sv /home/elfo/Documents/Aster/rtl/accelerator/aster_npu_regs.sv /home/elfo/Documents/Aster/rtl/cache/aster_coherent_cache.sv /home/elfo/Documents/Aster/rtl/cache/aster_l1_cache.sv /home/elfo/Documents/Aster/rtl/core/aster_atomic_hart.sv /home/elfo/Documents/Aster/rtl/core/aster_hart.sv /home/elfo/Documents/Aster/rtl/core/aster_pcpi_atomic.sv /home/elfo/Documents/Aster/rtl/core/aster_pcpi_dot8.sv /home/elfo/Documents/Aster/rtl/core/aster_picorv32.sv /home/elfo/Documents/Aster/rtl/dma/aster_dma_engine.sv /home/elfo/Documents/Aster/rtl/interconnect/aster_arbiter2.sv /home/elfo/Documents/Aster/rtl/interconnect/aster_atomic_fabric.sv /home/elfo/Documents/Aster/rtl/interconnect/aster_device_arbiter.sv /home/elfo/Documents/Aster/rtl/interconnect/aster_dma_arbiter.sv /home/elfo/Documents/Aster/rtl/memory/aster_ram.sv /home/elfo/Documents/Aster/rtl/memory/aster_rom.sv /home/elfo/Documents/Aster/rtl/peripherals/aster_coherent_perf.sv /home/elfo/Documents/Aster/rtl/peripherals/aster_dma_perf.sv /home/elfo/Documents/Aster/rtl/peripherals/aster_dot8_perf.sv /home/elfo/Documents/Aster/rtl/peripherals/aster_interrupt_controller.sv /home/elfo/Documents/Aster/rtl/peripherals/aster_perf_counters.sv /home/elfo/Documents/Aster/rtl/peripherals/aster_timer.sv /home/elfo/Documents/Aster/rtl/peripherals/aster_uart.sv /home/elfo/Documents/Aster/rtl/soc/aster_coherent_soc.sv /home/elfo/Documents/Aster/rtl/soc/aster_minimal.sv /home/elfo/Documents/Aster/rtl/soc/aster_multicore.sv /home/elfo/Documents/Aster/rtl/soc/aster_shared_fabric.sv /home/elfo/Documents/Aster/rtl/soc/aster_warm_stop.sv /home/elfo/Documents/Aster/vendor/picorv32/picorv32.v \
+	/home/elfo/Documents/Aster/rtl/peripherals/aster_uart_tx.sv /home/elfo/Documents/Aster/rtl/peripherals/aster_uart_rx.sv \
+	/home/elfo/Documents/Aster/rtl/soc/aster_pynq_linux.sv /home/elfo/Documents/Aster/verification/soc/tb_pynq_linux_dual.cpp
+make[1]: Entering directory '/home/elfo/Documents/Aster/build/obj_linux_dual'
+make[1]: Nothing to be done for 'default'.
+make[1]: Leaving directory '/home/elfo/Documents/Aster/build/obj_linux_dual'
+PASS: dual Linux AXI/serial runtime boot=0 jobs=1 workers=2 bytes=23 h0_retired=168457 h1_retired=1558
+PASS: dual Linux AXI/serial runtime boot=1 jobs=1 workers=2 bytes=23 h0_retired=168457 h1_retired=1558
+make[1]: Entering directory '/home/elfo/Documents/Aster'
+verilator --cc --exe --build --timing --Wall -DRISCV_FORMAL --Wno-DECLFILENAME --Wno-GENUNNAMED --Wno-UNUSEDSIGNAL --Wno-BLKSEQ \
+	--top-module aster_pynq_linux -GHART_COUNT=2 -GCLK_HZ=400 -GBAUD=10 -GRX_DEPTH=128 \
+	--Mdir /home/elfo/Documents/Aster/build/obj_linux_dual -o /home/elfo/Documents/Aster/build/aster_pynq_linux_dual_sim \
+	/home/elfo/Documents/Aster/rtl/accelerator/aster_int8_array.sv /home/elfo/Documents/Aster/rtl/accelerator/aster_int8_pe.sv /home/elfo/Documents/Aster/rtl/accelerator/aster_npu_engine.sv /home/elfo/Documents/Aster/rtl/accelerator/aster_npu_regs.sv /home/elfo/Documents/Aster/rtl/cache/aster_coherent_cache.sv /home/elfo/Documents/Aster/rtl/cache/aster_l1_cache.sv /home/elfo/Documents/Aster/rtl/core/aster_atomic_hart.sv /home/elfo/Documents/Aster/rtl/core/aster_hart.sv /home/elfo/Documents/Aster/rtl/core/aster_pcpi_atomic.sv /home/elfo/Documents/Aster/rtl/core/aster_pcpi_dot8.sv /home/elfo/Documents/Aster/rtl/core/aster_picorv32.sv /home/elfo/Documents/Aster/rtl/dma/aster_dma_engine.sv /home/elfo/Documents/Aster/rtl/interconnect/aster_arbiter2.sv /home/elfo/Documents/Aster/rtl/interconnect/aster_atomic_fabric.sv /home/elfo/Documents/Aster/rtl/interconnect/aster_device_arbiter.sv /home/elfo/Documents/Aster/rtl/interconnect/aster_dma_arbiter.sv /home/elfo/Documents/Aster/rtl/memory/aster_ram.sv /home/elfo/Documents/Aster/rtl/memory/aster_rom.sv /home/elfo/Documents/Aster/rtl/peripherals/aster_coherent_perf.sv /home/elfo/Documents/Aster/rtl/peripherals/aster_dma_perf.sv /home/elfo/Documents/Aster/rtl/peripherals/aster_dot8_perf.sv /home/elfo/Documents/Aster/rtl/peripherals/aster_interrupt_controller.sv /home/elfo/Documents/Aster/rtl/peripherals/aster_perf_counters.sv /home/elfo/Documents/Aster/rtl/peripherals/aster_timer.sv /home/elfo/Documents/Aster/rtl/peripherals/aster_uart.sv /home/elfo/Documents/Aster/rtl/soc/aster_coherent_soc.sv /home/elfo/Documents/Aster/rtl/soc/aster_minimal.sv /home/elfo/Documents/Aster/rtl/soc/aster_multicore.sv /home/elfo/Documents/Aster/rtl/soc/aster_shared_fabric.sv /home/elfo/Documents/Aster/rtl/soc/aster_warm_stop.sv /home/elfo/Documents/Aster/vendor/picorv32/picorv32.v \
+	/home/elfo/Documents/Aster/rtl/peripherals/aster_uart_tx.sv /home/elfo/Documents/Aster/rtl/peripherals/aster_uart_rx.sv \
+	/home/elfo/Documents/Aster/rtl/soc/aster_pynq_linux.sv /home/elfo/Documents/Aster/verification/soc/tb_pynq_linux_dual.cpp
+make[2]: Entering directory '/home/elfo/Documents/Aster/build/obj_linux_dual'
+make[2]: Nothing to be done for 'default'.
+make[2]: Leaving directory '/home/elfo/Documents/Aster/build/obj_linux_dual'
+PASS: dual Linux AXI/serial parallel boot=0 jobs=3 workers=1 bytes=2712 h0_retired=66603 h1_retired=0
+PASS: dual Linux AXI/serial parallel boot=1 jobs=3 workers=1 bytes=2712 h0_retired=66603 h1_retired=0
+make[1]: Leaving directory '/home/elfo/Documents/Aster'
+make[1]: Entering directory '/home/elfo/Documents/Aster'
+verilator --cc --exe --build --timing --Wall -DRISCV_FORMAL --Wno-DECLFILENAME --Wno-GENUNNAMED --Wno-UNUSEDSIGNAL --Wno-BLKSEQ \
+	--top-module aster_pynq_linux -GHART_COUNT=2 -GCLK_HZ=400 -GBAUD=10 -GRX_DEPTH=128 \
+	--Mdir /home/elfo/Documents/Aster/build/obj_linux_dual -o /home/elfo/Documents/Aster/build/aster_pynq_linux_dual_sim \
+	/home/elfo/Documents/Aster/rtl/accelerator/aster_int8_array.sv /home/elfo/Documents/Aster/rtl/accelerator/aster_int8_pe.sv /home/elfo/Documents/Aster/rtl/accelerator/aster_npu_engine.sv /home/elfo/Documents/Aster/rtl/accelerator/aster_npu_regs.sv /home/elfo/Documents/Aster/rtl/cache/aster_coherent_cache.sv /home/elfo/Documents/Aster/rtl/cache/aster_l1_cache.sv /home/elfo/Documents/Aster/rtl/core/aster_atomic_hart.sv /home/elfo/Documents/Aster/rtl/core/aster_hart.sv /home/elfo/Documents/Aster/rtl/core/aster_pcpi_atomic.sv /home/elfo/Documents/Aster/rtl/core/aster_pcpi_dot8.sv /home/elfo/Documents/Aster/rtl/core/aster_picorv32.sv /home/elfo/Documents/Aster/rtl/dma/aster_dma_engine.sv /home/elfo/Documents/Aster/rtl/interconnect/aster_arbiter2.sv /home/elfo/Documents/Aster/rtl/interconnect/aster_atomic_fabric.sv /home/elfo/Documents/Aster/rtl/interconnect/aster_device_arbiter.sv /home/elfo/Documents/Aster/rtl/interconnect/aster_dma_arbiter.sv /home/elfo/Documents/Aster/rtl/memory/aster_ram.sv /home/elfo/Documents/Aster/rtl/memory/aster_rom.sv /home/elfo/Documents/Aster/rtl/peripherals/aster_coherent_perf.sv /home/elfo/Documents/Aster/rtl/peripherals/aster_dma_perf.sv /home/elfo/Documents/Aster/rtl/peripherals/aster_dot8_perf.sv /home/elfo/Documents/Aster/rtl/peripherals/aster_interrupt_controller.sv /home/elfo/Documents/Aster/rtl/peripherals/aster_perf_counters.sv /home/elfo/Documents/Aster/rtl/peripherals/aster_timer.sv /home/elfo/Documents/Aster/rtl/peripherals/aster_uart.sv /home/elfo/Documents/Aster/rtl/soc/aster_coherent_soc.sv /home/elfo/Documents/Aster/rtl/soc/aster_minimal.sv /home/elfo/Documents/Aster/rtl/soc/aster_multicore.sv /home/elfo/Documents/Aster/rtl/soc/aster_shared_fabric.sv /home/elfo/Documents/Aster/rtl/soc/aster_warm_stop.sv /home/elfo/Documents/Aster/vendor/picorv32/picorv32.v \
+	/home/elfo/Documents/Aster/rtl/peripherals/aster_uart_tx.sv /home/elfo/Documents/Aster/rtl/peripherals/aster_uart_rx.sv \
+	/home/elfo/Documents/Aster/rtl/soc/aster_pynq_linux.sv /home/elfo/Documents/Aster/verification/soc/tb_pynq_linux_dual.cpp
+make[2]: Entering directory '/home/elfo/Documents/Aster/build/obj_linux_dual'
+make[2]: Nothing to be done for 'default'.
+make[2]: Leaving directory '/home/elfo/Documents/Aster/build/obj_linux_dual'
+PASS: dual Linux AXI/serial parallel boot=0 jobs=3 workers=2 bytes=2715 h0_retired=61552 h1_retired=72695
+PASS: dual Linux AXI/serial parallel boot=1 jobs=3 workers=2 bytes=2715 h0_retired=61552 h1_retired=72695
+make[1]: Leaving directory '/home/elfo/Documents/Aster'
+mkdir -p /home/elfo/Documents/Aster/build/linux_coherent_h2_l11
+verilator --cc --exe --build --timing --Wall -DRISCV_FORMAL --Wno-DECLFILENAME --Wno-GENUNNAMED --Wno-UNUSEDSIGNAL --Wno-BLKSEQ --unroll-count 2048 --unroll-stmts 100000 --assert -DASTER_COHERENCE_ASSERT --public-flat-rw \
+	--top-module aster_pynq_linux -GHART_COUNT=2 "-GENABLE_COHERENCE=1'b1" "-GCOHERENT_L1=1'b1" \
+	-GCLK_HZ=400 -GBAUD=10 -GRX_DEPTH=128 -CFLAGS '-DASTER_HART_COUNT=2 -DASTER_L1=1' \
+	--Mdir /home/elfo/Documents/Aster/build/linux_coherent_h2_l11/obj -o /home/elfo/Documents/Aster/build/linux_coherent_h2_l11/aster_linux_coherent_sim \
+	/home/elfo/Documents/Aster/rtl/accelerator/aster_int8_array.sv /home/elfo/Documents/Aster/rtl/accelerator/aster_int8_pe.sv /home/elfo/Documents/Aster/rtl/accelerator/aster_npu_engine.sv /home/elfo/Documents/Aster/rtl/accelerator/aster_npu_regs.sv /home/elfo/Documents/Aster/rtl/cache/aster_coherent_cache.sv /home/elfo/Documents/Aster/rtl/cache/aster_l1_cache.sv /home/elfo/Documents/Aster/rtl/core/aster_atomic_hart.sv /home/elfo/Documents/Aster/rtl/core/aster_hart.sv /home/elfo/Documents/Aster/rtl/core/aster_pcpi_atomic.sv /home/elfo/Documents/Aster/rtl/core/aster_pcpi_dot8.sv /home/elfo/Documents/Aster/rtl/core/aster_picorv32.sv /home/elfo/Documents/Aster/rtl/dma/aster_dma_engine.sv /home/elfo/Documents/Aster/rtl/interconnect/aster_arbiter2.sv /home/elfo/Documents/Aster/rtl/interconnect/aster_atomic_fabric.sv /home/elfo/Documents/Aster/rtl/interconnect/aster_device_arbiter.sv /home/elfo/Documents/Aster/rtl/interconnect/aster_dma_arbiter.sv /home/elfo/Documents/Aster/rtl/memory/aster_ram.sv /home/elfo/Documents/Aster/rtl/memory/aster_rom.sv /home/elfo/Documents/Aster/rtl/peripherals/aster_coherent_perf.sv /home/elfo/Documents/Aster/rtl/peripherals/aster_dma_perf.sv /home/elfo/Documents/Aster/rtl/peripherals/aster_dot8_perf.sv /home/elfo/Documents/Aster/rtl/peripherals/aster_interrupt_controller.sv /home/elfo/Documents/Aster/rtl/peripherals/aster_perf_counters.sv /home/elfo/Documents/Aster/rtl/peripherals/aster_timer.sv /home/elfo/Documents/Aster/rtl/peripherals/aster_uart.sv /home/elfo/Documents/Aster/rtl/soc/aster_coherent_soc.sv /home/elfo/Documents/Aster/rtl/soc/aster_minimal.sv /home/elfo/Documents/Aster/rtl/soc/aster_multicore.sv /home/elfo/Documents/Aster/rtl/soc/aster_shared_fabric.sv /home/elfo/Documents/Aster/rtl/soc/aster_warm_stop.sv /home/elfo/Documents/Aster/vendor/picorv32/picorv32.v \
+	/home/elfo/Documents/Aster/rtl/peripherals/aster_uart_tx.sv /home/elfo/Documents/Aster/rtl/peripherals/aster_uart_rx.sv \
+	/home/elfo/Documents/Aster/rtl/soc/aster_pynq_linux.sv /home/elfo/Documents/Aster/verification/soc/tb_pynq_linux_coherent.cpp
+make[1]: Entering directory '/home/elfo/Documents/Aster/build/linux_coherent_h2_l11/obj'
+make[1]: Nothing to be done for 'default'.
+make[1]: Leaving directory '/home/elfo/Documents/Aster/build/linux_coherent_h2_l11/obj'
+PASS: coherent AXI/serial runtime harts=2 cache=1 boot=0 bytes=65 retired=35620,15748 retained_RAM=65536
+PASS: coherent AXI/serial runtime harts=2 cache=1 boot=1 bytes=65 retired=35619,15747 retained_RAM=65536
+PASS: coherent AXI stop/boot/RAM gates, split channels, held replies, fault diagnostics, full-UART stop; snapshots=6 observed_stores=16144
+PASS: coherent AXI/serial lifecycle harts=2 cache=1 boot=0 bytes=24 retired=53571,6425 retained_RAM=65536
+PASS: coherent AXI/serial lifecycle harts=2 cache=1 boot=1 bytes=24 retired=53570,6425 retained_RAM=65536
+PASS: coherent AXI stop/boot/RAM gates, split channels, held replies, fault diagnostics, full-UART stop; snapshots=6 observed_stores=1824
+PASS: counters/events, command strobes, freeze/resume, reset and 64-bit rollover
+PASS: exact RVFI retirement, no fault side effects, six traps, four latencies and warm reset
+verilator --cc --exe --build --timing --Wall \
+	-DRISCV_FORMAL --Wno-DECLFILENAME --Wno-GENUNNAMED --Wno-UNUSEDSIGNAL --Wno-BLKSEQ --top-module aster_pcpi_probe \
+	--Mdir /home/elfo/Documents/Aster/build/obj_pcpi_probe -o /home/elfo/Documents/Aster/build/aster_pcpi_probe_sim \
+	/home/elfo/Documents/Aster/rtl/core/aster_picorv32.sv /home/elfo/Documents/Aster/vendor/picorv32/picorv32.v /home/elfo/Documents/Aster/rtl/core/aster_pcpi_atomic.sv \
+	/home/elfo/Documents/Aster/verification/unit/aster_pcpi_probe.sv /home/elfo/Documents/Aster/verification/unit/tb_aster_pcpi_probe.cpp
+make[1]: Entering directory '/home/elfo/Documents/Aster/build/obj_pcpi_probe'
+make[1]: Nothing to be done for 'default'.
+make[1]: Leaving directory '/home/elfo/Documents/Aster/build/obj_pcpi_probe'
+verilator --cc --exe --build --timing --Wall --Wno-UNUSEDSIGNAL \
+	--top-module aster_pcpi_atomic --Mdir /home/elfo/Documents/Aster/build/obj_pcpi_atomic -o /home/elfo/Documents/Aster/build/aster_pcpi_atomic_sim \
+	/home/elfo/Documents/Aster/rtl/core/aster_pcpi_atomic.sv /home/elfo/Documents/Aster/verification/unit/tb_aster_pcpi_atomic.cpp
+make[1]: Entering directory '/home/elfo/Documents/Aster/build/obj_pcpi_atomic'
+make[1]: Nothing to be done for 'default'.
+make[1]: Leaving directory '/home/elfo/Documents/Aster/build/obj_pcpi_atomic'
+PASS: PCPI real-core boundary: 4744 programs, 4072 command responses, 3544 exactly-once completions, 24 destructive reset probes, 84791 overlapping native-fetch cycles; seed=0xa57e6
+PASS: PCPI adapter: 32768 decode combinations, 44 stalled/held-response transactions
+verilator --cc --exe --build --timing --Wall --assert -DASTER_DOT8_ASSERT \
+	--top-module aster_pcpi_dot8 --Mdir /home/elfo/Documents/Aster/build/obj_dot8_unit -o /home/elfo/Documents/Aster/build/aster_pcpi_dot8_sim \
+	/home/elfo/Documents/Aster/rtl/core/aster_pcpi_dot8.sv /home/elfo/Documents/Aster/verification/unit/tb_aster_pcpi_dot8.cpp
+make[1]: Entering directory '/home/elfo/Documents/Aster/build/obj_dot8_unit'
+make[1]: Nothing to be done for 'default'.
+make[1]: Leaving directory '/home/elfo/Documents/Aster/build/obj_dot8_unit'
+PASS: dot8 PCPI seed=1 decode=131072 lane_products=262144 register_fields=32768 packed=6144 jobs=301061 reset_stages=4; exact signed sum, admission wait, captured operands, held reply, exactly-once events
+PASS: dot8 PCPI seed=677864 decode=131072 lane_products=262144 register_fields=32768 packed=6144 jobs=301061 reset_stages=4; exact signed sum, admission wait, captured operands, held reply, exactly-once events
+PASS: dot8 PCPI seed=12648430 decode=131072 lane_products=262144 register_fields=32768 packed=6144 jobs=301061 reset_stages=4; exact signed sum, admission wait, captured operands, held reply, exactly-once events
+verilator --cc --exe --build --timing --Wall --assert \
+	--top-module aster_int8_pe --Mdir /home/elfo/Documents/Aster/build/obj_int8_pe -o /home/elfo/Documents/Aster/build/aster_int8_pe_sim \
+	/home/elfo/Documents/Aster/rtl/accelerator/aster_int8_pe.sv /home/elfo/Documents/Aster/verification/unit/tb_aster_int8_pe.cpp
+make[1]: Entering directory '/home/elfo/Documents/Aster/build/obj_int8_pe'
+make[1]: Nothing to be done for 'default'.
+make[1]: Leaving directory '/home/elfo/Documents/Aster/build/obj_int8_pe'
+PASS: INT8 PE reset, valid/ready acceptance, exhaustive 8-bit signed products, random accumulators=10000, modulo-32-bit accumulation
+verilator --cc --exe --build --timing --Wall --assert \
+	-DASTER_INT8_ARRAY_ASSERT --top-module aster_int8_array --Mdir /home/elfo/Documents/Aster/build/obj_int8_array -o /home/elfo/Documents/Aster/build/aster_int8_array_sim \
+	/home/elfo/Documents/Aster/rtl/accelerator/aster_int8_pe.sv /home/elfo/Documents/Aster/rtl/accelerator/aster_int8_array.sv \
+	/home/elfo/Documents/Aster/verification/unit/tb_aster_int8_array.cpp
+make[1]: Entering directory '/home/elfo/Documents/Aster/build/obj_int8_array'
+make[1]: Nothing to be done for 'default'.
+make[1]: Leaving directory '/home/elfo/Documents/Aster/build/obj_int8_array'
+PASS: INT8 4x4 array tiles=252 randomized masks/K, K=0, reset, and stable finished results
+PASS: INT8 4x4 array tiles=252 randomized masks/K, K=0, reset, and stable finished results
+PASS: INT8 4x4 array tiles=252 randomized masks/K, K=0, reset, and stable finished results
+verilator --cc --exe --build --timing --Wall --assert \
+	--top-module aster_npu_engine --Mdir /home/elfo/Documents/Aster/build/obj_npu_engine -o /home/elfo/Documents/Aster/build/aster_npu_engine_sim \
+	/home/elfo/Documents/Aster/rtl/accelerator/aster_int8_pe.sv /home/elfo/Documents/Aster/rtl/accelerator/aster_int8_array.sv \
+	/home/elfo/Documents/Aster/rtl/accelerator/aster_npu_engine.sv /home/elfo/Documents/Aster/verification/unit/tb_aster_npu_engine.cpp
+make[1]: Entering directory '/home/elfo/Documents/Aster/build/obj_npu_engine'
+make[1]: Nothing to be done for 'default'.
+make[1]: Leaving directory '/home/elfo/Documents/Aster/build/obj_npu_engine'
+PASS: RAM-backed INT8 GEMM engine reads=1123 writes=652 cycles=2884; partial tiles, byte offsets, K=0, stalls, bounds/stride/overlap errors
+PASS: RAM-backed INT8 GEMM engine reads=1123 writes=652 cycles=2884; partial tiles, byte offsets, K=0, stalls, bounds/stride/overlap errors
+PASS: RAM-backed INT8 GEMM engine reads=1123 writes=652 cycles=2884; partial tiles, byte offsets, K=0, stalls, bounds/stride/overlap errors
+verilator --cc --exe --build --timing --Wall --assert \
+	--top-module aster_npu_regs --Mdir /home/elfo/Documents/Aster/build/obj_npu_regs -o /home/elfo/Documents/Aster/build/aster_npu_regs_sim \
+	/home/elfo/Documents/Aster/rtl/accelerator/aster_int8_pe.sv /home/elfo/Documents/Aster/rtl/accelerator/aster_int8_array.sv \
+	/home/elfo/Documents/Aster/rtl/accelerator/aster_npu_engine.sv /home/elfo/Documents/Aster/rtl/accelerator/aster_npu_regs.sv \
+	/home/elfo/Documents/Aster/verification/unit/tb_aster_npu_regs.cpp
+make[1]: Entering directory '/home/elfo/Documents/Aster/build/obj_npu_regs'
+make[1]: Nothing to be done for 'default'.
+make[1]: Leaving directory '/home/elfo/Documents/Aster/build/obj_npu_regs'
+PASS: NPU ABI/control registers, busy rejection, ACK accounting, RAM-backed GEMM, feature/descriptor/error behavior
+riscv32-unknown-elf-gcc -march=rv32im -mabi=ilp32 -nostdlib -nostartfiles -nodefaultlibs -ffreestanding -Wall -Wextra -Werror -O2 -fno-pic -fno-stack-protector -msmall-data-limit=0 -Isoftware/runtime -Isoftware/drivers -Isoftware/runtime -fsyntax-only software/drivers/aster_npu.c
+mkdir -p /home/elfo/Documents/Aster/build/npu_soc_h2_l1_sync0_wait0_w4_n16
+verilator --cc --exe --build --timing --Wall -DRISCV_FORMAL --Wno-DECLFILENAME --Wno-GENUNNAMED --Wno-UNUSEDSIGNAL --Wno-BLKSEQ --unroll-count 2048 --unroll-stmts 100000 \
+	--assert -DASTER_COHERENCE_ASSERT --top-module aster_coherent_soc \
+	-GHART_COUNT=2 "-GENABLE_L1=1'b1" "-GENABLE_DMA=1'b1" "-GENABLE_NPU=1'b1" \
+	"-GSYNC_MEMORY=1'b0" -GMEMORY_WAIT_CYCLES=0 "-GHOST_BOOT=1'b1" \
+	-GLINE_WORDS=4 -GLINE_COUNT=16 \
+	-CFLAGS '-DASTER_HART_COUNT=2 -DASTER_L1=1 -DASTER_MEMORY_WAIT=0' \
+	--Mdir /home/elfo/Documents/Aster/build/npu_soc_h2_l1_sync0_wait0_w4_n16/obj -o /home/elfo/Documents/Aster/build/npu_soc_h2_l1_sync0_wait0_w4_n16/aster_npu_runtime_sim \
+	/home/elfo/Documents/Aster/rtl/core/aster_picorv32.sv /home/elfo/Documents/Aster/vendor/picorv32/picorv32.v /home/elfo/Documents/Aster/rtl/cache/aster_l1_cache.sv /home/elfo/Documents/Aster/rtl/memory/aster_rom.sv /home/elfo/Documents/Aster/rtl/memory/aster_ram.sv /home/elfo/Documents/Aster/rtl/core/aster_pcpi_atomic.sv /home/elfo/Documents/Aster/rtl/core/aster_pcpi_dot8.sv /home/elfo/Documents/Aster/rtl/core/aster_atomic_hart.sv /home/elfo/Documents/Aster/rtl/cache/aster_coherent_cache.sv /home/elfo/Documents/Aster/rtl/interconnect/aster_atomic_fabric.sv /home/elfo/Documents/Aster/rtl/interconnect/aster_device_arbiter.sv /home/elfo/Documents/Aster/rtl/accelerator/aster_int8_pe.sv /home/elfo/Documents/Aster/rtl/accelerator/aster_int8_array.sv /home/elfo/Documents/Aster/rtl/accelerator/aster_npu_engine.sv /home/elfo/Documents/Aster/rtl/accelerator/aster_npu_regs.sv /home/elfo/Documents/Aster/rtl/soc/aster_warm_stop.sv /home/elfo/Documents/Aster/rtl/peripherals/aster_uart.sv /home/elfo/Documents/Aster/rtl/peripherals/aster_coherent_perf.sv /home/elfo/Documents/Aster/rtl/dma/aster_dma_engine.sv /home/elfo/Documents/Aster/rtl/interconnect/aster_dma_arbiter.sv /home/elfo/Documents/Aster/rtl/peripherals/aster_dma_perf.sv /home/elfo/Documents/Aster/rtl/peripherals/aster_dot8_perf.sv /home/elfo/Documents/Aster/rtl/peripherals/aster_timer.sv /home/elfo/Documents/Aster/rtl/peripherals/aster_interrupt_controller.sv /home/elfo/Documents/Aster/rtl/soc/aster_coherent_soc.sv /home/elfo/Documents/Aster/verification/soc/tb_aster_npu_runtime.cpp
+make[1]: Entering directory '/home/elfo/Documents/Aster/build/npu_soc_h2_l1_sync0_wait0_w4_n16/obj'
+make[1]: Nothing to be done for 'default'.
+make[1]: Leaving directory '/home/elfo/Documents/Aster/build/npu_soc_h2_l1_sync0_wait0_w4_n16/obj'
+PASS: Phase 9 actual-core NPU runtime harts=2 cache=1 wait=0 starts=7 max_tiles=4 max_bytes_written=256 max_job_cycles=15600 device_transactions=4836 RAM snapshot=65536 bytes hash=0x4aa6394016ee34c7
+PASS: Phase 9 actual-core NPU runtime harts=2 cache=1 wait=0 starts=7 max_tiles=4 max_bytes_written=256 max_job_cycles=15600 device_transactions=4845 RAM snapshot=65536 bytes hash=0x2f76ad00004dfb37
+mkdir -p /home/elfo/Documents/Aster/build/npu_bench_h2_l1_sync0_wait0_w4_n16
+verilator --cc --exe --build --timing --Wall -DRISCV_FORMAL --Wno-DECLFILENAME --Wno-GENUNNAMED --Wno-UNUSEDSIGNAL --Wno-BLKSEQ --unroll-count 2048 --unroll-stmts 100000 \
+	--assert -DASTER_COHERENCE_ASSERT --top-module aster_coherent_soc \
+	-GHART_COUNT=2 "-GENABLE_L1=1'b1" "-GENABLE_DMA=1'b1" "-GENABLE_NPU=1'b1" \
+	"-GSYNC_MEMORY=1'b0" -GMEMORY_WAIT_CYCLES=0 "-GHOST_BOOT=1'b1" \
+	-GLINE_WORDS=4 -GLINE_COUNT=16 \
+	-CFLAGS '-DASTER_HART_COUNT=2 -DASTER_L1=1 -DASTER_MEMORY_WAIT=0' \
+	--Mdir /home/elfo/Documents/Aster/build/npu_bench_h2_l1_sync0_wait0_w4_n16/obj -o /home/elfo/Documents/Aster/build/npu_bench_h2_l1_sync0_wait0_w4_n16/aster_npu_bench_sim \
+	/home/elfo/Documents/Aster/rtl/core/aster_picorv32.sv /home/elfo/Documents/Aster/vendor/picorv32/picorv32.v /home/elfo/Documents/Aster/rtl/cache/aster_l1_cache.sv /home/elfo/Documents/Aster/rtl/memory/aster_rom.sv /home/elfo/Documents/Aster/rtl/memory/aster_ram.sv /home/elfo/Documents/Aster/rtl/core/aster_pcpi_atomic.sv /home/elfo/Documents/Aster/rtl/core/aster_pcpi_dot8.sv /home/elfo/Documents/Aster/rtl/core/aster_atomic_hart.sv /home/elfo/Documents/Aster/rtl/cache/aster_coherent_cache.sv /home/elfo/Documents/Aster/rtl/interconnect/aster_atomic_fabric.sv /home/elfo/Documents/Aster/rtl/interconnect/aster_device_arbiter.sv /home/elfo/Documents/Aster/rtl/accelerator/aster_int8_pe.sv /home/elfo/Documents/Aster/rtl/accelerator/aster_int8_array.sv /home/elfo/Documents/Aster/rtl/accelerator/aster_npu_engine.sv /home/elfo/Documents/Aster/rtl/accelerator/aster_npu_regs.sv /home/elfo/Documents/Aster/rtl/soc/aster_warm_stop.sv /home/elfo/Documents/Aster/rtl/peripherals/aster_uart.sv /home/elfo/Documents/Aster/rtl/peripherals/aster_coherent_perf.sv /home/elfo/Documents/Aster/rtl/dma/aster_dma_engine.sv /home/elfo/Documents/Aster/rtl/interconnect/aster_dma_arbiter.sv /home/elfo/Documents/Aster/rtl/peripherals/aster_dma_perf.sv /home/elfo/Documents/Aster/rtl/peripherals/aster_dot8_perf.sv /home/elfo/Documents/Aster/rtl/peripherals/aster_timer.sv /home/elfo/Documents/Aster/rtl/peripherals/aster_interrupt_controller.sv /home/elfo/Documents/Aster/rtl/soc/aster_coherent_soc.sv /home/elfo/Documents/Aster/verification/soc/tb_aster_npu_bench.cpp
+make[1]: Entering directory '/home/elfo/Documents/Aster/build/npu_bench_h2_l1_sync0_wait0_w4_n16/obj'
+make[1]: Nothing to be done for 'default'.
+make[1]: Leaving directory '/home/elfo/Documents/Aster/build/npu_bench_h2_l1_sync0_wait0_w4_n16/obj'
+{"records": 2, "status": "PASS", "stop": {"device_transactions": 266, "npu_transactions": 10, "ram_bytes": 65536, "records": 2}}
+mkdir -p /home/elfo/Documents/Aster/build/xe_soc_h2_l11_sync0_wait0_w4_n16
+verilator --cc --exe --build --timing --Wall -DRISCV_FORMAL --Wno-DECLFILENAME --Wno-GENUNNAMED --Wno-UNUSEDSIGNAL --Wno-BLKSEQ --unroll-count 2048 --unroll-stmts 100000 \
+	--assert -DASTER_COHERENCE_ASSERT --top-module aster_coherent_soc \
+	-GHART_COUNT=2 "-GENABLE_L1=1'b1" "-GENABLE_DMA=1'b1" "-GENABLE_DOT8=1'b1" "-GENABLE_NPU=1'b1" \
+	"-GSYNC_MEMORY=1'b0" -GMEMORY_WAIT_CYCLES=0 "-GHOST_BOOT=1'b1" \
+	-GLINE_WORDS=4 -GLINE_COUNT=16 \
+	-CFLAGS '-DASTER_HART_COUNT=2 -DASTER_L1=1 -DASTER_MEMORY_WAIT=0' \
+	--Mdir /home/elfo/Documents/Aster/build/xe_soc_h2_l11_sync0_wait0_w4_n16/obj -o /home/elfo/Documents/Aster/build/xe_soc_h2_l11_sync0_wait0_w4_n16/aster_xe_sim \
+	/home/elfo/Documents/Aster/rtl/core/aster_picorv32.sv /home/elfo/Documents/Aster/vendor/picorv32/picorv32.v /home/elfo/Documents/Aster/rtl/cache/aster_l1_cache.sv /home/elfo/Documents/Aster/rtl/memory/aster_rom.sv /home/elfo/Documents/Aster/rtl/memory/aster_ram.sv /home/elfo/Documents/Aster/rtl/core/aster_pcpi_atomic.sv /home/elfo/Documents/Aster/rtl/core/aster_pcpi_dot8.sv /home/elfo/Documents/Aster/rtl/core/aster_atomic_hart.sv /home/elfo/Documents/Aster/rtl/cache/aster_coherent_cache.sv /home/elfo/Documents/Aster/rtl/interconnect/aster_atomic_fabric.sv /home/elfo/Documents/Aster/rtl/interconnect/aster_device_arbiter.sv /home/elfo/Documents/Aster/rtl/accelerator/aster_int8_pe.sv /home/elfo/Documents/Aster/rtl/accelerator/aster_int8_array.sv /home/elfo/Documents/Aster/rtl/accelerator/aster_npu_engine.sv /home/elfo/Documents/Aster/rtl/accelerator/aster_npu_regs.sv /home/elfo/Documents/Aster/rtl/soc/aster_warm_stop.sv /home/elfo/Documents/Aster/rtl/peripherals/aster_uart.sv /home/elfo/Documents/Aster/rtl/peripherals/aster_coherent_perf.sv /home/elfo/Documents/Aster/rtl/dma/aster_dma_engine.sv /home/elfo/Documents/Aster/rtl/interconnect/aster_dma_arbiter.sv /home/elfo/Documents/Aster/rtl/peripherals/aster_dma_perf.sv /home/elfo/Documents/Aster/rtl/peripherals/aster_dot8_perf.sv /home/elfo/Documents/Aster/rtl/peripherals/aster_timer.sv /home/elfo/Documents/Aster/rtl/peripherals/aster_interrupt_controller.sv /home/elfo/Documents/Aster/rtl/soc/aster_coherent_soc.sv /home/elfo/Documents/Aster/verification/soc/tb_aster_xe_bench.cpp
+make[1]: Entering directory '/home/elfo/Documents/Aster/build/xe_soc_h2_l11_sync0_wait0_w4_n16/obj'
+make[1]: Nothing to be done for 'default'.
+make[1]: Leaving directory '/home/elfo/Documents/Aster/build/xe_soc_h2_l11_sync0_wait0_w4_n16/obj'
+PASS: v8 gemm/scalar job=1 m=4 n=4 k=16 h0_cycles=27002 h1_cycles=27002
+PASS: v8 gemm/scalar job=2 m=4 n=4 k=16 h0_cycles=27002 h1_cycles=27002
+mkdir -p /home/elfo/Documents/Aster/build/phase11_soc_h2_l11_sync0_wait0_w4_n16
+verilator --cc --exe --build --timing --Wall -DRISCV_FORMAL --Wno-DECLFILENAME --Wno-GENUNNAMED --Wno-UNUSEDSIGNAL --Wno-BLKSEQ --unroll-count 2048 --unroll-stmts 100000 \
+	--assert -DASTER_COHERENCE_ASSERT --top-module aster_coherent_soc \
+	-GHART_COUNT=2 "-GENABLE_L1=1'b1" "-GENABLE_DMA=1'b1" "-GENABLE_DOT8=1'b1" "-GENABLE_NPU=1'b1" \
+	"-GSYNC_MEMORY=1'b0" -GMEMORY_WAIT_CYCLES=0 "-GHOST_BOOT=1'b1" \
+	-GLINE_WORDS=4 -GLINE_COUNT=16 \
+	-CFLAGS '-DASTER_HART_COUNT=2 -DASTER_L1=1 -DASTER_MEMORY_WAIT=0' \
+	--Mdir /home/elfo/Documents/Aster/build/phase11_soc_h2_l11_sync0_wait0_w4_n16/obj -o /home/elfo/Documents/Aster/build/phase11_soc_h2_l11_sync0_wait0_w4_n16/aster_mnist_infer_sim \
+	/home/elfo/Documents/Aster/rtl/core/aster_picorv32.sv /home/elfo/Documents/Aster/vendor/picorv32/picorv32.v /home/elfo/Documents/Aster/rtl/cache/aster_l1_cache.sv /home/elfo/Documents/Aster/rtl/memory/aster_rom.sv /home/elfo/Documents/Aster/rtl/memory/aster_ram.sv /home/elfo/Documents/Aster/rtl/core/aster_pcpi_atomic.sv /home/elfo/Documents/Aster/rtl/core/aster_pcpi_dot8.sv /home/elfo/Documents/Aster/rtl/core/aster_atomic_hart.sv /home/elfo/Documents/Aster/rtl/cache/aster_coherent_cache.sv /home/elfo/Documents/Aster/rtl/interconnect/aster_atomic_fabric.sv /home/elfo/Documents/Aster/rtl/interconnect/aster_device_arbiter.sv /home/elfo/Documents/Aster/rtl/accelerator/aster_int8_pe.sv /home/elfo/Documents/Aster/rtl/accelerator/aster_int8_array.sv /home/elfo/Documents/Aster/rtl/accelerator/aster_npu_engine.sv /home/elfo/Documents/Aster/rtl/accelerator/aster_npu_regs.sv /home/elfo/Documents/Aster/rtl/soc/aster_warm_stop.sv /home/elfo/Documents/Aster/rtl/peripherals/aster_uart.sv /home/elfo/Documents/Aster/rtl/peripherals/aster_coherent_perf.sv /home/elfo/Documents/Aster/rtl/dma/aster_dma_engine.sv /home/elfo/Documents/Aster/rtl/interconnect/aster_dma_arbiter.sv /home/elfo/Documents/Aster/rtl/peripherals/aster_dma_perf.sv /home/elfo/Documents/Aster/rtl/peripherals/aster_dot8_perf.sv /home/elfo/Documents/Aster/rtl/peripherals/aster_timer.sv /home/elfo/Documents/Aster/rtl/peripherals/aster_interrupt_controller.sv /home/elfo/Documents/Aster/rtl/soc/aster_coherent_soc.sv /home/elfo/Documents/Aster/verification/soc/tb_aster_mnist_infer.cpp
+make[1]: Entering directory '/home/elfo/Documents/Aster/build/phase11_soc_h2_l11_sync0_wait0_w4_n16/obj'
+make[1]: Nothing to be done for 'default'.
+make[1]: Leaving directory '/home/elfo/Documents/Aster/build/phase11_soc_h2_l11_sync0_wait0_w4_n16/obj'
+ASTERBENCH,version=9,name=mnist_mlp,method=npu,status=PASS,model=63c352eb252cf17a27067632187c41b4359a8d7d238a948a24eca3cf180356c5,image=0,label=0,class=0,expected=0,logit_match=1,logits=12fe090100040a0608fd,h0_cycles=0x000000000006854a,h0_retired=0x000000000000c877,h1_cycles=0x000000000006854a,h1_retired=0x0000000000000000,npu_job_cycles=0x0000000000001744,npu_compute_cycles=0x0000000000000060,npu_tiles=3,npu_bytes_read=416,npu_bytes_written=40,clock_hz=31250000,l1=1,sync_memory=0
+ASTERBENCH,version=9,name=mnist_mlp,method=npu,status=PASS,model=63c352eb252cf17a27067632187c41b4359a8d7d238a948a24eca3cf180356c5,image=1,label=1,class=1,expected=1,logit_match=1,logits=09250c17121b12111808,h0_cycles=0x00000000000685f5,h0_retired=0x000000000000c877,h1_cycles=0x00000000000685f5,h1_retired=0x0000000000000000,npu_job_cycles=0x0000000000001744,npu_compute_cycles=0x0000000000000060,npu_tiles=3,npu_bytes_read=416,npu_bytes_written=40,clock_hz=31250000,l1=1,sync_memory=0
+ASTERBENCH,version=9,name=mnist_mlp,method=npu,status=PASS,model=63c352eb252cf17a27067632187c41b4359a8d7d238a948a24eca3cf180356c5,image=2,label=2,class=2,expected=2,logit_match=1,logits=05111a18f4120c1810f5,h0_cycles=0x0000000000068548,h0_retired=0x000000000000c877,h1_cycles=0x0000000000068548,h1_retired=0x0000000000000000,npu_job_cycles=0x0000000000001744,npu_compute_cycles=0x0000000000000060,npu_tiles=3,npu_bytes_read=416,npu_bytes_written=40,clock_hz=31250000,l1=1,sync_memory=0
+ASTERBENCH,version=9,name=mnist_mlp,method=npu,status=PASS,model=63c352eb252cf17a27067632187c41b4359a8d7d238a948a24eca3cf180356c5,image=3,label=3,class=3,expected=3,logit_match=1,logits=fe07060f050f0205070d,h0_cycles=0x0000000000068582,h0_retired=0x000000000000c877,h1_cycles=0x0000000000068582,h1_retired=0x0000000000000000,npu_job_cycles=0x0000000000001744,npu_compute_cycles=0x0000000000000060,npu_tiles=3,npu_bytes_read=416,npu_bytes_written=40,clock_hz=31250000,l1=1,sync_memory=0
+ASTERBENCH,version=9,name=mnist_mlp,method=npu,status=PASS,model=63c352eb252cf17a27067632187c41b4359a8d7d238a948a24eca3cf180356c5,image=4,label=4,class=4,expected=4,logit_match=1,logits=151217111f150f19131b,h0_cycles=0x0000000000068604,h0_retired=0x000000000000c877,h1_cycles=0x0000000000068604,h1_retired=0x0000000000000000,npu_job_cycles=0x0000000000001744,npu_compute_cycles=0x0000000000000060,npu_tiles=3,npu_bytes_read=416,npu_bytes_written=40,clock_hz=31250000,l1=1,sync_memory=0
+ASTERBENCH,version=9,name=mnist_mlp,method=npu,status=PASS,model=63c352eb252cf17a27067632187c41b4359a8d7d238a948a24eca3cf180356c5,image=5,label=5,class=6,expected=6,logit_match=1,logits=fff4f0f0f5101bf1fff6,h0_cycles=0x0000000000068258,h0_retired=0x000000000000c877,h1_cycles=0x0000000000068258,h1_retired=0x0000000000000000,npu_job_cycles=0x0000000000001744,npu_compute_cycles=0x0000000000000060,npu_tiles=3,npu_bytes_read=416,npu_bytes_written=40,clock_hz=31250000,l1=1,sync_memory=0
+ASTERBENCH,version=9,name=mnist_mlp,method=npu,status=PASS,model=63c352eb252cf17a27067632187c41b4359a8d7d238a948a24eca3cf180356c5,image=6,label=6,class=6,expected=6,logit_match=1,logits=0bf107f5070815ef06fb,h0_cycles=0x000000000006844e,h0_retired=0x000000000000c877,h1_cycles=0x000000000006844e,h1_retired=0x0000000000000000,npu_job_cycles=0x0000000000001744,npu_compute_cycles=0x0000000000000060,npu_tiles=3,npu_bytes_read=416,npu_bytes_written=40,clock_hz=31250000,l1=1,sync_memory=0
+ASTERBENCH,version=9,name=mnist_mlp,method=npu,status=PASS,model=63c352eb252cf17a27067632187c41b4359a8d7d238a948a24eca3cf180356c5,image=7,label=7,class=7,expected=7,logit_match=1,logits=f1fefc01f202ec0afdfc,h0_cycles=0x00000000000682d9,h0_retired=0x000000000000c877,h1_cycles=0x00000000000682d9,h1_retired=0x0000000000000000,npu_job_cycles=0x0000000000001744,npu_compute_cycles=0x0000000000000060,npu_tiles=3,npu_bytes_read=416,npu_bytes_written=40,clock_hz=31250000,l1=1,sync_memory=0
+ASTERBENCH,version=9,name=mnist_mlp,method=npu,status=PASS,model=63c352eb252cf17a27067632187c41b4359a8d7d238a948a24eca3cf180356c5,image=8,label=8,class=8,expected=8,logit_match=1,logits=0f1213120d0f0d0e170c,h0_cycles=0x0000000000068601,h0_retired=0x000000000000c877,h1_cycles=0x0000000000068601,h1_retired=0x0000000000000000,npu_job_cycles=0x0000000000001744,npu_compute_cycles=0x0000000000000060,npu_tiles=3,npu_bytes_read=416,npu_bytes_written=40,clock_hz=31250000,l1=1,sync_memory=0
+ASTERBENCH,version=9,name=mnist_mlp,method=npu,status=PASS,model=63c352eb252cf17a27067632187c41b4359a8d7d238a948a24eca3cf180356c5,image=9,label=9,class=9,expected=9,logit_match=1,logits=08130a121613f4180f1e,h0_cycles=0x0000000000068584,h0_retired=0x000000000000c877,h1_cycles=0x0000000000068584,h1_retired=0x0000000000000000,npu_job_cycles=0x0000000000001744,npu_compute_cycles=0x0000000000000060,npu_tiles=3,npu_bytes_read=416,npu_bytes_written=40,clock_hz=31250000,l1=1,sync_memory=0
+ASTERBENCH,version=9,name=mnist_mlp,method=npu,status=PASS,model=63c352eb252cf17a27067632187c41b4359a8d7d238a948a24eca3cf180356c5,image=10,label=0,class=0,expected=0,logit_match=1,logits=27db1905191c17141715,h0_cycles=0x000000000006857f,h0_retired=0x000000000000c877,h1_cycles=0x000000000006857f,h1_retired=0x0000000000000000,npu_job_cycles=0x0000000000001744,npu_compute_cycles=0x0000000000000060,npu_tiles=3,npu_bytes_read=416,npu_bytes_written=40,clock_hz=31250000,l1=1,sync_memory=0
+ASTERBENCH,version=9,name=mnist_mlp,method=npu,status=PASS,model=63c352eb252cf17a27067632187c41b4359a8d7d238a948a24eca3cf180356c5,image=11,label=1,class=1,expected=1,logit_match=1,logits=0c2f041a17220b151b0c,h0_cycles=0x00000000000685f7,h0_retired=0x000000000000c877,h1_cycles=0x00000000000685f7,h1_retired=0x0000000000000000,npu_job_cycles=0x0000000000001744,npu_compute_cycles=0x0000000000000060,npu_tiles=3,npu_bytes_read=416,npu_bytes_written=40,clock_hz=31250000,l1=1,sync_memory=0
+ASTERBENCH,version=9,name=mnist_mlp,method=npu,status=PASS,model=63c352eb252cf17a27067632187c41b4359a8d7d238a948a24eca3cf180356c5,image=12,label=2,class=2,expected=2,logit_match=1,logits=0e242c26041810251efd,h0_cycles=0x00000000000685c1,h0_retired=0x000000000000c877,h1_cycles=0x00000000000685c1,h1_retired=0x0000000000000000,npu_job_cycles=0x0000000000001744,npu_compute_cycles=0x0000000000000060,npu_tiles=3,npu_bytes_read=416,npu_bytes_written=40,clock_hz=31250000,l1=1,sync_memory=0
+ASTERBENCH,version=9,name=mnist_mlp,method=npu,status=PASS,model=63c352eb252cf17a27067632187c41b4359a8d7d238a948a24eca3cf180356c5,image=13,label=3,class=3,expected=3,logit_match=1,logits=081f17321222f61f1c24,h0_cycles=0x0000000000068584,h0_retired=0x000000000000c877,h1_cycles=0x0000000000068584,h1_retired=0x0000000000000000,npu_job_cycles=0x0000000000001744,npu_compute_cycles=0x0000000000000060,npu_tiles=3,npu_bytes_read=416,npu_bytes_written=40,clock_hz=31250000,l1=1,sync_memory=0
+ASTERBENCH,version=9,name=mnist_mlp,method=npu,status=PASS,model=63c352eb252cf17a27067632187c41b4359a8d7d238a948a24eca3cf180356c5,image=14,label=4,class=4,expected=4,logit_match=1,logits=1e1b1f172a1a13211d23,h0_cycles=0x00000000000685fe,h0_retired=0x000000000000c877,h1_cycles=0x00000000000685fe,h1_retired=0x0000000000000000,npu_job_cycles=0x0000000000001744,npu_compute_cycles=0x0000000000000060,npu_tiles=3,npu_bytes_read=416,npu_bytes_written=40,clock_hz=31250000,l1=1,sync_memory=0
+ASTERBENCH,version=9,name=mnist_mlp,method=npu,status=PASS,model=63c352eb252cf17a27067632187c41b4359a8d7d238a948a24eca3cf180356c5,image=15,label=5,class=5,expected=5,logit_match=1,logits=fe0d0818082101061319,h0_cycles=0x000000000006857d,h0_retired=0x000000000000c877,h1_cycles=0x000000000006857d,h1_retired=0x0000000000000000,npu_job_cycles=0x0000000000001744,npu_compute_cycles=0x0000000000000060,npu_tiles=3,npu_bytes_read=416,npu_bytes_written=40,clock_hz=31250000,l1=1,sync_memory=0
+ASTERBENCH,version=9,name=mnist_mlp,method=npu,status=PASS,model=63c352eb252cf17a27067632187c41b4359a8d7d238a948a24eca3cf180356c5,image=16,label=6,class=6,expected=6,logit_match=1,logits=fdf2fbf9f50108fdfff4,h0_cycles=0x000000000006825d,h0_retired=0x000000000000c877,h1_cycles=0x000000000006825d,h1_retired=0x0000000000000000,npu_job_cycles=0x0000000000001744,npu_compute_cycles=0x0000000000000060,npu_tiles=3,npu_bytes_read=416,npu_bytes_written=40,clock_hz=31250000,l1=1,sync_memory=0
+ASTERBENCH,version=9,name=mnist_mlp,method=npu,status=PASS,model=63c352eb252cf17a27067632187c41b4359a8d7d238a948a24eca3cf180356c5,image=17,label=7,class=7,expected=7,logit_match=1,logits=f6060607f802ef11fcfb,h0_cycles=0x00000000000683d0,h0_retired=0x000000000000c877,h1_cycles=0x00000000000683d0,h1_retired=0x0000000000000000,npu_job_cycles=0x0000000000001744,npu_compute_cycles=0x0000000000000060,npu_tiles=3,npu_bytes_read=416,npu_bytes_written=40,clock_hz=31250000,l1=1,sync_memory=0
+ASTERBENCH,version=9,name=mnist_mlp,method=npu,status=PASS,model=63c352eb252cf17a27067632187c41b4359a8d7d238a948a24eca3cf180356c5,image=18,label=8,class=8,expected=8,logit_match=1,logits=130b131112120e0e1a13,h0_cycles=0x0000000000068601,h0_retired=0x000000000000c877,h1_cycles=0x0000000000068601,h1_retired=0x0000000000000000,npu_job_cycles=0x0000000000001744,npu_compute_cycles=0x0000000000000060,npu_tiles=3,npu_bytes_read=416,npu_bytes_written=40,clock_hz=31250000,l1=1,sync_memory=0
+ASTERBENCH,version=9,name=mnist_mlp,method=npu,status=PASS,model=63c352eb252cf17a27067632187c41b4359a8d7d238a948a24eca3cf180356c5,image=19,label=9,class=9,expected=9,logit_match=1,logits=10160e102011f3231424,h0_cycles=0x0000000000068586,h0_retired=0x000000000000c877,h1_cycles=0x0000000000068586,h1_retired=0x0000000000000000,npu_job_cycles=0x0000000000001744,npu_compute_cycles=0x0000000000000060,npu_tiles=3,npu_bytes_read=416,npu_bytes_written=40,clock_hz=31250000,l1=1,sync_memory=0
+ASTERBENCH,version=9,name=mnist_mlp,method=npu,status=PASS,model=63c352eb252cf17a27067632187c41b4359a8d7d238a948a24eca3cf180356c5,image=20,label=0,class=0,expected=0,logit_match=1,logits=26d61607181b0f1d1619,h0_cycles=0x0000000000068583,h0_retired=0x000000000000c877,h1_cycles=0x0000000000068583,h1_retired=0x0000000000000000,npu_job_cycles=0x0000000000001744,npu_compute_cycles=0x0000000000000060,npu_tiles=3,npu_bytes_read=416,npu_bytes_written=40,clock_hz=31250000,l1=1,sync_memory=0
+ASTERBENCH,version=9,name=mnist_mlp,method=npu,status=PASS,model=63c352eb252cf17a27067632187c41b4359a8d7d238a948a24eca3cf180356c5,image=21,label=1,class=1,expected=1,logit_match=1,logits=e82d241d22201e1f211f,h0_cycles=0x000000000006857c,h0_retired=0x000000000000c877,h1_cycles=0x000000000006857c,h1_retired=0x0000000000000000,npu_job_cycles=0x0000000000001744,npu_compute_cycles=0x0000000000000060,npu_tiles=3,npu_bytes_read=416,npu_bytes_written=40,clock_hz=31250000,l1=1,sync_memory=0
+ASTERBENCH,version=9,name=mnist_mlp,method=npu,status=PASS,model=63c352eb252cf17a27067632187c41b4359a8d7d238a948a24eca3cf180356c5,image=22,label=2,class=8,expected=8,logit_match=1,logits=120a17160818120a1909,h0_cycles=0x00000000000685f4,h0_retired=0x000000000000c877,h1_cycles=0x00000000000685f4,h1_retired=0x0000000000000000,npu_job_cycles=0x0000000000001744,npu_compute_cycles=0x0000000000000060,npu_tiles=3,npu_bytes_read=416,npu_bytes_written=40,clock_hz=31250000,l1=1,sync_memory=0
+ASTERBENCH,version=9,name=mnist_mlp,method=npu,status=PASS,model=63c352eb252cf17a27067632187c41b4359a8d7d238a948a24eca3cf180356c5,image=23,label=3,class=3,expected=3,logit_match=1,logits=081712220f19fd121614,h0_cycles=0x0000000000068582,h0_retired=0x000000000000c877,h1_cycles=0x0000000000068582,h1_retired=0x0000000000000000,npu_job_cycles=0x0000000000001744,npu_compute_cycles=0x0000000000000060,npu_tiles=3,npu_bytes_read=416,npu_bytes_written=40,clock_hz=31250000,l1=1,sync_memory=0
+ASTERBENCH,version=9,name=mnist_mlp,method=npu,status=PASS,model=63c352eb252cf17a27067632187c41b4359a8d7d238a948a24eca3cf180356c5,image=24,label=4,class=4,expected=4,logit_match=1,logits=1c171f15291a16201722,h0_cycles=0x0000000000068602,h0_retired=0x000000000000c877,h1_cycles=0x0000000000068602,h1_retired=0x0000000000000000,npu_job_cycles=0x0000000000001744,npu_compute_cycles=0x0000000000000060,npu_tiles=3,npu_bytes_read=416,npu_bytes_written=40,clock_hz=31250000,l1=1,sync_memory=0
+ASTERBENCH,version=9,name=mnist_mlp,method=npu,status=PASS,model=63c352eb252cf17a27067632187c41b4359a8d7d238a948a24eca3cf180356c5,image=25,label=5,class=5,expected=5,logit_match=1,logits=fe06020f021efe011112,h0_cycles=0x0000000000068502,h0_retired=0x000000000000c877,h1_cycles=0x0000000000068502,h1_retired=0x0000000000000000,npu_job_cycles=0x0000000000001744,npu_compute_cycles=0x0000000000000060,npu_tiles=3,npu_bytes_read=416,npu_bytes_written=40,clock_hz=31250000,l1=1,sync_memory=0
+ASTERBENCH,version=9,name=mnist_mlp,method=npu,status=PASS,model=63c352eb252cf17a27067632187c41b4359a8d7d238a948a24eca3cf180356c5,image=26,label=6,class=6,expected=6,logit_match=1,logits=0ff303ec100923e8fef2,h0_cycles=0x00000000000683d5,h0_retired=0x000000000000c877,h1_cycles=0x00000000000683d5,h1_retired=0x0000000000000000,npu_job_cycles=0x0000000000001744,npu_compute_cycles=0x0000000000000060,npu_tiles=3,npu_bytes_read=416,npu_bytes_written=40,clock_hz=31250000,l1=1,sync_memory=0
+ASTERBENCH,version=9,name=mnist_mlp,method=npu,status=PASS,model=63c352eb252cf17a27067632187c41b4359a8d7d238a948a24eca3cf180356c5,image=27,label=7,class=7,expected=7,logit_match=1,logits=f70e070efe0ceb1b000c,h0_cycles=0x0000000000068407,h0_retired=0x000000000000c877,h1_cycles=0x0000000000068407,h1_retired=0x0000000000000000,npu_job_cycles=0x0000000000001744,npu_compute_cycles=0x0000000000000060,npu_tiles=3,npu_bytes_read=416,npu_bytes_written=40,clock_hz=31250000,l1=1,sync_memory=0
+ASTERBENCH,version=9,name=mnist_mlp,method=npu,status=PASS,model=63c352eb252cf17a27067632187c41b4359a8d7d238a948a24eca3cf180356c5,image=28,label=8,class=8,expected=8,logit_match=1,logits=0d0e0e0d0c0c0b09140c,h0_cycles=0x0000000000068604,h0_retired=0x000000000000c877,h1_cycles=0x0000000000068604,h1_retired=0x0000000000000000,npu_job_cycles=0x0000000000001744,npu_compute_cycles=0x0000000000000060,npu_tiles=3,npu_bytes_read=416,npu_bytes_written=40,clock_hz=31250000,l1=1,sync_memory=0
+ASTERBENCH,version=9,name=mnist_mlp,method=npu,status=PASS,model=63c352eb252cf17a27067632187c41b4359a8d7d238a948a24eca3cf180356c5,image=29,label=9,class=9,expected=9,logit_match=1,logits=171c191b231d06231c28,h0_cycles=0x00000000000685ff,h0_retired=0x000000000000c877,h1_cycles=0x00000000000685ff,h1_retired=0x0000000000000000,npu_job_cycles=0x0000000000001744,npu_compute_cycles=0x0000000000000060,npu_tiles=3,npu_bytes_read=416,npu_bytes_written=40,clock_hz=31250000,l1=1,sync_memory=0
+ASTERBENCH,version=9,name=mnist_mlp,method=npu,status=PASS,model=63c352eb252cf17a27067632187c41b4359a8d7d238a948a24eca3cf180356c5,image=30,label=0,class=0,expected=0,logit_match=1,logits=18ef0c01050a0b0c0a04,h0_cycles=0x0000000000068588,h0_retired=0x000000000000c877,h1_cycles=0x0000000000068588,h1_retired=0x0000000000000000,npu_job_cycles=0x0000000000001744,npu_compute_cycles=0x0000000000000060,npu_tiles=3,npu_bytes_read=416,npu_bytes_written=40,clock_hz=31250000,l1=1,sync_memory=0
+ASTERBENCH,version=9,name=mnist_mlp,method=npu,status=PASS,model=63c352eb252cf17a27067632187c41b4359a8d7d238a948a24eca3cf180356c5,image=31,label=1,class=1,expected=1,logit_match=1,logits=ee28211c1e1e1a1c1f1d,h0_cycles=0x000000000006857b,h0_retired=0x000000000000c877,h1_cycles=0x000000000006857b,h1_retired=0x0000000000000000,npu_job_cycles=0x0000000000001744,npu_compute_cycles=0x0000000000000060,npu_tiles=3,npu_bytes_read=416,npu_bytes_written=40,clock_hz=31250000,l1=1,sync_memory=0
+MNIST INFER PASS images=32 class_correct=32 class_mismatch=0 logit_mismatch=0
+ASTERSTOP,records=32,device_transactions=987904,npu_transactions=987904
+PASS: v10 strided [memory] size=4096 iterations=4 cycles=9087 retired=1559
+PASS: v10 strided checksum=0x5fc0f800 matches independent oracle
+PASS: v10 sort_search [cpu] size=1024 iterations=4 cycles=2183301 retired=420942
+PASS: v10 sort_search checksum=0xb0e60880 matches independent oracle
+PASS: v10 fft [dsp] size=1024 iterations=4 cycles=3057473 retired=248399
+PASS: v10 fft checksum=0x2dfcff80 matches independent oracle
+PASS: v10 conv2d [dsp] size=1024 iterations=4 cycles=5820652 retired=704346
+PASS: v10 conv2d checksum=0x07df8000 matches independent oracle
+PASS: v10 coremark [cpu] size=2000 iterations=1 cycles=1922272 retired=284865
+PASS: v10 dhrystone [cpu] size=10000 iterations=1000 cycles=3128553 retired=492302
+PASS: v10 dhrystone checksum=0xbf140bdc matches independent oracle
+verilator --cc --exe --build --timing --Wall -DRISCV_FORMAL --Wno-DECLFILENAME --Wno-GENUNNAMED --Wno-UNUSEDSIGNAL --Wno-BLKSEQ --unroll-count 2048 --unroll-stmts 100000 \
+	--assert -DASTER_COHERENCE_ASSERT --top-module aster_coherent_soc \
+	-GHART_COUNT=2 "-GENABLE_L1=1'b1" "-GENABLE_DMA=1'b1" "-GENABLE_DOT8=1'b1" "-GENABLE_NPU=1'b1" \
+	"-GSYNC_MEMORY=1'b0" -GMEMORY_WAIT_CYCLES=0 "-GHOST_BOOT=1'b1" \
+	-GLINE_WORDS=4 -GLINE_COUNT=16 \
+	--Mdir /home/elfo/Documents/Aster/build/obj_reduce -o /home/elfo/Documents/Aster/build/aster_workload_coherent_sim \
+	/home/elfo/Documents/Aster/rtl/core/aster_picorv32.sv /home/elfo/Documents/Aster/vendor/picorv32/picorv32.v /home/elfo/Documents/Aster/rtl/cache/aster_l1_cache.sv /home/elfo/Documents/Aster/rtl/memory/aster_rom.sv /home/elfo/Documents/Aster/rtl/memory/aster_ram.sv /home/elfo/Documents/Aster/rtl/core/aster_pcpi_atomic.sv /home/elfo/Documents/Aster/rtl/core/aster_pcpi_dot8.sv /home/elfo/Documents/Aster/rtl/core/aster_atomic_hart.sv /home/elfo/Documents/Aster/rtl/cache/aster_coherent_cache.sv /home/elfo/Documents/Aster/rtl/interconnect/aster_atomic_fabric.sv /home/elfo/Documents/Aster/rtl/interconnect/aster_device_arbiter.sv /home/elfo/Documents/Aster/rtl/accelerator/aster_int8_pe.sv /home/elfo/Documents/Aster/rtl/accelerator/aster_int8_array.sv /home/elfo/Documents/Aster/rtl/accelerator/aster_npu_engine.sv /home/elfo/Documents/Aster/rtl/accelerator/aster_npu_regs.sv /home/elfo/Documents/Aster/rtl/soc/aster_warm_stop.sv /home/elfo/Documents/Aster/rtl/peripherals/aster_uart.sv /home/elfo/Documents/Aster/rtl/peripherals/aster_coherent_perf.sv /home/elfo/Documents/Aster/rtl/dma/aster_dma_engine.sv /home/elfo/Documents/Aster/rtl/interconnect/aster_dma_arbiter.sv /home/elfo/Documents/Aster/rtl/peripherals/aster_dma_perf.sv /home/elfo/Documents/Aster/rtl/peripherals/aster_dot8_perf.sv /home/elfo/Documents/Aster/rtl/peripherals/aster_timer.sv /home/elfo/Documents/Aster/rtl/peripherals/aster_interrupt_controller.sv /home/elfo/Documents/Aster/rtl/soc/aster_coherent_soc.sv /home/elfo/Documents/Aster/verification/soc/tb_aster_workload_coherent.cpp
+make[2]: Nothing to be done for 'default'.
+PASS: v10 reduce_scalar [cpu] size=4096 iterations=4 cycles=289251 retired=53299
+PASS: v10 reduce_scalar checksum=0x5c808000 matches independent oracle
+verilator --cc --exe --build --timing --Wall -DRISCV_FORMAL --Wno-DECLFILENAME --Wno-GENUNNAMED --Wno-UNUSEDSIGNAL --Wno-BLKSEQ --unroll-count 2048 --unroll-stmts 100000 \
+	--assert -DASTER_COHERENCE_ASSERT --top-module aster_coherent_soc \
+	-GHART_COUNT=2 "-GENABLE_L1=1'b1" "-GENABLE_DMA=1'b1" "-GENABLE_DOT8=1'b1" "-GENABLE_NPU=1'b1" \
+	"-GSYNC_MEMORY=1'b0" -GMEMORY_WAIT_CYCLES=0 "-GHOST_BOOT=1'b1" \
+	-GLINE_WORDS=4 -GLINE_COUNT=16 \
+	--Mdir /home/elfo/Documents/Aster/build/obj_reduce -o /home/elfo/Documents/Aster/build/aster_workload_coherent_sim \
+	/home/elfo/Documents/Aster/rtl/core/aster_picorv32.sv /home/elfo/Documents/Aster/vendor/picorv32/picorv32.v /home/elfo/Documents/Aster/rtl/cache/aster_l1_cache.sv /home/elfo/Documents/Aster/rtl/memory/aster_rom.sv /home/elfo/Documents/Aster/rtl/memory/aster_ram.sv /home/elfo/Documents/Aster/rtl/core/aster_pcpi_atomic.sv /home/elfo/Documents/Aster/rtl/core/aster_pcpi_dot8.sv /home/elfo/Documents/Aster/rtl/core/aster_atomic_hart.sv /home/elfo/Documents/Aster/rtl/cache/aster_coherent_cache.sv /home/elfo/Documents/Aster/rtl/interconnect/aster_atomic_fabric.sv /home/elfo/Documents/Aster/rtl/interconnect/aster_device_arbiter.sv /home/elfo/Documents/Aster/rtl/accelerator/aster_int8_pe.sv /home/elfo/Documents/Aster/rtl/accelerator/aster_int8_array.sv /home/elfo/Documents/Aster/rtl/accelerator/aster_npu_engine.sv /home/elfo/Documents/Aster/rtl/accelerator/aster_npu_regs.sv /home/elfo/Documents/Aster/rtl/soc/aster_warm_stop.sv /home/elfo/Documents/Aster/rtl/peripherals/aster_uart.sv /home/elfo/Documents/Aster/rtl/peripherals/aster_coherent_perf.sv /home/elfo/Documents/Aster/rtl/dma/aster_dma_engine.sv /home/elfo/Documents/Aster/rtl/interconnect/aster_dma_arbiter.sv /home/elfo/Documents/Aster/rtl/peripherals/aster_dma_perf.sv /home/elfo/Documents/Aster/rtl/peripherals/aster_dot8_perf.sv /home/elfo/Documents/Aster/rtl/peripherals/aster_timer.sv /home/elfo/Documents/Aster/rtl/peripherals/aster_interrupt_controller.sv /home/elfo/Documents/Aster/rtl/soc/aster_coherent_soc.sv /home/elfo/Documents/Aster/verification/soc/tb_aster_workload_coherent.cpp
+make[2]: Nothing to be done for 'default'.
+PASS: v10 reduce_parallel [cpu] size=4096 iterations=4 cycles=222374 retired=41111
+PASS: v10 reduce_parallel checksum=0x5c808000 matches independent oracle
+verilator --cc --exe --build --timing --Wall -DRISCV_FORMAL --Wno-DECLFILENAME --Wno-GENUNNAMED --Wno-UNUSEDSIGNAL --Wno-BLKSEQ --unroll-count 2048 --unroll-stmts 100000 \
+	--assert -DASTER_COHERENCE_ASSERT --top-module aster_coherent_soc \
+	-GHART_COUNT=2 "-GENABLE_L1=1'b1" "-GENABLE_DMA=1'b1" "-GENABLE_DOT8=1'b1" "-GENABLE_NPU=1'b1" \
+	"-GSYNC_MEMORY=1'b0" -GMEMORY_WAIT_CYCLES=0 "-GHOST_BOOT=1'b1" \
+	-GLINE_WORDS=4 -GLINE_COUNT=16 \
+	--Mdir /home/elfo/Documents/Aster/build/obj_reduce -o /home/elfo/Documents/Aster/build/aster_workload_coherent_sim \
+	/home/elfo/Documents/Aster/rtl/core/aster_picorv32.sv /home/elfo/Documents/Aster/vendor/picorv32/picorv32.v /home/elfo/Documents/Aster/rtl/cache/aster_l1_cache.sv /home/elfo/Documents/Aster/rtl/memory/aster_rom.sv /home/elfo/Documents/Aster/rtl/memory/aster_ram.sv /home/elfo/Documents/Aster/rtl/core/aster_pcpi_atomic.sv /home/elfo/Documents/Aster/rtl/core/aster_pcpi_dot8.sv /home/elfo/Documents/Aster/rtl/core/aster_atomic_hart.sv /home/elfo/Documents/Aster/rtl/cache/aster_coherent_cache.sv /home/elfo/Documents/Aster/rtl/interconnect/aster_atomic_fabric.sv /home/elfo/Documents/Aster/rtl/interconnect/aster_device_arbiter.sv /home/elfo/Documents/Aster/rtl/accelerator/aster_int8_pe.sv /home/elfo/Documents/Aster/rtl/accelerator/aster_int8_array.sv /home/elfo/Documents/Aster/rtl/accelerator/aster_npu_engine.sv /home/elfo/Documents/Aster/rtl/accelerator/aster_npu_regs.sv /home/elfo/Documents/Aster/rtl/soc/aster_warm_stop.sv /home/elfo/Documents/Aster/rtl/peripherals/aster_uart.sv /home/elfo/Documents/Aster/rtl/peripherals/aster_coherent_perf.sv /home/elfo/Documents/Aster/rtl/dma/aster_dma_engine.sv /home/elfo/Documents/Aster/rtl/interconnect/aster_dma_arbiter.sv /home/elfo/Documents/Aster/rtl/peripherals/aster_dma_perf.sv /home/elfo/Documents/Aster/rtl/peripherals/aster_dot8_perf.sv /home/elfo/Documents/Aster/rtl/peripherals/aster_timer.sv /home/elfo/Documents/Aster/rtl/peripherals/aster_interrupt_controller.sv /home/elfo/Documents/Aster/rtl/soc/aster_coherent_soc.sv /home/elfo/Documents/Aster/verification/soc/tb_aster_workload_coherent.cpp
+make[2]: Nothing to be done for 'default'.
+PASS: v10 conv2d_dot8 [dsp] size=1024 iterations=4 cycles=9786108 retired=1145218
+PASS: v10 conv2d_dot8 checksum=0x07df8000 matches independent oracle
+verilator --cc --exe --build --timing --Wall -DRISCV_FORMAL --Wno-DECLFILENAME --Wno-GENUNNAMED --Wno-UNUSEDSIGNAL --Wno-BLKSEQ --unroll-count 2048 --unroll-stmts 100000 \
+	--assert -DASTER_COHERENCE_ASSERT --top-module aster_coherent_soc \
+	-GHART_COUNT=2 "-GENABLE_L1=1'b1" "-GENABLE_DMA=1'b1" "-GENABLE_DOT8=1'b1" "-GENABLE_NPU=1'b1" \
+	"-GSYNC_MEMORY=1'b0" -GMEMORY_WAIT_CYCLES=0 "-GHOST_BOOT=1'b1" \
+	-GLINE_WORDS=4 -GLINE_COUNT=16 \
+	--Mdir /home/elfo/Documents/Aster/build/obj_reduce -o /home/elfo/Documents/Aster/build/aster_workload_coherent_sim \
+	/home/elfo/Documents/Aster/rtl/core/aster_picorv32.sv /home/elfo/Documents/Aster/vendor/picorv32/picorv32.v /home/elfo/Documents/Aster/rtl/cache/aster_l1_cache.sv /home/elfo/Documents/Aster/rtl/memory/aster_rom.sv /home/elfo/Documents/Aster/rtl/memory/aster_ram.sv /home/elfo/Documents/Aster/rtl/core/aster_pcpi_atomic.sv /home/elfo/Documents/Aster/rtl/core/aster_pcpi_dot8.sv /home/elfo/Documents/Aster/rtl/core/aster_atomic_hart.sv /home/elfo/Documents/Aster/rtl/cache/aster_coherent_cache.sv /home/elfo/Documents/Aster/rtl/interconnect/aster_atomic_fabric.sv /home/elfo/Documents/Aster/rtl/interconnect/aster_device_arbiter.sv /home/elfo/Documents/Aster/rtl/accelerator/aster_int8_pe.sv /home/elfo/Documents/Aster/rtl/accelerator/aster_int8_array.sv /home/elfo/Documents/Aster/rtl/accelerator/aster_npu_engine.sv /home/elfo/Documents/Aster/rtl/accelerator/aster_npu_regs.sv /home/elfo/Documents/Aster/rtl/soc/aster_warm_stop.sv /home/elfo/Documents/Aster/rtl/peripherals/aster_uart.sv /home/elfo/Documents/Aster/rtl/peripherals/aster_coherent_perf.sv /home/elfo/Documents/Aster/rtl/dma/aster_dma_engine.sv /home/elfo/Documents/Aster/rtl/interconnect/aster_dma_arbiter.sv /home/elfo/Documents/Aster/rtl/peripherals/aster_dma_perf.sv /home/elfo/Documents/Aster/rtl/peripherals/aster_dot8_perf.sv /home/elfo/Documents/Aster/rtl/peripherals/aster_timer.sv /home/elfo/Documents/Aster/rtl/peripherals/aster_interrupt_controller.sv /home/elfo/Documents/Aster/rtl/soc/aster_coherent_soc.sv /home/elfo/Documents/Aster/verification/soc/tb_aster_workload_coherent.cpp
+make[2]: Nothing to be done for 'default'.
+PASS: v10 conv2d_npu [dsp] size=1024 iterations=4 cycles=4636733 retired=531493
+PASS: v10 conv2d_npu checksum=0x07df8000 matches independent oracle
+verilator --cc --exe --build --timing --Wall -DRISCV_FORMAL --Wno-DECLFILENAME --Wno-GENUNNAMED --Wno-UNUSEDSIGNAL --Wno-BLKSEQ --unroll-count 2048 --unroll-stmts 100000 \
+	--assert -DASTER_COHERENCE_ASSERT --top-module aster_coherent_soc \
+	-GHART_COUNT=2 "-GENABLE_L1=1'b1" "-GENABLE_DMA=1'b1" "-GENABLE_DOT8=1'b1" "-GENABLE_NPU=1'b1" \
+	"-GSYNC_MEMORY=1'b0" -GMEMORY_WAIT_CYCLES=0 "-GHOST_BOOT=1'b1" \
+	-GLINE_WORDS=4 -GLINE_COUNT=16 \
+	--Mdir /home/elfo/Documents/Aster/build/obj_reduce -o /home/elfo/Documents/Aster/build/aster_workload_coherent_sim \
+	/home/elfo/Documents/Aster/rtl/core/aster_picorv32.sv /home/elfo/Documents/Aster/vendor/picorv32/picorv32.v /home/elfo/Documents/Aster/rtl/cache/aster_l1_cache.sv /home/elfo/Documents/Aster/rtl/memory/aster_rom.sv /home/elfo/Documents/Aster/rtl/memory/aster_ram.sv /home/elfo/Documents/Aster/rtl/core/aster_pcpi_atomic.sv /home/elfo/Documents/Aster/rtl/core/aster_pcpi_dot8.sv /home/elfo/Documents/Aster/rtl/core/aster_atomic_hart.sv /home/elfo/Documents/Aster/rtl/cache/aster_coherent_cache.sv /home/elfo/Documents/Aster/rtl/interconnect/aster_atomic_fabric.sv /home/elfo/Documents/Aster/rtl/interconnect/aster_device_arbiter.sv /home/elfo/Documents/Aster/rtl/accelerator/aster_int8_pe.sv /home/elfo/Documents/Aster/rtl/accelerator/aster_int8_array.sv /home/elfo/Documents/Aster/rtl/accelerator/aster_npu_engine.sv /home/elfo/Documents/Aster/rtl/accelerator/aster_npu_regs.sv /home/elfo/Documents/Aster/rtl/soc/aster_warm_stop.sv /home/elfo/Documents/Aster/rtl/peripherals/aster_uart.sv /home/elfo/Documents/Aster/rtl/peripherals/aster_coherent_perf.sv /home/elfo/Documents/Aster/rtl/dma/aster_dma_engine.sv /home/elfo/Documents/Aster/rtl/interconnect/aster_dma_arbiter.sv /home/elfo/Documents/Aster/rtl/peripherals/aster_dma_perf.sv /home/elfo/Documents/Aster/rtl/peripherals/aster_dot8_perf.sv /home/elfo/Documents/Aster/rtl/peripherals/aster_timer.sv /home/elfo/Documents/Aster/rtl/peripherals/aster_interrupt_controller.sv /home/elfo/Documents/Aster/rtl/soc/aster_coherent_soc.sv /home/elfo/Documents/Aster/verification/soc/tb_aster_workload_coherent.cpp
+make[2]: Nothing to be done for 'default'.
+PASS: v10 streaming_ecg [system] size=64 iterations=16 cycles=1528356 retired=228547
+PASS: v10 streaming_ecg checksum=0x19b26ea4 matches independent oracle
+verilator --cc --exe --build --timing --Wall -DRISCV_FORMAL --Wno-DECLFILENAME --Wno-GENUNNAMED --Wno-UNUSEDSIGNAL --Wno-BLKSEQ --unroll-count 2048 --unroll-stmts 100000 \
+	--assert -DASTER_COHERENCE_ASSERT --top-module aster_coherent_soc \
+	-GHART_COUNT=2 "-GENABLE_L1=1'b1" "-GENABLE_DMA=1'b1" "-GENABLE_DOT8=1'b1" "-GENABLE_NPU=1'b1" \
+	"-GSYNC_MEMORY=1'b0" -GMEMORY_WAIT_CYCLES=0 "-GHOST_BOOT=1'b1" \
+	-GLINE_WORDS=4 -GLINE_COUNT=16 \
+	--Mdir /home/elfo/Documents/Aster/build/obj_reduce -o /home/elfo/Documents/Aster/build/aster_workload_coherent_sim \
+	/home/elfo/Documents/Aster/rtl/core/aster_picorv32.sv /home/elfo/Documents/Aster/vendor/picorv32/picorv32.v /home/elfo/Documents/Aster/rtl/cache/aster_l1_cache.sv /home/elfo/Documents/Aster/rtl/memory/aster_rom.sv /home/elfo/Documents/Aster/rtl/memory/aster_ram.sv /home/elfo/Documents/Aster/rtl/core/aster_pcpi_atomic.sv /home/elfo/Documents/Aster/rtl/core/aster_pcpi_dot8.sv /home/elfo/Documents/Aster/rtl/core/aster_atomic_hart.sv /home/elfo/Documents/Aster/rtl/cache/aster_coherent_cache.sv /home/elfo/Documents/Aster/rtl/interconnect/aster_atomic_fabric.sv /home/elfo/Documents/Aster/rtl/interconnect/aster_device_arbiter.sv /home/elfo/Documents/Aster/rtl/accelerator/aster_int8_pe.sv /home/elfo/Documents/Aster/rtl/accelerator/aster_int8_array.sv /home/elfo/Documents/Aster/rtl/accelerator/aster_npu_engine.sv /home/elfo/Documents/Aster/rtl/accelerator/aster_npu_regs.sv /home/elfo/Documents/Aster/rtl/soc/aster_warm_stop.sv /home/elfo/Documents/Aster/rtl/peripherals/aster_uart.sv /home/elfo/Documents/Aster/rtl/peripherals/aster_coherent_perf.sv /home/elfo/Documents/Aster/rtl/dma/aster_dma_engine.sv /home/elfo/Documents/Aster/rtl/interconnect/aster_dma_arbiter.sv /home/elfo/Documents/Aster/rtl/peripherals/aster_dma_perf.sv /home/elfo/Documents/Aster/rtl/peripherals/aster_dot8_perf.sv /home/elfo/Documents/Aster/rtl/peripherals/aster_timer.sv /home/elfo/Documents/Aster/rtl/peripherals/aster_interrupt_controller.sv /home/elfo/Documents/Aster/rtl/soc/aster_coherent_soc.sv /home/elfo/Documents/Aster/verification/soc/tb_aster_workload_coherent.cpp
+make[2]: Nothing to be done for 'default'.
+PASS: v10 cifar_cnn [ml] size=768 iterations=20 cycles=61682928 retired=6750973
+PASS: independent CIFAR reference matches 20 images (14 correct, 0.7000)
+verilator --cc --exe --build --timing --Wall --Wno-UNUSEDSIGNAL \
+	--top-module aster_atomic_fabric --Mdir /home/elfo/Documents/Aster/build/obj_atomic_fabric -o /home/elfo/Documents/Aster/build/aster_atomic_fabric_sim \
+	/home/elfo/Documents/Aster/rtl/interconnect/aster_atomic_fabric.sv /home/elfo/Documents/Aster/verification/unit/tb_aster_atomic_fabric.cpp
+make[1]: Entering directory '/home/elfo/Documents/Aster/build/obj_atomic_fabric'
+make[1]: Nothing to be done for 'default'.
+make[1]: Leaving directory '/home/elfo/Documents/Aster/build/obj_atomic_fabric'
+PASS: RV32A uncached fabric seed=1: 57183 operations, 70026 backing transfers, 36945 committed stores, SC=4857/378 success/failure, 1406177 stalled cycles
+PASS: RV32A uncached fabric seed=677862: 57108 operations, 69962 backing transfers, 36926 committed stores, SC=4806/354 success/failure, 1401425 stalled cycles
+PASS: RV32A uncached fabric seed=12648430: 57124 operations, 70114 backing transfers, 36858 committed stores, SC=4755/421 success/failure, 1398620 stalled cycles
+mkdir -p /home/elfo/Documents/Aster/build/atomic_h2_c0_w4_n16
+verilator --cc --exe --build --timing --Wall -DRISCV_FORMAL --Wno-DECLFILENAME --Wno-GENUNNAMED --Wno-UNUSEDSIGNAL --Wno-BLKSEQ --unroll-count 2048 --unroll-stmts 100000 --assert -DASTER_COHERENCE_ASSERT \
+	--top-module aster_atomic_probe -GHART_COUNT=2 \
+	"-GENABLE_CACHE=1'b0" -GLINE_WORDS=4 -GLINE_COUNT=16 \
+	-CFLAGS '-DASTER_HART_COUNT=2 -DASTER_ATOMIC_CACHE=0 -DASTER_LINE_WORDS=4 -DASTER_LINE_COUNT=16' \
+	--Mdir /home/elfo/Documents/Aster/build/atomic_h2_c0_w4_n16/obj -o /home/elfo/Documents/Aster/build/atomic_h2_c0_w4_n16/aster_atomic_probe_sim \
+	/home/elfo/Documents/Aster/rtl/core/aster_picorv32.sv /home/elfo/Documents/Aster/vendor/picorv32/picorv32.v /home/elfo/Documents/Aster/rtl/cache/aster_l1_cache.sv /home/elfo/Documents/Aster/rtl/core/aster_pcpi_atomic.sv \
+	/home/elfo/Documents/Aster/rtl/cache/aster_coherent_cache.sv \
+	/home/elfo/Documents/Aster/rtl/core/aster_atomic_hart.sv /home/elfo/Documents/Aster/rtl/interconnect/aster_atomic_fabric.sv \
+	/home/elfo/Documents/Aster/verification/soc/aster_atomic_probe.sv /home/elfo/Documents/Aster/verification/soc/tb_aster_atomic_probe.cpp
+make[1]: Entering directory '/home/elfo/Documents/Aster/build/atomic_h2_c0_w4_n16/obj'
+make[1]: Nothing to be done for 'default'.
+make[1]: Leaving directory '/home/elfo/Documents/Aster/build/atomic_h2_c0_w4_n16/obj'
+PASS: compiled RV32IMA runtime harts=2 cache=0 latency=0 boot=0 jobs=3 cycles=319035 retired=33328,12668 A-retired=3605,2312 SC=1537/4
+PASS: compiled RV32IMA runtime harts=2 cache=0 latency=0 boot=1 jobs=3 cycles=319035 retired=33328,12668 A-retired=3605,2312 SC=1537/4
+PASS: compiled RV32IMA runtime harts=2 cache=0 latency=1 boot=0 jobs=3 cycles=386142 retired=33278,12618 A-retired=3605,2312 SC=1537/4
+PASS: compiled RV32IMA runtime harts=2 cache=0 latency=1 boot=1 jobs=3 cycles=386142 retired=33278,12618 A-retired=3605,2312 SC=1537/4
+PASS: compiled RV32IMA runtime harts=2 cache=0 latency=19 boot=0 jobs=3 cycles=1594231 retired=33121,12462 A-retired=3605,2312 SC=1537/4
+PASS: compiled RV32IMA runtime harts=2 cache=0 latency=19 boot=1 jobs=3 cycles=1594231 retired=33121,12462 A-retired=3605,2312 SC=1537/4
+PASS: compiled RV32IMA runtime harts=2 cache=0 latency=-1 boot=0 jobs=3 cycles=1395368 retired=33124,12465 A-retired=3605,2312 SC=1537/4
+PASS: compiled RV32IMA runtime harts=2 cache=0 latency=-1 boot=1 jobs=3 cycles=1395257 retired=33127,12467 A-retired=3605,2312 SC=1537/4
+mkdir -p /home/elfo/Documents/Aster/build/atomic_faults_c0_w4_n16
+verilator --cc --exe --build --timing --Wall -DRISCV_FORMAL --Wno-DECLFILENAME --Wno-GENUNNAMED --Wno-UNUSEDSIGNAL --Wno-BLKSEQ --unroll-count 2048 --unroll-stmts 100000 --assert -DASTER_COHERENCE_ASSERT \
+	--top-module aster_atomic_probe -GHART_COUNT=2 "-GENABLE_CACHE=1'b0" \
+	-GLINE_WORDS=4 -GLINE_COUNT=16 \
+	-CFLAGS '-DASTER_ATOMIC_CACHE=0 -DASTER_LINE_WORDS=4 -DASTER_LINE_COUNT=16' \
+	--Mdir /home/elfo/Documents/Aster/build/atomic_faults_c0_w4_n16/obj -o /home/elfo/Documents/Aster/build/atomic_faults_c0_w4_n16/aster_atomic_faults_sim \
+	/home/elfo/Documents/Aster/rtl/core/aster_picorv32.sv /home/elfo/Documents/Aster/vendor/picorv32/picorv32.v /home/elfo/Documents/Aster/rtl/cache/aster_l1_cache.sv /home/elfo/Documents/Aster/rtl/core/aster_pcpi_atomic.sv \
+	/home/elfo/Documents/Aster/rtl/cache/aster_coherent_cache.sv /home/elfo/Documents/Aster/rtl/core/aster_atomic_hart.sv \
+	/home/elfo/Documents/Aster/rtl/interconnect/aster_atomic_fabric.sv /home/elfo/Documents/Aster/verification/soc/aster_atomic_probe.sv \
+	/home/elfo/Documents/Aster/verification/soc/tb_aster_atomic_faults.cpp
+make[1]: Entering directory '/home/elfo/Documents/Aster/build/atomic_faults_c0_w4_n16/obj'
+make[1]: Nothing to be done for 'default'.
+make[1]: Leaving directory '/home/elfo/Documents/Aster/build/atomic_faults_c0_w4_n16/obj'
+PASS: integrated RV32A faults cache=0 programs=3432; both real harts, all A/order bits, misalignment/access/.D, SC with/without LR, no fault effects/retirement
+mkdir -p /home/elfo/Documents/Aster/build/coherent_l11_w4_n16
+verilator --cc --exe --build --timing --Wall --Wno-UNUSEDSIGNAL --unroll-count 2048 --unroll-stmts 100000 --assert -DASTER_COHERENCE_ASSERT \
+	--top-module aster_coherent_cache "-GENABLE_CACHE=1'b1" \
+	-GLINE_WORDS=4 -GLINE_COUNT=16 \
+	-CFLAGS '-DASTER_CACHE_ENABLE=1 -DASTER_LINE_WORDS=4 -DASTER_LINE_COUNT=16' \
+	--Mdir /home/elfo/Documents/Aster/build/coherent_l11_w4_n16/obj -o /home/elfo/Documents/Aster/build/coherent_l11_w4_n16/aster_coherent_cache_sim \
+	/home/elfo/Documents/Aster/rtl/cache/aster_coherent_cache.sv /home/elfo/Documents/Aster/verification/unit/tb_aster_coherent_cache.cpp
+make[1]: Entering directory '/home/elfo/Documents/Aster/build/coherent_l11_w4_n16/obj'
+make[1]: Nothing to be done for 'default'.
+make[1]: Leaving directory '/home/elfo/Documents/Aster/build/coherent_l11_w4_n16/obj'
+PASS: coherent cache enabled=1 geometry=4x16 seed=1 requests=12428 backing=35872/33088 read/write stalled=652313 flushes=140 interventions=2115
+PASS: coherent cache enabled=1 geometry=4x16 seed=788198 requests=12428 backing=35766/33032 read/write stalled=648862 flushes=140 interventions=1873
+PASS: coherent cache enabled=1 geometry=4x16 seed=12648430 requests=12428 backing=36135/33360 read/write stalled=657018 flushes=140 interventions=2018
+verilator --cc --exe --build --timing --Wall --top-module aster_warm_stop \
+	--Mdir /home/elfo/Documents/Aster/build/obj_warm_stop -o /home/elfo/Documents/Aster/build/aster_warm_stop_sim \
+	/home/elfo/Documents/Aster/rtl/soc/aster_warm_stop.sv /home/elfo/Documents/Aster/verification/unit/tb_aster_warm_stop.cpp
+make[1]: Entering directory '/home/elfo/Documents/Aster/build/obj_warm_stop'
+make[1]: Nothing to be done for 'default'.
+make[1]: Leaving directory '/home/elfo/Documents/Aster/build/obj_warm_stop'
+PASS: warm-stop sequencing cases=34; drain, response settlement, held flush, selective/global stop, escalation/restart
+verilator --cc --exe --build --timing --Wall --public-flat-rw --top-module aster_coherent_perf \
+	--Mdir /home/elfo/Documents/Aster/build/obj_coherent_perf -o /home/elfo/Documents/Aster/build/aster_coherent_perf_sim \
+	/home/elfo/Documents/Aster/rtl/peripherals/aster_coherent_perf.sv /home/elfo/Documents/Aster/verification/unit/tb_aster_coherent_perf.cpp
+make[1]: Entering directory '/home/elfo/Documents/Aster/build/obj_coherent_perf'
+make[1]: Nothing to be done for 'default'.
+make[1]: Leaving directory '/home/elfo/Documents/Aster/build/obj_coherent_perf'
+PASS: ABI 4 fourteen-counter scoreboard, common command edges, frozen reads, metadata, 32/64-bit carry
+mkdir -p /home/elfo/Documents/Aster/build/coherent_soc_h2_l11_sync0_wait0_w4_n16
+verilator --cc --exe --build --timing --Wall -DRISCV_FORMAL --Wno-DECLFILENAME --Wno-GENUNNAMED --Wno-UNUSEDSIGNAL --Wno-BLKSEQ --unroll-count 2048 --unroll-stmts 100000 --assert -DASTER_COHERENCE_ASSERT \
+	--top-module aster_coherent_soc -GHART_COUNT=2 "-GENABLE_L1=1'b1" \
+	"-GENABLE_DMA=1'b0" "-GENABLE_NPU=1'b0" \
+	"-GSYNC_MEMORY=1'b0" -GMEMORY_WAIT_CYCLES=0 "-GHOST_BOOT=1'b1" \
+	-GLINE_WORDS=4 -GLINE_COUNT=16 \
+	-CFLAGS '-DASTER_HART_COUNT=2 -DASTER_L1=1 -DASTER_MEMORY_WAIT=0' \
+	--Mdir /home/elfo/Documents/Aster/build/coherent_soc_h2_l11_sync0_wait0_w4_n16/obj -o /home/elfo/Documents/Aster/build/coherent_soc_h2_l11_sync0_wait0_w4_n16/aster_coherent_soc_sim \
+	/home/elfo/Documents/Aster/rtl/core/aster_picorv32.sv /home/elfo/Documents/Aster/vendor/picorv32/picorv32.v /home/elfo/Documents/Aster/rtl/cache/aster_l1_cache.sv /home/elfo/Documents/Aster/rtl/memory/aster_rom.sv /home/elfo/Documents/Aster/rtl/memory/aster_ram.sv /home/elfo/Documents/Aster/rtl/core/aster_pcpi_atomic.sv /home/elfo/Documents/Aster/rtl/core/aster_pcpi_dot8.sv /home/elfo/Documents/Aster/rtl/core/aster_atomic_hart.sv /home/elfo/Documents/Aster/rtl/cache/aster_coherent_cache.sv /home/elfo/Documents/Aster/rtl/interconnect/aster_atomic_fabric.sv /home/elfo/Documents/Aster/rtl/interconnect/aster_device_arbiter.sv /home/elfo/Documents/Aster/rtl/accelerator/aster_int8_pe.sv /home/elfo/Documents/Aster/rtl/accelerator/aster_int8_array.sv /home/elfo/Documents/Aster/rtl/accelerator/aster_npu_engine.sv /home/elfo/Documents/Aster/rtl/accelerator/aster_npu_regs.sv /home/elfo/Documents/Aster/rtl/soc/aster_warm_stop.sv /home/elfo/Documents/Aster/rtl/peripherals/aster_uart.sv /home/elfo/Documents/Aster/rtl/peripherals/aster_coherent_perf.sv /home/elfo/Documents/Aster/rtl/dma/aster_dma_engine.sv /home/elfo/Documents/Aster/rtl/interconnect/aster_dma_arbiter.sv /home/elfo/Documents/Aster/rtl/peripherals/aster_dma_perf.sv /home/elfo/Documents/Aster/rtl/peripherals/aster_dot8_perf.sv /home/elfo/Documents/Aster/rtl/peripherals/aster_timer.sv /home/elfo/Documents/Aster/rtl/peripherals/aster_interrupt_controller.sv /home/elfo/Documents/Aster/rtl/soc/aster_coherent_soc.sv /home/elfo/Documents/Aster/verification/soc/tb_aster_coherent_soc.cpp
+make[1]: Entering directory '/home/elfo/Documents/Aster/build/coherent_soc_h2_l11_sync0_wait0_w4_n16/obj'
+make[1]: Nothing to be done for 'default'.
+make[1]: Leaving directory '/home/elfo/Documents/Aster/build/coherent_soc_h2_l11_sync0_wait0_w4_n16/obj'
+PASS: coherent SoC runtime harts=2 caches=1 wait=0 jobs=3 cycles=295133 retired=33102,13054 safe RAM snapshot=65536 bytes
+PASS: coherent SoC runtime harts=2 caches=1 wait=0 jobs=3 cycles=295133 retired=33102,13054 safe RAM snapshot=65536 bytes
+PASS: coherent SoC adversarial warm stop point=0 all acknowledged RAM retained, reservations cleared
+PASS: coherent SoC adversarial warm stop point=1 all acknowledged RAM retained, reservations cleared
+PASS: coherent SoC adversarial warm stop point=2 all acknowledged RAM retained, reservations cleared
+PASS: coherent SoC adversarial warm stop point=3 all acknowledged RAM retained, reservations cleared
+PASS: coherent SoC adversarial warm stop point=4 all acknowledged RAM retained, reservations cleared
+PASS: coherent SoC adversarial warm stop point=5 all acknowledged RAM retained, reservations cleared
+PASS: coherent SoC adversarial warm stop point=6 all acknowledged RAM retained, reservations cleared
+PASS: coherent SoC adversarial warm stop point=7 all acknowledged RAM retained, reservations cleared
+PASS: coherent SoC adversarial warm stop point=8 all acknowledged RAM retained, reservations cleared
+PASS: coherent SoC runtime harts=2 caches=1 wait=0 jobs=3 cycles=295133 retired=33102,13054 safe RAM snapshot=65536 bytes
+PASS: coherent SoC closeout stops=12 architectural stores=34749; no destructive reset used after initial POR
+PASS: coherent SoC lifecycle harts=2 caches=1 wait=0 jobs=1 cycles=78854 retired=13657,6253 safe RAM snapshot=65536 bytes
+PASS: coherent SoC lifecycle harts=2 caches=1 wait=0 jobs=1 cycles=78854 retired=13657,6253 safe RAM snapshot=65536 bytes
+PASS: coherent SoC lifecycle harts=2 caches=1 wait=0 jobs=1 cycles=78854 retired=13657,6253 safe RAM snapshot=65536 bytes
+PASS: coherent SoC closeout stops=3 architectural stores=2733; no destructive reset used after initial POR
+timer MATCH_LATENCY=75
+PASS: coherent SoC timer harts=2 caches=1 cycles=8855418 retired=1006835,0
+interrupt TIMER IRQ PASS latency=594
+PASS: coherent SoC interrupt harts=2 caches=1 cycles=26251 retired=2701,0
+PASS: 23 frozen v1.0 interfaces match the RTL
+mkdir -p /home/elfo/Documents/Aster/build/coherent_soc_h2_l11_sync0_wait0_w4_n16
+verilator --cc --exe --build --timing --Wall -DRISCV_FORMAL --Wno-DECLFILENAME --Wno-GENUNNAMED --Wno-UNUSEDSIGNAL --Wno-BLKSEQ --unroll-count 2048 --unroll-stmts 100000 --assert -DASTER_COHERENCE_ASSERT \
+	--top-module aster_coherent_soc -GHART_COUNT=2 "-GENABLE_L1=1'b1" \
+	"-GENABLE_NPU=1'b0" \
+	"-GSYNC_MEMORY=1'b0" -GMEMORY_WAIT_CYCLES=0 "-GHOST_BOOT=1'b1" \
+	-GLINE_WORDS=4 -GLINE_COUNT=16 \
+	--Mdir /home/elfo/Documents/Aster/build/coherent_soc_h2_l11_sync0_wait0_w4_n16/bench_obj -o /home/elfo/Documents/Aster/build/coherent_soc_h2_l11_sync0_wait0_w4_n16/aster_coherent_bench_sim \
+	/home/elfo/Documents/Aster/rtl/core/aster_picorv32.sv /home/elfo/Documents/Aster/vendor/picorv32/picorv32.v /home/elfo/Documents/Aster/rtl/cache/aster_l1_cache.sv /home/elfo/Documents/Aster/rtl/memory/aster_rom.sv /home/elfo/Documents/Aster/rtl/memory/aster_ram.sv /home/elfo/Documents/Aster/rtl/core/aster_pcpi_atomic.sv /home/elfo/Documents/Aster/rtl/core/aster_pcpi_dot8.sv /home/elfo/Documents/Aster/rtl/core/aster_atomic_hart.sv /home/elfo/Documents/Aster/rtl/cache/aster_coherent_cache.sv /home/elfo/Documents/Aster/rtl/interconnect/aster_atomic_fabric.sv /home/elfo/Documents/Aster/rtl/interconnect/aster_device_arbiter.sv /home/elfo/Documents/Aster/rtl/accelerator/aster_int8_pe.sv /home/elfo/Documents/Aster/rtl/accelerator/aster_int8_array.sv /home/elfo/Documents/Aster/rtl/accelerator/aster_npu_engine.sv /home/elfo/Documents/Aster/rtl/accelerator/aster_npu_regs.sv /home/elfo/Documents/Aster/rtl/soc/aster_warm_stop.sv /home/elfo/Documents/Aster/rtl/peripherals/aster_uart.sv /home/elfo/Documents/Aster/rtl/peripherals/aster_coherent_perf.sv /home/elfo/Documents/Aster/rtl/dma/aster_dma_engine.sv /home/elfo/Documents/Aster/rtl/interconnect/aster_dma_arbiter.sv /home/elfo/Documents/Aster/rtl/peripherals/aster_dma_perf.sv /home/elfo/Documents/Aster/rtl/peripherals/aster_dot8_perf.sv /home/elfo/Documents/Aster/rtl/peripherals/aster_timer.sv /home/elfo/Documents/Aster/rtl/peripherals/aster_interrupt_controller.sv /home/elfo/Documents/Aster/rtl/soc/aster_coherent_soc.sv /home/elfo/Documents/Aster/verification/soc/tb_aster_coherent_bench.cpp
+make[1]: Entering directory '/home/elfo/Documents/Aster/build/coherent_soc_h2_l11_sync0_wait0_w4_n16/bench_obj'
+make[1]: Nothing to be done for 'default'.
+make[1]: Leaving directory '/home/elfo/Documents/Aster/build/coherent_soc_h2_l11_sync0_wait0_w4_n16/bench_obj'
+ASTERBOOT 1
+ASTERBENCH,version=4,name=atomic_add,window=dispatch_work_join,status=PASS,items=64,rounds=4,jobs=3,job=1,base_seed=0x13570000,seed=0x8d6079b9,harts=2,workers=2,h0_units=32,h1_units=32,result0=0x00000040,result1=0x000007e0,checksum=0x000007e0,errors=0,clock_hz=31250000,l1=1,sync_memory=0,line_words=4,line_count=16,memory_wait=0,counter0_addr=0x00000000,counter1_addr=0x00000000,h0_cycles=0x000000000000097b,h0_retired=0x00000000000000f7,h0_memory=0x000000000000016b,h0_i_access=0x000000000000012d,h0_i_miss=0x000000000000000b,h0_d_access=0x000000000000005c,h0_d_miss=0x000000000000000f,h0_backing=0x00000000000000ac,h0_atomic=0x0000000000000020,h0_sc_success=0x0000000000000000,h0_sc_failure=0x0000000000000000,h0_intervention=0x000000000000000d,h0_invalidation=0x000000000000000d,h0_writeback=0x0000000000000044,h1_cycles=0x000000000000097b,h1_retired=0x00000000000000d0,h1_memory=0x000000000000011e,h1_i_access=0x00000000000000f4,h1_i_miss=0x0000000000000015,h1_d_access=0x0000000000000049,h1_d_miss=0x0000000000000011,h1_backing=0x00000000000000cc,h1_atomic=0x0000000000000020,h1_sc_success=0x0000000000000000,h1_sc_failure=0x0000000000000000,h1_intervention=0x000000000000000f,h1_invalidation=0x000000000000000f,h1_writeback=0x0000000000000034
+COHERENT_OBS {"boot":1,"job":1,"counters":[[2427,247,363,301,11,92,15,172,32,0,0,13,13,68],[2427,208,286,244,21,73,17,204,32,0,0,15,15,52]],"kernel_retired":[147,149],"kernel_first":[150,817],"kernel_last":[1720,2278]}
+ASTERBENCH,version=4,name=atomic_add,window=dispatch_work_join,status=PASS,items=64,rounds=4,jobs=3,job=2,base_seed=0x13570000,seed=0x2f39f372,harts=2,workers=2,h0_units=32,h1_units=32,result0=0x00000040,result1=0x000007e0,checksum=0x000007e0,errors=0,clock_hz=31250000,l1=1,sync_memory=0,line_words=4,line_count=16,memory_wait=0,counter0_addr=0x00000000,counter1_addr=0x00000000,h0_cycles=0x000000000000097b,h0_retired=0x00000000000000f7,h0_memory=0x000000000000016b,h0_i_access=0x000000000000012d,h0_i_miss=0x000000000000000b,h0_d_access=0x000000000000005c,h0_d_miss=0x000000000000000f,h0_backing=0x00000000000000ac,h0_atomic=0x0000000000000020,h0_sc_success=0x0000000000000000,h0_sc_failure=0x0000000000000000,h0_intervention=0x000000000000000d,h0_invalidation=0x000000000000000d,h0_writeback=0x0000000000000044,h1_cycles=0x000000000000097b,h1_retired=0x00000000000000d0,h1_memory=0x000000000000011e,h1_i_access=0x00000000000000f4,h1_i_miss=0x0000000000000015,h1_d_access=0x0000000000000049,h1_d_miss=0x0000000000000011,h1_backing=0x00000000000000cc,h1_atomic=0x0000000000000020,h1_sc_success=0x0000000000000000,h1_sc_failure=0x0000000000000000,h1_intervention=0x000000000000000f,h1_invalidation=0x000000000000000f,h1_writeback=0x0000000000000034
+COHERENT_OBS {"boot":1,"job":2,"counters":[[2427,247,363,301,11,92,15,172,32,0,0,13,13,68],[2427,208,286,244,21,73,17,204,32,0,0,15,15,52]],"kernel_retired":[147,149],"kernel_first":[150,817],"kernel_last":[1720,2278]}
+ASTERBENCH,version=4,name=atomic_add,window=dispatch_work_join,status=PASS,items=64,rounds=4,jobs=3,job=3,base_seed=0x13570000,seed=0xc9f16d2b,harts=2,workers=2,h0_units=32,h1_units=32,result0=0x00000040,result1=0x000007e0,checksum=0x000007e0,errors=0,clock_hz=31250000,l1=1,sync_memory=0,line_words=4,line_count=16,memory_wait=0,counter0_addr=0x00000000,counter1_addr=0x00000000,h0_cycles=0x000000000000097b,h0_retired=0x00000000000000f7,h0_memory=0x000000000000016b,h0_i_access=0x000000000000012d,h0_i_miss=0x000000000000000b,h0_d_access=0x000000000000005c,h0_d_miss=0x000000000000000f,h0_backing=0x00000000000000ac,h0_atomic=0x0000000000000020,h0_sc_success=0x0000000000000000,h0_sc_failure=0x0000000000000000,h0_intervention=0x000000000000000d,h0_invalidation=0x000000000000000d,h0_writeback=0x0000000000000044,h1_cycles=0x000000000000097b,h1_retired=0x00000000000000d0,h1_memory=0x000000000000011e,h1_i_access=0x00000000000000f4,h1_i_miss=0x0000000000000015,h1_d_access=0x0000000000000049,h1_d_miss=0x0000000000000011,h1_backing=0x00000000000000cc,h1_atomic=0x0000000000000020,h1_sc_success=0x0000000000000000,h1_sc_failure=0x0000000000000000,h1_intervention=0x000000000000000f,h1_invalidation=0x000000000000000f,h1_writeback=0x0000000000000034
+COHERENT_OBS {"boot":1,"job":3,"counters":[[2427,247,363,301,11,92,15,172,32,0,0,13,13,68],[2427,208,286,244,21,73,17,204,32,0,0,15,15,52]],"kernel_retired":[147,149],"kernel_first":[150,817],"kernel_last":[1720,2278]}
+ASTERSTOP {"boot":1,"jobs":3,"ram_bytes":65536,"stores":4872,"lifetime_retired":[41241,3144]}
+ASTERBOOT 2
+ASTERBENCH,version=4,name=atomic_add,window=dispatch_work_join,status=PASS,items=64,rounds=4,jobs=3,job=1,base_seed=0x13570000,seed=0x8d6079b9,harts=2,workers=2,h0_units=32,h1_units=32,result0=0x00000040,result1=0x000007e0,checksum=0x000007e0,errors=0,clock_hz=31250000,l1=1,sync_memory=0,line_words=4,line_count=16,memory_wait=0,counter0_addr=0x00000000,counter1_addr=0x00000000,h0_cycles=0x000000000000097b,h0_retired=0x00000000000000f7,h0_memory=0x000000000000016b,h0_i_access=0x000000000000012d,h0_i_miss=0x000000000000000b,h0_d_access=0x000000000000005c,h0_d_miss=0x000000000000000f,h0_backing=0x00000000000000ac,h0_atomic=0x0000000000000020,h0_sc_success=0x0000000000000000,h0_sc_failure=0x0000000000000000,h0_intervention=0x000000000000000d,h0_invalidation=0x000000000000000d,h0_writeback=0x0000000000000044,h1_cycles=0x000000000000097b,h1_retired=0x00000000000000d0,h1_memory=0x000000000000011e,h1_i_access=0x00000000000000f4,h1_i_miss=0x0000000000000015,h1_d_access=0x0000000000000049,h1_d_miss=0x0000000000000011,h1_backing=0x00000000000000cc,h1_atomic=0x0000000000000020,h1_sc_success=0x0000000000000000,h1_sc_failure=0x0000000000000000,h1_intervention=0x000000000000000f,h1_invalidation=0x000000000000000f,h1_writeback=0x0000000000000034
+COHERENT_OBS {"boot":2,"job":1,"counters":[[2427,247,363,301,11,92,15,172,32,0,0,13,13,68],[2427,208,286,244,21,73,17,204,32,0,0,15,15,52]],"kernel_retired":[147,149],"kernel_first":[150,817],"kernel_last":[1720,2278]}
+ASTERBENCH,version=4,name=atomic_add,window=dispatch_work_join,status=PASS,items=64,rounds=4,jobs=3,job=2,base_seed=0x13570000,seed=0x2f39f372,harts=2,workers=2,h0_units=32,h1_units=32,result0=0x00000040,result1=0x000007e0,checksum=0x000007e0,errors=0,clock_hz=31250000,l1=1,sync_memory=0,line_words=4,line_count=16,memory_wait=0,counter0_addr=0x00000000,counter1_addr=0x00000000,h0_cycles=0x000000000000097b,h0_retired=0x00000000000000f7,h0_memory=0x000000000000016b,h0_i_access=0x000000000000012d,h0_i_miss=0x000000000000000b,h0_d_access=0x000000000000005c,h0_d_miss=0x000000000000000f,h0_backing=0x00000000000000ac,h0_atomic=0x0000000000000020,h0_sc_success=0x0000000000000000,h0_sc_failure=0x0000000000000000,h0_intervention=0x000000000000000d,h0_invalidation=0x000000000000000d,h0_writeback=0x0000000000000044,h1_cycles=0x000000000000097b,h1_retired=0x00000000000000d0,h1_memory=0x000000000000011e,h1_i_access=0x00000000000000f4,h1_i_miss=0x0000000000000015,h1_d_access=0x0000000000000049,h1_d_miss=0x0000000000000011,h1_backing=0x00000000000000cc,h1_atomic=0x0000000000000020,h1_sc_success=0x0000000000000000,h1_sc_failure=0x0000000000000000,h1_intervention=0x000000000000000f,h1_invalidation=0x000000000000000f,h1_writeback=0x0000000000000034
+COHERENT_OBS {"boot":2,"job":2,"counters":[[2427,247,363,301,11,92,15,172,32,0,0,13,13,68],[2427,208,286,244,21,73,17,204,32,0,0,15,15,52]],"kernel_retired":[147,149],"kernel_first":[150,817],"kernel_last":[1720,2278]}
+ASTERBENCH,version=4,name=atomic_add,window=dispatch_work_join,status=PASS,items=64,rounds=4,jobs=3,job=3,base_seed=0x13570000,seed=0xc9f16d2b,harts=2,workers=2,h0_units=32,h1_units=32,result0=0x00000040,result1=0x000007e0,checksum=0x000007e0,errors=0,clock_hz=31250000,l1=1,sync_memory=0,line_words=4,line_count=16,memory_wait=0,counter0_addr=0x00000000,counter1_addr=0x00000000,h0_cycles=0x000000000000097b,h0_retired=0x00000000000000f7,h0_memory=0x000000000000016b,h0_i_access=0x000000000000012d,h0_i_miss=0x000000000000000b,h0_d_access=0x000000000000005c,h0_d_miss=0x000000000000000f,h0_backing=0x00000000000000ac,h0_atomic=0x0000000000000020,h0_sc_success=0x0000000000000000,h0_sc_failure=0x0000000000000000,h0_intervention=0x000000000000000d,h0_invalidation=0x000000000000000d,h0_writeback=0x0000000000000044,h1_cycles=0x000000000000097b,h1_retired=0x00000000000000d0,h1_memory=0x000000000000011e,h1_i_access=0x00000000000000f4,h1_i_miss=0x0000000000000015,h1_d_access=0x0000000000000049,h1_d_miss=0x0000000000000011,h1_backing=0x00000000000000cc,h1_atomic=0x0000000000000020,h1_sc_success=0x0000000000000000,h1_sc_failure=0x0000000000000000,h1_intervention=0x000000000000000f,h1_invalidation=0x000000000000000f,h1_writeback=0x0000000000000034
+COHERENT_OBS {"boot":2,"job":3,"counters":[[2427,247,363,301,11,92,15,172,32,0,0,13,13,68],[2427,208,286,244,21,73,17,204,32,0,0,15,15,52]],"kernel_retired":[147,149],"kernel_first":[150,817],"kernel_last":[1720,2278]}
+ASTERSTOP {"boot":2,"jobs":3,"ram_bytes":65536,"stores":4872,"lifetime_retired":[41241,3144]}
+PASS: coherent benchmark boots=2 jobs=6; exact 14-counter/hart windows, independent full outputs, retained RAM
+mkdir -p /home/elfo/Documents/Aster/build/riscv_reference_l11_sync0_wait0_w4_n16
+verilator --cc --exe --build --timing --Wall -DRISCV_FORMAL --Wno-DECLFILENAME --Wno-GENUNNAMED --Wno-UNUSEDSIGNAL --Wno-BLKSEQ --unroll-count 2048 --unroll-stmts 100000 --assert -DASTER_COHERENCE_ASSERT \
+	--top-module aster_coherent_soc -GHART_COUNT=2 "-GENABLE_L1=1'b1" \
+	"-GSYNC_MEMORY=1'b0" -GMEMORY_WAIT_CYCLES=0 "-GHOST_BOOT=1'b1" \
+	-GLINE_WORDS=4 -GLINE_COUNT=16 \
+	--Mdir /home/elfo/Documents/Aster/build/riscv_reference_l11_sync0_wait0_w4_n16/obj -o /home/elfo/Documents/Aster/build/riscv_reference_l11_sync0_wait0_w4_n16/aster_riscv_reference_sim \
+	/home/elfo/Documents/Aster/rtl/core/aster_picorv32.sv /home/elfo/Documents/Aster/vendor/picorv32/picorv32.v /home/elfo/Documents/Aster/rtl/cache/aster_l1_cache.sv /home/elfo/Documents/Aster/rtl/memory/aster_rom.sv /home/elfo/Documents/Aster/rtl/memory/aster_ram.sv /home/elfo/Documents/Aster/rtl/core/aster_pcpi_atomic.sv /home/elfo/Documents/Aster/rtl/core/aster_pcpi_dot8.sv /home/elfo/Documents/Aster/rtl/core/aster_atomic_hart.sv /home/elfo/Documents/Aster/rtl/cache/aster_coherent_cache.sv /home/elfo/Documents/Aster/rtl/interconnect/aster_atomic_fabric.sv /home/elfo/Documents/Aster/rtl/interconnect/aster_device_arbiter.sv /home/elfo/Documents/Aster/rtl/accelerator/aster_int8_pe.sv /home/elfo/Documents/Aster/rtl/accelerator/aster_int8_array.sv /home/elfo/Documents/Aster/rtl/accelerator/aster_npu_engine.sv /home/elfo/Documents/Aster/rtl/accelerator/aster_npu_regs.sv /home/elfo/Documents/Aster/rtl/soc/aster_warm_stop.sv /home/elfo/Documents/Aster/rtl/peripherals/aster_uart.sv /home/elfo/Documents/Aster/rtl/peripherals/aster_coherent_perf.sv /home/elfo/Documents/Aster/rtl/dma/aster_dma_engine.sv /home/elfo/Documents/Aster/rtl/interconnect/aster_dma_arbiter.sv /home/elfo/Documents/Aster/rtl/peripherals/aster_dma_perf.sv /home/elfo/Documents/Aster/rtl/peripherals/aster_dot8_perf.sv /home/elfo/Documents/Aster/rtl/peripherals/aster_timer.sv /home/elfo/Documents/Aster/rtl/peripherals/aster_interrupt_controller.sv /home/elfo/Documents/Aster/rtl/soc/aster_coherent_soc.sv /home/elfo/Documents/Aster/verification/soc/tb_riscv_reference.cpp
+make[1]: Entering directory '/home/elfo/Documents/Aster/build/riscv_reference_l11_sync0_wait0_w4_n16/obj'
+make[1]: Nothing to be done for 'default'.
+make[1]: Leaving directory '/home/elfo/Documents/Aster/build/riscv_reference_l11_sync0_wait0_w4_n16/obj'
+PASS: pinned RV32UA test=amoadd_w hart=0 boot=1 cases=4 body_retired=27 cycles=1011 stores=13 retained_ram=65536
+PASS: pinned RV32UA test=amoadd_w hart=0 boot=2 cases=4 body_retired=27 cycles=1011 stores=13 retained_ram=65536
+PASS: pinned RV32UA test=amoadd_w hart=1 boot=1 cases=4 body_retired=27 cycles=1229 stores=13 retained_ram=65536
+PASS: pinned RV32UA test=amoadd_w hart=1 boot=2 cases=4 body_retired=27 cycles=1229 stores=13 retained_ram=65536
+PASS: pinned RV32UA test=amoand_w hart=0 boot=1 cases=4 body_retired=25 cycles=977 stores=13 retained_ram=65536
+PASS: pinned RV32UA test=amoand_w hart=0 boot=2 cases=4 body_retired=25 cycles=977 stores=13 retained_ram=65536
+PASS: pinned RV32UA test=amoand_w hart=1 boot=1 cases=4 body_retired=25 cycles=1195 stores=13 retained_ram=65536
+PASS: pinned RV32UA test=amoand_w hart=1 boot=2 cases=4 body_retired=25 cycles=1195 stores=13 retained_ram=65536
+PASS: pinned RV32UA test=amomax_w hart=0 boot=1 cases=6 body_retired=39 cycles=1174 stores=16 retained_ram=65536
+PASS: pinned RV32UA test=amomax_w hart=0 boot=2 cases=6 body_retired=39 cycles=1174 stores=16 retained_ram=65536
+PASS: pinned RV32UA test=amomax_w hart=1 boot=1 cases=6 body_retired=39 cycles=1392 stores=16 retained_ram=65536
+PASS: pinned RV32UA test=amomax_w hart=1 boot=2 cases=6 body_retired=39 cycles=1392 stores=16 retained_ram=65536
+PASS: pinned RV32UA test=amomaxu_w hart=0 boot=1 cases=4 body_retired=26 cycles=988 stores=14 retained_ram=65536
+PASS: pinned RV32UA test=amomaxu_w hart=0 boot=2 cases=4 body_retired=26 cycles=988 stores=14 retained_ram=65536
+PASS: pinned RV32UA test=amomaxu_w hart=1 boot=1 cases=4 body_retired=26 cycles=1206 stores=14 retained_ram=65536
+PASS: pinned RV32UA test=amomaxu_w hart=1 boot=2 cases=4 body_retired=26 cycles=1206 stores=14 retained_ram=65536
+PASS: pinned RV32UA test=amomin_w hart=0 boot=1 cases=6 body_retired=39 cycles=1174 stores=16 retained_ram=65536
+PASS: pinned RV32UA test=amomin_w hart=0 boot=2 cases=6 body_retired=39 cycles=1174 stores=16 retained_ram=65536
+PASS: pinned RV32UA test=amomin_w hart=1 boot=1 cases=6 body_retired=39 cycles=1392 stores=16 retained_ram=65536
+PASS: pinned RV32UA test=amomin_w hart=1 boot=2 cases=6 body_retired=39 cycles=1392 stores=16 retained_ram=65536
+PASS: pinned RV32UA test=amominu_w hart=0 boot=1 cases=4 body_retired=26 cycles=988 stores=14 retained_ram=65536
+PASS: pinned RV32UA test=amominu_w hart=0 boot=2 cases=4 body_retired=26 cycles=988 stores=14 retained_ram=65536
+PASS: pinned RV32UA test=amominu_w hart=1 boot=1 cases=4 body_retired=26 cycles=1206 stores=14 retained_ram=65536
+PASS: pinned RV32UA test=amominu_w hart=1 boot=2 cases=4 body_retired=26 cycles=1206 stores=14 retained_ram=65536
+PASS: pinned RV32UA test=amoor_w hart=0 boot=1 cases=4 body_retired=25 cycles=977 stores=13 retained_ram=65536
+PASS: pinned RV32UA test=amoor_w hart=0 boot=2 cases=4 body_retired=25 cycles=977 stores=13 retained_ram=65536
+PASS: pinned RV32UA test=amoor_w hart=1 boot=1 cases=4 body_retired=25 cycles=1195 stores=13 retained_ram=65536
+PASS: pinned RV32UA test=amoor_w hart=1 boot=2 cases=4 body_retired=25 cycles=1195 stores=13 retained_ram=65536
+PASS: pinned RV32UA test=amoswap_w hart=0 boot=1 cases=4 body_retired=25 cycles=977 stores=13 retained_ram=65536
+PASS: pinned RV32UA test=amoswap_w hart=0 boot=2 cases=4 body_retired=25 cycles=977 stores=13 retained_ram=65536
+PASS: pinned RV32UA test=amoswap_w hart=1 boot=1 cases=4 body_retired=25 cycles=1195 stores=13 retained_ram=65536
+PASS: pinned RV32UA test=amoswap_w hart=1 boot=2 cases=4 body_retired=25 cycles=1195 stores=13 retained_ram=65536
+PASS: pinned RV32UA test=amoxor_w hart=0 boot=1 cases=4 body_retired=29 cycles=1018 stores=13 retained_ram=65536
+PASS: pinned RV32UA test=amoxor_w hart=0 boot=2 cases=4 body_retired=29 cycles=1018 stores=13 retained_ram=65536
+PASS: pinned RV32UA test=amoxor_w hart=1 boot=1 cases=4 body_retired=29 cycles=1236 stores=13 retained_ram=65536
+PASS: pinned RV32UA test=amoxor_w hart=1 boot=2 cases=4 body_retired=29 cycles=1236 stores=13 retained_ram=65536
+PASS: pinned RV32UA test=lrsc hart=0 boot=1 cases=4 body_retired=6202 cycles=50158 stores=1295 retained_ram=65536
+PASS: pinned RV32UA test=lrsc hart=0 boot=2 cases=4 body_retired=6202 cycles=50158 stores=1295 retained_ram=65536
+PASS: pinned RV32UA test=lrsc hart=1 boot=1 cases=4 body_retired=6202 cycles=50372 stores=1295 retained_ram=65536
+PASS: pinned RV32UA test=lrsc hart=1 boot=2 cases=4 body_retired=6202 cycles=50372 stores=1295 retained_ram=65536
+PASS: upstream negative comparison hart=0, original test_2 fail path detected; vendor unchanged
+PASS: upstream negative comparison hart=1, original test_2 fail path detected; vendor unchanged
+mkdir -p /home/elfo/Documents/Aster/build/litmus_l11_sync0_wait0_w4_n16
+verilator --cc --exe --build --timing --Wall -DRISCV_FORMAL --Wno-DECLFILENAME --Wno-GENUNNAMED --Wno-UNUSEDSIGNAL --Wno-BLKSEQ --unroll-count 2048 --unroll-stmts 100000 --assert -DASTER_COHERENCE_ASSERT \
+	--top-module aster_coherent_soc -GHART_COUNT=2 "-GENABLE_L1=1'b1" \
+	"-GSYNC_MEMORY=1'b0" -GMEMORY_WAIT_CYCLES=0 "-GHOST_BOOT=1'b1" \
+	-GLINE_WORDS=4 -GLINE_COUNT=16 \
+	--Mdir /home/elfo/Documents/Aster/build/litmus_l11_sync0_wait0_w4_n16/obj -o /home/elfo/Documents/Aster/build/litmus_l11_sync0_wait0_w4_n16/aster_coherent_litmus_sim \
+	/home/elfo/Documents/Aster/rtl/core/aster_picorv32.sv /home/elfo/Documents/Aster/vendor/picorv32/picorv32.v /home/elfo/Documents/Aster/rtl/cache/aster_l1_cache.sv /home/elfo/Documents/Aster/rtl/memory/aster_rom.sv /home/elfo/Documents/Aster/rtl/memory/aster_ram.sv /home/elfo/Documents/Aster/rtl/core/aster_pcpi_atomic.sv /home/elfo/Documents/Aster/rtl/core/aster_pcpi_dot8.sv /home/elfo/Documents/Aster/rtl/core/aster_atomic_hart.sv /home/elfo/Documents/Aster/rtl/cache/aster_coherent_cache.sv /home/elfo/Documents/Aster/rtl/interconnect/aster_atomic_fabric.sv /home/elfo/Documents/Aster/rtl/interconnect/aster_device_arbiter.sv /home/elfo/Documents/Aster/rtl/accelerator/aster_int8_pe.sv /home/elfo/Documents/Aster/rtl/accelerator/aster_int8_array.sv /home/elfo/Documents/Aster/rtl/accelerator/aster_npu_engine.sv /home/elfo/Documents/Aster/rtl/accelerator/aster_npu_regs.sv /home/elfo/Documents/Aster/rtl/soc/aster_warm_stop.sv /home/elfo/Documents/Aster/rtl/peripherals/aster_uart.sv /home/elfo/Documents/Aster/rtl/peripherals/aster_coherent_perf.sv /home/elfo/Documents/Aster/rtl/dma/aster_dma_engine.sv /home/elfo/Documents/Aster/rtl/interconnect/aster_dma_arbiter.sv /home/elfo/Documents/Aster/rtl/peripherals/aster_dma_perf.sv /home/elfo/Documents/Aster/rtl/peripherals/aster_dot8_perf.sv /home/elfo/Documents/Aster/rtl/peripherals/aster_timer.sv /home/elfo/Documents/Aster/rtl/peripherals/aster_interrupt_controller.sv /home/elfo/Documents/Aster/rtl/soc/aster_coherent_soc.sv /home/elfo/Documents/Aster/verification/soc/tb_coherent_litmus.cpp
+make[1]: Entering directory '/home/elfo/Documents/Aster/build/litmus_l11_sync0_wait0_w4_n16/obj'
+make[1]: Nothing to be done for 'default'.
+make[1]: Leaving directory '/home/elfo/Documents/Aster/build/litmus_l11_sync0_wait0_w4_n16/obj'
+PASS: coherent litmus boot=1 mode=0 epochs=128 seed=677862 histogram=0,24,88,16 sc_failure=0,0 exact per-hart counters
+PASS: coherent litmus boot=1 mode=1 epochs=128 seed=677862 histogram=0,24,92,12 sc_failure=0,0 exact per-hart counters
+PASS: coherent litmus boot=1 mode=2 epochs=128 seed=677862 histogram=24,20,84,0 sc_failure=0,0 exact per-hart counters
+PASS: coherent litmus boot=1 mode=3 epochs=128 seed=677862 histogram=20,20,88,0 sc_failure=0,0 exact per-hart counters
+PASS: coherent litmus boot=1 mode=4 epochs=128 seed=677862 histogram=128,0,0,0 sc_failure=0,0 exact per-hart counters
+PASS: coherent litmus boot=1 mode=5 epochs=128 seed=677862 histogram=0,28,92,8 sc_failure=0,0 exact per-hart counters
+PASS: coherent litmus boot=1 mode=6 epochs=128 seed=677862 histogram=128,0,0,0 sc_failure=0,0 exact per-hart counters
+PASS: coherent litmus boot=1 mode=7 epochs=128 seed=677862 histogram=128,0,0,0 sc_failure=7447,7428 exact per-hart counters
+PASS: coherent litmus boot=2 mode=0 epochs=128 seed=677862 histogram=0,24,88,16 sc_failure=0,0 exact per-hart counters
+PASS: coherent litmus boot=2 mode=1 epochs=128 seed=677862 histogram=0,24,92,12 sc_failure=0,0 exact per-hart counters
+PASS: coherent litmus boot=2 mode=2 epochs=128 seed=677862 histogram=24,20,84,0 sc_failure=0,0 exact per-hart counters
+PASS: coherent litmus boot=2 mode=3 epochs=128 seed=677862 histogram=20,20,88,0 sc_failure=0,0 exact per-hart counters
+PASS: coherent litmus boot=2 mode=4 epochs=128 seed=677862 histogram=128,0,0,0 sc_failure=0,0 exact per-hart counters
+PASS: coherent litmus boot=2 mode=5 epochs=128 seed=677862 histogram=0,28,92,8 sc_failure=0,0 exact per-hart counters
+PASS: coherent litmus boot=2 mode=6 epochs=128 seed=677862 histogram=128,0,0,0 sc_failure=0,0 exact per-hart counters
+PASS: coherent litmus boot=2 mode=7 epochs=128 seed=677862 histogram=128,0,0,0 sc_failure=7447,7428 exact per-hart counters
+PASS: coherent litmus closeout trials=2048 contended_sc_failures=29750 warm_boots=2 complete_ram=65536; no destructive reset after POR
+verilator --cc --exe --build --timing --Wall \
+	--top-module aster_arbiter2 --Mdir /home/elfo/Documents/Aster/build/obj_arbiter -o /home/elfo/Documents/Aster/build/aster_arbiter2_sim \
+	/home/elfo/Documents/Aster/rtl/interconnect/aster_arbiter2.sv /home/elfo/Documents/Aster/verification/unit/tb_aster_arbiter2.cpp
+make[1]: Entering directory '/home/elfo/Documents/Aster/build/obj_arbiter'
+make[1]: Nothing to be done for 'default'.
+make[1]: Leaving directory '/home/elfo/Documents/Aster/build/obj_arbiter'
+PASS: arbiter seed=1 completions=10733 hart0=5390 hart1=5343 stores=8086 aborted=92 simultaneous=10503 stalled=89395 identical=128
+PASS: arbiter seed=42366 completions=10686 hart0=5356 hart1=5330 stores=8011 aborted=90 simultaneous=10437 stalled=89437 identical=128
+PASS: arbiter seed=12648430 completions=10692 hart0=5359 hart1=5333 stores=8091 aborted=90 simultaneous=10438 stalled=89446 identical=128
+mkdir -p /home/elfo/Documents/Aster/build/fabric_h2_l11_sync0_wait0_w4_n16
+verilator --cc --exe --build --timing --Wall --Wno-UNUSEDSIGNAL \
+	--top-module aster_shared_fabric --Mdir /home/elfo/Documents/Aster/build/fabric_h2_l11_sync0_wait0_w4_n16/obj -o /home/elfo/Documents/Aster/build/fabric_h2_l11_sync0_wait0_w4_n16/aster_fabric_sim \
+	-GHART_COUNT=2 "-GSYNC_MEMORY=1'b0" \
+	"-GENABLE_L1=1'b1" -GL1_LINE_WORDS=4 -GL1_LINE_COUNT=16 \
+	-GMEMORY_WAIT_CYCLES=0 "-GHOST_BOOT=1'b1" \
+	-CFLAGS '-DASTER_HART_COUNT=2 -DASTER_MEMORY_WAIT=0 -DASTER_SYNC_MEMORY=0 -DASTER_ENABLE_L1=1 -DASTER_LINE_WORDS=4 -DASTER_LINE_COUNT=16' \
+	/home/elfo/Documents/Aster/rtl/interconnect/aster_arbiter2.sv /home/elfo/Documents/Aster/rtl/soc/aster_shared_fabric.sv /home/elfo/Documents/Aster/rtl/memory/aster_rom.sv /home/elfo/Documents/Aster/rtl/memory/aster_ram.sv /home/elfo/Documents/Aster/rtl/peripherals/aster_uart.sv /home/elfo/Documents/Aster/rtl/peripherals/aster_perf_counters.sv \
+	/home/elfo/Documents/Aster/verification/soc/tb_aster_shared_fabric.cpp
+make[1]: Entering directory '/home/elfo/Documents/Aster/build/fabric_h2_l11_sync0_wait0_w4_n16/obj'
+make[1]: Nothing to be done for 'default'.
+make[1]: Leaving directory '/home/elfo/Documents/Aster/build/fabric_h2_l11_sync0_wait0_w4_n16/obj'
+PASS: shared fabric harts=2 seed=1 transfers=76049 dual_pending=41479 denied=23635 memory_wait=0
+PASS: shared fabric harts=2 seed=42366 transfers=76116 dual_pending=41449 denied=23390 memory_wait=0
+PASS: shared fabric harts=2 seed=12648430 transfers=76118 dual_pending=41417 denied=23520 memory_wait=0
+mkdir -p /home/elfo/Documents/Aster/build/multicore_h2_l11_sync0_wait0_w4_n16
+verilator --cc --exe --build --timing --Wall -DRISCV_FORMAL --Wno-DECLFILENAME --Wno-GENUNNAMED --Wno-UNUSEDSIGNAL --Wno-BLKSEQ \
+	--top-module aster_multicore --Mdir /home/elfo/Documents/Aster/build/multicore_h2_l11_sync0_wait0_w4_n16/obj -o /home/elfo/Documents/Aster/build/multicore_h2_l11_sync0_wait0_w4_n16/aster_multicore_sim \
+	-GHART_COUNT=2 "-GSYNC_MEMORY=1'b0" "-GENABLE_L1=1'b1" \
+	-GMEMORY_WAIT_CYCLES=0 -GL1_LINE_WORDS=4 -GL1_LINE_COUNT=16 \
+	-CFLAGS '-DASTER_HART_COUNT=2' \
+	/home/elfo/Documents/Aster/rtl/core/aster_picorv32.sv /home/elfo/Documents/Aster/vendor/picorv32/picorv32.v /home/elfo/Documents/Aster/rtl/cache/aster_l1_cache.sv /home/elfo/Documents/Aster/rtl/memory/aster_rom.sv /home/elfo/Documents/Aster/rtl/memory/aster_ram.sv /home/elfo/Documents/Aster/rtl/peripherals/aster_uart.sv /home/elfo/Documents/Aster/rtl/peripherals/aster_perf_counters.sv /home/elfo/Documents/Aster/rtl/interconnect/aster_arbiter2.sv /home/elfo/Documents/Aster/rtl/soc/aster_shared_fabric.sv /home/elfo/Documents/Aster/rtl/core/aster_hart.sv /home/elfo/Documents/Aster/rtl/soc/aster_multicore.sv \
+	/home/elfo/Documents/Aster/verification/soc/tb_aster_multicore.cpp
+make[1]: Entering directory '/home/elfo/Documents/Aster/build/multicore_h2_l11_sync0_wait0_w4_n16/obj'
+make[1]: Nothing to be done for 'default'.
+make[1]: Leaving directory '/home/elfo/Documents/Aster/build/multicore_h2_l11_sync0_wait0_w4_n16/obj'
+MULTICORE RUNTIME PASS
+PASS: runtime boot=0 hart0_retired=1613 hart1_retired=1485 hart0_pcs=196 hart1_pcs=116
+MULTICORE RUNTIME PASS
+PASS: runtime boot=1 hart0_retired=1613 hart1_retired=1485 hart0_pcs=196 hart1_pcs=116
+mkdir -p /home/elfo/Documents/Aster/build/adversarial_l11_sync0_wait0_w4_n16
+verilator --cc --exe --build --timing --Wall -DRISCV_FORMAL --Wno-DECLFILENAME --Wno-GENUNNAMED --Wno-UNUSEDSIGNAL --Wno-BLKSEQ \
+	--top-module aster_multicore_probe --Mdir /home/elfo/Documents/Aster/build/adversarial_l11_sync0_wait0_w4_n16/obj -o /home/elfo/Documents/Aster/build/adversarial_l11_sync0_wait0_w4_n16/aster_multicore_adversarial_sim \
+	"-GENABLE_L1=1'b1" "-GSYNC_MEMORY=1'b0" -GMEMORY_WAIT_CYCLES=0 \
+	/home/elfo/Documents/Aster/rtl/core/aster_picorv32.sv /home/elfo/Documents/Aster/vendor/picorv32/picorv32.v /home/elfo/Documents/Aster/rtl/cache/aster_l1_cache.sv /home/elfo/Documents/Aster/rtl/memory/aster_rom.sv /home/elfo/Documents/Aster/rtl/memory/aster_ram.sv /home/elfo/Documents/Aster/rtl/peripherals/aster_uart.sv /home/elfo/Documents/Aster/rtl/peripherals/aster_perf_counters.sv /home/elfo/Documents/Aster/rtl/interconnect/aster_arbiter2.sv /home/elfo/Documents/Aster/rtl/soc/aster_shared_fabric.sv /home/elfo/Documents/Aster/rtl/core/aster_hart.sv /home/elfo/Documents/Aster/rtl/soc/aster_multicore.sv \
+	/home/elfo/Documents/Aster/verification/soc/aster_multicore_probe.sv /home/elfo/Documents/Aster/verification/soc/tb_multicore_adversarial.cpp
+make[1]: Entering directory '/home/elfo/Documents/Aster/build/adversarial_l11_sync0_wait0_w4_n16/obj'
+make[1]: Nothing to be done for 'default'.
+make[1]: Leaving directory '/home/elfo/Documents/Aster/build/adversarial_l11_sync0_wait0_w4_n16/obj'
+PASS: real-core faults boot=0 traps=12 primary_retired_while_peer_trapped=9461
+PASS: real-core faults boot=1 traps=12 primary_retired_while_peer_trapped=9461
+mkdir -p /home/elfo/Documents/Aster/build/multicore_h2_l11_sync0_wait0_w4_n16
+verilator --cc --exe --build --timing --Wall -DRISCV_FORMAL --Wno-DECLFILENAME --Wno-GENUNNAMED --Wno-UNUSEDSIGNAL --Wno-BLKSEQ \
+	--top-module aster_multicore --Mdir /home/elfo/Documents/Aster/build/multicore_h2_l11_sync0_wait0_w4_n16/parallel_obj -o /home/elfo/Documents/Aster/build/multicore_h2_l11_sync0_wait0_w4_n16/aster_parallel_sim \
+	-GHART_COUNT=2 "-GSYNC_MEMORY=1'b0" "-GENABLE_L1=1'b1" \
+	-GMEMORY_WAIT_CYCLES=0 -GL1_LINE_WORDS=4 -GL1_LINE_COUNT=16 \
+	/home/elfo/Documents/Aster/rtl/core/aster_picorv32.sv /home/elfo/Documents/Aster/vendor/picorv32/picorv32.v /home/elfo/Documents/Aster/rtl/cache/aster_l1_cache.sv /home/elfo/Documents/Aster/rtl/memory/aster_rom.sv /home/elfo/Documents/Aster/rtl/memory/aster_ram.sv /home/elfo/Documents/Aster/rtl/peripherals/aster_uart.sv /home/elfo/Documents/Aster/rtl/peripherals/aster_perf_counters.sv /home/elfo/Documents/Aster/rtl/interconnect/aster_arbiter2.sv /home/elfo/Documents/Aster/rtl/soc/aster_shared_fabric.sv /home/elfo/Documents/Aster/rtl/core/aster_hart.sv /home/elfo/Documents/Aster/rtl/soc/aster_multicore.sv \
+	/home/elfo/Documents/Aster/verification/soc/tb_aster_parallel.cpp
+make[1]: Entering directory '/home/elfo/Documents/Aster/build/multicore_h2_l11_sync0_wait0_w4_n16/parallel_obj'
+make[1]: Nothing to be done for 'default'.
+make[1]: Leaving directory '/home/elfo/Documents/Aster/build/multicore_h2_l11_sync0_wait0_w4_n16/parallel_obj'
+ASTERBENCH,version=3,name=parallel_mix,status=PASS,bytes=256,rounds=4,jobs=3,job=1,base_seed=0x13570000,seed=0x8d6079b9,harts=2,workers=2,h0_words=32,h1_words=32,h0_checksum=0xff055ff7,h1_checksum=0xc153b60d,checksum=0xc0591604,clock_hz=31250000,l1=1,sync_memory=0,line_words=4,line_count=16,memory_wait=0,cycles=0x000000000000505e,h0_cycles=0x000000000000505e,h0_retired=0x00000000000008d4,h0_memory_transactions=0x0000000000000b19,h0_cache_accesses=0x0000000000000ad5,h0_cache_misses=0x000000000000003e,h0_dma_bytes=0x0000000000000000,h0_accelerator_cycles=0x0000000000000000,h0_backing_transactions=0x000000000000015b,h1_cycles=0x000000000000505e,h1_retired=0x00000000000008d9,h1_memory_transactions=0x0000000000000b22,h1_cache_accesses=0x0000000000000ada,h1_cache_misses=0x0000000000000039,h1_dma_bytes=0x0000000000000000,h1_accelerator_cycles=0x0000000000000000,h1_backing_transactions=0x0000000000000146
+ASTEROBS,{"boot":0,"job":1,"cycles":20574,"kernel_overlap_cycles":17927,"h0_kernel_retired":1688,"h0_kernel_first":1179,"h0_kernel_last":19123,"h1_kernel_retired":1688,"h1_kernel_first":1165,"h1_kernel_last":19105}
+ASTERBENCH,version=3,name=parallel_mix,status=PASS,bytes=256,rounds=4,jobs=3,job=2,base_seed=0x13570000,seed=0x2f39f372,harts=2,workers=2,h0_words=32,h1_words=32,h0_checksum=0x21e97907,h1_checksum=0x42671933,checksum=0x6450923a,clock_hz=31250000,l1=1,sync_memory=0,line_words=4,line_count=16,memory_wait=0,cycles=0x0000000000005045,h0_cycles=0x0000000000005045,h0_retired=0x00000000000008d4,h0_memory_transactions=0x0000000000000b19,h0_cache_accesses=0x0000000000000ad5,h0_cache_misses=0x0000000000000038,h0_dma_bytes=0x0000000000000000,h0_accelerator_cycles=0x0000000000000000,h0_backing_transactions=0x0000000000000153,h1_cycles=0x0000000000005045,h1_retired=0x00000000000008ea,h1_memory_transactions=0x0000000000000b3e,h1_cache_accesses=0x0000000000000af0,h1_cache_misses=0x0000000000000006,h1_dma_bytes=0x0000000000000000,h1_accelerator_cycles=0x0000000000000000,h1_backing_transactions=0x00000000000000fa
+ASTEROBS,{"boot":0,"job":2,"cycles":20549,"kernel_overlap_cycles":17854,"h0_kernel_retired":1688,"h0_kernel_first":1173,"h0_kernel_last":19104,"h1_kernel_retired":1688,"h1_kernel_first":1151,"h1_kernel_last":19026}
+ASTERBENCH,version=3,name=parallel_mix,status=PASS,bytes=256,rounds=4,jobs=3,job=3,base_seed=0x13570000,seed=0xc9f16d2b,harts=2,workers=2,h0_words=32,h1_words=32,h0_checksum=0x2760a968,h1_checksum=0xa400e5c3,checksum=0xcb618f2b,clock_hz=31250000,l1=1,sync_memory=0,line_words=4,line_count=16,memory_wait=0,cycles=0x0000000000005046,h0_cycles=0x0000000000005046,h0_retired=0x00000000000008d4,h0_memory_transactions=0x0000000000000b19,h0_cache_accesses=0x0000000000000ad5,h0_cache_misses=0x0000000000000038,h0_dma_bytes=0x0000000000000000,h0_accelerator_cycles=0x0000000000000000,h0_backing_transactions=0x0000000000000153,h1_cycles=0x0000000000005046,h1_retired=0x00000000000008e4,h1_memory_transactions=0x0000000000000b35,h1_cache_accesses=0x0000000000000aef,h1_cache_misses=0x000000000000000b,h1_dma_bytes=0x0000000000000000,h1_accelerator_cycles=0x0000000000000000,h1_backing_transactions=0x000000000000010e
+ASTEROBS,{"boot":0,"job":3,"cycles":20550,"kernel_overlap_cycles":17854,"h0_kernel_retired":1688,"h0_kernel_first":1175,"h0_kernel_last":19106,"h1_kernel_retired":1688,"h1_kernel_first":1153,"h1_kernel_last":19028}
+ASTERBENCH,version=3,name=parallel_mix,status=PASS,bytes=256,rounds=4,jobs=3,job=1,base_seed=0x13570000,seed=0x8d6079b9,harts=2,workers=2,h0_words=32,h1_words=32,h0_checksum=0xff055ff7,h1_checksum=0xc153b60d,checksum=0xc0591604,clock_hz=31250000,l1=1,sync_memory=0,line_words=4,line_count=16,memory_wait=0,cycles=0x000000000000505e,h0_cycles=0x000000000000505e,h0_retired=0x00000000000008d4,h0_memory_transactions=0x0000000000000b19,h0_cache_accesses=0x0000000000000ad5,h0_cache_misses=0x000000000000003e,h0_dma_bytes=0x0000000000000000,h0_accelerator_cycles=0x0000000000000000,h0_backing_transactions=0x000000000000015b,h1_cycles=0x000000000000505e,h1_retired=0x00000000000008d9,h1_memory_transactions=0x0000000000000b22,h1_cache_accesses=0x0000000000000ada,h1_cache_misses=0x0000000000000039,h1_dma_bytes=0x0000000000000000,h1_accelerator_cycles=0x0000000000000000,h1_backing_transactions=0x0000000000000146
+ASTEROBS,{"boot":1,"job":1,"cycles":20574,"kernel_overlap_cycles":17927,"h0_kernel_retired":1688,"h0_kernel_first":1179,"h0_kernel_last":19123,"h1_kernel_retired":1688,"h1_kernel_first":1165,"h1_kernel_last":19105}
+ASTERBENCH,version=3,name=parallel_mix,status=PASS,bytes=256,rounds=4,jobs=3,job=2,base_seed=0x13570000,seed=0x2f39f372,harts=2,workers=2,h0_words=32,h1_words=32,h0_checksum=0x21e97907,h1_checksum=0x42671933,checksum=0x6450923a,clock_hz=31250000,l1=1,sync_memory=0,line_words=4,line_count=16,memory_wait=0,cycles=0x0000000000005045,h0_cycles=0x0000000000005045,h0_retired=0x00000000000008d4,h0_memory_transactions=0x0000000000000b19,h0_cache_accesses=0x0000000000000ad5,h0_cache_misses=0x0000000000000038,h0_dma_bytes=0x0000000000000000,h0_accelerator_cycles=0x0000000000000000,h0_backing_transactions=0x0000000000000153,h1_cycles=0x0000000000005045,h1_retired=0x00000000000008ea,h1_memory_transactions=0x0000000000000b3e,h1_cache_accesses=0x0000000000000af0,h1_cache_misses=0x0000000000000006,h1_dma_bytes=0x0000000000000000,h1_accelerator_cycles=0x0000000000000000,h1_backing_transactions=0x00000000000000fa
+ASTEROBS,{"boot":1,"job":2,"cycles":20549,"kernel_overlap_cycles":17854,"h0_kernel_retired":1688,"h0_kernel_first":1173,"h0_kernel_last":19104,"h1_kernel_retired":1688,"h1_kernel_first":1151,"h1_kernel_last":19026}
+ASTERBENCH,version=3,name=parallel_mix,status=PASS,bytes=256,rounds=4,jobs=3,job=3,base_seed=0x13570000,seed=0xc9f16d2b,harts=2,workers=2,h0_words=32,h1_words=32,h0_checksum=0x2760a968,h1_checksum=0xa400e5c3,checksum=0xcb618f2b,clock_hz=31250000,l1=1,sync_memory=0,line_words=4,line_count=16,memory_wait=0,cycles=0x0000000000005046,h0_cycles=0x0000000000005046,h0_retired=0x00000000000008d4,h0_memory_transactions=0x0000000000000b19,h0_cache_accesses=0x0000000000000ad5,h0_cache_misses=0x0000000000000038,h0_dma_bytes=0x0000000000000000,h0_accelerator_cycles=0x0000000000000000,h0_backing_transactions=0x0000000000000153,h1_cycles=0x0000000000005046,h1_retired=0x00000000000008e4,h1_memory_transactions=0x0000000000000b35,h1_cache_accesses=0x0000000000000aef,h1_cache_misses=0x000000000000000b,h1_dma_bytes=0x0000000000000000,h1_accelerator_cycles=0x0000000000000000,h1_backing_transactions=0x000000000000010e
+ASTEROBS,{"boot":1,"job":3,"cycles":20550,"kernel_overlap_cycles":17854,"h0_kernel_retired":1688,"h0_kernel_first":1175,"h0_kernel_last":19106,"h1_kernel_retired":1688,"h1_kernel_first":1153,"h1_kernel_last":19028}
+PASS: parallel jobs, independent kernel retirement and exact RTL counter scoreboard (2 boots)
+PASS: timer free-run, compare match, clear/enable, byte merge, 64-bit wrap and reset
+PASS: interrupt controller edge capture, W1C, RAISE, per-hart masks, reset

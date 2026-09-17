@@ -1,0 +1,377 @@
+{
+  "configs": [
+    {
+      "id": "nocache",
+      "records": {
+        "conv2d": "ASTERBENCH,version=10,name=conv2d,category=dsp,status=PASS,size=1024,iterations=4,param=5,seed=0x13570000,checksum=0x07df8000,clock_hz=31250000,l1=0,sync_memory=0,line_words=4,line_count=16,memory_wait=0,cycles=0x000000000056ec41,retired=0x00000000000abf5a,memory_transactions=0x00000000000e9bad,backing_transactions=0x00000000000e9bad,cache_accesses=0x0000000000000000,cache_misses=0x0000000000000000,dma_bytes=0x0000000000000000,accelerator_cycles=0x0000000000000000\n",
+        "fft": "ASTERBENCH,version=10,name=fft,category=dsp,status=PASS,size=1024,iterations=4,param=256,seed=0x13570000,checksum=0x2dfcff80,clock_hz=31250000,l1=0,sync_memory=0,line_words=4,line_count=16,memory_wait=0,cycles=0x00000000002b1042,retired=0x000000000003ca4f,memory_transactions=0x000000000004bfc4,backing_transactions=0x000000000004bfc4,cache_accesses=0x0000000000000000,cache_misses=0x0000000000000000,dma_bytes=0x0000000000000000,accelerator_cycles=0x0000000000000000\n",
+        "sort_search": "ASTERBENCH,version=10,name=sort_search,category=cpu,status=PASS,size=1024,iterations=4,param=256,seed=0x13570000,checksum=0xb0e60880,clock_hz=31250000,l1=0,sync_memory=0,line_words=4,line_count=16,memory_wait=0,cycles=0x00000000001d7a17,retired=0x0000000000066c4e,memory_transactions=0x00000000000973ef,backing_transactions=0x00000000000973ef,cache_accesses=0x0000000000000000,cache_misses=0x0000000000000000,dma_bytes=0x0000000000000000,accelerator_cycles=0x0000000000000000\n",
+        "strided": "ASTERBENCH,version=10,name=strided,category=memory,status=PASS,size=4096,iterations=4,param=16,seed=0x13570000,checksum=0x5fc0f800,clock_hz=31250000,l1=0,sync_memory=0,line_words=4,line_count=16,memory_wait=0,cycles=0x0000000000001a48,retired=0x0000000000000617,memory_transactions=0x0000000000000816,backing_transactions=0x0000000000000816,cache_accesses=0x0000000000000000,cache_misses=0x0000000000000000,dma_bytes=0x0000000000000000,accelerator_cycles=0x0000000000000000\n"
+      },
+      "vars": {
+        "ENABLE_L1": "0"
+      }
+    },
+    {
+      "id": "w4n8",
+      "records": {
+        "conv2d": "ASTERBENCH,version=10,name=conv2d,category=dsp,status=PASS,size=1024,iterations=4,param=5,seed=0x13570000,checksum=0x07df8000,clock_hz=31250000,l1=1,sync_memory=0,line_words=4,line_count=8,memory_wait=0,cycles=0x000000000059517f,retired=0x00000000000abf5a,memory_transactions=0x00000000000e9bad,backing_transactions=0x000000000001f054,cache_accesses=0x00000000000e9bad,cache_misses=0x0000000000009195,dma_bytes=0x0000000000000000,accelerator_cycles=0x0000000000000000\n",
+        "fft": "ASTERBENCH,version=10,name=fft,category=dsp,status=PASS,size=1024,iterations=4,param=256,seed=0x13570000,checksum=0x2dfcff80,clock_hz=31250000,l1=1,sync_memory=0,line_words=4,line_count=8,memory_wait=0,cycles=0x00000000002f6b7e,retired=0x000000000003ca4f,memory_transactions=0x000000000004bfc4,backing_transactions=0x00000000000424d3,cache_accesses=0x0000000000049fc4,cache_misses=0x0000000000011d47,dma_bytes=0x0000000000000000,accelerator_cycles=0x0000000000000000\n",
+        "sort_search": "ASTERBENCH,version=10,name=sort_search,category=cpu,status=PASS,size=1024,iterations=4,param=256,seed=0x13570000,checksum=0xb0e60880,clock_hz=31250000,l1=1,sync_memory=0,line_words=4,line_count=8,memory_wait=0,cycles=0x00000000001fc848,retired=0x0000000000066c4e,memory_transactions=0x00000000000973ef,backing_transactions=0x0000000000022b0d,cache_accesses=0x00000000000973ef,cache_misses=0x0000000000004ecc,dma_bytes=0x0000000000000000,accelerator_cycles=0x0000000000000000\n",
+        "strided": "ASTERBENCH,version=10,name=strided,category=memory,status=PASS,size=4096,iterations=4,param=16,seed=0x13570000,checksum=0x5fc0f800,clock_hz=31250000,l1=1,sync_memory=0,line_words=4,line_count=8,memory_wait=0,cycles=0x0000000000001f67,retired=0x0000000000000617,memory_transactions=0x0000000000000816,backing_transactions=0x0000000000000418,cache_accesses=0x0000000000000816,cache_misses=0x0000000000000106,dma_bytes=0x0000000000000000,accelerator_cycles=0x0000000000000000\n"
+      },
+      "vars": {
+        "L1_LINE_COUNT": "8",
+        "L1_LINE_WORDS": "4"
+      }
+    },
+    {
+      "id": "w4n16",
+      "records": {
+        "conv2d": "ASTERBENCH,version=10,name=conv2d,category=dsp,status=PASS,size=1024,iterations=4,param=5,seed=0x13570000,checksum=0x07df8000,clock_hz=31250000,l1=1,sync_memory=0,line_words=4,line_count=16,memory_wait=0,cycles=0x000000000057f654,retired=0x00000000000abf5a,memory_transactions=0x00000000000e9bad,backing_transactions=0x000000000000da98,cache_accesses=0x00000000000e9bad,cache_misses=0x0000000000004c26,dma_bytes=0x0000000000000000,accelerator_cycles=0x0000000000000000\n",
+        "fft": "ASTERBENCH,version=10,name=fft,category=dsp,status=PASS,size=1024,iterations=4,param=256,seed=0x13570000,checksum=0x2dfcff80,clock_hz=31250000,l1=1,sync_memory=0,line_words=4,line_count=16,memory_wait=0,cycles=0x00000000002d015e,retired=0x000000000003ca4f,memory_transactions=0x000000000004bfc4,backing_transactions=0x000000000001a693,cache_accesses=0x0000000000049fc4,cache_misses=0x0000000000007b57,dma_bytes=0x0000000000000000,accelerator_cycles=0x0000000000000000\n",
+        "sort_search": "ASTERBENCH,version=10,name=sort_search,category=cpu,status=PASS,size=1024,iterations=4,param=256,seed=0x13570000,checksum=0xb0e60880,clock_hz=31250000,l1=1,sync_memory=0,line_words=4,line_count=16,memory_wait=0,cycles=0x00000000001f76b8,retired=0x0000000000066c4e,memory_transactions=0x00000000000973ef,backing_transactions=0x000000000001e9cd,cache_accesses=0x00000000000973ef,cache_misses=0x0000000000003e1c,dma_bytes=0x0000000000000000,accelerator_cycles=0x0000000000000000\n",
+        "strided": "ASTERBENCH,version=10,name=strided,category=memory,status=PASS,size=4096,iterations=4,param=16,seed=0x13570000,checksum=0x5fc0f800,clock_hz=31250000,l1=1,sync_memory=0,line_words=4,line_count=16,memory_wait=0,cycles=0x0000000000001f67,retired=0x0000000000000617,memory_transactions=0x0000000000000816,backing_transactions=0x0000000000000418,cache_accesses=0x0000000000000816,cache_misses=0x0000000000000106,dma_bytes=0x0000000000000000,accelerator_cycles=0x0000000000000000\n"
+      },
+      "vars": {
+        "L1_LINE_COUNT": "16",
+        "L1_LINE_WORDS": "4"
+      }
+    },
+    {
+      "id": "w4n32",
+      "records": {
+        "conv2d": "ASTERBENCH,version=10,name=conv2d,category=dsp,status=PASS,size=1024,iterations=4,param=5,seed=0x13570000,checksum=0x07df8000,clock_hz=31250000,l1=1,sync_memory=0,line_words=4,line_count=32,memory_wait=0,cycles=0x0000000000576eb4,retired=0x00000000000abf5a,memory_transactions=0x00000000000e9bad,backing_transactions=0x0000000000006e18,cache_accesses=0x00000000000e9bad,cache_misses=0x0000000000003106,dma_bytes=0x0000000000000000,accelerator_cycles=0x0000000000000000\n",
+        "fft": "ASTERBENCH,version=10,name=fft,category=dsp,status=PASS,size=1024,iterations=4,param=256,seed=0x13570000,checksum=0x2dfcff80,clock_hz=31250000,l1=1,sync_memory=0,line_words=4,line_count=32,memory_wait=0,cycles=0x00000000002cfbba,retired=0x000000000003ca4f,memory_transactions=0x000000000004bfc4,backing_transactions=0x000000000001a14f,cache_accesses=0x0000000000049fc4,cache_misses=0x0000000000007706,dma_bytes=0x0000000000000000,accelerator_cycles=0x0000000000000000\n",
+        "sort_search": "ASTERBENCH,version=10,name=sort_search,category=cpu,status=PASS,size=1024,iterations=4,param=256,seed=0x13570000,checksum=0xb0e60880,clock_hz=31250000,l1=1,sync_memory=0,line_words=4,line_count=32,memory_wait=0,cycles=0x00000000001ec948,retired=0x0000000000066c4e,memory_transactions=0x00000000000973ef,backing_transactions=0x0000000000013f15,cache_accesses=0x00000000000973ef,cache_misses=0x00000000000012ae,dma_bytes=0x0000000000000000,accelerator_cycles=0x0000000000000000\n",
+        "strided": "ASTERBENCH,version=10,name=strided,category=memory,status=PASS,size=4096,iterations=4,param=16,seed=0x13570000,checksum=0x5fc0f800,clock_hz=31250000,l1=1,sync_memory=0,line_words=4,line_count=32,memory_wait=0,cycles=0x0000000000001f67,retired=0x0000000000000617,memory_transactions=0x0000000000000816,backing_transactions=0x0000000000000418,cache_accesses=0x0000000000000816,cache_misses=0x0000000000000106,dma_bytes=0x0000000000000000,accelerator_cycles=0x0000000000000000\n"
+      },
+      "vars": {
+        "L1_LINE_COUNT": "32",
+        "L1_LINE_WORDS": "4"
+      }
+    },
+    {
+      "id": "w8n16",
+      "records": {
+        "conv2d": "ASTERBENCH,version=10,name=conv2d,category=dsp,status=PASS,size=1024,iterations=4,param=5,seed=0x13570000,checksum=0x07df8000,clock_hz=31250000,l1=1,sync_memory=0,line_words=8,line_count=16,memory_wait=0,cycles=0x00000000005807d4,retired=0x00000000000abf5a,memory_transactions=0x00000000000e9bad,backing_transactions=0x000000000000ff40,cache_accesses=0x00000000000e9bad,cache_misses=0x00000000000038fe,dma_bytes=0x0000000000000000,accelerator_cycles=0x0000000000000000\n",
+        "fft": "ASTERBENCH,version=10,name=fft,category=dsp,status=PASS,size=1024,iterations=4,param=256,seed=0x13570000,checksum=0x2dfcff80,clock_hz=31250000,l1=1,sync_memory=0,line_words=8,line_count=16,memory_wait=0,cycles=0x00000000002e1a7c,retired=0x000000000003ca4f,memory_transactions=0x000000000004bfc4,backing_transactions=0x000000000002c14b,cache_accesses=0x0000000000049fc4,cache_misses=0x00000000000075d6,dma_bytes=0x0000000000000000,accelerator_cycles=0x0000000000000000\n",
+        "sort_search": "ASTERBENCH,version=10,name=sort_search,category=cpu,status=PASS,size=1024,iterations=4,param=256,seed=0x13570000,checksum=0xb0e60880,clock_hz=31250000,l1=1,sync_memory=0,line_words=8,line_count=16,memory_wait=0,cycles=0x00000000001ec6f1,retired=0x0000000000066c4e,memory_transactions=0x00000000000973ef,backing_transactions=0x0000000000014429,cache_accesses=0x00000000000973ef,cache_misses=0x0000000000000b3e,dma_bytes=0x0000000000000000,accelerator_cycles=0x0000000000000000\n",
+        "strided": "ASTERBENCH,version=10,name=strided,category=memory,status=PASS,size=4096,iterations=4,param=16,seed=0x13570000,checksum=0x5fc0f800,clock_hz=31250000,l1=1,sync_memory=0,line_words=8,line_count=16,memory_wait=0,cycles=0x0000000000002364,retired=0x0000000000000617,memory_transactions=0x0000000000000816,backing_transactions=0x0000000000000818,cache_accesses=0x0000000000000816,cache_misses=0x0000000000000103,dma_bytes=0x0000000000000000,accelerator_cycles=0x0000000000000000\n"
+      },
+      "vars": {
+        "L1_LINE_COUNT": "16",
+        "L1_LINE_WORDS": "8"
+      }
+    }
+  ],
+  "provenance": {
+    "dirty": false,
+    "revision": "9622d97d90a6dd6dd04abc0dbf5cda0b5a11c75c"
+  },
+  "question": "How much do L1 cache sizes affect real workloads?",
+  "schema": "aster.phase14.study.v1",
+  "summary": [
+    {
+      "accelerator_cycles": 0,
+      "backing_transactions": 957357,
+      "cache_accesses": 0,
+      "cache_misses": 0,
+      "checksum": "0x07df8000",
+      "config": "nocache",
+      "cycles": 5696577,
+      "dma_bytes": 0,
+      "iterations": 4,
+      "memory_transactions": 957357,
+      "retired": 704346,
+      "size": 1024,
+      "workload": "conv2d"
+    },
+    {
+      "accelerator_cycles": 0,
+      "backing_transactions": 311236,
+      "cache_accesses": 0,
+      "cache_misses": 0,
+      "checksum": "0x2dfcff80",
+      "config": "nocache",
+      "cycles": 2822210,
+      "dma_bytes": 0,
+      "iterations": 4,
+      "memory_transactions": 311236,
+      "retired": 248399,
+      "size": 1024,
+      "workload": "fft"
+    },
+    {
+      "accelerator_cycles": 0,
+      "backing_transactions": 619503,
+      "cache_accesses": 0,
+      "cache_misses": 0,
+      "checksum": "0xb0e60880",
+      "config": "nocache",
+      "cycles": 1931799,
+      "dma_bytes": 0,
+      "iterations": 4,
+      "memory_transactions": 619503,
+      "retired": 420942,
+      "size": 1024,
+      "workload": "sort_search"
+    },
+    {
+      "accelerator_cycles": 0,
+      "backing_transactions": 2070,
+      "cache_accesses": 0,
+      "cache_misses": 0,
+      "checksum": "0x5fc0f800",
+      "config": "nocache",
+      "cycles": 6728,
+      "dma_bytes": 0,
+      "iterations": 4,
+      "memory_transactions": 2070,
+      "retired": 1559,
+      "size": 4096,
+      "workload": "strided"
+    },
+    {
+      "accelerator_cycles": 0,
+      "backing_transactions": 55960,
+      "cache_accesses": 957357,
+      "cache_misses": 19494,
+      "checksum": "0x07df8000",
+      "config": "w4n16",
+      "cycles": 5764692,
+      "dma_bytes": 0,
+      "iterations": 4,
+      "memory_transactions": 957357,
+      "retired": 704346,
+      "size": 1024,
+      "workload": "conv2d"
+    },
+    {
+      "accelerator_cycles": 0,
+      "backing_transactions": 108179,
+      "cache_accesses": 303044,
+      "cache_misses": 31575,
+      "checksum": "0x2dfcff80",
+      "config": "w4n16",
+      "cycles": 2949470,
+      "dma_bytes": 0,
+      "iterations": 4,
+      "memory_transactions": 311236,
+      "retired": 248399,
+      "size": 1024,
+      "workload": "fft"
+    },
+    {
+      "accelerator_cycles": 0,
+      "backing_transactions": 125389,
+      "cache_accesses": 619503,
+      "cache_misses": 15900,
+      "checksum": "0xb0e60880",
+      "config": "w4n16",
+      "cycles": 2062008,
+      "dma_bytes": 0,
+      "iterations": 4,
+      "memory_transactions": 619503,
+      "retired": 420942,
+      "size": 1024,
+      "workload": "sort_search"
+    },
+    {
+      "accelerator_cycles": 0,
+      "backing_transactions": 1048,
+      "cache_accesses": 2070,
+      "cache_misses": 262,
+      "checksum": "0x5fc0f800",
+      "config": "w4n16",
+      "cycles": 8039,
+      "dma_bytes": 0,
+      "iterations": 4,
+      "memory_transactions": 2070,
+      "retired": 1559,
+      "size": 4096,
+      "workload": "strided"
+    },
+    {
+      "accelerator_cycles": 0,
+      "backing_transactions": 28184,
+      "cache_accesses": 957357,
+      "cache_misses": 12550,
+      "checksum": "0x07df8000",
+      "config": "w4n32",
+      "cycles": 5729972,
+      "dma_bytes": 0,
+      "iterations": 4,
+      "memory_transactions": 957357,
+      "retired": 704346,
+      "size": 1024,
+      "workload": "conv2d"
+    },
+    {
+      "accelerator_cycles": 0,
+      "backing_transactions": 106831,
+      "cache_accesses": 303044,
+      "cache_misses": 30470,
+      "checksum": "0x2dfcff80",
+      "config": "w4n32",
+      "cycles": 2948026,
+      "dma_bytes": 0,
+      "iterations": 4,
+      "memory_transactions": 311236,
+      "retired": 248399,
+      "size": 1024,
+      "workload": "fft"
+    },
+    {
+      "accelerator_cycles": 0,
+      "backing_transactions": 81685,
+      "cache_accesses": 619503,
+      "cache_misses": 4782,
+      "checksum": "0xb0e60880",
+      "config": "w4n32",
+      "cycles": 2017608,
+      "dma_bytes": 0,
+      "iterations": 4,
+      "memory_transactions": 619503,
+      "retired": 420942,
+      "size": 1024,
+      "workload": "sort_search"
+    },
+    {
+      "accelerator_cycles": 0,
+      "backing_transactions": 1048,
+      "cache_accesses": 2070,
+      "cache_misses": 262,
+      "checksum": "0x5fc0f800",
+      "config": "w4n32",
+      "cycles": 8039,
+      "dma_bytes": 0,
+      "iterations": 4,
+      "memory_transactions": 2070,
+      "retired": 1559,
+      "size": 4096,
+      "workload": "strided"
+    },
+    {
+      "accelerator_cycles": 0,
+      "backing_transactions": 127060,
+      "cache_accesses": 957357,
+      "cache_misses": 37269,
+      "checksum": "0x07df8000",
+      "config": "w4n8",
+      "cycles": 5853567,
+      "dma_bytes": 0,
+      "iterations": 4,
+      "memory_transactions": 957357,
+      "retired": 704346,
+      "size": 1024,
+      "workload": "conv2d"
+    },
+    {
+      "accelerator_cycles": 0,
+      "backing_transactions": 271571,
+      "cache_accesses": 303044,
+      "cache_misses": 73031,
+      "checksum": "0x2dfcff80",
+      "config": "w4n8",
+      "cycles": 3107710,
+      "dma_bytes": 0,
+      "iterations": 4,
+      "memory_transactions": 311236,
+      "retired": 248399,
+      "size": 1024,
+      "workload": "fft"
+    },
+    {
+      "accelerator_cycles": 0,
+      "backing_transactions": 142093,
+      "cache_accesses": 619503,
+      "cache_misses": 20172,
+      "checksum": "0xb0e60880",
+      "config": "w4n8",
+      "cycles": 2082888,
+      "dma_bytes": 0,
+      "iterations": 4,
+      "memory_transactions": 619503,
+      "retired": 420942,
+      "size": 1024,
+      "workload": "sort_search"
+    },
+    {
+      "accelerator_cycles": 0,
+      "backing_transactions": 1048,
+      "cache_accesses": 2070,
+      "cache_misses": 262,
+      "checksum": "0x5fc0f800",
+      "config": "w4n8",
+      "cycles": 8039,
+      "dma_bytes": 0,
+      "iterations": 4,
+      "memory_transactions": 2070,
+      "retired": 1559,
+      "size": 4096,
+      "workload": "strided"
+    },
+    {
+      "accelerator_cycles": 0,
+      "backing_transactions": 65344,
+      "cache_accesses": 957357,
+      "cache_misses": 14590,
+      "checksum": "0x07df8000",
+      "config": "w8n16",
+      "cycles": 5769172,
+      "dma_bytes": 0,
+      "iterations": 4,
+      "memory_transactions": 957357,
+      "retired": 704346,
+      "size": 1024,
+      "workload": "conv2d"
+    },
+    {
+      "accelerator_cycles": 0,
+      "backing_transactions": 180555,
+      "cache_accesses": 303044,
+      "cache_misses": 30166,
+      "checksum": "0x2dfcff80",
+      "config": "w8n16",
+      "cycles": 3021436,
+      "dma_bytes": 0,
+      "iterations": 4,
+      "memory_transactions": 311236,
+      "retired": 248399,
+      "size": 1024,
+      "workload": "fft"
+    },
+    {
+      "accelerator_cycles": 0,
+      "backing_transactions": 82985,
+      "cache_accesses": 619503,
+      "cache_misses": 2878,
+      "checksum": "0xb0e60880",
+      "config": "w8n16",
+      "cycles": 2017009,
+      "dma_bytes": 0,
+      "iterations": 4,
+      "memory_transactions": 619503,
+      "retired": 420942,
+      "size": 1024,
+      "workload": "sort_search"
+    },
+    {
+      "accelerator_cycles": 0,
+      "backing_transactions": 2072,
+      "cache_accesses": 2070,
+      "cache_misses": 259,
+      "checksum": "0x5fc0f800",
+      "config": "w8n16",
+      "cycles": 9060,
+      "dma_bytes": 0,
+      "iterations": 4,
+      "memory_transactions": 2070,
+      "retired": 1559,
+      "size": 4096,
+      "workload": "strided"
+    }
+  ],
+  "sweep": "cache-geometry"
+}
