@@ -1,0 +1,24 @@
+OK: uart page
+OK: timer page
+OK: hart control page
+OK: interrupt controller page
+OK: dma page
+OK: npu page
+OK: perf hart 0 bank
+OK: perf hart 1 bank
+OK: dot8 perf bank
+OK: coherent perf base
+OK: coherent perf ABI
+OK: coherent perf command
+OK: legacy perf ABI
+OK: timer ABI
+OK: interrupt ABI
+OK: interrupt source count
+OK: dma engine ABI
+OK: dma perf ABI
+OK: dot8 perf ABI
+OK: bridge version
+OK: dot8 decode mask
+OK: dot8 software encoding
+OK: atomic fabric permitted pages ['20000', '20001', '20002', '20003', '20004', '30000', '40000']
+PASS: 23 frozen v1.0 interfaces match the RTL

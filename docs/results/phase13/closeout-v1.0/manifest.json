@@ -1,0 +1,69 @@
+{
+  "files": {
+    "interfaces/freeze-interfaces.log": {
+      "bytes": 583,
+      "sha256": "53c311cc140ff0da3aa8514085aa753b0f0fd8a2d788d26bc1418b3ef25a4110"
+    },
+    "source/source-state.json": {
+      "bytes": 43716,
+      "sha256": "3ee75d68895e2647630842e4724c76e6183ad055d029ab5d33b21a063f47771c"
+    },
+    "spec/architecture.md": {
+      "bytes": 23354,
+      "sha256": "8f75299926d45d5c2b07755199c624529f4a738454a55f42b1a06a2a07bdb44e"
+    },
+    "spec/known-limitations.md": {
+      "bytes": 2986,
+      "sha256": "0e17987fe5cd7dbb66000a7e4a9bdcfaab79bc91bd58a66bb7ab3a329d63905a"
+    },
+    "spec/phase13.md": {
+      "bytes": 3691,
+      "sha256": "d9306aa3a37eb767c2d01906fbb372a3a3d6230d0735a2379c020ecd7667b097"
+    },
+    "spec/phase14-plan.md": {
+      "bytes": 3744,
+      "sha256": "ccb4f68229e8856493ba6006f8c1e37a506d3c0f8b587251c5bb4d2c1d828412"
+    },
+    "spec/v1.md": {
+      "bytes": 14695,
+      "sha256": "1cd2d689b215ed160e82ab9487f113ea99eef654a8a6d88b70ecbcb9098bd113"
+    },
+    "verification/make-check.log": {
+      "bytes": 196811,
+      "sha256": "7caf0f2c7592e21e857c1c1139faea8ce8f4d6142c40ce93969c0420232dbdf0"
+    }
+  },
+  "requirements": {
+    "01-frozen-specification": [
+      "spec/v1.md",
+      "spec/phase13.md",
+      "spec/known-limitations.md",
+      "spec/phase14-plan.md",
+      "spec/architecture.md"
+    ],
+    "02-interface-freeze-guard": [
+      "interfaces/freeze-interfaces.log"
+    ],
+    "03-frozen-clean-check": [
+      "verification/make-check.log"
+    ],
+    "04-frozen-source-and-tag": [
+      "source/source-state.json"
+    ]
+  },
+  "schema": "aster.v1.closeout.v1",
+  "status": "complete",
+  "summary": {
+    "interfaces": {
+      "frozen_interfaces": 23
+    },
+    "source_revision": "b050a81e6586f586a8a14e9bb642710cc2d19ebc",
+    "spec": {
+      "spec_files": 5
+    },
+    "tag": "v1.0",
+    "verification": {
+      "host_tests_last": 253
+    }
+  }
+}
