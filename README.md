@@ -129,6 +129,15 @@ Phase 3 cycle counter, a routed all-engine overlay and two physical warm boots.
 The [closeout bundle](docs/results/phase12.5/closeout-c3ec874/README.md) passes
 `scripts/audit_timer.py`.
 
+Phase 12.6 (interrupts) is complete under the
+[Phase 12.6 contract](docs/interrupts.md): a per-hart MMIO interrupt controller
+in the reserved `0x20004000` page latches the timer, DMA completion, NPU done
+and software sources and delivers a level IRQ to each PicoRV32 hart through the
+fixed `0x10` vector, verified by a unit scoreboard, a firmware software/timer
+interrupt test, a routed all-engine overlay and two physical warm boots. The
+[closeout bundle](docs/results/phase12.6/closeout-c24d2bf/README.md) passes
+`scripts/audit_interrupts.py`.
+
 Start here:
 
 ```sh
@@ -449,6 +458,21 @@ merge, 64-bit wrap and reset; a firmware interval test matches a programmed
 deadline and agrees with the Phase 3 cycle counter; and the routed all-engine
 overlay passes reset/timing signoff with two physical warm boots. Interrupt
 delivery is Phase 12.6.
+
+## Phase 12.6 — Interrupts
+
+Add a memory-mapped interrupt controller and deliver interrupts to both harts.
+
+**Complete:** the [Phase 12.6 contract](docs/interrupts.md) and
+[closeout bundle](docs/results/phase12.6/closeout-c24d2bf/README.md) add a
+per-hart MMIO controller in the previously reserved `0x20004000` page that
+latches the Phase 12.5 timer, DMA completion, NPU done and a software source,
+and delivers a level IRQ to each PicoRV32 hart through the fixed `0x10` vector.
+A unit scoreboard proves edge capture, W1C, RAISE, per-hart masks and reset; a
+firmware test takes a software and a machine-timer interrupt, services and
+clears both, and resumes the interrupted loop; and the routed all-engine
+overlay passes reset/timing signoff with two physical warm boots. Keeping
+PicoRV32 `QREGS` off preserves the Xasterdot8 instruction encoding.
 
 ## Phase 13 — Freeze Aster v1
 

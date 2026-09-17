@@ -81,8 +81,8 @@ private caches. Phase 7 adds optional coherent DMA, Phase 8 adds the optional
 packed INT8 instruction and Phase 9 adds the optional 4×4 INT8 GEMM accelerator.
 Phase 10 runs identical dot/FIR/GEMM kernels through the scalar, dual-hart,
 Xasterdot8 and NPU paths without changing any map or ABI. Phase 12.5 adds one
-custom MMIO machine timer to the coherent top. Shared L2 and interrupts remain
-future work.
+custom MMIO machine timer to the coherent top and Phase 12.6 adds a per-hart
+interrupt controller. Shared L2 remains future work.
 
 ### Optional Phase 8 computation
 
@@ -229,8 +229,11 @@ the separate AsterBench v5 counter bank. DMA payloads are restricted to shared
 bypassed by either hart. DMA-disabled builds retain the reserved page behavior.
 The coherent top implements `0x20001000` as a custom MMIO machine timer: a
 free-running 64-bit `aclk` counter, a byte-strobed 64-bit compare, an
-enable/clear control and a level `timer_irq` for Phase 12.6. The legacy
-`aster_minimal` and Phase 5 maps keep the reserved page.
+enable/clear control and a level `timer_irq` for Phase 12.6. It also implements
+`0x20004000` as a per-hart interrupt controller that latches the timer, DMA
+completion, NPU done and software sources and delivers a level IRQ to each
+PicoRV32 hart through the fixed `0x10` vector. The legacy `aster_minimal` and
+Phase 5 maps keep the reserved pages.
 
 ### UART registers
 

@@ -1,0 +1,13 @@
+{
+  "firmware": [
+    "PASS: coherent SoC interrupt harts=2 caches=1 cycles=26251 retired=2701,0\ninterrupt TIMER IRQ PASS latency=594",
+    "PASS: coherent SoC interrupt harts=2 caches=1 cycles=26251 retired=2701,0\ninterrupt TIMER IRQ PASS latency=594",
+    "PASS: coherent SoC interrupt harts=2 caches=1 cycles=26251 retired=2701,0\ninterrupt TIMER IRQ PASS latency=594"
+  ],
+  "provenance": {
+    "dirty": false,
+    "revision": "ea0906b878f479ee159e439f3f25ed59969ed11a"
+  },
+  "schema": "aster.phase12.6.study.v1",
+  "unit": "PASS: interrupt controller edge capture, W1C, RAISE, per-hart masks, reset"
+}

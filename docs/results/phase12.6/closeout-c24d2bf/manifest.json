@@ -1,0 +1,131 @@
+{
+  "files": {
+    "fpga/aster_linux.bit": {
+      "bytes": 4045695,
+      "sha256": "2b684f2a39773eb571c470414a5ec91833667134188bb97279f6ffcead96ae90"
+    },
+    "fpga/aster_linux.hwh": {
+      "bytes": 139988,
+      "sha256": "7d68b5753045b739cff928abe59703b87e757c959ac136b80302bb3832c8a701"
+    },
+    "fpga/bitstream.sha256": {
+      "bytes": 164,
+      "sha256": "dd6bf1ce1c504ac07ba0f53fbfc21fcf3dafb85c60f16b39acc59ade71cb20b5"
+    },
+    "fpga/drc.rpt": {
+      "bytes": 48016,
+      "sha256": "9b824aa2bac63a39173405c5f9988f04e860b7c675cb152da05a3bbb060698f7"
+    },
+    "fpga/methodology.rpt": {
+      "bytes": 1363,
+      "sha256": "5a56524d3a0d80b070090674d8fc404a9fa53b19f33c96071b7f5cccf06c7a1d"
+    },
+    "fpga/route_status.rpt": {
+      "bytes": 651,
+      "sha256": "b3fac98f7cd2c26fd68c71a2cd8609c3d7ecefd56e87eb609481a95e6addb7aa"
+    },
+    "fpga/timing_summary.rpt": {
+      "bytes": 32959,
+      "sha256": "7c6540f8218c4f47ceda196da09da7b2a34e3d5b2ef294660cbfbe3f5e40ef9e"
+    },
+    "fpga/utilization_routed.rpt": {
+      "bytes": 11956,
+      "sha256": "e444f9d8cac6ba111c4deab8fdf7615eb9864fa27aa19fe346561bf2e1116871"
+    },
+    "input/timer_interrupt.c": {
+      "bytes": 3355,
+      "sha256": "5d4f9a03fc6c12386449721906d93e4279ee78b5fcb12adcdb5da1285a8d8226"
+    },
+    "input/timer_interrupt.hex": {
+      "bytes": 147456,
+      "sha256": "4ccd21fb822acd5a3eb46fdd3ec0f146288c19cbe6792db88f40dcbfbb048ff2"
+    },
+    "physical/boot1.ram": {
+      "bytes": 65536,
+      "sha256": "4e9cd4860c346d48a934a4d5b99a251346b366fcc51a53adfdaeb6e4af84cf64"
+    },
+    "physical/boot1.uart": {
+      "bytes": 27,
+      "sha256": "e254e9445d2038aa107b7382ed84b4759dfa1e5fadf14a3d5a22cbd0890a6e3b"
+    },
+    "physical/boot2.ram": {
+      "bytes": 65536,
+      "sha256": "84d0a2d0cef9cdfad8581c3e539d6c9e1ff223bbaed1dc8d0b0578abf6a22d3a"
+    },
+    "physical/boot2.uart": {
+      "bytes": 27,
+      "sha256": "e254e9445d2038aa107b7382ed84b4759dfa1e5fadf14a3d5a22cbd0890a6e3b"
+    },
+    "physical/physical.json": {
+      "bytes": 2885,
+      "sha256": "4eb5c49faba4f4f87bca90e742894d0f4c7c866253a56b2b474442eb4524e7aa"
+    },
+    "simulation/study.json": {
+      "bytes": 610,
+      "sha256": "006d84403223bc15099cd3cac66f217a5745275d7ea6c1968613774dc3ce460e"
+    },
+    "source/source-state.json": {
+      "bytes": 43039,
+      "sha256": "1df2bceee3a84972a3bc580581d4ffee719e1238d54fd90af00ad357a7b2252f"
+    },
+    "spec/interrupts.md": {
+      "bytes": 5001,
+      "sha256": "fe4646ecca0297530a070991151f8051cc9725c24bffc9022a14fb4a59b294e6"
+    },
+    "verification/make-check.log": {
+      "bytes": 150139,
+      "sha256": "7b40b4567c62e594c2d334e8427c3b41c1e9a57a686392e241d053c60f79f1c4"
+    }
+  },
+  "requirements": {
+    "01-contract-and-firmware": [
+      "spec/interrupts.md",
+      "input/timer_interrupt.c",
+      "input/timer_interrupt.hex"
+    ],
+    "02-unit-and-firmware-scoreboards": [
+      "verification/make-check.log"
+    ],
+    "03-simulation-study": [
+      "simulation/study.json"
+    ],
+    "04-routed-fpga-overlay": [
+      "fpga/aster_linux.bit",
+      "fpga/aster_linux.hwh",
+      "fpga/timing_summary.rpt",
+      "fpga/drc.rpt",
+      "fpga/methodology.rpt",
+      "fpga/route_status.rpt",
+      "fpga/utilization_routed.rpt"
+    ],
+    "05-physical-pynq-acceptance": [
+      "physical/physical.json"
+    ],
+    "06-clean-source-and-immutable-mapping": [
+      "source/source-state.json"
+    ]
+  },
+  "schema": "aster.phase12.6.closeout.v1",
+  "status": "complete",
+  "summary": {
+    "fpga": {
+      "bridge_version": "0x90001"
+    },
+    "input": {
+      "firmware_words": 16384
+    },
+    "physical": {
+      "boots": 2,
+      "interrupt_latency_cycles": 662
+    },
+    "simulation": {
+      "interrupt_latency_cycles": 594,
+      "repeats": 3
+    },
+    "source_revision": "c24d2bfec2c5ec878ffd528601851b927fc38636",
+    "source_sha256": "3f88f274d5b774481fc5962fa46b17efa0b1150cf7e19aa2a4048fb1a2c566ef",
+    "verification": {
+      "host_tests_last": 253
+    }
+  }
+}

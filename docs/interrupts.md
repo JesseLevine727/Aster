@@ -1,6 +1,6 @@
 # Phase 12.6: Interrupt controller
 
-Status: **in progress**.
+Status: **complete**.
 Baseline: pushed Phase 12.5 closeout `9971a8c`.
 This phase adds one memory-mapped interrupt controller to the coherent top and
 delivers a level interrupt to each PicoRV32 hart, consuming the Phase 12.5
@@ -85,10 +85,10 @@ Only byte lane 0 of `ENABLE0/1`, `PENDING` and `RAISE` is meaningful. Sources:
 - [x] Firmware takes a timer interrupt, services it, resumes the interrupted
       loop, and a software interrupt round-trips; both agree with the cycle
       counter.
-- [ ] Legacy `aster_minimal` and Phase 5 maps unchanged.
-- [ ] Routed all-engine overlay with reset/timing/HWH signoff.
-- [ ] Physical Pynq-Z1 capture with two warm boots and a stopped-state snapshot.
-- [ ] Self-contained closeout bundle and read-only audit.
+- [x] Legacy `aster_minimal` and Phase 5 maps unchanged.
+- [x] Routed all-engine overlay with reset/timing/HWH signoff.
+- [x] Physical Pynq-Z1 capture with two warm boots and a stopped-state snapshot.
+- [x] Self-contained closeout bundle and read-only audit.
 
 ## Explicit non-goals
 
