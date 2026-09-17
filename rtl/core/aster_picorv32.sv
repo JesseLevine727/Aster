@@ -4,7 +4,8 @@
 
 module aster_picorv32 #(
     parameter logic [31:0] PROGADDR_RESET = 32'h0000_0000,
-    parameter logic [31:0] STACKADDR = 32'h1001_0000
+    parameter logic [31:0] STACKADDR = 32'h1001_0000,
+    parameter bit ENABLE_IRQ = 1'b0
 ) (
     input  logic        clk,
     input  logic        resetn,
@@ -82,9 +83,14 @@ module aster_picorv32 #(
         .ENABLE_MUL(1),
         .ENABLE_FAST_MUL(0),
         .ENABLE_DIV(1),
-        .ENABLE_IRQ(0),
-        .ENABLE_IRQ_QREGS(0),
+        .ENABLE_IRQ(ENABLE_IRQ),
+        .ENABLE_IRQ_QREGS(ENABLE_IRQ),
         .ENABLE_IRQ_TIMER(0),
+        .MASKED_IRQ(32'h0000_0006),
+        // The controller holds each source as a level until the handler clears
+        // it, so follow the irq line directly instead of edge-latching it. This
+        // avoids one spurious re-entry after a level source is cleared.
+        .LATCHED_IRQ(32'h0000_0000),
         .ENABLE_TRACE(0),
         .REGS_INIT_ZERO(1),
         .PROGADDR_RESET(PROGADDR_RESET),

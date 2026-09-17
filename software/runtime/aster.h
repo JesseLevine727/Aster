@@ -39,6 +39,21 @@
 #define ASTER_TIMER_ABI (ASTER_TIMER_BASE + 6u)
 #define ASTER_TIMER_CLOCK_HZ (ASTER_TIMER_BASE + 7u)
 
+#define ASTER_IRQ_BASE ((volatile uint32_t *)0x20004000u)
+#define ASTER_IRQ_ENABLE0 (ASTER_IRQ_BASE + 0u)
+#define ASTER_IRQ_ENABLE1 (ASTER_IRQ_BASE + 1u)
+#define ASTER_IRQ_PENDING (ASTER_IRQ_BASE + 2u)
+#define ASTER_IRQ_ACTIVE0 (ASTER_IRQ_BASE + 3u)
+#define ASTER_IRQ_ACTIVE1 (ASTER_IRQ_BASE + 4u)
+#define ASTER_IRQ_RAISE (ASTER_IRQ_BASE + 5u)
+#define ASTER_IRQ_ABI (ASTER_IRQ_BASE + 6u)
+#define ASTER_IRQ_SOURCES (ASTER_IRQ_BASE + 7u)
+
+#define ASTER_IRQ_TIMER (1u << 0)
+#define ASTER_IRQ_DMA (1u << 1)
+#define ASTER_IRQ_NPU (1u << 2)
+#define ASTER_IRQ_SOFTWARE (1u << 3)
+
 struct aster_perf_counter {
     uint32_t lo;
     uint32_t hi;
@@ -121,6 +136,24 @@ static inline void aster_timer_control(uint32_t enabled, uint32_t clear) {
 
 static inline uint32_t aster_timer_status(void) {
     return *ASTER_TIMER_STATUS;
+}
+
+static inline void aster_irq_unmask(void) {
+    // PicoRV32 maskirq x0: irq_mask = rs1 | MASKED_IRQ, so x0 unmasks all but
+    // the permanently masked upstream ebreak/buserror bits.
+    __asm__ volatile (".word 0x0600000b" ::: "memory");
+}
+
+static inline void aster_irq_clear(uint32_t mask) {
+    __asm__ volatile ("" ::: "memory");
+    *ASTER_IRQ_PENDING = mask;
+    __asm__ volatile ("" ::: "memory");
+}
+
+static inline void aster_irq_raise(uint32_t mask) {
+    __asm__ volatile ("" ::: "memory");
+    *ASTER_IRQ_RAISE = mask;
+    __asm__ volatile ("" ::: "memory");
 }
 
 static inline void aster_perf_snapshot(struct aster_perf_snapshot *snapshot) {

@@ -4,11 +4,13 @@
 module aster_atomic_hart #(
     parameter bit ENABLE_ICACHE = 1'b0,
     parameter bit ENABLE_DOT8 = 1'b0,
+    parameter bit ENABLE_IRQ = 1'b0,
     parameter int unsigned LINE_WORDS = 4,
     parameter int unsigned LINE_COUNT = 16
 ) (
     input logic clk,
     input logic resetn,
+    input logic irq,
     input logic dot8_admit,
     output logic trap,
     output logic instr_retired,
@@ -54,14 +56,14 @@ module aster_atomic_hart #(
     logic [3:0] i_wstrb;
 
     /* verilator lint_off PINCONNECTEMPTY */
-    aster_picorv32 core (
+    aster_picorv32 #(.ENABLE_IRQ(ENABLE_IRQ)) core (
         .clk(clk), .resetn(resetn), .trap(trap), .instr_retired(instr_retired),
         .retired_pc(retired_pc), .retired_insn(retired_insn),
         .mem_valid(mem_valid), .mem_instr(mem_instr), .mem_ready(mem_ready),
         .mem_addr(mem_addr), .mem_wdata(mem_wdata), .mem_wstrb(mem_wstrb), .mem_rdata(mem_rdata),
         .pcpi_valid(pcpi_valid), .pcpi_insn(pcpi_insn), .pcpi_rs1(pcpi_rs1), .pcpi_rs2(pcpi_rs2),
         .pcpi_wr(pcpi_wr), .pcpi_rd(pcpi_rd), .pcpi_wait(pcpi_wait), .pcpi_ready(pcpi_ready),
-        .irq(32'b0), .eoi()
+        .irq(ENABLE_IRQ ? {31'b0, irq} : 32'b0), .eoi()
     );
     aster_pcpi_atomic adapter (
         .clk(clk), .resetn(resetn), .pcpi_valid(pcpi_valid), .pcpi_insn(pcpi_insn),

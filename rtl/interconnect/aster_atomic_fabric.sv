@@ -70,6 +70,7 @@ module aster_atomic_fabric #(
                           address[31:12] == 20'h20001 ||
                           address[31:12] == 20'h20002 ||
                           address[31:12] == 20'h20003 ||
+                          address[31:12] == 20'h20004 ||
                           (ENABLE_DMA && address[31:12] == 20'h30000) ||
                           (ENABLE_NPU && address[31:12] == 20'h40000)));
         supported_op = 1;

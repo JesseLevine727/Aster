@@ -10,6 +10,7 @@ module aster_coherent_soc #(
     parameter bit ENABLE_DMA = 1'b0,
     parameter bit ENABLE_DOT8 = 1'b0,
     parameter bit ENABLE_NPU = 1'b0,
+    parameter bit ENABLE_IRQ = 1'b1,
     parameter bit HOST_BOOT = 1'b0,
     parameter int unsigned CLOCK_HZ = 31_250_000,
     parameter int unsigned LINE_WORDS = 4,
@@ -45,6 +46,8 @@ module aster_coherent_soc #(
     output logic perf_resume,
     output logic [13:0] perf_events [0:1],
     output logic timer_irq,
+    output logic irq0,
+    output logic irq1,
     output logic store_commit,
     output logic store_owner,
     output logic [31:0] store_addr,
@@ -130,6 +133,8 @@ module aster_coherent_soc #(
     logic [31:0] npu_m_rdata;
     logic [31:0] rom_rdata, ram_rdata, control_rdata, uart_rdata, perf_rdata [0:1];
     logic [31:0] timer_rdata;
+    logic [31:0] irq_rdata;
+    logic dma_completion;
     logic uart_write_ready, uart_slot_valid;
     wire peripheral_resetn = resetn && !stopped;
     wire rom_access = m_addr < 32'h0001_0000;
@@ -138,6 +143,7 @@ module aster_coherent_soc #(
     wire uart_access = !m_instr && m_addr[31:12] == 20'h20000;
     wire control_access = !m_instr && m_addr[31:12] == 20'h20002;
     wire timer_access = !m_instr && m_addr[31:12] == 20'h20001;
+    wire irq_access = !m_instr && m_addr[31:12] == 20'h20004;
     wire dma_access = ENABLE_DMA && !m_instr && !m_device && m_addr[31:12] == 20'h30000;
     wire npu_access = ENABLE_NPU && !m_instr && !m_device && m_addr[31:12] == 20'h40000;
     wire npu_global_abort = stop_busy || stopped || !host_run || !hart_run[0];
@@ -180,9 +186,9 @@ module aster_coherent_soc #(
     /* verilator lint_off PINCONNECTEMPTY */
     for (genvar h = 0; h < 2; h++) begin : g_hart
         if (h < HART_COUNT) begin : g_present
-            aster_atomic_hart #(.ENABLE_ICACHE(ENABLE_L1), .ENABLE_DOT8(ENABLE_DOT8),
+            aster_atomic_hart #(.ENABLE_ICACHE(ENABLE_L1), .ENABLE_DOT8(ENABLE_DOT8), .ENABLE_IRQ(ENABLE_IRQ),
                 .LINE_WORDS(LINE_WORDS), .LINE_COUNT(LINE_COUNT)) hart (
-                .clk(clk), .resetn(hart_run[h]), .trap(hart_trap[h]),
+                .clk(clk), .resetn(hart_run[h]), .irq(ENABLE_IRQ && (h == 0 ? irq0 : irq1)), .trap(hart_trap[h]),
                 .dot8_admit(admit[h]), .dot8_busy(dot8_busy[h]), .dot8_events(dot8_events[h]),
                 .instr_retired(retired[h]), .retired_pc(retired_pc[h]), .retired_insn(retired_insn[h]),
                 .fault_valid(fault_valid[h]), .fault_cause(fault_cause[h]),
@@ -292,7 +298,7 @@ module aster_coherent_soc #(
             .cfg_addr(m_addr[11:0]), .cfg_wdata(m_wdata), .cfg_wstrb(m_mask), .cfg_rdata(engine_rdata),
             .pause(pause_dma), .abort_request(global_abort),
             .m_valid(valid), .m_addr(address), .m_wdata(data_out), .m_wstrb(mask), .m_ready(ready), .m_rdata(data_in),
-            .busy(dma_busy), .completion(), .status(dma_status), .bytes_done(dma_bytes_done),
+            .busy(dma_busy), .completion(dma_completion), .status(dma_status), .bytes_done(dma_bytes_done),
             .error_code(dma_error_code), .job_cycles(dma_job_cycles), .event_read(read_event), .event_write(write_event),
             .event_success(success_event), .event_abort(abort_event), .event_error(error_event), .event_reject(reject_event)
         );
@@ -343,7 +349,7 @@ module aster_coherent_soc #(
         assign c_valid = f_valid; assign c_owner = f_owner; assign c_instr = f_instr;
         assign c_addr = f_addr; assign c_wdata = f_wdata; assign c_mask = f_mask; assign c_device = 0;
         assign f_ready = c_ready; assign f_rdata = c_rdata;
-        assign dma_rdata = 0; assign dma_busy = 0; assign dma_request_pending = 0;
+        assign dma_rdata = 0; assign dma_busy = 0; assign dma_completion = 0; assign dma_request_pending = 0;
         assign dma_request_ready = 0; assign dma_request_addr = 0; assign dma_request_data = 0;
         assign dma_request_rdata = 0; assign dma_request_mask = 0;
         assign npu_m_ready = 0;
@@ -400,6 +406,12 @@ module aster_coherent_soc #(
         .clk(clk), .rst_n(peripheral_resetn), .addr(m_addr), .wdata(m_wdata),
         .wstrb(m_mask), .we(accepted && timer_access && |m_mask), .rdata(timer_rdata),
         .timer_irq(timer_irq)
+    );
+    aster_interrupt_controller interrupt_controller (
+        .clk(clk), .rst_n(peripheral_resetn), .addr(m_addr), .wdata(m_wdata),
+        .wstrb(m_mask), .we(accepted && irq_access && |m_mask),
+        .sources({1'b0, npu_done, dma_completion, timer_irq}),
+        .rdata(irq_rdata), .irq0(irq0), .irq1(irq1)
     );
 
     always_ff @(posedge clk) begin
@@ -474,6 +486,7 @@ module aster_coherent_soc #(
         else if (uart_access) m_rdata = uart_rdata;
         else if (control_access) m_rdata = control_rdata;
         else if (timer_access) m_rdata = timer_rdata;
+        else if (irq_access) m_rdata = irq_rdata;
         else if (dma_access) m_rdata = dma_rdata;
         else if (npu_access) m_rdata = npu_register_rdata;
         else if (!m_instr && m_addr[31:8] == 24'h200030) m_rdata = perf_rdata[0];

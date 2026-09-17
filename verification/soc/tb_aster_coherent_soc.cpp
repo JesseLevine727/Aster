@@ -29,6 +29,7 @@ public:
     unsigned secondary_stops = 0, primary_entries = 0;
     bool lifecycle = false;
     bool timer = false;
+    bool irq = false;
     bool block_uart = false, checking_uart = false;
     std::string line;
     Bench() {
@@ -62,6 +63,9 @@ public:
             else {
                 if (lifecycle) {
                     require(line == "COHERENT LIFECYCLE PASS", "secondary lifecycle firmware failed"); ++jobs;
+                } else if (irq) {
+                    require(line.rfind("TIMER IRQ PASS", 0) == 0, ("interrupt firmware failed: " + line).c_str());
+                    std::cerr << "interrupt " << line << "\n"; ++jobs;
                 } else if (timer) {
                     if (line.rfind("MATCH_LATENCY=", 0) == 0) std::cerr << "timer " << line << "\n";
                     else require(line == "TIMER PASS", ("timer firmware failed: " + line).c_str());
@@ -125,6 +129,16 @@ public:
                   << " wait=" << ASTER_MEMORY_WAIT << " jobs=" << jobs << " cycles=" << cycles
                   << " retired=" << retired[0] << "," << retired[1] << " safe RAM snapshot=65536 bytes\n";
     }
+    void irq_run() {
+        start(true);
+        unsigned cycles = 0;
+        for (; cycles < 20000000 && jobs < 1; ++cycles) { low(); rise(); }
+        require(jobs == 1 && line.empty(), "interrupt firmware did not report PASS");
+        require(retired[0] > 1000, "interrupt firmware retired too little primary work");
+        finish_stop();
+        std::cout << "PASS: coherent SoC interrupt harts=" << ASTER_HART_COUNT << " caches=" << ASTER_L1
+                  << " cycles=" << cycles << " retired=" << retired[0] << "," << retired[1] << "\n";
+    }
     void timer_run() {
         start(true);
         unsigned cycles = 0;
@@ -171,8 +185,10 @@ int main(int argc, char** argv) {
         for (int i = 1; i < argc; ++i) {
             if (std::string(argv[i]) == "--lifecycle") b.lifecycle = true;
             if (std::string(argv[i]) == "--timer") b.timer = true;
+            if (std::string(argv[i]) == "--irq") b.irq = true;
         }
         if (b.timer) { b.timer_run(); return 0; }
+        if (b.irq) { b.irq_run(); return 0; }
         b.full(); b.full();
         for (unsigned point = 0; point < 10 && !b.lifecycle; ++point) {
             if (point == 8 && ASTER_HART_COUNT == 1) continue;
