@@ -149,9 +149,10 @@ int main(int argc, char** argv) {
         require((rig.read(0x54) & 0x1f) == 0x1f, "4x4 INT8 feature bits are wrong");
         run_gemm(rig);
         rig.configure(base, base + 512, base + 1024, 1, 1, 4, 1, 1, 1025);
-        rig.write(0x00, 1, 1);
-        require(rig.read(0x04) == 0x6 && rig.read(0x34) == 1 && !rig.d.m_valid,
-                "malformed descriptor did not stop at register boundary");
+    rig.write(0x00, 1, 1);
+    for (unsigned guard = 0; guard < 1000000 && rig.d.busy; ++guard) rig.clock();
+    require(rig.read(0x04) == 0x6 && rig.read(0x34) == 1 && !rig.d.m_valid,
+            "malformed descriptor did not stop at register boundary");
         rig.write(0x00, 4, 1);
         rig.write(0x00, 1, 0x2);
         require(rig.read(0x04) == 0x4 && rig.read(0x34) == 7,
