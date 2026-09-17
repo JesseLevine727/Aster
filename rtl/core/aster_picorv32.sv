@@ -84,7 +84,10 @@ module aster_picorv32 #(
         .ENABLE_FAST_MUL(0),
         .ENABLE_DIV(1),
         .ENABLE_IRQ(ENABLE_IRQ),
-        .ENABLE_IRQ_QREGS(ENABLE_IRQ),
+        // QREGS stays off: enabling it would decode custom-0 funct7=0 as getq
+        // and shadow the Phase 8 Xasterdot8 instruction. Aster firmware keeps gp
+        // unused and tp holds only the startup hart id, so the q0/q1 alias is safe.
+        .ENABLE_IRQ_QREGS(1'b0),
         .ENABLE_IRQ_TIMER(0),
         .MASKED_IRQ(32'h0000_0006),
         // The controller holds each source as a level until the handler clears

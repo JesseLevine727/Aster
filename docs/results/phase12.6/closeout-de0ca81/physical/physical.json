@@ -1,0 +1,106 @@
+{
+  "bitstream_sha256": "169bd5e17803d2cec19098f1c0e3f97091d159a63495ee30e63f6d684ac9f9a2",
+  "board": "pynq",
+  "boots": [
+    {
+      "after_stop": {
+        "control": 0,
+        "fifo_count": 0,
+        "hart_status": 0,
+        "status": 0,
+        "stop_status": 1
+      },
+      "before_stop": {
+        "control": 1,
+        "fifo_count": 0,
+        "hart_status": 1,
+        "status": 1,
+        "stop_status": 0
+      },
+      "boot": 1,
+      "elapsed_seconds": 0.2012166670174338,
+      "interrupt_latency_cycles": 662,
+      "ram": {
+        "bytes": 65536,
+        "file": "boot1.ram",
+        "sha256": "4e9cd4860c346d48a934a4d5b99a251346b366fcc51a53adfdaeb6e4af84cf64"
+      },
+      "status": "PASS",
+      "uart": {
+        "bytes": 27,
+        "file": "boot1.uart",
+        "sha256": "e254e9445d2038aa107b7382ed84b4759dfa1e5fadf14a3d5a22cbd0890a6e3b"
+      },
+      "uart_output": "TIMER IRQ PASS latency=662\n"
+    },
+    {
+      "after_stop": {
+        "control": 0,
+        "fifo_count": 0,
+        "hart_status": 0,
+        "status": 0,
+        "stop_status": 1
+      },
+      "before_stop": {
+        "control": 1,
+        "fifo_count": 0,
+        "hart_status": 1,
+        "status": 1,
+        "stop_status": 0
+      },
+      "boot": 2,
+      "elapsed_seconds": 0.1987778950133361,
+      "interrupt_latency_cycles": 662,
+      "ram": {
+        "bytes": 65536,
+        "file": "boot2.ram",
+        "sha256": "84d0a2d0cef9cdfad8581c3e539d6c9e1ff223bbaed1dc8d0b0578abf6a22d3a"
+      },
+      "status": "PASS",
+      "uart": {
+        "bytes": 27,
+        "file": "boot2.uart",
+        "sha256": "e254e9445d2038aa107b7382ed84b4759dfa1e5fadf14a3d5a22cbd0890a6e3b"
+      },
+      "uart_output": "TIMER IRQ PASS latency=662\n"
+    }
+  ],
+  "clock_mhz": 31.25,
+  "final_state": {
+    "control": 0,
+    "fifo_count": 0,
+    "hart_status": 0,
+    "status": 0,
+    "stop_status": 1
+  },
+  "firmware_sha256": "4ccd21fb822acd5a3eb46fdd3ec0f146288c19cbe6792db88f40dcbfbb048ff2",
+  "handoff_preflight": {
+    "auxiliary_reset_active_high": true,
+    "axi_base": 1073741824,
+    "axi_span": 262144,
+    "bridge_version": 589825,
+    "caches": true,
+    "clock_hz": 31250000,
+    "coherent": true,
+    "dma": true,
+    "dma_abi": 1,
+    "dma_counter_abi": 5,
+    "dot8": true,
+    "dot8_abi": 1,
+    "dot8_counter_abi": 6,
+    "external_reset_active_high": false,
+    "hart_count": 2,
+    "isa": "rv32ima",
+    "npu": true,
+    "npu_abi": 1,
+    "npu_counter_abi": 1,
+    "safe_warm_stop": true
+  },
+  "hwh_sha256": "7edf00a9681f7ec329bb02b748d0a7c356407898da48769627b65f4f19e1d3ca",
+  "kernel": "6.6.10-xilinx-v2024.1-g916a1f7c7222",
+  "programmed": true,
+  "schema": "aster.phase12.6.physical-mem.v1",
+  "source_revision": "de0ca8100d01dcaa03edc43766db1e8ec308b161",
+  "status": "complete",
+  "transport": "fpga_manager PL load + /dev/mem AXI, FPGA UART TX-to-RX loopback"
+}
