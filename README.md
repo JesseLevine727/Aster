@@ -155,6 +155,15 @@ default zero-latency memory model and up to **1.98×** faster at high memory
 latency, with size scaling to **1.79×** on convolution at 16 KiB. It defaults
 off, so the v1.0 baseline is bit-identical.
 
+**Aster v1.2 parameterizes the NPU geometry.** The [v1.2 contract](docs/npu-geometry.md)
+and [closeout bundle](docs/results/v1.2/closeout-114f9c9d/README.md) expose the
+INT8 tile engine as 2×2 / 4×4 / 8×8 with the default unchanged at 4×4. All three
+produce the independent-oracle checksum, and the 8×8 overlay is physically
+verified. The measured answer to "how do accelerator dimensions affect
+utilization, area and performance" is that the **4×4 default is the sweet spot**:
+the 8×8 buys 2.7% throughput for +13 percentage points of LUTs and a lower Fmax,
+and is 24% worse per unit area.
+
 Start here:
 
 ```sh
