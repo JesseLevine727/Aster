@@ -7,7 +7,7 @@ consequence for interpretation and its planned resolution.
 
 | Limitation | Consequence | Planned |
 | --- | --- | --- |
-| No shared L2; coherence is MSI-like over shared RAM | L2 capacity/refill questions are unanswered; measured coherence costs are a lower bound relative to a directory protocol | v2 / Phase 14 |
+| No shared L2 in v1.0; coherence is MSI-like over shared RAM | L2 capacity/refill questions are unanswered in v1.0 | **resolved in v1.1** ([contract](l2.md)): a memory-side read-allocate/write-through L2, default off; see the [analysis](results/v1.1/closeout-d18b387/analysis.md) |
 | Cache hits are not serialized | Coherence and hit-latency numbers are optimistic; a directory design would add serialization | v2 |
 | Single outstanding native request per hart | No memory-level parallelism; latency is exposed | out of scope for v1 |
 | No interrupt priority, nesting or preemption | A single level per hart; the handler runs to completion and services all enabled sources | v2 |

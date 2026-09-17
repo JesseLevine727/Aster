@@ -147,6 +147,14 @@ v2 / Phase 14 axis; the
 [Phase 14 plan](docs/phase14-plan.md) maps the frozen knobs to the research
 questions below.
 
+**Aster v1.1 adds the shared L2.** The [v1.1 contract](docs/l2.md) and
+[closeout bundle](docs/results/v1.1/closeout-d18b387/README.md) add a
+memory-side, read-allocate, write-through L2 between the L1 backing port and
+memory. It is a **latency-hiding** structure: **0.94×** (6% slower) at the
+default zero-latency memory model and up to **1.98×** faster at high memory
+latency, with size scaling to **1.79×** on convolution at 16 KiB. It defaults
+off, so the v1.0 baseline is bit-identical.
+
 Start here:
 
 ```sh
