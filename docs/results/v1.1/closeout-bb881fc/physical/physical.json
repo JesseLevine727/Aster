@@ -1,0 +1,111 @@
+{
+  "bitstream_sha256": "0e6ff53814ed307065abe75c3d475c69e6cfa3c9b227579b127b2442109554c4",
+  "board": "pynq",
+  "boots": [
+    {
+      "after_stop": {
+        "control": 0,
+        "fifo_count": 0,
+        "hart_status": 0,
+        "status": 0,
+        "stop_status": 1
+      },
+      "before_stop": {
+        "control": 1,
+        "fifo_count": 0,
+        "hart_status": 3,
+        "status": 1,
+        "stop_status": 0
+      },
+      "boot": 1,
+      "checksum": "0x5c808000",
+      "cycles": 254368,
+      "elapsed_seconds": 0.21505303401499987,
+      "name": "reduce_parallel",
+      "ram": {
+        "bytes": 65536,
+        "file": "boot1.ram",
+        "sha256": "d6517c92175ea5b1978a90b1246ca0a96fc0707947b7fa40142d7b45537c3550"
+      },
+      "status": "PASS",
+      "uart": {
+        "bytes": 478,
+        "file": "boot1.uart",
+        "sha256": "b14e336818d837e11c1b76d47d4ecac5d2cb37b337f52b0b97d681549d3fc6cf"
+      },
+      "uart_output": "ASTERBENCH,version=10,name=reduce_parallel,category=cpu,status=PASS,size=4096,iterations=4,param=2,seed=0x13570000,checksum=0x5c808000,clock_hz=31250000,l1=1,sync_memory=1,line_words=4,line_count=16,memory_wait=1,cycles=0x000000000003e1a0,retired=0x000000000000a093,memory_transactions=0x000000000000d0b5,backing_transactions=0x00000000000028c8,cache_accesses=0x000000000000d0b4,cache_misses=0x000000000000061e,dma_bytes=0x0000000000000000,accelerator_cycles=0x0000000000000000\n"
+    },
+    {
+      "after_stop": {
+        "control": 0,
+        "fifo_count": 0,
+        "hart_status": 0,
+        "status": 0,
+        "stop_status": 1
+      },
+      "before_stop": {
+        "control": 1,
+        "fifo_count": 0,
+        "hart_status": 3,
+        "status": 1,
+        "stop_status": 0
+      },
+      "boot": 2,
+      "checksum": "0x5c808000",
+      "cycles": 254368,
+      "elapsed_seconds": 0.2142669620225206,
+      "name": "reduce_parallel",
+      "ram": {
+        "bytes": 65536,
+        "file": "boot2.ram",
+        "sha256": "d6517c92175ea5b1978a90b1246ca0a96fc0707947b7fa40142d7b45537c3550"
+      },
+      "status": "PASS",
+      "uart": {
+        "bytes": 478,
+        "file": "boot2.uart",
+        "sha256": "b14e336818d837e11c1b76d47d4ecac5d2cb37b337f52b0b97d681549d3fc6cf"
+      },
+      "uart_output": "ASTERBENCH,version=10,name=reduce_parallel,category=cpu,status=PASS,size=4096,iterations=4,param=2,seed=0x13570000,checksum=0x5c808000,clock_hz=31250000,l1=1,sync_memory=1,line_words=4,line_count=16,memory_wait=1,cycles=0x000000000003e1a0,retired=0x000000000000a093,memory_transactions=0x000000000000d0b5,backing_transactions=0x00000000000028c8,cache_accesses=0x000000000000d0b4,cache_misses=0x000000000000061e,dma_bytes=0x0000000000000000,accelerator_cycles=0x0000000000000000\n"
+    }
+  ],
+  "clock_mhz": 31.25,
+  "final_state": {
+    "control": 0,
+    "fifo_count": 0,
+    "hart_status": 0,
+    "status": 0,
+    "stop_status": 1
+  },
+  "firmware_sha256": "75d1827f76fae9c29bb87fc1f8222a32c23d1381a66748c116223a107073801c",
+  "handoff_preflight": {
+    "auxiliary_reset_active_high": true,
+    "axi_base": 1073741824,
+    "axi_span": 262144,
+    "bridge_version": 589825,
+    "caches": true,
+    "clock_hz": 31250000,
+    "coherent": true,
+    "dma": true,
+    "dma_abi": 1,
+    "dma_counter_abi": 5,
+    "dot8": true,
+    "dot8_abi": 1,
+    "dot8_counter_abi": 6,
+    "external_reset_active_high": false,
+    "hart_count": 2,
+    "isa": "rv32ima",
+    "npu": true,
+    "npu_abi": 1,
+    "npu_counter_abi": 1,
+    "safe_warm_stop": true
+  },
+  "hwh_sha256": "b683e699457ade7bc71b31e0366d620251d1e99039210e58e2a4296188c0abc0",
+  "kernel": "6.6.10-xilinx-v2024.1-g916a1f7c7222",
+  "name": "reduce_parallel",
+  "programmed": true,
+  "schema": "aster.v1.1.physical-mem.v1",
+  "source_revision": "bb881fc8885163d7b1e5ee835b24e1ec55b44ac3",
+  "status": "complete",
+  "transport": "fpga_manager PL load + /dev/mem AXI, FPGA UART TX-to-RX loopback"
+}

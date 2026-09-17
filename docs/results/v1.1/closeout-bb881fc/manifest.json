@@ -1,0 +1,140 @@
+{
+  "files": {
+    "analysis.md": {
+      "bytes": 3394,
+      "sha256": "93d82b45f28dd8e879e3f4848c35d493066f7ecfe3fd1d05b79243cb9198b1e9"
+    },
+    "fpga/aster_linux.bit": {
+      "bytes": 4045695,
+      "sha256": "0e6ff53814ed307065abe75c3d475c69e6cfa3c9b227579b127b2442109554c4"
+    },
+    "fpga/aster_linux.hwh": {
+      "bytes": 140141,
+      "sha256": "b683e699457ade7bc71b31e0366d620251d1e99039210e58e2a4296188c0abc0"
+    },
+    "fpga/bitstream.sha256": {
+      "bytes": 164,
+      "sha256": "999b8ea0f2c61694841402b6501d72ed8be0b3f9197eca7913d9def6857c44d5"
+    },
+    "fpga/drc.rpt": {
+      "bytes": 48019,
+      "sha256": "80035754cde2473e591de5e1b929d1f8cbfdeb940478e4f95ef6808f379e9255"
+    },
+    "fpga/methodology.rpt": {
+      "bytes": 1937,
+      "sha256": "8ed74e49ebbb3bb4cc24e462d6e5bdebde43109f4cc1f9175a03a33e02e36ea0"
+    },
+    "fpga/route_status.rpt": {
+      "bytes": 651,
+      "sha256": "e500bccbffe8b17120f5bd7397c46089ac04afa74f6e581150b7e977d3559de1"
+    },
+    "fpga/timing_summary.rpt": {
+      "bytes": 27595,
+      "sha256": "556a6f9e2ee690e296087ebe98c897aac5f2db84e5515c14c46a83907b123d9b"
+    },
+    "fpga/utilization_routed.rpt": {
+      "bytes": 11965,
+      "sha256": "8afb4f14c6bdb1db4230187ca00dedd95bb8189034aef959e3bf2ef9ecfed87d"
+    },
+    "physical/boot1.ram": {
+      "bytes": 65536,
+      "sha256": "d6517c92175ea5b1978a90b1246ca0a96fc0707947b7fa40142d7b45537c3550"
+    },
+    "physical/boot1.uart": {
+      "bytes": 478,
+      "sha256": "b14e336818d837e11c1b76d47d4ecac5d2cb37b337f52b0b97d681549d3fc6cf"
+    },
+    "physical/boot2.ram": {
+      "bytes": 65536,
+      "sha256": "d6517c92175ea5b1978a90b1246ca0a96fc0707947b7fa40142d7b45537c3550"
+    },
+    "physical/boot2.uart": {
+      "bytes": 478,
+      "sha256": "b14e336818d837e11c1b76d47d4ecac5d2cb37b337f52b0b97d681549d3fc6cf"
+    },
+    "physical/physical.json": {
+      "bytes": 3914,
+      "sha256": "cf4e504060ce68f0b7d5ed35a11d3d5f14d559cd9c0e25476aa89e72b5acbe7d"
+    },
+    "source/source-state.json": {
+      "bytes": 43759,
+      "sha256": "2ba79f0c37ea7731c43b63aa68bad324902369c4b1dfb746dbdcc5b750402a6c"
+    },
+    "spec/l2.md": {
+      "bytes": 4098,
+      "sha256": "7fac1dab0a371b718a9c457be640e1d18f6ef717ebc4d1a40c58118a3b2176ea"
+    },
+    "studies/l2-cache/study.json": {
+      "bytes": 11985,
+      "sha256": "956d927861a7eec304a08bd3825a6ef2ad255c2a20d153d412174aa1727121c5"
+    },
+    "studies/l2-size/study.json": {
+      "bytes": 8062,
+      "sha256": "23bca567473971cd5b357c4b7934e2ca2575605515609486339ca4e8d85ca88c"
+    },
+    "verification/make-check.log": {
+      "bytes": 253705,
+      "sha256": "d54788bc855779ba8bab478adc135979ae33a2592c46da22c262fd9037122a8c"
+    }
+  },
+  "requirements": {
+    "01-contract": [
+      "spec/l2.md"
+    ],
+    "02-l2-cache-crossover": [
+      "studies/l2-cache/study.json"
+    ],
+    "03-l2-size": [
+      "studies/l2-size/study.json"
+    ],
+    "04-analysis": [
+      "analysis.md"
+    ],
+    "05-frozen-clean-check": [
+      "verification/make-check.log"
+    ],
+    "06-frozen-source": [
+      "source/source-state.json"
+    ],
+    "07-routed-fpga-overlay": [
+      "fpga/aster_linux.bit",
+      "fpga/aster_linux.hwh",
+      "fpga/timing_summary.rpt",
+      "fpga/drc.rpt",
+      "fpga/methodology.rpt",
+      "fpga/route_status.rpt",
+      "fpga/utilization_routed.rpt"
+    ],
+    "08-physical-acceptance": [
+      "physical/physical.json"
+    ]
+  },
+  "schema": "aster.v1.1.closeout.v1",
+  "status": "complete",
+  "summary": {
+    "analysis": {
+      "sections": 3
+    },
+    "fpga": {
+      "bridge_version": "0x90001"
+    },
+    "physical": {
+      "boots": 2,
+      "checksum": "0x5c808000"
+    },
+    "source_revision": "bb881fc8885163d7b1e5ee835b24e1ec55b44ac3",
+    "studies": {
+      "l2-cache": {
+        "configs": 6,
+        "records": 12
+      },
+      "l2-size": {
+        "configs": 4,
+        "records": 8
+      }
+    },
+    "verification": {
+      "host_tests_last": 253
+    }
+  }
+}

@@ -1,0 +1,40 @@
+Copyright 1986-2022 Xilinx, Inc. All Rights Reserved. Copyright 2022-2025 Advanced Micro Devices, Inc. All Rights Reserved.
+---------------------------------------------------------------------------------------------------------------------------------------------
+| Tool Version : Vivado v.2025.1 (lin64) Build 6140274 Wed May 21 22:58:25 MDT 2025
+| Date         : Thu Sep 17 14:36:12 2026
+| Host         : gondor running 64-bit Ubuntu 24.04.3 LTS
+| Command      : report_methodology -file /home/elfo/Documents/Aster/build/fpga/pynq_z1/linux-h2-coherent-c1-dma-dot8-npu-l2/methodology.rpt
+| Design       : aster_linux_wrapper
+| Device       : xc7z020clg400-1
+| Speed File   : -1
+| Design State : Fully Routed
+---------------------------------------------------------------------------------------------------------------------------------------------
+
+Report Methodology
+
+Table of Contents
+-----------------
+1. REPORT SUMMARY
+2. REPORT DETAILS
+
+1. REPORT SUMMARY
+-----------------
+            Netlist: netlist
+          Floorplan: design_1
+      Design limits: <entire design considered>
+             Max checks: <unlimited>
+             Checks found: 1
++----------+----------+-------------------------------------------+--------+
+| Rule     | Severity | Description                               | Checks |
++----------+----------+-------------------------------------------+--------+
+| ULMTCS-2 | Warning  | Control Sets use limits require reduction | 1      |
++----------+----------+-------------------------------------------+--------+
+
+2. REPORT DETAILS
+-----------------
+ULMTCS-2#1 Warning
+Control Sets use limits require reduction  
+This design uses 2014 control sets (vs. available limit of 13300, determined by 1 control set per CLB). This exceeds the control set use guideline of 15 percent. This is at a level where reduction is REQUIRED (see UG949). Use report_control_sets to get more details.
+Related violations: <none>
+
+

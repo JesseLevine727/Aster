@@ -55,9 +55,19 @@ The L2 defaults to `ENABLE_L2=0`, so the frozen v1.0 baseline is bit-identical
 deliberate configuration, not a default, precisely because it loses at the
 default zero-latency memory model.
 
+## Routed overlay and physical acceptance
+
+The L2-enabled all-engine overlay routes with **WNS +3.158 ns** — statistically
+unchanged from the non-L2 overlay's +3.164 ns — so the combinational array read
+does not cost timing. LUT usage rises to 56% and BRAM to 23% (the 1 KiB L2
+array). Reset signoff passes with zero routing errors.
+
+Two warm boots on the Pynq-Z1 at 31.25 MHz run `reduce_parallel` with the L2
+enabled and report checksum `0x5c808000`, matching the independent oracle on
+both boots (254 368 cycles each), with a clean STOPPED snapshot. The L2 is
+coherent on hardware.
+
 ## Remaining for v1.1
 
-- A routed FPGA overlay and physical capture with the L2 enabled (the design is
-  simulated and coherent; board evidence is the remaining gate).
 - A write-back or inclusive L2, and L2/L1 inclusion policy, are explicitly out
   of scope.

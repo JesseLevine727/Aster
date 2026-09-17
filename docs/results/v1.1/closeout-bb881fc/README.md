@@ -32,14 +32,25 @@ updated. `ENABLE_L2=0` is bit-identical to the v1.0 baseline.
 | 4 | Analysis | `analysis.md` |
 | 5 | Clean check | `verification/make-check.log` |
 | 6 | Frozen source | `source/source-state.json` |
+| 7 | Routed L2 overlay | `fpga/` |
+| 8 | Physical acceptance | `physical/` |
+
+## Routed overlay and physical acceptance
+
+- Routed all-engine overlay with the L2 enabled: **WNS +3.158 ns** (unchanged
+  from the non-L2 overlay's +3.164 ns), TNS 0, zero routing errors, reset
+  signoff PASS. 56% LUTs, 23% BRAM.
+- Two warm boots on the Pynq-Z1 at 31.25 MHz running `reduce_parallel` with the
+  L2 enabled: **checksum `0x5c808000` matches the independent oracle on both
+  boots** (254 368 cycles), with a clean STOPPED snapshot. The L2 is coherent
+  on hardware.
 
 ## Remaining
 
-- Routed FPGA overlay and physical capture with the L2 enabled.
 - Write-back/inclusive L2 and L1/L2 inclusion policy are explicitly out of scope.
 
 ## Audit
 
 ```
-python3 scripts/audit_l2.py docs/results/v1.1/closeout-d18b387 --current
+python3 scripts/audit_l2.py docs/results/v1.1/closeout-bb881fc --current
 ```

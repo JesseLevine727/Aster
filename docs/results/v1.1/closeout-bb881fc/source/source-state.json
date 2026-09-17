@@ -1,11 +1,11 @@
 {
   "files": {
-    "Makefile": "78a3a31495007485a83d6a0f3c460b3969c3052383b1bd3550b8de84219804d1",
+    "Makefile": "cd848b96a96c30057c6862d0cd07ef87a64d7fe595d47dda78fcfedc1c471b04",
     "fpga/pynq_z1/README.md": "2929ae76d56ce736bdb2019001b5d5a3bd6a88c346a45b73ba4be626a065f3dc",
     "fpga/pynq_z1/aster_linux.xdc": "b59afb01ac71a14341086a0e9711e5fc85d57b2080c2f42c7e0df9f175fed37b",
     "fpga/pynq_z1/aster_pynq_z1.xdc": "a25d688b8a64f7b0aa8fd6180d950ccc86fca68b8986f3d8d64e20bb65e8cb11",
     "fpga/pynq_z1/build.tcl": "8cccd50e5135458ffebb9049a8c93c7e0edf5e7fa49a6a868585ddfe01345aa1",
-    "fpga/pynq_z1/build_linux.tcl": "c007ceafebfeacefb10baadef27b9d9d69a5e1deef7dfe24819d8b2d7472e654",
+    "fpga/pynq_z1/build_linux.tcl": "6227d4c78b814430fa953bf1339a6fea4692e0730fdf26d5d3a66bc8569f614b",
     "fpga/pynq_z1/signoff.tcl": "af8d329f0a6b5b5cdac9d8c6a5f23253bb5bcb3a543ca3c8eef5d1ec800a7bc7",
     "rtl/accelerator/README.md": "e3e168a00cb38c8f5ed785c87c26dc959c93c68274858d5dc3c07d7e5664c646",
     "rtl/accelerator/aster_int8_array.sv": "0e3e775fd4f5ce7a3c0857aea11da703f0b8f5c3e30ab394d86d23ade492da7e",
@@ -41,10 +41,10 @@
     "rtl/peripherals/aster_uart_rx.sv": "283c62f3ee377ee3f78c45786d0e6a4cc47846c1738d1a56c7b3c436810227eb",
     "rtl/peripherals/aster_uart_tx.sv": "e206c926b3e0f0bdd6426d3d9b38ded9d7969af073577add53946864455aa81d",
     "rtl/soc/aster_coherent_soc.sv": "5a582a09df4ff7bb80d68352fbb9e760e62a670abffb114d52c014eb56cbb18a",
-    "rtl/soc/aster_linux_ip.v": "35a5b8109d9c22c6c05ead24d6810d8edfa9264d5d5a873a4eb399813e932cc1",
+    "rtl/soc/aster_linux_ip.v": "4a8ff5b4d4cd9885847d5edb3b2d56eff497e1aa878ce29fd15b1e3639d8afdb",
     "rtl/soc/aster_minimal.sv": "d03117c4bf8f3d0a5eac07b43cb30640a43a5302c1ebee5aec32cb30db728cbe",
     "rtl/soc/aster_multicore.sv": "53a6a8b19f8a52fa01fdd3fd7e3d0f673ae2b969de20a8dfe0879ca5d97b654e",
-    "rtl/soc/aster_pynq_linux.sv": "e59be486eb54fb2567a72ffef5f742b46c13a4a02bdb022f7c9a5430f4f32fd9",
+    "rtl/soc/aster_pynq_linux.sv": "56245446f5188ce61d9f771309ae2689f16ac7b490086b05d6ba91af8f0095a8",
     "rtl/soc/aster_pynq_z1.sv": "cec722b6f4d09785f248387b7dd664a199588b2a8f736711e503cb86f2f7e520",
     "rtl/soc/aster_shared_fabric.sv": "18bdc3e808018eea28a6bbac53f81ab8af4120bfda9b893aec6a65d381ae82fb",
     "rtl/soc/aster_warm_stop.sv": "9d7b252f02c3009564ef54982cb9fa13702f1a8e3a3f0310cea662c1b50fb742",
@@ -60,7 +60,7 @@
     "scripts/asterbench_v8.py": "8c36ba5a4412a51519322efa562e0ef325d97cea4e6e39e222d28dbfde77382d",
     "scripts/asterbench_v9.py": "153013615d8b2f7aa90db337ae920b01fddef7472d2f7af6d162531568df252c",
     "scripts/audit_interrupts.py": "bd85192a5622f99726425a5358fc384894990fc1d2f8d7327256f897ccbd1f79",
-    "scripts/audit_l2.py": "a9bb9f1a266cc20f22a55b28b54f3546826341095d80cbf0f666e3bfc0e3d374",
+    "scripts/audit_l2.py": "247c27de9bf4b97c0ab9eb406e8fcbec4ff6e1d8797b7a5160b9c640a51d09c8",
     "scripts/audit_phase10.py": "c32688d1f1b8c126ccb556624fc8ee1dbd08e685b8c47ee1ab98dd9ae6b360e9",
     "scripts/audit_phase11.py": "4f39f513cbd33bcfc679a9be99bf148f216fb9790e9b6482626f869f912dc4b2",
     "scripts/audit_phase12.py": "98319922103e0d1856d313615bf45184704ee90c5a7c627b881f00fda4f134f7",
@@ -133,6 +133,7 @@
     "scripts/run_dma_sim.py": "673e99223aa8289da1a6a6ab9127c3319a0dfb61979e5f23f464d288eeb96b69",
     "scripts/run_dot8_sim.py": "5dd81ce329479ba72b4bc744a19ac86c97eed28f7faee0cd17b5d64b8bfcec72",
     "scripts/run_interrupt_mem.py": "961c8baf55b83b83680b529c854705d6705990fe708bb9893e90ee3826216e5d",
+    "scripts/run_l2_mem.py": "33fde3950b7384ea97342a91639f02e2889259195f8952583c6614b2550e3f01",
     "scripts/run_parallel_sim.py": "c5236c70fbabc58a22abc5bd48ad1377a430de0fc97e210d813130c87f110893",
     "scripts/run_phase11_mem.py": "ff7f58b81c25798a867e1a129cefce3b525d03c5cbd52841ded76a39258f37ff",
     "scripts/run_phase12_mem.py": "98445bbb225abac95be2f8dad206c6f1d1cd0c60085913fe573491b47c616fa6",
@@ -402,6 +403,6 @@
     "verification/unit/tb_aster_uart_tx.cpp": "6cb17cf0e6a6b0890aabd7660e01dd98ff2076b2b4be5b291f6a89c2e8cfca0e",
     "verification/unit/tb_aster_warm_stop.cpp": "5e5e2f325eb2f6483828a8825d264b8bbf17653dc3327a6346eb035aac35ac2b"
   },
-  "revision": "d18b387bb30b4c52d0551e8188ca52be7689d2e6",
+  "revision": "bb881fc8885163d7b1e5ee835b24e1ec55b44ac3",
   "schema": "aster.v1.1.source.v1"
 }
