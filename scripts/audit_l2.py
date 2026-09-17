@@ -14,14 +14,16 @@ from pathlib import Path
 
 try:
     from .dse_study import audit_sweep
+    from .pynq_handoff import validate_handoff
 except ImportError:
     from dse_study import audit_sweep
+    from pynq_handoff import validate_handoff
 
 
 SCHEMA = "aster.v1.1.closeout.v1"
 SOURCE_SCHEMA = "aster.v1.1.source.v1"
-REVISION = "d18b387bb30b4c52d0551e8188ca52be7689d2e6"
-TOP_DIRS = {"spec", "studies", "verification", "source"}
+REVISION = "bb881fc8885163d7b1e5ee835b24e1ec55b44ac3"
+TOP_DIRS = {"spec", "studies", "fpga", "physical", "verification", "source"}
 TOP_FILES = {"README.md", "analysis.md"}
 SWEEPS = ["l2-cache", "l2-size"]
 REQUIREMENTS = {
@@ -31,6 +33,12 @@ REQUIREMENTS = {
     "04-analysis": ["analysis.md"],
     "05-frozen-clean-check": ["verification/make-check.log"],
     "06-frozen-source": ["source/source-state.json"],
+    "07-routed-fpga-overlay": [
+        "fpga/aster_linux.bit", "fpga/aster_linux.hwh", "fpga/timing_summary.rpt",
+        "fpga/drc.rpt", "fpga/methodology.rpt", "fpga/route_status.rpt",
+        "fpga/utilization_routed.rpt",
+    ],
+    "08-physical-acceptance": ["physical/physical.json"],
 }
 
 
@@ -112,6 +120,44 @@ def audit_analysis(directory):
     return {"sections": 3}
 
 
+def audit_fpga(directory):
+    handoff = validate_handoff(directory / "aster_linux.hwh", 2, expected_coherent=True,
+                               expected_cache=True, expected_dma=True, expected_dot8=True,
+                               expected_npu=True)
+    require(handoff.get("bridge_version") == 0x00090001, "combined handoff identity is wrong")
+    timing = (directory / "timing_summary.rpt").read_text()
+    require(re.search(r"\n\s+[0-9]+\.[0-9]+\s+0\.000\s+0\s+\d+\s+[0-9]+\.[0-9]+\s+0\.000", timing),
+            "timing summary has failing setup/hold endpoints")
+    drc = (directory / "drc.rpt").read_text()
+    methodology = (directory / "methodology.rpt").read_text()
+    route = (directory / "route_status.rpt").read_text()
+    require("Design State : Fully Routed" in drc and "Checks found:" in drc, "DRC signoff incomplete")
+    require(not re.search(r"\|\s*\S+\s*\|\s*(?:Error|Critical)\s*\|", drc), "DRC error/critical findings")
+    require("Checks found: 0" in methodology, "methodology is not clean")
+    require(re.search(r"# of nets with routing errors.*:\s+0\s+:?\s*$", route, re.MULTILINE),
+            "routing errors present")
+    routed = (directory / "utilization_routed.rpt").read_text()
+    require("Slice LUTs" in routed and "DSPs" in routed, "routed utilization report incomplete")
+    return {"bridge_version": hex(handoff["bridge_version"])}
+
+
+def audit_physical(directory):
+    report = read(directory / "physical.json")
+    require(report.get("schema") == "aster.v1.1.physical-mem.v1" and report["status"] == "complete",
+            "physical package is incomplete")
+    require(report["source_revision"] == REVISION and abs(report["clock_mhz"] - 31.25) < 1e-6
+            and report["programmed"] is True, "physical identity/revision/clock/programming differs")
+    require(report["name"] == "reduce_parallel", "physical workload differs")
+    require(len(report["boots"]) == 2, "physical package did not run two warm boots")
+    for boot in report["boots"]:
+        require(boot["checksum"] == "0x5c808000", "physical checksum does not match the oracle")
+        require(boot["before_stop"]["control"] == 1 and boot["before_stop"]["stop_status"] == 0,
+                "was not running before STOP")
+        require(boot["after_stop"]["control"] == 0 and boot["after_stop"]["stop_status"] == 1
+                and boot["after_stop"]["fifo_count"] == 0, "did not stop cleanly")
+    return {"boots": len(report["boots"]), "checksum": report["boots"][0]["checksum"]}
+
+
 def audit_logs(directory):
     log = (directory / "make-check.log").read_text()
     require(not re.search(r"(?m)^FAIL:", log), "make-check.log contains FAIL")
@@ -132,6 +178,8 @@ def evaluate(directory, *, current=False):
         "source_revision": source["revision"],
         "studies": audit_studies(directory / "studies"),
         "analysis": audit_analysis(directory),
+        "fpga": audit_fpga(directory / "fpga"),
+        "physical": audit_physical(directory / "physical"),
         "verification": audit_logs(directory / "verification"),
     }
 
