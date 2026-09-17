@@ -1,0 +1,160 @@
+{
+  "bitstream_sha256": "d424735ddba6905dd33fa13ba110d249928aa930a415d7f5d3a5f7b5b9da1856",
+  "board": "pynq",
+  "ceiling_mhz": 100.0,
+  "firmware_sha256": "5e0d1a47e5015eed430a37b359cf2669b31b66730a3949c6a83b8e018ccdcd12",
+  "handoff_preflight": {
+    "auxiliary_reset_active_high": true,
+    "axi_base": 1073741824,
+    "axi_span": 262144,
+    "bridge_version": 589825,
+    "caches": true,
+    "clock_hz": 31250000,
+    "coherent": true,
+    "dma": true,
+    "dma_abi": 1,
+    "dma_counter_abi": 5,
+    "dot8": true,
+    "dot8_abi": 1,
+    "dot8_counter_abi": 6,
+    "external_reset_active_high": false,
+    "hart_count": 2,
+    "isa": "rv32ima",
+    "npu": true,
+    "npu_abi": 1,
+    "npu_counter_abi": 1,
+    "safe_warm_stop": true
+  },
+  "kernel": "6.6.10-xilinx-v2024.1-g916a1f7c7222",
+  "name": "streaming_ecg",
+  "results": [
+    {
+      "checksum": "0x19b26ea4",
+      "cycles": 1577811,
+      "elapsed_seconds": 0.1324,
+      "fclk_mhz": 31.25,
+      "label": "31.25",
+      "status": "PASS"
+    },
+    {
+      "checksum": "0x19b26ea4",
+      "cycles": 1577811,
+      "elapsed_seconds": 0.1208,
+      "fclk_mhz": 35.71,
+      "label": "35.71",
+      "status": "PASS"
+    },
+    {
+      "checksum": "0x19b26ea4",
+      "cycles": 1577811,
+      "elapsed_seconds": 0.1149,
+      "fclk_mhz": 38.46,
+      "label": "38.46",
+      "status": "PASS"
+    },
+    {
+      "checksum": "0x19b26ea4",
+      "cycles": 1577811,
+      "elapsed_seconds": 0.112,
+      "fclk_mhz": 40.0,
+      "label": "40.00",
+      "status": "PASS"
+    },
+    {
+      "checksum": "0x19b26ea4",
+      "cycles": 1577811,
+      "elapsed_seconds": 0.1091,
+      "fclk_mhz": 41.67,
+      "label": "41.67",
+      "status": "PASS"
+    },
+    {
+      "checksum": "0x19b26ea4",
+      "cycles": 1577811,
+      "elapsed_seconds": 0.1062,
+      "fclk_mhz": 43.48,
+      "label": "43.48",
+      "status": "PASS"
+    },
+    {
+      "checksum": "0x19b26ea4",
+      "cycles": 1577811,
+      "elapsed_seconds": 0.1035,
+      "fclk_mhz": 45.45,
+      "label": "45.45",
+      "status": "PASS"
+    },
+    {
+      "checksum": "0x19b26ea4",
+      "cycles": 1577811,
+      "elapsed_seconds": 0.1008,
+      "fclk_mhz": 47.62,
+      "label": "47.62",
+      "status": "PASS"
+    },
+    {
+      "checksum": "0x19b26ea4",
+      "cycles": 1577811,
+      "elapsed_seconds": 0.0977,
+      "fclk_mhz": 50.0,
+      "label": "50.00",
+      "status": "PASS"
+    },
+    {
+      "checksum": "0x19b26ea4",
+      "cycles": 1577811,
+      "elapsed_seconds": 0.0948,
+      "fclk_mhz": 52.63,
+      "label": "52.63",
+      "status": "PASS"
+    },
+    {
+      "checksum": "0x19b26ea4",
+      "cycles": 1577811,
+      "elapsed_seconds": 0.0919,
+      "fclk_mhz": 55.56,
+      "label": "55.56",
+      "status": "PASS"
+    },
+    {
+      "checksum": "0x19b26ea4",
+      "cycles": 1577811,
+      "elapsed_seconds": 0.0862,
+      "fclk_mhz": 62.5,
+      "label": "62.50",
+      "status": "PASS"
+    },
+    {
+      "checksum": "0x19b26ea4",
+      "cycles": 1577811,
+      "elapsed_seconds": 0.0804,
+      "fclk_mhz": 71.43,
+      "label": "71.43",
+      "status": "PASS"
+    },
+    {
+      "checksum": "0x19b26ea4",
+      "cycles": 1577811,
+      "elapsed_seconds": 0.0746,
+      "fclk_mhz": 83.33,
+      "label": "83.33",
+      "status": "PASS"
+    },
+    {
+      "checksum": "0x19b26ea4",
+      "cycles": 1577811,
+      "elapsed_seconds": 0.0689,
+      "fclk_mhz": 100.0,
+      "label": "100.0",
+      "status": "PASS"
+    },
+    {
+      "error": "retired must be in (0, cycles]",
+      "fclk_mhz": 111.11,
+      "label": "111.1",
+      "status": "FAIL"
+    }
+  ],
+  "schema": "aster.frequency.sweep.v1",
+  "status": "complete"
+}
