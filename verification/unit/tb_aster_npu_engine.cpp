@@ -182,6 +182,7 @@ static void invalid_descriptor(Bench& bench, uint32_t a, uint32_t b, uint32_t c,
     bench.d.start_a_stride = as; bench.d.start_b_stride = bs; bench.d.start_c_stride = cs;
     bench.d.start_m = m; bench.d.start_n = n; bench.d.start_k = k;
     bench.idle_start();
+    for (unsigned guard = 0; guard < 100 && bench.d.busy; ++guard) bench.tick();
     require(!bench.d.busy && bench.d.done && bench.d.error && bench.d.error_code == error_code,
             "invalid descriptor error was not reported without memory traffic");
 }

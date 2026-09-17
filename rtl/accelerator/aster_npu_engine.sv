@@ -52,6 +52,8 @@ module aster_npu_engine #(
 
     typedef enum logic [3:0] {
         IDLE,
+        CHECK,
+        VERIFY,
         ARRAY_START,
         LOAD_A,
         LOAD_B,
@@ -192,41 +194,46 @@ module aster_npu_engine #(
     // Widened descriptor arithmetic prevents wraparound before the first
     // memory request. Error values are stable software-visible ABI values.
     logic [63:0] a_end, b_end, c_end;
+    logic [63:0] a_end_q, b_end_q, c_end_q;
     logic a_nonempty, b_nonempty, c_nonempty;
+    // Ends are computed from the latched descriptor and registered, so the long
+    // multiply-add no longer sits on the descriptor-error/clock-enable path.
     always_comb begin
-        a_nonempty = start_m != 0 && start_k != 0;
-        b_nonempty = start_n != 0 && start_k != 0;
-        c_nonempty = start_m != 0 && start_n != 0;
-        a_end = {32'd0, start_a_base};
-        b_end = {32'd0, start_b_base};
-        c_end = {32'd0, start_c_base};
-        if (a_nonempty) a_end = {32'd0, start_a_base} +
-            {32'd0, start_m - 1} * {32'd0, start_a_stride} + {32'd0, start_k};
-        if (b_nonempty) b_end = {32'd0, start_b_base} +
-            {32'd0, start_k - 1} * {32'd0, start_b_stride} + {32'd0, start_n};
-        if (c_nonempty) c_end = {32'd0, start_c_base} +
-            {32'd0, start_m - 1} * {32'd0, start_c_stride} +
-            ({32'd0, start_n} - 64'd1) * 64'd4 + 64'd4;
+        a_nonempty = rows != 0 && reduction != 0;
+        b_nonempty = cols != 0 && reduction != 0;
+        c_nonempty = rows != 0 && cols != 0;
+        a_end = {32'd0, a_base};
+        b_end = {32'd0, b_base};
+        c_end = {32'd0, c_base};
+        if (a_nonempty) a_end = {32'd0, a_base} +
+            {32'd0, rows - 1} * {32'd0, a_stride} + {32'd0, reduction};
+        if (b_nonempty) b_end = {32'd0, b_base} +
+            {32'd0, reduction - 1} * {32'd0, b_stride} + {32'd0, cols};
+        if (c_nonempty) c_end = {32'd0, c_base} +
+            {32'd0, rows - 1} * {32'd0, c_stride} +
+            ({32'd0, cols} - 64'd1) * 64'd4 + 64'd4;
+    end
+    // Error decode runs in VERIFY from the registered ends.
+    always_comb begin
         descriptor_error = 0;
-        if (start_m > 1024 || start_n > 1024 || start_k > 1024)
+        if (rows > 1024 || cols > 1024 || reduction > 1024)
             descriptor_error = 1;
-        else if (start_a_stride < start_k || start_b_stride < start_n ||
-                 start_c_stride < start_n * 4)
+        else if (a_stride < reduction || b_stride < cols || c_stride < cols * 4)
             descriptor_error = 2;
-        else if (a_nonempty && (start_a_base < RAM_LO || a_end > {32'd0, RAM_HI}))
+        else if (a_nonempty && (a_base < RAM_LO || a_end_q > {32'd0, RAM_HI}))
             descriptor_error = 3;
-        else if (b_nonempty && (start_b_base < RAM_LO || b_end > {32'd0, RAM_HI}))
+        else if (b_nonempty && (b_base < RAM_LO || b_end_q > {32'd0, RAM_HI}))
             descriptor_error = 4;
-        else if (c_nonempty && (start_c_base < RAM_LO || c_end > {32'd0, RAM_HI}))
+        else if (c_nonempty && (c_base < RAM_LO || c_end_q > {32'd0, RAM_HI}))
             descriptor_error = 5;
         else if (a_nonempty && b_nonempty &&
-                 {32'd0, start_a_base} < b_end && {32'd0, start_b_base} < a_end)
+                 {32'd0, a_base} < b_end_q && {32'd0, b_base} < a_end_q)
             descriptor_error = 6;
         else if (a_nonempty && c_nonempty &&
-                 {32'd0, start_a_base} < c_end && {32'd0, start_c_base} < a_end)
+                 {32'd0, a_base} < c_end_q && {32'd0, c_base} < a_end_q)
             descriptor_error = 6;
         else if (b_nonempty && c_nonempty &&
-                 {32'd0, start_b_base} < c_end && {32'd0, start_c_base} < b_end)
+                 {32'd0, b_base} < c_end_q && {32'd0, c_base} < b_end_q)
             descriptor_error = 6;
     end
 
@@ -241,6 +248,7 @@ module aster_npu_engine #(
             abort_pending <= 0; request_held <= 0;
             tile_write_started <= 0; abort_drain_tile <= 0;
             done_flag <= 0; error_flag <= 0; aborted_flag <= 0; error_code <= 0;
+            a_end_q <= 0; b_end_q <= 0; c_end_q <= 0;
             bytes_read <= 0; bytes_written <= 0; job_cycles <= 0;
             compute_cycles <= 0; tiles <= 0;
             for (int i = 0; i < ROWS; i++) a_values[i] <= 0;
@@ -277,16 +285,25 @@ module aster_npu_engine #(
                         error_code <= 0; bytes_read <= 0; bytes_written <= 0;
                         job_cycles <= 0; compute_cycles <= 0; tiles <= 0;
                         tile_write_started <= 0; abort_drain_tile <= 0;
-                        if (descriptor_error != 0) begin
-                            state <= IDLE; done_flag <= 1; error_flag <= 1;
-                            error_code <= descriptor_error;
-                        end else if (start_m == 0 || start_n == 0) begin
-                            state <= IDLE; done_flag <= 1;
-                        end else begin
-                            state <= ARRAY_START;
-                            for (int i = 0; i < ROWS; i++) a_values[i] <= 0;
-                            for (int i = 0; i < COLS; i++) b_values[i] <= 0;
-                        end
+                        state <= CHECK;
+                    end
+                end
+                CHECK: begin
+                    a_end_q <= a_end;
+                    b_end_q <= b_end;
+                    c_end_q <= c_end;
+                    state <= VERIFY;
+                end
+                VERIFY: begin
+                    if (descriptor_error != 0) begin
+                        state <= IDLE; done_flag <= 1; error_flag <= 1;
+                        error_code <= descriptor_error;
+                    end else if (rows == 0 || cols == 0) begin
+                        state <= IDLE; done_flag <= 1;
+                    end else begin
+                        state <= ARRAY_START;
+                        for (int i = 0; i < ROWS; i++) a_values[i] <= 0;
+                        for (int i = 0; i < COLS; i++) b_values[i] <= 0;
                     end
                 end
                 ARRAY_START: if (array_start_accept) begin
