@@ -1638,6 +1638,7 @@ $(REDUCE_SIM): $(RTL_COHERENT) verification/soc/tb_aster_workload_coherent.cpp M
 		"-GSYNC_MEMORY=1'b$(SYNC_MEMORY)" -GMEMORY_WAIT_CYCLES=$(MEMORY_WAIT_CYCLES) "-GHOST_BOOT=1'b1" \
 		-GLINE_WORDS=$(L1_LINE_WORDS) -GLINE_COUNT=$(L1_LINE_COUNT) \
 		"-GENABLE_L2=1'b$(ENABLE_L2)" -GL2_LINE_WORDS=$(L2_LINE_WORDS) -GL2_LINE_COUNT=$(L2_LINE_COUNT) \
+		-GNPU_ROWS=$(NPU_ROWS) -GNPU_COLS=$(NPU_COLS) \
 		--Mdir $(BUILD_DIR)/obj_reduce -o $(abspath $@) \
 		$(addprefix $(ROOT)/,$(RTL_COHERENT)) $(ROOT)/verification/soc/tb_aster_workload_coherent.cpp
 
