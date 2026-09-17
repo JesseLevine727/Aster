@@ -4,13 +4,45 @@
       "bytes": 4768,
       "sha256": "7688cabce962d9c578a577138d4ffa4f9dc7717c24d4d1b50cced39bf2347aed"
     },
+    "area/README.md": {
+      "bytes": 2327,
+      "sha256": "9cb72e2d4f36994d405a1c844d1971138a62c8fcbfb2d5c82e8cdc081d0dbd2f"
+    },
+    "area/area.json": {
+      "bytes": 1135,
+      "sha256": "bb35e29960d3572f50235e049f26a6cf8d6cd4dbc187246ea0d972914ca12238"
+    },
+    "area/reports/baseline/timing_summary.rpt": {
+      "bytes": 32959,
+      "sha256": "7c6540f8218c4f47ceda196da09da7b2a34e3d5b2ef294660cbfbe3f5e40ef9e"
+    },
+    "area/reports/baseline/utilization_routed.rpt": {
+      "bytes": 11956,
+      "sha256": "e444f9d8cac6ba111c4deab8fdf7615eb9864fa27aa19fe346561bf2e1116871"
+    },
+    "area/reports/h1/timing_summary.rpt": {
+      "bytes": 25136,
+      "sha256": "416924e964b757b61862f6e16d0208658c2f0ad92fb8cb86a9300168936921f0"
+    },
+    "area/reports/h1/utilization_routed.rpt": {
+      "bytes": 11956,
+      "sha256": "8fb6504db21c83dcdab362433f3d8f6a4d36592863b4c6e1b546044e2661dd9f"
+    },
+    "area/reports/l2/timing_summary.rpt": {
+      "bytes": 27595,
+      "sha256": "556a6f9e2ee690e296087ebe98c897aac5f2db84e5515c14c46a83907b123d9b"
+    },
+    "area/reports/l2/utilization_routed.rpt": {
+      "bytes": 11965,
+      "sha256": "8afb4f14c6bdb1db4230187ca00dedd95bb8189034aef959e3bf2ef9ecfed87d"
+    },
     "source/source-state.json": {
       "bytes": 43352,
       "sha256": "ccae600fb613c2dac38d1d37d86c22f04e3aca9f51b651ec7347354a7f995334"
     },
     "spec/phase14.md": {
-      "bytes": 4986,
-      "sha256": "5aa330e5b06111338c186868379b8a056449a9a02e1a93940007144eb3b72bb6"
+      "bytes": 5056,
+      "sha256": "e820c2692317e80d38f1d28cf6f529efda773c74ce16220afce6c7909659fe04"
     },
     "studies/cache-geometry/study.json": {
       "bytes": 18368,
@@ -57,6 +89,10 @@
     ],
     "08-frozen-source": [
       "source/source-state.json"
+    ],
+    "09-routed-area-timing": [
+      "area/area.json",
+      "area/README.md"
     ]
   },
   "schema": "aster.phase14.closeout.v1",
@@ -64,6 +100,9 @@
   "summary": {
     "analysis": {
       "sections": 5
+    },
+    "area": {
+      "configs": 3
     },
     "source_revision": "b050a81e6586f586a8a14e9bb642710cc2d19ebc",
     "studies": {

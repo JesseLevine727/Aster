@@ -85,9 +85,8 @@ source, toolchain and configuration provenance.
 - [x] Every README research question that does not require shared L2 or ASIC
       PPA has a measured answer or an explicit "not measured" note.
 - [x] Analysis reports crossovers and slowdowns, not only speedups.
-- [ ] Routed timing/utilization retained for the swept configurations
-      (deferred to 14.6; the frozen v1.0 overlay timing is retained in the
-      Phase 13 bundle).
+- [x] Routed timing/utilization retained for the swept configurations
+      (`area/`, coherent configurations; the minimal-SoC sweeps have no overlay).
 - [x] Self-contained closeout bundle and read-only audit.
 
 ## Stage status
@@ -97,10 +96,11 @@ source, toolchain and configuration provenance.
 - **14.3 core scaling** — complete (`studies/core-scaling`).
 - **14.4 compute placement** — complete at one problem size
   (`studies/compute-placement`); a size sweep is a follow-up.
-- **14.5 accelerator dimensions** — deferred: the NPU engine hardcodes 4×4 in
-  ~10 places, so exposing 2×2/8×8 is a bounded but non-trivial RTL change that
-  needs its own re-verification.
-- **14.6 routed timing** — deferred.
+- **14.5 accelerator dimensions** — **deferred to v1.2**: the NPU engine
+  hardcodes 4×4 in ~15 places and the driver/im2col software assumes 4×4, so
+  exposing 2×2/8×8 is a bounded but non-trivial RTL+software change needing its
+  own contract and re-verification.
+- **14.6 routed timing** — complete (`area/`).
 
 ## Explicit non-goals
 
