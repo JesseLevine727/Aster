@@ -27,7 +27,7 @@ module aster_dot8_probe #(
 );
     /* verilator lint_off PINCONNECTEMPTY */
     aster_atomic_hart #(.ENABLE_DOT8(ENABLE_DOT8), .ENABLE_ICACHE(ENABLE_ICACHE)) hart (
-        .clk(clk), .resetn(resetn), .dot8_admit(dot8_admit), .trap(trap),
+        .clk(clk), .resetn(resetn), .irq(1'b0), .dot8_admit(dot8_admit), .trap(trap),
         .instr_retired(instr_retired), .retired_pc(retired_pc), .retired_insn(retired_insn),
         .fault_valid(fault_valid), .fault_cause(fault_cause), .fault_addr(fault_addr), .fault_insn(fault_insn),
         .lower_valid(lower_valid), .lower_atomic(lower_atomic), .lower_instr(lower_instr),
