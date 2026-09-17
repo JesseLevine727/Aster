@@ -11,7 +11,8 @@ module aster_linux_ip #(
     parameter integer NPU_COLS = 4,
     parameter integer ENABLE_L2 = 0,
     parameter integer L2_LINE_WORDS = 4,
-    parameter integer L2_LINE_COUNT = 64
+    parameter integer L2_LINE_COUNT = 64,
+    parameter integer CLK_HZ = 31250000
 ) (
     (* X_INTERFACE_INFO = "xilinx.com:signal:clock:1.0 aclk CLK",
        X_INTERFACE_PARAMETER = "ASSOCIATED_BUSIF s_axi, ASSOCIATED_RESET aresetn, FREQ_HZ 50000000" *)
@@ -60,7 +61,7 @@ module aster_linux_ip #(
     aster_pynq_linux #(.HART_COUNT(HART_COUNT), .ENABLE_COHERENCE(ENABLE_COHERENCE),
                      .COHERENT_L1(COHERENT_L1), .ENABLE_DMA(ENABLE_DMA), .ENABLE_DOT8(ENABLE_DOT8),
                      .ENABLE_NPU(ENABLE_NPU), .ENABLE_L2(ENABLE_L2),
-                     .NPU_ROWS(NPU_ROWS), .NPU_COLS(NPU_COLS),
+                     .NPU_ROWS(NPU_ROWS), .NPU_COLS(NPU_COLS), .CLK_HZ(CLK_HZ),
                      .L2_LINE_WORDS(L2_LINE_WORDS), .L2_LINE_COUNT(L2_LINE_COUNT)) implementation (
         .aclk(aclk), .aresetn(aresetn),
         .s_axi_awaddr(s_axi_awaddr), .s_axi_awvalid(s_axi_awvalid), .s_axi_awready(s_axi_awready),

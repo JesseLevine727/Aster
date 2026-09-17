@@ -46,6 +46,7 @@ int main(int argc, char** argv) {
             unsigned quiet = 0;
             bool running = false;
             std::array<std::array<uint64_t, 14>, 2> counters{};
+            std::array<std::uint32_t, 2> events_q{};
             std::array<uint64_t, 2> kernel_count{}, first{}, last{}, lifetime{};
             std::string line;
             auto edge = [&](bool check_uart) {
@@ -63,7 +64,7 @@ int main(int argc, char** argv) {
                     for (unsigned h = 0; h < 2; ++h) {
                         // Independent software accumulation of observed events,
                         // not reads of the register counters being validated.
-                        for (unsigned i = 0; i < 14; ++i) counters[h][i] += (d.perf_events[h] >> i) & 1;
+                        for (unsigned i = 0; i < 14; ++i) counters[h][i] += (events_q[h] >> i) & 1;
                         coherent_require(((d.perf_events[h] >> 1)&1) == ((d.retired >> h)&1), "retirement event misrouted");
                         if ((d.retired & (1u << h)) && d.retired_pc[h] >= opts.at("kernel-start") && d.retired_pc[h] < opts.at("kernel-end")) {
                             if (!kernel_count[h]++) first[h] = counters[h][0];
@@ -71,6 +72,7 @@ int main(int argc, char** argv) {
                         }
                     }
                 }
+                for (unsigned h = 0; h < 2; ++h) events_q[h] = d.perf_events[h];
                 for (unsigned h = 0; h < 2; ++h) if (d.retired & (1u << h)) ++lifetime[h];
                 if ((d.retired & 1) && d.retired_pc[0] == 0) ++primary_entries;
                 if (d.stop_commit == 2) ++secondary_stops;

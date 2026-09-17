@@ -76,6 +76,7 @@ set_property CONFIG.ENABLE_L2 $l2 [get_bd_cells aster]
 set_property CONFIG.NPU_ROWS $npu_rows [get_bd_cells aster]
 set_property CONFIG.NPU_COLS $npu_cols [get_bd_cells aster]
 set_property CONFIG.FREQ_HZ [expr {round($fclk * 1000000)}] [get_bd_cells aster]
+set_property CONFIG.CLK_HZ [expr {round($fclk * 1000000)}] [get_bd_cells aster]
 create_bd_cell -type ip -vlnv xilinx.com:ip:axi_interconnect:2.1 fabric
 set_property CONFIG.NUM_MI 1 [get_bd_cells fabric]
 create_bd_cell -type ip -vlnv xilinx.com:ip:proc_sys_reset:5.0 reset
