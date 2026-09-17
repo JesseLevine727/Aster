@@ -69,8 +69,8 @@ SWEEPS = {
     },
 }
 
-METRICS = ["cycles", "retired", "memory_transactions", "backing_transactions",
-           "cache_accesses", "cache_misses", "dma_bytes", "accelerator_cycles"]
+HEX_METRICS = ["cycles", "retired", "memory_transactions", "backing_transactions",
+               "cache_accesses", "cache_misses", "dma_bytes", "accelerator_cycles"]
 
 
 def _git(*arguments):
@@ -81,35 +81,48 @@ def provenance():
     return {"revision": _git("rev-parse", "HEAD"), "dirty": bool(_git("status", "--porcelain"))}
 
 
-def run_make(target, variables):
-    command = ["make", "-s", target] + [f"{key}={value}" for key, value in variables.items()]
+def run_make(target, variables, build_dir):
+    command = (["make", "-s", target, f"BUILD_DIR={build_dir}"]
+               + [f"{key}={value}" for key, value in variables.items()])
     result = subprocess.run(command, cwd=ROOT, text=True, capture_output=True)
     if result.returncode != 0:
         raise SystemExit(f"capture failed ({' '.join(command)}):\n{result.stdout}\n{result.stderr}")
     return result.stdout
 
 
-def capture(config, workload):
+def capture(sweep, config, workload):
     target, workload_vars, record_name = WORKLOADS[workload]
+    # Each configuration gets its own build directory so the Verilator model and
+    # firmware are rebuilt with the swept parameters instead of being reused.
+    build_dir = f"build/dse/{sweep}/{config['id']}"
+    (ROOT / build_dir).mkdir(parents=True, exist_ok=True)
     variables = dict(config["vars"])
     variables.update(workload_vars)
-    run_make(target, variables)
-    record = (ROOT / "build" / record_name).read_text()
+    run_make(target, variables, build_dir)
+    record = (ROOT / build_dir / record_name).read_text()
     parsed = bench.validate_line(record, name=workload)
     reference.verify(parsed, workload)
     return record, parsed
+
+
+def parse_fields(record):
+    fields = {}
+    for token in record.strip().split(",")[1:]:
+        key, _, value = token.partition("=")
+        fields[key] = value
+    return fields
 
 
 def summarize(study):
     rows = []
     for config in study["configs"]:
         for workload, record in config["records"].items():
-            parsed = bench.validate_line(record, name=workload)
-            row = {"config": config["id"], "workload": workload,
-                   "checksum": f"0x{parsed['checksum']:08x}", "size": parsed["size"],
-                   "iterations": parsed["iterations"]}
-            for metric in METRICS:
-                row[metric] = parsed[metric]
+            bench.validate_line(record, name=workload)
+            fields = parse_fields(record)
+            row = {"config": config["id"], "workload": workload, "checksum": fields["checksum"],
+                   "size": int(fields["size"]), "iterations": int(fields["iterations"])}
+            for metric in HEX_METRICS:
+                row[metric] = int(fields[metric], 16)
             rows.append(row)
     return rows
 
@@ -127,7 +140,7 @@ def capture_sweep(args):
     for config in spec["configs"]:
         records = {}
         for workload in spec["workloads"]:
-            record, parsed = capture(config, workload)
+            record, parsed = capture(args.sweep, config, workload)
             records[workload] = record
             print(f"{args.sweep} {config['id']} {workload}: cycles={parsed['cycles']} "
                   f"checksum=0x{parsed['checksum']:08x}", flush=True)
