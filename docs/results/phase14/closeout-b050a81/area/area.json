@@ -1,0 +1,47 @@
+{
+  "configs": {
+    "baseline": {
+      "bram": 32,
+      "ff_percent": 18.26,
+      "ffs": 19425,
+      "harts": 2,
+      "l2": false,
+      "lut_percent": 47.93,
+      "luts": 25499,
+      "note": "two harts, no L2",
+      "overlay": "linux-h2-coherent-c1-dma-dot8-npu",
+      "revision": "b050a81",
+      "speedup": "1.30x reduce_parallel",
+      "wns_ns": 3.164
+    },
+    "h1": {
+      "bram": 32,
+      "ff_percent": 11.91,
+      "ffs": 12672,
+      "harts": 1,
+      "l2": false,
+      "lut_percent": 37.09,
+      "luts": 19734,
+      "note": "one hart, all engines",
+      "overlay": "linux-h1-coherent-c1-dma-dot8-npu",
+      "revision": "bb881fc",
+      "speedup": "1.00x (single-hart baseline)",
+      "wns_ns": 4.776
+    },
+    "l2": {
+      "bram": 32,
+      "ff_percent": 27.81,
+      "ffs": 29586,
+      "harts": 2,
+      "l2": true,
+      "lut_percent": 56.07,
+      "luts": 29829,
+      "note": "two harts, 1 KiB L2",
+      "overlay": "linux-h2-coherent-c1-dma-dot8-npu-l2",
+      "revision": "bb881fc",
+      "speedup": "up to 1.98x at wait64",
+      "wns_ns": 3.158
+    }
+  },
+  "schema": "aster.phase14.area.v1"
+}

@@ -21,7 +21,7 @@ except ImportError:
 SCHEMA = "aster.phase14.closeout.v1"
 SOURCE_SCHEMA = "aster.phase14.source.v1"
 REVISION = "b050a81e6586f586a8a14e9bb642710cc2d19ebc"
-TOP_DIRS = {"spec", "studies", "verification", "source"}
+TOP_DIRS = {"spec", "studies", "area", "verification", "source"}
 TOP_FILES = {"README.md", "analysis.md"}
 SWEEPS = ["memory-latency", "cache-geometry", "core-scaling", "compute-placement"]
 REQUIREMENTS = {
@@ -33,6 +33,7 @@ REQUIREMENTS = {
     "06-analysis": ["analysis.md"],
     "07-frozen-clean-check": ["verification/make-check.log"],
     "08-frozen-source": ["source/source-state.json"],
+    "09-routed-area-timing": ["area/area.json", "area/README.md"],
 }
 
 
@@ -115,6 +116,22 @@ def audit_analysis(directory):
     return {"sections": 5}
 
 
+def audit_area(directory):
+    area = read(directory / "area.json")
+    require(area.get("schema") == "aster.phase14.area.v1", "area schema is wrong")
+    configs = area["configs"]
+    require(set(configs) == {"h1", "baseline", "l2"}, "area configurations differ")
+    for name, config in configs.items():
+        require(config["wns_ns"] > 0, f"{name} has failing timing")
+        require(config["luts"] > 0 and config["bram"] > 0, f"{name} area is incomplete")
+    require(configs["h1"]["luts"] < configs["baseline"]["luts"] < configs["l2"]["luts"],
+            "area ordering is inconsistent")
+    readme = (directory / "README.md").read_text()
+    for phrase in ("+5 765", "+4 330", "36.7 MHz"):
+        require(phrase in readme, f"area analysis is missing: {phrase}")
+    return {"configs": len(configs)}
+
+
 def audit_logs(directory):
     log = (directory / "make-check.log").read_text()
     require(not re.search(r"(?m)^FAIL:", log), "make-check.log contains FAIL")
@@ -134,6 +151,7 @@ def evaluate(directory, *, current=False):
     return {
         "source_revision": source["revision"],
         "studies": audit_studies(directory / "studies"),
+        "area": audit_area(directory / "area"),
         "analysis": audit_analysis(directory),
         "verification": audit_logs(directory / "verification"),
     }
