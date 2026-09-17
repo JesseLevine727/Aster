@@ -119,7 +119,7 @@ def parse_fields(record):
 def summarize(study):
     rows = []
     for config in study["configs"]:
-        for workload, record in config["records"].items():
+        for workload, record in sorted(config["records"].items()):
             bench.validate_line(record, name=workload)
             fields = parse_fields(record)
             row = {"config": config["id"], "workload": workload, "checksum": fields["checksum"],
@@ -127,6 +127,7 @@ def summarize(study):
             for metric in HEX_METRICS:
                 row[metric] = int(fields[metric], 16)
             rows.append(row)
+    rows.sort(key=lambda row: (row["config"], row["workload"]))
     return rows
 
 
