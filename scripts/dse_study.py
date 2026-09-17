@@ -58,8 +58,11 @@ SWEEPS = {
     },
     "core-scaling": {
         "question": "How well does performance scale from one to two cores?",
-        "configs": [{"id": "h1", "vars": {"HART_COUNT": "1"}},
-                    {"id": "h2", "vars": {"HART_COUNT": "2"}}],
+        "configs": [
+            {"id": "h1", "vars": {"HART_COUNT": "1"}, "workloads": ["reduce_scalar"]},
+            {"id": "h2", "vars": {"HART_COUNT": "2"},
+             "workloads": ["reduce_scalar", "reduce_parallel"]},
+        ],
         "workloads": ["reduce_scalar", "reduce_parallel"],
     },
     "compute-placement": {
@@ -139,7 +142,7 @@ def capture_sweep(args):
     configs = []
     for config in spec["configs"]:
         records = {}
-        for workload in spec["workloads"]:
+        for workload in config.get("workloads", spec["workloads"]):
             record, parsed = capture(args.sweep, config, workload)
             records[workload] = record
             print(f"{args.sweep} {config['id']} {workload}: cycles={parsed['cycles']} "
