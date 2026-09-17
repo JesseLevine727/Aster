@@ -46,6 +46,8 @@ public:
     Vaster_coherent_soc d;
     std::array<std::uint32_t,16384> ram{};
     std::array<std::uint64_t,50> counts{};
+    std::array<std::uint32_t,2> perf_q{}, dot8_q{};
+    std::array<std::uint32_t,14> dma_q{};
     std::array<std::uint64_t,2> dot_total{};
     std::array<std::uint64_t,2> accepted_total{},completed_total{};
     std::array<unsigned,2> phase{},finished{},methods{},seen{},phase_dots{},scalar_job{},publication{};
@@ -192,10 +194,10 @@ public:
         else if (d.perf_resume) counting=true;
         else if (counting) {
             for (unsigned h=0;h<2;++h) {
-                for (unsigned n=0;n<14;++n) counts[h*14+n]+=(d.perf_events[h]>>n)&1;
-                for (unsigned n=0;n<4;++n) counts[42+h*4+n]+=(d.dot8_events[h]>>n)&1;
+                for (unsigned n=0;n<14;++n) counts[h*14+n]+=(perf_q[h]>>n)&1;
+                for (unsigned n=0;n<4;++n) counts[42+h*4+n]+=(dot8_q[h]>>n)&1;
             }
-            for (unsigned n=0;n<14;++n) counts[28+n]+=d.dma_events[n];
+            for (unsigned n=0;n<14;++n) counts[28+n]+=dma_q[n];
         }
         if (d.stop_commit) {
             require(!d.dot8_busy && (!d.fabric_busy || (d.stop_commit==2 && d.dma_busy && !d.host_run &&
@@ -206,6 +208,8 @@ public:
             uart+=char(d.uart_tx_data);
             if (d.uart_tx_data=='\n') {require(uart=="DOT8 RUNTIME PASS\n","unexpected actual UART");received=true;}
         }
+        for (unsigned h=0;h<2;++h) {perf_q[h]=d.perf_events[h];dot8_q[h]=d.dot8_events[h];}
+        for (unsigned n=0;n<14;++n) dma_q[n]=d.dma_events[n];
         d.clk=1;d.eval();
         require(d.dot8_counting==counting && d.dma_counting==counting,"common bank window state");
         for (unsigned n=0;n<8;++n) require(d.dot8_counters[n]==counts[42+n],"integrated dot8 counter mismatch");

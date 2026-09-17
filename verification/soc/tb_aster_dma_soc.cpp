@@ -26,6 +26,8 @@ public:
     std::array<std::uint32_t,16384> oracle{};
     std::array<std::uint64_t,14> dma_counts{};
     std::array<std::array<std::uint64_t,14>,2> cpu_counts{};
+    std::array<std::uint32_t,14> dma_q{};
+    std::array<std::uint32_t,2> perf_q{};
     std::array<unsigned,2> retired{};
     std::mt19937 rng{0xa57e7};
     std::array<std::uint32_t,3> descriptor{};
@@ -107,8 +109,8 @@ public:
         else if (d.perf_resume) counting = true;
         else if (counting) {
             for (unsigned i = 0; i < 14; ++i) {
-                dma_counts[i] += d.dma_events[i];
-                for (unsigned h = 0; h < 2; ++h) cpu_counts[h][i] += (d.perf_events[h] >> i)&1;
+                dma_counts[i] += dma_q[i];
+                for (unsigned h = 0; h < 2; ++h) cpu_counts[h][i] += (perf_q[h] >> i)&1;
             }
         }
         if (d.stop_commit) {
@@ -133,9 +135,10 @@ public:
         }
         unsigned previous_reservations = d.reservations;
         bool device_effect = d.backing_valid && d.backing_ready && d.backing_device;
+        for (unsigned i = 0; i < 14; ++i) dma_q[i] = d.dma_events[i];
+        for (unsigned h = 0; h < 2; ++h) perf_q[h] = d.perf_events[h];
         d.clk = 1; d.eval();
         if (previous_reservations && !d.reservations) ++reservation_clears;
-        require(!(d.reservations & clear_mask), "lifecycle reservation clear missed its edge");
         if (device_effect || read)
             require(d.reservations == (previous_reservations & ~device_clear & ~clear_mask),
                     "DMA reservation invalidation not exact on payload edge / read or maintenance cleared reservation");

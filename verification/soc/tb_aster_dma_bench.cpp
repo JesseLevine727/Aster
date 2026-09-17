@@ -64,6 +64,8 @@ int main(int argc, char** argv) {
             std::array<uint64_t,2> lifetime{};
             std::array<std::array<uint64_t,14>,2> counters{};
             std::array<uint64_t,14> device{};
+            std::array<std::uint32_t,2> perf_q{};
+            std::array<std::uint32_t,14> device_q{};
             bool running = false; std::string line;
             auto edge = [&](bool check_uart) {
                 d.clk = 0; d.uart_tx_ready = opts.at("uart-seed") == 0 || rng()%4 != 0; d.eval();
@@ -85,10 +87,10 @@ int main(int argc, char** argv) {
                     running = false; ++freezes;
                 } else if (active) {
                     for (unsigned h = 0; h < 2; ++h) {
-                        for (unsigned i = 0; i < 14; ++i) counters[h][i] += (d.perf_events[h] >> i)&1;
+                        for (unsigned i = 0; i < 14; ++i) counters[h][i] += (perf_q[h] >> i)&1;
                         dma_require(((d.perf_events[h] >> 1)&1) == ((d.retired >> h)&1),"retirement event misrouted");
                     }
-                    for (unsigned i = 0; i < 14; ++i) device[i] += d.dma_events[i];
+                    for (unsigned i = 0; i < 14; ++i) device[i] += device_q[i];
                     if ((d.retired & 1) && d.retired_pc[0] >= opts.at("kernel-start") && d.retired_pc[0] < opts.at("kernel-end")) {
                         if (!kernel_retired++) kernel_first = counters[0][0]; kernel_last = counters[0][0];
                     }
@@ -174,6 +176,8 @@ int main(int argc, char** argv) {
                         ++records; ++records_total; line.clear();
                     }
                 }
+                for (unsigned h = 0; h < 2; ++h) perf_q[h] = d.perf_events[h];
+                for (unsigned i = 0; i < 14; ++i) device_q[i] = d.dma_events[i];
                 d.clk = 1; d.eval();
                 dma_require(d.dma_counting == running,"DMA common-window running state mismatch");
                 for (unsigned i = 0; i < 14; ++i) dma_require(d.dma_counters[i] == device[i],"DMA counter bank differs on actual increment edge");

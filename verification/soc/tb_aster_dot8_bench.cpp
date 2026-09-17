@@ -47,6 +47,7 @@ int main(int argc,char** argv) {
         for(unsigned boot=1;boot<=opts.at("boots");++boot) {
             std::cout<<"ASTERBOOT "<<boot<<'\n';
             std::array<std::uint64_t,50> counts{};
+            std::array<std::uint32_t,2> perf_q{}, dot8_q{};
             std::array<std::uint64_t,2> kernel{},first{},last{},lifetime{};
             std::array<std::set<std::uint32_t>,2> pcs;
             std::set<std::uint32_t> custom_pcs;
@@ -81,8 +82,8 @@ int main(int argc,char** argv) {
                     buffers(false);running=false;++freezes;
                 } else if(active) {
                     for(unsigned h=0;h<2;++h) {
-                        for(unsigned n=0;n<14;++n)counts[14*h+n]+=(d.perf_events[h]>>n)&1;
-                        for(unsigned n=0;n<4;++n)counts[42+4*h+n]+=(d.dot8_events[h]>>n)&1;
+                        for(unsigned n=0;n<14;++n)counts[14*h+n]+=(perf_q[h]>>n)&1;
+                        for(unsigned n=0;n<4;++n)counts[42+4*h+n]+=(dot8_q[h]>>n)&1;
                         dot8_require(bool((d.perf_events[h]>>1)&1)==bool((d.retired>>h)&1),"CPU retirement event mux");
                         bool custom=((d.retired>>h)&1) && (d.retired_insn[h]&0xfe00707f)==0x0b;
                         dot8_require(bool(d.dot8_events[h]&8)==custom,"custom retirement event mux");
@@ -132,6 +133,7 @@ int main(int argc,char** argv) {
                         std::cout<<"]}\n";++records;++total_records;line.clear();
                     }
                 }
+                for(unsigned h=0;h<2;++h){perf_q[h]=d.perf_events[h];dot8_q[h]=d.dot8_events[h];}
                 d.clk=1;d.eval();
                 dot8_require(d.dot8_counting==running && d.dma_counting==running,"common counter window state");
                 for(unsigned n=0;n<8;++n)dot8_require(d.dot8_counters[n]==counts[42+n],"actual counter update versus event edge");
