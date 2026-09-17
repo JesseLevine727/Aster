@@ -13,13 +13,15 @@ int main(int argc, char** argv) {
         Verilated::commandArgs(argc, argv); Vaster_coherent_perf d;
         std::array<std::uint64_t, 14> reference{};
         bool running = false;
+        std::uint32_t events_q = 0;  // the counter bank registers its event inputs
         auto read = [&](unsigned offset) { d.addr = 0x20003000 + offset; d.eval(); return d.rdata; };
         auto step = [&]() {
             d.clk = 0; d.eval();
             if (!d.resetn || d.start) { reference.fill(0); running = d.resetn && d.start; }
             else if (d.freeze) running = false;
             else if (d.resume_counting) running = true;
-            else if (running) for (unsigned i = 0; i < 14; ++i) reference[i] += (d.events >> i) & 1;
+            else if (running) for (unsigned i = 0; i < 14; ++i) reference[i] += (events_q >> i) & 1;
+            events_q = d.resetn ? d.events : 0;
             d.clk = 1; d.eval();
             for (unsigned i = 0; i < 14; ++i) {
                 const auto value = std::uint64_t(read(i*8)) | (std::uint64_t(read(i*8+4)) << 32);

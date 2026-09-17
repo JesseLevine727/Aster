@@ -21,7 +21,15 @@ module aster_coherent_perf #(
 );
     logic [63:0] counters [0:13];
     logic running;
+    // Register the event inputs so the long route from each event source into
+    // the 64-bit counter carry chains is broken. Measurement-only: this adds a
+    // one-cycle event latency and changes no register or ABI.
+    logic [13:0] events_q;
     wire [31:0] offset = addr - BASE_ADDR;
+    always_ff @(posedge clk) begin
+        if (!resetn) events_q <= '0;
+        else events_q <= events;
+    end
     always_ff @(posedge clk) begin
         if (!resetn || start) begin
             for (int i = 0; i < 14; i++) counters[i] <= 0;
@@ -29,7 +37,7 @@ module aster_coherent_perf #(
         end else if (freeze) running <= 0;
         else if (resume_counting) running <= 1;
         else if (running) begin
-            for (int i = 0; i < 14; i++) counters[i] <= counters[i] + {63'b0, events[i]};
+            for (int i = 0; i < 14; i++) counters[i] <= counters[i] + {63'b0, events_q[i]};
         end
     end
     always_comb begin

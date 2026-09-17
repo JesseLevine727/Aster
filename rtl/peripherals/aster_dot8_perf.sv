@@ -13,6 +13,13 @@ module aster_dot8_perf #(
     output logic [63:0] counters [0:7]
 );
     initial if (HART_COUNT < 1 || HART_COUNT > 2) $error("dot8 supports one or two harts");
+    // Register the events to break the route from the event sources into the
+    // counter carry chains (measurement-only, one-cycle latency).
+    logic [7:0] events_q;
+    always_ff @(posedge clk) begin
+        if (!resetn) events_q <= '0;
+        else events_q <= events;
+    end
     always_ff @(posedge clk) begin
         if (!resetn || start) begin
             for (int i = 0; i < 8; i++) counters[i] <= 0;
@@ -21,7 +28,7 @@ module aster_dot8_perf #(
         else if (resume_counting) running <= 1;
         else if (running) begin
             for (int i = 0; i < 8; i++)
-                if (i < 4*HART_COUNT) counters[i] <= counters[i] + {63'b0, events[i]};
+                if (i < 4*HART_COUNT) counters[i] <= counters[i] + {63'b0, events_q[i]};
         end
     end
     always_comb begin

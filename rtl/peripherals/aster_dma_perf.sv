@@ -20,6 +20,13 @@ module aster_dma_perf #(
     output logic running,
     output logic [63:0] counters [0:13]
 );
+    // Register the increments to break the route from the event sources into
+    // the counter carry chains (measurement-only, one-cycle latency).
+    logic [2:0] increments_q [0:13];
+    always_ff @(posedge clk) begin
+        if (!resetn) for (int i = 0; i < 14; i++) increments_q[i] <= 0;
+        else for (int i = 0; i < 14; i++) increments_q[i] <= increments[i];
+    end
     always_ff @(posedge clk) begin
         if (!resetn || start) begin
             for (int i = 0; i < 14; i++) counters[i] <= 0;
@@ -27,7 +34,7 @@ module aster_dma_perf #(
         end else if (freeze) running <= 0;
         else if (resume_counting) running <= 1;
         else if (running) begin
-            for (int i = 0; i < 14; i++) counters[i] <= counters[i] + {61'b0, increments[i]};
+            for (int i = 0; i < 14; i++) counters[i] <= counters[i] + {61'b0, increments_q[i]};
         end
     end
     always_comb begin
