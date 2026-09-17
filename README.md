@@ -525,8 +525,11 @@ results: `strided` degrades **9.34×** from `wait0` to `wait64` while `conv2d`
 degrades only **1.62×**; the L1 is a **net slowdown** on every workload and
 geometry in the minimal SoC; two workers give **1.30×** on the memory-bound
 reduction; and the Xasterdot8 convolution is **0.59×** the scalar baseline
-(im2col overhead dominates) while the NPU is only **1.24×**. The accelerator
-dimensions (2×2/4×4/8×8) and per-config routed timing are deferred to 14.5/14.6.
+(im2col overhead dominates) while the NPU is only **1.24×**. Routed area/timing
+(`area/`) shows the L2 is the better area investment than a second hart: +8.1 pp
+LUTs and no Fmax cost for up to 1.98×, versus +10.8 pp and −1.61 ns for 1.30×.
+The accelerator-dimensions axis (2×2/4×4/8×8) is scoped as the
+[v1.2 contract](docs/npu-geometry.md).
 
 ## Phase 15 — Learn SKY130 on a minimal configuration
 
