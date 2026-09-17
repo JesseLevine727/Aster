@@ -1,0 +1,116 @@
+{
+  "files": {
+    "analysis.md": {
+      "bytes": 2158,
+      "sha256": "cac0905175eb34b6c08303f0c2888d0f9e41757d1df221143904848bafadec78"
+    },
+    "fpga/aster_linux.bit": {
+      "bytes": 4045695,
+      "sha256": "d66f6bf26766b34b095eba00926743f8981c12a6f8ceef43181f5d71e3463cd7"
+    },
+    "fpga/aster_linux.hwh": {
+      "bytes": 140284,
+      "sha256": "36eb8144461e1a0a2e028d7d60cac2b2e2b4ad8aa24280cad0b2e1d89473eb73"
+    },
+    "fpga/bitstream.sha256": {
+      "bytes": 65,
+      "sha256": "748aa8d3e25de9e06ebad888ada75bc57d168b70c0bd9e83792309729321c325"
+    },
+    "fpga/drc.rpt": {
+      "bytes": 44273,
+      "sha256": "a68e6d6e177447ae973468822dcc388bcec5a27083a46ee024c1eb904bce26ff"
+    },
+    "fpga/methodology.rpt": {
+      "bytes": 1378,
+      "sha256": "1d9ce0735c348b9821d0b419943a8963c21befab84801f0e6d2cb065564e8803"
+    },
+    "fpga/route_status.rpt": {
+      "bytes": 651,
+      "sha256": "dc6f52dc24aab82c671376c474f200d33b74f42aa9979d28713fb69b0b1c05ca"
+    },
+    "fpga/timing_summary.rpt": {
+      "bytes": 28413,
+      "sha256": "030f9f903473760538edcce397c0e8fc10d6bed89c333be994dba67381dec487"
+    },
+    "fpga/utilization_routed.rpt": {
+      "bytes": 11988,
+      "sha256": "ebbbed55660826ef7ed16cddd4d71254e255f6ed16342c0ac3271b380a2404c4"
+    },
+    "physical/boot1.ram": {
+      "bytes": 65536,
+      "sha256": "beddca038ab070dbd4bb28a845632f46c9b6dcf83caf47e525abf66799003de9"
+    },
+    "physical/boot1.uart": {
+      "bytes": 478,
+      "sha256": "e0482cf434dcd0e137193617dd8ac7ca9da0787643a69385e5d7d64dc2a91024"
+    },
+    "physical/boot2.ram": {
+      "bytes": 65536,
+      "sha256": "beddca038ab070dbd4bb28a845632f46c9b6dcf83caf47e525abf66799003de9"
+    },
+    "physical/boot2.uart": {
+      "bytes": 478,
+      "sha256": "e0482cf434dcd0e137193617dd8ac7ca9da0787643a69385e5d7d64dc2a91024"
+    },
+    "physical/physical.json": {
+      "bytes": 3914,
+      "sha256": "fc179a91fb577de49cecb760f5d494b48d0fa68c7e95965e6c14c27b01302118"
+    },
+    "source/source-state.json": {
+      "bytes": 44157,
+      "sha256": "9b10d930da77011e729eaf1ff5f28b3d7e8489cb11333349c53a8cff8bfef4c2"
+    },
+    "spec/v1.3.md": {
+      "bytes": 3143,
+      "sha256": "56dc58b54c77547e73df75846776d5daa298afa51dfb31d39832b155b90ff01b"
+    },
+    "verification/make-check.log": {
+      "bytes": 104604,
+      "sha256": "77eca35b1feea90c4b42eb1890415687e4befc63669918281bbc8030de997b3e"
+    }
+  },
+  "requirements": {
+    "01-contract": [
+      "spec/v1.3.md"
+    ],
+    "02-routed-overlay": [
+      "fpga/timing_summary.rpt",
+      "fpga/utilization_routed.rpt",
+      "fpga/route_status.rpt",
+      "fpga/aster_linux.bit",
+      "fpga/aster_linux.hwh"
+    ],
+    "03-analysis": [
+      "analysis.md"
+    ],
+    "04-frozen-clean-check": [
+      "verification/make-check.log"
+    ],
+    "05-frozen-source": [
+      "source/source-state.json"
+    ],
+    "06-physical-acceptance": [
+      "physical/physical.json"
+    ]
+  },
+  "schema": "aster.v1.3.closeout.v1",
+  "status": "complete",
+  "summary": {
+    "analysis": {
+      "sections": 4
+    },
+    "fpga": {
+      "failing_endpoints": 0,
+      "wns_ns": 0.191
+    },
+    "physical": {
+      "boots": 2,
+      "checksum": "0x5c808000",
+      "clock_mhz": 50.0
+    },
+    "source_revision": "b3954ce52f2f08088693c1282f28d5016e0e5712",
+    "verification": {
+      "host_tests_last": 253
+    }
+  }
+}
