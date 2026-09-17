@@ -1,5 +1,5 @@
 {
-  "bitstream_sha256": "169bd5e17803d2cec19098f1c0e3f97091d159a63495ee30e63f6d684ac9f9a2",
+  "bitstream_sha256": "37478f563e3edc79fb2374cda9edc7ddf6e690005b5ff3c9a644337c89249cb9",
   "board": "pynq",
   "boots": [
     {
@@ -18,7 +18,7 @@
         "stop_status": 0
       },
       "boot": 1,
-      "elapsed_seconds": 0.2012166670174338,
+      "elapsed_seconds": 0.19410009996499866,
       "interrupt_latency_cycles": 662,
       "ram": {
         "bytes": 65536,
@@ -49,7 +49,7 @@
         "stop_status": 0
       },
       "boot": 2,
-      "elapsed_seconds": 0.1987778950133361,
+      "elapsed_seconds": 0.20276218798244372,
       "interrupt_latency_cycles": 662,
       "ram": {
         "bytes": 65536,
@@ -96,11 +96,11 @@
     "npu_counter_abi": 1,
     "safe_warm_stop": true
   },
-  "hwh_sha256": "7edf00a9681f7ec329bb02b748d0a7c356407898da48769627b65f4f19e1d3ca",
+  "hwh_sha256": "4a576557955a0f36a6ba9833b61bec5a955e8113f95fbaad0e4499ddf22a853a",
   "kernel": "6.6.10-xilinx-v2024.1-g916a1f7c7222",
   "programmed": true,
   "schema": "aster.phase12.6.physical-mem.v1",
-  "source_revision": "de0ca8100d01dcaa03edc43766db1e8ec308b161",
+  "source_revision": "24d4253e6ea3b118b25da1f67fec1d6eb41e56aa",
   "status": "complete",
   "transport": "fpga_manager PL load + /dev/mem AXI, FPGA UART TX-to-RX loopback"
 }

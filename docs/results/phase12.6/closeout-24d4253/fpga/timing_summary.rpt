@@ -1,0 +1,420 @@
+Copyright 1986-2022 Xilinx, Inc. All Rights Reserved. Copyright 2022-2025 Advanced Micro Devices, Inc. All Rights Reserved.
+-------------------------------------------------------------------------------------------------------------------------------------------------------------------
+| Tool Version : Vivado v.2025.1 (lin64) Build 6140274 Wed May 21 22:58:25 MDT 2025
+| Date         : Thu Sep 17 13:04:54 2026
+| Host         : gondor running 64-bit Ubuntu 24.04.3 LTS
+| Command      : report_timing_summary -file /home/elfo/Documents/Aster/build/fpga/pynq_z1/linux-h2-coherent-c1-dma-dot8-npu/timing_summary.rpt -warn_on_violation
+| Design       : aster_linux_wrapper
+| Device       : 7z020-clg400
+| Speed File   : -1  PRODUCTION 1.12 2019-11-22
+| Design State : Routed
+-------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+Timing Summary Report
+
+------------------------------------------------------------------------------------------------
+| Timer Settings
+| --------------
+------------------------------------------------------------------------------------------------
+
+  Enable Multi Corner Analysis               :  Yes
+  Enable Pessimism Removal                   :  Yes
+  Pessimism Removal Resolution               :  Nearest Common Node
+  Enable Input Delay Default Clock           :  No
+  Enable Preset / Clear Arcs                 :  No
+  Disable Flight Delays                      :  No
+  Ignore I/O Paths                           :  No
+  Timing Early Launch at Borrowing Latches   :  No
+  Borrow Time for Max Delay Exceptions       :  Yes
+  Merge Timing Exceptions                    :  Yes
+  Inter-SLR Compensation                     :  Conservative
+
+  Corner  Analyze    Analyze    
+  Name    Max Paths  Min Paths  
+  ------  ---------  ---------  
+  Slow    Yes        Yes        
+  Fast    Yes        Yes        
+
+
+------------------------------------------------------------------------------------------------
+| Report Methodology
+| ------------------
+------------------------------------------------------------------------------------------------
+
+No report available as report_methodology has not been run prior. Run report_methodology on the current design for the summary of methodology violations.
+
+
+
+check_timing report
+
+Table of Contents
+-----------------
+1. checking no_clock (0)
+2. checking constant_clock (0)
+3. checking pulse_width_clock (0)
+4. checking unconstrained_internal_endpoints (0)
+5. checking no_input_delay (0)
+6. checking no_output_delay (5)
+7. checking multiple_clock (0)
+8. checking generated_clocks (0)
+9. checking loops (0)
+10. checking partial_input_delay (0)
+11. checking partial_output_delay (0)
+12. checking latch_loops (0)
+
+1. checking no_clock (0)
+------------------------
+ There are 0 register/latch pins with no clock.
+
+
+2. checking constant_clock (0)
+------------------------------
+ There are 0 register/latch pins with constant_clock.
+
+
+3. checking pulse_width_clock (0)
+---------------------------------
+ There are 0 register/latch pins which need pulse_width check
+
+
+4. checking unconstrained_internal_endpoints (0)
+------------------------------------------------
+ There are 0 pins that are not constrained for maximum delay.
+
+ There are 0 pins that are not constrained for maximum delay due to constant clock.
+
+
+5. checking no_input_delay (0)
+------------------------------
+ There are 0 input ports with no input delay specified.
+
+ There are 0 input ports with no input delay but user has a false path constraint.
+
+
+6. checking no_output_delay (5)
+-------------------------------
+ There are 0 ports with no output delay specified.
+
+ There are 5 ports with no output delay but user has a false path constraint (MEDIUM)
+
+ There are 0 ports with no output delay but with a timing clock defined on it or propagating through it
+
+
+7. checking multiple_clock (0)
+------------------------------
+ There are 0 register/latch pins with multiple clocks.
+
+
+8. checking generated_clocks (0)
+--------------------------------
+ There are 0 generated clocks that are not connected to a clock source.
+
+
+9. checking loops (0)
+---------------------
+ There are 0 combinational loops in the design.
+
+
+10. checking partial_input_delay (0)
+------------------------------------
+ There are 0 input ports with partial input delay specified.
+
+
+11. checking partial_output_delay (0)
+-------------------------------------
+ There are 0 ports with partial output delay specified.
+
+
+12. checking latch_loops (0)
+----------------------------
+ There are 0 combinational latch loops in the design through latch input
+
+
+
+------------------------------------------------------------------------------------------------
+| Design Timing Summary
+| ---------------------
+------------------------------------------------------------------------------------------------
+
+    WNS(ns)      TNS(ns)  TNS Failing Endpoints  TNS Total Endpoints      WHS(ns)      THS(ns)  THS Failing Endpoints  THS Total Endpoints     WPWS(ns)     TPWS(ns)  TPWS Failing Endpoints  TPWS Total Endpoints  
+    -------      -------  ---------------------  -------------------      -------      -------  ---------------------  -------------------     --------     --------  ----------------------  --------------------  
+      3.164        0.000                      0                55068        0.020        0.000                      0                55068       14.750        0.000                       0                 19903  
+
+
+All user specified timing constraints are met.
+
+
+------------------------------------------------------------------------------------------------
+| Clock Summary
+| -------------
+------------------------------------------------------------------------------------------------
+
+Clock       Waveform(ns)       Period(ns)      Frequency(MHz)
+-----       ------------       ----------      --------------
+clk_fpga_0  {0.000 16.000}     32.000          31.250          
+
+
+------------------------------------------------------------------------------------------------
+| Intra Clock Table
+| -----------------
+------------------------------------------------------------------------------------------------
+
+Clock             WNS(ns)      TNS(ns)  TNS Failing Endpoints  TNS Total Endpoints      WHS(ns)      THS(ns)  THS Failing Endpoints  THS Total Endpoints     WPWS(ns)     TPWS(ns)  TPWS Failing Endpoints  TPWS Total Endpoints  
+-----             -------      -------  ---------------------  -------------------      -------      -------  ---------------------  -------------------     --------     --------  ----------------------  --------------------  
+clk_fpga_0          3.164        0.000                      0                55068        0.020        0.000                      0                55068       14.750        0.000                       0                 19903  
+
+
+------------------------------------------------------------------------------------------------
+| Inter Clock Table
+| -----------------
+------------------------------------------------------------------------------------------------
+
+From Clock    To Clock          WNS(ns)      TNS(ns)  TNS Failing Endpoints  TNS Total Endpoints      WHS(ns)      THS(ns)  THS Failing Endpoints  THS Total Endpoints  
+----------    --------          -------      -------  ---------------------  -------------------      -------      -------  ---------------------  -------------------  
+
+
+------------------------------------------------------------------------------------------------
+| Other Path Groups Table
+| -----------------------
+------------------------------------------------------------------------------------------------
+
+Path Group    From Clock    To Clock          WNS(ns)      TNS(ns)  TNS Failing Endpoints  TNS Total Endpoints      WHS(ns)      THS(ns)  THS Failing Endpoints  THS Total Endpoints  
+----------    ----------    --------          -------      -------  ---------------------  -------------------      -------      -------  ---------------------  -------------------  
+
+
+------------------------------------------------------------------------------------------------
+| Timing Details
+| --------------
+------------------------------------------------------------------------------------------------
+
+
+---------------------------------------------------------------------------------------------------
+From Clock:  clk_fpga_0
+  To Clock:  clk_fpga_0
+
+Setup :            0  Failing Endpoints,  Worst Slack        3.164ns,  Total Violation        0.000ns
+Hold  :            0  Failing Endpoints,  Worst Slack        0.020ns,  Total Violation        0.000ns
+PW    :            0  Failing Endpoints,  Worst Slack       14.750ns,  Total Violation        0.000ns
+---------------------------------------------------------------------------------------------------
+
+
+Max Delay Paths
+--------------------------------------------------------------------------------------
+Slack (MET) :             3.164ns  (required time - arrival time)
+  Source:                 aster_linux_i/aster/inst/implementation/g_coherent.soc/cache/flush_position_reg[5]/C
+                            (rising edge-triggered cell FDRE clocked by clk_fpga_0  {rise@0.000ns fall@16.000ns period=32.000ns})
+  Destination:            aster_linux_i/aster/inst/implementation/g_coherent.soc/g_dma.perf/counters_reg[11][61]/D
+                            (rising edge-triggered cell FDRE clocked by clk_fpga_0  {rise@0.000ns fall@16.000ns period=32.000ns})
+  Path Group:             clk_fpga_0
+  Path Type:              Setup (Max at Slow Process Corner)
+  Requirement:            32.000ns  (clk_fpga_0 rise@32.000ns - clk_fpga_0 rise@0.000ns)
+  Data Path Delay:        28.271ns  (logic 7.425ns (26.263%)  route 20.846ns (73.737%))
+  Logic Levels:           38  (CARRY4=20 LUT2=3 LUT3=3 LUT4=1 LUT5=2 LUT6=9)
+  Clock Path Skew:        -0.145ns (DCD - SCD + CPR)
+    Destination Clock Delay (DCD):    2.658ns = ( 34.658 - 32.000 ) 
+    Source Clock Delay      (SCD):    2.932ns
+    Clock Pessimism Removal (CPR):    0.129ns
+  Clock Uncertainty:      0.481ns  ((TSJ^2 + TIJ^2)^1/2 + DJ) / 2 + PE
+    Total System Jitter     (TSJ):    0.071ns
+    Total Input Jitter      (TIJ):    0.960ns
+    Discrete Jitter          (DJ):    0.000ns
+    Phase Error              (PE):    0.000ns
+
+    Location             Delay type                Incr(ns)  Path(ns)    Netlist Resource(s)
+  -------------------------------------------------------------------    -------------------
+                         (clock clk_fpga_0 rise edge)
+                                                      0.000     0.000 r  
+    PS7_X0Y0             PS7                          0.000     0.000 r  aster_linux_i/ps7/inst/PS7_i/FCLKCLK[0]
+                         net (fo=1, routed)           1.193     1.193    aster_linux_i/ps7/inst/FCLK_CLK_unbuffered[0]
+    BUFGCTRL_X0Y16       BUFG (Prop_bufg_I_O)         0.101     1.294 r  aster_linux_i/ps7/inst/buffer_fclk_clk_0.FCLK_CLK_0_BUFG/O
+                         net (fo=19915, routed)       1.638     2.932    aster_linux_i/aster/inst/implementation/g_coherent.soc/cache/aclk
+    SLICE_X51Y92         FDRE                                         r  aster_linux_i/aster/inst/implementation/g_coherent.soc/cache/flush_position_reg[5]/C
+  -------------------------------------------------------------------    -------------------
+    SLICE_X51Y92         FDRE (Prop_fdre_C_Q)         0.456     3.388 r  aster_linux_i/aster/inst/implementation/g_coherent.soc/cache/flush_position_reg[5]/Q
+                         net (fo=46, routed)          1.611     4.999    aster_linux_i/aster/inst/implementation/g_coherent.soc/cache/flush_position_reg_n_0_[5]
+    SLICE_X85Y97         LUT2 (Prop_lut2_I0_O)        0.150     5.149 r  aster_linux_i/aster/inst/implementation/g_coherent.soc/cache/to_hart1[31]_i_16/O
+                         net (fo=153, routed)         1.758     6.907    aster_linux_i/aster/inst/implementation/g_coherent.soc/cache/flush_owner
+    SLICE_X34Y95         LUT6 (Prop_lut6_I4_O)        0.326     7.233 r  aster_linux_i/aster/inst/implementation/g_coherent.soc/cache/g_program.memory_reg_0_0_i_458/O
+                         net (fo=1, routed)           0.826     8.059    aster_linux_i/aster/inst/implementation/g_coherent.soc/cache/g_program.memory_reg_0_0_i_458_n_0
+    SLICE_X36Y95         LUT6 (Prop_lut6_I5_O)        0.124     8.183 f  aster_linux_i/aster/inst/implementation/g_coherent.soc/cache/g_program.memory_reg_0_0_i_259/O
+                         net (fo=1, routed)           0.679     8.862    aster_linux_i/aster/inst/implementation/g_coherent.soc/cache/g_program.memory_reg_0_0_i_259_n_0
+    SLICE_X39Y97         LUT5 (Prop_lut5_I2_O)        0.124     8.986 r  aster_linux_i/aster/inst/implementation/g_coherent.soc/cache/g_program.memory_reg_0_0_i_129/O
+                         net (fo=1, routed)           0.437     9.423    aster_linux_i/aster/inst/implementation/g_coherent.soc/cache/g_program.memory_reg_0_0_i_129_n_0
+    SLICE_X43Y98         LUT6 (Prop_lut6_I0_O)        0.124     9.547 r  aster_linux_i/aster/inst/implementation/g_coherent.soc/cache/g_program.memory_reg_0_0_i_62/O
+                         net (fo=1, routed)           0.644    10.191    aster_linux_i/aster/inst/implementation/g_coherent.soc/cache/g_program.memory_reg_0_0_i_62_n_0
+    SLICE_X48Y101        LUT6 (Prop_lut6_I3_O)        0.124    10.315 r  aster_linux_i/aster/inst/implementation/g_coherent.soc/cache/g_program.memory_reg_0_0_i_32/O
+                         net (fo=1, routed)           0.000    10.315    aster_linux_i/aster/inst/implementation/g_coherent.soc/cache/p_0_out_1[13]
+    SLICE_X48Y101        CARRY4 (Prop_carry4_S[0]_CO[3])
+                                                      0.532    10.847 r  aster_linux_i/aster/inst/implementation/g_coherent.soc/cache/g_program.memory_reg_0_0_i_24/CO[3]
+                         net (fo=1, routed)           0.000    10.847    aster_linux_i/aster/inst/implementation/g_coherent.soc/cache/g_program.memory_reg_0_0_i_24_n_0
+    SLICE_X48Y102        CARRY4 (Prop_carry4_CI_CO[3])
+                                                      0.114    10.961 r  aster_linux_i/aster/inst/implementation/g_coherent.soc/cache/offset_carry__1_i_9/CO[3]
+                         net (fo=1, routed)           0.000    10.961    aster_linux_i/aster/inst/implementation/g_coherent.soc/cache/offset_carry__1_i_9_n_0
+    SLICE_X48Y103        CARRY4 (Prop_carry4_CI_CO[3])
+                                                      0.114    11.075 r  aster_linux_i/aster/inst/implementation/g_coherent.soc/cache/offset_carry__2_i_9/CO[3]
+                         net (fo=1, routed)           0.000    11.075    aster_linux_i/aster/inst/implementation/g_coherent.soc/cache/offset_carry__2_i_9_n_0
+    SLICE_X48Y104        CARRY4 (Prop_carry4_CI_O[0])
+                                                      0.222    11.297 r  aster_linux_i/aster/inst/implementation/g_coherent.soc/cache/offset_carry__3_i_9/O[0]
+                         net (fo=5, routed)           1.695    12.991    aster_linux_i/aster/inst/implementation/g_coherent.soc/cache/p_0_in__1[25]
+    SLICE_X49Y79         LUT3 (Prop_lut3_I0_O)        0.327    13.318 f  aster_linux_i/aster/inst/implementation/g_coherent.soc/cache/offset_carry__3_i_11/O
+                         net (fo=14, routed)          1.628    14.946    aster_linux_i/aster/inst/implementation/g_coherent.soc/cache/compare[63]_i_45_n_0
+    SLICE_X45Y59         LUT4 (Prop_lut4_I3_O)        0.360    15.306 r  aster_linux_i/aster/inst/implementation/g_coherent.soc/cache/i___928_i_19/O
+                         net (fo=6, routed)           1.130    16.436    aster_linux_i/aster/inst/implementation/g_coherent.soc/cache/i___928_i_19_n_0
+    SLICE_X47Y62         LUT6 (Prop_lut6_I2_O)        0.332    16.768 f  aster_linux_i/aster/inst/implementation/g_coherent.soc/cache/i___928_i_12/O
+                         net (fo=6, routed)           0.739    17.507    aster_linux_i/aster/inst/implementation/g_coherent.soc/cache/i___928_i_12_n_0
+    SLICE_X45Y59         LUT2 (Prop_lut2_I0_O)        0.124    17.631 f  aster_linux_i/aster/inst/implementation/g_coherent.soc/cache/i___928_i_2/O
+                         net (fo=37, routed)          1.886    19.517    aster_linux_i/aster/inst/implementation/g_coherent.soc/g_npu.npu/req_valid0
+    SLICE_X16Y30         LUT3 (Prop_lut3_I1_O)        0.124    19.641 r  aster_linux_i/aster/inst/implementation/g_coherent.soc/g_npu.npu/i___534_i_8/O
+                         net (fo=5, routed)           0.594    20.235    aster_linux_i/aster/inst/implementation/g_coherent.soc/g_npu.npu/i___534_i_8_n_0
+    SLICE_X13Y29         LUT5 (Prop_lut5_I1_O)        0.124    20.359 r  aster_linux_i/aster/inst/implementation/g_coherent.soc/g_npu.npu/i___534_i_2/O
+                         net (fo=4, routed)           0.542    20.902    aster_linux_i/aster/inst/implementation/g_coherent.soc/g_npu.npu/engine/i___496_i_2_0
+    SLICE_X11Y25         LUT6 (Prop_lut6_I2_O)        0.124    21.026 r  aster_linux_i/aster/inst/implementation/g_coherent.soc/g_npu.npu/engine/i___496_i_6/O
+                         net (fo=1, routed)           0.151    21.177    aster_linux_i/aster/inst/implementation/g_coherent.soc/g_npu.npu/engine/i___496_i_6_n_0
+    SLICE_X11Y25         LUT6 (Prop_lut6_I1_O)        0.124    21.301 r  aster_linux_i/aster/inst/implementation/g_coherent.soc/g_npu.npu/engine/i___496_i_2/O
+                         net (fo=18, routed)          2.194    23.495    aster_linux_i/aster/inst/implementation/g_coherent.soc/g_dma.g_dma_npu_arbiter.arbiter/npu_m_valid
+    SLICE_X67Y33         LUT6 (Prop_lut6_I4_O)        0.124    23.619 f  aster_linux_i/aster/inst/implementation/g_coherent.soc/g_dma.g_dma_npu_arbiter.arbiter/i___496_i_9/O
+                         net (fo=40, routed)          0.829    24.448    aster_linux_i/aster/inst/implementation/g_coherent.soc/g_dma.g_dma_npu_arbiter.arbiter/FSM_sequential_state_reg[0]_0
+    SLICE_X57Y30         LUT3 (Prop_lut3_I0_O)        0.118    24.566 f  aster_linux_i/aster/inst/implementation/g_coherent.soc/g_dma.g_dma_npu_arbiter.arbiter/next_destination[31]_i_4/O
+                         net (fo=23, routed)          1.576    26.142    aster_linux_i/aster/inst/implementation/g_coherent.soc/cache/read_buffer_reg[0]
+    SLICE_X81Y41         LUT2 (Prop_lut2_I1_O)        0.352    26.494 r  aster_linux_i/aster/inst/implementation/g_coherent.soc/cache/counters[11][0]_i_4/O
+                         net (fo=1, routed)           0.154    26.648    aster_linux_i/aster/inst/implementation/g_coherent.soc/g_dma.engine/aborted_reg_1
+    SLICE_X81Y41         LUT6 (Prop_lut6_I5_O)        0.326    26.974 r  aster_linux_i/aster/inst/implementation/g_coherent.soc/g_dma.engine/counters[11][0]_i_2/O
+                         net (fo=5, routed)           1.772    28.747    aster_linux_i/aster/inst/implementation/g_coherent.soc/g_dma.perf/counters_reg[11][3]_0[0]
+    SLICE_X33Y39         CARRY4 (Prop_carry4_DI[0]_CO[3])
+                                                      0.526    29.273 r  aster_linux_i/aster/inst/implementation/g_coherent.soc/g_dma.perf/counters_reg[11][0]_i_1/CO[3]
+                         net (fo=1, routed)           0.000    29.273    aster_linux_i/aster/inst/implementation/g_coherent.soc/g_dma.perf/counters_reg[11][0]_i_1_n_0
+    SLICE_X33Y40         CARRY4 (Prop_carry4_CI_CO[3])
+                                                      0.114    29.387 r  aster_linux_i/aster/inst/implementation/g_coherent.soc/g_dma.perf/counters_reg[11][4]_i_1/CO[3]
+                         net (fo=1, routed)           0.000    29.387    aster_linux_i/aster/inst/implementation/g_coherent.soc/g_dma.perf/counters_reg[11][4]_i_1_n_0
+    SLICE_X33Y41         CARRY4 (Prop_carry4_CI_CO[3])
+                                                      0.114    29.501 r  aster_linux_i/aster/inst/implementation/g_coherent.soc/g_dma.perf/counters_reg[11][8]_i_1/CO[3]
+                         net (fo=1, routed)           0.000    29.501    aster_linux_i/aster/inst/implementation/g_coherent.soc/g_dma.perf/counters_reg[11][8]_i_1_n_0
+    SLICE_X33Y42         CARRY4 (Prop_carry4_CI_CO[3])
+                                                      0.114    29.615 r  aster_linux_i/aster/inst/implementation/g_coherent.soc/g_dma.perf/counters_reg[11][12]_i_1/CO[3]
+                         net (fo=1, routed)           0.000    29.615    aster_linux_i/aster/inst/implementation/g_coherent.soc/g_dma.perf/counters_reg[11][12]_i_1_n_0
+    SLICE_X33Y43         CARRY4 (Prop_carry4_CI_CO[3])
+                                                      0.114    29.729 r  aster_linux_i/aster/inst/implementation/g_coherent.soc/g_dma.perf/counters_reg[11][16]_i_1/CO[3]
+                         net (fo=1, routed)           0.000    29.729    aster_linux_i/aster/inst/implementation/g_coherent.soc/g_dma.perf/counters_reg[11][16]_i_1_n_0
+    SLICE_X33Y44         CARRY4 (Prop_carry4_CI_CO[3])
+                                                      0.114    29.843 r  aster_linux_i/aster/inst/implementation/g_coherent.soc/g_dma.perf/counters_reg[11][20]_i_1/CO[3]
+                         net (fo=1, routed)           0.000    29.843    aster_linux_i/aster/inst/implementation/g_coherent.soc/g_dma.perf/counters_reg[11][20]_i_1_n_0
+    SLICE_X33Y45         CARRY4 (Prop_carry4_CI_CO[3])
+                                                      0.114    29.957 r  aster_linux_i/aster/inst/implementation/g_coherent.soc/g_dma.perf/counters_reg[11][24]_i_1/CO[3]
+                         net (fo=1, routed)           0.000    29.957    aster_linux_i/aster/inst/implementation/g_coherent.soc/g_dma.perf/counters_reg[11][24]_i_1_n_0
+    SLICE_X33Y46         CARRY4 (Prop_carry4_CI_CO[3])
+                                                      0.114    30.071 r  aster_linux_i/aster/inst/implementation/g_coherent.soc/g_dma.perf/counters_reg[11][28]_i_1/CO[3]
+                         net (fo=1, routed)           0.000    30.071    aster_linux_i/aster/inst/implementation/g_coherent.soc/g_dma.perf/counters_reg[11][28]_i_1_n_0
+    SLICE_X33Y47         CARRY4 (Prop_carry4_CI_CO[3])
+                                                      0.114    30.185 r  aster_linux_i/aster/inst/implementation/g_coherent.soc/g_dma.perf/counters_reg[11][32]_i_1/CO[3]
+                         net (fo=1, routed)           0.000    30.185    aster_linux_i/aster/inst/implementation/g_coherent.soc/g_dma.perf/counters_reg[11][32]_i_1_n_0
+    SLICE_X33Y48         CARRY4 (Prop_carry4_CI_CO[3])
+                                                      0.114    30.299 r  aster_linux_i/aster/inst/implementation/g_coherent.soc/g_dma.perf/counters_reg[11][36]_i_1/CO[3]
+                         net (fo=1, routed)           0.000    30.299    aster_linux_i/aster/inst/implementation/g_coherent.soc/g_dma.perf/counters_reg[11][36]_i_1_n_0
+    SLICE_X33Y49         CARRY4 (Prop_carry4_CI_CO[3])
+                                                      0.114    30.413 r  aster_linux_i/aster/inst/implementation/g_coherent.soc/g_dma.perf/counters_reg[11][40]_i_1/CO[3]
+                         net (fo=1, routed)           0.001    30.413    aster_linux_i/aster/inst/implementation/g_coherent.soc/g_dma.perf/counters_reg[11][40]_i_1_n_0
+    SLICE_X33Y50         CARRY4 (Prop_carry4_CI_CO[3])
+                                                      0.114    30.527 r  aster_linux_i/aster/inst/implementation/g_coherent.soc/g_dma.perf/counters_reg[11][44]_i_1/CO[3]
+                         net (fo=1, routed)           0.000    30.527    aster_linux_i/aster/inst/implementation/g_coherent.soc/g_dma.perf/counters_reg[11][44]_i_1_n_0
+    SLICE_X33Y51         CARRY4 (Prop_carry4_CI_CO[3])
+                                                      0.114    30.641 r  aster_linux_i/aster/inst/implementation/g_coherent.soc/g_dma.perf/counters_reg[11][48]_i_1/CO[3]
+                         net (fo=1, routed)           0.000    30.641    aster_linux_i/aster/inst/implementation/g_coherent.soc/g_dma.perf/counters_reg[11][48]_i_1_n_0
+    SLICE_X33Y52         CARRY4 (Prop_carry4_CI_CO[3])
+                                                      0.114    30.755 r  aster_linux_i/aster/inst/implementation/g_coherent.soc/g_dma.perf/counters_reg[11][52]_i_1/CO[3]
+                         net (fo=1, routed)           0.000    30.755    aster_linux_i/aster/inst/implementation/g_coherent.soc/g_dma.perf/counters_reg[11][52]_i_1_n_0
+    SLICE_X33Y53         CARRY4 (Prop_carry4_CI_CO[3])
+                                                      0.114    30.869 r  aster_linux_i/aster/inst/implementation/g_coherent.soc/g_dma.perf/counters_reg[11][56]_i_1/CO[3]
+                         net (fo=1, routed)           0.000    30.869    aster_linux_i/aster/inst/implementation/g_coherent.soc/g_dma.perf/counters_reg[11][56]_i_1_n_0
+    SLICE_X33Y54         CARRY4 (Prop_carry4_CI_O[1])
+                                                      0.334    31.203 r  aster_linux_i/aster/inst/implementation/g_coherent.soc/g_dma.perf/counters_reg[11][60]_i_1/O[1]
+                         net (fo=1, routed)           0.000    31.203    aster_linux_i/aster/inst/implementation/g_coherent.soc/g_dma.perf/counters_reg[11][60]_i_1_n_6
+    SLICE_X33Y54         FDRE                                         r  aster_linux_i/aster/inst/implementation/g_coherent.soc/g_dma.perf/counters_reg[11][61]/D
+  -------------------------------------------------------------------    -------------------
+
+                         (clock clk_fpga_0 rise edge)
+                                                     32.000    32.000 r  
+    PS7_X0Y0             PS7                          0.000    32.000 r  aster_linux_i/ps7/inst/PS7_i/FCLKCLK[0]
+                         net (fo=1, routed)           1.088    33.088    aster_linux_i/ps7/inst/FCLK_CLK_unbuffered[0]
+    BUFGCTRL_X0Y16       BUFG (Prop_bufg_I_O)         0.091    33.179 r  aster_linux_i/ps7/inst/buffer_fclk_clk_0.FCLK_CLK_0_BUFG/O
+                         net (fo=19915, routed)       1.479    34.658    aster_linux_i/aster/inst/implementation/g_coherent.soc/g_dma.perf/aclk
+    SLICE_X33Y54         FDRE                                         r  aster_linux_i/aster/inst/implementation/g_coherent.soc/g_dma.perf/counters_reg[11][61]/C
+                         clock pessimism              0.129    34.787    
+                         clock uncertainty           -0.481    34.305    
+    SLICE_X33Y54         FDRE (Setup_fdre_C_D)        0.062    34.367    aster_linux_i/aster/inst/implementation/g_coherent.soc/g_dma.perf/counters_reg[11][61]
+  -------------------------------------------------------------------
+                         required time                         34.367    
+                         arrival time                         -31.203    
+  -------------------------------------------------------------------
+                         slack                                  3.164    
+
+
+
+
+
+Min Delay Paths
+--------------------------------------------------------------------------------------
+Slack (MET) :             0.020ns  (arrival time - required time)
+  Source:                 aster_linux_i/fabric/s00_couplers/auto_pc/inst/gen_axilite.gen_b2s_conv.axilite_b2s/SI_REG/b.b_pipe/skid_buffer_reg[12]/C
+                            (rising edge-triggered cell FDRE clocked by clk_fpga_0  {rise@0.000ns fall@16.000ns period=32.000ns})
+  Destination:            aster_linux_i/fabric/s00_couplers/auto_pc/inst/gen_axilite.gen_b2s_conv.axilite_b2s/SI_REG/b.b_pipe/m_payload_i_reg[12]/D
+                            (rising edge-triggered cell FDRE clocked by clk_fpga_0  {rise@0.000ns fall@16.000ns period=32.000ns})
+  Path Group:             clk_fpga_0
+  Path Type:              Hold (Min at Fast Process Corner)
+  Requirement:            0.000ns  (clk_fpga_0 rise@0.000ns - clk_fpga_0 rise@0.000ns)
+  Data Path Delay:        0.464ns  (logic 0.209ns (45.088%)  route 0.255ns (54.912%))
+  Logic Levels:           1  (LUT3=1)
+  Clock Path Skew:        0.351ns (DCD - SCD - CPR)
+    Destination Clock Delay (DCD):    1.296ns
+    Source Clock Delay      (SCD):    0.910ns
+    Clock Pessimism Removal (CPR):    0.035ns
+
+    Location             Delay type                Incr(ns)  Path(ns)    Netlist Resource(s)
+  -------------------------------------------------------------------    -------------------
+                         (clock clk_fpga_0 rise edge)
+                                                      0.000     0.000 r  
+    PS7_X0Y0             PS7                          0.000     0.000 r  aster_linux_i/ps7/inst/PS7_i/FCLKCLK[0]
+                         net (fo=1, routed)           0.310     0.310    aster_linux_i/ps7/inst/FCLK_CLK_unbuffered[0]
+    BUFGCTRL_X0Y16       BUFG (Prop_bufg_I_O)         0.026     0.336 r  aster_linux_i/ps7/inst/buffer_fclk_clk_0.FCLK_CLK_0_BUFG/O
+                         net (fo=19915, routed)       0.574     0.910    aster_linux_i/fabric/s00_couplers/auto_pc/inst/gen_axilite.gen_b2s_conv.axilite_b2s/SI_REG/b.b_pipe/aclk
+    SLICE_X26Y99         FDRE                                         r  aster_linux_i/fabric/s00_couplers/auto_pc/inst/gen_axilite.gen_b2s_conv.axilite_b2s/SI_REG/b.b_pipe/skid_buffer_reg[12]/C
+  -------------------------------------------------------------------    -------------------
+    SLICE_X26Y99         FDRE (Prop_fdre_C_Q)         0.164     1.074 r  aster_linux_i/fabric/s00_couplers/auto_pc/inst/gen_axilite.gen_b2s_conv.axilite_b2s/SI_REG/b.b_pipe/skid_buffer_reg[12]/Q
+                         net (fo=1, routed)           0.255     1.328    aster_linux_i/fabric/s00_couplers/auto_pc/inst/gen_axilite.gen_b2s_conv.axilite_b2s/SI_REG/b.b_pipe/skid_buffer_reg_n_0_[12]
+    SLICE_X27Y100        LUT3 (Prop_lut3_I2_O)        0.045     1.373 r  aster_linux_i/fabric/s00_couplers/auto_pc/inst/gen_axilite.gen_b2s_conv.axilite_b2s/SI_REG/b.b_pipe/m_payload_i[12]_i_1__1/O
+                         net (fo=1, routed)           0.000     1.373    aster_linux_i/fabric/s00_couplers/auto_pc/inst/gen_axilite.gen_b2s_conv.axilite_b2s/SI_REG/b.b_pipe/m_payload_i[12]_i_1__1_n_0
+    SLICE_X27Y100        FDRE                                         r  aster_linux_i/fabric/s00_couplers/auto_pc/inst/gen_axilite.gen_b2s_conv.axilite_b2s/SI_REG/b.b_pipe/m_payload_i_reg[12]/D
+  -------------------------------------------------------------------    -------------------
+
+                         (clock clk_fpga_0 rise edge)
+                                                      0.000     0.000 r  
+    PS7_X0Y0             PS7                          0.000     0.000 r  aster_linux_i/ps7/inst/PS7_i/FCLKCLK[0]
+                         net (fo=1, routed)           0.337     0.337    aster_linux_i/ps7/inst/FCLK_CLK_unbuffered[0]
+    BUFGCTRL_X0Y16       BUFG (Prop_bufg_I_O)         0.029     0.366 r  aster_linux_i/ps7/inst/buffer_fclk_clk_0.FCLK_CLK_0_BUFG/O
+                         net (fo=19915, routed)       0.930     1.296    aster_linux_i/fabric/s00_couplers/auto_pc/inst/gen_axilite.gen_b2s_conv.axilite_b2s/SI_REG/b.b_pipe/aclk
+    SLICE_X27Y100        FDRE                                         r  aster_linux_i/fabric/s00_couplers/auto_pc/inst/gen_axilite.gen_b2s_conv.axilite_b2s/SI_REG/b.b_pipe/m_payload_i_reg[12]/C
+                         clock pessimism             -0.035     1.261    
+    SLICE_X27Y100        FDRE (Hold_fdre_C_D)         0.092     1.353    aster_linux_i/fabric/s00_couplers/auto_pc/inst/gen_axilite.gen_b2s_conv.axilite_b2s/SI_REG/b.b_pipe/m_payload_i_reg[12]
+  -------------------------------------------------------------------
+                         required time                         -1.353    
+                         arrival time                           1.373    
+  -------------------------------------------------------------------
+                         slack                                  0.020    
+
+
+
+
+
+Pulse Width Checks
+--------------------------------------------------------------------------------------
+Clock Name:         clk_fpga_0
+Waveform(ns):       { 0.000 16.000 }
+Period(ns):         32.000
+Sources:            { aster_linux_i/ps7/inst/PS7_i/FCLKCLK[0] }
+
+Check Type        Corner  Lib Pin             Reference Pin  Required(ns)  Actual(ns)  Slack(ns)  Location      Pin
+Min Period        n/a     RAMB36E1/CLKARDCLK  n/a            2.944         32.000      29.056     RAMB36_X2Y6   aster_linux_i/aster/inst/implementation/g_coherent.soc/ram/g_sync_read.memory_reg_0_0/CLKARDCLK
+Low Pulse Width   Slow    RAMD64E/CLK         n/a            1.250         16.000      14.750     SLICE_X38Y38  aster_linux_i/aster/inst/implementation/fifo_reg_0_63_0_2/RAMA/CLK
+High Pulse Width  Slow    RAMD64E/CLK         n/a            1.250         16.000      14.750     SLICE_X38Y38  aster_linux_i/aster/inst/implementation/fifo_reg_0_63_0_2/RAMA/CLK
+
+
+

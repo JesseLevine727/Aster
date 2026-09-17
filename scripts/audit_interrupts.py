@@ -22,7 +22,7 @@ except ImportError:
 
 SCHEMA = "aster.phase12.6.closeout.v1"
 SOURCE_SCHEMA = "aster.phase12.6.source.v1"
-REVISION = "de0ca8100d01dcaa03edc43766db1e8ec308b161"
+REVISION = "24d4253e6ea3b118b25da1f67fec1d6eb41e56aa"
 TOP = {"spec", "input", "simulation", "fpga", "physical", "source", "verification"}
 REQUIREMENTS = {
     "01-contract-and-firmware": ["spec/interrupts.md", "input/timer_interrupt.c", "input/timer_interrupt.hex"],
