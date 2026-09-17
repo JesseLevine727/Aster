@@ -97,7 +97,7 @@ def run(args):
                 entry = {"label": label, "fclk_mhz": round(actual, 2), "status": "PASS",
                          "cycles": parsed["cycles"], "checksum": f"0x{parsed['checksum']:08x}",
                          "elapsed_seconds": round(elapsed, 4)}
-            except (RuntimeError, TimeoutError) as error:
+            except Exception as error:
                 entry = {"label": label, "fclk_mhz": round(actual, 2), "status": "FAIL",
                          "error": str(error)}
             report["results"].append(entry)
