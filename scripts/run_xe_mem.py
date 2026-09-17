@@ -82,7 +82,7 @@ def set_fclk0_mhz(target=31.25):
     mapping = mmap.mmap(fd, 0x1000, mmap.MAP_SHARED, mmap.PROT_READ | mmap.PROT_WRITE, offset=0xF8000000)
     offset = 0x170
     old = struct.unpack_from("<I", mapping, offset)[0]
-    for divisor0, divisor1 in ((4, 8), (5, 8), (4, 10), (8, 4)):
+    for divisor0, divisor1 in ((4, 8), (5, 8), (4, 10), (8, 4), (4, 5), (5, 4)):
         value = (old & ~((0x3F << 8) | (0x3F << 20))) | (divisor0 << 8) | (divisor1 << 20)
         mapping[offset:offset + 4] = struct.pack("<I", value)
         time.sleep(0.05)
@@ -90,7 +90,7 @@ def set_fclk0_mhz(target=31.25):
         actual = 1000.0 / (((readback >> 8) & 0x3F) * ((readback >> 20) & 0x3F))
         if abs(actual - target) < 0.01:
             return actual
-    raise RuntimeError("could not set FCLK0 to 31.25 MHz")
+    raise RuntimeError(f"could not set FCLK0 to {target} MHz")
 
 
 class XeBridge:
