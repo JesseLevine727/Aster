@@ -87,8 +87,11 @@ def run(args):
     if not args.assume_programmed:
         program_pl(bitstream)
         report["programmed"] = True
-    report["clock_mhz"] = set_fclk0_mhz(31.25)
-    bridge = XeBridge(Mmio(0x40000000, 0x40000), harts=2, caches=True)
+    report["clock_mhz"] = set_fclk0_mhz(args.clock_mhz)
+    if handoff["clock_hz"] != round(args.clock_mhz * 1e6):
+        raise ValueError(f"handoff clock {handoff['clock_hz']} does not match requested {args.clock_mhz} MHz")
+    bridge = XeBridge(Mmio(0x40000000, 0x40000), harts=2, caches=True,
+                      clock_hz=round(args.clock_mhz * 1e6))
     try:
         bridge.load_words(words)
         for index in range(1, args.boots + 1):
@@ -124,6 +127,7 @@ def main():
     parser.add_argument("--schema", default="aster.v1.1.physical-mem.v1")
     parser.add_argument("--assume-programmed", action="store_true")
     parser.add_argument("--boots", type=int, default=2)
+    parser.add_argument("--clock-mhz", type=float, default=31.25)
     parser.add_argument("--host-pause", type=float, default=0.05)
     parser.add_argument("--timeout", type=float, default=120)
     args = parser.parse_args()

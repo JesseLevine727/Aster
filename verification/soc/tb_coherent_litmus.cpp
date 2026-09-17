@@ -35,6 +35,7 @@ int main(int argc, char** argv) {
             unsigned starts = 0, freezes = 0, records = 0, trials = 0, secondary_stops = 0, primary_entries = 0;
             std::array<unsigned,4> histogram{};
             std::array<std::array<uint64_t,14>,2> counters{};
+            std::array<std::uint32_t,2> events_q{};
             std::array<unsigned,2> kernel{};
             std::string line;
             auto edge = [&](bool serial) {
@@ -49,10 +50,11 @@ int main(int argc, char** argv) {
                     ++freezes; running = false;
                 } else if (running) {
                     for (unsigned h = 0; h < 2; ++h) {
-                        for (unsigned i = 0; i < 14; ++i) counters[h][i] += (d.perf_events[h] >> i)&1;
+                        for (unsigned i = 0; i < 14; ++i) counters[h][i] += (events_q[h] >> i)&1;
                         if ((d.retired & (1u << h)) && d.retired_pc[h] >= opts.at("--kernel-start") && d.retired_pc[h] < opts.at("--kernel-end")) ++kernel[h];
                     }
                 }
+                for (unsigned h = 0; h < 2; ++h) events_q[h] = d.perf_events[h];
                 if ((d.retired&1) && d.retired_pc[0] == 0) ++primary_entries;
                 if (d.stop_commit == 2) ++secondary_stops;
                 if (d.store_commit) {
