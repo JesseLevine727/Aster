@@ -63,7 +63,7 @@ def run_once(bridge, args, timeout):
             parsed = bench.validate_line(record if record.endswith("\n") else record + "\n", name=args.name)
             reference.verify(parsed, args.name)
             bridge.stop()
-            return parsed
+            return parsed, time.monotonic() - started
         if count == 0:
             time.sleep(0.0001)
     bridge.stop()
@@ -92,9 +92,10 @@ def run(args):
             actual = set_fclk0(d0, d1)
             bridge.load_words(words)
             try:
-                parsed = run_once(bridge, args, args.timeout)
+                parsed, elapsed = run_once(bridge, args, args.timeout)
                 entry = {"label": label, "fclk_mhz": round(actual, 2), "status": "PASS",
-                         "cycles": parsed["cycles"], "checksum": f"0x{parsed['checksum']:08x}"}
+                         "cycles": parsed["cycles"], "checksum": f"0x{parsed['checksum']:08x}",
+                         "elapsed_seconds": round(elapsed, 4)}
             except (RuntimeError, TimeoutError) as error:
                 entry = {"label": label, "fclk_mhz": round(actual, 2), "status": "FAIL",
                          "error": str(error)}
