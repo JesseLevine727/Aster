@@ -116,8 +116,9 @@ def validate_handoff(path, expected_harts=0, *, expected_coherent=False, expecte
                          ("ps7", "M_AXI_GP0_ACLK"), ("fabric", "ACLK"),
                          ("fabric", "S00_ACLK"), ("fabric", "M00_ACLK")]:
         driven(module, name, "ps7", "FCLK_CLK0")
-    require(port("ps7", "FCLK_CLK0").get("CLKFREQUENCY") == "31250000", "FCLK0 frequency")
-    require(port("aster", "aclk").get("CLKFREQUENCY") == "31250000", "Aster clock frequency")
+    clock_hz = int(port("ps7", "FCLK_CLK0").get("CLKFREQUENCY"))
+    require(clock_hz > 0, "FCLK0 frequency")
+    require(int(port("aster", "aclk").get("CLKFREQUENCY")) == clock_hz, "Aster clock frequency")
     driven("fabric", "ARESETN", "reset", "interconnect_aresetn")
     # Vivado omits POLARITY on axi_interconnect pins; their ARESETN contract
     # is fixed active-low. Reject contradictory annotations if present.
@@ -134,7 +135,7 @@ def validate_handoff(path, expected_harts=0, *, expected_coherent=False, expecte
     require(memory.get("BASEVALUE") == "0x40000000" and memory.get("HIGHVALUE") == "0x4003FFFF"
             and memory.get("MASTERBUSINTERFACE") == "M_AXI_GP0"
             and memory.get("SLAVEBUSINTERFACE") == "s_axi", "PS AXI address mapping")
-    result = {"clock_hz": 31250000, "axi_base": 0x40000000, "axi_span": 0x40000,
+    result = {"clock_hz": clock_hz, "axi_base": 0x40000000, "axi_span": 0x40000,
             "external_reset_active_high": False, "auxiliary_reset_active_high": True}
     if harts:
         result.update(hart_count=harts, bridge_version=0x00060001 if coherent else 0x00050001)

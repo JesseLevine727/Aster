@@ -1,5 +1,5 @@
 # AXI host bridge and real serial loopback, loaded through PYNQ Linux/PCAP.
-if {$argc < 2 || $argc > 12} { error "usage: build_linux.tcl <repo-root> <output-dir> ?harts? ?coherent? ?caches? ?dma? ?dot8? ?npu? ?l2? ?impl? ?npu-rows? ?npu-cols?" }
+if {$argc < 2 || $argc > 13} { error "usage: build_linux.tcl <repo-root> <output-dir> ?harts? ?coherent? ?caches? ?dma? ?dot8? ?npu? ?l2? ?impl? ?npu-rows? ?npu-cols? ?fclk-mhz?" }
 set repo_root [file normalize [lindex $argv 0]]
 set output_dir [file normalize [lindex $argv 1]]
 set harts 0
@@ -23,6 +23,11 @@ set npu_rows 4
 if {$argc >= 11} { set npu_rows [lindex $argv 10] }
 set npu_cols 4
 if {$argc >= 12} { set npu_cols [lindex $argv 11] }
+set fclk 31.25
+if {$argc >= 13} { set fclk [lindex $argv 12] }
+# Non-default FCLK0 also requires the matching FREQ_HZ in aster_pynq_linux.sv and
+# aster_linux_ip.v, because the module-reference clock interface is a fixed
+# string attribute that the BD will not let the tcl override.
 if {$coherent ni {0 1} || $caches ni {0 1} || $dma ni {0 1} || ($coherent && !$harts) || (!$coherent && (!$caches || $dma))} {
     error "invalid coherent Linux configuration"
 }
@@ -56,7 +61,7 @@ create_bd_design aster_linux
 create_bd_cell -type ip -vlnv xilinx.com:ip:processing_system7:5.5 ps7
 set_property -dict [list CONFIG.PCW_USE_M_AXI_GP0 {1} \
     CONFIG.PCW_EN_CLK0_PORT {1} CONFIG.PCW_EN_RST0_PORT {1} \
-    CONFIG.PCW_FPGA0_PERIPHERAL_FREQMHZ {31.25}] [get_bd_cells ps7]
+    CONFIG.PCW_FPGA0_PERIPHERAL_FREQMHZ $fclk] [get_bd_cells ps7]
 make_bd_intf_pins_external [get_bd_intf_pins ps7/DDR]
 make_bd_intf_pins_external [get_bd_intf_pins ps7/FIXED_IO]
 
@@ -70,6 +75,7 @@ set_property CONFIG.ENABLE_NPU $npu [get_bd_cells aster]
 set_property CONFIG.ENABLE_L2 $l2 [get_bd_cells aster]
 set_property CONFIG.NPU_ROWS $npu_rows [get_bd_cells aster]
 set_property CONFIG.NPU_COLS $npu_cols [get_bd_cells aster]
+set_property CONFIG.FREQ_HZ [expr {round($fclk * 1000000)}] [get_bd_cells aster]
 create_bd_cell -type ip -vlnv xilinx.com:ip:axi_interconnect:2.1 fabric
 set_property CONFIG.NUM_MI 1 [get_bd_cells fabric]
 create_bd_cell -type ip -vlnv xilinx.com:ip:proc_sys_reset:5.0 reset
