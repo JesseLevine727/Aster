@@ -29,6 +29,16 @@
 #define ASTER_PERF_LINE_COUNT (ASTER_PERF_BASE + 22u)
 #define ASTER_PERF_MEMORY_WAIT (ASTER_PERF_BASE + 23u)
 
+#define ASTER_TIMER_BASE ((volatile uint32_t *)0x20001000u)
+#define ASTER_TIMER_TIME_LO (ASTER_TIMER_BASE + 0u)
+#define ASTER_TIMER_TIME_HI (ASTER_TIMER_BASE + 1u)
+#define ASTER_TIMER_COMPARE_LO (ASTER_TIMER_BASE + 2u)
+#define ASTER_TIMER_COMPARE_HI (ASTER_TIMER_BASE + 3u)
+#define ASTER_TIMER_CONTROL (ASTER_TIMER_BASE + 4u)
+#define ASTER_TIMER_STATUS (ASTER_TIMER_BASE + 5u)
+#define ASTER_TIMER_ABI (ASTER_TIMER_BASE + 6u)
+#define ASTER_TIMER_CLOCK_HZ (ASTER_TIMER_BASE + 7u)
+
 struct aster_perf_counter {
     uint32_t lo;
     uint32_t hi;
@@ -90,6 +100,27 @@ static inline void aster_perf_clear(void) {
     __asm__ volatile ("" ::: "memory");
     *ASTER_PERF_CONTROL = 1u;
     __asm__ volatile ("" ::: "memory");
+}
+
+static inline uint64_t aster_counter_value(struct aster_perf_counter value) {
+    return ((uint64_t)value.hi << 32) | value.lo;
+}
+
+static inline struct aster_perf_counter aster_timer_read_time(void) {
+    return aster_perf_read_counter(ASTER_TIMER_TIME_LO, ASTER_TIMER_TIME_HI);
+}
+
+static inline void aster_timer_arm(struct aster_perf_counter deadline) {
+    *ASTER_TIMER_COMPARE_HI = deadline.hi;
+    *ASTER_TIMER_COMPARE_LO = deadline.lo;
+}
+
+static inline void aster_timer_control(uint32_t enabled, uint32_t clear) {
+    *ASTER_TIMER_CONTROL = (enabled & 1u) | ((clear & 1u) << 1);
+}
+
+static inline uint32_t aster_timer_status(void) {
+    return *ASTER_TIMER_STATUS;
 }
 
 static inline void aster_perf_snapshot(struct aster_perf_snapshot *snapshot) {

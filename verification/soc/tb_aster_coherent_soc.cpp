@@ -28,6 +28,7 @@ public:
     unsigned stores = 0, stops = 0, jobs = 0;
     unsigned secondary_stops = 0, primary_entries = 0;
     bool lifecycle = false;
+    bool timer = false;
     bool block_uart = false, checking_uart = false;
     std::string line;
     Bench() {
@@ -61,6 +62,10 @@ public:
             else {
                 if (lifecycle) {
                     require(line == "COHERENT LIFECYCLE PASS", "secondary lifecycle firmware failed"); ++jobs;
+                } else if (timer) {
+                    if (line.rfind("MATCH_LATENCY=", 0) == 0) std::cerr << "timer " << line << "\n";
+                    else require(line == "TIMER PASS", ("timer firmware failed: " + line).c_str());
+                    if (line == "TIMER PASS") ++jobs;
                 } else if (line == "RV32A JOB PASS") ++jobs;
                 else require(line == "RV32A DIRECTED PASS", "coherent SoC runtime reported failure");
                 line.clear();
@@ -120,6 +125,16 @@ public:
                   << " wait=" << ASTER_MEMORY_WAIT << " jobs=" << jobs << " cycles=" << cycles
                   << " retired=" << retired[0] << "," << retired[1] << " safe RAM snapshot=65536 bytes\n";
     }
+    void timer_run() {
+        start(true);
+        unsigned cycles = 0;
+        for (; cycles < 20000000 && jobs < 1; ++cycles) { low(); rise(); }
+        require(jobs == 1 && line.empty(), "timer firmware did not report PASS");
+        require(retired[0] > 1000, "timer firmware retired too little primary work");
+        finish_stop();
+        std::cout << "PASS: coherent SoC timer harts=" << ASTER_HART_COUNT << " caches=" << ASTER_L1
+                  << " cycles=" << cycles << " retired=" << retired[0] << "," << retired[1] << "\n";
+    }
     void abort(unsigned point) {
         start(false); block_uart = point == 7;
         bool reached = false;
@@ -153,7 +168,11 @@ int main(int argc, char** argv) {
     try {
         Verilated::commandArgs(argc, argv);
         Bench b;
-        for (int i = 1; i < argc; ++i) if (std::string(argv[i]) == "--lifecycle") b.lifecycle = true;
+        for (int i = 1; i < argc; ++i) {
+            if (std::string(argv[i]) == "--lifecycle") b.lifecycle = true;
+            if (std::string(argv[i]) == "--timer") b.timer = true;
+        }
+        if (b.timer) { b.timer_run(); return 0; }
         b.full(); b.full();
         for (unsigned point = 0; point < 10 && !b.lifecycle; ++point) {
             if (point == 8 && ASTER_HART_COUNT == 1) continue;

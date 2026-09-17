@@ -94,7 +94,7 @@ RTL_COHERENT := $(RTL_CORE) $(RTL_CACHE) $(RTL_MEMORY) rtl/core/aster_pcpi_atomi
 	rtl/accelerator/aster_npu_engine.sv rtl/accelerator/aster_npu_regs.sv \
 	rtl/soc/aster_warm_stop.sv rtl/peripherals/aster_uart.sv rtl/peripherals/aster_coherent_perf.sv \
 	rtl/dma/aster_dma_engine.sv rtl/interconnect/aster_dma_arbiter.sv rtl/peripherals/aster_dma_perf.sv \
-	rtl/peripherals/aster_dot8_perf.sv rtl/soc/aster_coherent_soc.sv
+	rtl/peripherals/aster_dot8_perf.sv rtl/peripherals/aster_timer.sv rtl/soc/aster_coherent_soc.sv
 RTL_FPGA := rtl/peripherals/aster_uart_tx.sv rtl/soc/aster_pynq_z1.sv
 
 HELLO_DIR := $(BUILD_DIR)/software
@@ -1063,6 +1063,11 @@ $(HELLO_DIR)/coherent_lifecycle.elf: software/tests/coherent_lifecycle.c softwar
 		-T software/boot/link_multicore.ld -Wl,-Map,$(HELLO_DIR)/coherent_lifecycle.map \
 		-o $@ software/runtime/start_multicore.S $<
 
+$(HELLO_DIR)/timer_interval.elf: software/tests/timer_interval.c software/runtime/start_multicore.S software/runtime/aster.h software/boot/link_multicore.ld Makefile | $(HELLO_DIR)
+	$(CC) $(filter-out -march=%,$(HELLO_CFLAGS)) -march=rv32ima \
+		-T software/boot/link_multicore.ld -Wl,-Map,$(HELLO_DIR)/timer_interval.map \
+		-o $@ software/runtime/start_multicore.S $<
+
 $(NPU_RUNTIME_ELF): software/tests/npu_runtime.c software/drivers/aster_npu.c software/drivers/aster_npu.h \
 		software/drivers/aster_dma.c software/drivers/aster_dma.h software/runtime/start_multicore.S \
 		software/runtime/aster.h software/boot/link_multicore.ld Makefile | $(HELLO_DIR)
@@ -1311,7 +1316,7 @@ dma-bench-sensitivity:
 			L1_LINE_WORDS=2 L1_LINE_COUNT=2 DMA_BYTES=$$bytes DMA_ALIGNMENT=$$alignment DMA_JOBS=3 DMA_SEED=0xc0ffee DMA_BOOTS=2 DMA_UART_SEED=0xa57e7; \
 	done; done
 
-.PHONY: coherent-soc coherent-soc-matrix
+.PHONY: coherent-soc coherent-soc-matrix timer-firmware
 $(COHERENT_SOC_SIM): $(RTL_COHERENT) verification/soc/tb_aster_coherent_soc.cpp Makefile
 	mkdir -p $(COHERENT_SOC_DIR)
 	$(VERILATOR) --cc --exe --build --timing --Wall $(VERILATOR_VENDOR_LINT_FLAGS) $(VERILATOR_COHERENT_FLAGS) --assert -DASTER_COHERENCE_ASSERT \
@@ -1326,6 +1331,9 @@ $(COHERENT_SOC_SIM): $(RTL_COHERENT) verification/soc/tb_aster_coherent_soc.cpp 
 coherent-soc: $(COHERENT_SOC_SIM) $(HELLO_DIR)/atomic_runtime.hex $(HELLO_DIR)/coherent_lifecycle.hex
 	@$(COHERENT_SOC_SIM) +rom=$(HELLO_DIR)/atomic_runtime.hex +ram_fill=a5a5a5a5
 	@$(COHERENT_SOC_SIM) +rom=$(HELLO_DIR)/coherent_lifecycle.hex +ram_fill=a5a5a5a5 --lifecycle
+
+timer-firmware: $(COHERENT_SOC_SIM) $(HELLO_DIR)/timer_interval.hex
+	@$(COHERENT_SOC_SIM) +rom=$(HELLO_DIR)/timer_interval.hex +ram_fill=a5a5a5a5 --timer
 
 coherent-soc-matrix:
 	@set -e; for harts in 1 2; do for cache in 0 1; do for timing in '0 0' '0 7' '1 1' '1 7'; do \
@@ -1970,7 +1978,7 @@ parallel-workloads:
 
 test: smoke phase1 hello bench cache uart fpga-sim linux-sim counters retirement npu-pe npu-array npu-engine npu-regs npu-driver npu-runtime npu-stop npu-bench-validate arbiter shared-fabric multicore-runtime parallel
 
-check: tools smoke phase1 hello bench cache uart fpga-sim linux-sim linux-dual-sim linux-coherent-sim counters retirement pcpi-probe dot8-unit npu-pe npu-array npu-engine npu-regs npu-driver npu-runtime npu-stop npu-bench-validate xe-bench-validate phase11-infer workloads atomic-fabric atomic-runtime atomic-faults coherent-cache warm-stop coherent-counters coherent-soc coherent-bench riscv-reference riscv-reference-negative coherent-litmus arbiter shared-fabric multicore-runtime multicore-adversarial parallel
+check: tools smoke phase1 hello bench cache uart fpga-sim linux-sim linux-dual-sim linux-coherent-sim counters retirement pcpi-probe dot8-unit npu-pe npu-array npu-engine npu-regs npu-driver npu-runtime npu-stop npu-bench-validate xe-bench-validate phase11-infer workloads atomic-fabric atomic-runtime atomic-faults coherent-cache warm-stop coherent-counters coherent-soc timer-unit timer-firmware coherent-bench riscv-reference riscv-reference-negative coherent-litmus arbiter shared-fabric multicore-runtime multicore-adversarial parallel
 
 clean:
 	rm -rf $(BUILD_DIR)

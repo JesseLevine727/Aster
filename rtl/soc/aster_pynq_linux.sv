@@ -370,7 +370,7 @@ module aster_pynq_linux #(
             .fault_valid(atomic_fault_valid), .fault_cause(atomic_fault_cause),
             .fault_addr(atomic_fault_addr), .fault_insn(atomic_fault_insn),
             .perf_start(coherent_perf_start), .perf_freeze(coherent_perf_freeze), .perf_resume(coherent_perf_resume),
-            .perf_events(coherent_perf_events),
+            .perf_events(coherent_perf_events), .timer_irq(),
             .store_commit(coherent_store_commit), .store_owner(coherent_store_owner),
             .store_addr(coherent_store_addr), .store_data(coherent_store_data), .store_mask(coherent_store_mask),
             .fabric_busy(), .stop_commit(), .reservations(), .reservation_addr(),

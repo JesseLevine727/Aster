@@ -44,6 +44,7 @@ module aster_coherent_soc #(
     output logic perf_freeze,
     output logic perf_resume,
     output logic [13:0] perf_events [0:1],
+    output logic timer_irq,
     output logic store_commit,
     output logic store_owner,
     output logic [31:0] store_addr,
@@ -128,6 +129,7 @@ module aster_coherent_soc #(
     logic [3:0] npu_m_wstrb;
     logic [31:0] npu_m_rdata;
     logic [31:0] rom_rdata, ram_rdata, control_rdata, uart_rdata, perf_rdata [0:1];
+    logic [31:0] timer_rdata;
     logic uart_write_ready, uart_slot_valid;
     wire peripheral_resetn = resetn && !stopped;
     wire rom_access = m_addr < 32'h0001_0000;
@@ -135,6 +137,7 @@ module aster_coherent_soc #(
     wire memory_access = m_valid && (rom_access || ram_access);
     wire uart_access = !m_instr && m_addr[31:12] == 20'h20000;
     wire control_access = !m_instr && m_addr[31:12] == 20'h20002;
+    wire timer_access = !m_instr && m_addr[31:12] == 20'h20001;
     wire dma_access = ENABLE_DMA && !m_instr && !m_device && m_addr[31:12] == 20'h30000;
     wire npu_access = ENABLE_NPU && !m_instr && !m_device && m_addr[31:12] == 20'h40000;
     wire npu_global_abort = stop_busy || stopped || !host_run || !hart_run[0];
@@ -393,6 +396,11 @@ module aster_coherent_soc #(
     );
     // Explicit global stop cancels console bytes, never RAM/atomic completion.
     assign uart_tx_valid = uart_slot_valid && host_run && peripheral_resetn;
+    aster_timer #(.CLOCK_HZ(CLOCK_HZ)) timer (
+        .clk(clk), .rst_n(peripheral_resetn), .addr(m_addr), .wdata(m_wdata),
+        .wstrb(m_mask), .we(accepted && timer_access && |m_mask), .rdata(timer_rdata),
+        .timer_irq(timer_irq)
+    );
 
     always_ff @(posedge clk) begin
         if (!resetn || stopped || stop_commit[0]) secondary_run <= 0;
@@ -465,6 +473,7 @@ module aster_coherent_soc #(
         else if (ram_access) m_rdata = ram_rdata;
         else if (uart_access) m_rdata = uart_rdata;
         else if (control_access) m_rdata = control_rdata;
+        else if (timer_access) m_rdata = timer_rdata;
         else if (dma_access) m_rdata = dma_rdata;
         else if (npu_access) m_rdata = npu_register_rdata;
         else if (!m_instr && m_addr[31:8] == 24'h200030) m_rdata = perf_rdata[0];

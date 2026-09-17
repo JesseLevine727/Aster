@@ -67,6 +67,7 @@ module aster_atomic_fabric #(
         permitted_native = permitted_ram ||
             (address < 32'h0001_0000 && mask == 0) ||
             (!is_instr && ((address[31:12] == 20'h20000 && (!owner || mask == 0)) ||
+                          address[31:12] == 20'h20001 ||
                           address[31:12] == 20'h20002 ||
                           address[31:12] == 20'h20003 ||
                           (ENABLE_DMA && address[31:12] == 20'h30000) ||

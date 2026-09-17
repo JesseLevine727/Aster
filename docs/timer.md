@@ -43,14 +43,29 @@ Page `0x2000_1000` (4 KiB, previously reserved and unimplemented), custom MMIO:
 - [x] Contract frozen.
 - [x] Unit scoreboard: free-running increment, 64-bit wrap, compare match cycle,
       clear/enable/disable, byte-strobed compare merge, reset.
-- [ ] Coherent-top integration with an ABI/clock/status readback and no change to
+- [x] Coherent-top integration with an ABI/clock/status readback and no change to
       any existing register page or ABI.
-- [ ] Firmware measures a programmed interval with the timer and agrees with the
+- [x] Firmware measures a programmed interval with the timer and agrees with the
       Phase 3 cycle counter.
 - [ ] Legacy `aster_minimal` and Phase 5 maps unchanged.
 - [ ] Routed all-engine overlay with reset/timing/HWH signoff.
 - [ ] Physical Pynq-Z1 capture with two warm boots and a stopped-state snapshot.
 - [ ] Self-contained closeout bundle and read-only audit.
+
+## Implementation notes
+
+- The atomic fabric permits the timer page `0x20001` for both harts on reads and
+  writes; the previous permit list covered `0x20000`, `0x20002` and `0x20003`
+  only, so an unpermitted access retired with `result = 0` and no fault. This is
+  the single non-additive RTL edit in this phase.
+- The coherent performance block (ABI 4) keeps its control at `0x2000_3080` and
+  its `CLOCK_HZ` at `0x2000_3088`, above the counter bank, unlike the legacy
+  `aster_minimal` map in `software/runtime/aster.h`. The timer firmware reads the
+  coherent map directly and uses counter 0 as the Phase 3 cycle reference.
+- The firmware polls `STATUS` through the coherent fabric, so the observed match
+  lands a bounded number of cycles after `TIME == COMPARE`. The scoreboard
+  measures and reports this `MATCH_LATENCY` and bounds it below 512 cycles; the
+  exact-cycle match itself is proven in the unit scoreboard.
 
 ## Explicit non-goals
 
