@@ -75,7 +75,7 @@ def run(args):
                                expected_dma=True, expected_dot8=True, expected_npu=True)
     words = read_firmware(args.firmware.resolve(strict=True))
     output.mkdir(parents=True)
-    report = {"schema": "aster.v1.1.physical-mem.v1", "status": "running",
+    report = {"schema": args.schema, "status": "running",
               "board": platform.node(), "kernel": platform.release(),
               "source_revision": args.revision, "handoff_preflight": handoff,
               "transport": "fpga_manager PL load + /dev/mem AXI, FPGA UART TX-to-RX loopback",
@@ -121,6 +121,7 @@ def main():
     parser.add_argument("--output", type=Path, required=True)
     parser.add_argument("--revision", required=True)
     parser.add_argument("--name", required=True)
+    parser.add_argument("--schema", default="aster.v1.1.physical-mem.v1")
     parser.add_argument("--assume-programmed", action="store_true")
     parser.add_argument("--boots", type=int, default=2)
     parser.add_argument("--host-pause", type=float, default=0.05)

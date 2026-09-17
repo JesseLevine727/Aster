@@ -1,0 +1,38 @@
+{
+  "configs": {
+    "2x2": {
+      "bram": 32,
+      "conv_cycles": 4875521,
+      "dsp": 24,
+      "engine_cycles": 4565,
+      "engine_reads": 1867,
+      "fmax_mhz": 37.3,
+      "lut_percent": 44.77,
+      "luts": 23815,
+      "wns_ns": 5.204
+    },
+    "4x4": {
+      "bram": 32,
+      "conv_cycles": 4636733,
+      "dsp": 24,
+      "engine_cycles": 2884,
+      "engine_reads": 1123,
+      "fmax_mhz": 34.9,
+      "lut_percent": 48.04,
+      "luts": 25556,
+      "wns_ns": 3.384
+    },
+    "8x8": {
+      "bram": 32,
+      "conv_cycles": 4513265,
+      "dsp": 24,
+      "engine_cycles": 2767,
+      "engine_reads": 736,
+      "fmax_mhz": 34.5,
+      "lut_percent": 61.04,
+      "luts": 32475,
+      "wns_ns": 3.012
+    }
+  },
+  "schema": "aster.v1.2.area.v1"
+}

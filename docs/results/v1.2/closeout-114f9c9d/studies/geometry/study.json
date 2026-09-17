@@ -1,0 +1,54 @@
+{
+  "geometries": [
+    {
+      "conv2d_npu": {
+        "checksum": "0x07df8000",
+        "cycles": 4875521,
+        "output": "Archive ar -rcs Vaster_coherent_soc__ALL.a Vaster_coherent_soc.o Vaster_coherent_soc___024root__DepSet_hc6677697__0.o Vaster_coherent_soc___024root__DepSet_hc6677697__1.o Vaster_coherent_soc___024root__DepSet_h9074b246__0.o Vaster_coherent_soc_aster_atomic_hart__pi1__DepSet_h7d6270d0__0.o Vaster_coherent_soc__ConstPool_0.o Vaster_coherent_soc___024root__Slow.o Vaster_coherent_soc___024root__DepSet_hc6677697__0__Slow.o Vaster_coherent_soc___024root__DepSet_h9074b246__0__Slow.o Vaster_coherent_soc_aster_atomic_hart__pi1__Slow.o Vaster_coherent_soc_aster_atomic_hart__pi1__DepSet_h7d6270d0__0__Slow.o Vaster_coherent_soc_aster_atomic_hart__pi1__DepSet_h3577b40b__0__Slow.o Vaster_coherent_soc__Syms.o\nPASS: v10 conv2d_npu [dsp] size=1024 iterations=4 cycles=4875521 retired=555109\nPASS: v10 conv2d_npu checksum=0x07df8000 matches independent oracle",
+        "record": "ASTERBENCH,version=10,name=conv2d_npu,category=dsp,status=PASS,size=1024,iterations=4,param=5,seed=0x13570000,checksum=0x07df8000,clock_hz=31250000,l1=1,sync_memory=0,line_words=4,line_count=16,memory_wait=0,cycles=0x00000000004a6501,retired=0x0000000000087865,memory_transactions=0x00000000000c6da9,backing_transactions=0x0000000000018454,cache_accesses=0x00000000000be0b4,cache_misses=0x00000000000047bc,dma_bytes=0x0000000000003100,accelerator_cycles=0x0000000000002648\n"
+      },
+      "engine": {
+        "cycles": 4565,
+        "output": "Archive ar -rcs Vaster_npu_engine__ALL.a Vaster_npu_engine__ALL.o\nPASS: RAM-backed INT8 GEMM engine reads=1867 writes=604 cycles=4565; partial tiles, byte offsets, K=0, stalls, bounds/stride/overlap errors\nPASS: RAM-backed INT8 GEMM engine reads=1867 writes=604 cycles=4565; partial tiles, byte offsets, K=0, stalls, bounds/stride/overlap errors\nPASS: RAM-backed INT8 GEMM engine reads=1867 writes=604 cycles=4565; partial tiles, byte offsets, K=0, stalls, bounds/stride/overlap errors",
+        "reads": 1867,
+        "writes": 604
+      },
+      "geometry": 2
+    },
+    {
+      "conv2d_npu": {
+        "checksum": "0x07df8000",
+        "cycles": 4636733,
+        "output": "Archive ar -rcs Vaster_coherent_soc__ALL.a Vaster_coherent_soc.o Vaster_coherent_soc___024root__DepSet_hc6677697__0.o Vaster_coherent_soc___024root__DepSet_hc6677697__1.o Vaster_coherent_soc___024root__DepSet_h9074b246__0.o Vaster_coherent_soc_aster_atomic_hart__pi1__DepSet_h7d6270d0__0.o Vaster_coherent_soc__ConstPool_0.o Vaster_coherent_soc___024root__Slow.o Vaster_coherent_soc___024root__DepSet_hc6677697__0__Slow.o Vaster_coherent_soc___024root__DepSet_h9074b246__0__Slow.o Vaster_coherent_soc_aster_atomic_hart__pi1__Slow.o Vaster_coherent_soc_aster_atomic_hart__pi1__DepSet_h7d6270d0__0__Slow.o Vaster_coherent_soc_aster_atomic_hart__pi1__DepSet_h3577b40b__0__Slow.o Vaster_coherent_soc__Syms.o\nPASS: v10 conv2d_npu [dsp] size=1024 iterations=4 cycles=4636733 retired=531493\nPASS: v10 conv2d_npu checksum=0x07df8000 matches independent oracle",
+        "record": "ASTERBENCH,version=10,name=conv2d_npu,category=dsp,status=PASS,size=1024,iterations=4,param=5,seed=0x13570000,checksum=0x07df8000,clock_hz=31250000,l1=1,sync_memory=0,line_words=4,line_count=16,memory_wait=0,cycles=0x000000000046c03d,retired=0x0000000000081c25,memory_transactions=0x00000000000be721,backing_transactions=0x00000000000174f4,cache_accesses=0x00000000000b6f50,cache_misses=0x00000000000043e4,dma_bytes=0x0000000000003100,accelerator_cycles=0x0000000000001324\n"
+      },
+      "engine": {
+        "cycles": 2884,
+        "output": "Archive ar -rcs Vaster_npu_engine__ALL.a Vaster_npu_engine__ALL.o\nPASS: RAM-backed INT8 GEMM engine reads=1123 writes=652 cycles=2884; partial tiles, byte offsets, K=0, stalls, bounds/stride/overlap errors\nPASS: RAM-backed INT8 GEMM engine reads=1123 writes=652 cycles=2884; partial tiles, byte offsets, K=0, stalls, bounds/stride/overlap errors\nPASS: RAM-backed INT8 GEMM engine reads=1123 writes=652 cycles=2884; partial tiles, byte offsets, K=0, stalls, bounds/stride/overlap errors",
+        "reads": 1123,
+        "writes": 652
+      },
+      "geometry": 4
+    },
+    {
+      "conv2d_npu": {
+        "checksum": "0x07df8000",
+        "cycles": 4513265,
+        "output": "Archive ar -rcs Vaster_coherent_soc__ALL.a Vaster_coherent_soc.o Vaster_coherent_soc___024root__DepSet_hc6677697__0.o Vaster_coherent_soc___024root__DepSet_hc6677697__1.o Vaster_coherent_soc___024root__DepSet_h9074b246__0.o Vaster_coherent_soc_aster_atomic_hart__pi1__DepSet_h7d6270d0__0.o Vaster_coherent_soc__ConstPool_0.o Vaster_coherent_soc___024root__Slow.o Vaster_coherent_soc___024root__DepSet_hc6677697__0__Slow.o Vaster_coherent_soc___024root__DepSet_h9074b246__0__Slow.o Vaster_coherent_soc_aster_atomic_hart__pi1__Slow.o Vaster_coherent_soc_aster_atomic_hart__pi1__DepSet_h7d6270d0__0__Slow.o Vaster_coherent_soc_aster_atomic_hart__pi1__DepSet_h3577b40b__0__Slow.o Vaster_coherent_soc__Syms.o\nPASS: v10 conv2d_npu [dsp] size=1024 iterations=4 cycles=4513265 retired=519013\nPASS: v10 conv2d_npu checksum=0x07df8000 matches independent oracle",
+        "record": "ASTERBENCH,version=10,name=conv2d_npu,category=dsp,status=PASS,size=1024,iterations=4,param=5,seed=0x13570000,checksum=0x07df8000,clock_hz=31250000,l1=1,sync_memory=0,line_words=4,line_count=16,memory_wait=0,cycles=0x000000000044ddf1,retired=0x000000000007eb65,memory_transactions=0x00000000000ba009,backing_transactions=0x0000000000016cd4,cache_accesses=0x00000000000b3364,cache_misses=0x00000000000041dc,dma_bytes=0x0000000000003100,accelerator_cycles=0x0000000000000992\n"
+      },
+      "engine": {
+        "cycles": 2767,
+        "output": "Archive ar -rcs Vaster_npu_engine__ALL.a Vaster_npu_engine__ALL.o\nPASS: RAM-backed INT8 GEMM engine reads=736 writes=844 cycles=2767; partial tiles, byte offsets, K=0, stalls, bounds/stride/overlap errors\nPASS: RAM-backed INT8 GEMM engine reads=736 writes=844 cycles=2767; partial tiles, byte offsets, K=0, stalls, bounds/stride/overlap errors\nPASS: RAM-backed INT8 GEMM engine reads=736 writes=844 cycles=2767; partial tiles, byte offsets, K=0, stalls, bounds/stride/overlap errors",
+        "reads": 736,
+        "writes": 844
+      },
+      "geometry": 8
+    }
+  ],
+  "provenance": {
+    "dirty": false,
+    "revision": "114f9c9d2456cc5559dc7b3c3da5b19471adc76f"
+  },
+  "schema": "aster.v1.2.study.v1"
+}

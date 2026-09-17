@@ -1,0 +1,111 @@
+{
+  "bitstream_sha256": "ef39d03d0afde1a4febb645e13079f34776e7ff3022c076ed0def7f72d8a19b3",
+  "board": "pynq",
+  "boots": [
+    {
+      "after_stop": {
+        "control": 0,
+        "fifo_count": 0,
+        "hart_status": 0,
+        "status": 0,
+        "stop_status": 1
+      },
+      "before_stop": {
+        "control": 1,
+        "fifo_count": 0,
+        "hart_status": 1,
+        "status": 1,
+        "stop_status": 0
+      },
+      "boot": 1,
+      "checksum": "0x07df8000",
+      "cycles": 4735733,
+      "elapsed_seconds": 0.6846427710261196,
+      "name": "conv2d_npu",
+      "ram": {
+        "bytes": 65536,
+        "file": "boot1.ram",
+        "sha256": "0f7737e1be60dc83b9a5cb4822e0eb55dc9bab1a852e29168eb0fb293ced0efa"
+      },
+      "status": "PASS",
+      "uart": {
+        "bytes": 473,
+        "file": "boot1.uart",
+        "sha256": "58b7e99c3ea9c4fe13107d2ade337d6b0bc42021a5c7e255758fe4e4cdffe173"
+      },
+      "uart_output": "ASTERBENCH,version=10,name=conv2d_npu,category=dsp,status=PASS,size=1024,iterations=4,param=5,seed=0x13570000,checksum=0x07df8000,clock_hz=31250000,l1=1,sync_memory=1,line_words=4,line_count=16,memory_wait=1,cycles=0x00000000004842f5,retired=0x00000000000805a5,memory_transactions=0x00000000000bc651,backing_transactions=0x0000000000017134,cache_accesses=0x00000000000b53a8,cache_misses=0x00000000000042f4,dma_bytes=0x0000000000003100,accelerator_cycles=0x0000000000000992\n"
+    },
+    {
+      "after_stop": {
+        "control": 0,
+        "fifo_count": 0,
+        "hart_status": 0,
+        "status": 0,
+        "stop_status": 1
+      },
+      "before_stop": {
+        "control": 1,
+        "fifo_count": 0,
+        "hart_status": 1,
+        "status": 1,
+        "stop_status": 0
+      },
+      "boot": 2,
+      "checksum": "0x07df8000",
+      "cycles": 4735733,
+      "elapsed_seconds": 0.6839370020315982,
+      "name": "conv2d_npu",
+      "ram": {
+        "bytes": 65536,
+        "file": "boot2.ram",
+        "sha256": "c17bc21301aa58c334b0d52b4aceb3b254a1d07f4a048880e676f74fb740a154"
+      },
+      "status": "PASS",
+      "uart": {
+        "bytes": 473,
+        "file": "boot2.uart",
+        "sha256": "58b7e99c3ea9c4fe13107d2ade337d6b0bc42021a5c7e255758fe4e4cdffe173"
+      },
+      "uart_output": "ASTERBENCH,version=10,name=conv2d_npu,category=dsp,status=PASS,size=1024,iterations=4,param=5,seed=0x13570000,checksum=0x07df8000,clock_hz=31250000,l1=1,sync_memory=1,line_words=4,line_count=16,memory_wait=1,cycles=0x00000000004842f5,retired=0x00000000000805a5,memory_transactions=0x00000000000bc651,backing_transactions=0x0000000000017134,cache_accesses=0x00000000000b53a8,cache_misses=0x00000000000042f4,dma_bytes=0x0000000000003100,accelerator_cycles=0x0000000000000992\n"
+    }
+  ],
+  "clock_mhz": 31.25,
+  "final_state": {
+    "control": 0,
+    "fifo_count": 0,
+    "hart_status": 0,
+    "status": 0,
+    "stop_status": 1
+  },
+  "firmware_sha256": "93ed37a68bf3f9cd93f565d2f248614887f1b644e2d53bc3c5fb6856224a2135",
+  "handoff_preflight": {
+    "auxiliary_reset_active_high": true,
+    "axi_base": 1073741824,
+    "axi_span": 262144,
+    "bridge_version": 589825,
+    "caches": true,
+    "clock_hz": 31250000,
+    "coherent": true,
+    "dma": true,
+    "dma_abi": 1,
+    "dma_counter_abi": 5,
+    "dot8": true,
+    "dot8_abi": 1,
+    "dot8_counter_abi": 6,
+    "external_reset_active_high": false,
+    "hart_count": 2,
+    "isa": "rv32ima",
+    "npu": true,
+    "npu_abi": 1,
+    "npu_counter_abi": 1,
+    "safe_warm_stop": true
+  },
+  "hwh_sha256": "de84dab6b921f39c6c9eaf6df8a22093d72b38cce7f19a1c8117778b5a5c7726",
+  "kernel": "6.6.10-xilinx-v2024.1-g916a1f7c7222",
+  "name": "conv2d_npu",
+  "programmed": true,
+  "schema": "aster.v1.2.physical-mem.v1",
+  "source_revision": "114f9c9d2456cc5559dc7b3c3da5b19471adc76f",
+  "status": "complete",
+  "transport": "fpga_manager PL load + /dev/mem AXI, FPGA UART TX-to-RX loopback"
+}

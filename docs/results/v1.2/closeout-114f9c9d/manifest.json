@@ -1,0 +1,122 @@
+{
+  "files": {
+    "analysis.md": {
+      "bytes": 2404,
+      "sha256": "81a940d02a98c88e24ba6c474ca7233a53815ac5dfa1df9902afc4d1cfbdd38e"
+    },
+    "area/README.md": {
+      "bytes": 1926,
+      "sha256": "336c97945424d815919daaa49ac58bd41edc16d5b2d830a6b6f086fae2db8e55"
+    },
+    "area/area.json": {
+      "bytes": 766,
+      "sha256": "f99302b701b41b37e7569e1388c2ac570bb1afb3a64131937d43a07a48b7e91f"
+    },
+    "area/reports/2x2/timing_summary.rpt": {
+      "bytes": 27009,
+      "sha256": "db64c4e8e8ccec01d77dbed18867bf2465a41cfb0d4f1edec149551b667cb66b"
+    },
+    "area/reports/2x2/utilization_routed.rpt": {
+      "bytes": 11977,
+      "sha256": "e3c9375d38aa65c4c010d717bf20b9ba931227c1ba8d550244ab8c259f7b450a"
+    },
+    "area/reports/4x4/timing_summary.rpt": {
+      "bytes": 31087,
+      "sha256": "dd975811c9b24f9f0904a94c89af214176ba7c97c4e8f9a2fa5f33a0f7a2309e"
+    },
+    "area/reports/4x4/utilization_routed.rpt": {
+      "bytes": 11956,
+      "sha256": "1615e74b36d3a3ad71ed27bddd4991df8f48b3d81c780d586dee4d966e22f052"
+    },
+    "area/reports/8x8/timing_summary.rpt": {
+      "bytes": 33066,
+      "sha256": "395da5294f491e7d365f44b33f09f0e2009baeeeed25e52f8ec5816468d30268"
+    },
+    "area/reports/8x8/utilization_routed.rpt": {
+      "bytes": 11977,
+      "sha256": "79811df7090c5198c5e73d38e61c8f9b1e9cb31304c47ca4bf2139d76aa44ac1"
+    },
+    "physical/boot1.ram": {
+      "bytes": 65536,
+      "sha256": "0f7737e1be60dc83b9a5cb4822e0eb55dc9bab1a852e29168eb0fb293ced0efa"
+    },
+    "physical/boot1.uart": {
+      "bytes": 473,
+      "sha256": "58b7e99c3ea9c4fe13107d2ade337d6b0bc42021a5c7e255758fe4e4cdffe173"
+    },
+    "physical/boot2.ram": {
+      "bytes": 65536,
+      "sha256": "c17bc21301aa58c334b0d52b4aceb3b254a1d07f4a048880e676f74fb740a154"
+    },
+    "physical/boot2.uart": {
+      "bytes": 473,
+      "sha256": "58b7e99c3ea9c4fe13107d2ade337d6b0bc42021a5c7e255758fe4e4cdffe173"
+    },
+    "physical/physical.json": {
+      "bytes": 3890,
+      "sha256": "a7e90e4e04c85a7f26a07875e1e48176f69affe3aeaf7deb99fbe3987474334d"
+    },
+    "source/source-state.json": {
+      "bytes": 43960,
+      "sha256": "f3dcd2c55cb00533a7c9ece8ac7931739ec9a17e0f56157418f13494205da9ed"
+    },
+    "spec/npu-geometry.md": {
+      "bytes": 4187,
+      "sha256": "c105818ecf324f9cb9640ce092e695ddf898a79c091b72f0f4ca2ac2aed313c2"
+    },
+    "studies/geometry/study.json": {
+      "bytes": 6461,
+      "sha256": "616065418c026781fdac34e6d2f294d1feeffcdae0a3bafa0297f3e0a1dfa7ad"
+    },
+    "verification/make-check.log": {
+      "bytes": 275592,
+      "sha256": "5c0298281fa78c82498c1a9762e79ef6fb4278855481b81c49e5e84f46f2234b"
+    }
+  },
+  "requirements": {
+    "01-contract": [
+      "spec/npu-geometry.md"
+    ],
+    "02-geometry-study": [
+      "studies/geometry/study.json"
+    ],
+    "03-area-timing": [
+      "area/area.json",
+      "area/README.md"
+    ],
+    "04-analysis": [
+      "analysis.md"
+    ],
+    "05-frozen-clean-check": [
+      "verification/make-check.log"
+    ],
+    "06-frozen-source": [
+      "source/source-state.json"
+    ],
+    "07-physical-acceptance": [
+      "physical/physical.json"
+    ]
+  },
+  "schema": "aster.v1.2.closeout.v1",
+  "status": "complete",
+  "summary": {
+    "analysis": {
+      "sections": 5
+    },
+    "area": {
+      "geometries": 3
+    },
+    "physical": {
+      "boots": 2,
+      "checksum": "0x07df8000"
+    },
+    "source_revision": "114f9c9d2456cc5559dc7b3c3da5b19471adc76f",
+    "studies": {
+      "checksum": "0x07df8000",
+      "geometries": 3
+    },
+    "verification": {
+      "host_tests_last": 253
+    }
+  }
+}

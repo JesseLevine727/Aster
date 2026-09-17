@@ -21,7 +21,7 @@ except ImportError:
 SCHEMA = "aster.v1.2.closeout.v1"
 SOURCE_SCHEMA = "aster.v1.2.source.v1"
 REVISION = "114f9c9d2456cc5559dc7b3c3da5b19471adc76f"
-TOP_DIRS = {"spec", "studies", "area", "verification", "source"}
+TOP_DIRS = {"spec", "studies", "area", "physical", "verification", "source"}
 TOP_FILES = {"README.md", "analysis.md"}
 REQUIREMENTS = {
     "01-contract": ["spec/npu-geometry.md"],
@@ -30,6 +30,7 @@ REQUIREMENTS = {
     "04-analysis": ["analysis.md"],
     "05-frozen-clean-check": ["verification/make-check.log"],
     "06-frozen-source": ["source/source-state.json"],
+    "07-physical-acceptance": ["physical/physical.json"],
 }
 
 
@@ -125,6 +126,23 @@ def audit_analysis(directory):
     return {"sections": 5}
 
 
+def audit_physical(directory):
+    report = read(directory / "physical.json")
+    require(report.get("schema") == "aster.v1.2.physical-mem.v1" and report["status"] == "complete",
+            "physical package is incomplete")
+    require(report["source_revision"] == REVISION and abs(report["clock_mhz"] - 31.25) < 1e-6
+            and report["programmed"] is True, "physical identity/revision/clock/programming differs")
+    require(report["name"] == "conv2d_npu", "physical workload differs")
+    require(len(report["boots"]) == 2, "physical package did not run two warm boots")
+    for boot in report["boots"]:
+        require(boot["checksum"] == "0x07df8000", "physical checksum does not match the oracle")
+        require(boot["before_stop"]["control"] == 1 and boot["before_stop"]["stop_status"] == 0,
+                "was not running before STOP")
+        require(boot["after_stop"]["control"] == 0 and boot["after_stop"]["stop_status"] == 1
+                and boot["after_stop"]["fifo_count"] == 0, "did not stop cleanly")
+    return {"boots": len(report["boots"]), "checksum": report["boots"][0]["checksum"]}
+
+
 def audit_logs(directory):
     log = (directory / "make-check.log").read_text()
     require(not re.search(r"(?m)^FAIL:", log), "make-check.log contains FAIL")
@@ -146,6 +164,7 @@ def evaluate(directory, *, current=False):
         "source_revision": source["revision"],
         "studies": audit_studies(directory / "studies"),
         "area": audit_area(directory / "area"),
+        "physical": audit_physical(directory / "physical"),
         "analysis": audit_analysis(directory),
         "verification": audit_logs(directory / "verification"),
     }
