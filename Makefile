@@ -277,6 +277,7 @@ WORKLOAD_ELF := $(WORKLOAD_FW_DIR)/workload.elf
 WORKLOAD_HEX := $(WORKLOAD_FW_DIR)/workload.hex
 WORKLOAD_SIM := $(BUILD_DIR)/aster_workload_sim
 PERF_SIM := $(BUILD_DIR)/aster_perf_sim
+TIMER_SIM := $(BUILD_DIR)/aster_timer_sim
 ARBITER_SIM := $(BUILD_DIR)/aster_arbiter2_sim
 FABRIC_DIR := $(BUILD_DIR)/fabric_h$(HART_COUNT)_$(CONFIG_TAG)
 FABRIC_SIM := $(FABRIC_DIR)/aster_fabric_sim
@@ -854,6 +855,14 @@ $(PERF_SIM): rtl/peripherals/aster_perf_counters.sv verification/unit/tb_aster_p
 	$(VERILATOR) --cc --exe --build --timing --Wall --Wno-fatal --public-flat-rw \
 		--top-module aster_perf_counters --Mdir $(BUILD_DIR)/obj_perf -o $(abspath $@) \
 		$(ROOT)/rtl/peripherals/aster_perf_counters.sv $(ROOT)/verification/unit/tb_aster_perf_counters.cpp
+
+$(TIMER_SIM): rtl/peripherals/aster_timer.sv verification/unit/tb_aster_timer.cpp | $(BUILD_DIR)
+	$(VERILATOR) --cc --exe --build --timing --Wall --Wno-fatal --public-flat-rw \
+		--top-module aster_timer --Mdir $(BUILD_DIR)/obj_timer -o $(abspath $@) \
+		$(ROOT)/rtl/peripherals/aster_timer.sv $(ROOT)/verification/unit/tb_aster_timer.cpp
+
+timer-unit: $(TIMER_SIM)
+	@$(TIMER_SIM)
 
 retirement: $(RETIRE_SIM)
 	@$(RETIRE_SIM)
