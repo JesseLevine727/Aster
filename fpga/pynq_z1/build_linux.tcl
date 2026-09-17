@@ -143,8 +143,10 @@ if {!$impl} {
     exit 0
 }
 opt_design
-place_design
-route_design
+place_design -directive Explore
+phys_opt_design -directive AggressiveExplore
+route_design -directive Explore
+phys_opt_design -directive AggressiveExplore
 # Write the routed checkpoint before signoff so a failing build is still
 # inspectable for its critical paths.
 write_checkpoint -force [file join $output_dir aster_linux_routed.dcp]
