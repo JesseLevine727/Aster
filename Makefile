@@ -13,6 +13,8 @@ RISCV_MARCH ?= rv32im
 RISCV_MABI ?= ilp32
 ENABLE_L1 ?= 1
 ENABLE_NPU ?= 0
+NPU_ROWS ?= 4
+NPU_COLS ?= 4
 ENABLE_DMA ?= 0
 HART_COUNT ?= 2
 SYNC_MEMORY ?= 0
@@ -319,6 +321,8 @@ LINUX_DMA ?= 0
 LINUX_DOT8 ?= 0
 LINUX_NPU ?= 0
 LINUX_L2 ?= 0
+LINUX_NPU_ROWS ?= 4
+LINUX_NPU_COLS ?= 4
 ifeq ($(filter $(LINUX_DMA),0 1),)
 $(error LINUX_DMA must be 0 or 1)
 endif
@@ -611,7 +615,7 @@ fpga-linux:
 	@mkdir -p $(LINUX_BUILD_DIR)
 	$(VIVADO) -mode batch -nojournal -nolog -notrace \
 		-source $(ROOT)/fpga/pynq_z1/build_linux.tcl \
-		-tclargs $(ROOT) $(LINUX_BUILD_DIR) $(LINUX_HART_COUNT) $(LINUX_COHERENCE) $(LINUX_CACHE) $(LINUX_DMA) $(LINUX_DOT8) $(LINUX_NPU) $(LINUX_L2)
+		-tclargs $(ROOT) $(LINUX_BUILD_DIR) $(LINUX_HART_COUNT) $(LINUX_COHERENCE) $(LINUX_CACHE) $(LINUX_DMA) $(LINUX_DOT8) $(LINUX_NPU) $(LINUX_L2) 1 $(LINUX_NPU_ROWS) $(LINUX_NPU_COLS)
 
 .PHONY: fpga-linux-dual
 fpga-linux-dual:
@@ -928,12 +932,21 @@ npu-array: $(NPU_ARRAY_SIM)
 $(NPU_ENGINE_SIM): rtl/accelerator/aster_int8_pe.sv rtl/accelerator/aster_int8_array.sv \
 		rtl/accelerator/aster_npu_engine.sv verification/unit/tb_aster_npu_engine.cpp Makefile | $(BUILD_DIR)
 	$(VERILATOR) --cc --exe --build --timing --Wall --assert \
+		-GROWS=$(NPU_ROWS) -GCOLS=$(NPU_COLS) \
+		-CFLAGS '-DASTER_NPU_ROWS=$(NPU_ROWS) -DASTER_NPU_COLS=$(NPU_COLS)' \
 		--top-module aster_npu_engine --Mdir $(BUILD_DIR)/obj_npu_engine -o $(abspath $@) \
 		$(ROOT)/rtl/accelerator/aster_int8_pe.sv $(ROOT)/rtl/accelerator/aster_int8_array.sv \
 		$(ROOT)/rtl/accelerator/aster_npu_engine.sv $(ROOT)/verification/unit/tb_aster_npu_engine.cpp
 
 npu-engine: $(NPU_ENGINE_SIM)
 	@set -e; for seed in 1 0xa57e8 0xc0ffee; do $(NPU_ENGINE_SIM) $$seed; done
+
+.PHONY: npu-engine-geometry
+npu-engine-geometry:
+	@set -e; for g in 2 4 8; do \
+		echo "NPU geometry $${g}x$${g}"; \
+		$(MAKE) --no-print-directory npu-engine NPU_ROWS=$$g NPU_COLS=$$g BUILD_DIR=build/npu_engine_r$$g; \
+	done
 
 $(NPU_REGS_SIM): rtl/accelerator/aster_int8_pe.sv rtl/accelerator/aster_int8_array.sv \
 		rtl/accelerator/aster_npu_engine.sv rtl/accelerator/aster_npu_regs.sv \

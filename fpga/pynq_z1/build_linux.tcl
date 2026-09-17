@@ -1,5 +1,5 @@
 # AXI host bridge and real serial loopback, loaded through PYNQ Linux/PCAP.
-if {$argc < 2 || $argc > 10} { error "usage: build_linux.tcl <repo-root> <output-dir> ?harts(0=legacy,1,2)? ?coherent(0,1)? ?caches(0,1)? ?dma(0,1)? ?dot8(0,1)? ?npu(0,1)? ?l2(0,1)? ?impl(0,1)?" }
+if {$argc < 2 || $argc > 12} { error "usage: build_linux.tcl <repo-root> <output-dir> ?harts? ?coherent? ?caches? ?dma? ?dot8? ?npu? ?l2? ?impl? ?npu-rows? ?npu-cols?" }
 set repo_root [file normalize [lindex $argv 0]]
 set output_dir [file normalize [lindex $argv 1]]
 set harts 0
@@ -19,12 +19,18 @@ set l2 0
 if {$argc >= 9} { set l2 [lindex $argv 8] }
 set impl 1
 if {$argc >= 10} { set impl [lindex $argv 9] }
+set npu_rows 4
+if {$argc >= 11} { set npu_rows [lindex $argv 10] }
+set npu_cols 4
+if {$argc >= 12} { set npu_cols [lindex $argv 11] }
 if {$coherent ni {0 1} || $caches ni {0 1} || $dma ni {0 1} || ($coherent && !$harts) || (!$coherent && (!$caches || $dma))} {
     error "invalid coherent Linux configuration"
 }
 if {$dot8 ni {0 1} || ($dot8 && (!$coherent || !$dma))} { error "dot8 Linux requires coherence and DMA" }
 if {$npu ni {0 1} || ($npu && (!$coherent || !$dma))} { error "NPU Linux requires coherence and DMA" }
 if {$l2 ni {0 1} || ($l2 && (!$coherent || !$dma))} { error "L2 Linux requires coherence and DMA" }
+if {$npu_rows ni {2 4 8} || $npu_cols ni {2 4 8}} { error "NPU geometry must be 2, 4 or 8" }
+if {($npu_rows != 4 || $npu_cols != 4) && !$npu} { error "non-default NPU geometry requires the NPU" }
 set part xc7z020clg400-1
 file mkdir $output_dir
 create_project aster_linux $output_dir -part $part -force
@@ -62,6 +68,8 @@ set_property CONFIG.ENABLE_DMA $dma [get_bd_cells aster]
 set_property CONFIG.ENABLE_DOT8 $dot8 [get_bd_cells aster]
 set_property CONFIG.ENABLE_NPU $npu [get_bd_cells aster]
 set_property CONFIG.ENABLE_L2 $l2 [get_bd_cells aster]
+set_property CONFIG.NPU_ROWS $npu_rows [get_bd_cells aster]
+set_property CONFIG.NPU_COLS $npu_cols [get_bd_cells aster]
 create_bd_cell -type ip -vlnv xilinx.com:ip:axi_interconnect:2.1 fabric
 set_property CONFIG.NUM_MI 1 [get_bd_cells fabric]
 create_bd_cell -type ip -vlnv xilinx.com:ip:proc_sys_reset:5.0 reset

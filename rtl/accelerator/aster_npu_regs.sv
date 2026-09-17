@@ -2,7 +2,10 @@
 // Register accesses are one-cycle request/response transactions; the engine
 // owns memory traffic and all job accounting.
 `timescale 1 ns / 1 ps
-module aster_npu_regs (
+module aster_npu_regs #(
+    parameter int ROWS = 4,
+    parameter int COLS = 4
+) (
     input  logic               clk,
     input  logic               resetn,
     input  logic               global_stop,
@@ -67,7 +70,7 @@ module aster_npu_regs (
     assign engine_abort = command_abort && engine_busy;
     assign engine_ack = command_ack && !engine_busy && !global_stop;
 
-    aster_npu_engine engine (
+    aster_npu_engine #(.ROWS(ROWS), .COLS(COLS)) engine (
         .clk(clk), .resetn(resetn), .start(engine_start),
         .start_a_base(a_base), .start_b_base(b_base), .start_c_base(c_base),
         .start_a_stride(a_stride), .start_b_stride(b_stride), .start_c_stride(c_stride),
@@ -117,9 +120,10 @@ module aster_npu_regs (
             12'h048: req_rdata = compute_cycles[31:0];
             12'h04c: req_rdata = compute_cycles[63:32];
             12'h050: req_rdata = tiles;
-            // bit 0: 4x4 geometry; bit 1: signed INT8; bit 2: byte strides;
-            // bit 3: exact byte-lane stores; bit 4: coherent-device contract.
-            12'h054: req_rdata = 32'h0000_001f;
+            // bit 0: 4x4 geometry (ROWS==COLS==4); bit 1: signed INT8; bit 2: byte
+            // strides; bit 3: exact byte-lane stores; bit 4: coherent-device contract.
+            12'h054: req_rdata = (ROWS == 4 && COLS == 4) ? 32'h0000_001f : 32'h0000_001e;
+            12'h058: req_rdata = {16'd0, 8'(ROWS), 8'(COLS)};
             default: req_rdata = 0;
         endcase
     end

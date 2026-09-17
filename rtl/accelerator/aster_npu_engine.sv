@@ -1,9 +1,13 @@
-// Phase 9.3: RAM-backed INT8 GEMM tile engine.
+// Phase 9.3 / v1.2: RAM-backed INT8 GEMM tile engine.
 // This module is deliberately independent of the CPU/register boundary. It
 // consumes one captured descriptor, drives the coherent-service memory port,
-// and uses the verified 4x4 array for each output tile.
+// and uses the parameterized ROWS x COLS array for each output tile. The
+// default 4x4 geometry is the frozen v1.0/v1.1 behavior.
 `timescale 1 ns / 1 ps
-module aster_npu_engine (
+module aster_npu_engine #(
+    parameter int ROWS = 4,
+    parameter int COLS = 4
+) (
     input  logic               clk,
     input  logic               resetn,
     input  logic               start,
@@ -40,6 +44,11 @@ module aster_npu_engine (
 );
     localparam logic [31:0] RAM_LO = 32'h1000_0000;
     localparam logic [31:0] RAM_HI = 32'h1000_8000;
+    localparam int ROW_BITS = ROWS > 1 ? $clog2(ROWS) : 1;
+    localparam int COL_BITS = COLS > 1 ? $clog2(COLS) : 1;
+    localparam int PROD_BITS = (ROWS*COLS) > 1 ? $clog2(ROWS*COLS) : 1;
+    localparam int LOAD_BITS = $clog2((ROWS > COLS ? ROWS : COLS) + 1);
+    localparam int OUT_BITS = $clog2(ROWS*COLS + 1);
 
     typedef enum logic [3:0] {
         IDLE,
@@ -57,10 +66,11 @@ module aster_npu_engine (
     logic [31:0] a_stride, b_stride, c_stride;
     logic [31:0] rows, cols, reduction;
     logic [31:0] tile_row, tile_col, k_index;
-    logic [4:0] load_index, output_index;
+    logic [LOAD_BITS-1:0] load_index;
+    logic [OUT_BITS-1:0] output_index;
     logic [2:0] output_byte;
-    logic signed [7:0] a_values [0:3];
-    logic signed [7:0] b_values [0:3];
+    logic signed [7:0] a_values [0:ROWS-1];
+    logic signed [7:0] b_values [0:COLS-1];
     logic abort_pending, request_held;
 
     logic done_flag, error_flag, aborted_flag;
@@ -79,10 +89,11 @@ module aster_npu_engine (
     logic array_step, array_step_accept;
     logic array_finish, array_finish_accept, array_result_valid;
     logic array_step_ready, array_finish_ready;
-    logic signed [7:0] array_a [0:3];
-    logic signed [7:0] array_b [0:3];
-    logic [3:0] array_row_mask, array_col_mask;
-    logic [31:0] array_results [0:15];
+    logic signed [7:0] array_a [0:ROWS-1];
+    logic signed [7:0] array_b [0:COLS-1];
+    logic [ROWS-1:0] array_row_mask;
+    logic [COLS-1:0] array_col_mask;
+    logic [31:0] array_results [0:ROWS*COLS-1];
 
     // The child is reset whenever this engine is idle. This clears an
     // interrupted tile without adding a second externally-visible lifecycle.
@@ -91,7 +102,7 @@ module aster_npu_engine (
     assign array_step = resetn && state == ARRAY_STEP && !pause && !abort_pending && !abort_request && array_step_ready;
     assign array_finish = resetn && state == ARRAY_FINISH && !pause && !abort_pending && !abort_request && array_finish_ready;
 
-    aster_int8_array array (
+    aster_int8_array #(.ROWS(ROWS), .COLS(COLS)) array (
         .clk(clk),
         .resetn(array_resetn),
         .start_tile(array_start),
@@ -131,23 +142,22 @@ module aster_npu_engine (
     assign read_accept = memory_accept && !m_write;
     assign write_accept = memory_accept && m_write;
 
-    assign current_a_active = load_index < 4 && (tile_row + {27'd0, load_index}) < rows;
-    assign current_b_active = load_index < 4 && (tile_col + {27'd0, load_index}) < cols;
-    assign current_c_active = (tile_row + ({27'd0, output_index} >> 2)) < rows &&
-                              (tile_col + ({27'd0, output_index} & 32'd3)) < cols && output_index < 16;
-    assign array_row_mask = {
-        (tile_row + 3 < rows), (tile_row + 2 < rows),
-        (tile_row + 1 < rows), (tile_row < rows)
-    };
-    assign array_col_mask = {
-        (tile_col + 3 < cols), (tile_col + 2 < cols),
-        (tile_col + 1 < cols), (tile_col < cols)
-    };
+    assign current_a_active = load_index < LOAD_BITS'(ROWS) &&
+                              (tile_row + 32'(load_index)) < rows;
+    assign current_b_active = load_index < LOAD_BITS'(COLS) &&
+                              (tile_col + 32'(load_index)) < cols;
+    assign current_c_active = (tile_row + (32'(output_index) >> COL_BITS)) < rows &&
+                              (tile_col + (32'(output_index) & (32'(COLS) - 32'd1))) < cols &&
+                              output_index < OUT_BITS'(ROWS*COLS);
+    always_comb begin
+        for (int r = 0; r < ROWS; r++) array_row_mask[r] = (tile_row + 32'(r)) < rows;
+        for (int c = 0; c < COLS; c++) array_col_mask[c] = (tile_col + 32'(c)) < cols;
+    end
     assign array_a = a_values;
     assign array_b = b_values;
 
-    assign load_index_ext = {{59{1'b0}}, load_index};
-    assign output_index_ext = {{59{1'b0}}, output_index};
+    assign load_index_ext = {{(64-LOAD_BITS){1'b0}}, load_index};
+    assign output_index_ext = {{(64-OUT_BITS){1'b0}}, output_index};
     assign output_byte_ext = {{61{1'b0}}, output_byte};
     assign a_load_byte = m_rdata[(8 * a_byte_address[1:0]) +: 8];
     assign b_load_byte = m_rdata[(8 * b_byte_address[1:0]) +: 8];
@@ -159,8 +169,8 @@ module aster_npu_engine (
                             {32'd0, k_index} * {32'd0, b_stride} +
                             ({32'd0, tile_col} + load_index_ext);
     assign c_byte_address = {32'd0, c_base} +
-                            ({32'd0, tile_row} + (output_index_ext >> 2)) * {32'd0, c_stride} +
-                            (({32'd0, tile_col} + (output_index_ext & 64'd3)) * 64'd4) +
+                            ({32'd0, tile_row} + (output_index_ext >> COL_BITS)) * {32'd0, c_stride} +
+                            (({32'd0, tile_col} + (output_index_ext & (64'(COLS) - 64'd1))) * 64'd4) +
                             output_byte_ext;
 
     always_comb begin
@@ -174,7 +184,7 @@ module aster_npu_engine (
         end else if (state == WRITE_C) begin
             m_addr = {c_byte_address[31:2], 2'b00} | {32{(|c_byte_address[63:32])}};
             m_wstrb = 4'b0001 << c_byte_address[1:0];
-            m_wdata = ((array_results[output_index[3:0]] >> (8 * output_byte)) & 32'hff) <<
+            m_wdata = ((array_results[output_index[PROD_BITS-1:0]] >> (8 * output_byte)) & 32'hff) <<
                       (8 * c_byte_address[1:0]);
         end
     end
@@ -233,7 +243,8 @@ module aster_npu_engine (
             done_flag <= 0; error_flag <= 0; aborted_flag <= 0; error_code <= 0;
             bytes_read <= 0; bytes_written <= 0; job_cycles <= 0;
             compute_cycles <= 0; tiles <= 0;
-            for (int i = 0; i < 4; i++) begin a_values[i] <= 0; b_values[i] <= 0; end
+            for (int i = 0; i < ROWS; i++) a_values[i] <= 0;
+            for (int i = 0; i < COLS; i++) b_values[i] <= 0;
         end else begin
             if (busy) job_cycles <= job_cycles + 64'd1;
             if (busy && abort_request) abort_pending <= 1'b1;
@@ -273,7 +284,8 @@ module aster_npu_engine (
                             state <= IDLE; done_flag <= 1;
                         end else begin
                             state <= ARRAY_START;
-                            for (int i = 0; i < 4; i++) begin a_values[i] <= 0; b_values[i] <= 0; end
+                            for (int i = 0; i < ROWS; i++) a_values[i] <= 0;
+                            for (int i = 0; i < COLS; i++) b_values[i] <= 0;
                         end
                     end
                 end
@@ -285,24 +297,24 @@ module aster_npu_engine (
                     else state <= LOAD_A;
                 end
                 LOAD_A: begin
-                    if (load_index >= 4) begin
+                    if (load_index >= LOAD_BITS'(ROWS)) begin
                         load_index <= 0;
                         state <= LOAD_B;
                     end else if (!current_a_active) begin
                         load_index <= load_index + 1;
                     end else if (read_accept) begin
-                        a_values[load_index[1:0]] <= a_load_byte;
+                        a_values[load_index[ROW_BITS-1:0]] <= a_load_byte;
                         load_index <= load_index + 1;
                     end
                 end
                 LOAD_B: begin
-                    if (load_index >= 4) begin
+                    if (load_index >= LOAD_BITS'(COLS)) begin
                         load_index <= 0;
                         state <= ARRAY_STEP;
                     end else if (!current_b_active) begin
                         load_index <= load_index + 1;
                     end else if (read_accept) begin
-                        b_values[load_index[1:0]] <= b_load_byte;
+                        b_values[load_index[COL_BITS-1:0]] <= b_load_byte;
                         load_index <= load_index + 1;
                     end
                 end
@@ -322,20 +334,20 @@ module aster_npu_engine (
                     state <= WRITE_C;
                 end
                 WRITE_C: begin
-                    if (output_index >= 16) begin
+                    if (output_index >= OUT_BITS'(ROWS*COLS)) begin
                         tiles <= tiles + 1;
                         k_index <= 0;
-                        if (tile_col + 4 >= cols) begin
+                        if (tile_col + 32'(COLS) >= cols) begin
                             tile_col <= 0;
-                            if (tile_row + 4 >= rows) begin
+                            if (tile_row + 32'(ROWS) >= rows) begin
                                 state <= IDLE;
                                 done_flag <= 1;
                             end else begin
-                                tile_row <= tile_row + 4;
+                                tile_row <= tile_row + 32'(ROWS);
                                 state <= ARRAY_START;
                             end
                         end else begin
-                            tile_col <= tile_col + 4;
+                            tile_col <= tile_col + 32'(COLS);
                             state <= ARRAY_START;
                         end
                     end else if (!current_c_active) begin
@@ -359,7 +371,7 @@ module aster_npu_engine (
             // drained so an abort cannot expose a partial output tile; no next
             // tile is started and no full result is claimed.
             if (busy && (abort_pending || abort_request) && (!m_valid || m_ready)) begin
-                if (state == WRITE_C && output_index < 16 &&
+                if (state == WRITE_C && output_index < OUT_BITS'(ROWS*COLS) &&
                     (tile_write_started || write_accept)) begin
                     abort_drain_tile <= 1;
                 end else begin

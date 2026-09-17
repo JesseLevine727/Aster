@@ -7,6 +7,8 @@ module aster_linux_ip #(
     parameter integer ENABLE_DMA = 0,
     parameter integer ENABLE_DOT8 = 0,
     parameter integer ENABLE_NPU = 0,
+    parameter integer NPU_ROWS = 4,
+    parameter integer NPU_COLS = 4,
     parameter integer ENABLE_L2 = 0,
     parameter integer L2_LINE_WORDS = 4,
     parameter integer L2_LINE_COUNT = 64
@@ -58,6 +60,7 @@ module aster_linux_ip #(
     aster_pynq_linux #(.HART_COUNT(HART_COUNT), .ENABLE_COHERENCE(ENABLE_COHERENCE),
                      .COHERENT_L1(COHERENT_L1), .ENABLE_DMA(ENABLE_DMA), .ENABLE_DOT8(ENABLE_DOT8),
                      .ENABLE_NPU(ENABLE_NPU), .ENABLE_L2(ENABLE_L2),
+                     .NPU_ROWS(NPU_ROWS), .NPU_COLS(NPU_COLS),
                      .L2_LINE_WORDS(L2_LINE_WORDS), .L2_LINE_COUNT(L2_LINE_COUNT)) implementation (
         .aclk(aclk), .aresetn(aresetn),
         .s_axi_awaddr(s_axi_awaddr), .s_axi_awvalid(s_axi_awvalid), .s_axi_awready(s_axi_awready),

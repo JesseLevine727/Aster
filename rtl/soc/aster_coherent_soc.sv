@@ -10,6 +10,8 @@ module aster_coherent_soc #(
     parameter bit ENABLE_DMA = 1'b0,
     parameter bit ENABLE_DOT8 = 1'b0,
     parameter bit ENABLE_NPU = 1'b0,
+    parameter int unsigned NPU_ROWS = 4,
+    parameter int unsigned NPU_COLS = 4,
     parameter bit ENABLE_IRQ = 1'b1,
     parameter bit ENABLE_L2 = 1'b0,
     parameter int unsigned L2_LINE_WORDS = 4,
@@ -244,7 +246,7 @@ module aster_coherent_soc #(
         .atomic_complete(atomic_complete), .sc_success(sc_success), .sc_failure(sc_failure)
     );
     if (ENABLE_NPU) begin : g_npu
-        aster_npu_regs npu (
+        aster_npu_regs #(.ROWS(NPU_ROWS), .COLS(NPU_COLS)) npu (
             .clk(clk), .resetn(peripheral_resetn), .global_stop(npu_global_abort),
             .req_valid(m_valid && npu_access), .req_write(|m_mask), .req_addr(m_addr[11:0]),
             .req_wdata(m_wdata), .req_wstrb(m_mask), .req_ready(npu_register_ready),

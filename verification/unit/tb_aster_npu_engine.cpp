@@ -7,6 +7,13 @@
 #include <random>
 #include <stdexcept>
 
+#ifndef ASTER_NPU_ROWS
+#define ASTER_NPU_ROWS 4
+#endif
+#ifndef ASTER_NPU_COLS
+#define ASTER_NPU_COLS 4
+#endif
+
 static void require(bool condition, const char* why) {
     if (!condition) throw std::runtime_error(why);
 }
@@ -115,7 +122,8 @@ public:
             tick(true, (guard % 11 == 3) ? 2 : 0);
         }
         require(!d.busy && d.done && !d.error && !d.aborted, "GEMM did not complete successfully");
-        const uint32_t expected_reads = ((n + 3) / 4) * m * k + ((m + 3) / 4) * n * k;
+        const uint32_t expected_reads = ((n + ASTER_NPU_COLS - 1) / ASTER_NPU_COLS) * m * k +
+                                        ((m + ASTER_NPU_ROWS - 1) / ASTER_NPU_ROWS) * n * k;
         require(d.bytes_read == expected_reads && d.bytes_written == m * n * 4,
                 "logical NPU byte counters are wrong");
         for (unsigned i = 0; i < m; ++i)
@@ -131,12 +139,13 @@ public:
     }
 
     void abort_after_first_output_byte() {
+        const uint32_t m = ASTER_NPU_ROWS, n = ASTER_NPU_COLS, k = 1;
+        const uint32_t as = 1, bs = ASTER_NPU_COLS, cs = ASTER_NPU_COLS * 4 + 4;
         const uint32_t a = base + 12000, b = base + 12100, c = base + 12203;
-        const uint32_t m = 4, n = 4, k = 1, as = 1, bs = 4, cs = 20;
-        for (unsigned i = 0; i < 4; ++i) memory[a - base + i] = static_cast<uint8_t>(i + 1);
-        for (unsigned i = 0; i < 4; ++i) memory[b - base + i] = static_cast<uint8_t>(i + 2);
-        for (unsigned i = 0; i < 4; ++i)
-            for (unsigned j = 0; j < 4; ++j)
+        for (unsigned i = 0; i < m; ++i) memory[a - base + i] = static_cast<uint8_t>(i + 1);
+        for (unsigned i = 0; i < n; ++i) memory[b - base + i] = static_cast<uint8_t>(i + 2);
+        for (unsigned i = 0; i < m; ++i)
+            for (unsigned j = 0; j < n; ++j)
                 for (unsigned byte = 0; byte < 4; ++byte)
                     memory[c - base + i * cs + 4 * j + byte] = 0xa5;
         d.start_a_base = a; d.start_b_base = b; d.start_c_base = c;
@@ -153,10 +162,10 @@ public:
         d.abort_request = 0;
         require(!d.busy && d.done && d.aborted && !d.error,
                 "abort did not terminate with an acknowledged aborted job");
-        require(writes == writes_before + 16 * 4 && d.bytes_written == 16 * 4,
+        require(writes == writes_before + m * n * 4 && d.bytes_written == m * n * 4,
                 "abort left a partially written active output tile");
-        for (unsigned i = 0; i < 4; ++i)
-            for (unsigned j = 0; j < 4; ++j) {
+        for (unsigned i = 0; i < m; ++i)
+            for (unsigned j = 0; j < n; ++j) {
                 const uint32_t expected = uint32_t(i + 1) * uint32_t(j + 2);
                 for (unsigned byte = 0; byte < 4; ++byte)
                     require(memory[c - base + i * cs + 4 * j + byte] ==
