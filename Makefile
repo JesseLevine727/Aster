@@ -332,7 +332,7 @@ endif
 ifeq ($(filter $(LINUX_NPU),0 1),)
 $(error LINUX_NPU must be 0 or 1)
 endif
-LINUX_BUILD_DIR = $(FPGA_BUILD_DIR)/linux$(if $(filter 0,$(LINUX_HART_COUNT)),,-h$(LINUX_HART_COUNT))$(if $(filter 1,$(LINUX_COHERENCE)),-coherent-c$(LINUX_CACHE),)$(if $(filter 1,$(LINUX_DMA)),-dma,)$(if $(filter 1,$(LINUX_DOT8)),-dot8,)$(if $(filter 1,$(LINUX_NPU)),-npu,)$(if $(filter 1,$(LINUX_L2)),-l2,)
+LINUX_BUILD_DIR = $(FPGA_BUILD_DIR)/linux$(if $(filter 0,$(LINUX_HART_COUNT)),,-h$(LINUX_HART_COUNT))$(if $(filter 1,$(LINUX_COHERENCE)),-coherent-c$(LINUX_CACHE),)$(if $(filter 1,$(LINUX_DMA)),-dma,)$(if $(filter 1,$(LINUX_DOT8)),-dot8,)$(if $(filter 1,$(LINUX_NPU)),-npu,)$(if $(filter 1,$(LINUX_L2)),-l2,)$(if $(filter-out 4 4,$(LINUX_NPU_ROWS) $(LINUX_NPU_COLS)),-npu$(LINUX_NPU_ROWS)x$(LINUX_NPU_COLS),)
 SOC_TEST_DIR := $(BUILD_DIR)/soc_$(CONFIG_TAG)
 SOC_SIM := $(SOC_TEST_DIR)/aster_soc_sim
 TRAP_CASES := 0 1 2 3 4 5 6 7 8 9 10 11
@@ -644,6 +644,14 @@ fpga-linux-xe:
 .PHONY: fpga-linux-l2
 fpga-linux-l2:
 	$(MAKE) LINUX_HART_COUNT=2 LINUX_COHERENCE=1 LINUX_DMA=1 LINUX_DOT8=1 LINUX_NPU=1 LINUX_L2=1 fpga-linux
+
+.PHONY: fpga-linux-npu-geometry
+fpga-linux-npu-geometry:
+	@set -e; for g in 2 4 8; do \
+		echo "NPU overlay $${g}x$${g}"; \
+		$(MAKE) LINUX_HART_COUNT=2 LINUX_COHERENCE=1 LINUX_DMA=1 LINUX_DOT8=1 LINUX_NPU=1 \
+			LINUX_NPU_ROWS=$$g LINUX_NPU_COLS=$$g fpga-linux; \
+	done
 
 $(LINUX_SIM): $(RTL_CORE) $(RTL_CACHE) $(RTL_MEMORY) $(RTL_PERIPHERALS) $(RTL_SOC) $(RTL_MULTICORE) $(RTL_COHERENT) \
 		rtl/peripherals/aster_uart_tx.sv rtl/peripherals/aster_uart_rx.sv \
