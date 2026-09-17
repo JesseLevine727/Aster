@@ -18,6 +18,9 @@ HART_COUNT ?= 2
 SYNC_MEMORY ?= 0
 L1_LINE_WORDS ?= 4
 L1_LINE_COUNT ?= 16
+ENABLE_L2 ?= 0
+L2_LINE_WORDS ?= 4
+L2_LINE_COUNT ?= 64
 MEMORY_WAIT_CYCLES ?= $(SYNC_MEMORY)
 BENCH_WORKLOAD ?= memcpy
 BENCH_WORDS ?= 64
@@ -89,7 +92,7 @@ RTL_SOC := rtl/core/aster_hart.sv rtl/soc/aster_minimal.sv
 RTL_FABRIC := rtl/interconnect/aster_arbiter2.sv rtl/soc/aster_shared_fabric.sv
 RTL_MULTICORE := $(RTL_FABRIC) rtl/core/aster_hart.sv rtl/soc/aster_multicore.sv
 RTL_COHERENT := $(RTL_CORE) $(RTL_CACHE) $(RTL_MEMORY) rtl/core/aster_pcpi_atomic.sv \
-	rtl/core/aster_pcpi_dot8.sv rtl/core/aster_atomic_hart.sv rtl/cache/aster_coherent_cache.sv rtl/interconnect/aster_atomic_fabric.sv \
+	rtl/core/aster_pcpi_dot8.sv rtl/core/aster_atomic_hart.sv rtl/cache/aster_coherent_cache.sv rtl/cache/aster_l2_cache.sv rtl/interconnect/aster_atomic_fabric.sv \
 	rtl/interconnect/aster_device_arbiter.sv rtl/accelerator/aster_int8_pe.sv rtl/accelerator/aster_int8_array.sv \
 	rtl/accelerator/aster_npu_engine.sv rtl/accelerator/aster_npu_regs.sv \
 	rtl/soc/aster_warm_stop.sv rtl/peripherals/aster_uart.sv rtl/peripherals/aster_coherent_perf.sv \
@@ -279,6 +282,7 @@ WORKLOAD_SIM := $(BUILD_DIR)/aster_workload_sim
 PERF_SIM := $(BUILD_DIR)/aster_perf_sim
 TIMER_SIM := $(BUILD_DIR)/aster_timer_sim
 IRQ_SIM := $(BUILD_DIR)/aster_irq_sim
+L2_SIM := $(BUILD_DIR)/aster_l2_sim
 ARBITER_SIM := $(BUILD_DIR)/aster_arbiter2_sim
 FABRIC_DIR := $(BUILD_DIR)/fabric_h$(HART_COUNT)_$(CONFIG_TAG)
 FABRIC_SIM := $(FABRIC_DIR)/aster_fabric_sim
@@ -877,6 +881,14 @@ irq-unit: $(IRQ_SIM)
 freeze-interfaces:
 	@$(PYTHON) scripts/freeze_interfaces.py --quiet
 
+$(L2_SIM): rtl/cache/aster_l2_cache.sv verification/unit/tb_aster_l2_cache.cpp | $(BUILD_DIR)
+	$(VERILATOR) --cc --exe --build --timing --Wall --Wno-fatal --public-flat-rw \
+		--top-module aster_l2_cache --Mdir $(BUILD_DIR)/obj_l2 -o $(abspath $@) \
+		$(ROOT)/rtl/cache/aster_l2_cache.sv $(ROOT)/verification/unit/tb_aster_l2_cache.cpp
+
+l2-unit: $(L2_SIM)
+	@$(L2_SIM)
+
 retirement: $(RETIRE_SIM)
 	@$(RETIRE_SIM)
 
@@ -1342,6 +1354,7 @@ $(COHERENT_SOC_SIM): $(RTL_COHERENT) verification/soc/tb_aster_coherent_soc.cpp 
 		"-GENABLE_DMA=1'b$(ENABLE_DMA)" "-GENABLE_NPU=1'b$(ENABLE_NPU)" \
 		"-GSYNC_MEMORY=1'b$(SYNC_MEMORY)" -GMEMORY_WAIT_CYCLES=$(MEMORY_WAIT_CYCLES) "-GHOST_BOOT=1'b1" \
 		-GLINE_WORDS=$(L1_LINE_WORDS) -GLINE_COUNT=$(L1_LINE_COUNT) \
+		"-GENABLE_L2=1'b$(ENABLE_L2)" -GL2_LINE_WORDS=$(L2_LINE_WORDS) -GL2_LINE_COUNT=$(L2_LINE_COUNT) \
 		-CFLAGS '-DASTER_HART_COUNT=$(HART_COUNT) -DASTER_L1=$(ENABLE_L1) -DASTER_MEMORY_WAIT=$(MEMORY_WAIT_CYCLES)' \
 		--Mdir $(COHERENT_SOC_DIR)/obj -o $(abspath $@) \
 		$(addprefix $(ROOT)/,$(RTL_COHERENT)) $(ROOT)/verification/soc/tb_aster_coherent_soc.cpp
@@ -1606,6 +1619,7 @@ $(REDUCE_SIM): $(RTL_COHERENT) verification/soc/tb_aster_workload_coherent.cpp M
 		-GHART_COUNT=$(HART_COUNT) "-GENABLE_L1=1'b$(ENABLE_L1)" "-GENABLE_DMA=1'b1" "-GENABLE_DOT8=1'b1" "-GENABLE_NPU=1'b1" \
 		"-GSYNC_MEMORY=1'b$(SYNC_MEMORY)" -GMEMORY_WAIT_CYCLES=$(MEMORY_WAIT_CYCLES) "-GHOST_BOOT=1'b1" \
 		-GLINE_WORDS=$(L1_LINE_WORDS) -GLINE_COUNT=$(L1_LINE_COUNT) \
+		"-GENABLE_L2=1'b$(ENABLE_L2)" -GL2_LINE_WORDS=$(L2_LINE_WORDS) -GL2_LINE_COUNT=$(L2_LINE_COUNT) \
 		--Mdir $(BUILD_DIR)/obj_reduce -o $(abspath $@) \
 		$(addprefix $(ROOT)/,$(RTL_COHERENT)) $(ROOT)/verification/soc/tb_aster_workload_coherent.cpp
 

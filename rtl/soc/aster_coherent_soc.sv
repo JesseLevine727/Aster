@@ -11,6 +11,9 @@ module aster_coherent_soc #(
     parameter bit ENABLE_DOT8 = 1'b0,
     parameter bit ENABLE_NPU = 1'b0,
     parameter bit ENABLE_IRQ = 1'b1,
+    parameter bit ENABLE_L2 = 1'b0,
+    parameter int unsigned L2_LINE_WORDS = 4,
+    parameter int unsigned L2_LINE_COUNT = 64,
     parameter bit HOST_BOOT = 1'b0,
     parameter int unsigned CLOCK_HZ = 31_250_000,
     parameter int unsigned LINE_WORDS = 4,
@@ -120,6 +123,10 @@ module aster_coherent_soc #(
     logic m_valid, m_owner, m_instr, m_ready, m_device;
     logic [31:0] m_addr, m_wdata, m_rdata;
     logic [3:0] m_mask;
+    logic l1_m_valid, l1_m_instr, l1_m_ready, l1_m_device;
+    logic [31:0] l1_m_addr, l1_m_wdata, l1_m_rdata;
+    logic [3:0] l1_m_mask;
+    logic l2_access, l2_miss, l2_refill, l2_write;
     logic d_access, d_miss, intervention, invalidation, writeback;
     logic device_forward, device_writeback;
     logic [1:0] device_invalidations;
@@ -365,15 +372,27 @@ module aster_coherent_soc #(
     aster_coherent_cache #(.ENABLE_CACHE(ENABLE_L1), .ENABLE_DMA(ENABLE_DMA),
         .LINE_WORDS(LINE_WORDS), .LINE_COUNT(LINE_COUNT)) cache (
         .clk(clk), .resetn(resetn), .s_valid(c_valid), .s_owner(c_owner), .s_instr(c_instr),
-        .s_device(c_device), .m_device(m_device), .device_store_commit(dma_store_commit), .device_read_forward(device_forward),
+        .s_device(c_device), .m_device(l1_m_device), .device_store_commit(dma_store_commit), .device_read_forward(device_forward),
         .device_writeback(device_writeback), .device_invalidations(device_invalidations),
         .s_addr(c_addr), .s_wdata(c_wdata), .s_wstrb(c_mask), .s_ready(c_ready), .s_rdata(c_rdata),
         .flush_valid(flush_active), .flush_mask(flush_mask), .flush_ready(flush_ready), .busy(),
-        .m_valid(m_valid), .m_owner(m_owner), .m_instr(m_instr), .m_addr(m_addr),
-        .m_wdata(m_wdata), .m_wstrb(m_mask), .m_ready(m_ready), .m_rdata(m_rdata),
+        .m_valid(l1_m_valid), .m_owner(m_owner), .m_instr(l1_m_instr), .m_addr(l1_m_addr),
+        .m_wdata(l1_m_wdata), .m_wstrb(l1_m_mask), .m_ready(l1_m_ready), .m_rdata(l1_m_rdata),
         .access_event(d_access), .miss_event(d_miss), .intervention_event(intervention),
         .invalidation_event(invalidation), .writeback_event(writeback),
         .observed_state(), .observed_tag(), .observed_data()
+    );
+    aster_l2_cache #(.ENABLE_L2(ENABLE_L2), .LINE_WORDS(L2_LINE_WORDS),
+        .LINE_COUNT(L2_LINE_COUNT)) l2 (
+        .clk(clk), .resetn(resetn),
+        .s_valid(l1_m_valid), .s_instr(l1_m_instr), .s_device(l1_m_device),
+        .s_addr(l1_m_addr), .s_wdata(l1_m_wdata), .s_wstrb(l1_m_mask),
+        .s_ready(l1_m_ready), .s_rdata(l1_m_rdata),
+        .m_valid(m_valid), .m_instr(m_instr), .m_device(m_device),
+        .m_addr(m_addr), .m_wdata(m_wdata), .m_wstrb(m_mask),
+        .m_ready(m_ready), .m_rdata(m_rdata),
+        .access_event(l2_access), .miss_event(l2_miss),
+        .refill_event(l2_refill), .write_event(l2_write)
     );
     /* verilator lint_on PINCONNECTEMPTY */
 

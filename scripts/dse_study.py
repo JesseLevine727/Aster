@@ -70,6 +70,18 @@ SWEEPS = {
         "configs": [{"id": "xe", "vars": {}}],
         "workloads": ["conv2d", "conv2d_dot8", "conv2d_npu"],
     },
+    "l2-cache": {
+        "question": "How much do L2 cache sizes affect real workloads?",
+        "configs": [
+            {"id": "l2off-w0", "vars": {"ENABLE_L2": "0", "MEMORY_WAIT_CYCLES": "0"}},
+            {"id": "l2on-w0", "vars": {"ENABLE_L2": "1", "L2_LINE_COUNT": "256", "MEMORY_WAIT_CYCLES": "0"}},
+            {"id": "l2off-w16", "vars": {"ENABLE_L2": "0", "MEMORY_WAIT_CYCLES": "16"}},
+            {"id": "l2on-w16", "vars": {"ENABLE_L2": "1", "L2_LINE_COUNT": "256", "MEMORY_WAIT_CYCLES": "16"}},
+            {"id": "l2off-w64", "vars": {"ENABLE_L2": "0", "MEMORY_WAIT_CYCLES": "64"}},
+            {"id": "l2on-w64", "vars": {"ENABLE_L2": "1", "L2_LINE_COUNT": "256", "MEMORY_WAIT_CYCLES": "64"}},
+        ],
+        "workloads": ["reduce_parallel", "conv2d_npu"],
+    },
 }
 
 HEX_METRICS = ["cycles", "retired", "memory_transactions", "backing_transactions",

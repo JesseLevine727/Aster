@@ -33,7 +33,7 @@ set rtl_files [list rtl/core/aster_picorv32.sv vendor/picorv32/picorv32.v \
     rtl/core/aster_hart.sv rtl/soc/aster_minimal.sv rtl/soc/aster_pynq_linux.sv \
     rtl/interconnect/aster_arbiter2.sv rtl/soc/aster_shared_fabric.sv rtl/soc/aster_multicore.sv \
     rtl/core/aster_pcpi_atomic.sv rtl/core/aster_pcpi_dot8.sv rtl/core/aster_atomic_hart.sv rtl/interconnect/aster_atomic_fabric.sv \
-    rtl/cache/aster_coherent_cache.sv rtl/soc/aster_warm_stop.sv \
+    rtl/cache/aster_coherent_cache.sv rtl/cache/aster_l2_cache.sv rtl/soc/aster_warm_stop.sv \
     rtl/interconnect/aster_device_arbiter.sv rtl/accelerator/aster_int8_pe.sv \
     rtl/accelerator/aster_int8_array.sv rtl/accelerator/aster_npu_engine.sv \
     rtl/accelerator/aster_npu_regs.sv \
