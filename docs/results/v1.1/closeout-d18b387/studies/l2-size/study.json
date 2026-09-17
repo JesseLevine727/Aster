@@ -1,0 +1,180 @@
+{
+  "configs": [
+    {
+      "id": "off",
+      "records": {
+        "conv2d_npu": "ASTERBENCH,version=10,name=conv2d_npu,category=dsp,status=PASS,size=1024,iterations=4,param=5,seed=0x13570000,checksum=0x07df8000,clock_hz=31250000,l1=1,sync_memory=0,line_words=4,line_count=16,memory_wait=64,cycles=0x00000000011c0369,retired=0x000000000008f425,memory_transactions=0x00000000000d2221,backing_transactions=0x00000000000198f4,cache_accesses=0x00000000000c78d0,cache_misses=0x0000000000004ce4,dma_bytes=0x0000000000003100,accelerator_cycles=0x0000000000001324\n",
+        "reduce_parallel": "ASTERBENCH,version=10,name=reduce_parallel,category=cpu,status=PASS,size=4096,iterations=4,param=2,seed=0x13570000,checksum=0x5c808000,clock_hz=31250000,l1=1,sync_memory=0,line_words=4,line_count=16,memory_wait=64,cycles=0x00000000000fb1a5,retired=0x000000000000a097,memory_transactions=0x000000000000d0bb,backing_transactions=0x00000000000028e8,cache_accesses=0x000000000000d0ba,cache_misses=0x000000000000061e,dma_bytes=0x0000000000000000,accelerator_cycles=0x0000000000000000\n"
+      },
+      "vars": {
+        "ENABLE_L2": "0",
+        "MEMORY_WAIT_CYCLES": "64"
+      }
+    },
+    {
+      "id": "n64",
+      "records": {
+        "conv2d_npu": "ASTERBENCH,version=10,name=conv2d_npu,category=dsp,status=PASS,size=1024,iterations=4,param=5,seed=0x13570000,checksum=0x07df8000,clock_hz=31250000,l1=1,sync_memory=0,line_words=4,line_count=16,memory_wait=64,cycles=0x0000000000c65ce5,retired=0x0000000000084da5,memory_transactions=0x00000000000c2f51,backing_transactions=0x000000000001eb04,cache_accesses=0x00000000000bac28,cache_misses=0x00000000000045f4,dma_bytes=0x0000000000000000,accelerator_cycles=0x0000000000001324\n",
+        "reduce_parallel": "ASTERBENCH,version=10,name=reduce_parallel,category=cpu,status=PASS,size=4096,iterations=4,param=2,seed=0x13570000,checksum=0x5c808000,clock_hz=31250000,l1=1,sync_memory=0,line_words=4,line_count=16,memory_wait=64,cycles=0x00000000000ffb85,retired=0x000000000000a097,memory_transactions=0x000000000000d0bb,backing_transactions=0x00000000000028c8,cache_accesses=0x000000000000d0ba,cache_misses=0x000000000000061e,dma_bytes=0x0000000000000000,accelerator_cycles=0x0000000000000000\n"
+      },
+      "vars": {
+        "ENABLE_L2": "1",
+        "L2_LINE_COUNT": "64",
+        "MEMORY_WAIT_CYCLES": "64"
+      }
+    },
+    {
+      "id": "n256",
+      "records": {
+        "conv2d_npu": "ASTERBENCH,version=10,name=conv2d_npu,category=dsp,status=PASS,size=1024,iterations=4,param=5,seed=0x13570000,checksum=0x07df8000,clock_hz=31250000,l1=1,sync_memory=0,line_words=4,line_count=16,memory_wait=64,cycles=0x0000000000b96345,retired=0x0000000000084b65,memory_transactions=0x00000000000c2c09,backing_transactions=0x000000000001b808,cache_accesses=0x00000000000ba964,cache_misses=0x00000000000045dc,dma_bytes=0x0000000000000000,accelerator_cycles=0x0000000000001324\n",
+        "reduce_parallel": "ASTERBENCH,version=10,name=reduce_parallel,category=cpu,status=PASS,size=4096,iterations=4,param=2,seed=0x13570000,checksum=0x5c808000,clock_hz=31250000,l1=1,sync_memory=0,line_words=4,line_count=16,memory_wait=64,cycles=0x000000000007ed5d,retired=0x000000000000a097,memory_transactions=0x000000000000d0bb,backing_transactions=0x00000000000010d8,cache_accesses=0x000000000000d0ba,cache_misses=0x000000000000061e,dma_bytes=0x0000000000000000,accelerator_cycles=0x0000000000000000\n"
+      },
+      "vars": {
+        "ENABLE_L2": "1",
+        "L2_LINE_COUNT": "256",
+        "MEMORY_WAIT_CYCLES": "64"
+      }
+    },
+    {
+      "id": "n1024",
+      "records": {
+        "conv2d_npu": "ASTERBENCH,version=10,name=conv2d_npu,category=dsp,status=PASS,size=1024,iterations=4,param=5,seed=0x13570000,checksum=0x07df8000,clock_hz=31250000,l1=1,sync_memory=0,line_words=4,line_count=16,memory_wait=64,cycles=0x00000000009e9209,retired=0x0000000000083c65,memory_transactions=0x00000000000c1629,backing_transactions=0x0000000000014fc8,cache_accesses=0x00000000000b96f4,cache_misses=0x000000000000453c,dma_bytes=0x0000000000000000,accelerator_cycles=0x0000000000001324\n",
+        "reduce_parallel": "ASTERBENCH,version=10,name=reduce_parallel,category=cpu,status=PASS,size=4096,iterations=4,param=2,seed=0x13570000,checksum=0x5c808000,clock_hz=31250000,l1=1,sync_memory=0,line_words=4,line_count=16,memory_wait=64,cycles=0x000000000007dc32,retired=0x000000000000a09b,memory_transactions=0x000000000000d0c1,backing_transactions=0x00000000000010a4,cache_accesses=0x000000000000d0c0,cache_misses=0x000000000000061e,dma_bytes=0x0000000000000000,accelerator_cycles=0x0000000000000000\n"
+      },
+      "vars": {
+        "ENABLE_L2": "1",
+        "L2_LINE_COUNT": "1024",
+        "MEMORY_WAIT_CYCLES": "64"
+      }
+    }
+  ],
+  "provenance": {
+    "dirty": false,
+    "revision": "a8b446f4ad25383a86ad6393e4b736d17ad92f66"
+  },
+  "question": "How much do L2 cache sizes affect real workloads?",
+  "schema": "aster.phase14.study.v1",
+  "summary": [
+    {
+      "accelerator_cycles": 4900,
+      "backing_transactions": 85960,
+      "cache_accesses": 759540,
+      "cache_misses": 17724,
+      "checksum": "0x07df8000",
+      "config": "n1024",
+      "cycles": 10392073,
+      "dma_bytes": 0,
+      "iterations": 4,
+      "memory_transactions": 792105,
+      "retired": 539749,
+      "size": 1024,
+      "workload": "conv2d_npu"
+    },
+    {
+      "accelerator_cycles": 0,
+      "backing_transactions": 4260,
+      "cache_accesses": 53440,
+      "cache_misses": 1566,
+      "checksum": "0x5c808000",
+      "config": "n1024",
+      "cycles": 515122,
+      "dma_bytes": 0,
+      "iterations": 4,
+      "memory_transactions": 53441,
+      "retired": 41115,
+      "size": 4096,
+      "workload": "reduce_parallel"
+    },
+    {
+      "accelerator_cycles": 4900,
+      "backing_transactions": 112648,
+      "cache_accesses": 764260,
+      "cache_misses": 17884,
+      "checksum": "0x07df8000",
+      "config": "n256",
+      "cycles": 12149573,
+      "dma_bytes": 0,
+      "iterations": 4,
+      "memory_transactions": 797705,
+      "retired": 543589,
+      "size": 1024,
+      "workload": "conv2d_npu"
+    },
+    {
+      "accelerator_cycles": 0,
+      "backing_transactions": 4312,
+      "cache_accesses": 53434,
+      "cache_misses": 1566,
+      "checksum": "0x5c808000",
+      "config": "n256",
+      "cycles": 519517,
+      "dma_bytes": 0,
+      "iterations": 4,
+      "memory_transactions": 53435,
+      "retired": 41111,
+      "size": 4096,
+      "workload": "reduce_parallel"
+    },
+    {
+      "accelerator_cycles": 4900,
+      "backing_transactions": 125700,
+      "cache_accesses": 764968,
+      "cache_misses": 17908,
+      "checksum": "0x07df8000",
+      "config": "n64",
+      "cycles": 12999909,
+      "dma_bytes": 0,
+      "iterations": 4,
+      "memory_transactions": 798545,
+      "retired": 544165,
+      "size": 1024,
+      "workload": "conv2d_npu"
+    },
+    {
+      "accelerator_cycles": 0,
+      "backing_transactions": 10440,
+      "cache_accesses": 53434,
+      "cache_misses": 1566,
+      "checksum": "0x5c808000",
+      "config": "n64",
+      "cycles": 1047429,
+      "dma_bytes": 0,
+      "iterations": 4,
+      "memory_transactions": 53435,
+      "retired": 41111,
+      "size": 4096,
+      "workload": "reduce_parallel"
+    },
+    {
+      "accelerator_cycles": 4900,
+      "backing_transactions": 104692,
+      "cache_accesses": 817360,
+      "cache_misses": 19684,
+      "checksum": "0x07df8000",
+      "config": "off",
+      "cycles": 18613097,
+      "dma_bytes": 12544,
+      "iterations": 4,
+      "memory_transactions": 860705,
+      "retired": 586789,
+      "size": 1024,
+      "workload": "conv2d_npu"
+    },
+    {
+      "accelerator_cycles": 0,
+      "backing_transactions": 10472,
+      "cache_accesses": 53434,
+      "cache_misses": 1566,
+      "checksum": "0x5c808000",
+      "config": "off",
+      "cycles": 1028517,
+      "dma_bytes": 0,
+      "iterations": 4,
+      "memory_transactions": 53435,
+      "retired": 41111,
+      "size": 4096,
+      "workload": "reduce_parallel"
+    }
+  ],
+  "sweep": "l2-size"
+}
