@@ -78,6 +78,10 @@ module aster_coherent_cache #(
     logic [SCAN_BITS-1:0] flush_position;
     logic flush_owner;
     logic [INDEX_BITS-1:0] flush_index;
+    // Registered flush-scan target so the data-array read in FLUSH_WRITE is
+    // driven by a local register rather than the flush_position counter.
+    logic flush_owner_q;
+    logic [INDEX_BITS-1:0] flush_index_q;
 
     initial begin
         if (LINE_WORDS < 1 || LINE_WORDS > 1024 || (LINE_WORDS & (LINE_WORDS-1)) != 0)
@@ -149,9 +153,9 @@ module aster_coherent_cache #(
                 end
                 FLUSH_WRITE: begin
                     m_valid = 1;
-                    m_owner = flush_owner;
-                    m_addr = tags[flush_owner][flush_index] + 32'(transfer_word)*4;
-                    m_wdata = data[flush_owner][flush_index][transfer_word];
+                    m_owner = flush_owner_q;
+                    m_addr = tags[flush_owner_q][flush_index_q] + 32'(transfer_word)*4;
+                    m_wdata = data[flush_owner_q][flush_index_q][transfer_word];
                     m_wstrb = 4'hf;
                 end
                 default: begin end
@@ -299,7 +303,11 @@ module aster_coherent_cache #(
                 FLUSH_SCAN: begin
                     if (flush_position == SCAN_BITS'(2*LINE_COUNT)) state <= FLUSH_DONE;
                     else if (!selected_flush[flush_owner]) flush_position <= flush_position + 1'b1;
-                    else if (lines[flush_owner][flush_index] == M) state <= FLUSH_WRITE;
+                    else if (lines[flush_owner][flush_index] == M) begin
+                        flush_owner_q <= flush_owner;
+                        flush_index_q <= flush_index;
+                        state <= FLUSH_WRITE;
+                    end
                     else begin
                         lines[flush_owner][flush_index] <= I;
                         flush_position <= flush_position + 1'b1;
@@ -307,7 +315,7 @@ module aster_coherent_cache #(
                 end
                 FLUSH_WRITE: if (m_ready) begin
                     if (transfer_word == WORD_BITS'(LINE_WORDS-1)) begin
-                        lines[flush_owner][flush_index] <= I;
+                        lines[flush_owner_q][flush_index_q] <= I;
                         transfer_word <= 0;
                         flush_position <= flush_position + 1'b1;
                         state <= FLUSH_SCAN;

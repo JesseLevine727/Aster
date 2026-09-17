@@ -14,7 +14,7 @@ module aster_linux_ip #(
     parameter integer L2_LINE_COUNT = 64
 ) (
     (* X_INTERFACE_INFO = "xilinx.com:signal:clock:1.0 aclk CLK",
-       X_INTERFACE_PARAMETER = "ASSOCIATED_BUSIF s_axi, ASSOCIATED_RESET aresetn, FREQ_HZ 31250000" *)
+       X_INTERFACE_PARAMETER = "ASSOCIATED_BUSIF s_axi, ASSOCIATED_RESET aresetn, FREQ_HZ 50000000" *)
     input wire aclk,
     (* X_INTERFACE_INFO = "xilinx.com:signal:reset:1.0 aresetn RST",
        X_INTERFACE_PARAMETER = "POLARITY ACTIVE_LOW" *)
