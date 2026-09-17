@@ -1,0 +1,433 @@
+Copyright 1986-2022 Xilinx, Inc. All Rights Reserved. Copyright 2022-2025 Advanced Micro Devices, Inc. All Rights Reserved.
+---------------------------------------------------------------------------------------------------------------------------------------------
+| Tool Version : Vivado v.2025.1 (lin64) Build 6140274 Wed May 21 22:58:25 MDT 2025
+| Date         : Thu Sep 17 12:24:03 2026
+| Host         : gondor running 64-bit Ubuntu 24.04.3 LTS
+| Command      : report_drc -file /home/elfo/Documents/Aster/build/fpga/pynq_z1/linux-h2-coherent-c1-dma-dot8-npu/drc.rpt
+| Design       : aster_linux_wrapper
+| Device       : xc7z020clg400-1
+| Speed File   : -1
+| Design State : Fully Routed
+---------------------------------------------------------------------------------------------------------------------------------------------
+
+Report DRC
+
+Table of Contents
+-----------------
+1. REPORT SUMMARY
+2. REPORT DETAILS
+
+1. REPORT SUMMARY
+-----------------
+            Netlist: netlist
+          Floorplan: design_1
+      Design limits: <entire design considered>
+           Ruledeck: default
+             Max checks: <unlimited>
+             Checks found: 79
++--------+----------+------------------------+--------+
+| Rule   | Severity | Description            | Checks |
++--------+----------+------------------------+--------+
+| DPIP-1 | Warning  | Input pipelining       | 31     |
+| DPOP-1 | Warning  | PREG Output pipelining | 24     |
+| DPOP-2 | Warning  | MREG Output pipelining | 24     |
++--------+----------+------------------------+--------+
+
+2. REPORT DETAILS
+-----------------
+DPIP-1#1 Warning
+Input pipelining  
+DSP aster_linux_i/aster/inst/implementation/g_coherent.soc/g_npu.npu/engine/a_byte_address1 input aster_linux_i/aster/inst/implementation/g_coherent.soc/g_npu.npu/engine/a_byte_address1/B[17:0] is not pipelined. Pipelining DSP48 input will improve performance.
+Related violations: <none>
+
+DPIP-1#2 Warning
+Input pipelining  
+DSP aster_linux_i/aster/inst/implementation/g_coherent.soc/g_npu.npu/engine/a_byte_address1__0 input aster_linux_i/aster/inst/implementation/g_coherent.soc/g_npu.npu/engine/a_byte_address1__0/A[29:0] is not pipelined. Pipelining DSP48 input will improve performance.
+Related violations: <none>
+
+DPIP-1#3 Warning
+Input pipelining  
+DSP aster_linux_i/aster/inst/implementation/g_coherent.soc/g_npu.npu/engine/a_byte_address1__1 input aster_linux_i/aster/inst/implementation/g_coherent.soc/g_npu.npu/engine/a_byte_address1__1/A[29:0] is not pipelined. Pipelining DSP48 input will improve performance.
+Related violations: <none>
+
+DPIP-1#4 Warning
+Input pipelining  
+DSP aster_linux_i/aster/inst/implementation/g_coherent.soc/g_npu.npu/engine/a_byte_address1__2 input aster_linux_i/aster/inst/implementation/g_coherent.soc/g_npu.npu/engine/a_byte_address1__2/A[29:0] is not pipelined. Pipelining DSP48 input will improve performance.
+Related violations: <none>
+
+DPIP-1#5 Warning
+Input pipelining  
+DSP aster_linux_i/aster/inst/implementation/g_coherent.soc/g_npu.npu/engine/a_end2 input aster_linux_i/aster/inst/implementation/g_coherent.soc/g_npu.npu/engine/a_end2/A[29:0] is not pipelined. Pipelining DSP48 input will improve performance.
+Related violations: <none>
+
+DPIP-1#6 Warning
+Input pipelining  
+DSP aster_linux_i/aster/inst/implementation/g_coherent.soc/g_npu.npu/engine/a_end2 input aster_linux_i/aster/inst/implementation/g_coherent.soc/g_npu.npu/engine/a_end2/B[17:0] is not pipelined. Pipelining DSP48 input will improve performance.
+Related violations: <none>
+
+DPIP-1#7 Warning
+Input pipelining  
+DSP aster_linux_i/aster/inst/implementation/g_coherent.soc/g_npu.npu/engine/a_end2__0 input aster_linux_i/aster/inst/implementation/g_coherent.soc/g_npu.npu/engine/a_end2__0/A[29:0] is not pipelined. Pipelining DSP48 input will improve performance.
+Related violations: <none>
+
+DPIP-1#8 Warning
+Input pipelining  
+DSP aster_linux_i/aster/inst/implementation/g_coherent.soc/g_npu.npu/engine/a_end2__0 input aster_linux_i/aster/inst/implementation/g_coherent.soc/g_npu.npu/engine/a_end2__0/B[17:0] is not pipelined. Pipelining DSP48 input will improve performance.
+Related violations: <none>
+
+DPIP-1#9 Warning
+Input pipelining  
+DSP aster_linux_i/aster/inst/implementation/g_coherent.soc/g_npu.npu/engine/a_end2__1 input aster_linux_i/aster/inst/implementation/g_coherent.soc/g_npu.npu/engine/a_end2__1/A[29:0] is not pipelined. Pipelining DSP48 input will improve performance.
+Related violations: <none>
+
+DPIP-1#10 Warning
+Input pipelining  
+DSP aster_linux_i/aster/inst/implementation/g_coherent.soc/g_npu.npu/engine/a_end2__1 input aster_linux_i/aster/inst/implementation/g_coherent.soc/g_npu.npu/engine/a_end2__1/B[17:0] is not pipelined. Pipelining DSP48 input will improve performance.
+Related violations: <none>
+
+DPIP-1#11 Warning
+Input pipelining  
+DSP aster_linux_i/aster/inst/implementation/g_coherent.soc/g_npu.npu/engine/a_end2__2 input aster_linux_i/aster/inst/implementation/g_coherent.soc/g_npu.npu/engine/a_end2__2/A[29:0] is not pipelined. Pipelining DSP48 input will improve performance.
+Related violations: <none>
+
+DPIP-1#12 Warning
+Input pipelining  
+DSP aster_linux_i/aster/inst/implementation/g_coherent.soc/g_npu.npu/engine/a_end2__2 input aster_linux_i/aster/inst/implementation/g_coherent.soc/g_npu.npu/engine/a_end2__2/B[17:0] is not pipelined. Pipelining DSP48 input will improve performance.
+Related violations: <none>
+
+DPIP-1#13 Warning
+Input pipelining  
+DSP aster_linux_i/aster/inst/implementation/g_coherent.soc/g_npu.npu/engine/b_end2 input aster_linux_i/aster/inst/implementation/g_coherent.soc/g_npu.npu/engine/b_end2/A[29:0] is not pipelined. Pipelining DSP48 input will improve performance.
+Related violations: <none>
+
+DPIP-1#14 Warning
+Input pipelining  
+DSP aster_linux_i/aster/inst/implementation/g_coherent.soc/g_npu.npu/engine/b_end2 input aster_linux_i/aster/inst/implementation/g_coherent.soc/g_npu.npu/engine/b_end2/B[17:0] is not pipelined. Pipelining DSP48 input will improve performance.
+Related violations: <none>
+
+DPIP-1#15 Warning
+Input pipelining  
+DSP aster_linux_i/aster/inst/implementation/g_coherent.soc/g_npu.npu/engine/b_end2__0 input aster_linux_i/aster/inst/implementation/g_coherent.soc/g_npu.npu/engine/b_end2__0/A[29:0] is not pipelined. Pipelining DSP48 input will improve performance.
+Related violations: <none>
+
+DPIP-1#16 Warning
+Input pipelining  
+DSP aster_linux_i/aster/inst/implementation/g_coherent.soc/g_npu.npu/engine/b_end2__0 input aster_linux_i/aster/inst/implementation/g_coherent.soc/g_npu.npu/engine/b_end2__0/B[17:0] is not pipelined. Pipelining DSP48 input will improve performance.
+Related violations: <none>
+
+DPIP-1#17 Warning
+Input pipelining  
+DSP aster_linux_i/aster/inst/implementation/g_coherent.soc/g_npu.npu/engine/b_end2__1 input aster_linux_i/aster/inst/implementation/g_coherent.soc/g_npu.npu/engine/b_end2__1/A[29:0] is not pipelined. Pipelining DSP48 input will improve performance.
+Related violations: <none>
+
+DPIP-1#18 Warning
+Input pipelining  
+DSP aster_linux_i/aster/inst/implementation/g_coherent.soc/g_npu.npu/engine/b_end2__1 input aster_linux_i/aster/inst/implementation/g_coherent.soc/g_npu.npu/engine/b_end2__1/B[17:0] is not pipelined. Pipelining DSP48 input will improve performance.
+Related violations: <none>
+
+DPIP-1#19 Warning
+Input pipelining  
+DSP aster_linux_i/aster/inst/implementation/g_coherent.soc/g_npu.npu/engine/b_end2__2 input aster_linux_i/aster/inst/implementation/g_coherent.soc/g_npu.npu/engine/b_end2__2/B[17:0] is not pipelined. Pipelining DSP48 input will improve performance.
+Related violations: <none>
+
+DPIP-1#20 Warning
+Input pipelining  
+DSP aster_linux_i/aster/inst/implementation/g_coherent.soc/g_npu.npu/engine/c_byte_address2 input aster_linux_i/aster/inst/implementation/g_coherent.soc/g_npu.npu/engine/c_byte_address2/B[17:0] is not pipelined. Pipelining DSP48 input will improve performance.
+Related violations: <none>
+
+DPIP-1#21 Warning
+Input pipelining  
+DSP aster_linux_i/aster/inst/implementation/g_coherent.soc/g_npu.npu/engine/c_byte_address2__0 input aster_linux_i/aster/inst/implementation/g_coherent.soc/g_npu.npu/engine/c_byte_address2__0/A[29:0] is not pipelined. Pipelining DSP48 input will improve performance.
+Related violations: <none>
+
+DPIP-1#22 Warning
+Input pipelining  
+DSP aster_linux_i/aster/inst/implementation/g_coherent.soc/g_npu.npu/engine/c_byte_address2__1 input aster_linux_i/aster/inst/implementation/g_coherent.soc/g_npu.npu/engine/c_byte_address2__1/A[29:0] is not pipelined. Pipelining DSP48 input will improve performance.
+Related violations: <none>
+
+DPIP-1#23 Warning
+Input pipelining  
+DSP aster_linux_i/aster/inst/implementation/g_coherent.soc/g_npu.npu/engine/c_byte_address2__2 input aster_linux_i/aster/inst/implementation/g_coherent.soc/g_npu.npu/engine/c_byte_address2__2/A[29:0] is not pipelined. Pipelining DSP48 input will improve performance.
+Related violations: <none>
+
+DPIP-1#24 Warning
+Input pipelining  
+DSP aster_linux_i/aster/inst/implementation/g_coherent.soc/g_npu.npu/engine/c_end3 input aster_linux_i/aster/inst/implementation/g_coherent.soc/g_npu.npu/engine/c_end3/A[29:0] is not pipelined. Pipelining DSP48 input will improve performance.
+Related violations: <none>
+
+DPIP-1#25 Warning
+Input pipelining  
+DSP aster_linux_i/aster/inst/implementation/g_coherent.soc/g_npu.npu/engine/c_end3 input aster_linux_i/aster/inst/implementation/g_coherent.soc/g_npu.npu/engine/c_end3/B[17:0] is not pipelined. Pipelining DSP48 input will improve performance.
+Related violations: <none>
+
+DPIP-1#26 Warning
+Input pipelining  
+DSP aster_linux_i/aster/inst/implementation/g_coherent.soc/g_npu.npu/engine/c_end3__0 input aster_linux_i/aster/inst/implementation/g_coherent.soc/g_npu.npu/engine/c_end3__0/A[29:0] is not pipelined. Pipelining DSP48 input will improve performance.
+Related violations: <none>
+
+DPIP-1#27 Warning
+Input pipelining  
+DSP aster_linux_i/aster/inst/implementation/g_coherent.soc/g_npu.npu/engine/c_end3__0 input aster_linux_i/aster/inst/implementation/g_coherent.soc/g_npu.npu/engine/c_end3__0/B[17:0] is not pipelined. Pipelining DSP48 input will improve performance.
+Related violations: <none>
+
+DPIP-1#28 Warning
+Input pipelining  
+DSP aster_linux_i/aster/inst/implementation/g_coherent.soc/g_npu.npu/engine/c_end3__1 input aster_linux_i/aster/inst/implementation/g_coherent.soc/g_npu.npu/engine/c_end3__1/A[29:0] is not pipelined. Pipelining DSP48 input will improve performance.
+Related violations: <none>
+
+DPIP-1#29 Warning
+Input pipelining  
+DSP aster_linux_i/aster/inst/implementation/g_coherent.soc/g_npu.npu/engine/c_end3__1 input aster_linux_i/aster/inst/implementation/g_coherent.soc/g_npu.npu/engine/c_end3__1/B[17:0] is not pipelined. Pipelining DSP48 input will improve performance.
+Related violations: <none>
+
+DPIP-1#30 Warning
+Input pipelining  
+DSP aster_linux_i/aster/inst/implementation/g_coherent.soc/g_npu.npu/engine/c_end3__2 input aster_linux_i/aster/inst/implementation/g_coherent.soc/g_npu.npu/engine/c_end3__2/A[29:0] is not pipelined. Pipelining DSP48 input will improve performance.
+Related violations: <none>
+
+DPIP-1#31 Warning
+Input pipelining  
+DSP aster_linux_i/aster/inst/implementation/g_coherent.soc/g_npu.npu/engine/c_end3__2 input aster_linux_i/aster/inst/implementation/g_coherent.soc/g_npu.npu/engine/c_end3__2/B[17:0] is not pipelined. Pipelining DSP48 input will improve performance.
+Related violations: <none>
+
+DPOP-1#1 Warning
+PREG Output pipelining  
+DSP aster_linux_i/aster/inst/implementation/g_coherent.soc/g_npu.npu/engine/a_byte_address1 output aster_linux_i/aster/inst/implementation/g_coherent.soc/g_npu.npu/engine/a_byte_address1/P[47:0] is not pipelined (PREG=0). Pipelining the DSP48 output will improve performance and often saves power so it is suggested whenever possible to fully pipeline this function.  If this DSP48 function was inferred, it is suggested to describe an additional register stage after this function.  If the DSP48 was instantiated in the design, it is suggested to set the PREG attribute to 1.
+Related violations: <none>
+
+DPOP-1#2 Warning
+PREG Output pipelining  
+DSP aster_linux_i/aster/inst/implementation/g_coherent.soc/g_npu.npu/engine/a_byte_address1__0 output aster_linux_i/aster/inst/implementation/g_coherent.soc/g_npu.npu/engine/a_byte_address1__0/P[47:0] is not pipelined (PREG=0). Pipelining the DSP48 output will improve performance and often saves power so it is suggested whenever possible to fully pipeline this function.  If this DSP48 function was inferred, it is suggested to describe an additional register stage after this function.  If the DSP48 was instantiated in the design, it is suggested to set the PREG attribute to 1.
+Related violations: <none>
+
+DPOP-1#3 Warning
+PREG Output pipelining  
+DSP aster_linux_i/aster/inst/implementation/g_coherent.soc/g_npu.npu/engine/a_byte_address1__1 output aster_linux_i/aster/inst/implementation/g_coherent.soc/g_npu.npu/engine/a_byte_address1__1/P[47:0] is not pipelined (PREG=0). Pipelining the DSP48 output will improve performance and often saves power so it is suggested whenever possible to fully pipeline this function.  If this DSP48 function was inferred, it is suggested to describe an additional register stage after this function.  If the DSP48 was instantiated in the design, it is suggested to set the PREG attribute to 1.
+Related violations: <none>
+
+DPOP-1#4 Warning
+PREG Output pipelining  
+DSP aster_linux_i/aster/inst/implementation/g_coherent.soc/g_npu.npu/engine/a_byte_address1__2 output aster_linux_i/aster/inst/implementation/g_coherent.soc/g_npu.npu/engine/a_byte_address1__2/P[47:0] is not pipelined (PREG=0). Pipelining the DSP48 output will improve performance and often saves power so it is suggested whenever possible to fully pipeline this function.  If this DSP48 function was inferred, it is suggested to describe an additional register stage after this function.  If the DSP48 was instantiated in the design, it is suggested to set the PREG attribute to 1.
+Related violations: <none>
+
+DPOP-1#5 Warning
+PREG Output pipelining  
+DSP aster_linux_i/aster/inst/implementation/g_coherent.soc/g_npu.npu/engine/a_end2 output aster_linux_i/aster/inst/implementation/g_coherent.soc/g_npu.npu/engine/a_end2/P[47:0] is not pipelined (PREG=0). Pipelining the DSP48 output will improve performance and often saves power so it is suggested whenever possible to fully pipeline this function.  If this DSP48 function was inferred, it is suggested to describe an additional register stage after this function.  If the DSP48 was instantiated in the design, it is suggested to set the PREG attribute to 1.
+Related violations: <none>
+
+DPOP-1#6 Warning
+PREG Output pipelining  
+DSP aster_linux_i/aster/inst/implementation/g_coherent.soc/g_npu.npu/engine/a_end2__0 output aster_linux_i/aster/inst/implementation/g_coherent.soc/g_npu.npu/engine/a_end2__0/P[47:0] is not pipelined (PREG=0). Pipelining the DSP48 output will improve performance and often saves power so it is suggested whenever possible to fully pipeline this function.  If this DSP48 function was inferred, it is suggested to describe an additional register stage after this function.  If the DSP48 was instantiated in the design, it is suggested to set the PREG attribute to 1.
+Related violations: <none>
+
+DPOP-1#7 Warning
+PREG Output pipelining  
+DSP aster_linux_i/aster/inst/implementation/g_coherent.soc/g_npu.npu/engine/a_end2__1 output aster_linux_i/aster/inst/implementation/g_coherent.soc/g_npu.npu/engine/a_end2__1/P[47:0] is not pipelined (PREG=0). Pipelining the DSP48 output will improve performance and often saves power so it is suggested whenever possible to fully pipeline this function.  If this DSP48 function was inferred, it is suggested to describe an additional register stage after this function.  If the DSP48 was instantiated in the design, it is suggested to set the PREG attribute to 1.
+Related violations: <none>
+
+DPOP-1#8 Warning
+PREG Output pipelining  
+DSP aster_linux_i/aster/inst/implementation/g_coherent.soc/g_npu.npu/engine/a_end2__2 output aster_linux_i/aster/inst/implementation/g_coherent.soc/g_npu.npu/engine/a_end2__2/P[47:0] is not pipelined (PREG=0). Pipelining the DSP48 output will improve performance and often saves power so it is suggested whenever possible to fully pipeline this function.  If this DSP48 function was inferred, it is suggested to describe an additional register stage after this function.  If the DSP48 was instantiated in the design, it is suggested to set the PREG attribute to 1.
+Related violations: <none>
+
+DPOP-1#9 Warning
+PREG Output pipelining  
+DSP aster_linux_i/aster/inst/implementation/g_coherent.soc/g_npu.npu/engine/b_byte_address1 output aster_linux_i/aster/inst/implementation/g_coherent.soc/g_npu.npu/engine/b_byte_address1/P[47:0] is not pipelined (PREG=0). Pipelining the DSP48 output will improve performance and often saves power so it is suggested whenever possible to fully pipeline this function.  If this DSP48 function was inferred, it is suggested to describe an additional register stage after this function.  If the DSP48 was instantiated in the design, it is suggested to set the PREG attribute to 1.
+Related violations: <none>
+
+DPOP-1#10 Warning
+PREG Output pipelining  
+DSP aster_linux_i/aster/inst/implementation/g_coherent.soc/g_npu.npu/engine/b_byte_address1__0 output aster_linux_i/aster/inst/implementation/g_coherent.soc/g_npu.npu/engine/b_byte_address1__0/P[47:0] is not pipelined (PREG=0). Pipelining the DSP48 output will improve performance and often saves power so it is suggested whenever possible to fully pipeline this function.  If this DSP48 function was inferred, it is suggested to describe an additional register stage after this function.  If the DSP48 was instantiated in the design, it is suggested to set the PREG attribute to 1.
+Related violations: <none>
+
+DPOP-1#11 Warning
+PREG Output pipelining  
+DSP aster_linux_i/aster/inst/implementation/g_coherent.soc/g_npu.npu/engine/b_byte_address1__1 output aster_linux_i/aster/inst/implementation/g_coherent.soc/g_npu.npu/engine/b_byte_address1__1/P[47:0] is not pipelined (PREG=0). Pipelining the DSP48 output will improve performance and often saves power so it is suggested whenever possible to fully pipeline this function.  If this DSP48 function was inferred, it is suggested to describe an additional register stage after this function.  If the DSP48 was instantiated in the design, it is suggested to set the PREG attribute to 1.
+Related violations: <none>
+
+DPOP-1#12 Warning
+PREG Output pipelining  
+DSP aster_linux_i/aster/inst/implementation/g_coherent.soc/g_npu.npu/engine/b_byte_address1__2 output aster_linux_i/aster/inst/implementation/g_coherent.soc/g_npu.npu/engine/b_byte_address1__2/P[47:0] is not pipelined (PREG=0). Pipelining the DSP48 output will improve performance and often saves power so it is suggested whenever possible to fully pipeline this function.  If this DSP48 function was inferred, it is suggested to describe an additional register stage after this function.  If the DSP48 was instantiated in the design, it is suggested to set the PREG attribute to 1.
+Related violations: <none>
+
+DPOP-1#13 Warning
+PREG Output pipelining  
+DSP aster_linux_i/aster/inst/implementation/g_coherent.soc/g_npu.npu/engine/b_end2 output aster_linux_i/aster/inst/implementation/g_coherent.soc/g_npu.npu/engine/b_end2/P[47:0] is not pipelined (PREG=0). Pipelining the DSP48 output will improve performance and often saves power so it is suggested whenever possible to fully pipeline this function.  If this DSP48 function was inferred, it is suggested to describe an additional register stage after this function.  If the DSP48 was instantiated in the design, it is suggested to set the PREG attribute to 1.
+Related violations: <none>
+
+DPOP-1#14 Warning
+PREG Output pipelining  
+DSP aster_linux_i/aster/inst/implementation/g_coherent.soc/g_npu.npu/engine/b_end2__0 output aster_linux_i/aster/inst/implementation/g_coherent.soc/g_npu.npu/engine/b_end2__0/P[47:0] is not pipelined (PREG=0). Pipelining the DSP48 output will improve performance and often saves power so it is suggested whenever possible to fully pipeline this function.  If this DSP48 function was inferred, it is suggested to describe an additional register stage after this function.  If the DSP48 was instantiated in the design, it is suggested to set the PREG attribute to 1.
+Related violations: <none>
+
+DPOP-1#15 Warning
+PREG Output pipelining  
+DSP aster_linux_i/aster/inst/implementation/g_coherent.soc/g_npu.npu/engine/b_end2__1 output aster_linux_i/aster/inst/implementation/g_coherent.soc/g_npu.npu/engine/b_end2__1/P[47:0] is not pipelined (PREG=0). Pipelining the DSP48 output will improve performance and often saves power so it is suggested whenever possible to fully pipeline this function.  If this DSP48 function was inferred, it is suggested to describe an additional register stage after this function.  If the DSP48 was instantiated in the design, it is suggested to set the PREG attribute to 1.
+Related violations: <none>
+
+DPOP-1#16 Warning
+PREG Output pipelining  
+DSP aster_linux_i/aster/inst/implementation/g_coherent.soc/g_npu.npu/engine/b_end2__2 output aster_linux_i/aster/inst/implementation/g_coherent.soc/g_npu.npu/engine/b_end2__2/P[47:0] is not pipelined (PREG=0). Pipelining the DSP48 output will improve performance and often saves power so it is suggested whenever possible to fully pipeline this function.  If this DSP48 function was inferred, it is suggested to describe an additional register stage after this function.  If the DSP48 was instantiated in the design, it is suggested to set the PREG attribute to 1.
+Related violations: <none>
+
+DPOP-1#17 Warning
+PREG Output pipelining  
+DSP aster_linux_i/aster/inst/implementation/g_coherent.soc/g_npu.npu/engine/c_byte_address2 output aster_linux_i/aster/inst/implementation/g_coherent.soc/g_npu.npu/engine/c_byte_address2/P[47:0] is not pipelined (PREG=0). Pipelining the DSP48 output will improve performance and often saves power so it is suggested whenever possible to fully pipeline this function.  If this DSP48 function was inferred, it is suggested to describe an additional register stage after this function.  If the DSP48 was instantiated in the design, it is suggested to set the PREG attribute to 1.
+Related violations: <none>
+
+DPOP-1#18 Warning
+PREG Output pipelining  
+DSP aster_linux_i/aster/inst/implementation/g_coherent.soc/g_npu.npu/engine/c_byte_address2__0 output aster_linux_i/aster/inst/implementation/g_coherent.soc/g_npu.npu/engine/c_byte_address2__0/P[47:0] is not pipelined (PREG=0). Pipelining the DSP48 output will improve performance and often saves power so it is suggested whenever possible to fully pipeline this function.  If this DSP48 function was inferred, it is suggested to describe an additional register stage after this function.  If the DSP48 was instantiated in the design, it is suggested to set the PREG attribute to 1.
+Related violations: <none>
+
+DPOP-1#19 Warning
+PREG Output pipelining  
+DSP aster_linux_i/aster/inst/implementation/g_coherent.soc/g_npu.npu/engine/c_byte_address2__1 output aster_linux_i/aster/inst/implementation/g_coherent.soc/g_npu.npu/engine/c_byte_address2__1/P[47:0] is not pipelined (PREG=0). Pipelining the DSP48 output will improve performance and often saves power so it is suggested whenever possible to fully pipeline this function.  If this DSP48 function was inferred, it is suggested to describe an additional register stage after this function.  If the DSP48 was instantiated in the design, it is suggested to set the PREG attribute to 1.
+Related violations: <none>
+
+DPOP-1#20 Warning
+PREG Output pipelining  
+DSP aster_linux_i/aster/inst/implementation/g_coherent.soc/g_npu.npu/engine/c_byte_address2__2 output aster_linux_i/aster/inst/implementation/g_coherent.soc/g_npu.npu/engine/c_byte_address2__2/P[47:0] is not pipelined (PREG=0). Pipelining the DSP48 output will improve performance and often saves power so it is suggested whenever possible to fully pipeline this function.  If this DSP48 function was inferred, it is suggested to describe an additional register stage after this function.  If the DSP48 was instantiated in the design, it is suggested to set the PREG attribute to 1.
+Related violations: <none>
+
+DPOP-1#21 Warning
+PREG Output pipelining  
+DSP aster_linux_i/aster/inst/implementation/g_coherent.soc/g_npu.npu/engine/c_end3 output aster_linux_i/aster/inst/implementation/g_coherent.soc/g_npu.npu/engine/c_end3/P[47:0] is not pipelined (PREG=0). Pipelining the DSP48 output will improve performance and often saves power so it is suggested whenever possible to fully pipeline this function.  If this DSP48 function was inferred, it is suggested to describe an additional register stage after this function.  If the DSP48 was instantiated in the design, it is suggested to set the PREG attribute to 1.
+Related violations: <none>
+
+DPOP-1#22 Warning
+PREG Output pipelining  
+DSP aster_linux_i/aster/inst/implementation/g_coherent.soc/g_npu.npu/engine/c_end3__0 output aster_linux_i/aster/inst/implementation/g_coherent.soc/g_npu.npu/engine/c_end3__0/P[47:0] is not pipelined (PREG=0). Pipelining the DSP48 output will improve performance and often saves power so it is suggested whenever possible to fully pipeline this function.  If this DSP48 function was inferred, it is suggested to describe an additional register stage after this function.  If the DSP48 was instantiated in the design, it is suggested to set the PREG attribute to 1.
+Related violations: <none>
+
+DPOP-1#23 Warning
+PREG Output pipelining  
+DSP aster_linux_i/aster/inst/implementation/g_coherent.soc/g_npu.npu/engine/c_end3__1 output aster_linux_i/aster/inst/implementation/g_coherent.soc/g_npu.npu/engine/c_end3__1/P[47:0] is not pipelined (PREG=0). Pipelining the DSP48 output will improve performance and often saves power so it is suggested whenever possible to fully pipeline this function.  If this DSP48 function was inferred, it is suggested to describe an additional register stage after this function.  If the DSP48 was instantiated in the design, it is suggested to set the PREG attribute to 1.
+Related violations: <none>
+
+DPOP-1#24 Warning
+PREG Output pipelining  
+DSP aster_linux_i/aster/inst/implementation/g_coherent.soc/g_npu.npu/engine/c_end3__2 output aster_linux_i/aster/inst/implementation/g_coherent.soc/g_npu.npu/engine/c_end3__2/P[47:0] is not pipelined (PREG=0). Pipelining the DSP48 output will improve performance and often saves power so it is suggested whenever possible to fully pipeline this function.  If this DSP48 function was inferred, it is suggested to describe an additional register stage after this function.  If the DSP48 was instantiated in the design, it is suggested to set the PREG attribute to 1.
+Related violations: <none>
+
+DPOP-2#1 Warning
+MREG Output pipelining  
+DSP aster_linux_i/aster/inst/implementation/g_coherent.soc/g_npu.npu/engine/a_byte_address1 multiplier stage aster_linux_i/aster/inst/implementation/g_coherent.soc/g_npu.npu/engine/a_byte_address1/P[47:0] is not pipelined (MREG=0). Pipelining the multiplier function will improve performance and will save significant power so it is suggested whenever possible to fully pipeline this function.  If this multiplier was inferred, it is suggested to describe an additional register stage after this function.  If there is no registered adder/accumulator following the multiply function, two pipeline stages are suggested to allow both the MREG and PREG registers to be used.  If the DSP48 was instantiated in the design, it is suggested to set both the MREG and PREG attributes to 1 when performing multiply functions.
+Related violations: <none>
+
+DPOP-2#2 Warning
+MREG Output pipelining  
+DSP aster_linux_i/aster/inst/implementation/g_coherent.soc/g_npu.npu/engine/a_byte_address1__0 multiplier stage aster_linux_i/aster/inst/implementation/g_coherent.soc/g_npu.npu/engine/a_byte_address1__0/P[47:0] is not pipelined (MREG=0). Pipelining the multiplier function will improve performance and will save significant power so it is suggested whenever possible to fully pipeline this function.  If this multiplier was inferred, it is suggested to describe an additional register stage after this function.  If there is no registered adder/accumulator following the multiply function, two pipeline stages are suggested to allow both the MREG and PREG registers to be used.  If the DSP48 was instantiated in the design, it is suggested to set both the MREG and PREG attributes to 1 when performing multiply functions.
+Related violations: <none>
+
+DPOP-2#3 Warning
+MREG Output pipelining  
+DSP aster_linux_i/aster/inst/implementation/g_coherent.soc/g_npu.npu/engine/a_byte_address1__1 multiplier stage aster_linux_i/aster/inst/implementation/g_coherent.soc/g_npu.npu/engine/a_byte_address1__1/P[47:0] is not pipelined (MREG=0). Pipelining the multiplier function will improve performance and will save significant power so it is suggested whenever possible to fully pipeline this function.  If this multiplier was inferred, it is suggested to describe an additional register stage after this function.  If there is no registered adder/accumulator following the multiply function, two pipeline stages are suggested to allow both the MREG and PREG registers to be used.  If the DSP48 was instantiated in the design, it is suggested to set both the MREG and PREG attributes to 1 when performing multiply functions.
+Related violations: <none>
+
+DPOP-2#4 Warning
+MREG Output pipelining  
+DSP aster_linux_i/aster/inst/implementation/g_coherent.soc/g_npu.npu/engine/a_byte_address1__2 multiplier stage aster_linux_i/aster/inst/implementation/g_coherent.soc/g_npu.npu/engine/a_byte_address1__2/P[47:0] is not pipelined (MREG=0). Pipelining the multiplier function will improve performance and will save significant power so it is suggested whenever possible to fully pipeline this function.  If this multiplier was inferred, it is suggested to describe an additional register stage after this function.  If there is no registered adder/accumulator following the multiply function, two pipeline stages are suggested to allow both the MREG and PREG registers to be used.  If the DSP48 was instantiated in the design, it is suggested to set both the MREG and PREG attributes to 1 when performing multiply functions.
+Related violations: <none>
+
+DPOP-2#5 Warning
+MREG Output pipelining  
+DSP aster_linux_i/aster/inst/implementation/g_coherent.soc/g_npu.npu/engine/a_end2 multiplier stage aster_linux_i/aster/inst/implementation/g_coherent.soc/g_npu.npu/engine/a_end2/P[47:0] is not pipelined (MREG=0). Pipelining the multiplier function will improve performance and will save significant power so it is suggested whenever possible to fully pipeline this function.  If this multiplier was inferred, it is suggested to describe an additional register stage after this function.  If there is no registered adder/accumulator following the multiply function, two pipeline stages are suggested to allow both the MREG and PREG registers to be used.  If the DSP48 was instantiated in the design, it is suggested to set both the MREG and PREG attributes to 1 when performing multiply functions.
+Related violations: <none>
+
+DPOP-2#6 Warning
+MREG Output pipelining  
+DSP aster_linux_i/aster/inst/implementation/g_coherent.soc/g_npu.npu/engine/a_end2__0 multiplier stage aster_linux_i/aster/inst/implementation/g_coherent.soc/g_npu.npu/engine/a_end2__0/P[47:0] is not pipelined (MREG=0). Pipelining the multiplier function will improve performance and will save significant power so it is suggested whenever possible to fully pipeline this function.  If this multiplier was inferred, it is suggested to describe an additional register stage after this function.  If there is no registered adder/accumulator following the multiply function, two pipeline stages are suggested to allow both the MREG and PREG registers to be used.  If the DSP48 was instantiated in the design, it is suggested to set both the MREG and PREG attributes to 1 when performing multiply functions.
+Related violations: <none>
+
+DPOP-2#7 Warning
+MREG Output pipelining  
+DSP aster_linux_i/aster/inst/implementation/g_coherent.soc/g_npu.npu/engine/a_end2__1 multiplier stage aster_linux_i/aster/inst/implementation/g_coherent.soc/g_npu.npu/engine/a_end2__1/P[47:0] is not pipelined (MREG=0). Pipelining the multiplier function will improve performance and will save significant power so it is suggested whenever possible to fully pipeline this function.  If this multiplier was inferred, it is suggested to describe an additional register stage after this function.  If there is no registered adder/accumulator following the multiply function, two pipeline stages are suggested to allow both the MREG and PREG registers to be used.  If the DSP48 was instantiated in the design, it is suggested to set both the MREG and PREG attributes to 1 when performing multiply functions.
+Related violations: <none>
+
+DPOP-2#8 Warning
+MREG Output pipelining  
+DSP aster_linux_i/aster/inst/implementation/g_coherent.soc/g_npu.npu/engine/a_end2__2 multiplier stage aster_linux_i/aster/inst/implementation/g_coherent.soc/g_npu.npu/engine/a_end2__2/P[47:0] is not pipelined (MREG=0). Pipelining the multiplier function will improve performance and will save significant power so it is suggested whenever possible to fully pipeline this function.  If this multiplier was inferred, it is suggested to describe an additional register stage after this function.  If there is no registered adder/accumulator following the multiply function, two pipeline stages are suggested to allow both the MREG and PREG registers to be used.  If the DSP48 was instantiated in the design, it is suggested to set both the MREG and PREG attributes to 1 when performing multiply functions.
+Related violations: <none>
+
+DPOP-2#9 Warning
+MREG Output pipelining  
+DSP aster_linux_i/aster/inst/implementation/g_coherent.soc/g_npu.npu/engine/b_byte_address1 multiplier stage aster_linux_i/aster/inst/implementation/g_coherent.soc/g_npu.npu/engine/b_byte_address1/P[47:0] is not pipelined (MREG=0). Pipelining the multiplier function will improve performance and will save significant power so it is suggested whenever possible to fully pipeline this function.  If this multiplier was inferred, it is suggested to describe an additional register stage after this function.  If there is no registered adder/accumulator following the multiply function, two pipeline stages are suggested to allow both the MREG and PREG registers to be used.  If the DSP48 was instantiated in the design, it is suggested to set both the MREG and PREG attributes to 1 when performing multiply functions.
+Related violations: <none>
+
+DPOP-2#10 Warning
+MREG Output pipelining  
+DSP aster_linux_i/aster/inst/implementation/g_coherent.soc/g_npu.npu/engine/b_byte_address1__0 multiplier stage aster_linux_i/aster/inst/implementation/g_coherent.soc/g_npu.npu/engine/b_byte_address1__0/P[47:0] is not pipelined (MREG=0). Pipelining the multiplier function will improve performance and will save significant power so it is suggested whenever possible to fully pipeline this function.  If this multiplier was inferred, it is suggested to describe an additional register stage after this function.  If there is no registered adder/accumulator following the multiply function, two pipeline stages are suggested to allow both the MREG and PREG registers to be used.  If the DSP48 was instantiated in the design, it is suggested to set both the MREG and PREG attributes to 1 when performing multiply functions.
+Related violations: <none>
+
+DPOP-2#11 Warning
+MREG Output pipelining  
+DSP aster_linux_i/aster/inst/implementation/g_coherent.soc/g_npu.npu/engine/b_byte_address1__1 multiplier stage aster_linux_i/aster/inst/implementation/g_coherent.soc/g_npu.npu/engine/b_byte_address1__1/P[47:0] is not pipelined (MREG=0). Pipelining the multiplier function will improve performance and will save significant power so it is suggested whenever possible to fully pipeline this function.  If this multiplier was inferred, it is suggested to describe an additional register stage after this function.  If there is no registered adder/accumulator following the multiply function, two pipeline stages are suggested to allow both the MREG and PREG registers to be used.  If the DSP48 was instantiated in the design, it is suggested to set both the MREG and PREG attributes to 1 when performing multiply functions.
+Related violations: <none>
+
+DPOP-2#12 Warning
+MREG Output pipelining  
+DSP aster_linux_i/aster/inst/implementation/g_coherent.soc/g_npu.npu/engine/b_byte_address1__2 multiplier stage aster_linux_i/aster/inst/implementation/g_coherent.soc/g_npu.npu/engine/b_byte_address1__2/P[47:0] is not pipelined (MREG=0). Pipelining the multiplier function will improve performance and will save significant power so it is suggested whenever possible to fully pipeline this function.  If this multiplier was inferred, it is suggested to describe an additional register stage after this function.  If there is no registered adder/accumulator following the multiply function, two pipeline stages are suggested to allow both the MREG and PREG registers to be used.  If the DSP48 was instantiated in the design, it is suggested to set both the MREG and PREG attributes to 1 when performing multiply functions.
+Related violations: <none>
+
+DPOP-2#13 Warning
+MREG Output pipelining  
+DSP aster_linux_i/aster/inst/implementation/g_coherent.soc/g_npu.npu/engine/b_end2 multiplier stage aster_linux_i/aster/inst/implementation/g_coherent.soc/g_npu.npu/engine/b_end2/P[47:0] is not pipelined (MREG=0). Pipelining the multiplier function will improve performance and will save significant power so it is suggested whenever possible to fully pipeline this function.  If this multiplier was inferred, it is suggested to describe an additional register stage after this function.  If there is no registered adder/accumulator following the multiply function, two pipeline stages are suggested to allow both the MREG and PREG registers to be used.  If the DSP48 was instantiated in the design, it is suggested to set both the MREG and PREG attributes to 1 when performing multiply functions.
+Related violations: <none>
+
+DPOP-2#14 Warning
+MREG Output pipelining  
+DSP aster_linux_i/aster/inst/implementation/g_coherent.soc/g_npu.npu/engine/b_end2__0 multiplier stage aster_linux_i/aster/inst/implementation/g_coherent.soc/g_npu.npu/engine/b_end2__0/P[47:0] is not pipelined (MREG=0). Pipelining the multiplier function will improve performance and will save significant power so it is suggested whenever possible to fully pipeline this function.  If this multiplier was inferred, it is suggested to describe an additional register stage after this function.  If there is no registered adder/accumulator following the multiply function, two pipeline stages are suggested to allow both the MREG and PREG registers to be used.  If the DSP48 was instantiated in the design, it is suggested to set both the MREG and PREG attributes to 1 when performing multiply functions.
+Related violations: <none>
+
+DPOP-2#15 Warning
+MREG Output pipelining  
+DSP aster_linux_i/aster/inst/implementation/g_coherent.soc/g_npu.npu/engine/b_end2__1 multiplier stage aster_linux_i/aster/inst/implementation/g_coherent.soc/g_npu.npu/engine/b_end2__1/P[47:0] is not pipelined (MREG=0). Pipelining the multiplier function will improve performance and will save significant power so it is suggested whenever possible to fully pipeline this function.  If this multiplier was inferred, it is suggested to describe an additional register stage after this function.  If there is no registered adder/accumulator following the multiply function, two pipeline stages are suggested to allow both the MREG and PREG registers to be used.  If the DSP48 was instantiated in the design, it is suggested to set both the MREG and PREG attributes to 1 when performing multiply functions.
+Related violations: <none>
+
+DPOP-2#16 Warning
+MREG Output pipelining  
+DSP aster_linux_i/aster/inst/implementation/g_coherent.soc/g_npu.npu/engine/b_end2__2 multiplier stage aster_linux_i/aster/inst/implementation/g_coherent.soc/g_npu.npu/engine/b_end2__2/P[47:0] is not pipelined (MREG=0). Pipelining the multiplier function will improve performance and will save significant power so it is suggested whenever possible to fully pipeline this function.  If this multiplier was inferred, it is suggested to describe an additional register stage after this function.  If there is no registered adder/accumulator following the multiply function, two pipeline stages are suggested to allow both the MREG and PREG registers to be used.  If the DSP48 was instantiated in the design, it is suggested to set both the MREG and PREG attributes to 1 when performing multiply functions.
+Related violations: <none>
+
+DPOP-2#17 Warning
+MREG Output pipelining  
+DSP aster_linux_i/aster/inst/implementation/g_coherent.soc/g_npu.npu/engine/c_byte_address2 multiplier stage aster_linux_i/aster/inst/implementation/g_coherent.soc/g_npu.npu/engine/c_byte_address2/P[47:0] is not pipelined (MREG=0). Pipelining the multiplier function will improve performance and will save significant power so it is suggested whenever possible to fully pipeline this function.  If this multiplier was inferred, it is suggested to describe an additional register stage after this function.  If there is no registered adder/accumulator following the multiply function, two pipeline stages are suggested to allow both the MREG and PREG registers to be used.  If the DSP48 was instantiated in the design, it is suggested to set both the MREG and PREG attributes to 1 when performing multiply functions.
+Related violations: <none>
+
+DPOP-2#18 Warning
+MREG Output pipelining  
+DSP aster_linux_i/aster/inst/implementation/g_coherent.soc/g_npu.npu/engine/c_byte_address2__0 multiplier stage aster_linux_i/aster/inst/implementation/g_coherent.soc/g_npu.npu/engine/c_byte_address2__0/P[47:0] is not pipelined (MREG=0). Pipelining the multiplier function will improve performance and will save significant power so it is suggested whenever possible to fully pipeline this function.  If this multiplier was inferred, it is suggested to describe an additional register stage after this function.  If there is no registered adder/accumulator following the multiply function, two pipeline stages are suggested to allow both the MREG and PREG registers to be used.  If the DSP48 was instantiated in the design, it is suggested to set both the MREG and PREG attributes to 1 when performing multiply functions.
+Related violations: <none>
+
+DPOP-2#19 Warning
+MREG Output pipelining  
+DSP aster_linux_i/aster/inst/implementation/g_coherent.soc/g_npu.npu/engine/c_byte_address2__1 multiplier stage aster_linux_i/aster/inst/implementation/g_coherent.soc/g_npu.npu/engine/c_byte_address2__1/P[47:0] is not pipelined (MREG=0). Pipelining the multiplier function will improve performance and will save significant power so it is suggested whenever possible to fully pipeline this function.  If this multiplier was inferred, it is suggested to describe an additional register stage after this function.  If there is no registered adder/accumulator following the multiply function, two pipeline stages are suggested to allow both the MREG and PREG registers to be used.  If the DSP48 was instantiated in the design, it is suggested to set both the MREG and PREG attributes to 1 when performing multiply functions.
+Related violations: <none>
+
+DPOP-2#20 Warning
+MREG Output pipelining  
+DSP aster_linux_i/aster/inst/implementation/g_coherent.soc/g_npu.npu/engine/c_byte_address2__2 multiplier stage aster_linux_i/aster/inst/implementation/g_coherent.soc/g_npu.npu/engine/c_byte_address2__2/P[47:0] is not pipelined (MREG=0). Pipelining the multiplier function will improve performance and will save significant power so it is suggested whenever possible to fully pipeline this function.  If this multiplier was inferred, it is suggested to describe an additional register stage after this function.  If there is no registered adder/accumulator following the multiply function, two pipeline stages are suggested to allow both the MREG and PREG registers to be used.  If the DSP48 was instantiated in the design, it is suggested to set both the MREG and PREG attributes to 1 when performing multiply functions.
+Related violations: <none>
+
+DPOP-2#21 Warning
+MREG Output pipelining  
+DSP aster_linux_i/aster/inst/implementation/g_coherent.soc/g_npu.npu/engine/c_end3 multiplier stage aster_linux_i/aster/inst/implementation/g_coherent.soc/g_npu.npu/engine/c_end3/P[47:0] is not pipelined (MREG=0). Pipelining the multiplier function will improve performance and will save significant power so it is suggested whenever possible to fully pipeline this function.  If this multiplier was inferred, it is suggested to describe an additional register stage after this function.  If there is no registered adder/accumulator following the multiply function, two pipeline stages are suggested to allow both the MREG and PREG registers to be used.  If the DSP48 was instantiated in the design, it is suggested to set both the MREG and PREG attributes to 1 when performing multiply functions.
+Related violations: <none>
+
+DPOP-2#22 Warning
+MREG Output pipelining  
+DSP aster_linux_i/aster/inst/implementation/g_coherent.soc/g_npu.npu/engine/c_end3__0 multiplier stage aster_linux_i/aster/inst/implementation/g_coherent.soc/g_npu.npu/engine/c_end3__0/P[47:0] is not pipelined (MREG=0). Pipelining the multiplier function will improve performance and will save significant power so it is suggested whenever possible to fully pipeline this function.  If this multiplier was inferred, it is suggested to describe an additional register stage after this function.  If there is no registered adder/accumulator following the multiply function, two pipeline stages are suggested to allow both the MREG and PREG registers to be used.  If the DSP48 was instantiated in the design, it is suggested to set both the MREG and PREG attributes to 1 when performing multiply functions.
+Related violations: <none>
+
+DPOP-2#23 Warning
+MREG Output pipelining  
+DSP aster_linux_i/aster/inst/implementation/g_coherent.soc/g_npu.npu/engine/c_end3__1 multiplier stage aster_linux_i/aster/inst/implementation/g_coherent.soc/g_npu.npu/engine/c_end3__1/P[47:0] is not pipelined (MREG=0). Pipelining the multiplier function will improve performance and will save significant power so it is suggested whenever possible to fully pipeline this function.  If this multiplier was inferred, it is suggested to describe an additional register stage after this function.  If there is no registered adder/accumulator following the multiply function, two pipeline stages are suggested to allow both the MREG and PREG registers to be used.  If the DSP48 was instantiated in the design, it is suggested to set both the MREG and PREG attributes to 1 when performing multiply functions.
+Related violations: <none>
+
+DPOP-2#24 Warning
+MREG Output pipelining  
+DSP aster_linux_i/aster/inst/implementation/g_coherent.soc/g_npu.npu/engine/c_end3__2 multiplier stage aster_linux_i/aster/inst/implementation/g_coherent.soc/g_npu.npu/engine/c_end3__2/P[47:0] is not pipelined (MREG=0). Pipelining the multiplier function will improve performance and will save significant power so it is suggested whenever possible to fully pipeline this function.  If this multiplier was inferred, it is suggested to describe an additional register stage after this function.  If there is no registered adder/accumulator following the multiply function, two pipeline stages are suggested to allow both the MREG and PREG registers to be used.  If the DSP48 was instantiated in the design, it is suggested to set both the MREG and PREG attributes to 1 when performing multiply functions.
+Related violations: <none>
+
+

@@ -1,0 +1,131 @@
+{
+  "files": {
+    "fpga/aster_linux.bit": {
+      "bytes": 4045695,
+      "sha256": "1e0753fb89f59e9306993d744f43407b77f472e581523730371079026794a45a"
+    },
+    "fpga/aster_linux.hwh": {
+      "bytes": 139988,
+      "sha256": "2d743d4c8f6d5640c96bfcf51938acb7e1c4736bd9b00f1ebb77b168625c03ab"
+    },
+    "fpga/bitstream.sha256": {
+      "bytes": 164,
+      "sha256": "3fc4da318f50ff561097c1693dabe49e03b383394c9c2c6dd1a7ed50819b561a"
+    },
+    "fpga/drc.rpt": {
+      "bytes": 48016,
+      "sha256": "659324fbfaf3fdd336132facc15db99d0b616b3ff2751d1131f9922dd82e4550"
+    },
+    "fpga/methodology.rpt": {
+      "bytes": 1363,
+      "sha256": "ea96de48b30844280217cca00b1c9cbdd6d48626ac667b70c41790272a0233da"
+    },
+    "fpga/route_status.rpt": {
+      "bytes": 651,
+      "sha256": "c05f7a6def0182cce27cc4bb14be89d5555266d679ffe3d68ac6b8b42adc21cc"
+    },
+    "fpga/timing_summary.rpt": {
+      "bytes": 32549,
+      "sha256": "ac0d990b5b3a4787c17b969c030552e541f75d422adac7a334d663404d0ca8bb"
+    },
+    "fpga/utilization_routed.rpt": {
+      "bytes": 11956,
+      "sha256": "6e6bb14273b08416d05866ee17314c2011bb00ed6211fbfd51ea82794e9a3a56"
+    },
+    "input/timer_interval.c": {
+      "bytes": 3730,
+      "sha256": "1a0d641f1739eb3b697260d2513df658af05767b0e201b7e1b1a1c648b1ce0b3"
+    },
+    "input/timer_interval.hex": {
+      "bytes": 147456,
+      "sha256": "1ea2981ec7bc1fd505439fd7f9df32687b6a1b69f9d5039a3d813ef56eabed54"
+    },
+    "physical/boot1.ram": {
+      "bytes": 65536,
+      "sha256": "20948938c73d3897e7b7e3de34aa5970f02fddf80158b6b6a2709a6fc37143bb"
+    },
+    "physical/boot1.uart": {
+      "bytes": 27,
+      "sha256": "fa426b193363704467c5c05353d6259af2ceba6743b7c50b1fc43ad68b917940"
+    },
+    "physical/boot2.ram": {
+      "bytes": 65536,
+      "sha256": "20948938c73d3897e7b7e3de34aa5970f02fddf80158b6b6a2709a6fc37143bb"
+    },
+    "physical/boot2.uart": {
+      "bytes": 27,
+      "sha256": "fa426b193363704467c5c05353d6259af2ceba6743b7c50b1fc43ad68b917940"
+    },
+    "physical/physical.json": {
+      "bytes": 2877,
+      "sha256": "190dfe801429b6fcb9ff393ff624d1f6602b2eaed4e371d0118b20e1e04abc7a"
+    },
+    "simulation/study.json": {
+      "bytes": 581,
+      "sha256": "a6bcd2ee279df76bcbf05a397bda23c5ddc9a3c7a4ce3fdad2db858667db27e7"
+    },
+    "source/source-state.json": {
+      "bytes": 42374,
+      "sha256": "744e0937f9049efa9e6178912459a943e8e8a13c92d9e2885e4dd0563a7f63c5"
+    },
+    "spec/timer.md": {
+      "bytes": 3752,
+      "sha256": "0aba280886a467db4d1fe9ee2efd75a1b2ace6c324f726d1cb5103649886ec39"
+    },
+    "verification/make-check.log": {
+      "bytes": 271086,
+      "sha256": "4795c7a47546a7af14f544a35ccda1ab3183c9cd50abe00e375de0513ad5fb29"
+    }
+  },
+  "requirements": {
+    "01-contract-and-firmware": [
+      "spec/timer.md",
+      "input/timer_interval.c",
+      "input/timer_interval.hex"
+    ],
+    "02-unit-and-firmware-scoreboards": [
+      "verification/make-check.log"
+    ],
+    "03-simulation-study": [
+      "simulation/study.json"
+    ],
+    "04-routed-fpga-overlay": [
+      "fpga/aster_linux.bit",
+      "fpga/aster_linux.hwh",
+      "fpga/timing_summary.rpt",
+      "fpga/drc.rpt",
+      "fpga/methodology.rpt",
+      "fpga/route_status.rpt",
+      "fpga/utilization_routed.rpt"
+    ],
+    "05-physical-pynq-acceptance": [
+      "physical/physical.json"
+    ],
+    "06-clean-source-and-immutable-mapping": [
+      "source/source-state.json"
+    ]
+  },
+  "schema": "aster.phase12.5.closeout.v1",
+  "status": "complete",
+  "summary": {
+    "fpga": {
+      "bridge_version": "0x90001"
+    },
+    "input": {
+      "firmware_words": 16384
+    },
+    "physical": {
+      "boots": 2,
+      "match_latency_cycles": 84
+    },
+    "simulation": {
+      "match_latency_cycles": 75,
+      "repeats": 3
+    },
+    "source_revision": "c3ec874d00155bd297a56dc55290fb7795651b49",
+    "source_sha256": "6d90a21bffc8b8efe1b4f0721554a453858dfb52fb937b05677b13cefc77bd26",
+    "verification": {
+      "host_tests_last": 253
+    }
+  }
+}

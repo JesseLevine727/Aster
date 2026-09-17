@@ -80,8 +80,9 @@ remain disconnected. Phase 6 separately adds two RV32IMA harts and coherent
 private caches. Phase 7 adds optional coherent DMA, Phase 8 adds the optional
 packed INT8 instruction and Phase 9 adds the optional 4×4 INT8 GEMM accelerator.
 Phase 10 runs identical dot/FIR/GEMM kernels through the scalar, dual-hart,
-Xasterdot8 and NPU paths without changing any map or ABI. Shared L2, interrupts
-and timers remain future work.
+Xasterdot8 and NPU paths without changing any map or ABI. Phase 12.5 adds one
+custom MMIO machine timer to the coherent top. Shared L2 and interrupts remain
+future work.
 
 ### Optional Phase 8 computation
 
@@ -212,7 +213,7 @@ reserved 4 KiB stack at the top; the linker rejects data/BSS overlap with it.
 | Boot ROM | `0x0000_0000` | `0x0001_0000` | 64 KiB | RX | Firmware and read-only data |
 | Main RAM | `0x1000_0000` | `0x1001_0000` | 64 KiB | RWX | Data, stack and uncached instruction execution |
 | UART | `0x2000_0000` | `0x2000_1000` | 4 KiB | RW | Console and bring-up status |
-| Timer | `0x2000_1000` | `0x2000_2000` | 4 KiB | RW | Reserved for Phase 1+ |
+| Timer | `0x2000_1000` | `0x2000_2000` | 4 KiB | RW | Phase 12.5 machine timer (coherent top) |
 | Interrupt controller | `0x2000_2000` | `0x2000_3000` | 4 KiB | RW | Reserved for Phase 5+ |
 | Performance counters | `0x2000_3000` | `0x2000_4000` | 4 KiB | RW | Cycles, RVFI retirement and traffic counters |
 | DMA | `0x3000_0000` | `0x3000_1000` | 4 KiB | RW | Reserved for Phase 7 |
@@ -226,6 +227,10 @@ the reserved `0x30000000` page becomes data-only DMA ABI 1 control/status plus
 the separate AsterBench v5 counter bank. DMA payloads are restricted to shared
 `0x10000000–0x10008000`; its own source/destination/length validation cannot be
 bypassed by either hart. DMA-disabled builds retain the reserved page behavior.
+The coherent top implements `0x20001000` as a custom MMIO machine timer: a
+free-running 64-bit `aclk` counter, a byte-strobed 64-bit compare, an
+enable/clear control and a level `timer_irq` for Phase 12.6. The legacy
+`aster_minimal` and Phase 5 maps keep the reserved page.
 
 ### UART registers
 
@@ -327,7 +332,7 @@ silently assumed by Phase 0:
 - system interconnect transaction format and arbitration;
 - custom instruction encoding and toolchain support;
 - NPU register/DMA interface, tiling format and saturation rules;
-- interrupt priority and timer semantics;
+- interrupt priority and semantics;
 - SKY130 macro strategy and SRAM availability.
 
 ## Phase 2 FPGA contract

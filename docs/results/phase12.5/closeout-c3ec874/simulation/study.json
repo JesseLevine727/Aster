@@ -1,0 +1,13 @@
+{
+  "firmware": [
+    "PASS: coherent SoC timer harts=2 caches=1 cycles=8855353 retired=1006834,0\ntimer MATCH_LATENCY=75",
+    "PASS: coherent SoC timer harts=2 caches=1 cycles=8855353 retired=1006834,0\ntimer MATCH_LATENCY=75",
+    "PASS: coherent SoC timer harts=2 caches=1 cycles=8855353 retired=1006834,0\ntimer MATCH_LATENCY=75"
+  ],
+  "provenance": {
+    "dirty": false,
+    "revision": "72ea19a7eadcf8b767996838ee41ad9c8d328771"
+  },
+  "schema": "aster.phase12.5.study.v1",
+  "unit": "PASS: timer free-run, compare match, clear/enable, byte merge, 64-bit wrap and reset"
+}

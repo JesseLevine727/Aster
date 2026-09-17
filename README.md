@@ -119,7 +119,15 @@ PhysioNet MIT-BIH data. The pipeline is bit-exact against an independent oracle,
 three fresh simulation repeats and two physical warm boots reproduce the record,
 and the [closeout bundle](docs/results/phase12/closeout-f1f62e2/README.md) passes
 `scripts/audit_phase12.py`. "Real time" means sustained per-chunk throughput;
-interrupts and timers remain future work.
+interrupts remain future work.
+
+Phase 12.5 (machine timer) is complete under the
+[Phase 12.5 contract](docs/timer.md): a custom MMIO 64-bit free-running timer
+with a byte-strobed compare and a level interrupt in the reserved `0x20001000`
+page, verified by a unit scoreboard, a firmware interval test against the
+Phase 3 cycle counter, a routed all-engine overlay and two physical warm boots.
+The [closeout bundle](docs/results/phase12.5/closeout-c3ec874/README.md) passes
+`scripts/audit_timer.py`.
 
 Start here:
 
@@ -427,6 +435,20 @@ PhysioNet MIT-BIH ECG stream through the CPU, DMA, Xasterdot8 and NPU together,
 bit-exact against an independent oracle and reproduced in simulation and on the
 Pynq-Z1. Sustained per-chunk throughput is demonstrated; hard deadlines,
 interrupts and timers are out of scope.
+
+## Phase 12.5 — Machine timer
+
+Add one memory-mapped machine timer to the coherent top before interrupts.
+
+**Complete:** the [Phase 12.5 contract](docs/timer.md) and
+[closeout bundle](docs/results/phase12.5/closeout-c3ec874/README.md) add a
+custom MMIO 64-bit free-running timer with a byte-strobed 64-bit compare and a
+level `timer_irq` in the previously reserved `0x20001000` page. A unit
+scoreboard proves free-run, exact compare match, clear/enable/disable, byte
+merge, 64-bit wrap and reset; a firmware interval test matches a programmed
+deadline and agrees with the Phase 3 cycle counter; and the routed all-engine
+overlay passes reset/timing signoff with two physical warm boots. Interrupt
+delivery is Phase 12.6.
 
 ## Phase 13 — Freeze Aster v1
 
