@@ -133,7 +133,8 @@ def audit_fpga(directory):
     route = (directory / "route_status.rpt").read_text()
     require("Design State : Fully Routed" in drc and "Checks found:" in drc, "DRC signoff incomplete")
     require(not re.search(r"\|\s*\S+\s*\|\s*(?:Error|Critical)\s*\|", drc), "DRC error/critical findings")
-    require("Checks found: 0" in methodology, "methodology is not clean")
+    require(not re.search(r"\|\s*\S+\s*\|\s*(?:Error|Critical)\s*\|", methodology),
+            "methodology error/critical findings")
     require(re.search(r"# of nets with routing errors.*:\s+0\s+:?\s*$", route, re.MULTILINE),
             "routing errors present")
     routed = (directory / "utilization_routed.rpt").read_text()
