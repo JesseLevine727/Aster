@@ -92,18 +92,23 @@ Nix lock) so the toolchain identity is reproducible.
 ## Deliverables
 
 ```text
+rtl/memory/
+  aster_sram_macro.sv                          # single-port adapter to the macro
+  sky130_sram_2kbyte_1rw1r_32x512_8.sv         # behavioural model (black box at PnR)
 asic/sky130/
   README.md            # how to run the flow
   config.json          # LibreLane configuration (minimal config above)
   pin_order.cfg        # IO placement
   constraints.sdc      # 20 ns clock, false paths, IO delays
   aster_asic.sv        # thin top binding aster_minimal to the pad ring
-  sram/                # RAM macro wrapper + black-box stub
 scripts/
   run_asic.py          # deterministic flow driver + report capture
   audit_phase15.py     # read-only closeout audit
 docs/results/phase15/closeout-<rev>/   # self-contained evidence bundle
 ```
+
+The wrapper lives with the other memory RTL so every Verilator target picks it
+up; the physical macro (LEF/LIB/GDS) is supplied by the PDK at place and route.
 
 ## Verification and acceptance gates
 

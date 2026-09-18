@@ -88,7 +88,8 @@ VERILATOR_COHERENT_FLAGS := --unroll-count 2048 --unroll-stmts 100000
 
 RTL_CORE := rtl/core/aster_picorv32.sv vendor/picorv32/picorv32.v
 RTL_CACHE := rtl/cache/aster_l1_cache.sv
-RTL_MEMORY := rtl/memory/aster_rom.sv rtl/memory/aster_ram.sv
+RTL_MEMORY := rtl/memory/aster_rom.sv rtl/memory/aster_ram.sv rtl/memory/aster_sram_macro.sv \
+	rtl/memory/sky130_sram_2kbyte_1rw1r_32x512_8.sv
 RTL_PERIPHERALS := rtl/peripherals/aster_uart.sv rtl/peripherals/aster_perf_counters.sv
 RTL_SOC := rtl/core/aster_hart.sv rtl/soc/aster_minimal.sv
 RTL_FABRIC := rtl/interconnect/aster_arbiter2.sv rtl/soc/aster_shared_fabric.sv
@@ -285,6 +286,7 @@ PERF_SIM := $(BUILD_DIR)/aster_perf_sim
 TIMER_SIM := $(BUILD_DIR)/aster_timer_sim
 IRQ_SIM := $(BUILD_DIR)/aster_irq_sim
 L2_SIM := $(BUILD_DIR)/aster_l2_sim
+SRAM_SIM := $(BUILD_DIR)/aster_sram_sim
 ARBITER_SIM := $(BUILD_DIR)/aster_arbiter2_sim
 FABRIC_DIR := $(BUILD_DIR)/fabric_h$(HART_COUNT)_$(CONFIG_TAG)
 FABRIC_SIM := $(FABRIC_DIR)/aster_fabric_sim
@@ -906,6 +908,20 @@ $(L2_SIM): rtl/cache/aster_l2_cache.sv verification/unit/tb_aster_l2_cache.cpp |
 
 l2-unit: $(L2_SIM)
 	@$(L2_SIM)
+
+$(SRAM_SIM): rtl/memory/aster_sram_macro.sv rtl/memory/sky130_sram_2kbyte_1rw1r_32x512_8.sv verification/unit/tb_aster_sram_macro.cpp | $(BUILD_DIR)
+	$(VERILATOR) --cc --exe --build --timing --Wall --Wno-fatal --public-flat-rw \
+		--top-module aster_sram_macro --Mdir $(BUILD_DIR)/obj_sram -o $(abspath $@) \
+		$(ROOT)/rtl/memory/aster_sram_macro.sv $(ROOT)/rtl/memory/sky130_sram_2kbyte_1rw1r_32x512_8.sv \
+		$(ROOT)/verification/unit/tb_aster_sram_macro.cpp
+
+sram-unit: $(SRAM_SIM)
+	@$(SRAM_SIM)
+
+sram-lint:
+	$(VERILATOR) --lint-only --timing --Wall --Wno-fatal $(VERILATOR_VENDOR_LINT_FLAGS) \
+		--top-module aster_minimal "-GUSE_SRAM=1'b1" -GROM_WORDS=512 -GRAM_WORDS=512 \
+		$(addprefix $(ROOT)/,$(RTL_CORE) $(RTL_CACHE) $(RTL_MEMORY) $(RTL_PERIPHERALS) $(RTL_SOC))
 
 retirement: $(RETIRE_SIM)
 	@$(RETIRE_SIM)
@@ -2041,7 +2057,7 @@ parallel-workloads:
 
 test: smoke phase1 hello bench cache uart fpga-sim linux-sim counters retirement npu-pe npu-array npu-engine npu-regs npu-driver npu-runtime npu-stop npu-bench-validate arbiter shared-fabric multicore-runtime parallel
 
-check: tools smoke phase1 hello bench cache uart fpga-sim linux-sim linux-dual-sim linux-coherent-sim counters retirement pcpi-probe dot8-unit npu-pe npu-array npu-engine npu-regs npu-driver npu-runtime npu-stop npu-bench-validate xe-bench-validate phase11-infer workloads atomic-fabric atomic-runtime atomic-faults coherent-cache warm-stop coherent-counters coherent-soc timer-unit timer-firmware irq-unit timer-interrupt freeze-interfaces coherent-bench riscv-reference riscv-reference-negative coherent-litmus arbiter shared-fabric multicore-runtime multicore-adversarial parallel
+check: tools smoke phase1 hello bench cache uart fpga-sim linux-sim linux-dual-sim linux-coherent-sim counters retirement pcpi-probe dot8-unit npu-pe npu-array npu-engine npu-regs npu-driver npu-runtime npu-stop npu-bench-validate xe-bench-validate phase11-infer workloads atomic-fabric atomic-runtime atomic-faults coherent-cache warm-stop coherent-counters coherent-soc timer-unit timer-firmware irq-unit timer-interrupt sram-unit sram-lint freeze-interfaces coherent-bench riscv-reference riscv-reference-negative coherent-litmus arbiter shared-fabric multicore-runtime multicore-adversarial parallel
 
 clean:
 	rm -rf $(BUILD_DIR)

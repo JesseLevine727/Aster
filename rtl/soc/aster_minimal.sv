@@ -6,7 +6,10 @@ module aster_minimal #(
     parameter bit HOST_BOOT = 1'b0,
     parameter int unsigned CLOCK_HZ = 31_250_000,
     parameter int unsigned L1_LINE_WORDS = 4,
-    parameter int unsigned L1_LINE_COUNT = 16
+    parameter int unsigned L1_LINE_COUNT = 16,
+    parameter int unsigned ROM_WORDS = 16_384,
+    parameter int unsigned RAM_WORDS = 16_384,
+    parameter bit USE_SRAM = 1'b0
 ) (
     input  logic        clk,
     input  logic        rst_n,
@@ -20,9 +23,9 @@ module aster_minimal #(
     output logic        trap
 );
     localparam logic [31:0] ROM_BASE = 32'h0000_0000;
-    localparam logic [31:0] ROM_END = ROM_BASE + 32'h0001_0000;
+    localparam logic [31:0] ROM_END = ROM_BASE + 32'(ROM_WORDS * 4);
     localparam logic [31:0] RAM_BASE = 32'h1000_0000;
-    localparam logic [31:0] RAM_END = RAM_BASE + 32'h0001_0000;
+    localparam logic [31:0] RAM_END = RAM_BASE + 32'(RAM_WORDS * 4);
     localparam logic [31:0] UART_BASE = 32'h2000_0000;
     localparam logic [31:0] UART_LAST = UART_BASE + 32'h0000_0fff;
     localparam logic [31:0] PERF_BASE = 32'h2000_3000;
@@ -92,6 +95,7 @@ module aster_minimal #(
 
     aster_rom #(
         .BASE_ADDR(ROM_BASE),
+        .DEPTH_WORDS(ROM_WORDS),
         .MEM_INIT_FILE(MEM_INIT_FILE),
         .SYNC_READ(SYNC_MEMORY),
         .ENABLE_PROGRAM(HOST_BOOT)
@@ -105,16 +109,32 @@ module aster_minimal #(
         .rdata(rom_rdata)
     );
 
-    aster_ram #(
-        .SYNC_READ(SYNC_MEMORY)
-    ) ram (
-        .clk(clk),
-        .addr(lower_addr),
-        .wdata(lower_wdata),
-        .wstrb(lower_wstrb),
-        .we(ram_we),
-        .rdata(ram_rdata)
-    );
+    generate if (USE_SRAM) begin : g_sram
+        aster_sram_macro #(
+            .BASE_ADDR(RAM_BASE),
+            .DEPTH_WORDS(RAM_WORDS)
+        ) ram (
+            .clk(clk),
+            .addr(lower_addr),
+            .wdata(lower_wdata),
+            .wstrb(lower_wstrb),
+            .we(ram_we),
+            .rdata(ram_rdata)
+        );
+    end else begin : g_ram
+        aster_ram #(
+            .BASE_ADDR(RAM_BASE),
+            .DEPTH_WORDS(RAM_WORDS),
+            .SYNC_READ(SYNC_MEMORY)
+        ) ram (
+            .clk(clk),
+            .addr(lower_addr),
+            .wdata(lower_wdata),
+            .wstrb(lower_wstrb),
+            .we(ram_we),
+            .rdata(ram_rdata)
+        );
+    end endgenerate
 
     aster_uart uart (
         .clk(clk),
