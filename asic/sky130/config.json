@@ -12,11 +12,17 @@
     "PNR_SDC_FILE": "dir::constraints.sdc",
     "SIGNOFF_SDC_FILE": "dir::constraints.sdc",
 
-    "VDD_NETS": ["VPWR"],
-    "GND_NETS": ["VGND"],
+    "MACRO_PLACEMENT_CFG": "dir::macro_placement.cfg",
+
+    "VDD_NETS": ["vccd1"],
+    "GND_NETS": ["vssd1"],
+
+    "PDN_MACRO_CONNECTIONS": [
+        "soc.g_sram.ram.macro vccd1 vssd1 vccd1 vssd1"
+    ],
 
     "FP_SIZING": "absolute",
-    "DIE_AREA": [0, 0, 2000, 2000],
+    "DIE_AREA": [0, 0, 1200, 1200],
     "RT_MAX_LAYER": "met4",
 
     "pdk::sky130*": {

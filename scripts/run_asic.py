@@ -75,6 +75,28 @@ def strip_comb_guards(path):
     path.write_text("".join(kept))
 
 
+def pdk_macro_files(pdk_root):
+    """Locate the SRAM macro views inside the ciel PDK install.
+
+    LibreLane selects a PDK version itself, so search every installed version
+    and prefer the newest one that carries the macro.
+    """
+    name = "sky130_sram_2kbyte_1rw1r_32x512_8"
+    candidates = sorted(
+        Path(pdk_root).glob("ciel/sky130/versions/*/sky130A/libs.ref/sky130_sram_macros"),
+        key=lambda path: path.stat().st_mtime,
+        reverse=True,
+    )
+    for root in candidates:
+        lef = root / "lef" / f"{name}.lef"
+        gds = root / "gds" / f"{name}.gds"
+        mag = root / "maglef" / f"{name}.mag"
+        libs = sorted((root / "lib").glob(f"{name}_*.lib"))
+        if lef.is_file() and gds.is_file() and libs:
+            return lef, libs, gds, mag
+    raise SystemExit(f"no {name} macro views found under {pdk_root}")
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--pdk-root", default=os.environ.get("PDK_ROOT", str(Path.home() / ".ciel")))
@@ -87,11 +109,20 @@ def main():
     if not args.skip_convert:
         convert()
 
+    lef, libs, gds, mag = pdk_macro_files(args.pdk_root)
+
     command = [LIBRELANE, "--docker-no-tty", "--dockerized", "--pdk-root", args.pdk_root]
     if args.to:
         command += ["-T", args.to]
     if args.run_tag:
         command += ["--run-tag", args.run_tag]
+    command += [
+        "--override-config", "EXTRA_LEFS=" + str(lef),
+        "--override-config", "EXTRA_LIBS=" + ",".join(str(lib) for lib in libs),
+        "--override-config", "EXTRA_GDS=" + str(gds),
+    ]
+    if mag.is_file():
+        command += ["--override-config", "MAGIC_DRC_MAGLEFS=" + str(mag)]
     command += args.librelane_args
     command += [str(ASIC / "config.json")]
 
