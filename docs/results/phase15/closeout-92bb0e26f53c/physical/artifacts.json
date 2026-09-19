@@ -1,0 +1,27 @@
+{
+  "def": {
+    "bytes": 38579080,
+    "path": "final/def/aster_asic.def",
+    "sha256": "e8506a12f2481b24c680975fb1bc32eb6ae9049327ca35f360339521f44d1dc8"
+  },
+  "gds": {
+    "bytes": 62514440,
+    "path": "final/gds/aster_asic.gds",
+    "sha256": "e9f8ada768ac9328a40b2ec89e37a87119289c1f7add0a4d4050d974b83fd8cb"
+  },
+  "nl": {
+    "bytes": 14563022,
+    "path": "final/nl/aster_asic.nl.v",
+    "sha256": "07799c35d2dde411ff802de8e5cff1dc95e5a980f05dc3d5021f7a3eb8efa81f"
+  },
+  "pnl": {
+    "bytes": 32280812,
+    "path": "final/pnl/aster_asic.pnl.v",
+    "sha256": "a7f6c63144fcb84664dca03eb8b5173ffc19830ae71a9f8c55fb8c58d2ba99e9"
+  },
+  "sdf": {
+    "bytes": 7443140,
+    "path": "final/sdf/nom_tt_025C_1v80/aster_asic__nom_tt_025C_1v80.sdf",
+    "sha256": "d938ec352b79edb1fb941f999a7238ce001cdaf98da010b202b97498f4522dca"
+  }
+}

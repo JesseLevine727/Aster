@@ -1,0 +1,179 @@
+{
+  "files": {
+    "analysis.md": {
+      "bytes": 879,
+      "sha256": "f6b691ed88963f67554cef1f11267ac1dddf0dc408e9a61f6abaac5bfe63c3f1"
+    },
+    "physical/antenna_summary.rpt": {
+      "bytes": 518,
+      "sha256": "bd4c6489f063ba0e337ce9356da7a70bf063e08c5713b64eac28b6f9cd496d6a"
+    },
+    "physical/artifacts.json": {
+      "bytes": 838,
+      "sha256": "c0153382876db6705d3d29990f9533b74e087204314b0cfc7c5a8adb0e31fa41"
+    },
+    "physical/drc.klayout.json": {
+      "bytes": 4811,
+      "sha256": "16214d2fe423079d5337d46df5591231798a14dab8ecb9650e6bc52519a27d42"
+    },
+    "physical/drc.magic.rpt": {
+      "bytes": 104,
+      "sha256": "4cdebb01b8d432988681227f97a3629987492948e8cfd613ac400e386f7e4bf7"
+    },
+    "physical/lvs.netgen.rpt": {
+      "bytes": 211936,
+      "sha256": "2109aa365218549b83810f8148ea15e62fecef0297f880c94c9c1559db0f28b7"
+    },
+    "physical/metrics.csv": {
+      "bytes": 15901,
+      "sha256": "629e06a90dcc75f73ae5a891cebc9f78611f02c367a993c4a9bd2f8e5de80e45"
+    },
+    "physical/resolved.json": {
+      "bytes": 164687,
+      "sha256": "9fce3afa63406c3b143230e2bf3348c48dac3b32dca62417dab71215d6446d36"
+    },
+    "physical/timing/max_ss_100C_1v60/skew.max.rpt": {
+      "bytes": 409,
+      "sha256": "92600360602c7d893dd291446c38fcf6955ec07b031a13850ff1a88c1a058cd5"
+    },
+    "physical/timing/max_ss_100C_1v60/skew.min.rpt": {
+      "bytes": 407,
+      "sha256": "cc203eb78107dcb2b82bf177361edf2f0b292e80b7bed1f3358de3a1f5511874"
+    },
+    "physical/timing/max_ss_100C_1v60/tns.max.rpt": {
+      "bytes": 205,
+      "sha256": "96969700a310391e17cecb00ab857ed8d0bdb72825a212e14f42c3e74629e7e6"
+    },
+    "physical/timing/max_ss_100C_1v60/tns.min.rpt": {
+      "bytes": 204,
+      "sha256": "43631fe1f7fcc9c60ec0a22c6d28e4da03dd569319aeb2deaeffef9de76c51f6"
+    },
+    "physical/timing/max_ss_100C_1v60/wns.max.rpt": {
+      "bytes": 205,
+      "sha256": "ad8be4594fe2b2e64708d84307f03eeeba3bfb7f800176d80e37779f69b1c330"
+    },
+    "physical/timing/max_ss_100C_1v60/wns.min.rpt": {
+      "bytes": 202,
+      "sha256": "af5a436542c677f6b603976a61cffa5ad8186dd7d281c6469327b6e077de2629"
+    },
+    "physical/timing/nom_ss_100C_1v60/skew.max.rpt": {
+      "bytes": 409,
+      "sha256": "a26475e1362fd4a521195d85114cc02fbdf9d8933f87829da087b691461b0bdb"
+    },
+    "physical/timing/nom_ss_100C_1v60/skew.min.rpt": {
+      "bytes": 407,
+      "sha256": "7524d3b13ce46ac5d7f5f6e57c0029e42e942e7afe1b7e2a8f37621a5a370439"
+    },
+    "physical/timing/nom_ss_100C_1v60/tns.max.rpt": {
+      "bytes": 205,
+      "sha256": "e09d9bd64c68f75bb36c5e5fa0d7cbf3e37007f0fac36c077bc03c69a09095d3"
+    },
+    "physical/timing/nom_ss_100C_1v60/tns.min.rpt": {
+      "bytes": 204,
+      "sha256": "37adb114f28a39b82a3f1e1c666a0e057b9f32c3482d1b5e28b8b34fb66c4532"
+    },
+    "physical/timing/nom_ss_100C_1v60/wns.max.rpt": {
+      "bytes": 205,
+      "sha256": "003e4ed00a782c823e8c563d41d75d2d9bfb064dff5c53b50dac19034f51162c"
+    },
+    "physical/timing/nom_ss_100C_1v60/wns.min.rpt": {
+      "bytes": 202,
+      "sha256": "dcb794026ed2183b6677402ccef062d8ed0c914b34ee6bf9c1b9a6f72f693144"
+    },
+    "physical/timing/nom_tt_025C_1v80/skew.max.rpt": {
+      "bytes": 409,
+      "sha256": "1897cd6a1e17ffe2dad4835e0a56314d0e9e0796fe45b963562ec27a7728b3b7"
+    },
+    "physical/timing/nom_tt_025C_1v80/skew.min.rpt": {
+      "bytes": 407,
+      "sha256": "2f9b4cb7ef67e7cd8ac7c18d2a5414a8d5a460814813fcc21f5e1dfa2854807d"
+    },
+    "physical/timing/nom_tt_025C_1v80/tns.max.rpt": {
+      "bytes": 205,
+      "sha256": "62292ca88994c259d36d136f6d66f4d1150930fb196adc8607d058e2e80b0abd"
+    },
+    "physical/timing/nom_tt_025C_1v80/tns.min.rpt": {
+      "bytes": 204,
+      "sha256": "6a441470fbb28085daadd1a4c0455339db4f4d0377a8a5e373206f10247d2534"
+    },
+    "physical/timing/nom_tt_025C_1v80/wns.max.rpt": {
+      "bytes": 205,
+      "sha256": "d7f72dc8852dff8c6c9e28cb888207ce35ac8d8068a6bc2708f3869bea3a00b9"
+    },
+    "physical/timing/nom_tt_025C_1v80/wns.min.rpt": {
+      "bytes": 202,
+      "sha256": "07a4abd92ab6e63b717249e62c24c08f3f65ffdcb4998591daf4d206b7bb438a"
+    },
+    "source/source-state.json": {
+      "bytes": 44906,
+      "sha256": "1093127b37ccec15d81eaaf9e2fe70d61e9810ff9e44d6db666353ae2bdc4cda"
+    },
+    "spec/phase15.md": {
+      "bytes": 8547,
+      "sha256": "40b44aad4b327f3548ccaeaeb6023f86703f0754f131ab8a814540fcff53e344"
+    },
+    "verification/gate-level-sim.log": {
+      "bytes": 5176886,
+      "sha256": "b006892f05f3325c6c1fa999886c552010148f6a1f00930846bc41c0440ddde7"
+    },
+    "verification/make-check.log": {
+      "bytes": 99442,
+      "sha256": "6b229141b5cffda71ac80f72a4e94e73242a9e39a757848bd2c5c415ce30b500"
+    }
+  },
+  "requirements": {
+    "01-contract": [
+      "spec/phase15.md"
+    ],
+    "02-signoff-metrics": [
+      "physical/metrics.csv",
+      "physical/artifacts.json"
+    ],
+    "03-drc-lvs-antenna": [
+      "physical/drc.magic.rpt",
+      "physical/drc.klayout.json",
+      "physical/lvs.netgen.rpt",
+      "physical/antenna_summary.rpt"
+    ],
+    "04-timing": [
+      "physical/timing/max_ss_100C_1v60/wns.max.rpt"
+    ],
+    "05-gate-level": [
+      "verification/gate-level-sim.log"
+    ],
+    "06-frozen-clean-check": [
+      "verification/make-check.log"
+    ],
+    "07-frozen-source": [
+      "source/source-state.json"
+    ],
+    "08-analysis": [
+      "analysis.md"
+    ]
+  },
+  "revision": "92bb0e26f53cbde8d6e0ff1aada813259675e540",
+  "run": "p15-gds",
+  "schema": "aster.phase15.closeout.v1",
+  "status": "complete",
+  "summary": {
+    "metrics": {
+      "antenna_nets": 0,
+      "design_violations": 0,
+      "hold_ws_worst": 0.2695166388574295,
+      "klayout_drc": 0,
+      "lvs_errors": 0,
+      "magic_drc": 0,
+      "setup_ws_worst": 1.678845554539208
+    },
+    "physical": {
+      "artifacts": 5
+    },
+    "source_revision": "92bb0e26f53cbde8d6e0ff1aada813259675e540",
+    "timing": {
+      "worst_corner_wns": 0.0
+    },
+    "verification": {
+      "check_passes": 201
+    }
+  }
+}

@@ -560,7 +560,15 @@ Take a tiny Aster configuration through the complete open ASIC flow first:
 RTL -> Yosys -> SKY130 -> floorplan -> placement -> CTS -> routing -> STA -> DRC/LVS -> GDSII
 ```
 
-**Exit:** a minimal configuration completes the physical-design flow.
+**Complete.** The [Phase 15 contract](docs/phase15.md) and
+[closeout bundle](docs/results/phase15/closeout-92bb0e26f53c/README.md) take the
+minimal single-hart SoC through LibreLane 3.0 on SKY130: zero Magic/KLayout DRC,
+clean Netgen LVS, no antenna violations, setup closed at every RC corner
+(worst-case WNS +1.679 ns at 20 ns), and an SDF-annotated post-layout gate-level
+simulation that reproduces the `Hello from Aster` oracle. Two flow lessons are
+recorded in the contract: the firmware must be a combinational ROM (power-up
+flops cannot hold an image on SKY130), and the gate-level simulation needs the
+`FUNCTIONAL` cell models and `-gspecify` for SDF annotation.
 
 ## Phase 16 — Full ASIC implementation and PPA
 
