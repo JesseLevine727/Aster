@@ -3,6 +3,7 @@
 
     "VERILOG_FILES": [
         "dir::build/aster_asic.v",
+        "dir::build/rom_image.v",
         "dir::sram/sky130_sram_2kbyte_1rw1r_32x512_8.v"
     ],
 
@@ -13,6 +14,12 @@
     "SIGNOFF_SDC_FILE": "dir::constraints.sdc",
 
     "MACRO_PLACEMENT_CFG": "dir::macro_placement.cfg",
+
+    "EXTRA_EXCLUDED_CELLS": ["sky130_fd_sc_hd__clkdlybuf4s*"],
+
+    "RUN_POST_GRT_RESIZER_TIMING": true,
+    "GRT_RESIZER_SETUP_SLACK_MARGIN": 6.0,
+    "GRT_RESIZER_SETUP_REPAIR_TNS_PCT": 100,
 
     "VDD_NETS": ["vccd1"],
     "GND_NETS": ["vssd1"],

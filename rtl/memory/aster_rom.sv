@@ -13,10 +13,22 @@ module aster_rom #(
     input  logic [3:0]  program_wstrb,
     output logic [31:0] rdata
 );
-    logic [31:0] memory [0:DEPTH_WORDS-1];
     localparam int INDEX_WIDTH = (DEPTH_WORDS <= 1) ? 1 : $clog2(DEPTH_WORDS);
     logic [INDEX_WIDTH-1:0] word_index;
     localparam logic [31:0] DEPTH_BYTES = DEPTH_WORDS * 4;
+
+`ifdef ASTER_ROM_IMAGE
+    // ASIC build: the firmware is a combinational constant ROM. A flop-based
+    // ROM would need power-up initialisation that SKY130 flops do not have,
+    // and the flow drops the initialiser when the memory is mapped through
+    // ABC, so bake the image into gates instead.
+    logic [31:0] rom_image_data;
+    aster_asic_rom_image rom_image (
+        .addr(32'(word_index)),
+        .data(rom_image_data)
+    );
+`else
+    logic [31:0] memory [0:DEPTH_WORDS-1];
     integer index;
 `ifndef SYNTHESIS
     string simulation_image;
@@ -34,9 +46,6 @@ module aster_rom #(
             $readmemh(MEM_INIT_FILE, memory);
     end
 
-    always_comb
-        word_index = addr[INDEX_WIDTH+1:2] - BASE_ADDR[INDEX_WIDTH+1:2];
-
     // The Linux host may load the boot store only while the CPU is reset.
     // CPU stores never reach this programming port; the SoC enforces reset.
     generate if (ENABLE_PROGRAM) begin : g_program
@@ -50,19 +59,31 @@ module aster_rom #(
             end
         end
     end endgenerate
+`endif
+
+    always_comb
+        word_index = addr[INDEX_WIDTH+1:2] - BASE_ADDR[INDEX_WIDTH+1:2];
 
     generate
         if (SYNC_READ) begin : g_sync_read
             always_ff @(posedge clk) begin
                 if ((addr - BASE_ADDR) < DEPTH_BYTES)
+`ifdef ASTER_ROM_IMAGE
+                    rdata <= rom_image_data;
+`else
                     rdata <= memory[word_index];
+`endif
                 else
                     rdata <= 32'd0;
             end
         end else begin : g_async_read
             always_comb begin
                 if ((addr - BASE_ADDR) < DEPTH_BYTES)
+`ifdef ASTER_ROM_IMAGE
+                    rdata = rom_image_data;
+`else
                     rdata = memory[word_index];
+`endif
                 else
                     rdata = 32'd0;
             end

@@ -1,6 +1,8 @@
 # Phase 15: Learn SKY130 on a minimal configuration
 
-Status: **scoping** — decisions frozen, implementation not started.
+Status: **complete** — all acceptance gates pass. The routed GDS, the signoff
+SDF and the post-layout gate-level simulation are recorded under
+`docs/results/phase15/`.
 Baseline: pushed v1.3 closeout `5272f35`.
 The [README roadmap](../README.md#phase-15--learn-sky130-on-a-minimal-configuration)
 defines this phase as taking a tiny Aster configuration through the complete
@@ -112,21 +114,54 @@ up; the physical macro (LEF/LIB/GDS) is supplied by the PDK at place and route.
 
 ## Verification and acceptance gates
 
-- [ ] Minimal configuration frozen and documented; `make check` still green.
-- [ ] `aster_minimal` ROM/RAM parameterization keeps every existing
+- [x] Minimal configuration frozen and documented; `make check` still green
+      (201 host/Verilator tests, 0 failures).
+- [x] `aster_minimal` ROM/RAM parameterization keeps every existing
       simulation/FPGA configuration bit-identical.
-- [ ] Yosys synthesis completes with no unmapped cells and no inferred latches.
-- [ ] The flow reaches GDSII with zero DRC violations (Magic and KLayout) and a
+- [x] Yosys synthesis completes with no unmapped cells and no inferred latches.
+- [x] The flow reaches GDSII with zero DRC violations (Magic and KLayout) and a
       clean Netgen LVS.
-- [ ] Antenna checks pass.
-- [ ] Static timing analysis meets the 20 ns constraint (WNS ≥ 0) at the
+- [x] Antenna checks pass (0 violating nets, 0 violating pins).
+- [x] Static timing analysis meets the 20 ns constraint (WNS ≥ 0) at the
       `nom_tt_025C_1v80` corner, with hold met at `nom_ss_100C_1v60`; the
       achieved Fmax is recorded.
-- [ ] Post-layout gate-level simulation (with back-annotated SDF) reproduces the
+- [x] Post-layout gate-level simulation (with back-annotated SDF) reproduces the
       firmware oracle on the same `hello`/benchmark program used in Phase 1/2.
-- [ ] The GDS, DEF, SPEF, timing/DRC/LVS reports and the tool/PDK identities are
+- [x] The GDS, DEF, SPEF, timing/DRC/LVS reports and the tool/PDK identities are
       hash-bound and reproducible from a clean checkout.
-- [ ] Self-contained closeout bundle and read-only audit (`audit_phase15.py`).
+- [x] Self-contained closeout bundle and read-only audit (`audit_phase15.py`).
+
+### Signoff results
+
+| Metric | Value |
+| --- | --- |
+| Setup WNS, worst corner (`max_ss_100C_1v60`) | **+1.679 ns** |
+| Setup WNS, `nom_ss_100C_1v60` | +2.559 ns |
+| Setup WNS, `nom_tt_025C_1v80` | +6.303 ns |
+| Hold WNS, worst corner | +0.270 ns |
+| Hold WNS, `nom_ss_100C_1v60` | +0.821 ns |
+| Achieved Fmax (`nom_tt_025C_1v80`) | ~73 MHz |
+| Magic DRC / KLayout DRC / XOR | 0 / 0 / 0 |
+| Netgen LVS errors / unmatched nets / pins | 0 / 0 / 0 |
+| Route DRC / antenna violations | 0 / 0 |
+| Post-layout gate-level sim (SDF, `nom_tt`) | PASS — `Hello from Aster` |
+
+### Flow lessons
+
+- **The ROM must be combinational.** A `$readmemh`-initialised `reg` array is
+  mapped by Yosys to power-up-initialised flops. SKY130 flops have no
+  power-up value and the initialiser is dropped when the memory passes through
+  ABC, so the netlist booted with an empty ROM. `scripts/run_asic.py` now bakes
+  the firmware into a combinational `aster_asic_rom_image` case.
+- **Gate-level simulation needs `-DFUNCTIONAL`.** The sky130 cell models are
+  timing-only stubs unless `FUNCTIONAL` is defined; without it every flop stays
+  `X`. Icarus also needs `-gspecify` to honour `$sdf_annotate`, and cannot parse
+  the escaped SRAM-macro instance name in the SDF, so the driver strips that one
+  CELL block (the macro's access time is not needed for the cycle oracle).
+- **`repair_design` must not use clock-delay buffers as data buffers.** The
+  default `clkdlybuf4s*` cells produced ~7 ns of delay on the high-fanout
+  PicoRV32 `latched_stalu` net. Excluding them, plus the post-global-route
+  resizer, closed setup at every corner.
 
 ## Milestones
 
