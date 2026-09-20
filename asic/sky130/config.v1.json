@@ -12,6 +12,8 @@
     "PNR_SDC_FILE": "dir::constraints.v1.sdc",
     "SIGNOFF_SDC_FILE": "dir::constraints.v1.sdc",
 
+    "MACRO_PLACEMENT_CFG": "dir::macro_placement.v1.cfg",
+
     "EXTRA_EXCLUDED_CELLS": ["sky130_fd_sc_hd__clkdlybuf4s*"],
 
     "RUN_POST_GRT_RESIZER_TIMING": true,
