@@ -29,7 +29,7 @@
     ],
 
     "FP_SIZING": "absolute",
-    "DIE_AREA": [0, 0, 7000, 5000],
+    "DIE_AREA": [0, 0, 9000, 7000],
     "RT_MAX_LAYER": "met4",
 
     "pdk::sky130*": {
