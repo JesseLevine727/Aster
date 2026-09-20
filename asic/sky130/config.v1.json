@@ -22,8 +22,8 @@
     "GND_NETS": ["vssd1"],
 
     "PDN_MACRO_CONNECTIONS": [
-        "soc.g_rom.rom.bank.* vccd1 vssd1 vccd1 vssd1",
-        "soc.g_ram.ram.bank.* vccd1 vssd1 vccd1 vssd1"
+        "soc.rom.bank.g_macro.*.macro vccd1 vssd1 vccd1 vssd1",
+        "soc.ram.bank.g_macro.*.macro vccd1 vssd1 vccd1 vssd1"
     ],
 
     "FP_SIZING": "absolute",
