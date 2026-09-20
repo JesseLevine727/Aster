@@ -17,8 +17,43 @@ module aster_rom #(
     logic [INDEX_WIDTH-1:0] word_index;
     localparam logic [31:0] DEPTH_BYTES = DEPTH_WORDS * 4;
 
+`ifdef ASTER_SRAM
+    // ASIC build: a bank of OpenRAM macros. The CPU read and the host boot
+    // program share the macro write/read port (they never overlap: the host
+    // programs only while the CPU is held in reset).
+    logic [31:0] bank_addr;
+    logic [31:0] bank_wdata;
+    logic [3:0]  bank_wstrb;
+    logic        bank_we;
+
+    always_comb begin
+        if (program_we) begin
+            bank_addr = {16'd0, program_addr};
+            bank_wdata = program_wdata;
+            bank_wstrb = program_wstrb;
+            bank_we = 1'b1;
+        end else begin
+            bank_addr = addr;
+            bank_wdata = 32'd0;
+            bank_wstrb = 4'd0;
+            bank_we = 1'b0;
+        end
+    end
+
+    aster_sram_bank #(
+        .BASE_ADDR(BASE_ADDR),
+        .DEPTH_WORDS(DEPTH_WORDS)
+    ) bank (
+        .clk(clk),
+        .addr(bank_addr),
+        .wdata(bank_wdata),
+        .wstrb(bank_wstrb),
+        .we(bank_we),
+        .rdata(rdata)
+    );
+`else
 `ifdef ASTER_ROM_IMAGE
-    // ASIC build: the firmware is a combinational constant ROM. A flop-based
+    // Phase 15 build: the firmware is a combinational constant ROM. A flop-based
     // ROM would need power-up initialisation that SKY130 flops do not have,
     // and the flow drops the initialiser when the memory is mapped through
     // ABC, so bake the image into gates instead.
@@ -89,4 +124,5 @@ module aster_rom #(
             end
         end
     endgenerate
+`endif
 endmodule

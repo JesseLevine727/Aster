@@ -89,7 +89,7 @@ VERILATOR_COHERENT_FLAGS := --unroll-count 2048 --unroll-stmts 100000
 RTL_CORE := rtl/core/aster_picorv32.sv vendor/picorv32/picorv32.v
 RTL_CACHE := rtl/cache/aster_l1_cache.sv
 RTL_MEMORY := rtl/memory/aster_rom.sv rtl/memory/aster_ram.sv rtl/memory/aster_sram_macro.sv \
-	rtl/memory/sky130_sram_2kbyte_1rw1r_32x512_8.sv
+	rtl/memory/aster_sram_bank.sv rtl/memory/sky130_sram_2kbyte_1rw1r_32x512_8.sv
 RTL_PERIPHERALS := rtl/peripherals/aster_uart.sv rtl/peripherals/aster_perf_counters.sv
 RTL_SOC := rtl/core/aster_hart.sv rtl/soc/aster_minimal.sv
 RTL_FABRIC := rtl/interconnect/aster_arbiter2.sv rtl/soc/aster_shared_fabric.sv

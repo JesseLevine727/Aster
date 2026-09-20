@@ -10,6 +10,20 @@ module aster_ram #(
     input  logic        we,
     output logic [31:0] rdata
 );
+`ifdef ASTER_SRAM
+    // ASIC build: a bank of OpenRAM macros with a registered read.
+    aster_sram_bank #(
+        .BASE_ADDR(BASE_ADDR),
+        .DEPTH_WORDS(DEPTH_WORDS)
+    ) bank (
+        .clk(clk),
+        .addr(addr),
+        .wdata(wdata),
+        .wstrb(wstrb),
+        .we(we),
+        .rdata(rdata)
+    );
+`else
     logic [31:0] memory [0:DEPTH_WORDS-1];
     localparam int INDEX_WIDTH = (DEPTH_WORDS <= 1) ? 1 : $clog2(DEPTH_WORDS);
     logic [INDEX_WIDTH-1:0] word_index;
@@ -68,4 +82,5 @@ module aster_ram #(
             end
         end
     endgenerate
+`endif
 endmodule

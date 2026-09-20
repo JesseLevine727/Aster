@@ -1,0 +1,40 @@
+{
+    "DESIGN_NAME": "aster_v1_asic",
+
+    "VERILOG_FILES": [
+        "dir::build/aster_v1_asic.v",
+        "dir::sram/sky130_sram_2kbyte_1rw1r_32x512_8.v"
+    ],
+
+    "CLOCK_PORT": "clk",
+    "CLOCK_PERIOD": 20.0,
+
+    "PNR_SDC_FILE": "dir::constraints.v1.sdc",
+    "SIGNOFF_SDC_FILE": "dir::constraints.v1.sdc",
+
+    "EXTRA_EXCLUDED_CELLS": ["sky130_fd_sc_hd__clkdlybuf4s*"],
+
+    "RUN_POST_GRT_RESIZER_TIMING": true,
+    "GRT_RESIZER_SETUP_SLACK_MARGIN": 6.0,
+    "GRT_RESIZER_SETUP_REPAIR_TNS_PCT": 100,
+
+    "VDD_NETS": ["vccd1"],
+    "GND_NETS": ["vssd1"],
+
+    "PDN_MACRO_CONNECTIONS": [
+        "soc.g_rom.rom.bank.* vccd1 vssd1 vccd1 vssd1",
+        "soc.g_ram.ram.bank.* vccd1 vssd1 vccd1 vssd1"
+    ],
+
+    "FP_SIZING": "absolute",
+    "DIE_AREA": [0, 0, 7000, 5000],
+    "RT_MAX_LAYER": "met4",
+
+    "pdk::sky130*": {
+        "FP_CORE_UTIL": 35,
+        "CLOCK_PERIOD": 20.0,
+        "scl::sky130_fd_sc_hd": {
+            "CLOCK_PERIOD": 20.0
+        }
+    }
+}
