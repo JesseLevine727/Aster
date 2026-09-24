@@ -64,9 +64,20 @@ module aster_sram_bank #(
         /* verilator lint_on PINCONNECTEMPTY */
     end
 
+    // One-hot AND-OR read mux. A 32:1 word mux would make each select bit fan
+    // out to ~1000 muxes; decoding to one-hot makes each decoded bit drive only
+    // the 32 data bits of one macro, which keeps the select fanout small.
+    logic [MACROS-1:0] sel_onehot;
+
+    always_comb begin
+        sel_onehot = '0;
+        if (in_range_q)
+            sel_onehot[sel_q] = 1'b1;
+    end
+
     always_comb begin
         rdata = 32'd0;
-        if (in_range_q)
-            rdata = dout[sel_q];
+        for (int index = 0; index < MACROS; index++)
+            rdata |= dout[index] & {32{sel_onehot[index]}};
     end
 endmodule

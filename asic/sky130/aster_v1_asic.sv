@@ -12,7 +12,11 @@ module aster_v1_asic #(
     parameter int unsigned BAUD = 115_200,
     parameter int unsigned NPU_ROWS = 4,
     parameter int unsigned NPU_COLS = 4,
-    parameter bit ENABLE_L2 = 1'b0
+    parameter bit ENABLE_L2 = 1'b0,
+    // Documented reduced cut: 16 KiB ROM/RAM (8 macros each) instead of the
+    // frozen 64 KiB, so the design fits and routes on SKY130.
+    parameter int unsigned ROM_WORDS = 4_096,
+    parameter int unsigned RAM_WORDS = 4_096
 ) (
     input  logic        clk,
     input  logic        rst_n,
@@ -43,7 +47,9 @@ module aster_v1_asic #(
         .ENABLE_IRQ(1'b1),
         .ENABLE_L2(ENABLE_L2),
         .HOST_BOOT(1'b1),
-        .CLOCK_HZ(CLOCK_HZ)
+        .CLOCK_HZ(CLOCK_HZ),
+        .ROM_WORDS(ROM_WORDS),
+        .RAM_WORDS(RAM_WORDS)
     ) soc (
         .clk(clk),
         .resetn(rst_n),

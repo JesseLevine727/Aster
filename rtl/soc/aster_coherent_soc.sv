@@ -19,7 +19,11 @@ module aster_coherent_soc #(
     parameter bit HOST_BOOT = 1'b0,
     parameter int unsigned CLOCK_HZ = 31_250_000,
     parameter int unsigned LINE_WORDS = 4,
-    parameter int unsigned LINE_COUNT = 16
+    parameter int unsigned LINE_COUNT = 16,
+    // Physical memory sizes. The default is the frozen v1.0 64 KiB map; the
+    // ASIC build may reduce them (documented reduced cut) to fit the die.
+    parameter int unsigned ROM_WORDS = 16_384,
+    parameter int unsigned RAM_WORDS = 16_384
 ) (
     input logic clk,
     input logic resetn,
@@ -405,12 +409,12 @@ module aster_coherent_soc #(
     assign m_ready = resetn && m_valid && (memory_access
         ? wait_count == WAIT_BITS'(MEMORY_WAIT_CYCLES) :
           npu_access ? npu_register_ready : !uart_request || uart_write_ready);
-    aster_rom #(.MEM_INIT_FILE(MEM_INIT_FILE), .SYNC_READ(SYNC_MEMORY), .ENABLE_PROGRAM(HOST_BOOT)) rom (
+    aster_rom #(.MEM_INIT_FILE(MEM_INIT_FILE), .DEPTH_WORDS(ROM_WORDS), .SYNC_READ(SYNC_MEMORY), .ENABLE_PROGRAM(HOST_BOOT)) rom (
         .clk(clk), .addr(m_addr), .rdata(rom_rdata),
         .program_we(HOST_BOOT && stopped && !host_run && boot_we), .program_addr(boot_addr),
         .program_wdata(boot_wdata), .program_wstrb(boot_wstrb)
     );
-    aster_ram #(.SYNC_READ(SYNC_MEMORY)) ram (
+    aster_ram #(.DEPTH_WORDS(RAM_WORDS), .SYNC_READ(SYNC_MEMORY)) ram (
         .clk(clk), .addr(stopped && !host_run ? 32'h1000_0000 + {16'b0, host_ram_addr} : m_addr),
         .wdata(m_wdata), .wstrb(m_mask), .we(accepted && ram_access && !m_instr && |m_mask), .rdata(ram_rdata)
     );
