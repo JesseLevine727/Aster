@@ -1,45 +1,46 @@
 {
     "DESIGN_NAME": "aster_v1_asic",
-
     "VERILOG_FILES": [
         "dir::build/aster_v1_asic.v",
         "dir::sram/sky130_sram_2kbyte_1rw1r_32x512_8.v"
     ],
-
     "CLOCK_PORT": "clk",
-    "CLOCK_PERIOD": 20.0,
-
+    "CLOCK_PERIOD": 45.0,
     "PNR_SDC_FILE": "dir::constraints.v1.sdc",
     "SIGNOFF_SDC_FILE": "dir::constraints.v1.sdc",
-
     "MACRO_PLACEMENT_CFG": "dir::macro_placement.v1.cfg",
-
-    "EXTRA_EXCLUDED_CELLS": ["sky130_fd_sc_hd__clkdlybuf4s*"],
-
+    "EXTRA_EXCLUDED_CELLS": [
+        "sky130_fd_sc_hd__clkdlybuf4s*"
+    ],
     "RUN_POST_GRT_RESIZER_TIMING": true,
     "GRT_RESIZER_SETUP_SLACK_MARGIN": 6.0,
     "GRT_RESIZER_SETUP_REPAIR_TNS_PCT": 100,
-
-    "VDD_NETS": ["vccd1"],
-    "GND_NETS": ["vssd1"],
-
+    "VDD_NETS": [
+        "vccd1"
+    ],
+    "GND_NETS": [
+        "vssd1"
+    ],
     "PDN_MACRO_CONNECTIONS": [
         "soc.rom.bank.g_macro.*.macro vccd1 vssd1 vccd1 vssd1",
         "soc.ram.bank.g_macro.*.macro vccd1 vssd1 vccd1 vssd1"
     ],
-
     "FP_SIZING": "absolute",
-    "DIE_AREA": [0, 0, 5000, 4000],
-    "PL_TARGET_DENSITY_PCT": 30,
+    "DIE_AREA": [
+        0,
+        0,
+        5000,
+        4000
+    ],
+    "PL_TARGET_DENSITY_PCT": 25,
     "GRT_ALLOW_CONGESTION": true,
     "GRT_OVERFLOW_ITERS": 10,
     "RT_MAX_LAYER": "met5",
-
     "pdk::sky130*": {
         "FP_CORE_UTIL": 35,
-        "CLOCK_PERIOD": 20.0,
+        "CLOCK_PERIOD": 45.0,
         "scl::sky130_fd_sc_hd": {
-            "CLOCK_PERIOD": 20.0
+            "CLOCK_PERIOD": 45.0
         }
     }
 }
