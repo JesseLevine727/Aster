@@ -45,7 +45,8 @@ int main(int argc, char** argv) {
                 // registers or alternate reset semantics to production RTL.
                 for (unsigned i = 0; i < 14; ++i) {
                     reference[i] = cycle == 3000 ? 0xfffffff0ull + i : UINT64_MAX - i;
-                    d.rootp->aster_coherent_perf__DOT__counters[i] = reference[i];
+                    d.rootp->aster_coherent_perf__DOT__counters_lo[i] = static_cast<std::uint32_t>(reference[i]);
+                    d.rootp->aster_coherent_perf__DOT__counters_hi[i] = static_cast<std::uint32_t>(reference[i] >> 32);
                 }
                 d.start = d.freeze = 0; d.resume_counting = 1;
             }

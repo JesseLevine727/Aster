@@ -19,10 +19,11 @@ module aster_coherent_perf #(
     input logic [31:0] addr,
     output logic [31:0] rdata
 );
-    logic [63:0] counters [0:13];
+    logic [31:0] counters_lo [0:13];
+    logic [31:0] counters_hi [0:13];
     logic running;
     // Register the event inputs so the long route from each event source into
-    // the 64-bit counter carry chains is broken. Measurement-only: this adds a
+    // the counter carry chains is broken. Measurement-only: this adds a
     // one-cycle event latency and changes no register or ABI.
     logic [13:0] events_q;
     wire [31:0] offset = addr - BASE_ADDR;
@@ -30,21 +31,30 @@ module aster_coherent_perf #(
         if (!resetn) events_q <= '0;
         else events_q <= events;
     end
+    // The 64-bit increment is split into two 32-bit halves. A single 64-bit
+    // ripple carry makes bit 62 depend on a 62-input AND chain (~10 ns at SS);
+    // incrementing the high half from the low half's carry halves that depth.
     always_ff @(posedge clk) begin
         if (!resetn || start) begin
-            for (int i = 0; i < 14; i++) counters[i] <= 0;
+            for (int i = 0; i < 14; i++) begin
+                counters_lo[i] <= 0;
+                counters_hi[i] <= 0;
+            end
             running <= resetn && start;
         end else if (freeze) running <= 0;
         else if (resume_counting) running <= 1;
         else if (running) begin
-            for (int i = 0; i < 14; i++) counters[i] <= counters[i] + {63'b0, events_q[i]};
+            for (int i = 0; i < 14; i++) begin
+                counters_lo[i] <= counters_lo[i] + {31'b0, events_q[i]};
+                counters_hi[i] <= counters_hi[i] + {31'b0, events_q[i] & (&counters_lo[i])};
+            end
         end
     end
     always_comb begin
         rdata = 0;
         if (offset < 32'h70 && offset[1:0] == 0) begin
-            if (offset[2]) rdata = counters[offset[6:3]][63:32];
-            else rdata = counters[offset[6:3]][31:0];
+            if (offset[2]) rdata = counters_hi[offset[6:3]];
+            else rdata = counters_lo[offset[6:3]];
         end else case (offset)
             32'h80: rdata = {31'b0, running};
             32'h84: rdata = 4;
