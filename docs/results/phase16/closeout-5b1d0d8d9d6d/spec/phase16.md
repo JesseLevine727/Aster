@@ -1,7 +1,6 @@
 # Phase 16: Full ASIC implementation and PPA
 
-Status: **complete** — the full v1.3 system is implemented on SKY130 at the
-achievable frequency. See [Results](#results).
+Status: **scoping** — decisions proposed, to be frozen before implementation.
 Baseline: pushed v1.3 closeout `b3954ce`, plus the Phase 15 SKY130 flow
 infrastructure (`ba6c760`).
 The [README roadmap](../README.md#phase-16--full-asic-implementation-and-ppa)
@@ -189,34 +188,6 @@ docs/
 - [ ] The GDS, DEF, SPEF, timing/DRC/LVS reports and the tool/PDK identities are
       hash-bound and reproducible from a clean checkout.
 - [ ] Self-contained closeout bundle and read-only audit (`audit_phase16.py`).
-
-## Results
-
-The full v1.3 all-engine coherent system was taken through LibreLane 3.0 on
-SKY130. It is a **~21 MHz part at the slow corner** — the 28 nm FPGA closed 20 ns,
-and 130 nm is roughly 2× slower on the same combinational paths. Getting to
-50 MHz needs the deep fabric/NPU/cache paths pipelined (a v2 effort; Phase 15's
-minimal block already closes 50 MHz).
-
-| Metric | Value |
-| --- | --- |
-| Die | 20 mm² (5000×4000 µm), 16 OpenRAM macros (reduced from the 64 KiB map) |
-| Cells | 2.14 mm² stdcells, 4.55 mm² macros |
-| Setup WNS `nom_tt` | **+10.74 ns** ✅ |
-| Setup WNS `nom_ss` | **+0.35 ns** ✅ |
-| Setup WNS `max_ss` (worst RC) | −1.15 ns ❌ (needs ~49 ns) |
-| Hold WNS worst (`max_ff`) | −0.17 ns ❌ |
-| Magic / KLayout DRC | **0 / 0** ✅ |
-| Antenna | **0** ✅ |
-| Route (TritonRoute) DRC | 106 ❌ |
-| LVS | 13 (top-level power-pin matching; device classes equivalent) ❌ |
-| Achieved Fmax | **~21 MHz** (`nom_ss`) / ~43 MHz (`nom_tt`) |
-
-The signoff uses an **over-constrained PnR SDC (20 ns) with a 47 ns signoff
-SDC** so the optimizer works hard; the reduced memory cut (16 KiB ROM/RAM, 16
-macros) is what makes the design routable at all. The residuals — `max_ss`
-setup, hold, the TritonRoute DRC count and the power-pin LVS detail — are the
-remaining physical-cleanup work; the perf-counter carry split is retained.
 
 ## Milestones
 

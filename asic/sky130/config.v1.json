@@ -5,8 +5,8 @@
         "dir::sram/sky130_sram_2kbyte_1rw1r_32x512_8.v"
     ],
     "CLOCK_PORT": "clk",
-    "CLOCK_PERIOD": 45.0,
-    "PNR_SDC_FILE": "dir::constraints.v1.sdc",
+    "CLOCK_PERIOD": 47.0,
+    "PNR_SDC_FILE": "dir::constraints_pnr.v1.sdc",
     "SIGNOFF_SDC_FILE": "dir::constraints.v1.sdc",
     "MACRO_PLACEMENT_CFG": "dir::macro_placement.v1.cfg",
     "EXTRA_EXCLUDED_CELLS": [
@@ -38,9 +38,12 @@
     "RT_MAX_LAYER": "met5",
     "pdk::sky130*": {
         "FP_CORE_UTIL": 35,
-        "CLOCK_PERIOD": 45.0,
+        "CLOCK_PERIOD": 47.0,
         "scl::sky130_fd_sc_hd": {
-            "CLOCK_PERIOD": 45.0
+            "CLOCK_PERIOD": 47.0
         }
-    }
+    },
+    "PL_RESIZER_HOLD_SLACK_MARGIN": 0.3,
+    "GRT_RESIZER_HOLD_SLACK_MARGIN": 0.3,
+    "RUN_HEURISTIC_DIODE_INSERTION": true
 }
