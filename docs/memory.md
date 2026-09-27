@@ -138,6 +138,16 @@ then `sudo systemctl daemon-reload`. Disabling oomd entirely
 OOM killer then picks a victim, which is usually a batch job rather than the
 desktop, but it is less predictable.
 
+## Applied on this machine (2026-09-27)
+
+- `/swapfile` added, 32 GiB (total swap 40 GiB), persisted in `/etc/fstab`.
+- `/etc/systemd/oomd.conf.d/aster.conf`: `DefaultMemoryPressureLimit=85%`,
+  `SwapUsedLimit=95%` (was 60% / 90%).
+- `/etc/systemd/system/user@.service.d/oomd.conf`:
+  `ManagedOOMMemoryPressure=auto`, `ManagedOOMMemoryPressureLimit=85%`
+  (was `kill` / 50%).
+- `systemd-oomd` restarted.
+
 ## Checklist before a long run
 
 - [ ] Close the heavy desktop apps (chrome, codex, MATLAB) or accept that they
