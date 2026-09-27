@@ -13,6 +13,7 @@ repository root.
 """
 import argparse
 import os
+import shutil
 import subprocess
 import sys
 from pathlib import Path
@@ -206,6 +207,11 @@ def main():
     parser.add_argument("--to", default=None, help="stop at this LibreLane step id")
     parser.add_argument("--run-tag", default=None)
     parser.add_argument("--skip-convert", action="store_true")
+    parser.add_argument(
+        "--no-memguard",
+        action="store_true",
+        help="do not serialise/cap the flow with scripts/memguard.sh",
+    )
     parser.add_argument("librelane_args", nargs="*")
     args = parser.parse_args()
 
@@ -232,6 +238,12 @@ def main():
         command += ["--override-config", "MAGIC_DRC_MAGLEFS=" + str(mag)]
     command += args.librelane_args
     command += [str(ROOT / design["config"])]
+
+    # Serialise and cap the flow so a signoff step (magic-writelef peaks at
+    # 32-54 GiB on the full chip) can never OOM the desktop. See docs/memory.md.
+    guard = ROOT / "scripts" / "memguard.sh"
+    if not args.no_memguard and guard.is_file() and shutil.which("systemd-run"):
+        command = [str(guard), "--"] + command
 
     print("librelane:", " ".join(command), flush=True)
     return subprocess.run(command, cwd=ROOT).returncode

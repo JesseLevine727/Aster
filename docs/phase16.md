@@ -243,6 +243,15 @@ regresses setup (−1.62 ns at `max_ss`) and routing (240 DRC), confirming the
 remaining residuals are architectural (NPU/fabric paths need pipelining) rather
 than a flow-tuning problem. `p16-f2` remains the balanced signoff point.
 
+### Host memory and OOM containment
+
+The full-chip signoff is memory-heavy (`magic-writelef` peaks at 32-54 GiB,
+`klayout-drc` at 25 GiB) and the gate-level sims add ~10 GiB. Run the heavy jobs
+through `scripts/memguard.sh` (or `scripts/run_asic.py`, which wraps it by
+default): it serialises them with a `flock` and caps each in its own cgroup.
+`docs/memory.md` has the full diagnosis, the `systemd-oomd` hardening and the
+swap recommendation.
+
 ### Tier 2 gate-level simulation
 
 `docs/results/phase16/tier2-gate-level/README.md` records the post-layout
