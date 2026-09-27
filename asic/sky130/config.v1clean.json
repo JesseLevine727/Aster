@@ -32,9 +32,9 @@
         5000,
         4000
     ],
-    "PL_TARGET_DENSITY_PCT": 30,
+    "PL_TARGET_DENSITY_PCT": 25,
     "GRT_ALLOW_CONGESTION": true,
-    "GRT_OVERFLOW_ITERS": 30,
+    "GRT_OVERFLOW_ITERS": 10,
     "RT_MAX_LAYER": "met5",
     "pdk::sky130*": {
         "FP_CORE_UTIL": 35,
