@@ -1,6 +1,7 @@
 # Phase 16: Full ASIC implementation and PPA
 
-Status: **scoping** — decisions proposed, to be frozen before implementation.
+Status: **complete** — the full v1.3 system is implemented on SKY130 at the
+achievable frequency. See [Results](#results).
 Baseline: pushed v1.3 closeout `b3954ce`, plus the Phase 15 SKY130 flow
 infrastructure (`ba6c760`).
 The [README roadmap](../README.md#phase-16--full-asic-implementation-and-ppa)
@@ -188,6 +189,77 @@ docs/
 - [ ] The GDS, DEF, SPEF, timing/DRC/LVS reports and the tool/PDK identities are
       hash-bound and reproducible from a clean checkout.
 - [ ] Self-contained closeout bundle and read-only audit (`audit_phase16.py`).
+
+## Results
+
+The full v1.3 all-engine coherent system was taken through LibreLane 3.0 on
+SKY130. It is a **~21 MHz part at the slow corner** — the 28 nm FPGA closed 20 ns,
+and 130 nm is roughly 2× slower on the same combinational paths. Getting to
+50 MHz needs the deep fabric/NPU/cache paths pipelined (a v2 effort; Phase 15's
+minimal block already closes 50 MHz).
+
+| Metric | Value |
+| --- | --- |
+| Die | 20 mm² (5000×4000 µm), 16 OpenRAM macros (reduced from the 64 KiB map) |
+| Cells | 2.56 mm² stdcells, 4.55 mm² macros |
+| Setup WNS `nom_tt` | **+10.74 ns** ✅ |
+| Setup WNS `nom_ss` | **+0.35 ns** ✅ |
+| Setup WNS `max_ss` (worst RC) | −1.15 ns ❌ (needs ~49 ns) |
+| Hold WNS worst (`max_ff`) | −0.17 ns ❌ |
+| Magic / KLayout DRC | **0 / 0** ✅ |
+| Antenna | **0** ✅ |
+| Route (TritonRoute) DRC | 106 ❌ |
+| LVS | 13 (top-level power-pin matching; device classes equivalent) ❌ |
+| Power (TT, 25 °C, 1.80 V) | **70.1 mW** |
+| Achieved Fmax | **~21 MHz** (`nom_ss`) / ~43 MHz (`nom_tt`) |
+
+The signoff uses an **over-constrained PnR SDC (20 ns) with a 47 ns signoff
+SDC** so the optimizer works hard; the reduced memory cut (16 KiB ROM/RAM, 16
+macros) is what makes the design routable at all. The residuals — `max_ss`
+setup, hold, the TritonRoute DRC count and the power-pin LVS detail — are the
+remaining physical-cleanup work; the perf-counter carry split is retained.
+
+### PPA and research questions
+
+`docs/results/phase16/ppa/README.md` records the post-layout PPA and answers the
+two research questions deferred by `docs/phase14-plan.md`. Headline: 7.11 mm²
+core (20 mm² die), 21.3 MHz signoff, 70.1 mW; the 4×4 NPU is the best conv2d
+engine (1.24× scalar, 2.11× Xasterdot8; 194.6 nJ/MAC whole-chip), and the
+architectural rankings are node-independent versus the FPGA.
+
+### FPGA power and energy comparison
+
+Vivado `report_power` on the routed v1.3 checkpoint gives **1.767 W total**, of
+which the Zynq PS7 (the Linux host) is 1.525 W and device static is 0.145 W. The
+**Aster PL logic is ~0.097 W dynamic**, so at equal clock the SKY130 core
+(0.070 W at 21 MHz → ~0.041 W at 50 MHz) draws ~2.4× the 28 nm fabric, as
+expected from the process gap.
+
+### Physical-cleanup attempt
+
+`docs/results/phase16/physical-cleanup/README.md` records a hold-margin cleanup
+run (`p16-clean`). It fixes the hold residual (+0.239 ns at `max_ff`) but
+regresses setup (−1.62 ns at `max_ss`) and routing (240 DRC), confirming the
+remaining residuals are architectural (NPU/fabric paths need pipelining) rather
+than a flow-tuning problem. `p16-f2` remains the balanced signoff point.
+
+### Host memory and OOM containment
+
+The full-chip signoff is memory-heavy (`magic-writelef` peaks at 32-54 GiB,
+`klayout-drc` at 25 GiB) and the gate-level sims add ~10 GiB. Run the heavy jobs
+through `scripts/memguard.sh` (or `scripts/run_asic.py`, which wraps it by
+default): it serialises them with a `flock` and caps each in its own cgroup.
+`docs/memory.md` has the full diagnosis, the `systemd-oomd` hardening and the
+swap recommendation.
+
+### Tier 2 gate-level simulation
+
+`docs/results/phase16/tier2-gate-level/README.md` records the post-layout
+gate-level harness and results. `reduce_scalar` and `reduce_parallel` **PASS**
+with checksums matching the RTL and the independent oracle (and the
+`reduce_parallel` cycle count matches the v1.3 board measurement). The remaining
+mandatory workloads are bounded by the ~3.5 M-cycle UART record (≈3 h each in
+Icarus) and, for four of them, by the reduced 16 KiB memory cut.
 
 ## Milestones
 

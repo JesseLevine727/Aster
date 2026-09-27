@@ -106,13 +106,17 @@ Implementation revision: `{revision}`.
 
 ## Correctness
 
-- Post-layout gate-level simulation with the `nom_tt_025C_1v80` SDF reproduces
-  the Phase 1/2 oracle `Hello from Aster\\n`.
-- `make check` is green with 201 passing host/Verilator tests.
+- Tier 1: the full AsterBench v10 catalog passes at RTL on the ASIC
+  configuration (`make check` is green with 201 passing host/Verilator tests).
+- Tier 2: post-layout gate-level simulation with the `nom_tt_025C_1v80` SDF
+  reproduces `reduce_scalar` and `reduce_parallel` with checksums matching the
+  RTL and the independent oracle (see `docs/results/phase16/tier2-gate-level/`).
+- Tier 3: static signoff (STA, RCX/SPEF, antenna, DRC, LVS) is recorded in the
+  `physical/` directory of this bundle.
 
 ## Compatibility
 
-No frozen v1.0 address, register, ABI or instruction was changed; the ROM
+No frozen v1.0 address, register, ABI or instruction was changed; the ROM/RAM
 parameterisation keeps every existing simulation/FPGA configuration identical.
 """
 
@@ -201,13 +205,18 @@ def main():
 
     readme = f"""# Phase 16 closeout ({revision[:12]})
 
-Self-contained evidence for the minimal SKY130/LibreLane flow, built from
-`asic/sky130/runs/{args.run}`.
+Self-contained evidence for the Phase 16 full v1.3 SKY130/LibreLane flow, built
+from `asic/sky130/runs/{args.run}`.
 
-- Setup WNS worst corner: {values['timing__setup__ws']:.3f} ns
-- Hold WNS worst corner: {values['timing__hold__ws']:.3f} ns
-- Magic/KLayout DRC, LVS errors, antenna nets: 0 / 0 / 0 / 0
-- Gate-level SDF simulation: PASS (`Hello from Aster`)
+- Setup WNS worst corner (`max_ss`): {values['timing__setup__ws']:.3f} ns
+- Setup WNS `nom_ss` / `nom_tt`: {values['timing__setup__ws__corner:nom_ss_100C_1v60']:.3f} / {values['timing__setup__ws__corner:nom_tt_025C_1v80']:.3f} ns
+- Hold WNS worst corner (`max_ff`): {values['timing__hold__ws']:.3f} ns
+- Magic / KLayout DRC: {int(values['magic__drc_error__count'])} / {int(values['klayout__drc_error__count'])}
+- Antenna violating nets: {int(values['antenna__violating__nets'])}
+- Route (TritonRoute) DRC: {int(values['route__drc_errors'])}
+- LVS errors: {int(values['design__lvs_error__count'])}
+- Power (TT): {values['power__total'] * 1000:.1f} mW
+- Tier 2 gate-level: `reduce_scalar` and `reduce_parallel` PASS
 
 Validate with `python3 scripts/audit_phase16.py docs/results/phase16/closeout-{revision[:12]} --current`.
 """
