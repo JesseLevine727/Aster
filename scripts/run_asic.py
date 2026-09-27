@@ -107,6 +107,16 @@ DESIGNS = {
         "rom_image_module": "aster_v1_asic_rom_image",
         "config": "asic/sky130/config.v1clean.json",
     },
+    # A++ cleanup: lower placement density and more global/detailed-route
+    # iterations to chase route DRC to zero, with a moderate hold margin.
+    "v1aplus": {
+        "rtl": RTL_V1,
+        "defines": ["RISCV_FORMAL", "SYNTHESIS", "ASTER_SRAM"],
+        "output": "aster_v1_asic.v",
+        "rom_image": None,
+        "rom_image_module": "aster_v1_asic_rom_image",
+        "config": "asic/sky130/config.v1aplus.json",
+    },
 }
 
 

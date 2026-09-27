@@ -56,6 +56,17 @@ static void build_inputs(void) {
 }
 
 static int run_engine(void) {
+#if CONV_ENGINE == 2
+    // Scalar reference path on the coherent SoC, so the same gate-level
+    // netlist can produce the CPU baseline for the cross-engine check.
+    for (uint32_t m = 0; m < CONV_M; ++m) {
+        int32_t sum = 0;
+        for (uint32_t k = 0; k < CONV_KK; ++k)
+            sum += (int32_t)im2col[m * CONV_KK + k] * (int32_t)kernel[k];
+        output[m] = sum;
+    }
+    return 0;
+#else
     struct aster_npu_gemm job = {im2col, kernel, output, CONV_KK, 1u, 4u, CONV_M, 1u, CONV_KK};
 #if CONV_ENGINE == 1
     struct aster_npu_status status;
@@ -66,6 +77,7 @@ static int run_engine(void) {
 #else
     xe_dot8_gemm(&job);
     return 0;
+#endif
 #endif
 }
 
@@ -87,6 +99,9 @@ int main(void) {
     __asm__ volatile ("fence rw,rw" ::: "memory");
 #if CONV_ENGINE == 1
     aster_workload_emit_coh("conv2d_npu", "dsp", CONV_H * CONV_W, CONV_ITERATIONS, CONV_K,
+                            CONV_SEED, checksum, 1u);
+#elif CONV_ENGINE == 2
+    aster_workload_emit_coh("conv2d_scalar_coh", "dsp", CONV_H * CONV_W, CONV_ITERATIONS, CONV_K,
                             CONV_SEED, checksum, 1u);
 #else
     aster_workload_emit_coh("conv2d_dot8", "dsp", CONV_H * CONV_W, CONV_ITERATIONS, CONV_K,
