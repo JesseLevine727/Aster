@@ -201,7 +201,7 @@ minimal block already closes 50 MHz).
 | Metric | Value |
 | --- | --- |
 | Die | 20 mm² (5000×4000 µm), 16 OpenRAM macros (reduced from the 64 KiB map) |
-| Cells | 2.14 mm² stdcells, 4.55 mm² macros |
+| Cells | 2.56 mm² stdcells, 4.55 mm² macros |
 | Setup WNS `nom_tt` | **+10.74 ns** ✅ |
 | Setup WNS `nom_ss` | **+0.35 ns** ✅ |
 | Setup WNS `max_ss` (worst RC) | −1.15 ns ❌ (needs ~49 ns) |
@@ -210,6 +210,7 @@ minimal block already closes 50 MHz).
 | Antenna | **0** ✅ |
 | Route (TritonRoute) DRC | 106 ❌ |
 | LVS | 13 (top-level power-pin matching; device classes equivalent) ❌ |
+| Power (TT, 25 °C, 1.80 V) | **70.1 mW** |
 | Achieved Fmax | **~21 MHz** (`nom_ss`) / ~43 MHz (`nom_tt`) |
 
 The signoff uses an **over-constrained PnR SDC (20 ns) with a 47 ns signoff
@@ -217,6 +218,39 @@ SDC** so the optimizer works hard; the reduced memory cut (16 KiB ROM/RAM, 16
 macros) is what makes the design routable at all. The residuals — `max_ss`
 setup, hold, the TritonRoute DRC count and the power-pin LVS detail — are the
 remaining physical-cleanup work; the perf-counter carry split is retained.
+
+### PPA and research questions
+
+`docs/results/phase16/ppa/README.md` records the post-layout PPA and answers the
+two research questions deferred by `docs/phase14-plan.md`. Headline: 7.11 mm²
+core (20 mm² die), 21.3 MHz signoff, 70.1 mW; the 4×4 NPU is the best conv2d
+engine (1.24× scalar, 2.11× Xasterdot8; 194.6 nJ/MAC whole-chip), and the
+architectural rankings are node-independent versus the FPGA.
+
+### FPGA power and energy comparison
+
+Vivado `report_power` on the routed v1.3 checkpoint gives **1.767 W total**, of
+which the Zynq PS7 (the Linux host) is 1.525 W and device static is 0.145 W. The
+**Aster PL logic is ~0.097 W dynamic**, so at equal clock the SKY130 core
+(0.070 W at 21 MHz → ~0.041 W at 50 MHz) draws ~2.4× the 28 nm fabric, as
+expected from the process gap.
+
+### Physical-cleanup attempt
+
+`docs/results/phase16/physical-cleanup/README.md` records a hold-margin cleanup
+run (`p16-clean`). It fixes the hold residual (+0.239 ns at `max_ff`) but
+regresses setup (−1.62 ns at `max_ss`) and routing (240 DRC), confirming the
+remaining residuals are architectural (NPU/fabric paths need pipelining) rather
+than a flow-tuning problem. `p16-f2` remains the balanced signoff point.
+
+### Tier 2 gate-level simulation
+
+`docs/results/phase16/tier2-gate-level/README.md` records the post-layout
+gate-level harness and results. `reduce_scalar` and `reduce_parallel` **PASS**
+with checksums matching the RTL and the independent oracle (and the
+`reduce_parallel` cycle count matches the v1.3 board measurement). The remaining
+mandatory workloads are bounded by the ~3.5 M-cycle UART record (≈3 h each in
+Icarus) and, for four of them, by the reduced 16 KiB memory cut.
 
 ## Milestones
 
