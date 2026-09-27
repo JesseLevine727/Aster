@@ -84,17 +84,29 @@ at 4×4 tile size — the same relative ranking measured on FPGA in Phase 12.
 |--------|---------------------|------------------------|
 | Clock | 50 MHz | 21.3 MHz signoff |
 | Resources | 25,628 LUT (48.2%), 19,794 FF, 32 BRAM (22.9%), 24 DSP (10.9%) | 2.56 mm² stdcell + 4.55 mm² SRAM, 20 mm² die |
-| Power | not measured | 70.1 mW |
+| Aster logic power | ~0.097 W dynamic (PL only) | 70.1 mW total core |
+| Total on-chip power | 1.767 W (incl. 1.525 W PS7 + 0.145 W static) | 70.1 mW |
 | NPU vs scalar conv2d | NPU faster, DOT8 slower | NPU faster, DOT8 slower |
 | Multicore reduce speedup | ~1.3× | ~1.3× |
+
+FPGA power is from Vivado `report_power` on the routed v1.3 checkpoint
+(`linux-h2-coherent-c1-dma-dot8-npu-fclk50`): 1.767 W total, of which the
+**Zynq PS7 (the Linux host) is 1.525 W** and device static is 0.145 W. The
+**Aster PL logic is therefore ~0.097 W dynamic** (clocks 0.023 + slice 0.016 +
+signals 0.027 + BRAM 0.029 + DSP <0.001 + I/O 0.002). Compared at equal clock,
+the SKY130 core (0.070 W at 21 MHz) is ~0.041 W at 50 MHz — so the 130 nm part
+draws ~2.4× the 28 nm FPGA fabric for the same logic, as expected from the
+process gap.
 
 **The architectural conclusions are node-independent.** Relative engine rankings
 (NPU > scalar > DOT8 for this conv2d shape), the im2col-feed bottleneck, and the
 coherence scaling ratio are identical on FPGA and SKY130 because both run the same
 RTL; only the absolute clock, area and energy differ. The ASIC trades ~2.3× clock
 for a dedicated, measurable silicon area and a hard power number; the FPGA trades
-area for reconfigurability and a higher clock. A follow-up that measures FPGA power
-would complete the energy comparison.
+area for reconfigurability and a higher clock. With both power numbers now
+measured, the energy conclusion is also node-independent in ranking but the ASIC
+is the lower-energy implementation at equal work (0.070 W core vs ~0.097 W of PL
+logic at a higher clock).
 
 ## Provenance
 

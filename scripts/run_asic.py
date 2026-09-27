@@ -96,6 +96,16 @@ DESIGNS = {
         "rom_image_module": "aster_v1_asic_rom_image",
         "config": "asic/sky130/config.v1.json",
     },
+    # Physical-cleanup variant of v1: tighter hold margin and more global-route
+    # overflow iterations to remove the max-corner hold and route-DRC residuals.
+    "v1clean": {
+        "rtl": RTL_V1,
+        "defines": ["RISCV_FORMAL", "SYNTHESIS", "ASTER_SRAM"],
+        "output": "aster_v1_asic.v",
+        "rom_image": None,
+        "rom_image_module": "aster_v1_asic_rom_image",
+        "config": "asic/sky130/config.v1clean.json",
+    },
 }
 
 
