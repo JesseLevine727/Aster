@@ -74,23 +74,43 @@ Override with `ASTER_MEM_HIGH` / `ASTER_MEM_MAX` / `ASTER_MEM_SWAP_MAX`.
 parallel.** `memguard` serialises them; if you bypass it, use the same
 `flock /tmp/opencode/aster-heavy.lock` yourself.
 
+## The `magic-writelef` spike is not fundamental
+
+`Magic.WriteLEF` reads the 536 MB, 3.98 M-instance DEF into Magic's flat layout
+database and emits a **370-line** abstract LEF — 54 GiB and 1h15m single-threaded
+for a 14 KB file. The cost is entirely Magic's per-cell-use memory model, not a
+requirement of the flow:
+
+- The top-level LEF's **only consumer** is `Odb.CheckDesignAntennaProperties`,
+  which *prints warnings* if the LEF lacks antenna info. It gates nothing.
+- `Magic.WriteLEF`'s output is otherwise just the `final/lef/aster_v1_asic.lef`
+  deliverable, which only matters if the chip is instantiated as a hierarchical
+  block. Aster is a flat single-block SoC, so it is not needed.
+
+Skip both steps and the 54 GiB spike disappears:
+
+```sh
+scripts/memguard.sh --high 16G --max 24G -- \
+  python3 scripts/run_asic.py --design v1 --run-tag p16-f2 \
+      -S Magic.WriteLEF -S Odb.CheckDesignAntennaProperties
+```
+
+`MAGIC_LEF_WRITE_USE_GDS=1` switches the input from the DEF to the GDS but does
+not change the per-instance cost, so it is not a fix. If a future phase needs the
+top LEF (hierarchy), run that one step alone with enough swap.
+
 ## Fix: give the big step headroom
 
-`magic-writelef`'s 54 GiB spike is the single largest consumer. Two options:
+Even with the LEF write skipped, `magic-spiceextraction` (21 GiB) and
+`klayout-drc` (25 GiB) still spike, so keep some headroom. 8 GiB of swap is thin
+for a 25-54 GiB spike on a 60 GiB box. Grow it (root):
 
-- **More swap.** 8 GiB is not enough headroom for a 54 GiB spike on a 60 GiB
-  box. Grow it (root):
-
-  ```sh
-  sudo fallocate -l 32G /swapfile && sudo chmod 600 /swapfile
-  sudo mkswap /swapfile && sudo swapon /swapfile
-  # persist in /etc/fstab:
-  # /swapfile none swap sw 0 0
-  ```
-
-- **Avoid the Magic LEF write.** The top-level LEF is only needed for
-  hierarchical flows; a flat single-block run can skip it. If a future phase
-  re-introduces hierarchy, prefer KLayout streamout for the top LEF.
+```sh
+sudo fallocate -l 32G /swapfile && sudo chmod 600 /swapfile
+sudo mkswap /swapfile && sudo swapon /swapfile
+# persist in /etc/fstab:
+# /swapfile none swap sw 0 0
+```
 
 ## Fix: stop oomd killing the session
 

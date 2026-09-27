@@ -212,6 +212,14 @@ def main():
         action="store_true",
         help="do not serialise/cap the flow with scripts/memguard.sh",
     )
+    parser.add_argument(
+        "--skip-step",
+        action="append",
+        default=[],
+        metavar="STEP",
+        help="skip a LibreLane step id (repeatable), e.g. "
+        "-S Magic.WriteLEF -S Odb.CheckDesignAntennaProperties",
+    )
     parser.add_argument("librelane_args", nargs="*")
     args = parser.parse_args()
 
@@ -236,6 +244,8 @@ def main():
     ]
     if mag.is_file():
         command += ["--override-config", "MAGIC_DRC_MAGLEFS=" + str(mag)]
+    for step in args.skip_step:
+        command += ["-S", step]
     command += args.librelane_args
     command += [str(ROOT / design["config"])]
 
