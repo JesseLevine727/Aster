@@ -81,6 +81,24 @@ cycles=0x0000000000049a43,retired=0x000000000000d033,...
 - Run cost: 2,399,030 cycles ≈ 2 h 40 m wall clock in Icarus, of which ~2.07 M
   cycles are the 476-byte UART record.
 
+## Result: `reduce_parallel` PASS (coherence path)
+
+```text
+ASTERBENCH,version=10,name=reduce_parallel,category=cpu,status=PASS,size=4096,
+iterations=4,param=2,seed=0x13570000,checksum=0x5c808000,clock_hz=50000000,
+l1=1,sync_memory=1,line_words=4,line_count=16,memory_wait=1,
+cycles=0x0000000000038dfe,retired=0x000000000000a093,...
+```
+
+- `checksum=0x5c808000` matches the RTL and the independent oracle; `retired`
+  matches the RTL exactly.
+- `cycles=0x38dfe` (232,958) matches the v1.3 FPGA board measurement of
+  232,958 cycles — the ASIC gate-level netlist and the board agree on the
+  two-hart coherence path.
+- Two mandatory Tier 2 workloads now pass end to end (`reduce_scalar`,
+  `reduce_parallel`); both cover the scalar CPU + 2-hart coherence + perf
+  counters + L1 path.
+
 ## Substitution
 
 `docs/phase16.md` permits "a documented, equivalent smaller input for a workload
