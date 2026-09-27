@@ -60,6 +60,27 @@ $HOME/tools/iverilog/usr/bin/vvp v1_gl.vvp \
    `dhrystone` (18.4 KiB) and `cifar_cnn` (28.3 KiB text) exceed it. They will
    run once the full 64 KiB design closes (Phase 17).
 
+## Result: `reduce_scalar` PASS
+
+The routed netlist reproduces the workload end to end:
+
+```text
+ASTERBENCH,version=10,name=reduce_scalar,category=cpu,status=PASS,size=4096,
+iterations=4,param=1,seed=0x13570000,checksum=0x5c808000,clock_hz=50000000,
+l1=1,sync_memory=1,line_words=4,line_count=16,memory_wait=1,
+cycles=0x0000000000049a43,retired=0x000000000000d033,...
+```
+
+- `checksum=0x5c808000` matches the RTL record and the independent oracle
+  (`scripts/workload_reference.py verify` → PASS).
+- `retired=0xd033` (53,299) matches the RTL record exactly.
+- `cycles=301,635` differs from the RTL's 289,251 only because the ASIC build
+  runs `sync_memory=1 / memory_wait=1` at 50 MHz while the RTL reference ran
+  `sync_memory=0` at 31.25 MHz — the same architectural work at a different
+  memory timing.
+- Run cost: 2,399,030 cycles ≈ 2 h 40 m wall clock in Icarus, of which ~2.07 M
+  cycles are the 476-byte UART record.
+
 ## Substitution
 
 `docs/phase16.md` permits "a documented, equivalent smaller input for a workload
