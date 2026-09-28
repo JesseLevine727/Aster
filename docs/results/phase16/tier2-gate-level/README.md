@@ -122,6 +122,22 @@ path runs at ~130 cycles/s in Icarus and had not finished computing after a
 board results are recorded; the gate-level run is the one substitution the
 contract permits.
 
+## Result: memory-heavy workloads exceed the gate-level budget
+
+`coremark` and `streaming_ecg` were also attempted and **timed out** (coremark at
+6 M cycles with no output; ecg stalled at 3.57 M). The reason is the ASIC memory
+timing: the routed design runs `sync_memory=1` / `memory_wait=1`, so every
+memory access costs an extra cycle relative to the RTL reference
+(`sync_memory=0`). For memory-bound workloads this roughly doubles the cycle
+count *and* the absolute Icarus rate drops, so they need budgets well past
+6 M cycles. `fft` additionally runs on a different (`aster_minimal`) netlist.
+
+The gate-level Tier 2 set is therefore **four workloads** —
+`reduce_scalar`, `reduce_parallel`, `conv2d_scalar_coh`, `conv2d_npu` — which
+together cover the scalar CPU, 2-hart coherence + perf counters + L1, and the
+CPU-vs-NPU cross-engine path. The rest are covered at Tier 1 (RTL) and, for
+`reduce_parallel`, on the physical board.
+
 ## Substitution
 
 `docs/phase16.md` permits "a documented, equivalent smaller input for a workload
