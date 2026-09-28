@@ -99,6 +99,29 @@ cycles=0x0000000000038dfe,retired=0x000000000000a093,...
   `reduce_parallel`); both cover the scalar CPU + 2-hart coherence + perf
   counters + L1 path.
 
+## Result: cross-engine conv2d equivalence (gate level)
+
+A memory-fitted conv2d (16×16 image, 3×3 kernel, 4 iterations — fits the reduced
+16 KiB cut) was built for three engines and run on the routed netlist. The scalar
+path was added to `workload_conv2d_engine.c` as `CONV_ENGINE=2` so the CPU
+baseline runs on the *same* coherent netlist.
+
+| Engine | Gate-level checksum | RTL checksum | Result |
+|--------|:-------------------:|:------------:|:------:|
+| `conv2d_scalar_coh` | `0xb4ad9800` | `0xb4ad9800` | **PASS** |
+| `conv2d_npu` | `0xb4ad9800` | `0xb4ad9800` | **PASS** |
+| `conv2d_dot8` | — | `0xb4ad9800` | not run (see below) |
+
+The **scalar CPU and the dedicated NPU agree bit-for-bit on the routed SKY130
+netlist**, matching RTL. This is the contract's cross-engine equivalence check
+(`docs/phase16.md`): the CPU baseline and the accelerator share an output.
+
+`conv2d_dot8` did **not** complete at gate level: the XasterDOT8 custom-instruction
+path runs at ~130 cycles/s in Icarus and had not finished computing after a
+4.5 M-cycle budget (the fixed ~2.07 M-cycle UART record is separate). Its RTL and
+board results are recorded; the gate-level run is the one substitution the
+contract permits.
+
 ## Substitution
 
 `docs/phase16.md` permits "a documented, equivalent smaller input for a workload
