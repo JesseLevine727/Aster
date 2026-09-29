@@ -4,7 +4,7 @@
 > superseded — timing per corner, Fmax, power corner, LVS, electrical
 > violations, Tier 2 coverage, and the mixed-top engine ratios. The reconciled
 > values are in [`docs/phase16.md` Results](../../../phase16.md#results); the
-> same-top engine comparison is the [Phase 17 baseline](../../phase17/).
+> same-top engine comparison is the [Phase 17 baseline](../../phase17/baseline-9b9c94f58a85/README.md).
 
 Tier 2 requires post-layout, SDF-back-annotated simulation of the routed
 `aster_v1_asic` netlist on one oracle per compute path

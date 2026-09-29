@@ -1,7 +1,7 @@
 # Aster core — CPU specification (Phase 18)
 
-Status: **draft for approval (P17-E).** This is the contract for the CPU that
-replaces PicoRV32 in v2. It is written before any RTL so that every milestone has
+Status: **approved on 29 September 2026 (P17-E) — the Phase 18 contract.** This
+is the specification of the CPU that replaces PicoRV32 in v2. It is written before any RTL so that every milestone has
 a fixed target, interface, verification method, and timing/area gate. The
 surrounding plan is [`phase17-plus.md`](phase17-plus.md#6-phase-17-sequence).
 
@@ -178,10 +178,10 @@ Each milestone passes all applicable layers before the next milestone starts.
 | 18.6 | L1 instruction/data caches with single-cycle hits; SRAM interface; runtime port | Cache reference model, stalls, firmware regression |
 | 18.7 | Evaluation | CPU set vs PicoRV32 (≥2×); 100 MHz feasibility report for FPGA and SKY130 |
 
-## 9. Decisions requested
+## 9. Approval
 
-1. Approve the ISA and machine-mode-only scope, including standard traps and
-   the interrupt-controller-to-`MEIP` wiring (§2–3).
-2. Approve the pipeline and hazard policy (§4), including static branch
-   prediction first.
-3. Approve Spike as the golden model and the verification layers (§6).
+Approved as drafted on 29 September 2026: the ISA and machine-mode-only scope
+with standard traps and the interrupt controller on `MEIP` (§2–3), the pipeline
+and hazard policy with static branch prediction first (§4), and Spike as the
+golden model with the verification layers of §6. Changes after approval are
+recorded here with the evidence that motivated them.

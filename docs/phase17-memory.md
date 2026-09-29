@@ -1,8 +1,9 @@
 # P17-D — memory capacity and die-area decision brief
 
-Status: **for owner decision.** Phase 17 must freeze one memory/area point before
-Phase 18 RTL starts ([plan](phase17-plus.md#memory-capacity-and-area-are-one-decision)).
-This brief records the facts that constrain the choice and a recommendation.
+Status: **decided on 29 September 2026 — Option B**: a 96 KiB host-loaded
+unified SRAM in independent banks. Phase 17 had to freeze one memory/area point
+before Phase 18 RTL ([plan](phase17-plus.md#memory-capacity-and-area-are-one-decision)).
+This brief records the facts that constrained the choice.
 
 ## Facts
 
@@ -78,4 +79,6 @@ unrouted 64-macro configuration, and matches how the Phase 16 ASIC already
 booted (host-loaded SRAM instead of a mask ROM). The NPU operand buffers are
 decided separately in Phase 19.
 
-The owner's decision is recorded in [`phase17-todo.md`](phase17-todo.md) (P17-D).
+**Decision (owner, 29 September 2026): Option B.** The die budget is set from
+Phase 18's measured block areas plus ≈13.7 mm² of macros, and is recorded when
+the Phase 18 feasibility report closes.

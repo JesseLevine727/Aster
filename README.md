@@ -83,7 +83,10 @@ computing in 0.42% of the workload's cycles.
 ## v2 performance targets
 
 The [Phase 17+ plan](docs/phase17-plus.md) defines methods and exit criteria.
-The targets below are goals to verify, not claims about the current design.
+The targets below were frozen on 29 September 2026, with a 96 KiB unified on-chip
+SRAM ([memory decision](docs/phase17-memory.md)) and the approved
+[Aster core specification](docs/cpu.md). They are goals to verify, not claims
+about the current design.
 
 | Target | Goal |
 | --- | --- |

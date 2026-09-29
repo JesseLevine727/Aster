@@ -58,7 +58,7 @@ project, useful multicore scaling, a well-fed INT8 accelerator, and reproducible
 FPGA/ASIC PPA. The primary design target is **100 MHz**. That is an engineering
 goal to test and close, not a claim that the current RTL already meets it.
 
-### Proposed top-level targets
+### Top-level targets (frozen 29 September 2026)
 
 | Metric | v2 target | Acceptance evidence |
 | --- | --- | --- |
@@ -72,10 +72,13 @@ goal to test and close, not a claim that the current RTL already meets it.
 | ASIC physical signoff | Zero setup/hold violations, zero routing DRC, zero foundry DRC, zero LVS mismatch, zero antenna violations, zero max-slew/capacitance/fanout violations | Hash-bound post-route reports, real macro models, and a fresh read-only audit that fails on any unmet release gate. |
 | Energy | Measured or vector-based energy per workload, not one global power number divided among workloads | Workload-specific post-route activity including SRAM macros, or a clearly labeled board measurement. Separate FPGA PL from PS and ASIC from FPGA. State the corner of every power number. |
 
-These are proposed v2 targets. Phase 17 freezes exact workload sizes, compiler
-flags, memory capacity, area budget, power method, and signoff corners before
-performance RTL work begins. Any target change must be recorded with the evidence
-and trade-off that motivated it.
+These targets were frozen at the Phase 17 review on 29 September 2026, together
+with the memory point (a 96 KiB host-loaded unified SRAM;
+[`phase17-memory.md`](phase17-memory.md)) and the Aster core specification
+([`cpu.md`](cpu.md)). The workload definitions and sizes are those of the
+[retained Phase 17 baseline](results/phase17/baseline-9b9c94f58a85/README.md); compiler flags follow the
+current Makefile. Any target change must be recorded with the evidence and
+trade-off that motivated it.
 
 ### 100 MHz feasibility
 
@@ -111,7 +114,9 @@ macros), not the default 64 KiB ROM plus 64 KiB RAM map. Its 16 macros occupy
 4.55 mm². Scaling that same macro choice to the full map requires about 64
 macros, or roughly 18.2 mm² of macro area before standard cells, power
 distribution, routing, and whitespace. A 20 mm² die cannot simply be assumed to
-fit the full map. Phase 17 must choose one of these explicit product points:
+fit the full map. Phase 17 had to choose one of these explicit product points
+(decision: a 96 KiB unified SRAM, a deliberately sized on-chip budget of type 2 —
+see [`phase17-memory.md`](phase17-memory.md)):
 
 1. a larger die with the full memory map;
 2. a deliberately smaller on-chip SRAM budget with workloads/models tiled or

@@ -250,7 +250,7 @@ instance area (2.56 mm² standard cells + 4.55 mm² macros), not a core area;
 21.3 MHz and 70.1 mW are corrected in the table above; the 1.24×/2.11× ratios
 compared a scalar run on `aster_minimal` with DOT8/NPU on the coherent top (on
 one top the NPU is 2.06× and DOT8 0.96× — see the
-[Phase 17 baseline](results/phase17/)); energy per MAC divided one vectorless
+[Phase 17 baseline](results/phase17/baseline-9b9c94f58a85/README.md)); energy per MAC divided one vectorless
 whole-chip power figure among workloads; the Tier 1 cycle counts were RTL runs
 with zero-wait memory and the full 64 KiB map, not the ASIC's synchronous
 memory and 16 KiB cut; and the "node-independent ranking" is circular because

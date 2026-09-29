@@ -4,7 +4,7 @@
 > superseded — timing per corner, Fmax, power corner, LVS, electrical
 > violations, Tier 2 coverage, and the mixed-top engine ratios. The reconciled
 > values are in [`docs/phase16.md` Results](../../../phase16.md#results); the
-> same-top engine comparison is the [Phase 17 baseline](../../phase17/).
+> same-top engine comparison is the [Phase 17 baseline](../../phase17/baseline-9b9c94f58a85/README.md).
 
 The Phase 16 closeout (`runs/p16-f2`) left three physical residuals:
 

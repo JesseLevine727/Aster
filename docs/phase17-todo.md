@@ -81,7 +81,7 @@ What the v11 records show:
     `memguard.sh -- run_asic.py` example deadlocked on the nested lock); FPGA
     results are not called "silicon"; `docs/l2.md` matches the RTL.
   - [x] Stray tracked files are removed.
-- [ ] **P17-A5/A6 — One retained same-top v1 baseline.** Scalar, multicore,
+- [x] **P17-A5/A6 — One retained same-top v1 baseline.** Scalar, multicore,
   DOT8, and NPU for Conv2D, reduction, MNIST MLP, ECG, and CIFAR on the
   all-engine coherent SoC, captured under the physical synchronous one-wait
   memory model and, labelled as an idealization, the zero-wait model. One
@@ -89,7 +89,14 @@ What the v11 records show:
   hashes, configuration, toolchain, and oracle outputs are retained under
   `docs/results/phase17/` with an audit that rejects a mismatched top, clock,
   memory mode, counter, or source hash. `aster_minimal` stays a separately
-  named data point.
+  named data point. Retained as
+  [`results/phase17/baseline-9b9c94f58a85`](results/phase17/baseline-9b9c94f58a85/README.md): 17 captures × 2
+  memory models × 2 byte-identical repeats, audited by
+  `scripts/audit_phase17_baseline.py` (run by `make check`); mutation tests show
+  the audit rejects a changed top, clock, memory mode, DMA attribution,
+  last-job-only NPU total, repeat, or source hash. Cross-check: the `sync1` MNIST
+  NPU inference (462,953 cycles per image, 4.46×) equals the Phase 11 PYNQ-Z1
+  board capture exactly.
 - [x] **P17-B — CoreMark labelling.** Label the current one-iteration run as a
   fixed-iteration CRC correctness check wherever it appears; no standard score
   is claimed for PicoRV32. A valid CoreMark score (real timer, at least ten
@@ -115,20 +122,22 @@ What the v11 records show:
     expected outcome is that Phase 16 reports **incomplete**.
   - [x] Future closeouts include `asic/` in the hashed source state (the
     Phase 17 baseline audit hashes `asic/` with the rest of the source).
-- [ ] **P17-D — Memory and area point (owner decision).** Present options with
+- [x] **P17-D — Memory and area point (owner decision).** Present options with
   numbers: full map on a larger die, smaller on-chip SRAM with tiled workloads,
   or an external-memory interface; macros versus latch/flop RAM per array. Freeze
   one option with a die-area budget. The decision brief is
-  [`phase17-memory.md`](phase17-memory.md) (recommendation: 96 KiB host-loaded
-  unified SRAM in banks); awaiting the owner's decision.
-- [ ] **P17-E — Freeze the v2 contract and the CPU specification.** Approve the
+  [`phase17-memory.md`](phase17-memory.md). **Decided 29 September 2026:** a 96 KiB
+  host-loaded unified SRAM in independent banks; the die budget is set from the
+  Phase 18 block areas plus ≈13.7 mm² of macros.
+- [x] **P17-E — Freeze the v2 contract and the CPU specification.** Approve the
   100 MHz FPGA/SKY130 targets and required corners, NPU utilization and speedup
   goals including the N=1 mapping, the CPU cycle target, resource/die limits,
   energy method, workload matrix, gate-level method, and evidence manifest.
   Write `docs/cpu.md` for the Aster core (ISA, pipeline, interfaces, traps,
   verification layers, timing gates) as outlined in
-  [phase17-plus.md section 6](phase17-plus.md#6-phase-17-sequence). The draft
-  specification is [`cpu.md`](cpu.md); awaiting the owner's approval.
+  [phase17-plus.md section 6](phase17-plus.md#6-phase-17-sequence). **Approved 29
+  September 2026:** the section 2 targets are frozen and [`cpu.md`](cpu.md) is
+  the Phase 18 contract.
 - [ ] **P17-F — Live documentation aligned.** README, architecture status,
   subsystem READMEs, and the phase index describe the current state, and
   historical claims are labelled with their original configuration.
