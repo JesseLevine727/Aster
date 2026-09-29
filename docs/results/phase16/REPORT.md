@@ -2,6 +2,13 @@
 
 **Final report — Phase 16 (v1.3 full ASIC implementation)**
 
+> **Review status:** this historical report documents a completed physical-design
+> run, not clean ASIC signoff. The recorded run uses a reduced memory cut and has
+> worst-corner timing, routing DRC, LVS, and Tier 2 gaps. Its performance and
+> energy comparisons are provisional because the workload records do not all use
+> the ASIC top/configuration and some counter/power derivations need correction.
+> See [Phase 16 status](../../phase16.md) and the [Phase 17+ re-baseline plan](../../phase17-plus.md).
+
 Aster is an open, from-scratch heterogeneous RISC-V system-on-chip built to answer
 one question: *when should a workload run on a scalar CPU, across multiple coherent
 cores, through an ISA-level accelerator, or on a dedicated hardware accelerator?*

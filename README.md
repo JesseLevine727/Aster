@@ -1,727 +1,192 @@
 # Aster
 
-**An open, Apple-Silicon-inspired heterogeneous RISC-V SoC — from simulation to FPGA to SKY130 ASIC.**
+**A performance-driven, heterogeneous RISC-V SoC research project.** Aster
+compares scalar CPU, multicore CPU, custom-instruction, DMA, and INT8 accelerator
+execution on real workloads, then validates a selected design on FPGA and in a
+SKY130 ASIC flow.
 
-Aster is a learning and research project to design a small heterogeneous system-on-chip around open RISC-V CPUs, a memory hierarchy, DMA, custom compute instructions, and an INT8 neural-network accelerator. The design will be developed incrementally in RTL, verified in simulation, validated on a PYNQ-Z1 FPGA, characterized with a purpose-built benchmark suite, and ultimately taken through an open-source SKY130 ASIC physical-design flow.
+Aster is inspired by heterogeneous-compute systems, not an attempt to reproduce
+an Apple A-series processor. Its research contribution is the architecture and,
+equally, a fair and reproducible method for deciding where work should execute.
 
-The goal is **not to reproduce an Apple A-series processor**. Modern Apple silicon is the architectural inspiration: general-purpose CPUs coexist with specialized hardware, and workloads are placed on the compute engine best suited to them. Aster asks how much of that heterogeneous-computing philosophy can be explored in a small, understandable, open design.
+## Current status — 29 September 2026
 
-> **Core research question:** When should a workload execute on a scalar CPU, across multiple CPU cores, through an ISA-level accelerator, or on a dedicated hardware accelerator?
+### Aster v1: functionally verified reference system
 
-## Current status
+The v1 RTL integrates two PicoRV32 RV32IMA harts, private instruction/coherent
+data caches, serialized atomic/coherence service, optional L2, DMA, Xasterdot8,
+a 4×4 signed-INT8 NPU, timer, interrupts, and performance counters. The PicoRV32
+is a small low-area in-order reference core; it is **not** a high-performance
+CPU. The v1 system is a useful correctness and workload-placement baseline.
 
-Phase 1 is implemented and verified: PicoRV32 RV32IM executes bare-metal C
-using 64 KiB ROM, 64 KiB RAM, a RAM stack and UART. The closeout regression
-checks 1,584 generated ISA vector groups, load/store lanes, control flow,
-memory-map boundaries, RAM execution, initialized data, nonzero initial RAM,
-warm-reset startup, linker limits and 12 trap scenarios. It runs with caches
-off/on and asynchronous/synchronous memory using `make phase1-matrix`.
+The all-engine PYNQ-Z1 v1.3 overlay closes timing at **50 MHz** and has physical
+workload evidence. Earlier phases also retain large correctness, regression,
+and workload studies. The results are indexed below; each phase has its own
+configuration and acceptance contract.
 
-Phase 3 measurement closeout is verified: non-trapping RVFI retirement, a
-common frozen counter window, separate CPU/backing-memory traffic, strict
-AsterBench v2 records and reproducible capture/comparison with source and
-toolchain provenance. [Saved clean-revision results](docs/results/phase3/README.md)
-include all cached/uncached and async/sync baseline combinations.
+### Phase 16: ASIC attempt, not clean signoff
 
-Phase 2 is physically verified on PYNQ-Z1 through PYNQ Linux: Hello, a
-1,060-byte UART stress stream and three AsterBench workloads each pass two
-warm boots. Every benchmark field matches its Verilator reference. The first
-attempt exposed a reset-polarity defect in the FPGA shell; it is fixed and
-guarded by generated-netlist simulation and pre-download handoff checks.
-[Physical records and routed reports](docs/results/phase2/README.md) distinguish
-real FPGA serial TX/RX captured over AXI/SSH from external Pmod wiring, which
-was not tested.
+The SKY130/LibreLane flow produced a routed/GDS result for a reduced **16 KiB
+ROM + 16 KiB RAM** cut. At the 47 ns signoff point the reported worst setup slack
+is **−1.154 ns**; worst hold slack is **−0.171 ns**; TritonRoute reports **106**
+DRC errors and LVS reports **13** errors. The original 50 MHz target and full
+memory configuration did not close. No Aster chip has been fabricated.
 
-Phase 4 closeout is verified: 108 seeded cache scoreboard runs across 36
-geometries, a 24-configuration SoC/latency matrix, and all four README cache
-experiments. [Retained clean-revision results](docs/results/phase4/README.md)
-cover 60 configurations plus a repeat, with correctness/provenance checks and
-analysis of both cache benefits and slowdowns. Phases 1–4 are complete;
-[`docs/phase-closeout.md`](docs/phase-closeout.md) maps the acceptance contract
-to retained evidence.
+The Phase 16 result is a useful physical feasibility experiment, but it is not a
+signoff-clean implementation. Its Fmax/power derivations, workload
+comparability, and closeout audit need re-baselining before those figures can be
+used as v2 performance claims. See the [Phase 16 status](docs/phase16.md),
+[saved report](docs/results/phase16/REPORT.md), and the
+[Phase 17+ performance plan](docs/phase17-plus.md).
 
-Phase 5 is complete: two independent PicoRV32 RV32IM harts execute a protected,
-separate-stack C runtime and a correctly checked parallel workload on the
-PYNQ-Z1 through Linux/PCAP. Private I/D caches, uncached shared RAM, round-robin
-arbitration, hart lifecycle and polling mailboxes follow the
-[dual-hart contract and acceptance audit](docs/phase5.md). Strict AsterBench v3
-records use common measurement windows, per-hart counters and full provenance.
+## Why a new performance phase is needed
 
-[Retained physical evidence](docs/results/phase5/closeout-71e2570/README.md)
-contains 18 warm boots, 48 benchmark jobs, clean FPGA signoff and complete
-legacy/multicore regression matrices. The default 64-word workload measures
-**1.973× physical speedup**, including dispatch/copy/completion overhead;
-small-job overhead and cache-dependent scaling remain visible. Older captures
-retain their original source/timing meaning. `make linux-dual-sim` tests the
-new bridge; `make fpga-linux-dual` builds its overlay. Original `fpga` and
-`fpga-linux` targets preserve the single-core map. Phase 6 is now complete:
-the [coherence and full RV32A contract](docs/phase6.md) defines staged PCPI,
-atomic-memory, MSI-like cache, runtime, benchmark and physical acceptance gates.
-Legacy builds remain RV32IM. The new RV32IMA bring-up passes
-independent atomic-fabric tests and compiled one-/two-core C runtime tests.
-The new MSI-like D-cache controller also passes geometry, dirty-data, flush and
-real-core atomic tests. The new SoC passes RAM-preserving warm-stop and repeated
-secondary-reset tests. The Phase 6 AXI bridge and stopped-only host helpers pass
-serial, RAM-retention and protocol tests. AsterBench v4 now exercises nine
-atomic/coherent workloads with exact simulated per-hart event scoreboards and
-independent RAM results. Both cache-off/on overlays pass clean-source routed
-signoff. The complete physical Linux/PCAP study now passes all 57 captures,
-114 warm boots and 342 jobs, matching every reference counter with full UART
-and stopped-RAM evidence. Full-A C runtime and selective-reset lifecycle tests
-also pass two physical boots each with caches off and on. The matching
-clean-source simulation study and strict 22-target regression audit pass.
-The [self-contained Phase 6 evidence](docs/results/phase6/closeout-215b2d0/README.md)
-passes all seven requirement audits and a fresh clean rebuild with 84 host
-tests. Its 835 hash-checked artifacts include both actual bitstreams and full
-raw regression/firmware/physical records. Phase 7 (DMA) is also complete:
-coherent autonomous copies, a RAM-backed C driver and AsterBench v5 size
-experiments pass all seven [acceptance gates](docs/results/phase7/closeout-888c24b/README.md).
-The 2,003-artifact bundle retains all 22 legacy and 14 DMA regression targets,
-144 physical benchmark captures, eight additional functional board boots,
-both routed 31.25 MHz overlays and a fresh rebuild with 149 host tests.
-The [current runtime guide](docs/runtime.md) covers the coherent RV32IMA/DMA
-configuration separately from the preserved legacy maps. Phase 8 is complete:
-the packed signed INT8 instruction, RAM-backed runtime, full regressions, routed
-overlays and guarded PYNQ Linux acceptance all pass the [immutable closeout
-audit](docs/results/phase8/closeout-5b9c175/README.md). Phase 9 is complete: the
-4×4 signed-INT8 GEMM matrix accelerator runs a RAM-backed C runtime on the
-coherent RV32IMA/DMA SoC, passes AsterBench v7 with an independent oracle, and is
-physically verified through PYNQ Linux/PCAP in both cache modes at 31.25 MHz.
-The [Phase 9 contract](docs/phase9.md) and [immutable evidence
-bundle](docs/results/phase9/closeout-2493435/README.md) retain the 16-case
-actual-core matrix, routed overlays and physical records.
+The v1 tests establish that the blocks work. They do not establish that the
+whole SoC has a competitive CPU, efficient accelerator dataflow, or a trustworthy
+ASIC PPA result. The current implementation serializes CPU/device memory
+transactions, uses a small blocking cache, and feeds the NPU through the shared
+memory service. Conv2D with N=1 activates only one NPU column, and per-byte
+operand/result traffic dominates its compute.
 
-Phase 10 (CPU vs multicore vs ISA vs NPU) is complete under the
-[Phase 10 contract](docs/phase10.md): identical signed-INT8 dot, FIR and GEMM
-kernels run through the scalar CPU, two coherent harts, the Xasterdot8
-instruction and the NPU on one all-engine SoC image. The fixed 288-capture
-AsterBench v8 study passes with two fresh repeats, per-engine FPGA utilization
-and routed timing are measured, and six physical Pynq-Z1 captures at 31.25 MHz
-match the simulation ratios. The [self-contained closeout
-bundle](docs/results/phase10/closeout-8371c3d/README.md) retains the raw records,
-routed reports and physical evidence and passes `scripts/audit_phase10.py`.
+The published Conv2D cycle records also use different SoC tops and default
+asynchronous memory, while the ASIC top uses synchronous memory and a reduced
+memory cut. `dma_bytes` includes NPU device stores, and NPU `accelerator_cycles`
+is currently a last-job value rather than a sum over the workload. These are
+Phase 17 measurement-contract items, not harmless formatting details.
 
-Phase 11 (quantized ML inference) is complete under the
-[Phase 11 contract](docs/phase11.md): a frozen INT8 MLP `784→32→10` runs end to
-end on the coherent RV32IMA/NPU SoC with the CPU owning control,
-requantization, activation and classification and the NPU owning the matrix
-multiply. All four execution paths (scalar, multicore, DOT8, NPU) are bit-exact
-against an independent integer reference, and the four-path study and physical
-captures agree (NPU ≈4.5× the scalar baseline). The [closeout
-bundle](docs/results/phase11/closeout-ff56683/README.md) passes
-`scripts/audit_phase11.py`.
+The next version must be designed around workload, bandwidth, timing, area, and
+energy budgets from the beginning. The historical v1 implementation and its
+results remain the reference; v2 performance work gets its own measured gates.
 
-Phase 12 (real-time heterogeneous demo) is complete under the
-[Phase 12 contract](docs/phase12.md): a streaming ECG pipeline stages each chunk
-with the CPU, moves it with DMA, filters it with Xasterdot8 on the secondary
-hart, extracts features on the CPU and classifies them on the NPU, using real
-PhysioNet MIT-BIH data. The pipeline is bit-exact against an independent oracle,
-three fresh simulation repeats and two physical warm boots reproduce the record,
-and the [closeout bundle](docs/results/phase12/closeout-f1f62e2/README.md) passes
-`scripts/audit_phase12.py`. "Real time" means sustained per-chunk throughput;
-interrupts remain future work.
+## Proposed v2 performance targets
 
-Phase 12.5 (machine timer) is complete under the
-[Phase 12.5 contract](docs/timer.md): a custom MMIO 64-bit free-running timer
-with a byte-strobed compare and a level interrupt in the reserved `0x20001000`
-page, verified by a unit scoreboard, a firmware interval test against the
-Phase 3 cycle counter, a routed all-engine overlay and two physical warm boots.
-The [closeout bundle](docs/results/phase12.5/closeout-c3ec874/README.md) passes
-`scripts/audit_timer.py`.
+The [Phase 17+ plan](docs/phase17-plus.md) defines methods and exit criteria.
+The targets below are goals to verify, not claims about the current design.
 
-Phase 12.6 (interrupts) is complete under the
-[Phase 12.6 contract](docs/interrupts.md): a per-hart MMIO interrupt controller
-in the reserved `0x20004000` page latches the timer, DMA completion, NPU done
-and software sources and delivers a level IRQ to each PicoRV32 hart through the
-fixed `0x10` vector, verified by a unit scoreboard, a firmware software/timer
-interrupt test, a routed all-engine overlay and two physical warm boots. The
-[closeout bundle](docs/results/phase12.6/closeout-c24d2bf/README.md) passes
-`scripts/audit_interrupts.py`.
+| Target | Goal |
+| --- | --- |
+| Operating frequency | **100 MHz** post-route on PYNQ-Z1 and a 100 MHz SKY130 design target, with positive setup/hold slack at all required corners. Feasibility is an early gate; functional overclocking alone does not count. |
+| INT8 NPU | 4×4 array: **3.2 GOPS theoretical peak at 100 MHz** when one MAC counts as two operations; at least 50% peak on predeclared dense GEMM shapes. Report MAC/s, utilization, and end-to-end time as well as GOPS. |
+| CPU baseline | A measured, pipelined in-order RV32 candidate should improve cycles by at least 2× over v1 on the fixed CPU-bound test set at the same clock and memory configuration. PicoRV32 remains a reference point. |
+| Multicore / offload | Measure scaling and crossovers end-to-end. Large GEMM and the selected MLP should benefit from the NPU; small jobs are allowed to lose and must remain in the results. |
+| Physical quality | Timing closure, zero routing/foundry DRC, zero LVS mismatch, zero antenna violations, and workload-specific energy evidence. Memory capacity and die-area budget must be chosen together. |
 
-**Aster v1.0 is frozen.** The authoritative contract for every address,
-register, ABI and instruction encoding is [`docs/v1.md`](docs/v1.md), with
-deliberate boundaries in [`docs/known-limitations.md`](docs/known-limitations.md)
-and the freeze decision in [`docs/phase13.md`](docs/phase13.md). The frozen
-interface is guarded by `make freeze-interfaces`. Shared L2 is intentionally a
-v2 / Phase 14 axis; the
-[Phase 14 plan](docs/phase14-plan.md) maps the frozen knobs to the research
-questions below.
+100 MHz is **not a limit imposed by the 130 nm node**; many 130 nm designs run
+faster. It is a target for this design, and feasibility depends on its pipeline,
+SRAM access, fanout, routing, and area. The current FPGA design has 50 MHz routed
+timing signoff; its earlier 100 MHz test was functional on a limited workload
+but did not close static timing. The current SKY130 critical path is far from a
+10 ns period. Phase 18 will measure the architecture and area changes needed.
+A lower-frequency result must be reported as such, not relabeled as 100 MHz
+success.
 
-**Aster v1.1 adds the shared L2.** The [v1.1 contract](docs/l2.md) and
-[closeout bundle](docs/results/v1.1/closeout-d18b387/README.md) add a
-memory-side, read-allocate, write-through L2 between the L1 backing port and
-memory. It is a **latency-hiding** structure: **0.94×** (6% slower) at the
-default zero-latency memory model and up to **1.98×** faster at high memory
-latency, with size scaling to **1.79×** on convolution at 16 KiB. It defaults
-off, so the v1.0 baseline is bit-identical.
+## Research questions
 
-**Aster v1.2 parameterizes the NPU geometry.** The [v1.2 contract](docs/npu-geometry.md)
-and [closeout bundle](docs/results/v1.2/closeout-114f9c9d/README.md) expose the
-INT8 tile engine as 2×2 / 4×4 / 8×8 with the default unchanged at 4×4. All three
-produce the independent-oracle checksum, and the 8×8 overlay is physically
-verified. The measured answer to "how do accelerator dimensions affect
-utilization, area and performance" is that the **4×4 default is the sweet spot**:
-the 8×8 buys 2.7% throughput for +13 percentage points of LUTs and a lower Fmax,
-and is 24% worse per unit area.
+1. When does a single CPU, two CPUs, DOT8, DMA, or the NPU win for the same work?
+2. How do working set, access pattern, bank conflicts, and SRAM latency affect
+   throughput?
+3. What are the real cache capacity, coherence, false-sharing, and L2 trade-offs?
+4. At what transfer size and alignment does DMA beat CPU copying, and is CPU time
+   actually available for other work?
+5. How do NPU geometry, tile shape, operand reuse, and memory bandwidth affect
+   useful PE utilization and performance per area?
+6. Does the heterogeneous ECG pipeline overlap work and meet a stated throughput
+   or deadline target?
+7. How do conclusions change between PYNQ FPGA and SKY130, using the same
+   workload definitions and valid timing/power evidence?
 
-**Aster v1.3 closes the slow corner at 50 MHz.** The [v1.3 contract](docs/v1.3.md)
-and [closeout bundle](docs/results/v1.3/closeout-b3954ce/README.md) pipeline the
-perf-event inputs, the cache flush-scan target and the NPU descriptor check, and
-build with timing-driven place/route/phys-opt. The all-engine coherent overlay
-now signs off at a 20 ns constraint with **WNS +0.191 ns and zero failing
-endpoints** (up from the 31.25 MHz baseline) and runs `reduce_parallel` at
-50 MHz on the Pynq-Z1 with the oracle checksum on two warm boots.
+## Workloads retained for v2
 
-Start here:
+| Area | Workloads and methods |
+| --- | --- |
+| CPU | CoreMark under official timing rules, Dhrystone, sort/search, integer kernels |
+| Memory | `memcpy`, sequential, strided, random/pointer-chase walks, working-set and latency sweeps |
+| Multicore/coherence | Reductions, GEMM, producer/consumer, SPSC, ping-pong, atomics, false-sharing and padded controls |
+| DSP | Dot product, FIR, FFT, direct and im2col Conv2D; scalar, multicore, DOT8, and NPU where applicable |
+| Machine learning | Frozen MNIST MLP and tiny CIFAR-10 CNN, with accuracy and latency reported together |
+| Streaming system | Real MIT-BIH ECG segment through CPU, DMA, filtering, feature processing, and classification |
+| Data movement | Paired CPU/DMA transfers over size, alignment, cache, and memory-latency sweeps |
+
+No workload is dropped because an accelerator loses. Correctness uses an
+independent reference; performance includes both kernel-only and end-to-end
+measurements. All comparable engine paths use the same image, input, memory
+configuration, cache policy, compiler settings, and clock.
+
+## Roadmap
+
+| Phase | Focus | Exit condition |
+| --- | --- | --- |
+| 17 | Repair/rebaseline measurements; freeze v2 workload, memory, frequency, area, and power contracts | Raw records and audits reproduce; no mixed-top/mixed-memory comparisons; numeric targets are frozen. |
+| 18 | CPU and memory/fabric performance architecture; early 100 MHz feasibility | A measured CPU choice and memory organization meet staged timing, area, and bandwidth gates. |
+| 19 | NPU utilization and data movement | Packed/banked operand delivery, cumulative counters, dense-GEMM utilization and end-to-end targets pass. |
+| 20 | Integrate CPU, multicore, caches, DMA, DOT8, NPU, and all workloads | Full workload matrix passes independent correctness and performance audits on the same declared configurations. |
+| 21 | PYNQ-Z1 implementation and physical workload study | All-engine overlay closes at 100 MHz and repeated physical captures match independent references. |
+| 22 | SKY130 implementation, STA, physical signoff, and workload PPA | Declared memory fits; all-corner timing and clean physical signoff pass; workload power/energy is activity-based. |
+| 23 | Tapeout (optional stretch) | Only considered after Phase 22 artifacts and signoff are reproducible. |
+
+The [detailed Phase 17+ plan](docs/phase17-plus.md) specifies the workload
+matrices, record contents, verification levels, frequency feasibility checks,
+and phase-by-phase acceptance gates.
+
+## Historical phase links
+
+The phase contracts retain links to the former README roadmap headings. These
+anchors keep those historical links working while the current plan lives in
+`docs/phase17-plus.md`.
+
+<a id="phase-7--dma"></a>**Phase 7 — DMA:** [contract](docs/phase7.md) · [results](docs/results/phase7/closeout-888c24b/README.md)
+
+<a id="phase-8--custom-compute-instruction"></a>**Phase 8 — DOT8:** [contract](docs/phase8.md) · [results](docs/results/phase8/closeout-5b9c175/README.md)
+
+<a id="phase-9--matrix-accelerator--npu"></a>**Phase 9 — NPU:** [contract](docs/phase9.md) · [results](docs/results/phase9/closeout-2493435/README.md)
+
+<a id="phase-10--cpu-vs-multicore-vs-isa-vs-npu"></a>**Phase 10 — compute placement:** [contract](docs/phase10.md) · [results](docs/results/phase10/README.md)
+
+<a id="phase-11--quantized-ml-inference"></a>**Phase 11 — quantized ML:** [contract](docs/phase11.md) · [results](docs/results/phase11/README.md)
+
+<a id="phase-12--real-time-heterogeneous-demo"></a>**Phase 12 — streaming ECG:** [contract](docs/phase12.md) · [results](docs/results/phase12/closeout-f1f62e2/README.md)
+
+<a id="phase-15--learn-sky130-on-a-minimal-configuration"></a>**Phase 15 — minimal SKY130 flow:** [contract](docs/phase15.md) · [results](docs/results/phase15/closeout-92bb0e26f53c/README.md)
+<a id="phase-16--full-asic-implementation-and-ppa"></a>**Phase 16 — full-system ASIC attempt:** [contract/status](docs/phase16.md) · [report](docs/results/phase16/REPORT.md)
+
+## Architecture and evidence
+
+- [v1 architecture baseline and memory map](docs/architecture.md) (later phase
+  contracts supersede portions of this historical document)
+- [Frozen v1 interfaces](docs/v1.md)
+- [Known limitations](docs/known-limitations.md)
+- [Runtime guide](docs/runtime.md)
+- [Toolchain and build targets](docs/toolchain.md)
+- [Verification strategy](docs/verification.md)
+- [AsterBench workload definitions](docs/workloads.md)
+- [Phase 10 cross-engine study](docs/results/phase10/README.md)
+- [Phase 11 quantized ML results](docs/results/phase11/README.md)
+- [Phase 14 design-space results](docs/results/phase14/closeout-b050a81/README.md)
+- [Phase 15 minimal SKY130 flow](docs/results/phase15/closeout-92bb0e26f53c/README.md)
+- [Phase 16 physical/PPA report](docs/results/phase16/REPORT.md) — read together
+  with the incomplete-signoff status in [docs/phase16.md](docs/phase16.md)
+
+Historical evidence bundles retain their original source revisions. A historical
+`make check` pass or a closeout bundle does not certify later source changes.
+
+## Quick start
 
 ```sh
+make tools
 make check
+make workloads
 ```
 
-See [`docs/architecture.md`](docs/architecture.md) for the current contract,
-[`docs/toolchain.md`](docs/toolchain.md) for setup and build targets, and
-[`docs/verification.md`](docs/verification.md) for the test strategy. The
-PicoRV32 is pinned under `vendor/` and integrated through an Aster-owned
-wrapper, so the CPU can be replaced later without rewriting the SoC fabric.
+`make check` is the fast default regression, not the full research campaign. Use
+the phase-specific study/capture/audit commands to reproduce fixed matrices and
+physical experiments. For example:
 
-Run `make bench` to execute the comparable benchmark record directly in
-Verilator.
-
----
-
-## Vision
-
-```text
-                    ASTER SoC
-
-       +-------------+   +-------------+
-       | RISC-V CPU 0|   | RISC-V CPU 1|
-       +------+------+   +------+------+
-              |                 |
-          L1 I$ / D$        L1 I$ / D$
-              |                 |
-              +--------+--------+
-                       |
-                 Shared L2
-                       |
-                System Fabric
-          +------------+------------+
-          |            |            |
-         DMA       INT8 NPU     Peripherals
-          |        / MAC array   UART/Timer
-          +------------+------------+
-                       |
-                     Memory
+```sh
+make xe-matrix
+python3 scripts/xe_study.py plan
+make fpga-linux-xe
 ```
 
-A reasonable frozen v1 target is:
-
-- 2 × RV32IM in-order RISC-V cores
-- Per-core L1 instruction and data caches
-- Shared L2 cache
-- Two-core cache coherence
-- DMA engine
-- Custom packed INT8 dot-product instruction(s)
-- Small INT8 matrix/NPU accelerator (initially 4×4, potentially 8×8)
-- Interrupt controller, timer, UART and performance counters
-- Bare-metal software stack
-- PYNQ-Z1 FPGA implementation
-- SKY130 synthesis and physical design
-- Reproducible performance/area/power experiments
-
-Linux, out-of-order execution, a GPU, a large NoC, RV64 and high core counts are deliberately **not v1 requirements**. Scope discipline is part of the project.
-
----
-
-## The idea
-
-The interesting part of a modern SoC is not simply the number of CPU cores. It is the interaction between general-purpose compute, specialized compute, memory, data movement and software.
-
-Aster is intended to make those trade-offs measurable. The same operation — for example matrix multiplication — can eventually run in four ways:
-
-```text
-                         GEMM
-                          |
-          +---------------+---------------+
-          |               |               |
-     Scalar CPU       2 CPU cores      DOT8 ISA
-                                              |
-                                              +---- Dedicated NPU
-```
-
-Rather than assuming specialization is always better, Aster will measure **where each approach wins and where its overhead makes it lose**.
-
-## Questions Aster should answer
-
-- How well does performance scale from one to two cores?
-- When does memory bandwidth become the bottleneck?
-- How much do L1/L2 cache sizes affect real workloads?
-- What is the cost of coherence and false sharing?
-- At what transfer size does DMA become preferable to CPU copying?
-- When is a custom RISC-V instruction enough, and when is a separate accelerator justified?
-- At what problem size does NPU offload overcome setup and data-movement overhead?
-- How do accelerator dimensions affect utilization, area and performance?
-- Which architecture provides the best performance per area and estimated energy?
-- How different are the conclusions on FPGA versus SKY130?
-
----
-
-## Workloads
-
-### CPU baseline
-
-CoreMark, Dhrystone, integer kernels, sorting/search and small general-purpose C programs establish CPU correctness and baseline performance.
-
-### Memory hierarchy
-
-`memcpy`, sequential and strided access, random access, pointer chasing and working-set sweeps characterize memory latency, bandwidth and cache behavior.
-
-### Multicore and coherence
-
-Parallel GEMM, reductions, producer/consumer queues, shared atomic counters, cache-line ping-pong, false sharing and synchronization tests measure scaling and deliberately torture coherence.
-
-### DSP
-
-Dot product, FIR filtering, FFT and convolution provide useful targets for scalar code, custom packed operations and streaming execution.
-
-### Machine learning
-
-INT8 GEMM, INT8 Conv2D, a tiny fully connected network, MNIST inference and eventually a small CIFAR-10 CNN exercise the dedicated accelerator.
-
-### Full-system streaming workload
-
-A final demonstration will combine multiple engines concurrently:
-
-```text
-ECG samples -> DMA -> memory -> FIR/DSP -> feature processing -> NPU -> result
-                         |                         |
-                       CPU 0                    CPU 1
-```
-
-This demonstrates the real objective: making a heterogeneous system cooperate on a useful workload.
-
----
-
-## Datasets
-
-### MNIST
-
-The first end-to-end ML target. Its 28×28 grayscale inputs and simple models are ideal for validating quantized inference and accelerator/software correctness.
-
-### CIFAR-10
-
-A later, more demanding image-classification workload. A small quantized CNN can stress Conv2D, memory reuse and accelerator utilization more realistically than MNIST.
-
-### PhysioNet ECG
-
-An open ECG dataset can provide a real-world streaming signal-processing workload involving DMA, filtering/feature processing and inference.
-
-### Synthetic benchmark data
-
-GEMM, FIR, FFT, cache and coherence tests will use deterministic generated inputs, fixed seeds and known reference outputs for reproducible regression testing.
-
----
-
-## Development philosophy
-
-> **Never add several major unverified subsystems at once.**
-
-Every stage must boot, execute its tests and pass regressions before the next architectural feature is introduced. A one-core system that is completely understood is more useful than a four-core/NPU system whose failures cannot be isolated.
-
----
-
-# Roadmap: zero to silicon
-
-## Phase 0 — Specification and toolchain
-
-Define the memory map, ISA target, coding conventions, interfaces and v1 scope. Establish Verilator, waveform viewing, RISC-V GCC/binutils and automated builds/tests.
-
-**Exit:** RTL can be simulated and a bare-metal RISC-V binary can be built reproducibly.
-
-## Phase 1 — Minimal single-core computer
-
-Bring up one RV32I/RV32IM core with ROM/RAM and UART. A proven open core can initially be used so SoC infrastructure is developed independently of CPU microarchitecture.
-
-**Exit:** a compiled program executes and prints `Hello from Aster` in simulation.
-
-## Phase 2 — Early PYNQ-Z1 bring-up
-
-Put the minimal CPU + BRAM + UART system on the FPGA immediately.
-
-**Exit:** Aster executes real RISC-V firmware on PYNQ-Z1 and communicates with the outside world.
-
-## Phase 3 — AsterBench and performance counters
-
-Create the benchmark framework early. Add counters for cycles, retired instructions, cache accesses/misses, memory transactions, DMA bytes and accelerator cycles.
-
-**Exit:** results are emitted in a machine-readable format and can be compared across RTL revisions.
-
-## Phase 4 — L1 caches
-
-Add simple instruction and data caches and verify them thoroughly.
-
-**Experiments:** no-cache vs cache, working-set sweeps, sequential vs random access and cache-size sensitivity.
-
-## Phase 5 — Second RISC-V core
-
-Add hart IDs, startup/reset, synchronization and inter-core signaling.
-
-**Exit:** both cores execute independently and a parallel workload produces the correct result.
-
-## Phase 6 — Coherent memory
-
-Introduce a simple two-core snooping coherence protocol, such as MSI/MESI-like behavior, and eventually a shared L2 where appropriate.
-
-**Tests:** ping-pong, producer/consumer, atomics, false sharing and adversarial ownership transitions.
-
-The active [Phase 6 contract](docs/phase6.md) adds full RV32A (LR/SC and all word
-AMOs) through Aster-owned PicoRV32 integration. Shared L2 is deferred; coherent
-shared RAM, ordering/fault/reset correctness and physical validation are not.
-**Complete:** [full-A/coherence acceptance and reproducible physical evidence](docs/results/phase6/closeout-215b2d0/README.md).
-
-## Phase 7 — DMA
-
-Build a memory-to-memory DMA engine with source, destination, length, start/status and completion signaling.
-
-**Experiment:** CPU `memcpy` vs DMA across increasing transfer sizes to identify the crossover point.
-
-**Complete:** [seven-gate acceptance and immutable evidence](docs/results/phase7/closeout-888c24b/README.md).
-The [Phase 7 contract](docs/phase7.md) implements DMA in the reserved
-`0x3000_0000` register page, participates in coherent shared-RAM access and
-retains the verified 31.25 MHz baseline. Completion is pollable; interrupts,
-shared L2 and Phase 8+ remain outside this phase.
-The [paired AsterBench v5 tools](docs/phase7-bench.md) now verify actual CPU/DMA
-copies, full outputs, counters and saved provenance. The clean fixed simulation
-study passes 144 captures / 288 warm boots / 1,152 paired jobs, and both
-31.25 MHz DMA overlays pass routed/reset/HWH signoff. All 144 physical benchmark
-captures pass the complete physical/Git audit with exact reference counters.
-Eight separate functional board boots also pass directed runtime, atomic/reset
-interactions and DMA-copied RAM-code publication. The final independent read
-confirms safely stopped CPUs/DMA and Linux available. All 22 legacy and 14 DMA
-regression targets pass their scenario/provenance audits, and the fresh rebuild
-passes 157 emitted scenarios and 149 host tests. All seven combined requirements
-pass against 2,003 hash-checked artifacts.
-The DMA-enabled Linux shell also passes actual-core AXI/serial runtime,
-RAM-code publication and safe-stop tests; its v5 benchmark has separate
-freeze-time CPU/DMA observations and physical-baud simulation coverage.
-Clean cache-off/on functional references retain actual ELF/ROM/UART/RAM and
-independent event/retirement evidence for both C programs over eight warm boots.
-The [physical workflow](docs/phase7-physical.md) uses guarded Linux/PCAP only.
-At 8 KiB with caches enabled, measured CPU cycles / DMA cycles is **1.104×
-aligned** and **1.623× with different offsets**. Small transfers can be slower
-with DMA; the report retains alignment/cache-specific sampled crossover points
-and reversals. Polling does not demonstrate freed CPU time.
-
-## Phase 8 — Custom compute instruction
-
-Add a packed INT8 dot-product/MAC-style RISC-V extension with software support and a scalar reference implementation.
-
-**Experiment:** scalar dot product/FIR/GEMM vs custom instruction.
-
-**Complete:** [Phase 8 contract and results](docs/phase8.md). Xasterdot8
-computes four signed INT8 products into a 32-bit result through the pinned
-PicoRV32 PCPI path, with a RAM-backed C runtime and explicit modulo-2^32
-accumulation. The fixed AsterBench v6 study covers 174 simulation captures and
-the matching 174-capture PYNQ Linux study; both cache modes, full regressions,
-routed/reset/HWH signoff, guarded functional boots and the final stopped-state
-audit pass at 31.25 MHz. The [self-contained evidence bundle](docs/results/phase8/closeout-5b9c175/README.md)
-retains the raw records and provenance. Phase 9's NPU remains separate.
-
-## Phase 9 — Matrix accelerator / NPU
-
-**Complete:** [Phase 9 contract and results](docs/phase9.md). Build from small verified
-pieces: processing element → array → 4×4 MAC array → memory/control interface
-→ coherent SoC integration → RAM-backed C runtime → guarded PYNQ Linux/PCAP.
-AsterBench v7 remains mandatory; it adds a strict accelerator/GEMM record
-version while preserving v2–v6. The [self-contained Phase 9 evidence bundle](docs/results/phase9/closeout-2493435/README.md)
-retains the 100-capture study, fresh repeats, routed artifacts, physical
-cache-mode boots, independent audits and full regressions.
-
-Start with INT8 GEMM only. CNN support comes later.
-
-**Exit:** accelerator GEMM is bit-correct against a software reference over randomized test cases, with routed and physical acceptance evidence.
-
-## Phase 10 — CPU vs multicore vs ISA vs NPU
-
-Run identical kernels through all execution paths and measure cycles, latency, instructions, cache behavior, memory traffic, accelerator utilization, FPGA resources and maximum clock.
-
-This is one of Aster's central experiments.
-
-**Complete:** the [Phase 10 contract](docs/phase10.md) fixes signed-INT8 dot,
-FIR and GEMM semantics and runs them through all four engines on one all-engine
-SoC image with AsterBench v8 and an independent oracle. The 288-capture study
-plus two fresh repeats, per-engine FPGA utilization/routed timing and six
-physical Pynq-Z1 captures are retained in the
-[results bundle](docs/results/phase10/README.md).
-
-## Phase 11 — Quantized ML inference
-
-Deploy a small INT8 model beginning with MNIST. Map supported operations to the NPU while the CPU handles control and unsupported operations.
-
-**Experiment:** scalar CPU vs multicore vs custom ISA vs NPU inference, including offload overhead.
-
-**Complete:** the [Phase 11 contract](docs/phase11.md) deploys a frozen INT8 MLP
-on MNIST through all four paths with an independent integer reference and
-AsterBench v9. The [closeout bundle](docs/results/phase11/closeout-ff56683/README.md)
-retains the model, the four-path study with repeats, the routed overlay and the
-physical captures (NPU ≈4.5× scalar, DOT8 ≈2.3×, two harts ≈1.95×).
-
-## Phase 12 — Real-time heterogeneous demo
-
-Use a streaming dataset such as ECG and exercise CPU, DMA, DSP/custom instructions and NPU together.
-
-**Exit:** Aster sustains the target stream in real time while reporting utilization/performance counters.
-
-**Complete:** the [Phase 12 contract](docs/phase12.md) and
-[closeout bundle](docs/results/phase12/closeout-f1f62e2/README.md) run a real
-PhysioNet MIT-BIH ECG stream through the CPU, DMA, Xasterdot8 and NPU together,
-bit-exact against an independent oracle and reproduced in simulation and on the
-Pynq-Z1. Sustained per-chunk throughput is demonstrated; hard deadlines,
-interrupts and timers are out of scope.
-
-## Phase 12.5 — Machine timer
-
-Add one memory-mapped machine timer to the coherent top before interrupts.
-
-**Complete:** the [Phase 12.5 contract](docs/timer.md) and
-[closeout bundle](docs/results/phase12.5/closeout-c3ec874/README.md) add a
-custom MMIO 64-bit free-running timer with a byte-strobed 64-bit compare and a
-level `timer_irq` in the previously reserved `0x20001000` page. A unit
-scoreboard proves free-run, exact compare match, clear/enable/disable, byte
-merge, 64-bit wrap and reset; a firmware interval test matches a programmed
-deadline and agrees with the Phase 3 cycle counter; and the routed all-engine
-overlay passes reset/timing signoff with two physical warm boots. Interrupt
-delivery is Phase 12.6.
-
-## Phase 12.6 — Interrupts
-
-Add a memory-mapped interrupt controller and deliver interrupts to both harts.
-
-**Complete:** the [Phase 12.6 contract](docs/interrupts.md) and
-[closeout bundle](docs/results/phase12.6/closeout-c24d2bf/README.md) add a
-per-hart MMIO controller in the previously reserved `0x20004000` page that
-latches the Phase 12.5 timer, DMA completion, NPU done and a software source,
-and delivers a level IRQ to each PicoRV32 hart through the fixed `0x10` vector.
-A unit scoreboard proves edge capture, W1C, RAISE, per-hart masks and reset; a
-firmware test takes a software and a machine-timer interrupt, services and
-clears both, and resumes the interrupted loop; and the routed all-engine
-overlay passes reset/timing signoff with two physical warm boots. Keeping
-PicoRV32 `QREGS` off preserves the Xasterdot8 instruction encoding.
-
-## Phase 13 — Freeze Aster v1
-
-Stop feature development and stabilize the architecture, software, documentation and tests.
-
-**Complete:** the [Phase 13 contract](docs/phase13.md) freezes
-[`docs/v1.md`](docs/v1.md) — 2× RV32IMA + L1s + MSI-like coherence over shared
-RAM + DMA + Xasterdot8 + 4×4 INT8 NPU + UART/timer/interrupts/performance
-counters — and records shared L2 as a deliberate v2 / Phase 14 axis in
-[`docs/known-limitations.md`](docs/known-limitations.md). The frozen interface is
-guarded by `scripts/freeze_interfaces.py` (`make freeze-interfaces`), the frozen
-revision is tagged `v1.0`, and the [closeout
-bundle](docs/results/phase13/closeout-v1.0/README.md) passes
-`scripts/audit_v1.py`.
-
-## Phase 14 — Design-space exploration
-
-Sweep parameters rather than adding features:
-
-- 1 vs 2 cores
-- cache capacities/organizations
-- 2×2 vs 4×4 vs 8×8 accelerator
-- scalar vs ISA extension vs NPU
-- different working-set/problem sizes
-
-The goal is to discover **crossovers and bottlenecks**, not simply build the largest configuration.
-
-**First campaign complete:** the [Phase 14 contract](docs/phase14.md) and
-[closeout bundle](docs/results/phase14/closeout-b050a81/README.md) sweep memory
-latency, L1 geometry, core scaling and compute placement on the frozen v1.0
-design, validating every record against its independent oracle. Headline
-results: `strided` degrades **9.34×** from `wait0` to `wait64` while `conv2d`
-degrades only **1.62×**; the L1 is a **net slowdown** on every workload and
-geometry in the minimal SoC; two workers give **1.30×** on the memory-bound
-reduction; and the Xasterdot8 convolution is **0.59×** the scalar baseline
-(im2col overhead dominates) while the NPU is only **1.24×**. Routed area/timing
-(`area/`) shows the L2 is the better area investment than a second hart: +8.1 pp
-LUTs and no Fmax cost for up to 1.98×, versus +10.8 pp and −1.61 ns for 1.30×.
-The accelerator-dimensions axis (2×2/4×4/8×8) is scoped as the
-[v1.2 contract](docs/npu-geometry.md), and the FPGA-frequency axis is closed for
-the 50 MHz operating point by the [v1.3 contract](docs/v1.3.md) and
-[closeout bundle](docs/results/v1.3/closeout-b3954ce/README.md): the all-engine
-overlay signs off at a 20 ns constraint (WNS +0.191 ns, zero failing endpoints)
-and runs `reduce_parallel` at 50 MHz on hardware.
-
-## Phase 15 — Learn SKY130 on a minimal configuration
-
-Take a tiny Aster configuration through the complete open ASIC flow first:
-
-```text
-RTL -> Yosys -> SKY130 -> floorplan -> placement -> CTS -> routing -> STA -> DRC/LVS -> GDSII
-```
-
-**Complete.** The [Phase 15 contract](docs/phase15.md) and
-[closeout bundle](docs/results/phase15/closeout-92bb0e26f53c/README.md) take the
-minimal single-hart SoC through LibreLane 3.0 on SKY130: zero Magic/KLayout DRC,
-clean Netgen LVS, no antenna violations, setup closed at every RC corner
-(worst-case WNS +1.679 ns at 20 ns), and an SDF-annotated post-layout gate-level
-simulation that reproduces the `Hello from Aster` oracle. Two flow lessons are
-recorded in the contract: the firmware must be a combinational ROM (power-up
-flops cannot hold an image on SKY130), and the gate-level simulation needs the
-`FUNCTIONAL` cell models and `-gspecify` for SDF annotation.
-
-## Phase 16 — Full ASIC implementation and PPA
-
-Move the frozen architecture through SKY130/OpenROAD. Collect post-synthesis/post-layout area, timing and estimated power and analyze metrics such as performance/mm², energy/op and accelerator GOPS/W where meaningful.
-
-## Phase 17 — Tapeout (stretch goal)
-
-Fabrication is not required for project success. The primary ASIC finish line is a reproducible, timing-analyzed, DRC/LVS-clean GDSII. If an accessible shuttle is available, fabrication, packaging, board bring-up and first UART output become the final stretch goal.
-
----
-
-## AsterBench
-
-AsterBench is a first-class project component:
-
-```text
-benchmarks/
-  coremark/
-  dhrystone/
-  memcpy/
-  pointer_chase/
-  fir/
-  fft/
-  gemm/
-  conv2d/
-  multicore_gemm/
-  cache_pingpong/
-  false_sharing/
-  npu_gemm/
-  mnist/
-  streaming_ecg/
-```
-
-Each benchmark should report reproducible metadata and measured counters. Placeholder performance claims are not results: numbers in reports should come from simulation, FPGA measurements or the documented ASIC flow.
-
----
-
-## Verification strategy
-
-1. Unit-test ALUs, arbiters, FIFOs, cache controllers, DMA and accelerator PEs independently.
-2. Compare CPU behavior against known RISC-V tests/reference models where practical.
-3. Use deterministic software tests with known outputs.
-4. Add assertions around protocols and invariants.
-5. Add randomized tests for caches, coherence and the NPU.
-6. Maintain regression tests before architectural changes are accepted.
-7. Compare accelerator results against simple software golden models.
-8. Re-run AsterBench after major architecture revisions.
-
-**Correctness comes before optimization.**
-
----
-
-## Proposed repository structure
-
-```text
-Aster/
-├── rtl/
-│   ├── core/
-│   ├── cache/
-│   ├── interconnect/
-│   ├── memory/
-│   ├── dma/
-│   ├── accelerator/
-│   └── peripherals/
-├── verification/
-│   ├── unit/
-│   └── soc/
-├── software/
-│   ├── boot/
-│   ├── drivers/
-│   ├── runtime/
-│   └── benchmarks/
-├── fpga/
-│   └── pynq_z1/
-├── asic/
-│   └── sky130/
-├── scripts/
-├── docs/
-└── README.md
-```
-
----
-
-## What success looks like
-
-1. **Computer:** one RISC-V core executes bare-metal software.
-2. **FPGA SoC:** the system runs reproducibly on PYNQ-Z1.
-3. **Multicore SoC:** two cores execute parallel workloads correctly.
-4. **Heterogeneous SoC:** DMA, custom instructions and NPU cooperate with the CPUs.
-5. **Research platform:** AsterBench produces reproducible architectural comparisons.
-6. **ASIC implementation:** the frozen SoC completes the SKY130 physical-design flow.
-7. **Stretch:** fabricated Aster silicon boots and communicates with the outside world.
-
----
-
-## Potential research direction
-
-> **Design and Evaluation of a Heterogeneous Multicore RISC-V System-on-Chip for Edge AI Acceleration**
-
-The contribution would not simply be “a RISC-V CPU was built.” It would be the architecture plus a reproducible methodology and experimental characterization of **compute placement** across scalar CPU, multicore CPU, ISA-level specialization and dedicated acceleration under realistic memory, area and energy constraints.
-
----
-
-## Inspiration and related ecosystems
-
-Aster is inspired by the heterogeneous-compute philosophy of modern Apple silicon while remaining an independent open RISC-V project. Useful projects and ecosystems to study include RISC-V, Chipyard/Rocket/BOOM, BlackParrot, PULP/HERO, PicoRV32, Gemmini, PYNQ/Zynq, Verilator, Yosys, OpenROAD and SkyWater SKY130.
-
-These are references and tools, not a requirement that Aster simply assemble existing projects. Mature infrastructure should be reused where it saves time, while Aster focuses implementation effort on architectural components relevant to its research questions.
-
----
-
-## The journey
-
-```text
-Specification
-     ↓
-Single RISC-V
-     ↓
-Hello World
-     ↓
-PYNQ-Z1
-     ↓
-AsterBench
-     ↓
-Caches
-     ↓
-2 cores
-     ↓
-Coherence
-     ↓
-DMA
-     ↓
-DOT8
-     ↓
-NPU
-     ↓
-GEMM comparison
-     ↓
-TinyML
-     ↓
-Real-time ECG pipeline
-     ↓
-Design-space experiments
-     ↓
-Freeze RTL
-     ↓
-SKY130 / OpenROAD
-     ↓
-Post-layout PPA
-     ↓
-DRC/LVS-clean GDSII
-     ↓
-[Optional tapeout]
-```
-
-Aster starts with one core printing a line of text. It ends, ideally, as a measured, verified heterogeneous computer with a physical chip layout.
+Generated builds live under `build/`; physical FPGA and ASIC tools are separate
+from the portable host/Verilator checks. See `docs/toolchain.md` before running
+board or physical-design flows.

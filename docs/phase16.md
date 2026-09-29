@@ -1,7 +1,9 @@
 # Phase 16: Full ASIC implementation and PPA
 
-Status: **complete** — the full v1.3 system is implemented on SKY130 at the
-achievable frequency. See [Results](#results).
+Status: **PPA run complete; Phase 16 acceptance/signoff incomplete.** The
+`p16-f2` flow produced a GDS and post-route evidence for a reduced 16 KiB ROM /
+16 KiB RAM cut. It does not meet the original all-corner timing, routing DRC,
+LVS, full-memory, or Tier 2 workload gates. See [Results](#results).
 Baseline: pushed v1.3 closeout `b3954ce`, plus the Phase 15 SKY130 flow
 infrastructure (`ba6c760`).
 The [README roadmap](../README.md#phase-16--full-asic-implementation-and-ppa)
@@ -192,11 +194,14 @@ docs/
 
 ## Results
 
-The full v1.3 all-engine coherent system was taken through LibreLane 3.0 on
-SKY130. It is a **~21 MHz part at the slow corner** — the 28 nm FPGA closed 20 ns,
-and 130 nm is roughly 2× slower on the same combinational paths. Getting to
-50 MHz needs the deep fabric/NPU/cache paths pipelined (a v2 effort; Phase 15's
-minimal block already closes 50 MHz).
+The v1.3 all-engine coherent RTL was taken through LibreLane 3.0 on SKY130 using
+a **reduced 16 KiB ROM / 16 KiB RAM physical cut**. This proves that the flow can
+produce a routed layout; it does not complete the original Phase 16 acceptance
+contract. The 47 ns signoff point is about 21 MHz, and the worst `max_ss` setup
+corner still fails. The full 64 KiB ROM / 64 KiB RAM configuration did not route
+within the selected 20 mm² die. A 50 MHz or 100 MHz SKY130 target therefore
+requires a redesigned/timed architecture and an explicit memory/die budget, not
+an extrapolation from this run.
 
 | Metric | Value |
 | --- | --- |
@@ -213,13 +218,22 @@ minimal block already closes 50 MHz).
 | Power (TT, 25 °C, 1.80 V) | **70.1 mW** |
 | Achieved Fmax | **~21 MHz** (`nom_ss`) / ~43 MHz (`nom_tt`) |
 
-The signoff uses an **over-constrained PnR SDC (20 ns) with a 47 ns signoff
-SDC** so the optimizer works hard; the reduced memory cut (16 KiB ROM/RAM, 16
-macros) is what makes the design routable at all. The residuals — `max_ss`
-setup, hold, the TritonRoute DRC count and the power-pin LVS detail — are the
-remaining physical-cleanup work; the perf-counter carry split is retained.
+The flow used an **over-constrained 20 ns PnR SDC** and a **47 ns signoff SDC**.
+The reduced memory cut (16 KiB ROM/RAM, 16 macros) is what made this run
+routable. Remaining failures include `max_ss` setup, worst-corner hold, 106
+TritonRoute DRC errors, and 13 LVS errors. Magic/KLayout DRC and antenna checks
+are clean, but that does not make the result signoff-clean. The published Fmax
+and power figures also need reconciliation against the actual period used by STA
+and the saved power report before being used as v2 baselines. The perf-counter
+carry split is retained as a source change, not evidence that the physical gates
+passed.
 
 ### PPA and research questions
+
+The figures below are historical Phase 16 analysis, **not an accepted v2
+performance baseline**. Workload records were not all captured on the ASIC top
+with its synchronous SRAM and reduced memory capacity; the saved Fmax and power
+derivations also need reconciliation. Phase 17 defines the re-baseline.
 
 `docs/results/phase16/ppa/README.md` records the post-layout PPA and answers the
 two research questions deferred by `docs/phase14-plan.md`. Headline: 7.11 mm²
@@ -255,11 +269,12 @@ swap recommendation.
 ### Tier 2 gate-level simulation
 
 `docs/results/phase16/tier2-gate-level/README.md` records the post-layout
-gate-level harness and results. `reduce_scalar` and `reduce_parallel` **PASS**
-with checksums matching the RTL and the independent oracle (and the
-`reduce_parallel` cycle count matches the v1.3 board measurement). The remaining
-mandatory workloads are bounded by the ~3.5 M-cycle UART record (≈3 h each in
-Icarus) and, for four of them, by the reduced 16 KiB memory cut.
+gate-level harness and results. The immutable closeout log contains passing
+`reduce_scalar` and `reduce_parallel` runs. Later notes add reduced-shape
+scalar/NPU Conv2D equivalence, but do not complete the eight-workload Tier 2
+contract. CoreMark, FFT, DOT8 Conv2D, ECG, CIFAR, and MNIST do not all have the
+required full-size gate-level evidence. The 16 KiB memory cut also excludes
+several full workloads. Tier 2 therefore remains incomplete.
 
 ## Milestones
 

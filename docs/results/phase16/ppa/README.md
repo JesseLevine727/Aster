@@ -4,6 +4,20 @@ This directory records the post-layout power/performance/area (PPA) analysis of 
 Phase 16 full v1.3 system on SKY130, and answers the two research questions that
 `docs/phase14-plan.md` deferred to this phase.
 
+> **Status caveat:** this is the historical Phase 16 analysis, not an accepted
+> v2 performance baseline. The generic `workload`/CoreMark/Dhrystone targets use
+> `aster_minimal`; coherent accelerator workloads use `aster_coherent_soc`. The
+> RTL records also use the default asynchronous, zero-wait memory, while the ASIC
+> top uses synchronous SRAM with a wait cycle and a reduced capacity. In
+> particular, the scalar Conv2D number is not from the same top as the NPU/DOT8
+> numbers. Re-run comparisons under one declared configuration before using the
+> ratios as final architecture conclusions. Phase 17 specifies that re-baseline.
+
+The v10 `dma_bytes` field also counts NPU device writes in these records, and
+`accelerator_cycles` is the last NPU job rather than the sum across all jobs.
+Those semantics must be corrected or separately labeled before utilization or
+per-engine traffic conclusions are derived from them.
+
 ## Design point
 
 | Item | Value | Source |
