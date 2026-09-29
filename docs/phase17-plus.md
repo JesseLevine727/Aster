@@ -1,7 +1,7 @@
 # Aster v2 performance roadmap: Phase 17 and beyond
 
-Status: **Phase 17 complete (29 September 2026); Phase 18 — the Aster core — is
-next.**
+Status: **Phase 17 in progress — two exit items reopened (MNIST v11 records and
+live documentation); see [`phase17-todo.md`](phase17-todo.md).**
 Revised 29 September 2026; [section 7](#7-plan-revision--29-september-2026)
 records what changed from the first draft and why. This plan defines the
 performance-oriented successor to the functionally verified v1 system. It does

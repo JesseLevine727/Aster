@@ -1,7 +1,10 @@
 # Phase 17 TODO — correct the v1 baseline and freeze the v2 contract
 
-Status: **complete (29 September 2026)** — every item below is closed and the
-exit gate is met; Phase 18 (the Aster core) is next. Revised 29 September 2026
+Status: **in progress — two exit items reopened (29 September 2026).** The MNIST
+MLP, a coherent-SoC workload, still emits only the v9 per-image record with
+last-job NPU counters, so "every coherent workload emits v11" is not yet true;
+and P17-F was ticked before the FPGA and benchmark READMEs were checked.
+Phase 18 starts after both close. Revised 29 September 2026
 (see the
 [plan revision](phase17-plus.md#7-plan-revision--29-september-2026)). Phase 17
 is deliberately lean: it corrects what v1 reports and fixes the v2 contract; it
@@ -32,7 +35,7 @@ documents that link to them.
   oracle; the arbiter test holds the requester tag across a stall. Verified with
   the full `make check` (204 PASS, 257 host tests).
 
-- [x] **P17-A4 — v11 record support and aggregation** (`f025a29`). Verified with the full
+- [ ] **P17-A4 — v11 record support and aggregation** (`f025a29`; MNIST reopened). Verified with the full
   `make check` (207 PASS, 260 host tests).
   - [x] Coherent workloads (reduction, Conv2D engines, ECG, CIFAR) emit v11,
     summing DMA `bytes_done`/job cycles and NPU bytes/tiles/job/compute cycles
@@ -142,10 +145,12 @@ What the v11 records show:
   [phase17-plus.md section 6](phase17-plus.md#6-phase-17-sequence). **Approved 29
   September 2026:** the section 2 targets are frozen and [`cpu.md`](cpu.md) is
   the Phase 18 contract.
-- [x] **P17-F — Live documentation aligned.** README, architecture status,
+- [ ] **P17-F — Live documentation aligned.** README, architecture status,
   subsystem READMEs, and the phase index describe the current state, and
-  historical claims are labelled with their original configuration (done across
-  P17-H, the plan revision, and P17-C).
+  historical claims are labelled with their original configuration. Open:
+  `fpga/pynq_z1/README.md` (still describes the 31.25 MHz Phase 2 setup),
+  `software/benchmarks/README.md` (stops at AsterBench v4), and the
+  verification/runtime guides.
 
 ## Removed from the first draft
 
