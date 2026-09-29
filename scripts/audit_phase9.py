@@ -169,8 +169,11 @@ def evaluate(directory, *, current=False):
     fpga = {"cache-on": audit_fpga(directory / "fpga", True), "cache-off": audit_fpga(directory / "fpga", False)}
     logs = audit_logs(directory)
     source = read(directory / "source" / "source-state.json")
-    require(source.get("schema") == "aster.phase9.source.v1" and typed_equal(source, source_state()),
-            "closeout source snapshot differs from the committed implementation")
+    # The plain audit checks the retained snapshot; only --current compares it
+    # with the live tree, as every later closeout audit does. (Comparing it here
+    # made the plain audit fail as soon as the tree moved past Phase 9.)
+    require(source.get("schema") == "aster.phase9.source.v1",
+            "closeout source snapshot has the wrong schema")
     if current:
         require(typed_equal(source, source_state()), "current source differs from closeout source snapshot")
     return {
