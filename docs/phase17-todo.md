@@ -105,13 +105,15 @@ What the v11 records show:
   `docs/results/phase17/` with an audit that rejects a mismatched top, clock,
   memory mode, counter, or source hash. `aster_minimal` stays a separately
   named data point. Retained as
-  [`results/phase17/baseline-9b9c94f58a85`](results/phase17/baseline-9b9c94f58a85/README.md): 17 captures × 2
+  [`results/phase17/baseline-56067a15815a`](results/phase17/baseline-56067a15815a/README.md): 17 captures × 2
   memory models × 2 byte-identical repeats, audited by
   `scripts/audit_phase17_baseline.py` (run by `make check`); mutation tests show
   the audit rejects a changed top, clock, memory mode, DMA attribution,
   last-job-only NPU total, repeat, or source hash. Cross-check: the `sync1` MNIST
-  NPU inference (462,953 cycles per image, 4.46×) equals the Phase 11 PYNQ-Z1
-  board capture exactly.
+  NPU inference of the v9-only firmware (462,953 cycles per image, 4.46×; retained
+  at `dfcd8fc`) equalled the Phase 11 PYNQ-Z1 board capture exactly. The current
+  firmware, which adds the v11 summary, is a different binary; its NPU run is
+  faster because of the CPU-polling contention recorded under A4.
 - [x] **P17-B — CoreMark labelling.** Label the current one-iteration run as a
   fixed-iteration CRC correctness check wherever it appears; no standard score
   is claimed for PicoRV32. A valid CoreMark score (real timer, at least ten

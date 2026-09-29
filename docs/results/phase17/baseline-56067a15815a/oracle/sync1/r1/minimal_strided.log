@@ -1,0 +1,2 @@
+PASS: v10 strided [memory] size=4096 iterations=4 cycles=9087 retired=1559
+PASS: v10 strided checksum=0x5fc0f800 matches independent oracle

@@ -1,0 +1,2 @@
+PASS: v11 streaming_ecg [system] size=64 cycles=1470057 retired=214183 dma_bytes=1024 npu_jobs=16
+PASS: v11 streaming_ecg checksum=0x19b26ea4 matches independent oracle

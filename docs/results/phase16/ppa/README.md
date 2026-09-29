@@ -4,7 +4,7 @@
 > superseded — timing per corner, Fmax, power corner, LVS, electrical
 > violations, Tier 2 coverage, and the mixed-top engine ratios. The reconciled
 > values are in [`docs/phase16.md` Results](../../../phase16.md#results); the
-> same-top engine comparison is the [Phase 17 baseline](../../phase17/baseline-9b9c94f58a85/README.md).
+> same-top engine comparison is the [Phase 17 baseline](../../phase17/baseline-56067a15815a/README.md).
 
 This directory records the post-layout power/performance/area (PPA) analysis of the
 Phase 16 full v1.3 system on SKY130, and answers the two research questions that

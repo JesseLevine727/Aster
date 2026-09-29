@@ -1,0 +1,2 @@
+PASS: v11 conv2d_npu [dsp] size=1024 cycles=4837408 retired=534490 dma_bytes=0 npu_jobs=4
+PASS: v11 conv2d_npu checksum=0x07df8000 matches independent oracle

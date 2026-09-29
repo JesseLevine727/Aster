@@ -1,0 +1,2 @@
+PASS: v10 conv2d [dsp] size=1024 iterations=4 cycles=5764692 retired=704346
+PASS: v10 conv2d checksum=0x07df8000 matches independent oracle

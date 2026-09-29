@@ -77,7 +77,7 @@ These targets were frozen at the Phase 17 review on 29 September 2026, together
 with the memory point (a 96 KiB host-loaded unified SRAM;
 [`phase17-memory.md`](phase17-memory.md)) and the Aster core specification
 ([`cpu.md`](cpu.md)). The workload definitions and sizes are those of the
-[retained Phase 17 baseline](results/phase17/baseline-9b9c94f58a85/README.md); compiler flags follow the
+[retained Phase 17 baseline](results/phase17/baseline-56067a15815a/README.md); compiler flags follow the
 current Makefile. Any target change must be recorded with the evidence and
 trade-off that motivated it.
 
