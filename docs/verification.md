@@ -1,5 +1,20 @@
 # Verification strategy
 
+This document records the v1 verification contracts phase by phase, written up
+through Phase 10 (sections are in historical, not numerical, order). Later
+verification lives with each phase's contract: quantized ML in
+[`phase11.md`](phase11.md), the streaming ECG demo in [`phase12.md`](phase12.md),
+the timer and interrupts in [`timer.md`](timer.md) and
+[`interrupts.md`](interrupts.md), the v1.0 freeze in [`phase13.md`](phase13.md)
+and [`v1.md`](v1.md), the design-space study in [`phase14.md`](phase14.md), the L2
+in [`l2.md`](l2.md), NPU geometry in [`npu-geometry.md`](npu-geometry.md), the
+50 MHz FPGA closure in [`v1.3.md`](v1.3.md), and the SKY130 phases in
+[`phase15.md`](phase15.md) and [`phase16.md`](phase16.md). The v2 verification
+method (independent reference models, CPU lockstep against Spike, SoC and
+physical release gates, the gate-level method) is
+[`phase17-plus.md` §5](phase17-plus.md#5-verification-method-and-release-gates)
+and [`cpu.md` §6](cpu.md#6-verification).
+
 ## Phase 8 packed-compute checkpoints
 
 [The Phase 8 contract](phase8.md) freezes encoding/arithmetic, handshake,
@@ -201,14 +216,16 @@ make bench
 - Assertions and randomized tests are added before each major subsystem is
   connected to the SoC.
 
-## Next verification increments
+## Maintained regressions and next increments
 
-1. Maintain Phase 2 physical Linux/firmware validation and reset/handoff gates.
-2. Maintain the Phase 3 parser/counter/snapshot/provenance regression contract.
-3. Maintain the Phase 4 randomized/stall/reset/configuration and experiment regressions.
-4. Integrate a full external architectural reference suite where practical.
-5. Add coherence/cache-maintenance tests when those protocols are introduced.
-6. Maintain the Phase 9 NPU reference-model/oracle and the Phase 10 cross-engine contract.
+`make check` keeps the v1 regressions green (the Phase 2 physical/handoff
+contracts are exercised by the board phases): parser/counter/provenance
+(Phase 3), randomized cache stall/reset/configuration tests (Phase 4),
+coherence and litmus tests (Phase 6), the DMA, DOT8 and NPU reference models
+(Phases 7–9), the cross-engine contract (Phase 10), AsterBench v9–v11 records,
+and the Phase 17 retained-baseline audit. The next increments are the v2 ones:
+an external architectural suite (`riscv-arch-test`) and Spike lockstep for the
+Aster core in Phase 18 (see [`cpu.md`](cpu.md#6-verification)).
 
 ## Phase 10 cross-engine verification
 

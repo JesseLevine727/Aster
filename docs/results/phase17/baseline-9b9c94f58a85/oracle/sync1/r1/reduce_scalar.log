@@ -1,2 +1,0 @@
-PASS: v11 reduce_scalar [cpu] size=4096 cycles=301794 retired=53305 dma_bytes=0 npu_jobs=0
-PASS: v11 reduce_scalar checksum=0x5c808000 matches independent oracle

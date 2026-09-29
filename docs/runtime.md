@@ -1,8 +1,15 @@
-# Bare-metal runtime through Phase 10
+# Bare-metal runtime (v1)
 
 The ARM runs PYNQ Linux; the RISC-V harts run freestanding C firmware. These
-are separate execution environments. Aster has fatal fault reporting, not a
-privileged RISC-V operating system, exception dispatcher or interrupt runtime.
+are separate execution environments. Aster has fatal fault reporting, a machine
+timer and an interrupt entry: since Phases 12.5/12.6, `start.S` and
+`start_multicore.S` place a vector at PicoRV32's fixed IRQ address `0x10` that
+saves the caller-saved registers and calls a weak C dispatcher, and `aster.h`
+provides the timer and interrupt-controller registers (see [`timer.md`](timer.md)
+and [`interrupts.md`](interrupts.md)). It is not a privileged RISC-V operating
+system. The v2 Aster core replaces PicoRV32's IRQ convention with standard
+machine-mode traps (`mtvec`/`mret`), so this entry code is ported in Phase 18
+([`cpu.md`](cpu.md) §3).
 
 ## Select the matching architecture
 

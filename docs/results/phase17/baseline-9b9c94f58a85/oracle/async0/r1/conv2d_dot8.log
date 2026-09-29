@@ -1,2 +1,0 @@
-PASS: v11 conv2d_dot8 [dsp] size=1024 cycles=10016476 retired=1145218 dma_bytes=0 npu_jobs=0
-PASS: v11 conv2d_dot8 checksum=0x07df8000 matches independent oracle

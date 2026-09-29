@@ -1,5 +1,33 @@
 # PYNQ-Z1 bring-up
 
+## Current status (v1.3)
+
+The maintained target is the **PYNQ Linux overlay** built by
+`fpga/pynq_z1/build_linux.tcl` (`make fpga-linux` and its `fpga-linux-*`
+variants). Its configuration comes from the `LINUX_*` make variables, which map
+to the script's positional arguments: harts, coherence, caches, DMA, DOT8, NPU,
+L2, implementation (always on from the Makefile), NPU rows/columns, and
+`LINUX_FCLK` (FCLK0 in MHz, default 31.25).
+
+- The all-engine v1.3 image (2 coherent harts, L1, DMA, DOT8, 4×4 NPU) closes
+  routed timing at **50 MHz** (`LINUX_FCLK=50`, WNS +0.191 ns, no failing
+  endpoints); see [`docs/v1.3.md`](../../docs/v1.3.md). The earlier 100 MHz run
+  was a functional overclock, not a timing closure.
+- Physical captures load the bitstream through the Linux FPGA manager
+  (`/lib/firmware` plus `/sys/class/fpga_manager/fpga0`) and access the PL
+  through `/dev/mem` (`scripts/run_*_mem.py`), because the board's PYNQ 3.1.1
+  Python cannot enumerate the Zynq. PL writes must be 32-bit mmap slice stores,
+  and FCLK0 is set through `0xF8000170`.
+- `rtl/soc/aster_pynq_linux.sv` and `aster_linux_ip.v` hard-code the clock
+  interface attribute `FREQ_HZ 50000000`, while `build_linux.tcl` sets the block
+  design's `FREQ_HZ` from `LINUX_FCLK`; a build at a non-50 MHz FCLK needs to be
+  rechecked before it is relied on (tracked for Phase 18).
+- The v2 FPGA target is a 100 MHz all-engine image (Phase 21 of the
+  [v2 plan](../../docs/phase17-plus.md)).
+
+The sections below are the historical phase-by-phase bring-up notes (Phases 2,
+5 and 9); their clocks, addresses and results describe those phases.
+
 These targets implement Aster with one PicoRV32 RV32IM
 core, private Phase 4 L1 instruction/data caches, initialized ROM,
 byte-writeable RAM, the Aster UART register block and a board-facing UART

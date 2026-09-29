@@ -1,5 +1,29 @@
 # AsterBench
 
+## Record versions
+
+Every benchmark emits one self-describing `ASTERBENCH,version=N,...` line per
+measurement, checked by a strict validator and an independent oracle. Older
+versions keep their original meaning.
+
+| Version | Workloads | Emitter | Validator / contract |
+| --- | --- | --- | --- |
+| v2 | memcpy and memory walks (Phases 3–4) | `asterbench.h` | `scripts/asterbench.py` |
+| v3 | parallel mix (Phase 5) | `parallel_mix.c` | `scripts/asterbench_parallel.py` |
+| v4 | coherent atomics/locks/queues (Phase 6) | `coherent.c` | [`asterbench-v4.md`](../../docs/asterbench-v4.md) |
+| v5 | CPU/DMA copy (Phase 7) | `dma.c` | `scripts/asterbench_dma.py` |
+| v6 | DOT8 (Phase 8) | `dot8.c` | `scripts/asterbench_dot8.py` |
+| v7 | NPU GEMM (Phase 9) | `npu_gemm.c` | `scripts/asterbench_v7.py` |
+| v8 | cross-engine dot/FIR/GEMM (Phase 10) | `cross_engine.c` | `scripts/asterbench_v8.py` |
+| v9 | MNIST MLP per image (Phase 11) | `mnist_infer.c` | `scripts/asterbench_v9.py` |
+| v10 | generic workload catalog on `aster_minimal` | `workload.h` | [`workloads.md`](../../docs/workloads.md) |
+| v11 | coherent-SoC workloads with requester-attributed, cumulative engine totals (reduction, Conv2D engines, ECG, CIFAR, and the MNIST summary) | `workload_coh.h` | [`asterbench-v11.md`](../../docs/asterbench-v11.md) |
+
+The retained same-top v1 baseline (`make phase17-baseline`, audited by
+`make phase17-baseline-audit`) is in
+[`docs/results/phase17/`](../../docs/results/phase17/). The historical sections
+below describe the earlier formats.
+
 Phase 6 adds [AsterBench v4](../../docs/asterbench-v4.md) through
 `make coherent-bench`: real RV32IMA atomic counters, locks, ping-pong, SPSC
 queues, false-sharing/padded counters and parallel shared-RAM compute. It has

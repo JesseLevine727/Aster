@@ -1,2 +1,0 @@
-PASS: v10 fft [dsp] size=1024 iterations=4 cycles=2949470 retired=248399
-PASS: v10 fft checksum=0x2dfcff80 matches independent oracle

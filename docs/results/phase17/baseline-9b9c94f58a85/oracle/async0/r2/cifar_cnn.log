@@ -1,2 +1,0 @@
-PASS: v11 cifar_cnn [ml] size=768 cycles=61016482 retired=6677585 dma_bytes=0 npu_jobs=60
-PASS: independent CIFAR reference matches 20 images (14 correct, 0.7000)

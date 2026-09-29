@@ -1,2 +1,0 @@
-PASS: v10 dhrystone [cpu] size=10000 iterations=1000 cycles=2737452 retired=492302
-PASS: v10 dhrystone checksum=0xbf140bdc matches independent oracle

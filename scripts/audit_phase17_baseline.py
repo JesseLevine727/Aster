@@ -360,7 +360,7 @@ def _cycles(bundle: Path, model: str, capture: dict) -> int:
     text = (bundle / "records" / model / "r1" / f"{capture['id']}.record").read_text()
     if capture["format"] == "v9":
         return sum(int(fields_of(line)["h0_cycles"], 16)
-                   for line in text.splitlines() if line.startswith("ASTERBENCH,"))
+                   for line in text.splitlines() if line.startswith("ASTERBENCH,version=9,"))
     return int(fields_of(text)["cycles"], 16)
 
 
