@@ -15,9 +15,10 @@ equally, a fair and reproducible method for deciding where work should execute.
 
 The v1 RTL integrates two PicoRV32 RV32IMA harts, private instruction/coherent
 data caches, serialized atomic/coherence service, optional L2, DMA, Xasterdot8,
-a 4×4 signed-INT8 NPU, timer, interrupts, and performance counters. The PicoRV32
-is a small low-area in-order reference core; it is **not** a high-performance
-CPU. The v1 system is a useful correctness and workload-placement baseline.
+a 4×4 signed-INT8 NPU, timer, interrupts, and performance counters. PicoRV32 is
+a small, multi-cycle reference core (about 5.4–5.7 cycles per instruction on
+the coherent-SoC reduction workload); it is **not** a high-performance CPU. The v1
+system is the correctness and workload-placement reference for v2.
 
 The all-engine PYNQ-Z1 v1.3 overlay closes timing at **50 MHz** and has physical
 workload evidence. Earlier phases also retain large correctness, regression,
@@ -26,40 +27,59 @@ configuration and acceptance contract.
 
 ### Phase 16: ASIC attempt, not clean signoff
 
-The SKY130/LibreLane flow produced a routed/GDS result for a reduced **16 KiB
-ROM + 16 KiB RAM** cut. At the 47 ns signoff point the reported worst setup slack
-is **−1.154 ns**; worst hold slack is **−0.171 ns**; TritonRoute reports **106**
-DRC errors and LVS reports **13** errors. The original 50 MHz target and full
-memory configuration did not close. No Aster chip has been fabricated.
+The SKY130/LibreLane flow produced a routed GDS for a reduced **16 KiB ROM +
+16 KiB RAM** cut, signed off with a **47 ns** clock. It is not a clean
+implementation:
 
-The Phase 16 result is a useful physical feasibility experiment, but it is not a
-signoff-clean implementation. Its Fmax/power derivations, workload
-comparability, and closeout audit need re-baselining before those figures can be
-used as v2 performance claims. See the [Phase 16 status](docs/phase16.md),
-[saved report](docs/results/phase16/REPORT.md), and the
-[Phase 17+ performance plan](docs/phase17-plus.md).
+- setup fails at `max_ss` (−1.154 ns, 67 endpoints); hold fails at `nom_ff`,
+  `max_tt`, and `max_ff` (worst −0.171 ns);
+- TritonRoute reports **106** routing DRC errors, and STA reports 85,996
+  max-slew and 5,443 max-capacitance violations at the worst corner;
+- LVS fails: the netlists do not match, and the top-level `vccd1` pin resolves
+  to the `vssd1` node (the SRAM macro supply is not connected as intended);
+- one of the eight mandatory gate-level workloads passed at full size and one
+  more at a reduced shape.
 
-## Why a new performance phase is needed
+Several published Phase 16 figures are also mislabelled — for example, the
+70.1 mW power figure is the fast `max_ff` corner, not typical (62.1 mW) — and
+are being corrected in Phase 17. The original 50 MHz target and full memory
+configuration did not close. No Aster chip has been fabricated. See the
+[Phase 16 status](docs/phase16.md), [saved report](docs/results/phase16/REPORT.md),
+and the [Phase 17+ plan](docs/phase17-plus.md).
 
-The v1 tests establish that the blocks work. They do not establish that the
-whole SoC has a competitive CPU, efficient accelerator dataflow, or a trustworthy
-ASIC PPA result. The current implementation serializes CPU/device memory
-transactions, uses a small blocking cache, and feeds the NPU through the shared
-memory service. Conv2D with N=1 activates only one NPU column, and per-byte
-operand/result traffic dominates its compute.
+## What limits v1
 
-The published Conv2D cycle records also use different SoC tops and default
-asynchronous memory, while the ASIC top uses synchronous memory and a reduced
-memory cut. Historical v10 captures can count NPU stores as `dma_bytes`; Phase
-17-A2 now filters new DMA-byte events by requester. The v10 NPU
-`accelerator_cycles` field still reports only the last job, not the workload sum.
-These are Phase 17 measurement-contract items, not harmless formatting details.
+The v1 tests establish that the blocks work. They do not make the SoC fast, and
+the reasons are architectural, not the process node:
 
-The next version must be designed around workload, bandwidth, timing, area, and
-energy budgets from the beginning. The historical v1 implementation and its
-results remain the reference; v2 performance work gets its own measured gates.
+- **One memory transaction at a time, chip-wide.** Both harts, instruction
+  refills, atomics, DMA, and the NPU share one serialized fabric → arbiter →
+  cache-controller → memory path. The data cache sits below that fabric, so even
+  a cache hit costs about seven cycles.
+- **A multi-cycle CPU.** PicoRV32 needs several cycles per instruction before
+  any memory stall is added.
+- **A starved accelerator.** Each NPU operand byte is a separate 32-bit read
+  through the shared path, each 32-bit result is written as four byte stores, and
+  operand addresses come from combinational 32×32 multiplies (also the v1.3 FPGA
+  critical path). Inside NPU jobs the array computes in under 1% of busy cycles
+  (16 of 2,492 cycles for a 4×4×16 GEMM; 124 of 14,608 for 8×8×31). The headline
+  Conv2D shape (M=784, N=1, K=25) also activates only 4 of the 16 PEs.
 
-## Proposed v2 performance targets
+A faster CPU alone would not fix this. v2 redesigns the CPU together with its
+memory interface, and gives the accelerator a data path that can feed it.
+
+### Measurement corrections
+
+The published Conv2D ratios compared a scalar run on `aster_minimal` with
+DOT8/NPU runs on the coherent SoC, and every simulation used asynchronous,
+zero-wait memory that no physical target has. On one coherent SoC with the same
+input, the NPU is **2.07×** and DOT8 **0.98×** relative to scalar (not 1.24× and
+0.59×). The v10 `dma_bytes` field also counted NPU stores, and
+`accelerator_cycles` reported only the last NPU job. Phase 17-A1–A3 fixed the
+attribution in RTL and added independent scoreboards; corrected v11 records land
+in Phase 17-A4.
+
+## v2 performance targets
 
 The [Phase 17+ plan](docs/phase17-plus.md) defines methods and exit criteria.
 The targets below are goals to verify, not claims about the current design.
@@ -67,10 +87,10 @@ The targets below are goals to verify, not claims about the current design.
 | Target | Goal |
 | --- | --- |
 | Operating frequency | **100 MHz** post-route on PYNQ-Z1 and a 100 MHz SKY130 design target, with positive setup/hold slack at all required corners. Feasibility is an early gate; functional overclocking alone does not count. |
+| CPU | **Aster's own in-order RV32IMA core** (five-stage pipeline, designed and verified in Phase 18) with at least **2× fewer cycles** than v1 PicoRV32 on the fixed CPU-bound test set at the same clock and memory configuration. PicoRV32 remains the v1 reference point. |
 | INT8 NPU | 4×4 array: **3.2 GOPS theoretical peak at 100 MHz** when one MAC counts as two operations; at least 50% peak on predeclared dense GEMM shapes. Report MAC/s, utilization, and end-to-end time as well as GOPS. |
-| CPU baseline | A measured, pipelined in-order RV32 candidate should improve cycles by at least 2× over v1 on the fixed CPU-bound test set at the same clock and memory configuration. PicoRV32 remains a reference point. |
 | Multicore / offload | Measure scaling and crossovers end-to-end. Large GEMM and the selected MLP should benefit from the NPU; small jobs are allowed to lose and must remain in the results. |
-| Physical quality | Timing closure, zero routing/foundry DRC, zero LVS mismatch, zero antenna violations, and workload-specific energy evidence. Memory capacity and die-area budget must be chosen together. |
+| Physical quality | Timing closure, zero routing/foundry DRC, zero LVS mismatch, zero antenna and electrical (slew/capacitance/fanout) violations, and workload-specific energy evidence. Memory capacity and die-area budget must be chosen together. |
 
 100 MHz is **not a limit imposed by the 130 nm node**; many 130 nm designs run
 faster. A 100 MHz FPGA pass would be a strong milestone, but it would not imply
@@ -78,9 +98,13 @@ faster. A 100 MHz FPGA pass would be a strong milestone, but it would not imply
 trees, and routing. The current FPGA design has 50 MHz routed timing signoff; its
 earlier 100 MHz test was functional on a limited workload but did not close
 static timing. The current SKY130 critical path is far from a 10 ns period.
-Phase 18 will measure the architecture and area changes needed. Only positive
-setup and hold slack at the required ASIC corners establishes 100 MHz SKY130
-closure.
+
+The SKY130 SRAM macro is itself a first-order constraint. Its liberty model
+exists only at the typical corner and launches read data from the falling clock
+edge, leaving roughly half of a 10 ns cycle for logic after a read. Each 2 KiB
+macro also occupies about 0.285 mm². Phase 18 will measure the architecture and
+area changes needed. Only positive setup and hold slack at the required ASIC
+corners establishes 100 MHz SKY130 closure.
 
 ## Research questions
 
@@ -118,20 +142,22 @@ configuration, cache policy, compiler settings, and clock.
 
 | Phase | Focus | Exit condition |
 | --- | --- | --- |
-| 17 | Repair/rebaseline measurements; freeze v2 workload, memory, frequency, area, and power contracts | Raw records and audits reproduce; no mixed-top/mixed-memory comparisons; numeric targets are frozen. |
-| 18 | CPU and memory/fabric performance architecture; early 100 MHz feasibility | A measured CPU choice and memory organization meet staged timing, area, and bandwidth gates. |
-| 19 | NPU utilization and data movement | Packed/banked operand delivery, cumulative counters, dense-GEMM utilization and end-to-end targets pass. |
+| 17 | Correct the v1 measurements (v11 records, one same-top baseline), correct Phase 15/16 reporting and audits, choose the memory/area point, freeze the v2 contract and CPU specification | v11 records and the retained v1 baseline reproduce; audits enforce their gates; targets, memory point, and CPU specification are frozen. |
+| 18 | **Aster core:** design and verify our own five-stage RV32IMA CPU together with its L1/SRAM interface; early 100 MHz feasibility | Lockstep-verified against an independent reference model; ≥2× fewer cycles than PicoRV32 on the CPU set; block timing meets 10 ns on FPGA and SKY130, or the limiting path and its cost are quantified. |
+| 19 | NPU utilization and data movement | Local operand buffers, full-word transfers, pipelined address generation, cumulative counters; dense-GEMM utilization and end-to-end targets pass. |
 | 20 | Integrate CPU, multicore, caches, DMA, DOT8, NPU, and all workloads | Full workload matrix passes independent correctness and performance audits on the same declared configurations. |
 | 21 | PYNQ-Z1 implementation and physical workload study | All-engine overlay closes at 100 MHz and repeated physical captures match independent references. |
-| 22 | SKY130 implementation, STA, physical signoff, and workload PPA | Declared memory fits; all-corner timing and clean physical signoff pass; workload power/energy is activity-based. |
+| 22 | SKY130 implementation, STA, physical signoff, and workload PPA | Declared memory fits; all-corner timing and clean physical/electrical signoff pass; workload power/energy is activity-based. |
 | 23 | Tapeout (optional stretch) | Only considered after Phase 22 artifacts and signoff are reproducible. |
 
-The [detailed Phase 17+ plan](docs/phase17-plus.md) specifies the workload
-matrices, record contents, verification levels, frequency feasibility checks,
-and phase-by-phase acceptance gates. Phase 17 is active; the
-[Phase 17 TODO](docs/phase17-todo.md) lists current work and open acceptance items,
-starting with the [AsterBench v11 measurement contract](docs/asterbench-v11.md),
-counter attribution, same-top comparisons, and independent per-job scoreboards.
+The [detailed Phase 17+ plan](docs/phase17-plus.md) specifies the diagnosis,
+CPU specification, workload matrices, record contents, verification levels,
+frequency feasibility checks, and phase-by-phase acceptance gates. It was
+revised on 29 September 2026; its final section records what changed and why.
+Phase 17 is active: A1–A3 are complete (v11 contract, DMA requester attribution,
+independent counter scoreboards), and the [Phase 17 TODO](docs/phase17-todo.md)
+lists the remaining items, starting with the
+[AsterBench v11](docs/asterbench-v11.md) emitters and validators.
 
 ## Historical phase links
 
@@ -182,9 +208,10 @@ make check
 make workloads
 ```
 
-`make check` is the fast default regression, not the full research campaign. Use
-the phase-specific study/capture/audit commands to reproduce fixed matrices and
-physical experiments. For example:
+`make check` is the fast default regression (about five minutes on the
+development host), not the full research campaign. Use the phase-specific
+study/capture/audit commands to reproduce fixed matrices and physical
+experiments. For example:
 
 ```sh
 make xe-matrix

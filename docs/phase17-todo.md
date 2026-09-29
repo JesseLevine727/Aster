@@ -1,29 +1,39 @@
-# Phase 17 TODO — trustworthy baseline and performance contract
+# Phase 17 TODO — correct the v1 baseline and freeze the v2 contract
 
-Status: **in progress**. Phase 17 starts with evidence and measurement integrity;
-no v2 performance result is accepted until the items below are closed.
+Status: **in progress**. Revised 29 September 2026 (see the
+[plan revision](phase17-plus.md#7-plan-revision--29-september-2026)). Phase 17
+is deliberately lean: it corrects what v1 reports and fixes the v2 contract; it
+does not polish a design that v2 replaces. No v2 performance RTL starts until the
+exit review below.
 
 The v1 RTL and historical records remain the reference. New measurement semantics
 must not silently reinterpret saved v10 results. Use a new record version for
-corrected semantics and keep old parsers/fixtures working.
+corrected semantics and keep old parsers/fixtures working. Immutable closeout
+bundles (`docs/results/*/closeout-*`) are never edited; corrections go in live
+documents that link to them.
 
-## Current milestone: P17-A — same-top, correctly attributed baseline
+## Done
 
-Progress: **P17-A1 is specified** in the
-[AsterBench v11 contract](asterbench-v11.md). P17-A2 now propagates a DMA-owner
-tag from the device arbiter and qualifies the DMA byte event with that tag; the
-generic device-store event remains generic for coherence/reservation use. The
-unit arbiter test checks CPU/DMA/NPU ownership, and the actual-core NPU runtime
-compares attributed DMA bytes against accepted DMA payloads in a mixed run.
+- [x] **P17-A1 — Specify v11 record semantics** (`9e81ebe`). One field per
+  requester for DMA and NPU bytes; cumulative NPU busy/compute cycles and job
+  counts; exact increment rules. See [`asterbench-v11.md`](asterbench-v11.md).
+- [x] **P17-A2 — Trace DMA requester identity** (`9e81ebe`). The device arbiter
+  carries a DMA-owner tag and the DMA byte event is qualified by it, while the
+  generic `device_store_commit` stays available for NPU coherence/reservation
+  logic. Known remaining gap: device events 5–9 still include NPU traffic, and
+  with `ENABLE_L2=1` the DMA byte event reads zero; v11 therefore aggregates
+  engine totals from per-job status registers instead of these events.
+- [x] **P17-A3 — Independent counter scoreboards** (`b40066b`). DMA-only service
+  is checked by `tb_aster_dma_soc`/`dma-runtime`; NPU-only Conv2D by the Phase 17
+  matrix audit; the mixed DMA/NPU runtime compares DMA-request bytes with
+  DMA-attributed events and sums nine NPU jobs against an independent shape
+  oracle; the arbiter test holds the requester tag across a stall. Verified with
+  the full `make check` (204 PASS, 257 host tests).
 
-The firmware also contains a coherent scalar Conv2D path; Phase 17 exposes it as
-`CONV_ENGINE=scalar_coh` and adds `make phase17-conv-matrix` to compare it with
-DOT8 and NPU on the same coherent top. This remains a diagnostic v10 matrix; the
-accepted baseline remains blocked on v11 implementation and evidence below.
-
-The first local diagnostic used the same 32×32/K=5 input and the default RTL
-configuration (31.25 MHz, L1 on, async/zero-wait memory, 4×16 L1, two-hart
-coherent all-engine top). All three checksums were `0x07df8000`:
+Same-top diagnostic (default RTL configuration: 31.25 MHz, L1 on, asynchronous
+zero-wait memory, two-hart coherent all-engine top, 32×32/K=5 input; all
+checksums `0x07df8000`). These are v10 diagnostics in ignored `build/`, not
+retained evidence:
 
 | Method | Cycles | Ratio vs coherent scalar |
 | --- | ---: | ---: |
@@ -31,82 +41,90 @@ coherent all-engine top). All three checksums were `0x07df8000`:
 | DOT8 | 9,786,108 | 0.98× |
 | NPU | 4,636,733 | 2.07× |
 
-This already differs from the old 1.24× headline because that scalar number came
-from `aster_minimal`. These records are v10 diagnostics in ignored `build/`; do
-not treat them as audited evidence. The first capture, before P17-A2, counted
-12,544 NPU output bytes as DMA. The post-A2 NPU-only rerun reports zero
-`dma_bytes`; historical bundles remain unchanged. The v10 NPU
-`accelerator_cycles` field still reports only the last job's 4,900 compute
-cycles. P17-A3–A6 must complete before this becomes the accepted Phase 17
-baseline.
+The old 1.24× headline used a scalar run on `aster_minimal`. The v10 NPU
+`accelerator_cycles` field reports only the last of four jobs (4,900 cycles).
 
-- [x] **P17-A1 — Specify v11 record semantics.** Define one field per requester
-  for DMA bytes and NPU bytes; define cumulative NPU busy/compute cycles and job
-  count; document exactly which accepted memory events increment each field. See
-  [`docs/asterbench-v11.md`](asterbench-v11.md).
-- [x] **P17-A2 — Trace DMA requester identity.** Carry a DMA-owner tag through
-  the coherent device arbiter; qualify DMA payload-byte events with it while
-  preserving generic `device_store_commit` for NPU coherence/reservation logic.
-  Old records remain unchanged; the integrated runtime regression checks that
-  NPU output stores do not inflate DMA bytes.
-- [x] **P17-A3 — Add independent counter scoreboards.** DMA-only service is
-  checked by `tb_aster_dma_soc`/`dma-runtime`; NPU-only Conv2D is checked by the
-  Phase 17 matrix audit; mixed DMA/NPU runtime compares DMA-request bytes with
-  DMA-attributed events and sums nine NPU jobs against an independent shape
-  oracle. Existing engine scoreboards cover partial words, zero length, stalls,
-  aborts, and reset. Focused regressions pass; v11 firmware aggregation remains
-  P17-A4.
-- [ ] **P17-A4 — Add v11 C/Python/C++ record support and aggregation.** Sum DMA
-  `bytes_done`/job cycles and NPU byte/cycle/tile snapshots over all jobs; read
-  DOT8's per-hart event bank after freeze. Preserve v2–v10 validators and fixtures.
-  Mutation tests must reject omitted, duplicated, misattributed, and
-  non-cumulative engine fields.
-- [ ] **P17-A5 — Establish same-top compute comparisons.** Run scalar, multicore,
-  DOT8, and NPU implementations on the same all-engine SoC, with the same input,
-  precision, memory timing, cache policy, clock, and result oracle. Keep
-  `aster_minimal` measurements as a separately named baseline.
-- [ ] **P17-A6 — Capture and bind raw baselines.** Retain raw records, firmware
-  images, source/toolchain/configuration hashes, repeated captures, and the exact
-  independent oracle outputs. Do not use ignored `build/` files as closeout
-  evidence.
+## Open, in order
 
-### P17-A acceptance
+- [ ] **P17-H — Housekeeping.**
+  - [ ] Workload simulators rebuild when their configuration changes (no
+    fixed-path binaries reused across configurations).
+  - [ ] `make check` covers `device-arbiter`, `dma-counters`, and `l2-unit`.
+  - [ ] Stale phase statuses, broken links, subsystem READMEs, the ASIC README,
+    `docs/toolchain.md`, and `docs/memory.md` examples are corrected; FPGA
+    results are not called "silicon"; `docs/l2.md` matches the RTL.
+  - [ ] Stray tracked files are removed.
+- [ ] **P17-A4 — v11 record support and aggregation.**
+  - [ ] Coherent workloads (reduction, Conv2D engines, ECG, CIFAR) emit v11,
+    summing DMA `bytes_done`/job cycles and NPU bytes/tiles/job/compute cycles
+    over every job, and reading each hart's DOT8 event bank after freeze.
+  - [ ] Strict Python validator and C++ parser share one valid/malformed
+    mutation corpus that rejects omitted, duplicated, unknown, misattributed,
+    and non-cumulative engine fields.
+  - [ ] v2–v10 validators and fixtures still pass; capture/study scripts that
+    only understand v10 either accept v11 or fail with an explicit v10-only
+    message.
+  - [ ] The same-top matrix audit and workload oracles run on v11 records;
+    `make check` passes.
+- [ ] **P17-A5/A6 — One retained same-top v1 baseline.** Scalar, multicore,
+  DOT8, and NPU for Conv2D, reduction, MNIST MLP, ECG, and CIFAR on the
+  all-engine coherent SoC, captured under the physical synchronous one-wait
+  memory model and, labelled as an idealization, the zero-wait model. One
+  capture plus one determinism repeat per configuration. Raw records, firmware
+  hashes, configuration, toolchain, and oracle outputs are retained under
+  `docs/results/phase17/` with an audit that rejects a mismatched top, clock,
+  memory mode, counter, or source hash. `aster_minimal` stays a separately
+  named data point.
+- [ ] **P17-B — CoreMark labelling.** Label the current one-iteration run as a
+  fixed-iteration CRC correctness check wherever it appears; no standard score
+  is claimed for PicoRV32. A valid CoreMark score (real timer, at least ten
+  seconds) is an Aster-core deliverable in Phase 18/21. Document the Dhrystone
+  adaptation.
+- [ ] **P17-C — Correct Phase 15/16 reporting, without new ASIC runs.**
+  - [ ] Phase 16 documents state: per-corner setup/hold from the `p16-f2`
+    signoff STA (hold fails at `nom_ff`, `max_tt`, `max_ff`); Fmax per corner
+    from that STA (`nom_tt` 40.96 MHz, `max_ss` 20.77 MHz at the 47 ns SDC);
+    power with its corner (typical 62.1 mW; 70.1 mW is `max_ff`); LVS as a
+    failing netlist mismatch in which `vccd1` resolves to `vssd1`; 106 routing
+    DRC; 85,996 max-slew and 5,443 max-capacitance violations; Tier 2 as one
+    full-size and one reduced-shape pass of eight mandatory workloads; SDF
+    annotation not demonstrated; ASIC workload cycles not captured on the ASIC
+    configuration.
+  - [ ] Phase 15 documents record its 2,262 max-slew and 274 max-capacitance
+    violations and name the corner of its power figure.
+  - [ ] `audit_phase15.py` and `audit_phase16.py` enforce their contracts:
+    every corner's setup/hold, route DRC, LVS error count, electrical
+    violations, and required gate-level runs, with checks that can fail. The
+    expected outcome is that Phase 16 reports **incomplete**.
+  - [ ] Future closeouts include `asic/` in the hashed source state.
+- [ ] **P17-D — Memory and area point (owner decision).** Present options with
+  numbers: full map on a larger die, smaller on-chip SRAM with tiled workloads,
+  or an external-memory interface; macros versus latch/flop RAM per array. Freeze
+  one option with a die-area budget.
+- [ ] **P17-E — Freeze the v2 contract and the CPU specification.** Approve the
+  100 MHz FPGA/SKY130 targets and required corners, NPU utilization and speedup
+  goals including the N=1 mapping, the CPU cycle target, resource/die limits,
+  energy method, workload matrix, gate-level method, and evidence manifest.
+  Write `docs/cpu.md` for the Aster core (ISA, pipeline, interfaces, traps,
+  verification layers, timing gates) as outlined in
+  [phase17-plus.md section 6](phase17-plus.md#6-phase-17-sequence).
+- [ ] **P17-F — Live documentation aligned.** README, architecture status,
+  subsystem READMEs, and the phase index describe the current state, and
+  historical claims are labelled with their original configuration.
 
-- A DMA-only run has zero NPU traffic/cycles; an NPU-only run has zero DMA bytes;
-  a combined run attributes each accepted byte to exactly one requester.
-- The cumulative NPU values equal the sum of all jobs, not just the last job.
-- Scalar/multicore/DOT8/NPU comparisons use one declared coherent SoC
-  configuration and identical logical work.
-- Independent RTL scoreboards and host record validators agree on all counters;
-  existing v2–v10 records still parse with their original semantics.
-- Three fresh RTL captures reproduce outputs and counters; no run is discarded
-  because it is slow.
+## Removed from the first draft
 
-## Remaining Phase 17 work
+- Three fresh RTL captures of each v1 diagnostic (deterministic simulation needs
+  one capture plus a determinism repeat).
+- Re-deriving Phase 16 Fmax/power with new flow runs (P17-C corrects the
+  documents and audits from the retained reports instead).
+- A valid CoreMark score for PicoRV32 (moved to the Aster core).
 
-- [ ] **P17-B — Valid CPU workload timing.** Keep short CoreMark CRC tests as
-  correctness checks; produce a standard CoreMark score only with a real timer,
-  the required run duration, frozen compiler flags, and repeatable board timing.
-  Document the Dhrystone adaptation and do not claim a standard rate for it.
-- [ ] **P17-C — Reconcile Phase 16 PPA.** Recompute Fmax using the SDC associated
-  with each slack report; reconcile `power.rpt` against `metrics.csv`; identify
-  power activity assumptions; regenerate workload times/energy only from
-  comparable source records. Keep failed timing/DRC/LVS/Tier 2 gates visible.
-- [ ] **P17-D — Choose memory and area point.** Compare macro count, capacity,
-  floorplan/routing margin, and workload fit for full memory, tiled smaller
-  memory, and any proposed external-memory interface. Freeze one option with a
-  die-area budget; do not silently shrink the map.
-- [ ] **P17-E — Freeze v2 target contract.** Approve 100 MHz FPGA and SKY130
-  targets/required corners, NPU utilization and speedup goals, CPU baseline,
-  resource/die limits, energy method, fixed workload matrix, and source/evidence
-  manifest requirements.
-- [ ] **P17-F — Align live documentation.** Update the root README, architecture
-  status, subsystem READMEs, and phase index. Preserve immutable bundles and label
-  historical claims with their original source/configuration.
+## Phase 17 exit gate
 
-### Phase 17 exit gate
-
-Phase 17 is complete only when P17-A through P17-F have independently auditable
-evidence, the v2 numerical targets and memory/die point are frozen, and a fresh
-read-only audit rejects source/configuration drift and any failed gate. No
-full-chip v2 feature implementation starts before that exit review.
+Phase 17 is complete when v11 records validate in Python and C++ against a
+shared mutation corpus and every coherent workload emits them; the retained v1
+baseline exists and its audit rejects configuration or source drift; the
+Phase 15/16 documents and audits report their true status; and the memory/area
+point, v2 targets, and Aster core specification are approved. Phase 18 RTL
+starts after that review.
