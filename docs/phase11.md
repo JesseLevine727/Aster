@@ -167,6 +167,15 @@ Per-layer cycles, total offload cost, NPU active-array cycles and memory-only
 cycles are reported separately. Slowdowns below one are retained. End-to-end
 accuracy on the retained subset is reported alongside cycles, not instead of it.
 
+> **Phase 17 corrections.** Two v9 fields do not mean what their names say. The
+> firmware reads `h0_retired`/`h1_retired` from counter 2 (`0x2000_3010`), which
+> is the CPU memory-transaction count; retired instructions are counter 1. And
+> the v9 NPU fields describe only the last (fc2) NPU job of each image. No
+> published Phase 11 result used either. The v9 format is kept unchanged for
+> history; since Phase 17 the firmware also emits an
+> [AsterBench v11](asterbench-v11.md#summed-window-records) summary with the
+> correct retired count and cumulative NPU totals.
+
 ## Verification and acceptance gates
 
 - [x] Feasibility spike committed; model and memory map frozen.

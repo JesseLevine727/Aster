@@ -183,7 +183,9 @@ def validate_stream(lines, model: dict, *, method: str | None = None, complete: 
     for line in lines:
         if not line.strip():
             continue
-        if line.startswith(("ASTERSTOP,", "MNIST INFER ")):
+        # Since Phase 17-A4 the firmware also emits one AsterBench v11 summary
+        # record; it is validated by asterbench_v11.py, not as a v9 record.
+        if line.startswith(("ASTERSTOP,", "MNIST INFER ", "ASTERBENCH,version=11,")):
             continue
         require(line.startswith("ASTERBENCH,"), "log contains a line that is not a record")
         results.append(validate_line(line if line.endswith("\n") else line + "\n", model, method=method))

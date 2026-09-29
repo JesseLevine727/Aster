@@ -75,6 +75,19 @@ class Phase17BaselineAudit(unittest.TestCase):
         self.set_field(bundle, "async0", "conv2d_npu", "npu_compute_cycles", f"0x{4900:016x}")
         self.assert_rejected(bundle, "shape oracle")
 
+    def test_rejects_last_layer_only_mnist_npu_total(self):
+        bundle = self.copy()
+        for repeat in audit.REPEATS:
+            path = bundle / "records" / "sync1" / f"r{repeat}" / "mnist_npu.record"
+            lines = path.read_text().splitlines(keepends=True)
+            index = next(i for i, line in enumerate(lines) if line.startswith("ASTERBENCH,version=11,"))
+            fields = audit.fields_of(lines[index])
+            fields["npu_compute_cycles"] = f"0x{96 * 32:016x}"
+            lines[index] = "ASTERBENCH," + ",".join(f"{k}={v}" for k, v in fields.items()) + "\n"
+            path.write_text("".join(lines))
+        self.rehash(bundle)
+        self.assert_rejected(bundle, "oracle")
+
     def test_rejects_nondeterministic_repeat(self):
         bundle = self.copy()
         path = bundle / "records" / "sync1" / "r2" / "reduce_scalar.record"

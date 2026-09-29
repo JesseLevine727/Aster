@@ -74,6 +74,13 @@ class AsterBenchV9(unittest.TestCase):
         results = bench.validate_stream(lines, self.model, method="npu", complete=True)
         self.assertEqual(len(results), count)
 
+    def test_stream_skips_the_v11_summary_record(self):
+        count = len(self.model["test"]["labels"])
+        lines = [render(make_fields(self.model, image=i)) for i in range(count)]
+        lines.append("ASTERBENCH,version=11,name=mnist_mlp_npu,category=ml,status=PASS\n")
+        results = bench.validate_stream(lines, self.model, method="npu", complete=True)
+        self.assertEqual(len(results), count)
+
     def test_complete_rejects_missing_image(self):
         lines = [render(make_fields(self.model, image=i)) for i in range(5)]
         with self.assertRaises(bench.ValidationError):

@@ -167,4 +167,80 @@ static inline void aster_workload_emit_coh_v11(
     coh_hex64("npu_compute_cycles", engines->npu_compute_cycles);
     aster_putc('\n');
 }
+
+// Summed-window v11 records. A workload that starts and freezes the common
+// counters once per item (MNIST runs one window per image) adds each frozen
+// window's CPU and DOT8 counters here, then emits one v11 record whose counters
+// are the sum over its windows. These are separate from the single-window
+// emitter above so the existing workloads' images are unchanged.
+struct aster_workload_window_totals {
+    uint64_t cycles, retired, memory_transactions, backing_transactions;
+    uint64_t cache_accesses, cache_misses;
+    uint64_t dot8[2][4];  // per hart: accept, wait, complete, retire
+};
+
+static inline void aster_workload_add_window(struct aster_workload_window_totals *totals) {
+    totals->cycles += coh_counter(0);
+    totals->retired += coh_counter(1);
+    totals->memory_transactions += coh_counter(2);
+    totals->backing_transactions += coh_counter(7);
+    totals->cache_accesses += coh_counter(3) + coh_counter(5);
+    totals->cache_misses += coh_counter(4) + coh_counter(6);
+    for (uint32_t hart = 0; hart < 2; ++hart)
+        for (uint32_t event = 0; event < 4; ++event)
+            totals->dot8[hart][event] += coh_dot8_counter(hart, event);
+}
+
+static inline void aster_workload_emit_coh_v11_windows(
+    const char *name, const char *category, uint32_t size, uint32_t iterations,
+    uint32_t param, uint32_t workers, uint32_t seed, uint32_t checksum,
+    uint32_t pass, const struct aster_workload_window_totals *windows,
+    const struct aster_workload_engine_totals *engines) {
+    aster_puts("ASTERBENCH,version=11,name="); aster_puts(name);
+    aster_puts(",category="); aster_puts(category);
+    aster_puts(",status="); aster_puts(pass ? "PASS" : "FAIL");
+    coh_field("size", size);
+    coh_field("iterations", iterations);
+    coh_field("param", param);
+    coh_hex32("seed", seed);
+    coh_hex32("checksum", checksum);
+    coh_field("clock_hz", coh_reg(COH_CLOCK_HZ));
+    coh_field("harts", coh_reg(COH_HART_COUNT));
+    coh_field("workers", workers);
+    coh_field("l1", coh_reg(COH_FLAGS) & 1u);
+    coh_field("sync_memory", (coh_reg(COH_FLAGS) >> 1) & 1u);
+    coh_field("line_words", coh_reg(COH_LINE_WORDS));
+    coh_field("line_count", coh_reg(COH_LINE_COUNT));
+    coh_field("memory_wait", coh_reg(COH_MEMORY_WAIT));
+    coh_hex64("cycles", windows->cycles);
+    coh_hex64("retired", windows->retired);
+    coh_hex64("memory_transactions", windows->memory_transactions);
+    coh_hex64("backing_transactions", windows->backing_transactions);
+    coh_hex64("cache_accesses", windows->cache_accesses);
+    coh_hex64("cache_misses", windows->cache_misses);
+    coh_field("dma_jobs", engines->dma_jobs);
+    coh_field("dma_completed_jobs", engines->dma_completed_jobs);
+    coh_field("dma_aborted_jobs", engines->dma_aborted_jobs);
+    coh_field("dma_error_jobs", engines->dma_error_jobs);
+    coh_hex64("dma_bytes", engines->dma_bytes);
+    coh_hex64("dma_job_cycles", engines->dma_job_cycles);
+    static const char *const events[4] = {"accept", "wait", "complete", "retire"};
+    for (uint32_t hart = 0; hart < 2; ++hart)
+        for (uint32_t event = 0; event < 4; ++event) {
+            aster_putc(','); aster_puts(hart == 0 ? "h0_dot8_" : "h1_dot8_");
+            aster_puts(events[event]); aster_puts("=0x");
+            aster_put_hex32((uint32_t)(windows->dot8[hart][event] >> 32));
+            aster_put_hex32((uint32_t)windows->dot8[hart][event]);
+        }
+    coh_field("npu_jobs", engines->npu_jobs);
+    coh_field("npu_completed_jobs", engines->npu_completed_jobs);
+    coh_field("npu_aborted_jobs", engines->npu_aborted_jobs);
+    coh_field("npu_error_jobs", engines->npu_error_jobs);
+    coh_hex64("npu_bytes_read", engines->npu_bytes_read);
+    coh_hex64("npu_bytes_written", engines->npu_bytes_written);
+    coh_hex64("npu_tiles", engines->npu_tiles);
+    coh_hex64("npu_job_cycles", engines->npu_job_cycles);
+    coh_hex64("npu_compute_cycles", engines->npu_compute_cycles);
+    aster_putc('\n');
+}
 #endif

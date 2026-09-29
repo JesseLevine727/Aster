@@ -25,7 +25,7 @@ def capture_boot(bridge, output, index, args, model):
     count = len(model["test"]["labels"])
     bridge.start()
     time.sleep(args.host_pause)
-    complete = re.compile(rb"(?:ASTERBENCH,[^\n]*\n){" + str(count).encode() + rb"}")
+    complete = re.compile(rb"(?:ASTERBENCH,version=9,[^\n]*\n){" + str(count).encode() + rb"}")
     with uart_path.open("xb") as raw:
         while time.monotonic() - started < args.timeout:
             fifo = bridge.mmio.read(0x0C)
@@ -51,7 +51,7 @@ def capture_boot(bridge, output, index, args, model):
             raise TimeoutError("physical Phase 11 capture timed out")
     time.sleep(0.02)
     records = [line for line in payload.decode("ascii").splitlines(keepends=True)
-               if line.startswith("ASTERBENCH,")]
+               if line.startswith("ASTERBENCH,version=9,")]
     if len(records) != count:
         raise RuntimeError("physical capture did not emit every record")
     for line in records:

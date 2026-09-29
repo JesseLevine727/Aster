@@ -10,6 +10,7 @@
 #include "xe_kernels.h"
 #include "phase11_model.h"
 #include "phase11_images.h"
+#include "workload_coh.h"
 #include <stdatomic.h>
 
 #ifndef P11_METHOD
@@ -39,6 +40,12 @@ struct p11_io {
 static struct p11_io io __attribute__((section(".p11_io"), aligned(64)));
 
 static const char *const method_names[] = {"scalar", "multicore", "dot8", "npu"};
+// AsterBench v11 summary: the 32 per-image windows summed, with cumulative
+// requester-owned engine totals (Phase 17-A4).
+static const char *const v11_names[] = {"mnist_mlp_scalar", "mnist_mlp_multicore",
+                                        "mnist_mlp_dot8", "mnist_mlp_npu"};
+static struct aster_workload_window_totals windows;
+static struct aster_workload_engine_totals engines;
 #if P11_METHOD == 1
 static _Atomic uint32_t p11_epoch, p11_done;
 static struct aster_npu_gemm p11_job;
@@ -97,6 +104,9 @@ static void run_layer(const int8_t *a, const int8_t *b, int32_t *c,
     if (result == ASTER_NPU_PENDING) result = aster_npu_wait(8000000u, &npu_status);
     else aster_npu_poll(&npu_status);
     if (result != ASTER_NPU_OK) { aster_puts("MNIST INFER NPU FAIL\n"); __asm__ volatile ("ebreak"); for (;;) {} }
+    aster_workload_add_npu_success(&engines, npu_status.bytes_read, npu_status.bytes_written,
+                                   npu_status.job_cycles, npu_status.compute_cycles,
+                                   npu_status.tiles);
 #elif P11_METHOD == 2
     xe_dot8_gemm(&job);
 #elif P11_METHOD == 0
@@ -153,7 +163,7 @@ int main(void) {
     copy_bytes(w2, phase11_fc2_weights, sizeof w2);
     fence_io();
 
-    uint32_t class_correct = 0, class_mismatch = 0, logit_mismatch = 0;
+    uint32_t class_correct = 0, class_mismatch = 0, logit_mismatch = 0, checksum = 0;
     for (uint32_t image = 0; image < PHASE11_TEST_COUNT; ++image) {
         copy_bytes(io.input, &phase11_test_images[image * PHASE11_FC1_IN], PHASE11_FC1_IN);
         fence_io();
@@ -174,6 +184,10 @@ int main(void) {
         fence_io();
         REG(P11_PERF_CONTROL) = 2u;
         fence_io();
+        aster_workload_add_window(&windows);
+        for (uint32_t o = 0; o < PHASE11_FC2_OUT; ++o)
+            checksum = (checksum * 33u) ^ (uint8_t)io.logits[o];
+        checksum = (checksum * 33u) ^ (uint32_t)best;
 
         const uint32_t expected = phase11_test_classes[image];
         const uint32_t label = phase11_test_labels[image];
@@ -210,6 +224,11 @@ int main(void) {
         aster_putc('\n');
     }
 
+    aster_workload_emit_coh_v11_windows(v11_names[P11_METHOD], "ml", PHASE11_FC1_IN,
+                                        PHASE11_TEST_COUNT, PHASE11_FC1_OUT,
+                                        P11_METHOD == 1 ? 2u : 1u, 0u, checksum,
+                                        class_mismatch == 0u && logit_mismatch == 0u,
+                                        &windows, &engines);
     aster_puts("MNIST INFER ");
     aster_puts((class_mismatch || logit_mismatch) ? "FAIL" : "PASS");
     aster_puts(" images="); aster_put_u32(PHASE11_TEST_COUNT);

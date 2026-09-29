@@ -35,7 +35,8 @@ documents that link to them.
   oracle; the arbiter test holds the requester tag across a stall. Verified with
   the full `make check` (204 PASS, 257 host tests).
 
-- [ ] **P17-A4 — v11 record support and aggregation** (`f025a29`; MNIST reopened). Verified with the full
+- [x] **P17-A4 — v11 record support and aggregation** (`f025a29`; MNIST added
+  after the exit review). Verified with the full
   `make check` (207 PASS, 260 host tests).
   - [x] Coherent workloads (reduction, Conv2D engines, ECG, CIFAR) emit v11,
     summing DMA `bytes_done`/job cycles and NPU bytes/tiles/job/compute cycles
@@ -46,6 +47,15 @@ documents that link to them.
     capture/study drivers reject a v11 record with an explicit message.
   - [x] The same-top matrix audit checks NPU totals against an independent
     cumulative shape oracle, so a last-job-only total fails.
+  - [x] The MNIST MLP also emits a v11 summary over its 32 per-image windows
+    ([summed-window records](asterbench-v11.md#summed-window-records)); the
+    baseline audit requires its cycles to equal the sum of the v9 windows, its
+    checksum to match the model's reference outputs, and its NPU totals to
+    cover both layers. Two findings: the v9 `h0_retired`/`h1_retired` fields
+    have always held counter 2 (memory transactions), not retired
+    instructions; and the NPU's own job time depends on the CPU's polling code
+    (the same fc2 job took 5,956 then 5,756 cycles after an unrelated code-layout
+    change), because every poll competes for the one serialized memory path.
 
 Same-top diagnostic (default RTL configuration: 31.25 MHz, L1 on, asynchronous
 zero-wait memory, two-hart coherent all-engine top, 32×32/K=5 input; all

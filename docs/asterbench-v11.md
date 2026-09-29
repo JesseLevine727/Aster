@@ -1,7 +1,7 @@
 # AsterBench v11 — engine-attributed workload records
 
 Status: **implemented (Phase 17-A4)**. The coherent-SoC workloads (reduction,
-Conv2D engines, ECG, CIFAR) emit v11; `scripts/asterbench_v11.py` and
+Conv2D engines, ECG, CIFAR, and the MNIST MLP) emit v11; `scripts/asterbench_v11.py` and
 `verification/common/asterbench_v11_record.h` validate it against one shared
 mutation corpus. Existing AsterBench v2–v10 records and their historical
 meanings remain unchanged.
@@ -104,6 +104,18 @@ must prove equality with the per-job sum.
   each executing hart. Wait counts may be greater and reflect stalls.
 - Unknown, duplicate, missing, truncated, overflowing, or inconsistent fields
   fail validation. A configuration mismatch is not a comparable speedup.
+
+### Summed-window records
+
+A workload that starts and freezes the common counters once per item emits one
+v11 record whose CPU and DOT8 counters are the **sum of its per-item windows**
+(`aster_workload_add_window` / `aster_workload_emit_coh_v11_windows` in
+`workload_coh.h`). The MNIST MLP does this: it keeps its per-image v9 records
+(the model oracle checks their logits) and ends with one v11 summary named
+`mnist_mlp_<method>` over the 32 image windows, with `size=784`,
+`iterations=32`, `param=32`, and a checksum over all logits and classes. Its
+`cycles` must equal the sum of the v9 `h0_cycles`, and its NPU totals cover
+both layers of every image.
 
 ## Measurement and provenance
 

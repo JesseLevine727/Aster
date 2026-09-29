@@ -37,7 +37,7 @@ def capture_method(method: str, model: dict) -> list[str]:
                             cwd=ROOT, text=True, capture_output=True)
     if result.returncode != 0:
         raise SystemExit(f"capture {method} failed:\n{result.stdout}\n{result.stderr}")
-    records = [line for line in result.stdout.splitlines(keepends=True) if line.startswith("ASTERBENCH,")]
+    records = [line for line in result.stdout.splitlines(keepends=True) if line.startswith("ASTERBENCH,version=9,")]
     if len(records) != len(model["test"]["labels"]):
         raise SystemExit(f"capture {method} emitted {len(records)} records")
     for line in records:

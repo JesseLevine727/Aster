@@ -1538,8 +1538,10 @@ phase11-infer: $(PHASE11_SIM) $(PHASE11_HEX)
 
 .PHONY: phase11-infer-validate
 phase11-infer-validate: $(PHASE11_SIM) $(PHASE11_HEX)
-	@set -o pipefail; $(PHASE11_SIM) +rom=$(PHASE11_HEX) +ram_fill=a5a5a5a5 | \
-		$(PYTHON) scripts/asterbench_v9.py validate --model docs/results/phase11/model.json --method $(PHASE11_METHOD) --complete
+	@$(PHASE11_SIM) +rom=$(PHASE11_HEX) +ram_fill=a5a5a5a5 > $(BUILD_DIR)/mnist_$(PHASE11_METHOD).log
+	@$(PYTHON) scripts/asterbench_v9.py validate --model docs/results/phase11/model.json --method $(PHASE11_METHOD) --complete < $(BUILD_DIR)/mnist_$(PHASE11_METHOD).log | tail -1
+	@grep '^ASTERBENCH,version=11,' $(BUILD_DIR)/mnist_$(PHASE11_METHOD).log | \
+		$(PYTHON) scripts/asterbench_v11.py validate --name mnist_mlp_$(PHASE11_METHOD)
 
 .PHONY: workload workload-firmware
 $(WORKLOAD_ELF): software/benchmarks/workload_$(WORKLOAD).c software/benchmarks/workload.h \
@@ -2082,7 +2084,7 @@ parallel-workloads:
 
 test: smoke phase1 hello bench cache uart fpga-sim linux-sim counters retirement npu-pe npu-array npu-engine npu-regs npu-driver npu-runtime npu-stop npu-bench-validate arbiter shared-fabric multicore-runtime parallel
 
-check: tools smoke phase1 hello bench cache uart fpga-sim linux-sim linux-dual-sim linux-coherent-sim counters retirement pcpi-probe dot8-unit npu-pe npu-array npu-engine npu-regs device-arbiter dma-counters l2-unit npu-driver npu-runtime npu-stop npu-bench-validate xe-bench-validate phase11-infer workloads atomic-fabric atomic-runtime atomic-faults coherent-cache warm-stop coherent-counters coherent-soc timer-unit timer-firmware irq-unit timer-interrupt sram-unit sram-lint freeze-interfaces coherent-bench riscv-reference riscv-reference-negative coherent-litmus arbiter shared-fabric multicore-runtime multicore-adversarial parallel phase17-baseline-audit
+check: tools smoke phase1 hello bench cache uart fpga-sim linux-sim linux-dual-sim linux-coherent-sim counters retirement pcpi-probe dot8-unit npu-pe npu-array npu-engine npu-regs device-arbiter dma-counters l2-unit npu-driver npu-runtime npu-stop npu-bench-validate xe-bench-validate phase11-infer-validate workloads atomic-fabric atomic-runtime atomic-faults coherent-cache warm-stop coherent-counters coherent-soc timer-unit timer-firmware irq-unit timer-interrupt sram-unit sram-lint freeze-interfaces coherent-bench riscv-reference riscv-reference-negative coherent-litmus arbiter shared-fabric multicore-runtime multicore-adversarial parallel phase17-baseline-audit
 
 # Print a make variable (used by scripts/phase17_baseline.py to find firmware images).
 print-%:

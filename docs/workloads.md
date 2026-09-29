@@ -6,7 +6,8 @@ Earlier record versions (v2–v9) are unchanged. Since Phase 17-A4 the
 `aster_minimal` workloads (strided, sort/search, FFT, `conv2d`, CoreMark,
 Dhrystone) still emit v10, while the coherent-SoC workloads (reduction, the
 Conv2D engines, ECG, CIFAR) emit [AsterBench v11](asterbench-v11.md), which adds
-per-hart DOT8 events and cumulative, requester-attributed DMA/NPU totals.
+per-hart DOT8 events and cumulative, requester-attributed DMA/NPU totals. The
+Phase 11 MNIST MLP keeps its per-image v9 records and adds one v11 summary.
 
 Phase 17 adds `conv2d_scalar_coh` as an auxiliary same-top baseline for the
 coherent DOT8/NPU Conv2D runs. The original `conv2d` workload remains the legacy

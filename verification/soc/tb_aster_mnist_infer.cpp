@@ -37,6 +37,7 @@ public:
     std::uint64_t device_transactions = 0;
     std::uint64_t npu_transactions = 0;
     std::string method;
+    unsigned v11_summaries = 0;
     bool summary_pass = false;
 
     Bench() {
@@ -61,6 +62,15 @@ public:
             require(fields["method"] == method, "v9 records mix methods");
             std::cout << text << '\n';
             records.push_back(text);
+        } else if (text.rfind("ASTERBENCH,version=11,", 0) == 0) {
+            // Phase 17-A4 summary: the per-image windows summed, with cumulative
+            // engine totals. The host validator checks its fields and oracle.
+            auto fields = parse(text);
+            require(fields.count("status") && fields["status"] == "PASS", "v11 summary is not PASS");
+            require(!method.empty() && fields.count("name") && fields["name"] == "mnist_mlp_" + method,
+                    "v11 summary name does not match the v9 method");
+            std::cout << text << '\n';
+            ++v11_summaries;
         } else if (text.rfind("MNIST INFER ", 0) == 0) {
             std::cout << text << '\n';
             summary_pass = text.find("MNIST INFER PASS") == 0;
@@ -119,6 +129,7 @@ int main(int argc, char** argv) {
         for (unsigned cycle = 0; cycle < 400000000u && !bench.summary_pass; ++cycle) bench.tick();
         require(bench.summary_pass, "MNIST inference did not emit a PASS summary");
         require(bench.records.size() == 32u, "MNIST inference did not emit 32 image records");
+        require(bench.v11_summaries == 1u, "MNIST inference did not emit one v11 summary record");
         if (bench.method == "npu")
             require(bench.npu_transactions > 0u && bench.device_transactions > 0u,
                     "NPU inference observed no coherent device traffic");

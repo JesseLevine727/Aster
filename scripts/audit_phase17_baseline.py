@@ -106,6 +106,8 @@ CIFAR_LAYERS = ((196, 16, 27),      # workload_cifar.c: conv1 C1_M x CONV1_OUT x
                 (25, 32, 144),      # conv2 C2_M x CONV2_OUT x CONV2_K
                 (10, 1, 128))       # fc FC_OUT x 1 x FC_IN
 MNIST_LAST_LAYER = (10, 1, 32)      # mnist_infer.c: fc2 FC2_OUT x 1 x FC2_IN
+MNIST_LAYERS = ((32, 1, 784),      # fc1 FC1_OUT x 1 x FC1_IN
+                MNIST_LAST_LAYER)
 
 
 class AuditError(ValueError):
@@ -158,6 +160,17 @@ def fields_of(line: str) -> dict[str, str]:
     return dict(token.split("=", 1) for token in body.split(","))
 
 
+def mnist_checksum(mnist_model: dict) -> int:
+    """The v11 summary checksum, recomputed from the model's reference outputs."""
+    checksum = 0
+    test = mnist_model["test"]
+    for logits, best in zip(test["reference_logits"], test["reference_classes"]):
+        for value in logits:
+            checksum = ((checksum * 33) ^ (value & 0xFF)) & 0xFFFFFFFF
+        checksum = ((checksum * 33) ^ best) & 0xFFFFFFFF
+    return checksum
+
+
 def check_model_config(model: str, sync_memory: int, memory_wait: int | None, where: str) -> None:
     spec = MODELS[model]
     require(sync_memory == spec["SYNC_MEMORY"],
@@ -187,7 +200,7 @@ def validate_capture(capture: dict, text: str, model: str, mnist_model: dict,
         method = capture["method"]
         lines = [line for line in text.splitlines(True) if line.strip()]
         results = v9.validate_stream(lines, mnist_model, method=method, complete=True)
-        records = [fields_of(line) for line in lines if line.startswith("ASTERBENCH,")]
+        records = [fields_of(line) for line in lines if line.startswith("ASTERBENCH,version=9,")]
         for fields in records:
             check_model_config(model, int(fields["sync_memory"]), None, where)
             require(int(fields["l1"]) == COMMON["ENABLE_L1"], f"{where}: L1 setting differs")
@@ -201,9 +214,36 @@ def validate_capture(capture: dict, text: str, model: str, mnist_model: dict,
                             f"{where}: v9 {key}={actual} is not the last-layer value {value}")
         clocks = {int(fields["clock_hz"]) for fields in records}
         require(len(clocks) == 1, f"{where}: records disagree on clock_hz")
+        summaries = [line for line in lines if line.startswith("ASTERBENCH,version=11,")]
+        require(len(summaries) == 1, f"{where}: expected exactly one v11 summary record")
+        summary = v11.validate_line(summaries[0], name=f"mnist_mlp_{method}", category="ml")
+        check_model_config(model, summary["sync_memory"], summary["memory_wait"], where)
+        cycles_total = sum(r["h0_cycles"] for r in results)
+        require(summary["cycles"] == cycles_total,
+                f"{where}: v11 cycles {summary['cycles']} != sum of the v9 image windows {cycles_total}")
+        require(summary["checksum"] == mnist_checksum(mnist_model),
+                f"{where}: v11 checksum differs from the model's reference outputs")
+        require(summary["iterations"] == len(results) and summary["size"] == 784 and summary["param"] == 32,
+                f"{where}: v11 summary shape fields are wrong")
+        require(summary["workers"] == (2 if method == "multicore" else 1),
+                f"{where}: v11 worker count does not match the method")
+        require(summary["dma_jobs"] == 0 and summary["h1_dot8_accept"] == 0,
+                f"{where}: unexpected DMA or hart-1 DOT8 activity")
+        require((summary["h0_dot8_accept"] > 0) == (method == "dot8"),
+                f"{where}: DOT8 activity does not match the method")
+        if method == "npu":
+            require(summary["npu_jobs"] == len(MNIST_LAYERS) * len(results),
+                    f"{where}: expected two NPU jobs per image")
+            for key, value in sum_oracle(MNIST_LAYERS, len(results)).items():
+                require(summary[key] == value,
+                        f"{where}: v11 {key}={summary[key]} differs from oracle {value}")
+        else:
+            require(summary["npu_jobs"] == 0, f"{where}: non-NPU method reported NPU jobs")
         return {"clock_hz": clocks.pop(), "images": len(results),
                 "correct": sum(1 for r in results if r["class"] == r["label"]),
-                "h0_cycles_total": sum(r["h0_cycles"] for r in results)}
+                "h0_cycles_total": cycles_total,
+                "v11": {key: summary[key] for key in (
+                    "cycles", "retired", "npu_jobs", "npu_job_cycles", "npu_compute_cycles")}}
     record = v10.validate_line(text, name=capture["workload"])
     if capture["workload"] != "coremark":  # CoreMark self-checks its CRCs in firmware
         reference.verify(record, capture["workload"])
@@ -290,6 +330,11 @@ def summarize(bundle: Path) -> dict:
                     "correct": p[f"mnist_{method}"]["correct"],
                     "cycles_per_image": p[f"mnist_{method}"]["h0_cycles_total"] // p[f"mnist_{method}"]["images"],
                     "speedup_vs_scalar": round(scalar_mnist / p[f"mnist_{method}"]["h0_cycles_total"], 4),
+                    "retired_per_image": p[f"mnist_{method}"]["v11"]["retired"] // p[f"mnist_{method}"]["images"],
+                    "npu_busy_fraction": round(p[f"mnist_{method}"]["v11"]["npu_job_cycles"] /
+                                               p[f"mnist_{method}"]["v11"]["cycles"], 6),
+                    "npu_array_active_fraction": round(p[f"mnist_{method}"]["v11"]["npu_compute_cycles"] /
+                                                       p[f"mnist_{method}"]["v11"]["cycles"], 6),
                 } for method in MNIST_METHODS},
             "streaming_ecg": {
                 "cycles": p["streaming_ecg"]["cycles"],
