@@ -4,6 +4,11 @@
 Runs the streaming ECG heterogeneous pipeline on the Pynq-Z1 at 31.25 MHz,
 validates the v10 record with the strict validator and the independent oracle,
 and snapshots the stopped RAM.
+
+AsterBench v10 only: this historical v1 driver re-validates retained v10
+records. Coherent workloads emit v11 since Phase 17-A4, so a fresh capture from
+the current firmware fails with an explicit v11 message; new studies use the
+v11 tooling.
 """
 import argparse
 import json

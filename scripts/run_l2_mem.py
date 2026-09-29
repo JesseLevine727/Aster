@@ -4,6 +4,11 @@
 Runs a coherent AsterBench v10 workload on the L2-enabled Pynq-Z1 overlay at
 31.25 MHz, validates the emitted record with the strict v10 validator and the
 independent oracle, and snapshots the stopped RAM. It must run as root.
+
+AsterBench v10 only: this historical v1 driver re-validates retained v10
+records. Coherent workloads emit v11 since Phase 17-A4, so a fresh capture from
+the current firmware fails with an explicit v11 message; new studies use the
+v11 tooling.
 """
 import argparse
 import json

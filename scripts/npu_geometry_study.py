@@ -4,6 +4,11 @@
 Runs the engine scoreboard and the NPU convolution workload at 2x2, 4x4 and 8x8,
 retains the raw outputs, and checks that every geometry produces the same
 independent-oracle checksum.
+
+AsterBench v10 only: this historical v1 driver re-validates retained v10
+records. Coherent workloads emit v11 since Phase 17-A4, so a fresh capture from
+the current firmware fails with an explicit v11 message; new studies use the
+v11 tooling.
 """
 from __future__ import annotations
 

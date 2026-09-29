@@ -1,4 +1,4 @@
-// AsterBench v10: streaming ECG heterogeneous pipeline.
+// AsterBench v11: streaming ECG heterogeneous pipeline.
 // Per chunk: CPU stages a synthetic ECG-like sample window, DMA moves it,
 // Xasterdot8 runs the FIR filter, the CPU extracts features and the 4x4 NPU
 // classifies them. The primary hart orchestrates while the secondary runs the
@@ -82,12 +82,14 @@ int main(void) {
     __asm__ volatile ("fence rw,rw" ::: "memory");
 
     uint32_t checksum = 0;
+    struct aster_workload_engine_totals engines = {0};
     for (uint32_t chunk = 0; chunk < ECG_CHUNKS; ++chunk) {
         for (uint32_t i = 0; i < ECG_CHUNK; ++i) raw[i] = ecg_samples[chunk * ECG_CHUNK + i];
         __asm__ volatile ("fence rw,rw" ::: "memory");
         if (aster_dma_copy(dma_buf, raw, ECG_CHUNK, 8000000u) != ASTER_DMA_OK) {
             aster_puts("ECG DMA FAIL\n"); __asm__ volatile ("ebreak"); for (;;) {}
         }
+        aster_workload_add_dma_success(&engines, aster_dma_bytes_done(), aster_dma_job_cycles());
         __asm__ volatile ("fence rw,rw" ::: "memory");
         atomic_store_explicit(&ecg_done, 0u, memory_order_relaxed);
         atomic_store_explicit(&ecg_epoch, chunk + 1u, memory_order_release);
@@ -120,6 +122,8 @@ int main(void) {
         if (result == ASTER_NPU_PENDING) result = aster_npu_wait(8000000u, &status);
         else aster_npu_poll(&status);
         if (result != ASTER_NPU_OK) { aster_puts("ECG NPU FAIL\n"); __asm__ volatile ("ebreak"); for (;;) {} }
+        aster_workload_add_npu_success(&engines, status.bytes_read, status.bytes_written,
+                                       status.job_cycles, status.compute_cycles, status.tiles);
         int best = 0;
         for (uint32_t c = 1; c < ECG_CLASSES; ++c) if (scores[c] > scores[best]) best = (int)c;
 
@@ -131,7 +135,7 @@ int main(void) {
     }
     *(volatile uint32_t *)COH_CONTROL = 2u;
     __asm__ volatile ("fence rw,rw" ::: "memory");
-    aster_workload_emit_coh("streaming_ecg", "system", ECG_CHUNK, ECG_CHUNKS, ECG_COEF,
-                            ECG_SEED, checksum, 1u);
+    aster_workload_emit_coh_v11("streaming_ecg", "system", ECG_CHUNK, ECG_CHUNKS,
+                                ECG_COEF, 2u, ECG_SEED, checksum, 1u, &engines);
     for (;;) { }
 }

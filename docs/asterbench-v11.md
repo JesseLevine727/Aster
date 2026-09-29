@@ -1,9 +1,10 @@
 # AsterBench v11 — engine-attributed workload records
 
-Status: **Phase 17-A1 contract**. This specification defines the corrected
-coherent-SoC record before RTL counters, firmware emitters, or validators are
-changed. Existing AsterBench v2–v10 records and their historical meanings remain
-unchanged.
+Status: **implemented (Phase 17-A4)**. The coherent-SoC workloads (reduction,
+Conv2D engines, ECG, CIFAR) emit v11; `scripts/asterbench_v11.py` and
+`verification/common/asterbench_v11_record.h` validate it against one shared
+mutation corpus. Existing AsterBench v2–v10 records and their historical
+meanings remain unchanged.
 
 ## Purpose
 
@@ -51,7 +52,9 @@ lowercase hexadecimal digits after `0x`; every 64-bit field is exactly sixteen.
 Decimal fields use canonical unsigned decimal notation.
 
 `harts` is the elaborated hart count. `workers` is the number of harts assigned
-useful work for this workload, not merely the number of elaborated harts. Engine
+useful work for this workload, not merely the number of elaborated harts. The six
+CPU counters retain the v10 meanings and are read from the primary hart's counter
+bank. DOT8's four events are reported independently for each hart. Engine
 geometry, full memory capacities, L2 parameters, source revision, toolchain,
 compiler flags, and physical image identity are required in the capture manifest
 that accompanies the raw record; they are not inferred from a workload name.
@@ -61,8 +64,8 @@ that accompanies the raw record; they are not inferred from a workload name.
 | Field | Exact meaning |
 | --- | --- |
 | `cycles`, `retired` | Primary hart's common start-to-freeze window and non-trapping retired instructions, using the existing counter ABI semantics. |
-| `memory_transactions`, `backing_transactions` | Existing CPU request and backing-memory transaction counts; device engines retain separate requester-attributed fields below. |
-| `cache_accesses`, `cache_misses` | Existing combined primary-hart instruction/data cache events. Preserve the established event-window boundary semantics. |
+| `memory_transactions`, `backing_transactions` | Primary-hart CPU request and backing-memory transaction counts; device engines retain separate requester-attributed fields below. |
+| `cache_accesses`, `cache_misses` | Combined primary-hart instruction/data cache events, using the existing v10 counter mapping. |
 | `dma_jobs` | DMA START commands accepted during the workload. A rejected command is not a job; a started error/abort remains a job. |
 | `dma_completed_jobs`, `dma_aborted_jobs`, `dma_error_jobs` | Mutually exclusive terminal outcomes for accepted DMA jobs. At freeze their sum equals `dma_jobs`; a passing workload has all accepted jobs completed successfully. |
 | `dma_bytes` | Sum of `bytes_done` for each accepted DMA job, including the completed prefix of an aborted job. It is payload bytes owned by the DMA engine only; cache writebacks and NPU writes are excluded. |
@@ -92,6 +95,9 @@ must prove equality with the per-job sum.
 - `npu_compute_cycles <= npu_job_cycles`; all NPU totals are zero when
   `npu_jobs == 0`.
 - All DMA totals are zero when `dma_jobs == 0`.
+- `retired`, `memory_transactions`, `backing_transactions`, `cache_accesses`, and
+  `cache_misses` are bounded by `cycles`; `cache_misses <= cache_accesses`.
+- With one elaborated hart, h1 DOT8 activity events are zero.
 - An absent hart has zero DOT8 counters. A workload with no DOT8 instructions
   has all DOT8 counters zero.
 - In a successful DOT8-only interval, accepts, completes, and retires agree for
@@ -123,6 +129,6 @@ retained baseline.
   device traffic and verify byte ownership and cumulative totals.
 - Firmware migration follows only after the schema and scoreboards pass; all
   coherent workload records then use v11 consistently.
-- `make phase17-conv-matrix` is a same-top diagnostic until v11 counters and
-  retained provenance are complete. Do not use its present v10 output as a
-  Phase 17 accepted performance baseline.
+- `make phase17-conv-matrix` is a same-top v11 diagnostic until retained
+  provenance is complete. Do not treat its ignored `build/` output as an accepted
+  Phase 17 performance baseline.

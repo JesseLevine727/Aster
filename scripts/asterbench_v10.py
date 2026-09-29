@@ -66,6 +66,9 @@ def _parse_fields(line: str) -> dict[str, str]:
         require(key != "", "record field has an empty key")
         require(key not in fields, f"duplicate record field {key!r}")
         fields[key] = value
+    require(fields.get("version") != "11",
+            "AsterBench v11 record given to the v10 validator: coherent workloads emit v11 "
+            "since Phase 17-A4; validate it with scripts/asterbench_v11.py")
     require(set(fields) == ALL_FIELDS, "record fields do not match the v10 schema exactly")
     return fields
 

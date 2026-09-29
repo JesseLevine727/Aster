@@ -1,18 +1,22 @@
-# AsterBench workloads (v10)
+# AsterBench workloads (v10 and v11)
 
 AsterBench v10 is the generic workload record family added after the Phase 11
 closeout. It covers the README workload catalog beyond the phased experiments.
-Earlier record versions (v2–v9) are unchanged.
+Earlier record versions (v2–v9) are unchanged. Since Phase 17-A4 the
+`aster_minimal` workloads (strided, sort/search, FFT, `conv2d`, CoreMark,
+Dhrystone) still emit v10, while the coherent-SoC workloads (reduction, the
+Conv2D engines, ECG, CIFAR) emit [AsterBench v11](asterbench-v11.md), which adds
+per-hart DOT8 events and cumulative, requester-attributed DMA/NPU totals.
 
 Phase 17 adds `conv2d_scalar_coh` as an auxiliary same-top baseline for the
 coherent DOT8/NPU Conv2D runs. The original `conv2d` workload remains the legacy
 `aster_minimal` CPU data point; these two scalar results are not interchangeable.
-The corrected engine-attributed coherent record contract is
-[`AsterBench v11`](asterbench-v11.md); it preserves v10 record semantics.
 `scripts/phase17_conv_baseline.py` audits the coherent scalar/DOT8/NPU records as
-one matching diagnostic matrix.
+one matching diagnostic matrix, including NPU totals against an independent
+cumulative shape oracle.
 
-Each workload emits one line:
+Each v10 workload emits one line (the v11 field list is in
+[`asterbench-v11.md`](asterbench-v11.md#record-shape)):
 
 ```text
 ASTERBENCH,version=10,name=<name>,category=<cpu|memory|dsp|ml|system>,status=PASS,
@@ -23,9 +27,9 @@ backing_transactions=0x...,cache_accesses=0x...,cache_misses=0x...,dma_bytes=0x.
 accelerator_cycles=0x...
 ```
 
-`scripts/asterbench_v10.py` validates the structure strictly;
-`scripts/workload_reference.py` recomputes each workload's checksum
-independently. Run one workload with:
+`scripts/asterbench_v10.py` and `scripts/asterbench_v11.py` validate the
+structure strictly; `scripts/workload_reference.py verify [--version 11]`
+recomputes each workload's checksum independently. Run one workload with:
 
 ```sh
 make workload WORKLOAD=fft
@@ -79,10 +83,13 @@ configuration mismatches and DMA/NPU counter cross-attribution.
   the output is `DFT/N`. The firmware and the oracle use the identical integer
   operations.
 - **Reduction** reports the primary hart's counters; its cycles include the join
-  wait, so the wall-clock is captured. Per-hart fields are not part of v10.
+  wait, so the wall-clock is captured. CPU counters are the primary hart's; v11
+  adds per-hart DOT8 events only.
 - **Conv2D** engine variants materialize an im2col matrix in shared RAM; the
-  materialization cost is inside the measured window and is why `conv2d_dot8`
-  is slower than scalar for this shape.
+  materialization cost is inside the measured window. On the same coherent
+  top, `conv2d_dot8` is roughly equal to (slightly slower than) the coherent
+  scalar path; the older "0.59×" figure compared it with the `aster_minimal`
+  scalar run.
 - **Streaming ECG** is the heterogeneous demo (Phase 12). Each of the 16 chunks
   of 64 samples is staged by the CPU, moved by DMA, filtered by Xasterdot8, and
   classified by the NPU while the primary hart orchestrates and the secondary
@@ -90,11 +97,11 @@ configuration mismatches and DMA/NPU counter cross-attribution.
   record 100 MLII segment (samples 0–1023, ADC zero 1024, scale 4), baked by
   `scripts/gen_ecg_data.py` into `software/benchmarks/workload_ecg_data.h` and
   `docs/results/phase12/ecg_segment.json`. "Real time" means sustained per-chunk
-  throughput, not hard deadlines, because there are no interrupts or timers.
-  Post-P17-A2 captures attribute `dma_bytes` to accepted DMA payload bytes only;
-  historical v10 captures may include NPU device stores. v10
-  `accelerator_cycles` is the last NPU job's active-array cycles; v11 defines
-  cumulative per-window engine counters.
+  throughput, not hard deadlines: the workload does not use the Phase 12.5
+  timer or Phase 12.6 interrupts. Historical v10 captures may include NPU
+  device stores in `dma_bytes`, and v10 `accelerator_cycles` is the last NPU
+  job's active-array cycles; v11 records report cumulative, requester-owned
+  DMA and NPU totals.
 - **CIFAR-10** is a tiny quantized CNN: the 32×32 RGB input is downscaled 2×2
   to 16×16 to fit the 32 KiB NPU-visible RAM, and the network is two 3×3
   convolutions (3→16, 16→32), each with ReLU and 2×2 max pool, and a 128→10
@@ -108,6 +115,6 @@ configuration mismatches and DMA/NPU counter cross-attribution.
 ## Provenance
 
 `vendor/coremark/` and `vendor/dhrystone/` retain their upstream sources and
-`UPSTREAM.md`; the Aster ports live under `software/benchmarks/`. The v10 record
-binds the clock, cache geometry and memory timing so a captured record is
-self-describing.
+`UPSTREAM.md`; the Aster ports live under `software/benchmarks/`. v10 and v11
+records bind the clock, cache geometry and memory timing so a captured record
+is self-describing.

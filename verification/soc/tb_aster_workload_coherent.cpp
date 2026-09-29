@@ -5,8 +5,9 @@
 #include <stdexcept>
 #include <string>
 
-// Coherent-SoC harness for generic AsterBench v10 records (parallel reduction).
-// Prints the single serial record; scripts/asterbench_v10.py validates it.
+// Coherent-SoC harness for the AsterBench v11 coherent workloads (reduction,
+// Conv2D engines, ECG, CIFAR). Prints the serial record; scripts/asterbench_v11.py
+// validates it.
 
 int main(int argc, char** argv) {
     try {

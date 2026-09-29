@@ -1,4 +1,4 @@
-// AsterBench v10: engine-accelerated 2D convolution on the coherent SoC.
+// AsterBench v11: engine-accelerated 2D convolution on the coherent SoC.
 // The signed-INT8 convolution is lowered to an im2col GEMM and executed by the
 // coherent scalar path (CONV_ENGINE=2), Xasterdot8 (CONV_ENGINE=0), or the
 // 4x4 NPU (CONV_ENGINE=1). All paths use the same coherent SoC and independent
@@ -56,7 +56,8 @@ static void build_inputs(void) {
     }
 }
 
-static int run_engine(void) {
+static int run_engine(struct aster_workload_engine_totals *engines) {
+    (void)engines;
 #if CONV_ENGINE == 2
     // Scalar reference path on the coherent SoC, so the same gate-level
     // netlist can produce the CPU baseline for the cross-engine check.
@@ -74,7 +75,10 @@ static int run_engine(void) {
     enum aster_npu_result result = aster_npu_submit(&job);
     if (result == ASTER_NPU_PENDING) result = aster_npu_wait(8000000u, &status);
     else aster_npu_poll(&status);
-    return result == ASTER_NPU_OK ? 0 : -1;
+    if (result != ASTER_NPU_OK) return -1;
+    aster_workload_add_npu_success(engines, status.bytes_read, status.bytes_written,
+                                   status.job_cycles, status.compute_cycles, status.tiles);
+    return 0;
 #else
     xe_dot8_gemm(&job);
     return 0;
@@ -89,24 +93,28 @@ int main(void) {
     *(volatile uint32_t *)COH_CONTROL = 1u;
     __asm__ volatile ("fence rw,rw" ::: "memory");
     uint32_t checksum = 0;
+    struct aster_workload_engine_totals engines = {0};
     for (uint32_t iteration = 0; iteration < CONV_ITERATIONS; ++iteration) {
         build_inputs();
         __asm__ volatile ("fence rw,rw" ::: "memory");
-        if (run_engine()) { aster_puts("CONV ENGINE FAIL\n"); __asm__ volatile ("ebreak"); for (;;) {} }
+        if (run_engine(&engines)) { aster_puts("CONV ENGINE FAIL\n"); __asm__ volatile ("ebreak"); for (;;) {} }
         __asm__ volatile ("fence rw,rw" ::: "memory");
         for (uint32_t i = 0; i < CONV_M; ++i) checksum = (checksum * 33u) ^ (uint32_t)output[i];
     }
     *(volatile uint32_t *)COH_CONTROL = 2u;
     __asm__ volatile ("fence rw,rw" ::: "memory");
 #if CONV_ENGINE == 1
-    aster_workload_emit_coh("conv2d_npu", "dsp", CONV_H * CONV_W, CONV_ITERATIONS, CONV_K,
-                            CONV_SEED, checksum, 1u);
+    aster_workload_emit_coh_v11("conv2d_npu", "dsp", CONV_H * CONV_W,
+                                CONV_ITERATIONS, CONV_K, 1u, CONV_SEED,
+                                checksum, 1u, &engines);
 #elif CONV_ENGINE == 2
-    aster_workload_emit_coh("conv2d_scalar_coh", "dsp", CONV_H * CONV_W, CONV_ITERATIONS, CONV_K,
-                            CONV_SEED, checksum, 1u);
+    aster_workload_emit_coh_v11("conv2d_scalar_coh", "dsp", CONV_H * CONV_W,
+                                CONV_ITERATIONS, CONV_K, 1u, CONV_SEED,
+                                checksum, 1u, &engines);
 #else
-    aster_workload_emit_coh("conv2d_dot8", "dsp", CONV_H * CONV_W, CONV_ITERATIONS, CONV_K,
-                            CONV_SEED, checksum, 1u);
+    aster_workload_emit_coh_v11("conv2d_dot8", "dsp", CONV_H * CONV_W,
+                                CONV_ITERATIONS, CONV_K, 1u, CONV_SEED,
+                                checksum, 1u, &engines);
 #endif
     for (;;) { }
 }

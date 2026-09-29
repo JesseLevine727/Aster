@@ -1,4 +1,4 @@
-// AsterBench v10: tiny quantized CIFAR-10 CNN (two conv layers) on the NPU SoC.
+// AsterBench v11: tiny quantized CIFAR-10 CNN (two conv layers) on the NPU SoC.
 // Per image: im2col + NPU conv1, requant + ReLU + 2x2 pool, im2col + NPU conv2,
 // requant + ReLU + 2x2 pool, then an NPU fully-connected layer and argmax.
 #include <stdint.h>
@@ -54,12 +54,15 @@ static int8_t requant(int32_t accumulator, int32_t mult, int shift, int32_t bias
 static void copy_bytes(int8_t *destination, const int8_t *source, uint32_t length) {
     for (uint32_t i = 0; i < length; ++i) destination[i] = source[i];
 }
-static int run_npu(struct aster_npu_gemm *job) {
+static int run_npu(struct aster_npu_gemm *job, struct aster_workload_engine_totals *engines) {
     struct aster_npu_status status;
     enum aster_npu_result result = aster_npu_submit(job);
     if (result == ASTER_NPU_PENDING) result = aster_npu_wait(8000000u, &status);
     else aster_npu_poll(&status);
-    return result == ASTER_NPU_OK ? 0 : -1;
+    if (result != ASTER_NPU_OK) return -1;
+    aster_workload_add_npu_success(engines, status.bytes_read, status.bytes_written,
+                                   status.job_cycles, status.compute_cycles, status.tiles);
+    return 0;
 }
 
 // im2col over a CxHxW int8 plane set into a C*9-wide matrix.
@@ -91,6 +94,9 @@ int main(void) {
     *(volatile uint32_t *)COH_CONTROL = 1u;
     __asm__ volatile ("fence rw,rw" ::: "memory");
     uint32_t checksum = 0, mismatches = 0;
+    // static: zero-initialised by the start-up .bss clear; an automatic `= {0}`
+    // of this size makes GCC call memset, which the freestanding build lacks.
+    static struct aster_workload_engine_totals engines;
     for (uint32_t item = 0; item < CIFAR_TEST_COUNT; ++item) {
         copy_bytes(image, &cifar_test_images[item * 3u * CIFAR_H * CIFAR_H], sizeof image);
         __asm__ volatile ("fence rw,rw" ::: "memory");
@@ -100,7 +106,7 @@ int main(void) {
         struct aster_npu_gemm conv1_job = {im2col, conv1_weights_b, conv_acc,
                                            CIFAR_CONV1_K, CIFAR_CONV1_OUT, 4u * CIFAR_CONV1_OUT,
                                            C1_M, CIFAR_CONV1_OUT, CIFAR_CONV1_K};
-        if (run_npu(&conv1_job)) { aster_puts("CIFAR CONV1 FAIL\n"); __asm__ volatile ("ebreak"); for (;;) {} }
+        if (run_npu(&conv1_job, &engines)) { aster_puts("CIFAR CONV1 FAIL\n"); __asm__ volatile ("ebreak"); for (;;) {} }
         for (uint32_t row = 0; row < C1_M; ++row)
             for (uint32_t n = 0; n < CIFAR_CONV1_OUT; ++n) {
                 int8_t value = requant(conv_acc[row * CIFAR_CONV1_OUT + n], CIFAR_CONV1_MULT,
@@ -125,7 +131,7 @@ int main(void) {
         struct aster_npu_gemm conv2_job = {im2col, conv2_weights_b, conv_acc,
                                            CIFAR_CONV2_K, CIFAR_CONV2_OUT, 4u * CIFAR_CONV2_OUT,
                                            C2_M, CIFAR_CONV2_OUT, CIFAR_CONV2_K};
-        if (run_npu(&conv2_job)) { aster_puts("CIFAR CONV2 FAIL\n"); __asm__ volatile ("ebreak"); for (;;) {} }
+        if (run_npu(&conv2_job, &engines)) { aster_puts("CIFAR CONV2 FAIL\n"); __asm__ volatile ("ebreak"); for (;;) {} }
         for (uint32_t row = 0; row < C2_M; ++row)
             for (uint32_t n = 0; n < CIFAR_CONV2_OUT; ++n) {
                 int8_t value = requant(conv_acc[row * CIFAR_CONV2_OUT + n], CIFAR_CONV2_MULT,
@@ -147,7 +153,7 @@ int main(void) {
 
         struct aster_npu_gemm fc_job = {fc_weights, pool2, fc_acc, CIFAR_FC_IN, 1u, 4u,
                                         CIFAR_FC_OUT, 1u, CIFAR_FC_IN};
-        if (run_npu(&fc_job)) { aster_puts("CIFAR FC FAIL\n"); __asm__ volatile ("ebreak"); for (;;) {} }
+        if (run_npu(&fc_job, &engines)) { aster_puts("CIFAR FC FAIL\n"); __asm__ volatile ("ebreak"); for (;;) {} }
         int best = 0;
         for (uint32_t o = 0; o < CIFAR_FC_OUT; ++o) {
             logits[o] = requant(fc_acc[o], CIFAR_FC_MULT, CIFAR_FC_SHIFT, fc_bias_q[o]);
@@ -159,7 +165,8 @@ int main(void) {
     }
     *(volatile uint32_t *)COH_CONTROL = 2u;
     __asm__ volatile ("fence rw,rw" ::: "memory");
-    aster_workload_emit_coh("cifar_cnn", "ml", 3u * CIFAR_H * CIFAR_H, CIFAR_TEST_COUNT,
-                            CIFAR_CONV1_OUT, 0u, checksum, mismatches == 0u ? 1u : 0u);
+    aster_workload_emit_coh_v11("cifar_cnn", "ml", 3u * CIFAR_H * CIFAR_H,
+                                CIFAR_TEST_COUNT, CIFAR_CONV1_OUT, 1u, 0u,
+                                checksum, mismatches == 0u ? 1u : 0u, &engines);
     for (;;) { }
 }

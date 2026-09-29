@@ -5,6 +5,11 @@ Programs the overlay once, then for each target frequency sets FCLK0, runs a
 workload with the CPU restarted cleanly, and records whether the independent
 oracle checksum still matches. The highest passing frequency is the measured
 operating ceiling. It must run as root.
+
+AsterBench v10 only: this historical v1 driver re-validates retained v10
+records. Coherent workloads emit v11 since Phase 17-A4, so a fresh capture from
+the current firmware fails with an explicit v11 message; new studies use the
+v11 tooling.
 """
 import argparse
 import json

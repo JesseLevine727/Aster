@@ -1,9 +1,10 @@
 #!/usr/bin/env python3
-"""Independent checksum oracle for the generic AsterBench v10 workloads.
+"""Independent checksum oracle for the generic AsterBench v10/v11 workloads.
 
 Recomputes each workload's expected checksum from its size, iteration count,
 parameter and seed, and compares it against the emitted record. This is the
-host reference the structural validator intentionally does not carry.
+host reference the structural validator intentionally does not carry. Use
+`--version 11` for the coherent-SoC workloads, which emit v11 records.
 """
 from __future__ import annotations
 
@@ -237,19 +238,24 @@ def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("action", choices=["verify"])
     parser.add_argument("--name")
+    parser.add_argument("--version", type=int, choices=(10, 11), default=10,
+                        help="record schema to validate (default: 10)")
     args = parser.parse_args()
+    validator = bench
+    if args.version == 11:
+        import asterbench_v11 as validator
     try:
-        records = [bench.validate_line(line if line.endswith("\n") else line + "\n")
+        records = [validator.validate_line(line if line.endswith("\n") else line + "\n")
                    for line in sys.stdin if line.strip()]
-        require = bench.require
-        require(records, "no v10 records were provided")
+        require = validator.require
+        require(records, f"no v{args.version} records were provided")
         for record in records:
             verify(record, args.name)
-    except bench.ValidationError as error:
+    except ValueError as error:
         sys.stderr.write(f"FAIL: {error}\n")
         return 1
     for record in records:
-        print(f"PASS: v10 {record['name']} checksum={record['checksum']:#010x} "
+        print(f"PASS: v{args.version} {record['name']} checksum={record['checksum']:#010x} "
               f"matches independent oracle")
     return 0
 

@@ -73,11 +73,12 @@ memory interface, and gives the accelerator a data path that can feed it.
 The published Conv2D ratios compared a scalar run on `aster_minimal` with
 DOT8/NPU runs on the coherent SoC, and every simulation used asynchronous,
 zero-wait memory that no physical target has. On one coherent SoC with the same
-input, the NPU is **2.07×** and DOT8 **0.98×** relative to scalar (not 1.24× and
+input, the NPU is **2.06×** and DOT8 **0.96×** relative to scalar (not 1.24× and
 0.59×). The v10 `dma_bytes` field also counted NPU stores, and
-`accelerator_cycles` reported only the last NPU job. Phase 17-A1–A3 fixed the
-attribution in RTL and added independent scoreboards; corrected v11 records land
-in Phase 17-A4.
+`accelerator_cycles` reported only the last NPU job. Phase 17-A1–A4 fixed the
+attribution in RTL, added independent scoreboards, and moved the coherent
+workloads to corrected v11 records; the v11 Conv2D record shows the NPU array
+computing in 0.42% of the workload's cycles.
 
 ## v2 performance targets
 
@@ -154,10 +155,10 @@ The [detailed Phase 17+ plan](docs/phase17-plus.md) specifies the diagnosis,
 CPU specification, workload matrices, record contents, verification levels,
 frequency feasibility checks, and phase-by-phase acceptance gates. It was
 revised on 29 September 2026; its final section records what changed and why.
-Phase 17 is active: A1–A3 are complete (v11 contract, DMA requester attribution,
-independent counter scoreboards), and the [Phase 17 TODO](docs/phase17-todo.md)
-lists the remaining items, starting with the
-[AsterBench v11](docs/asterbench-v11.md) emitters and validators.
+Phase 17 is active: A1–A4 are complete ([AsterBench v11](docs/asterbench-v11.md)
+contract, DMA requester attribution, independent counter scoreboards, v11
+emitters and validators), and the [Phase 17 TODO](docs/phase17-todo.md) lists the
+remaining items, starting with one retained same-top v1 baseline.
 
 ## Historical phase links
 

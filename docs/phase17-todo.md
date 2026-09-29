@@ -30,19 +30,44 @@ documents that link to them.
   oracle; the arbiter test holds the requester tag across a stall. Verified with
   the full `make check` (204 PASS, 257 host tests).
 
+- [x] **P17-A4 — v11 record support and aggregation.** Verified with the full
+  `make check` (207 PASS, 260 host tests).
+  - [x] Coherent workloads (reduction, Conv2D engines, ECG, CIFAR) emit v11,
+    summing DMA `bytes_done`/job cycles and NPU bytes/tiles/job/compute cycles
+    over every job, and reading each hart's DOT8 event bank after freeze.
+  - [x] The strict Python validator and C++ parser share one valid/malformed
+    mutation corpus (it caught the C++ parser accepting a trailing comma).
+  - [x] v2–v10 validators and fixtures still pass; the six historical v10
+    capture/study drivers reject a v11 record with an explicit message.
+  - [x] The same-top matrix audit checks NPU totals against an independent
+    cumulative shape oracle, so a last-job-only total fails.
+
 Same-top diagnostic (default RTL configuration: 31.25 MHz, L1 on, asynchronous
 zero-wait memory, two-hart coherent all-engine top, 32×32/K=5 input; all
-checksums `0x07df8000`). These are v10 diagnostics in ignored `build/`, not
-retained evidence:
+checksums `0x07df8000`). These are development records in ignored `build/`, not
+retained evidence (that is P17-A5/A6):
 
-| Method | Cycles | Ratio vs coherent scalar |
-| --- | ---: | ---: |
-| Coherent scalar | 9,586,170 | 1.00× |
-| DOT8 | 9,786,108 | 0.98× |
-| NPU | 4,636,733 | 2.07× |
+| Method | Cycles (v11 firmware) | Ratio vs coherent scalar | Cycles (v10 firmware) |
+| --- | ---: | ---: | ---: |
+| Coherent scalar | 9,586,170 | 1.00× | 9,586,170 |
+| DOT8 | 10,016,476 | 0.96× | 9,786,108 |
+| NPU | 4,644,700 | 2.06× | 4,636,733 |
 
-The old 1.24× headline used a scalar run on `aster_minimal`. The v10 NPU
-`accelerator_cycles` field reports only the last of four jobs (4,900 cycles).
+The old 1.24× headline used a scalar run on `aster_minimal`. The DOT8 build
+retires exactly the same 1,145,218 instructions under both firmware versions, so
+its 2.4% cycle difference is a code-layout timing effect (mechanism not yet
+isolated); the NPU difference is the per-job status reads now inside the window.
+
+What the v11 records show:
+
+- NPU Conv2D: 4 jobs, 784 tiles, 98,000 bytes read, 12,544 bytes written, and
+  19,600 array-step cycles — exactly the shape oracle. The NPU is busy for
+  1,345,796 cycles, but its array computes in only 0.42% of the workload's
+  cycles, and with N=1 only 4 of 16 PEs do useful work (25% when active).
+- CIFAR: 60 NPU jobs writing 315,680 bytes — the amount v10 misreported as
+  `dma_bytes` — with the array computing in 274,800 of 28.1 M NPU-busy cycles.
+- ECG: 16 DMA jobs moving exactly 1,024 bytes, DOT8 on hart 1 only, and 16 NPU
+  jobs writing 192 bytes.
 
 ## Open, in order
 
@@ -56,18 +81,6 @@ The old 1.24× headline used a scalar run on `aster_minimal`. The v10 NPU
     `memguard.sh -- run_asic.py` example deadlocked on the nested lock); FPGA
     results are not called "silicon"; `docs/l2.md` matches the RTL.
   - [x] Stray tracked files are removed.
-- [ ] **P17-A4 — v11 record support and aggregation.**
-  - [ ] Coherent workloads (reduction, Conv2D engines, ECG, CIFAR) emit v11,
-    summing DMA `bytes_done`/job cycles and NPU bytes/tiles/job/compute cycles
-    over every job, and reading each hart's DOT8 event bank after freeze.
-  - [ ] Strict Python validator and C++ parser share one valid/malformed
-    mutation corpus that rejects omitted, duplicated, unknown, misattributed,
-    and non-cumulative engine fields.
-  - [ ] v2–v10 validators and fixtures still pass; capture/study scripts that
-    only understand v10 either accept v11 or fail with an explicit v10-only
-    message.
-  - [ ] The same-top matrix audit and workload oracles run on v11 records;
-    `make check` passes.
 - [ ] **P17-A5/A6 — One retained same-top v1 baseline.** Scalar, multicore,
   DOT8, and NPU for Conv2D, reduction, MNIST MLP, ECG, and CIFAR on the
   all-engine coherent SoC, captured under the physical synchronous one-wait

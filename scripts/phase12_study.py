@@ -4,6 +4,11 @@
 Runs the heterogeneous pipeline on the all-engine SoC, validates every record
 with the strict v10 validator and the independent pipeline oracle, and retains
 independently fresh repeats.
+
+AsterBench v10 only: this historical v1 driver re-validates retained v10
+records. Coherent workloads emit v11 since Phase 17-A4, so a fresh capture from
+the current firmware fails with an explicit v11 message; new studies use the
+v11 tooling.
 """
 from __future__ import annotations
 

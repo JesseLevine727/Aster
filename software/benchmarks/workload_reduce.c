@@ -1,4 +1,4 @@
-// AsterBench v10: parallel reduction on the coherent RV32IMA SoC.
+// AsterBench v11: parallel reduction on the coherent RV32IMA SoC.
 // One or two harts sum disjoint halves of a shared-RAM array; the secondary
 // publishes its partial and the primary combines. The host oracle recomputes
 // the exact total independently.
@@ -62,6 +62,7 @@ int main(void) {
     __asm__ volatile ("fence rw,rw" ::: "memory");
 
     uint32_t checksum = 0;
+    struct aster_workload_engine_totals engines = {0};
     for (uint32_t iteration = 1; iteration <= REDUCE_ITERATIONS; ++iteration) {
         for (uint32_t i = 0; i < REDUCE_WORDS; ++i) array[i] = REDUCE_SEED ^ (i * 0x1021u);
         __asm__ volatile ("fence rw,rw" ::: "memory");
@@ -82,11 +83,13 @@ int main(void) {
     __asm__ volatile ("fence rw,rw" ::: "memory");
 
 #if REDUCE_WORKERS == 2
-    aster_workload_emit_coh("reduce_parallel", "cpu", REDUCE_WORDS * 4u, REDUCE_ITERATIONS,
-                            2u, REDUCE_SEED, checksum, 1u);
+    aster_workload_emit_coh_v11("reduce_parallel", "cpu", REDUCE_WORDS * 4u,
+                                REDUCE_ITERATIONS, 2u, REDUCE_WORKERS,
+                                REDUCE_SEED, checksum, 1u, &engines);
 #else
-    aster_workload_emit_coh("reduce_scalar", "cpu", REDUCE_WORDS * 4u, REDUCE_ITERATIONS,
-                            1u, REDUCE_SEED, checksum, 1u);
+    aster_workload_emit_coh_v11("reduce_scalar", "cpu", REDUCE_WORDS * 4u,
+                                REDUCE_ITERATIONS, 1u, REDUCE_WORKERS,
+                                REDUCE_SEED, checksum, 1u, &engines);
 #endif
     for (;;) { }
 }

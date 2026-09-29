@@ -1676,8 +1676,8 @@ $(REDUCE_SIM): $(RTL_COHERENT) verification/soc/tb_aster_workload_coherent.cpp M
 
 reduce: $(REDUCE_SIM) $(REDUCE_HEX)
 	@$(REDUCE_SIM) +rom=$(REDUCE_HEX) +ram_fill=a5a5a5a5 > $(BUILD_DIR)/$(REDUCE_NAME).record
-	@$(PYTHON) scripts/asterbench_v10.py validate --name $(REDUCE_NAME) < $(BUILD_DIR)/$(REDUCE_NAME).record
-	@$(PYTHON) scripts/workload_reference.py verify --name $(REDUCE_NAME) < $(BUILD_DIR)/$(REDUCE_NAME).record
+	@$(PYTHON) scripts/asterbench_v11.py validate --name $(REDUCE_NAME) < $(BUILD_DIR)/$(REDUCE_NAME).record
+	@$(PYTHON) scripts/workload_reference.py verify --version 11 --name $(REDUCE_NAME) < $(BUILD_DIR)/$(REDUCE_NAME).record
 
 CONV_ENGINE ?= npu
 ifeq ($(filter $(CONV_ENGINE),dot8 npu scalar_coh),)
@@ -1706,8 +1706,8 @@ conv-engine-firmware: $(CONV_HEX)
 
 conv-engine: $(REDUCE_SIM) $(CONV_HEX)
 	@$(REDUCE_SIM) +rom=$(CONV_HEX) +ram_fill=a5a5a5a5 > $(BUILD_DIR)/$(CONV_NAME).record
-	@$(PYTHON) scripts/asterbench_v10.py validate --name $(CONV_NAME) < $(BUILD_DIR)/$(CONV_NAME).record
-	@$(PYTHON) scripts/workload_reference.py verify --name $(CONV_NAME) < $(BUILD_DIR)/$(CONV_NAME).record
+	@$(PYTHON) scripts/asterbench_v11.py validate --name $(CONV_NAME) < $(BUILD_DIR)/$(CONV_NAME).record
+	@$(PYTHON) scripts/workload_reference.py verify --version 11 --name $(CONV_NAME) < $(BUILD_DIR)/$(CONV_NAME).record
 
 .PHONY: phase17-conv-matrix
 phase17-conv-matrix:
@@ -1743,8 +1743,8 @@ ecg-firmware: $(ECG_HEX)
 
 ecg: $(REDUCE_SIM) $(ECG_HEX)
 	@$(REDUCE_SIM) +rom=$(ECG_HEX) +ram_fill=a5a5a5a5 > $(BUILD_DIR)/streaming_ecg.record
-	@$(PYTHON) scripts/asterbench_v10.py validate --name streaming_ecg < $(BUILD_DIR)/streaming_ecg.record
-	@$(PYTHON) scripts/workload_reference.py verify --name streaming_ecg < $(BUILD_DIR)/streaming_ecg.record
+	@$(PYTHON) scripts/asterbench_v11.py validate --name streaming_ecg < $(BUILD_DIR)/streaming_ecg.record
+	@$(PYTHON) scripts/workload_reference.py verify --version 11 --name streaming_ecg < $(BUILD_DIR)/streaming_ecg.record
 
 CIFAR_FW_DIR := $(HELLO_DIR)/cifar_cnn
 CIFAR_ELF := $(CIFAR_FW_DIR)/cifar.elf
@@ -1772,7 +1772,7 @@ cifar-firmware: $(CIFAR_HEX)
 
 cifar: $(REDUCE_SIM) $(CIFAR_HEX)
 	@$(REDUCE_SIM) +rom=$(CIFAR_HEX) +ram_fill=a5a5a5a5 > $(BUILD_DIR)/cifar_cnn.record
-	@$(PYTHON) scripts/asterbench_v10.py validate --name cifar_cnn < $(BUILD_DIR)/cifar_cnn.record
+	@$(PYTHON) scripts/asterbench_v11.py validate --name cifar_cnn < $(BUILD_DIR)/cifar_cnn.record
 	@$(PYTHON) scripts/cifar_reference.py docs/results/workloads/cifar_model.json --record $(BUILD_DIR)/cifar_cnn.record
 
 .PHONY: workloads
