@@ -1716,6 +1716,15 @@ phase17-conv-matrix:
 	done
 	@$(PYTHON) scripts/phase17_conv_baseline.py --records-dir $(BUILD_DIR)
 
+# P17-A5/A6: capture the retained same-top v1 baseline (from a clean, committed
+# tree) and audit the retained bundle read-only.
+.PHONY: phase17-baseline phase17-baseline-audit
+phase17-baseline:
+	$(PYTHON) scripts/phase17_baseline.py
+
+phase17-baseline-audit:
+	@$(PYTHON) scripts/audit_phase17_baseline.py
+
 ECG_CHUNKS ?= 16
 ECG_CHUNK ?= 64
 ECG_COEF ?= 16
@@ -2073,7 +2082,11 @@ parallel-workloads:
 
 test: smoke phase1 hello bench cache uart fpga-sim linux-sim counters retirement npu-pe npu-array npu-engine npu-regs npu-driver npu-runtime npu-stop npu-bench-validate arbiter shared-fabric multicore-runtime parallel
 
-check: tools smoke phase1 hello bench cache uart fpga-sim linux-sim linux-dual-sim linux-coherent-sim counters retirement pcpi-probe dot8-unit npu-pe npu-array npu-engine npu-regs device-arbiter dma-counters l2-unit npu-driver npu-runtime npu-stop npu-bench-validate xe-bench-validate phase11-infer workloads atomic-fabric atomic-runtime atomic-faults coherent-cache warm-stop coherent-counters coherent-soc timer-unit timer-firmware irq-unit timer-interrupt sram-unit sram-lint freeze-interfaces coherent-bench riscv-reference riscv-reference-negative coherent-litmus arbiter shared-fabric multicore-runtime multicore-adversarial parallel
+check: tools smoke phase1 hello bench cache uart fpga-sim linux-sim linux-dual-sim linux-coherent-sim counters retirement pcpi-probe dot8-unit npu-pe npu-array npu-engine npu-regs device-arbiter dma-counters l2-unit npu-driver npu-runtime npu-stop npu-bench-validate xe-bench-validate phase11-infer workloads atomic-fabric atomic-runtime atomic-faults coherent-cache warm-stop coherent-counters coherent-soc timer-unit timer-firmware irq-unit timer-interrupt sram-unit sram-lint freeze-interfaces coherent-bench riscv-reference riscv-reference-negative coherent-litmus arbiter shared-fabric multicore-runtime multicore-adversarial parallel phase17-baseline-audit
+
+# Print a make variable (used by scripts/phase17_baseline.py to find firmware images).
+print-%:
+	@echo '$($*)'
 
 clean:
 	rm -rf $(BUILD_DIR)
