@@ -1,6 +1,11 @@
 # Phase 13: Freeze Aster v1
 
-Status: **in progress**.
+Status: **closed** — Aster v1.0 was frozen at tag `v1.0` (`b050a81`); the
+evidence is the audited bundle
+[`closeout-v1.0`](results/phase13/closeout-v1.0/README.md) (`scripts/audit_v1.py`).
+The checklist below is the original contract and was not ticked at the time;
+the bundle's four audited requirements (frozen specification, interface guard,
+clean `make check`, source and tag) carry the evidence.
 Baseline: pushed Phase 12.6 closeout `ca43eca`.
 
 Phase 13 stops feature development and stabilizes the architecture, software,

@@ -1,6 +1,11 @@
 # Phase 14: Design-space exploration
 
-Status: **in progress**.
+Status: **complete** — closed by the audited bundle
+[`closeout-b050a81`](results/phase14/closeout-b050a81/README.md)
+(`scripts/audit_phase14.py`). Stage 14.5 (NPU geometry) was delivered as
+[v1.2](npu-geometry.md). Except where a sweep varies memory wait, its studies
+use the zero-wait simulation model, which no physical target implements; see
+the [v2 plan](phase17-plus.md#simulated-memory-must-match-a-physical-target).
 Baseline: frozen Aster v1.0 at tag `v1.0` (`b050a81`).
 
 Phase 14 varies the frozen v1.0 parameters rather than adding features. The

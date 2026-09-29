@@ -281,7 +281,9 @@ WORKLOAD_CFLAGS = $(HELLO_CFLAGS) -Isoftware/benchmarks \
 WORKLOAD_FW_DIR := $(HELLO_DIR)/workload_$(WORKLOAD)_r$(WORKLOAD_REPETITIONS)_s$(WORKLOAD_SEED)
 WORKLOAD_ELF := $(WORKLOAD_FW_DIR)/workload.elf
 WORKLOAD_HEX := $(WORKLOAD_FW_DIR)/workload.hex
-WORKLOAD_SIM := $(BUILD_DIR)/aster_workload_sim
+# Config-tagged so a changed memory/cache configuration never reuses a stale binary.
+WORKLOAD_SIM_DIR := $(BUILD_DIR)/workload_$(CONFIG_TAG)
+WORKLOAD_SIM := $(WORKLOAD_SIM_DIR)/aster_workload_sim
 PERF_SIM := $(BUILD_DIR)/aster_perf_sim
 TIMER_SIM := $(BUILD_DIR)/aster_timer_sim
 IRQ_SIM := $(BUILD_DIR)/aster_irq_sim
@@ -1552,11 +1554,12 @@ $(WORKLOAD_HEX): $(WORKLOAD_ELF) scripts/elf_to_hex.py
 workload-firmware: $(WORKLOAD_HEX)
 
 $(WORKLOAD_SIM): $(RTL_CORE) $(RTL_CACHE) $(RTL_MEMORY) $(RTL_PERIPHERALS) $(RTL_SOC) verification/soc/tb_aster_workload.cpp Makefile
+	mkdir -p $(WORKLOAD_SIM_DIR)
 	$(VERILATOR) --cc --exe --build --timing --Wall --Wno-fatal \
 		$(VERILATOR_VENDOR_LINT_FLAGS) --top-module aster_minimal \
 		"-GENABLE_L1=1'b$(ENABLE_L1)" "-GSYNC_MEMORY=1'b$(SYNC_MEMORY)" \
 		-GMEMORY_WAIT_CYCLES=$(MEMORY_WAIT_CYCLES) -GL1_LINE_WORDS=$(L1_LINE_WORDS) -GL1_LINE_COUNT=$(L1_LINE_COUNT) \
-		--Mdir $(BUILD_DIR)/obj_workload -o $(abspath $@) \
+		--Mdir $(WORKLOAD_SIM_DIR)/obj -o $(abspath $@) \
 		$(addprefix $(ROOT)/,$(RTL_CORE) $(RTL_CACHE) $(RTL_MEMORY) $(RTL_PERIPHERALS) $(RTL_SOC)) \
 		$(ROOT)/verification/soc/tb_aster_workload.cpp
 
@@ -1640,7 +1643,9 @@ REDUCE_NAME := $(if $(filter 2,$(REDUCE_WORKERS)),reduce_parallel,reduce_scalar)
 REDUCE_FW_DIR := $(HELLO_DIR)/$(REDUCE_NAME)_w$(REDUCE_WORDS)_i$(REDUCE_ITERATIONS)
 REDUCE_ELF := $(REDUCE_FW_DIR)/reduce.elf
 REDUCE_HEX := $(REDUCE_FW_DIR)/reduce.hex
-REDUCE_SIM := $(BUILD_DIR)/aster_workload_coherent_sim
+# Config-tagged: every -G parameter of the coherent workload simulator is in the path.
+REDUCE_SIM_DIR := $(BUILD_DIR)/workload_coherent_h$(HART_COUNT)_$(CONFIG_TAG)_l2$(ENABLE_L2)w$(L2_LINE_WORDS)n$(L2_LINE_COUNT)_npu$(NPU_ROWS)x$(NPU_COLS)
+REDUCE_SIM := $(REDUCE_SIM_DIR)/aster_workload_coherent_sim
 REDUCE_CFLAGS = $(filter-out -march=% -mabi=%,$(HELLO_CFLAGS)) -march=rv32ima -mabi=ilp32 \
 	-Isoftware/drivers -Isoftware/benchmarks -Isoftware/runtime \
 	-DREDUCE_WORKERS=$(REDUCE_WORKERS) -DREDUCE_WORDS=$(REDUCE_WORDS) -DREDUCE_ITERATIONS=$(REDUCE_ITERATIONS)
@@ -1658,6 +1663,7 @@ $(REDUCE_HEX): $(REDUCE_ELF) scripts/elf_to_hex.py
 reduce-firmware: $(REDUCE_HEX)
 
 $(REDUCE_SIM): $(RTL_COHERENT) verification/soc/tb_aster_workload_coherent.cpp Makefile
+	mkdir -p $(REDUCE_SIM_DIR)
 	$(VERILATOR) --cc --exe --build --timing --Wall $(VERILATOR_VENDOR_LINT_FLAGS) $(VERILATOR_COHERENT_FLAGS) \
 		--assert -DASTER_COHERENCE_ASSERT --top-module aster_coherent_soc \
 		-GHART_COUNT=$(HART_COUNT) "-GENABLE_L1=1'b$(ENABLE_L1)" "-GENABLE_DMA=1'b1" "-GENABLE_DOT8=1'b1" "-GENABLE_NPU=1'b1" \
@@ -1665,7 +1671,7 @@ $(REDUCE_SIM): $(RTL_COHERENT) verification/soc/tb_aster_workload_coherent.cpp M
 		-GLINE_WORDS=$(L1_LINE_WORDS) -GLINE_COUNT=$(L1_LINE_COUNT) \
 		"-GENABLE_L2=1'b$(ENABLE_L2)" -GL2_LINE_WORDS=$(L2_LINE_WORDS) -GL2_LINE_COUNT=$(L2_LINE_COUNT) \
 		-GNPU_ROWS=$(NPU_ROWS) -GNPU_COLS=$(NPU_COLS) \
-		--Mdir $(BUILD_DIR)/obj_reduce -o $(abspath $@) \
+		--Mdir $(REDUCE_SIM_DIR)/obj -o $(abspath $@) \
 		$(addprefix $(ROOT)/,$(RTL_COHERENT)) $(ROOT)/verification/soc/tb_aster_workload_coherent.cpp
 
 reduce: $(REDUCE_SIM) $(REDUCE_HEX)
@@ -2067,7 +2073,7 @@ parallel-workloads:
 
 test: smoke phase1 hello bench cache uart fpga-sim linux-sim counters retirement npu-pe npu-array npu-engine npu-regs npu-driver npu-runtime npu-stop npu-bench-validate arbiter shared-fabric multicore-runtime parallel
 
-check: tools smoke phase1 hello bench cache uart fpga-sim linux-sim linux-dual-sim linux-coherent-sim counters retirement pcpi-probe dot8-unit npu-pe npu-array npu-engine npu-regs npu-driver npu-runtime npu-stop npu-bench-validate xe-bench-validate phase11-infer workloads atomic-fabric atomic-runtime atomic-faults coherent-cache warm-stop coherent-counters coherent-soc timer-unit timer-firmware irq-unit timer-interrupt sram-unit sram-lint freeze-interfaces coherent-bench riscv-reference riscv-reference-negative coherent-litmus arbiter shared-fabric multicore-runtime multicore-adversarial parallel
+check: tools smoke phase1 hello bench cache uart fpga-sim linux-sim linux-dual-sim linux-coherent-sim counters retirement pcpi-probe dot8-unit npu-pe npu-array npu-engine npu-regs device-arbiter dma-counters l2-unit npu-driver npu-runtime npu-stop npu-bench-validate xe-bench-validate phase11-infer workloads atomic-fabric atomic-runtime atomic-faults coherent-cache warm-stop coherent-counters coherent-soc timer-unit timer-firmware irq-unit timer-interrupt sram-unit sram-lint freeze-interfaces coherent-bench riscv-reference riscv-reference-negative coherent-litmus arbiter shared-fabric multicore-runtime multicore-adversarial parallel
 
 clean:
 	rm -rf $(BUILD_DIR)

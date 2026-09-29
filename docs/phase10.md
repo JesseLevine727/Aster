@@ -1,6 +1,8 @@
 # Phase 10: CPU vs multicore vs ISA vs NPU
 
-Status: **in progress** (simulation scope).
+Status: **complete** — closed by the audited bundle
+[`closeout-8371c3d`](results/phase10/closeout-8371c3d/README.md)
+(`scripts/audit_phase10.py`); see the [results summary](results/phase10/README.md).
 Baseline: pushed Phase 9 closeout `2493435` /
 `docs/results/phase9/closeout-2493435/`.
 The [README roadmap](../README.md#phase-10--cpu-vs-multicore-vs-isa-vs-npu) defines

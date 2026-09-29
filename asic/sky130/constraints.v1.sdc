@@ -1,5 +1,6 @@
-# Phase 16 constraints: the full v1.3 all-engine coherent system at 20 ns.
-# Relative to CLOCK_PERIOD so the same file works at any target frequency.
+# Phase 16 signoff constraints for the full v1.3 all-engine coherent system.
+# The period comes from CLOCK_PERIOD (47 ns in config.v1.json); place-and-route
+# uses the separate 20 ns constraints_pnr.v1.sdc.
 
 create_clock -name clk -period $::env(CLOCK_PERIOD) [get_ports clk]
 set clocks [get_clocks clk]

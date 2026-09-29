@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Phase 15 ASIC flow driver.
+"""SKY130/LibreLane ASIC flow driver (Phase 15 minimal and Phase 16 v1 designs).
 
 SystemVerilog is converted to Verilog with sv2v (Yosys cannot parse several
 constructs Aster uses, such as ``return`` inside a function), then LibreLane
@@ -7,6 +7,11 @@ runs the SKY130 Classic flow on the converted netlist.
 
     python3 scripts/run_asic.py                      # full Classic flow
     python3 scripts/run_asic.py --to Yosys.Synthesis # stop after synthesis
+    python3 scripts/run_asic.py --design v1 --skip-step Magic.WriteLEF
+
+The flow runs under scripts/memguard.sh by default; do not wrap this script in
+memguard yourself (the nested lock deadlocks). Set ASTER_MEM_HIGH/MAX/SWAP_MAX
+to change the caps.
 
 The ROM init path inside the RTL is relative, so the flow always runs from the
 repository root.
@@ -97,8 +102,8 @@ DESIGNS = {
         "rom_image_module": "aster_v1_asic_rom_image",
         "config": "asic/sky130/config.v1.json",
     },
-    # Physical-cleanup variant of v1: tighter hold margin and more global-route
-    # overflow iterations to remove the max-corner hold and route-DRC residuals.
+    # Physical-cleanup variant of v1: hold slack margins 0.3 -> 0.6 ns (the only
+    # difference from config.v1.json).
     "v1clean": {
         "rtl": RTL_V1,
         "defines": ["RISCV_FORMAL", "SYNTHESIS", "ASTER_SRAM"],
@@ -228,7 +233,7 @@ def main():
         default=[],
         metavar="STEP",
         help="skip a LibreLane step id (repeatable), e.g. "
-        "-S Magic.WriteLEF -S Odb.CheckDesignAntennaProperties",
+        "--skip-step Magic.WriteLEF --skip-step Odb.CheckDesignAntennaProperties",
     )
     parser.add_argument("librelane_args", nargs="*")
     args = parser.parse_args()

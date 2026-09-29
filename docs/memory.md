@@ -60,8 +60,13 @@ one heavy job runs at a time, and (b) runs in a cgroup with a hard `MemoryMax`,
 so a runaway is killed *inside its own cgroup* instead of taking the desktop
 down. It also sets `MALLOC_ARENA_MAX=2` and caps OpenMP threads.
 
+`scripts/run_asic.py` applies the wrapper itself, so run it directly and set the
+caps through the environment. Do **not** wrap `run_asic.py` in `memguard.sh`
+again: the nested `flock` on the same lock file deadlocks (observed on
+2026-09-27). Wrap other heavy commands, such as gate-level simulation, directly:
+
 ```sh
-scripts/memguard.sh -- python3 scripts/run_asic.py --design v1 --run-tag p16-f2
+python3 scripts/run_asic.py --design v1 --run-tag p16-f2
 scripts/memguard.sh --high 12G --max 16G --swap 8G -- \
     /home/elfo/tools/iverilog/usr/bin/vvp v1_tb_c.vvp +rom=... +timeout=...
 ```
@@ -90,9 +95,9 @@ requirement of the flow:
 Skip both steps and the 54 GiB spike disappears:
 
 ```sh
-scripts/memguard.sh --high 16G --max 24G -- \
+ASTER_MEM_HIGH=16G ASTER_MEM_MAX=24G \
   python3 scripts/run_asic.py --design v1 --run-tag p16-f2 \
-      -S Magic.WriteLEF -S Odb.CheckDesignAntennaProperties
+      --skip-step Magic.WriteLEF --skip-step Odb.CheckDesignAntennaProperties
 ```
 
 `MAGIC_LEF_WRITE_USE_GDS=1` switches the input from the DEF to the GDS but does

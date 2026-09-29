@@ -25,7 +25,7 @@ produced the correct output.
 ## Why 100 MHz when static timing closes at 34.9 MHz
 
 The routed design closes at **WNS +3.384 ns** at a 32 ns period → 34.9 MHz
-implied. But the actual silicon runs ~3× faster. Two reasons:
+implied. But the FPGA board runs ~3× faster functionally. Two reasons:
 
 1. **The static analysis is conservative.** It reports the slow process corner
    with 0.481 ns of clock uncertainty; the real part at room temperature has far
@@ -68,7 +68,7 @@ Two things are clear:
 2. **The design does not close at 100 MHz.** Even optimized, 70% of endpoints
    fail at 10 ns, and the best achievable closure is ~47.8 MHz. The gap to
    100 MHz is ~2×, which is the slow-corner-versus-typical-corner difference:
-   the silicon runs at 100 MHz at room temperature, but the slow corner (used
+   the board runs at 100 MHz at room temperature, but the slow corner (used
    for signoff) closes at ~48 MHz.
 
 ## What it takes to close at 100 MHz

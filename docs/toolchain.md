@@ -11,8 +11,10 @@ The Phase 0 build is intentionally based on command-line tools:
 
 The simulator targets do not require a vendor FPGA/ASIC installation. Vivado
 2025.1 (or a compatible release) is required only for the PYNQ-Z1 bitstream
-targets. PYNQ Python/XRT is needed on the board for Linux loading. Yosys and
-OpenROAD remain later ASIC-phase dependencies.
+targets. PYNQ Python/XRT is needed on the board for Linux loading; in
+practice the board flows load overlays through the Linux FPGA manager and
+`/dev/mem` because PYNQ 3.1.1 cannot enumerate the Zynq (see the board runners
+in `scripts/run_*_mem.py`).
 The Linux FPGA build also uses Vivado's `xvlog`, `xelab` and `xsim` to test the
 generated reset netlist; it finds them through `XILINX_VIVADO` or `PATH`.
 
@@ -41,6 +43,27 @@ make VIVADO=/path/to/vivado fpga
 
 If the RISC-V toolchain is not on `PATH`, prepend its `bin` directory before
 running the build. Do not commit generated toolchains or build output.
+
+## ASIC tools (Phases 15–16)
+
+The SKY130 flow is driven by `scripts/run_asic.py` and is separate from the
+portable checks:
+
+- **LibreLane 3.0.14**, installed as a Python venv at `~/tools/librelane-venv` and
+  run `--dockerized` with the `ghcr.io/librelane/librelane:3.0.14` image (Yosys,
+  OpenROAD, Magic, KLayout, and Netgen live inside the container);
+- **SKY130 PDK** through `ciel` under `~/.ciel`; the flows used PDK version
+  `8afc8346a57fe1ab7934ba5a6056ea8b43078e71`, including the OpenRAM
+  `sky130_sram_2kbyte_1rw1r_32x512_8` macro views;
+- **sv2v 0.0.13** at `~/tools/sv2v/sv2v-Linux/sv2v` (Yosys cannot parse several
+  SystemVerilog constructs Aster uses); override with `SV2V`;
+- **Icarus Verilog 12.0** at `~/tools/iverilog` for SDF gate-level simulation
+  (`-gspecify`, with `-DFUNCTIONAL` for the SKY130 cell models).
+
+Heavy flow steps can exceed the host's memory. `run_asic.py` therefore runs
+LibreLane under `scripts/memguard.sh` (a global lock plus a cgroup memory cap);
+see [`memory.md`](memory.md) for the limits, the environment overrides, and the
+steps that can be skipped safely.
 
 ## Build targets
 

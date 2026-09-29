@@ -1,4 +1,4 @@
-# Aster: an open heterogeneous RISC-V SoC from RTL to SKY130 silicon flow
+# Aster: an open heterogeneous RISC-V SoC from RTL to a SKY130 layout flow
 
 **Final report — Phase 16 (v1.3 full ASIC implementation)**
 
@@ -52,7 +52,7 @@ The routed `aster_v1_asic` netlist is simulated with the `nom_tt_025C_1v80` SDF.
 Passing: `reduce_scalar`, `reduce_parallel`, `conv2d_scalar_coh`, `conv2d_npu`.
 The two-hart `reduce_parallel` result is **232,958 cycles — identical to the
 physical PYNQ-Z1 board measurement**, closing the loop across RTL, gates and
-silicon-referenced hardware.
+the FPGA board.
 
 ## 3. The headline result: cross-engine equivalence
 

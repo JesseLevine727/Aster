@@ -19,7 +19,10 @@
 #
 # Usage:
 #   scripts/memguard.sh <command> [args...]
-#   scripts/memguard.sh --high 48G --max 56G --swap 32G -- make asic-v1
+#   scripts/memguard.sh --high 12G --max 16G --swap 8G -- vvp build.vvp +rom=...
+#
+# scripts/run_asic.py already runs LibreLane under this wrapper; do not wrap it
+# again (a nested flock on the same lock deadlocks).
 #
 # Environment overrides: ASTER_MEM_HIGH, ASTER_MEM_MAX, ASTER_MEM_SWAP_MAX,
 # ASTER_MEM_LOCK.

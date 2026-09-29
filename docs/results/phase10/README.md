@@ -88,7 +88,7 @@ NPU +4,543 LUT / +24 DSP.
 
 ## Physical acceptance
 
-See [physical/](physical/README.md). Six captures ran on the Pynq-Z1 at
+See [closeout-8371c3d/physical/](closeout-8371c3d/physical/). Six captures ran on the Pynq-Z1 at
 31.25 MHz through the all-engine overlay, each validated by the independent v8
 oracle on the board. Physical GEMM 4×4×16 ratios (scalar 27,821 cycles):
 multicore 1.628×, dot8 1.476×, NPU 3.974× — closely matching simulation.
@@ -99,6 +99,6 @@ Each simulation capture was produced by `scripts/xe_study.py`; each physical
 capture by `scripts/run_xe_mem.py`. The simulation cycles are the
 RTL-configured fabric clock; the FPGA numbers in [resources.md](resources.md)
 are real post-synthesis/post-route Vivado results and the physical numbers are
-real 31.25 MHz silicon measurements. The physical transport is the FPGA UART
+real 31.25 MHz FPGA-board measurements. The physical transport is the FPGA UART
 transmitter-to-receiver serial loopback read over AXI/Linux, not an external
 Pmod electrical-loopback test.

@@ -46,14 +46,16 @@ The old 1.24× headline used a scalar run on `aster_minimal`. The v10 NPU
 
 ## Open, in order
 
-- [ ] **P17-H — Housekeeping.**
-  - [ ] Workload simulators rebuild when their configuration changes (no
-    fixed-path binaries reused across configurations).
-  - [ ] `make check` covers `device-arbiter`, `dma-counters`, and `l2-unit`.
-  - [ ] Stale phase statuses, broken links, subsystem READMEs, the ASIC README,
-    `docs/toolchain.md`, and `docs/memory.md` examples are corrected; FPGA
+- [x] **P17-H — Housekeeping.** Verified with the full `make check` (207 PASS,
+  257 host tests).
+  - [x] Workload simulators are built in configuration-tagged directories, so a
+    changed memory/cache/L2/NPU configuration never reuses a stale binary.
+  - [x] `make check` covers `device-arbiter`, `dma-counters`, and `l2-unit`.
+  - [x] Stale phase statuses, broken links, subsystem READMEs, the ASIC README,
+    `docs/toolchain.md`, and `docs/memory.md` examples are corrected (the old
+    `memguard.sh -- run_asic.py` example deadlocked on the nested lock); FPGA
     results are not called "silicon"; `docs/l2.md` matches the RTL.
-  - [ ] Stray tracked files are removed.
+  - [x] Stray tracked files are removed.
 - [ ] **P17-A4 — v11 record support and aggregation.**
   - [ ] Coherent workloads (reduction, Conv2D engines, ECG, CIFAR) emit v11,
     summing DMA `bytes_done`/job cycles and NPU bytes/tiles/job/compute cycles

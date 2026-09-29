@@ -52,7 +52,7 @@ in Phase 16. This document is the Phase 15 contract.
 | Clock | single `clk`, active-low `rst_n` |
 | Target period | 20 ns (50 MHz) — matching the v1.3 FPGA operating point |
 | Standard cells | `sky130_fd_sc_hd` |
-| PDK | `sky130A` (ciel `f3c505b`) |
+| PDK | `sky130A`, version `8afc8346a57fe1ab7934ba5a6056ea8b43078e71` (the version LibreLane 3.0.14 selected and the retained run records; the contract originally named the local ciel `current` link, `f3c505b`) |
 
 `aster_minimal` currently hard-codes 64 KiB ROM/RAM in its address decode and
 instantiates the memories at their default depth. Phase 15 adds

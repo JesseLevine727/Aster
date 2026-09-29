@@ -1,10 +1,15 @@
 # Aster architecture specification
 
-Status: Phases 1–12 complete and physically verified, 2026-09-16. See the
+Status: **v1 reference architecture.** Written through Phase 12 (2026-09-16)
+and frozen as v1.0; later v1 changes are the optional [v1.1 shared L2](l2.md),
+[v1.2 NPU geometry](npu-geometry.md), and [v1.3 50 MHz FPGA closure](v1.3.md),
+followed by the SKY130 attempts in [Phase 15](phase15.md) and
+[Phase 16](phase16.md). The v2 architecture is planned in
+[`phase17-plus.md`](phase17-plus.md). See the
 [Phase 9 closeout](results/phase9/closeout-2493435/README.md),
 [Phase 10 results](results/phase10/README.md),
 [Phase 11 results](results/phase11/README.md) and
-[Phase 12 results](results/phase12/README.md) for the immutable acceptance
+[Phase 12 results](results/phase12/closeout-f1f62e2/README.md) for the immutable acceptance
 bundles.
 
 Phase 5 is implemented and physically verified in the `aster_multicore` top. Its
@@ -82,7 +87,8 @@ packed INT8 instruction and Phase 9 adds the optional 4×4 INT8 GEMM accelerator
 Phase 10 runs identical dot/FIR/GEMM kernels through the scalar, dual-hart,
 Xasterdot8 and NPU paths without changing any map or ABI. Phase 12.5 adds one
 custom MMIO machine timer to the coherent top and Phase 12.6 adds a per-hart
-interrupt controller. Shared L2 remains future work.
+interrupt controller. A shared L2 was added later as the optional, default-off
+v1.1 memory-side L2 ([`l2.md`](l2.md)).
 
 ### Optional Phase 8 computation
 
@@ -328,10 +334,12 @@ ignores writes to reserved windows.
 ## Decisions resolved for v1.0
 
 The Phase 0 open decisions are resolved for v1.0 in
-[`docs/v1.md`](v1.md). Shared L2 remains a deliberate v2 / Phase 14 axis:
+[`docs/v1.md`](v1.md). Items marked open or deferred were settled later as
+noted:
 
-- shared L2 organization and refill protocol — **deferred to v2**; v1.0
-  coherently shares RAM;
+- shared L2 organization and refill protocol — deferred at v1.0 (v1.0
+  coherently shares RAM); delivered in v1.1 as an optional, default-off,
+  direct-mapped, write-through L2 ([`l2.md`](l2.md));
 - coherence protocol and atomic-memory implementation — MSI-like snooping D$
   with the atomic fabric/PCPI A path;
 - system interconnect transaction format and arbitration — atomic fabric +
@@ -341,7 +349,10 @@ The Phase 0 open decisions are resolved for v1.0 in
 - NPU register/DMA interface, tiling format and saturation rules — 4×4 signed
   INT8 with byte strides and modulo-2³² accumulation;
 - interrupt priority and semantics — per-hart level, no priority or nesting;
-- SKY130 macro strategy and SRAM availability — **open (Phase 15)**.
+- SKY130 macro strategy and SRAM availability — open at v1.0; Phases 15/16
+  used the OpenRAM `sky130_sram_2kbyte_1rw1r_32x512_8` macro, whose limits are
+  recorded in the
+  [v2 plan](phase17-plus.md#sky130-sram-macro-constraints).
 
 ## Phase 2 FPGA contract
 
