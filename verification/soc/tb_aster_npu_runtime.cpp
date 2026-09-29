@@ -1,5 +1,7 @@
 #include "Vaster_coherent_soc.h"
 #include "verilated.h"
+#include <algorithm>
+#include <array>
 #include <cstdint>
 #include <iostream>
 #include <random>
@@ -22,6 +24,28 @@ static std::uint32_t count_bytes(std::uint8_t mask) {
     return total;
 }
 
+struct NpuShape { std::uint32_t m, n, k; };
+static constexpr std::array<NpuShape, 9> npu_shapes{{
+    {1, 1, 1}, {3, 5, 8}, {5, 7, 3}, {7, 5, 15}, {8, 8, 31},
+    {15, 3, 32}, {4, 4, 0}, {0, 4, 7}, {4, 0, 7}
+}};
+
+static std::uint64_t expected_npu_tiles(const NpuShape& shape) {
+    return std::uint64_t((shape.m + 3u) / 4u) * ((shape.n + 3u) / 4u);
+}
+
+static std::uint64_t expected_npu_reads(const NpuShape& shape) {
+    std::uint64_t total = 0;
+    for (std::uint32_t row = 0; row < shape.m; row += 4u) {
+        const std::uint32_t rows = std::min(4u, shape.m - row);
+        for (std::uint32_t col = 0; col < shape.n; col += 4u) {
+            const std::uint32_t cols = std::min(4u, shape.n - col);
+            total += std::uint64_t(shape.k) * (rows + cols);
+        }
+    }
+    return total;
+}
+
 class NpuRuntime {
 public:
     Vaster_coherent_soc d;
@@ -30,9 +54,19 @@ public:
     std::uint32_t summary_addr = 0;
     std::uint32_t summary_checks = 0;
     std::uint32_t npu_starts = 0;
+    std::uint32_t npu_completed_jobs = 0;
+    std::uint32_t npu_aborted_jobs = 0;
+    std::uint32_t npu_error_jobs = 0;
     std::uint32_t max_tiles = 0;
     std::uint32_t max_bytes_written = 0;
     std::uint64_t max_job_cycles = 0;
+    std::uint64_t npu_bytes_read_total = 0;
+    std::uint64_t npu_bytes_written_total = 0;
+    std::uint64_t npu_job_cycles_total = 0;
+    std::uint64_t npu_compute_cycles_total = 0;
+    std::uint64_t npu_tiles_total = 0;
+    std::uint64_t npu_busy_clock_cycles = 0;
+    std::uint64_t current_npu_busy_cycles = 0;
     bool previous_npu_busy = false;
     bool npu_seen = false;
     bool pass = false;
@@ -79,6 +113,10 @@ public:
         dma_attributed_bytes += d.dma_events[4];
         if (d.dma_request_pending && d.dma_request_ready)
             dma_payload_bytes += count_bytes(d.dma_request_mask);
+        if (d.npu_busy) {
+            ++npu_busy_clock_cycles;
+            ++current_npu_busy_cycles;
+        }
         if (d.backing_valid && d.backing_device) {
             require(d.backing_addr >= 0x10000000u && d.backing_addr < 0x10008000u,
                     "NPU/DMA device request escaped shared RAM");
@@ -110,7 +148,22 @@ public:
     }
 
     void observe_after_rise() {
-        if (!previous_npu_busy && d.npu_busy) ++npu_starts;
+        if (!previous_npu_busy && d.npu_busy) {
+            ++npu_starts;
+            current_npu_busy_cycles = 0;
+        }
+        if (previous_npu_busy && !d.npu_busy && d.npu_done) {
+            if (d.npu_aborted) ++npu_aborted_jobs;
+            else if (d.npu_error) ++npu_error_jobs;
+            else ++npu_completed_jobs;
+            require(d.npu_job_cycles == current_npu_busy_cycles,
+                    "NPU job-cycle register differs from independently counted busy clocks");
+            npu_bytes_read_total += d.npu_bytes_read;
+            npu_bytes_written_total += d.npu_bytes_written;
+            npu_job_cycles_total += d.npu_job_cycles;
+            npu_compute_cycles_total += d.npu_compute_cycles;
+            npu_tiles_total += d.npu_tiles;
+        }
         previous_npu_busy = d.npu_busy;
         npu_seen = npu_seen || d.npu_busy || d.npu_done;
         if (d.npu_done && !d.npu_busy) {
@@ -144,7 +197,9 @@ public:
     void run() {
         for (unsigned cycle = 0; cycle < 50000000u && !pass; ++cycle) tick();
         require(pass, "NPU runtime firmware timed out before PASS");
-        require(npu_seen && npu_starts >= 5u, "actual NPU engine never executed enough jobs");
+        require(npu_seen && npu_starts == 9u && npu_completed_jobs == 9u &&
+                npu_aborted_jobs == 0u && npu_error_jobs == 0u,
+                "actual NPU engine did not complete all nine accepted jobs");
         require(max_tiles > 0u && max_bytes_written > 0u && max_job_cycles > 0u,
                 "NPU completion counters never showed a real tile job");
         require(d.npu_done && !d.npu_busy && !d.npu_error && !d.npu_aborted,
@@ -153,6 +208,27 @@ public:
                 "coherent device path observed no accepted NPU/DMA traffic");
         require(dma_attributed_bytes == dma_payload_bytes,
                 "DMA byte counter included non-DMA device stores or missed DMA payload bytes");
+
+        std::uint64_t expected_reads = 0, expected_writes = 0;
+        std::uint64_t expected_compute_cycles = 0, expected_tiles = 0;
+        for (const auto& shape : npu_shapes) {
+            const std::uint64_t job_tiles = expected_npu_tiles(shape);
+            const std::uint64_t job_reads = expected_npu_reads(shape);
+            expected_tiles += job_tiles;
+            expected_reads += job_reads;
+            expected_writes += std::uint64_t(shape.m) * shape.n * 4u;
+            expected_compute_cycles += std::uint64_t(shape.k) * job_tiles;
+        }
+        require(npu_bytes_read_total == expected_reads,
+                "cumulative NPU reads differ from independent tiled-shape oracle");
+        require(npu_bytes_written_total == expected_writes,
+                "cumulative NPU writes differ from independent output-byte oracle");
+        require(npu_tiles_total == expected_tiles,
+                "cumulative NPU tile count differs from independent shape oracle");
+        require(npu_compute_cycles_total == expected_compute_cycles,
+                "cumulative NPU compute cycles differ from independent K×tile oracle");
+        require(npu_job_cycles_total == npu_busy_clock_cycles,
+                "summed NPU job cycles differ from independently observed busy clocks");
     }
 
     void run_global_stop_abort() {
@@ -176,9 +252,19 @@ public:
         summary_addr = 0;
         summary_checks = 0;
         npu_starts = 0;
+        npu_completed_jobs = 0;
+        npu_aborted_jobs = 0;
+        npu_error_jobs = 0;
         max_tiles = 0;
         max_bytes_written = 0;
         max_job_cycles = 0;
+        npu_bytes_read_total = 0;
+        npu_bytes_written_total = 0;
+        npu_job_cycles_total = 0;
+        npu_compute_cycles_total = 0;
+        npu_tiles_total = 0;
+        npu_busy_clock_cycles = 0;
+        current_npu_busy_cycles = 0;
         previous_npu_busy = false;
         npu_seen = false;
         saw_npu_output = false;
@@ -236,6 +322,12 @@ int main(int argc, char** argv) {
         std::cout << "PASS: Phase 9 actual-core NPU runtime harts=" << ASTER_HART_COUNT
                   << " cache=" << ASTER_L1 << " wait=" << ASTER_MEMORY_WAIT
                   << " starts=" << runtime.npu_starts
+                  << " completed_jobs=" << runtime.npu_completed_jobs
+                  << " sum_bytes_read=" << runtime.npu_bytes_read_total
+                  << " sum_bytes_written=" << runtime.npu_bytes_written_total
+                  << " sum_job_cycles=" << runtime.npu_job_cycles_total
+                  << " sum_compute_cycles=" << runtime.npu_compute_cycles_total
+                  << " sum_tiles=" << runtime.npu_tiles_total
                   << " max_tiles=" << runtime.max_tiles
                   << " max_bytes_written=" << runtime.max_bytes_written
                   << " max_job_cycles=" << runtime.max_job_cycles

@@ -49,9 +49,13 @@ baseline.
   preserving generic `device_store_commit` for NPU coherence/reservation logic.
   Old records remain unchanged; the integrated runtime regression checks that
   NPU output stores do not inflate DMA bytes.
-- [ ] **P17-A3 — Add independent counter scoreboards.** Cover DMA-only, NPU-only,
-  and combined jobs; stalls, partial words, zero-length jobs, aborts, resets, and
-  several jobs inside one measurement window. Check exact byte and cycle totals.
+- [x] **P17-A3 — Add independent counter scoreboards.** DMA-only service is
+  checked by `tb_aster_dma_soc`/`dma-runtime`; NPU-only Conv2D is checked by the
+  Phase 17 matrix audit; mixed DMA/NPU runtime compares DMA-request bytes with
+  DMA-attributed events and sums nine NPU jobs against an independent shape
+  oracle. Existing engine scoreboards cover partial words, zero length, stalls,
+  aborts, and reset. Focused regressions pass; v11 firmware aggregation remains
+  P17-A4.
 - [ ] **P17-A4 — Add v11 C/Python/C++ record support and aggregation.** Sum DMA
   `bytes_done`/job cycles and NPU byte/cycle/tile snapshots over all jobs; read
   DOT8's per-hart event bank after freeze. Preserve v2–v10 validators and fixtures.

@@ -42,6 +42,9 @@ int main(int argc, char** argv) {
         r.tick();
         require(r.d.m_valid && r.d.m_device && r.d.m_dma && r.d.m_addr == 0x10000000,
                 "DMA did not receive fair first device turn with DMA attribution");
+        r.d.m_ready = 0; r.tick();
+        require(r.d.m_valid && r.d.m_device && r.d.m_dma && r.d.m_addr == 0x10000000,
+                "stalled DMA offer changed or lost its requester tag");
         r.d.m_ready = 1; r.tick();
         r.tick();
         require(r.d.m_valid && r.d.m_device && !r.d.m_dma && r.d.m_addr == 0x10000004,

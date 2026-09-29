@@ -131,7 +131,7 @@ matrices, record contents, verification levels, frequency feasibility checks,
 and phase-by-phase acceptance gates. Phase 17 is active; the
 [Phase 17 TODO](docs/phase17-todo.md) lists current work and open acceptance items,
 starting with the [AsterBench v11 measurement contract](docs/asterbench-v11.md),
-counter attribution, and a same-top benchmark baseline.
+counter attribution, same-top comparisons, and independent per-job scoreboards.
 
 ## Historical phase links
 

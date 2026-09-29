@@ -9,6 +9,8 @@ coherent DOT8/NPU Conv2D runs. The original `conv2d` workload remains the legacy
 `aster_minimal` CPU data point; these two scalar results are not interchangeable.
 The corrected engine-attributed coherent record contract is
 [`AsterBench v11`](asterbench-v11.md); it preserves v10 record semantics.
+`scripts/phase17_conv_baseline.py` audits the coherent scalar/DOT8/NPU records as
+one matching diagnostic matrix.
 
 Each workload emits one line:
 
@@ -32,7 +34,7 @@ make dhrystone
 make reduce REDUCE_WORKERS=1        # or 2
 make conv-engine CONV_ENGINE=npu    # or dot8
 make conv-engine CONV_ENGINE=scalar_coh # coherent-top CPU baseline
-make phase17-conv-matrix            # same top/data for scalar, DOT8, and NPU
+make phase17-conv-matrix            # same top/data plus configuration/counter audit
 make workloads                      # all of the above; part of make check
 ```
 
@@ -58,7 +60,8 @@ make workloads                      # all of the above; part of make check
 all-engine SoC with the same logical input and must produce the same checksum.
 `conv2d` remains the legacy `aster_minimal` scalar workload and is not a direct
 cycle-speedup baseline for those coherent-top methods. The Phase 17 matrix uses
-the coherent scalar path for same-top comparisons.
+the coherent scalar path for same-top comparisons; its host audit rejects
+configuration mismatches and DMA/NPU counter cross-attribution.
 
 ## Known limitations (documented, not hidden)
 

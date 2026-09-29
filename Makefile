@@ -1708,6 +1708,7 @@ phase17-conv-matrix:
 	@set -e; for engine in scalar_coh dot8 npu; do \
 		$(MAKE) --no-print-directory conv-engine CONV_ENGINE=$$engine; \
 	done
+	@$(PYTHON) scripts/phase17_conv_baseline.py --records-dir $(BUILD_DIR)
 
 ECG_CHUNKS ?= 16
 ECG_CHUNK ?= 64
@@ -1775,9 +1776,7 @@ workloads:
 	@$(MAKE) --no-print-directory dhrystone
 	@$(MAKE) --no-print-directory reduce REDUCE_WORKERS=1
 	@$(MAKE) --no-print-directory reduce REDUCE_WORKERS=2
-	@$(MAKE) --no-print-directory conv-engine CONV_ENGINE=scalar_coh
-	@$(MAKE) --no-print-directory conv-engine CONV_ENGINE=dot8
-	@$(MAKE) --no-print-directory conv-engine CONV_ENGINE=npu
+	@$(MAKE) --no-print-directory phase17-conv-matrix
 	@$(MAKE) --no-print-directory ecg
 	@$(MAKE) --no-print-directory cifar
 
