@@ -38,10 +38,13 @@ and trade-off that motivated it.
 
 ### 100 MHz feasibility
 
-100 MHz is **not inherently too fast for 130 nm**. The process node alone does
-not set the SoC clock; logic depth, SRAM timing, fanout, routing, pipeline
-boundaries, voltage, and signoff corner do. It is a reasonable FPGA goal and an
-ambitious target for this SKY130 implementation:
+100 MHz is **not inherently too fast for 130 nm**; chips at that node can run
+much faster. The process node alone does not set the SoC clock: logic depth, SRAM
+timing, fanout, routing, pipeline boundaries, voltage, and signoff corner do.
+A 100 MHz FPGA pass would be a strong milestone, but it would not establish
+100 MHz SKY130 closure. The two implementations use different cells, SRAMs,
+clock trees, and routing. For this design, 100 MHz is a plausible FPGA target
+and a demanding ASIC target:
 
 - The v1.3 FPGA implementation closes at 50 MHz. The earlier 100 MHz frequency
   sweep was a functional experiment on a limited workload; its 10 ns timing
@@ -53,9 +56,12 @@ ambitious target for this SKY130 implementation:
   re-evaluate SRAM and routing. The approximate 4.8× ratio describes this v1
   path, not a 130 nm technology limit. Placement alone cannot establish closure.
 - Phase 18 includes an early synthesis/place/STA feasibility experiment for
-  100 MHz on both targets. If it fails, the project records the limiting path,
-  the pipeline/area cost of the next attempt, and an explicit decision. It must
-  not label a functional overclock as a closed operating point.
+  100 MHz on both targets. If FPGA timing closes, that is a strong milestone,
+  not evidence that SKY130 will close. The ASIC must be mapped and timed with
+  its actual standard-cell and SRAM libraries, then iterated on pipeline
+  boundaries and memory interfaces before full-chip place-and-route. If it
+  fails, record the limiting path, pipeline/area cost, and an explicit decision.
+  A functional overclock is never labelled as a closed operating point.
 
 ### Memory capacity and area are one decision
 

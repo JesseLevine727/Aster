@@ -72,13 +72,14 @@ The targets below are goals to verify, not claims about the current design.
 | Physical quality | Timing closure, zero routing/foundry DRC, zero LVS mismatch, zero antenna violations, and workload-specific energy evidence. Memory capacity and die-area budget must be chosen together. |
 
 100 MHz is **not a limit imposed by the 130 nm node**; many 130 nm designs run
-faster. It is a target for this design, and feasibility depends on its pipeline,
-SRAM access, fanout, routing, and area. The current FPGA design has 50 MHz routed
-timing signoff; its earlier 100 MHz test was functional on a limited workload
-but did not close static timing. The current SKY130 critical path is far from a
-10 ns period. Phase 18 will measure the architecture and area changes needed.
-A lower-frequency result must be reported as such, not relabeled as 100 MHz
-success.
+faster. A 100 MHz FPGA pass would be a strong milestone, but it would not imply
+100 MHz ASIC closure. The FPGA and ASIC use different logic cells, SRAMs, clock
+trees, and routing. The current FPGA design has 50 MHz routed timing signoff; its
+earlier 100 MHz test was functional on a limited workload but did not close
+static timing. The current SKY130 critical path is far from a 10 ns period.
+Phase 18 will measure the architecture and area changes needed. Only positive
+setup and hold slack at the required ASIC corners establishes 100 MHz SKY130
+closure.
 
 ## Research questions
 
