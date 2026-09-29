@@ -90,13 +90,14 @@ What the v11 records show:
   `docs/results/phase17/` with an audit that rejects a mismatched top, clock,
   memory mode, counter, or source hash. `aster_minimal` stays a separately
   named data point.
-- [ ] **P17-B — CoreMark labelling.** Label the current one-iteration run as a
+- [x] **P17-B — CoreMark labelling.** Label the current one-iteration run as a
   fixed-iteration CRC correctness check wherever it appears; no standard score
   is claimed for PicoRV32. A valid CoreMark score (real timer, at least ten
   seconds) is an Aster-core deliverable in Phase 18/21. Document the Dhrystone
-  adaptation.
+  adaptation. Done in `docs/workloads.md`, `docs/phase16.md`, and the retained
+  baseline's README.
 - [ ] **P17-C — Correct Phase 15/16 reporting, without new ASIC runs.**
-  - [ ] Phase 16 documents state: per-corner setup/hold from the `p16-f2`
+  - [x] Phase 16 documents state: per-corner setup/hold from the `p16-f2`
     signoff STA (hold fails at `nom_ff`, `max_tt`, `max_ff`); Fmax per corner
     from that STA (`nom_tt` 40.96 MHz, `max_ss` 20.77 MHz at the 47 ns SDC);
     power with its corner (typical 62.1 mW; 70.1 mW is `max_ff`); LVS as a
@@ -104,25 +105,30 @@ What the v11 records show:
     DRC; 85,996 max-slew and 5,443 max-capacitance violations; Tier 2 as one
     full-size and one reduced-shape pass of eight mandatory workloads; SDF
     annotation not demonstrated; ASIC workload cycles not captured on the ASIC
-    configuration.
-  - [ ] Phase 15 documents record its 2,262 max-slew and 274 max-capacitance
+    configuration. (`docs/phase16.md` Results; correction notes on the report,
+    PPA, Tier 2, and cleanup pages.)
+  - [x] Phase 15 documents record its 2,262 max-slew and 274 max-capacitance
     violations and name the corner of its power figure.
   - [ ] `audit_phase15.py` and `audit_phase16.py` enforce their contracts:
     every corner's setup/hold, route DRC, LVS error count, electrical
     violations, and required gate-level runs, with checks that can fail. The
     expected outcome is that Phase 16 reports **incomplete**.
-  - [ ] Future closeouts include `asic/` in the hashed source state.
+  - [x] Future closeouts include `asic/` in the hashed source state (the
+    Phase 17 baseline audit hashes `asic/` with the rest of the source).
 - [ ] **P17-D — Memory and area point (owner decision).** Present options with
   numbers: full map on a larger die, smaller on-chip SRAM with tiled workloads,
   or an external-memory interface; macros versus latch/flop RAM per array. Freeze
-  one option with a die-area budget.
+  one option with a die-area budget. The decision brief is
+  [`phase17-memory.md`](phase17-memory.md) (recommendation: 96 KiB host-loaded
+  unified SRAM in banks); awaiting the owner's decision.
 - [ ] **P17-E — Freeze the v2 contract and the CPU specification.** Approve the
   100 MHz FPGA/SKY130 targets and required corners, NPU utilization and speedup
   goals including the N=1 mapping, the CPU cycle target, resource/die limits,
   energy method, workload matrix, gate-level method, and evidence manifest.
   Write `docs/cpu.md` for the Aster core (ISA, pipeline, interfaces, traps,
   verification layers, timing gates) as outlined in
-  [phase17-plus.md section 6](phase17-plus.md#6-phase-17-sequence).
+  [phase17-plus.md section 6](phase17-plus.md#6-phase-17-sequence). The draft
+  specification is [`cpu.md`](cpu.md); awaiting the owner's approval.
 - [ ] **P17-F — Live documentation aligned.** README, architecture status,
   subsystem READMEs, and the phase index describe the current state, and
   historical claims are labelled with their original configuration.

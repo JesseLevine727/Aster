@@ -1,5 +1,11 @@
 # Phase 16 — Tier 2 post-layout gate-level simulation
 
+> **Phase 17 corrections (P17-C).** Several figures in this document are
+> superseded — timing per corner, Fmax, power corner, LVS, electrical
+> violations, Tier 2 coverage, and the mixed-top engine ratios. The reconciled
+> values are in [`docs/phase16.md` Results](../../../phase16.md#results); the
+> same-top engine comparison is the [Phase 17 baseline](../../phase17/).
+
 Tier 2 requires post-layout, SDF-back-annotated simulation of the routed
 `aster_v1_asic` netlist on one oracle per compute path
 (`docs/phase16.md`, lines 113–138). This directory records the harness, the

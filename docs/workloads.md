@@ -48,8 +48,8 @@ make workloads                      # all of the above; part of make check
 | --- | --- | --- | --- | --- |
 | `strided` | memory | CPU | one word every `param` words | checksum oracle |
 | `sort_search` | cpu | CPU | insertion sort + binary search | checksum oracle |
-| `coremark` | cpu | CPU | official CoreMark (Apache-2.0) | CoreMark CRC `0xe714` |
-| `dhrystone` | cpu | CPU | Dhrystone 2.1, `iterations` runs | canonical final values |
+| `coremark` | cpu | CPU | official CoreMark (Apache-2.0), one iteration: a fixed-work CRC correctness check, **not a CoreMark score** | CoreMark CRC `0xe714`, self-checked in firmware (no host oracle) |
+| `dhrystone` | cpu | CPU | adapted Dhrystone 2.1 (`float` compiled as integer), `iterations` runs; raw cycles, no DMIPS claimed | canonical final values |
 | `fft` | dsp | CPU | N=256 fixed-point radix-2 FFT | checksum oracle |
 | `conv2d` | dsp | CPU | 32×32 image, 5×5 kernel | checksum oracle |
 | `conv2d_scalar_coh` | dsp | scalar CPU on `aster_coherent_soc` | Same Conv2D as DOT8/NPU, but on the same top | checksum oracle |
@@ -75,10 +75,15 @@ configuration mismatches and DMA/NPU counter cross-attribution.
   string), and folds them into the checksum. The target has no FPU and the
   toolchain ships no soft-float, so the vendored file is compiled with `float`
   as integer; that computation is outside the timed loop, so the measured cycles
-  are unaffected.
-- **CoreMark** runs the official `core_main.c` with an Aster port. Ticks are
-  treated as milliseconds so CoreMark's "must run for at least 10 s" reporting
-  rule passes; the record reports raw cycles, not that derived figure.
+  are unaffected. Because the port is adapted, Aster reports raw cycles only and
+  claims no standard Dhrystone/DMIPS figure.
+- **CoreMark** runs the official `core_main.c` for one iteration with an Aster
+  port. It is a **fixed-iteration CRC correctness check, not a CoreMark score**:
+  the port treats CPU cycles as milliseconds, which makes CoreMark's "must run
+  for at least 10 s" rule pass without a real ten-second run. The record's raw
+  cycles are a fixed-work measurement only. A valid CoreMark score (real timer,
+  a run of at least ten seconds, converted with the measured clock) is an
+  Aster-core deliverable in Phase 18/21 and is not claimed for PicoRV32.
 - **FFT** is a scaled fixed-point transform: each stage shifts right by one, so
   the output is `DFT/N`. The firmware and the oracle use the identical integer
   operations.

@@ -3,6 +3,15 @@
 Status: **complete** — all acceptance gates pass. The routed GDS, the signoff
 SDF and the post-layout gate-level simulation are recorded under
 `docs/results/phase15/`.
+
+> **Phase 17 note (P17-C).** The contract's gates pass, but the routed result also
+> carries 2,262 max-slew and 274 max-capacitance violations at `max_ss` that the
+> closeout did not report (this contract did not gate them; v2 does). Its
+> recorded `power__total` of 18.26 mW is the `max_ff` corner; `nom_tt` is
+> 15.85 mW. The gate-level simulation stripped the SRAM macro's SDF entry
+> (Icarus cannot parse its escaped instance name), so macro timing was not
+> annotated, and the audit's DRC and antenna checks were substring tests that
+> could not fail; they are tightened in Phase 17.
 Baseline: pushed v1.3 closeout `5272f35`.
 The [README roadmap](../README.md#phase-15--learn-sky130-on-a-minimal-configuration)
 defines this phase as taking a tiny Aster configuration through the complete
@@ -179,7 +188,8 @@ up; the physical macro (LEF/LIB/GDS) is supplied by the PDK at place and route.
 
 - **No frozen v1 system.** Caches, coherence, DMA, Xasterdot8, the NPU,
   multicore and interrupts are Phase 16.
-- **No tapeout.** Phase 17.
+- **No tapeout.** Fabrication is the optional Phase 23 of the
+  [v2 plan](phase17-plus.md) (originally numbered Phase 17).
 - **No PPA optimization.** Area/power/performance analysis is Phase 16; Phase 15
   only needs a correct, clean, closed flow.
 - **No custom SRAM generation** (the PDK macros are used as-is) and no

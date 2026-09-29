@@ -121,7 +121,7 @@ behaviour; it does not re-prove the architecture. The mandatory set is:
 | Workload | Path proved | Approx. cycles |
 | --- | --- | ---: |
 | `reduce_parallel` | scalar CPU + 2-hart coherence + perf counters + L1 | ~233 k |
-| `coremark` | CPU core (official CoreMark CRC) | large |
+| `coremark` | CPU core (fixed-iteration CoreMark CRC check, not a CoreMark score) | large |
 | `fft` | CPU fixed-point DSP | small |
 | `conv2d_dot8` | Xasterdot8 packed-INT8 ISA path | small |
 | `conv2d_npu` | 4×4 NPU accelerator path (cross-engine equality) | ~5 M |
@@ -210,23 +210,27 @@ an extrapolation from this run.
 | Setup WNS `nom_tt` | **+10.74 ns** ✅ |
 | Setup WNS `nom_ss` | **+0.35 ns** ✅ |
 | Setup WNS `max_ss` (worst RC) | −1.15 ns ❌ (needs ~49 ns) |
-| Hold WNS worst (`max_ff`) | −0.17 ns ❌ |
+| Hold WNS | −0.171 ns ❌ — fails at `nom_ff` (−0.026), `max_tt` (−0.133), and `max_ff` (−0.171) |
 | Magic / KLayout DRC | **0 / 0** ✅ |
 | Antenna | **0** ✅ |
 | Route (TritonRoute) DRC | 106 ❌ |
-| LVS | 13 (top-level power-pin matching; device classes equivalent) ❌ |
-| Power (TT, 25 °C, 1.80 V) | **70.1 mW** |
-| Achieved Fmax | **~21 MHz** (`nom_ss`) / ~43 MHz (`nom_tt`) |
+| Max slew / max capacitance (`max_ss`) | 85,996 / 5,443 violations ❌ (the flow's `design__violations` summary reports 0) |
+| LVS | fails ❌ — netlists do not match (device and net counts differ); the top-level `vccd1` pin resolves to the `vssd1` node and the SRAM macro supply is disconnected |
+| Power (vectorless, 47 ns clock) | **62.1 mW** at `nom_tt`; the 70.1 mW `power__total` is the `max_ff` corner |
+| STA Fmax at the 47 ns SDC | `nom_tt` 40.96 MHz, `nom_ss` 22.12 MHz, `max_ss` 20.77 MHz (fails at 47 ns) |
 
 The flow used an **over-constrained 20 ns PnR SDC** and a **47 ns signoff SDC**.
 The reduced memory cut (16 KiB ROM/RAM, 16 macros) is what made this run
 routable. Remaining failures include `max_ss` setup, worst-corner hold, 106
 TritonRoute DRC errors, and 13 LVS errors. Magic/KLayout DRC and antenna checks
-are clean, but that does not make the result signoff-clean. The published Fmax
-and power figures also need reconciliation against the actual period used by STA
-and the saved power report before being used as v2 baselines. The perf-counter
-carry split is retained as a source change, not evidence that the physical gates
-passed.
+are clean, but that does not make the result signoff-clean. The table above was
+reconciled in Phase 17 (P17-C) from the retained `p16-f2` STA and power reports.
+Earlier documents quoted "~43 MHz TT" (from a different run), "108 MHz" (the
+closeout script subtracted the slack from 20 ns although STA ran at 47 ns),
+"21.3 MHz signoff" (1/47 ns, although `max_ss` fails at that period) and
+"70.1 mW TT" (the `max_ff` corner); those figures are superseded. The
+perf-counter carry split is retained as a source change, not evidence that the
+physical gates passed.
 
 ### PPA and research questions
 
@@ -241,13 +245,26 @@ core (20 mm² die), 21.3 MHz signoff, 70.1 mW; the 4×4 NPU is the best conv2d
 engine (1.24× scalar, 2.11× Xasterdot8; 194.6 nJ/MAC whole-chip), and the
 architectural rankings are node-independent versus the FPGA.
 
+**Phase 17 correction.** Those headline figures are superseded. 7.11 mm² is the
+instance area (2.56 mm² standard cells + 4.55 mm² macros), not a core area;
+21.3 MHz and 70.1 mW are corrected in the table above; the 1.24×/2.11× ratios
+compared a scalar run on `aster_minimal` with DOT8/NPU on the coherent top (on
+one top the NPU is 2.06× and DOT8 0.96× — see the
+[Phase 17 baseline](results/phase17/)); energy per MAC divided one vectorless
+whole-chip power figure among workloads; the Tier 1 cycle counts were RTL runs
+with zero-wait memory and the full 64 KiB map, not the ASIC's synchronous
+memory and 16 KiB cut; and the "node-independent ranking" is circular because
+the FPGA and SKY130 columns used the same RTL simulation cycles.
+
 ### FPGA power and energy comparison
 
 Vivado `report_power` on the routed v1.3 checkpoint gives **1.767 W total**, of
 which the Zynq PS7 (the Linux host) is 1.525 W and device static is 0.145 W. The
-**Aster PL logic is ~0.097 W dynamic**, so at equal clock the SKY130 core
-(0.070 W at 21 MHz → ~0.041 W at 50 MHz) draws ~2.4× the 28 nm fabric, as
-expected from the process gap.
+**Aster PL logic is ~0.097 W dynamic**. The comparison drawn from it earlier is
+withdrawn: dynamic power rises with clock frequency, so scaling 70.1 mW at 21 MHz
+*down* to ~41 mW at 50 MHz inverts the relationship; 70.1 mW is also the
+`max_ff` corner; and the Vivado power report itself is not retained in the
+repository.
 
 ### Physical-cleanup attempt
 
@@ -272,9 +289,14 @@ swap recommendation.
 gate-level harness and results. The immutable closeout log contains passing
 `reduce_scalar` and `reduce_parallel` runs. Later notes add reduced-shape
 scalar/NPU Conv2D equivalence, but do not complete the eight-workload Tier 2
-contract. CoreMark, FFT, DOT8 Conv2D, ECG, CIFAR, and MNIST do not all have the
-required full-size gate-level evidence. The 16 KiB memory cut also excludes
-several full workloads. Tier 2 therefore remains incomplete.
+contract. Of the eight mandatory workloads, only `reduce_parallel` passed at
+full size, and `conv2d_npu` passed only at a reduced 16×16/K=3 shape;
+`reduce_scalar` and `conv2d_scalar_coh` also passed but are not in the mandatory
+set. CoreMark and ECG timed out; DOT8 Conv2D did not finish; FFT, CIFAR, and
+MNIST were not run (the 16 KiB cut excludes several full workloads). SDF
+annotation is optional in the testbench command and no retained log
+demonstrates it, and the testbench clock (20 ns) is faster than the `nom_tt`
+minimum period (24.42 ns). Tier 2 therefore remains incomplete.
 
 ## Milestones
 
@@ -293,6 +315,7 @@ several full workloads. Tier 2 therefore remains incomplete.
 
 - **No architecture changes.** Phase 16 implements v1.3 as frozen; new features
   are a v2 change.
-- **No tapeout.** Fabrication, packaging and board bring-up are Phase 17.
+- **No tapeout.** Fabrication, packaging and board bring-up are the optional
+  Phase 23 of the [v2 plan](phase17-plus.md) (originally numbered Phase 17).
 - **No L2 default change.** The L2 stays off unless a sweep justifies it.
 - **No analog/mixed-signal blocks** and no custom SRAM generation.
