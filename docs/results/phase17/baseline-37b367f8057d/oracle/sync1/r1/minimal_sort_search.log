@@ -1,2 +1,0 @@
-PASS: v10 sort_search [cpu] size=1024 iterations=4 cycles=2183301 retired=420942
-PASS: v10 sort_search checksum=0xb0e60880 matches independent oracle

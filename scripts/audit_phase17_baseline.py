@@ -207,6 +207,11 @@ def validate_capture(capture: dict, text: str, model: str, mnist_model: dict,
     record = v10.validate_line(text, name=capture["workload"])
     if capture["workload"] != "coremark":  # CoreMark self-checks its CRCs in firmware
         reference.verify(record, capture["workload"])
+    # The v10 validator returns only the workload fields; read the (already
+    # validated) configuration fields from the raw record.
+    raw = fields_of(text)
+    record = {**record, **{key: int(raw[key]) for key in (
+        "clock_hz", "l1", "sync_memory", "line_words", "line_count", "memory_wait")}}
     check_model_config(model, record["sync_memory"], record["memory_wait"], where)
     require(record["l1"] == COMMON["ENABLE_L1"] and record["line_words"] == COMMON["L1_LINE_WORDS"] and
             record["line_count"] == COMMON["L1_LINE_COUNT"],
