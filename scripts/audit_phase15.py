@@ -7,6 +7,7 @@ manifest to the committed source snapshot.
 
     python3 scripts/audit_phase15.py docs/results/phase15/closeout-<rev> --current
 """
+import asic_contract
 import argparse
 import csv
 import hashlib
@@ -119,15 +120,10 @@ def audit_metrics(directory):
 
 
 def audit_physical(directory):
-    for name in ("drc.magic.rpt",):
-        require("0" in (directory / name).read_text(), f"{name} is not clean")
-    lvs = (directory / "lvs.netgen.rpt").read_text()
-    for key in ("device_difference", "net_difference", "property_fail", "error"):
-        require(re.search(rf"{key}\D+0", lvs) or key not in lvs.lower(),
-                f"LVS report shows a {key}")
-    antenna = (directory / "antenna_summary.rpt").read_text()
-    require("violating" not in antenna.lower() or "0" in antenna,
-            "antenna summary shows violations")
+    # Integrity only. DRC, LVS and antenna are contract gates evaluated from
+    # counts in contract_gates(); the former substring checks could not fail.
+    for name in ("drc.magic.rpt", "lvs.netgen.rpt", "antenna_summary.rpt"):
+        require((directory / name).is_file(), f"{name} is missing")
     klayout = read(directory / "drc.klayout.json")
     require(not klayout or all(not value for value in klayout.values()),
             "KLayout DRC report is not clean")
@@ -190,17 +186,57 @@ def audit(directory, *, current=False):
     return summary
 
 
+def contract_gates(directory):
+    """Evaluate every Phase 15 contract gate from the retained evidence (P17-C)."""
+    physical = directory / "physical"
+    metrics = asic_contract.load_metrics(physical / "metrics.csv")
+    check = (directory / "verification" / "make-check.log").read_text()
+    gl = (directory / "verification" / "gate-level-sim.log").read_text()
+    unmatched = len(re.findall(r"Unable to match ModPath", gl))
+    gates = [
+        asic_contract.make_check_gate(check),
+        asic_contract.synthesis_gate(metrics),
+        asic_contract.drc_lvs_gate(metrics),
+        asic_contract.antenna_gate(metrics),
+        # The Phase 15 contract requires setup at nom_tt and hold at nom_ss.
+        asic_contract.slack_gate("setup slack >= 0 at nom_tt", metrics, "setup",
+                                 ("nom_tt_025C_1v80",)),
+        asic_contract.slack_gate("hold slack >= 0 at nom_ss", metrics, "hold",
+                                 ("nom_ss_100C_1v60",)),
+        asic_contract.gate("gate-level simulation with back-annotated SDF reproduces the oracle",
+                           'reproduced "Hello from Aster' in gl and "Annotating SDF" in gl
+                           and unmatched == 0,
+                           {"oracle_reproduced": 'reproduced "Hello from Aster' in gl,
+                            "sdf_annotation_logged": "Annotating SDF" in gl,
+                            "unmatched_sdf_paths": unmatched}),
+        asic_contract.artifacts_gate(read(physical / "artifacts.json")),
+    ]
+    info = {
+        "all_corner_setup": asic_contract.slack_gate("", metrics, "setup", asic_contract.CORNERS)["evidence"],
+        "all_corner_hold": asic_contract.slack_gate("", metrics, "hold", asic_contract.CORNERS)["evidence"],
+        "route_drc_errors": asic_contract.count(metrics, "route__drc_errors"),
+        "electrical_violations_not_gated_by_this_contract": asic_contract.electrical(metrics),
+        "power_total_is_corner": "max_ff_n40C_1v95",
+    }
+    return gates, info
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("directory", type=Path)
     parser.add_argument("--current", action="store_true")
     args = parser.parse_args()
     try:
-        result = audit(args.directory, current=args.current)
+        audit(args.directory, current=args.current)
     except ValueError as error:
         raise SystemExit(f"FAIL: {error}")
-    print(json.dumps(result, indent=2, sort_keys=True))
-    print("PASS: Phase 15 signoff, gate-level simulation and frozen source")
+    print("PASS: Phase 15 bundle integrity (inventory, manifest, source snapshot)")
+    gates, info = contract_gates(args.directory)
+    complete, text = asic_contract.report("Phase 15 contract gates:", gates, info)
+    print(text)
+    if not complete:
+        raise SystemExit("FAIL: Phase 15 is INCOMPLETE: its contract gates are not all met")
+    print("PASS: Phase 15 contract complete")
 
 
 if __name__ == "__main__":

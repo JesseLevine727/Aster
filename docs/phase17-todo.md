@@ -1,6 +1,8 @@
 # Phase 17 TODO — correct the v1 baseline and freeze the v2 contract
 
-Status: **in progress**. Revised 29 September 2026 (see the
+Status: **complete (29 September 2026)** — every item below is closed and the
+exit gate is met; Phase 18 (the Aster core) is next. Revised 29 September 2026
+(see the
 [plan revision](phase17-plus.md#7-plan-revision--29-september-2026)). Phase 17
 is deliberately lean: it corrects what v1 reports and fixes the v2 contract; it
 does not polish a design that v2 replaces. No v2 performance RTL starts until the
@@ -23,14 +25,14 @@ documents that link to them.
   logic. Known remaining gap: device events 5–9 still include NPU traffic, and
   with `ENABLE_L2=1` the DMA byte event reads zero; v11 therefore aggregates
   engine totals from per-job status registers instead of these events.
-- [x] **P17-A3 — Independent counter scoreboards** (`b40066b`). DMA-only service
+- [x] **P17-A3 — Independent counter scoreboards** (`cefc504`). DMA-only service
   is checked by `tb_aster_dma_soc`/`dma-runtime`; NPU-only Conv2D by the Phase 17
   matrix audit; the mixed DMA/NPU runtime compares DMA-request bytes with
   DMA-attributed events and sums nine NPU jobs against an independent shape
   oracle; the arbiter test holds the requester tag across a stall. Verified with
   the full `make check` (204 PASS, 257 host tests).
 
-- [x] **P17-A4 — v11 record support and aggregation.** Verified with the full
+- [x] **P17-A4 — v11 record support and aggregation** (`f025a29`). Verified with the full
   `make check` (207 PASS, 260 host tests).
   - [x] Coherent workloads (reduction, Conv2D engines, ECG, CIFAR) emit v11,
     summing DMA `bytes_done`/job cycles and NPU bytes/tiles/job/compute cycles
@@ -103,7 +105,7 @@ What the v11 records show:
   seconds) is an Aster-core deliverable in Phase 18/21. Document the Dhrystone
   adaptation. Done in `docs/workloads.md`, `docs/phase16.md`, and the retained
   baseline's README.
-- [ ] **P17-C — Correct Phase 15/16 reporting, without new ASIC runs.**
+- [x] **P17-C — Correct Phase 15/16 reporting, without new ASIC runs.**
   - [x] Phase 16 documents state: per-corner setup/hold from the `p16-f2`
     signoff STA (hold fails at `nom_ff`, `max_tt`, `max_ff`); Fmax per corner
     from that STA (`nom_tt` 40.96 MHz, `max_ss` 20.77 MHz at the 47 ns SDC);
@@ -116,10 +118,12 @@ What the v11 records show:
     PPA, Tier 2, and cleanup pages.)
   - [x] Phase 15 documents record its 2,262 max-slew and 274 max-capacitance
     violations and name the corner of its power figure.
-  - [ ] `audit_phase15.py` and `audit_phase16.py` enforce their contracts:
-    every corner's setup/hold, route DRC, LVS error count, electrical
-    violations, and required gate-level runs, with checks that can fail. The
-    expected outcome is that Phase 16 reports **incomplete**.
+  - [x] `audit_phase15.py` and `audit_phase16.py` evaluate every contract gate
+    from counts and evidence (shared `scripts/asic_contract.py`) instead of
+    substring checks, and report electrical violations and route DRC as
+    information where the historical contract did not gate them. Result:
+    **Phase 16 incomplete (4/11 gates)**, and **Phase 15 incomplete (6/8)**: its
+    SDF annotation left 36,809 paths unmatched and its SPEF is not hash-bound.
   - [x] Future closeouts include `asic/` in the hashed source state (the
     Phase 17 baseline audit hashes `asic/` with the rest of the source).
 - [x] **P17-D — Memory and area point (owner decision).** Present options with
@@ -138,9 +142,10 @@ What the v11 records show:
   [phase17-plus.md section 6](phase17-plus.md#6-phase-17-sequence). **Approved 29
   September 2026:** the section 2 targets are frozen and [`cpu.md`](cpu.md) is
   the Phase 18 contract.
-- [ ] **P17-F — Live documentation aligned.** README, architecture status,
+- [x] **P17-F — Live documentation aligned.** README, architecture status,
   subsystem READMEs, and the phase index describe the current state, and
-  historical claims are labelled with their original configuration.
+  historical claims are labelled with their original configuration (done across
+  P17-H, the plan revision, and P17-C).
 
 ## Removed from the first draft
 

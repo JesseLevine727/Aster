@@ -1,8 +1,11 @@
 # Phase 15: Learn SKY130 on a minimal configuration
 
-Status: **complete** — all acceptance gates pass. The routed GDS, the signoff
-SDF and the post-layout gate-level simulation are recorded under
-`docs/results/phase15/`.
+Status: **incomplete — 6 of 8 contract gates pass** (Phase 17 audit). The routed
+GDS, the signoff SDF and the post-layout gate-level simulation are recorded
+under `docs/results/phase15/`. `scripts/audit_phase15.py` now evaluates every
+gate from the retained evidence: the gate-level simulation logged SDF
+annotation but left 36,809 timing paths unmatched, and the SPEF is not
+hash-bound. The checklist below records what the phase originally claimed.
 
 > **Phase 17 note (P17-C).** The contract's gates pass, but the routed result also
 > carries 2,262 max-slew and 274 max-capacitance violations at `max_ss` that the
@@ -11,7 +14,7 @@ SDF and the post-layout gate-level simulation are recorded under
 > 15.85 mW. The gate-level simulation stripped the SRAM macro's SDF entry
 > (Icarus cannot parse its escaped instance name), so macro timing was not
 > annotated, and the audit's DRC and antenna checks were substring tests that
-> could not fail; they are tightened in Phase 17.
+> could not fail; the Phase 17 audit replaces them with counts.
 Baseline: pushed v1.3 closeout `5272f35`.
 The [README roadmap](../README.md#phase-15--learn-sky130-on-a-minimal-configuration)
 defines this phase as taking a tiny Aster configuration through the complete

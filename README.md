@@ -40,9 +40,12 @@ implementation:
 - one of the eight mandatory gate-level workloads passed at full size and one
   more at a reduced shape.
 
-Several published Phase 16 figures are also mislabelled — for example, the
+Several published Phase 16 figures were also mislabelled — for example, the
 70.1 mW power figure is the fast `max_ff` corner, not typical (62.1 mW) — and
-are being corrected in Phase 17. The original 50 MHz target and full memory
+were corrected in Phase 17. The rewritten audit reports Phase 16 as incomplete
+(4 of 11 contract gates) and the minimal Phase 15 flow as incomplete (6 of 8:
+its gate-level SDF annotation left most timing paths unmatched and its SPEF is
+not hash-bound). The original 50 MHz target and full memory
 configuration did not close. No Aster chip has been fabricated. See the
 [Phase 16 status](docs/phase16.md), [saved report](docs/results/phase16/REPORT.md),
 and the [Phase 17+ plan](docs/phase17-plus.md).
@@ -158,10 +161,12 @@ The [detailed Phase 17+ plan](docs/phase17-plus.md) specifies the diagnosis,
 CPU specification, workload matrices, record contents, verification levels,
 frequency feasibility checks, and phase-by-phase acceptance gates. It was
 revised on 29 September 2026; its final section records what changed and why.
-Phase 17 is active: A1–A4 are complete ([AsterBench v11](docs/asterbench-v11.md)
-contract, DMA requester attribution, independent counter scoreboards, v11
-emitters and validators), and the [Phase 17 TODO](docs/phase17-todo.md) lists the
-remaining items, starting with one retained same-top v1 baseline.
+**Phase 17 is complete** ([TODO and exit gate](docs/phase17-todo.md)): corrected
+[AsterBench v11](docs/asterbench-v11.md) records, a
+[retained same-top v1 baseline](docs/results/phase17/baseline-9b9c94f58a85/README.md)
+with a drift-rejecting audit, corrected Phase 15/16 reporting and audits, the
+96 KiB memory decision, and the approved [Aster core specification](docs/cpu.md).
+**Phase 18 — designing and verifying the Aster core — is next.**
 
 ## Historical phase links
 

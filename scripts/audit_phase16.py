@@ -7,6 +7,7 @@ manifest to the committed source snapshot.
 
     python3 scripts/audit_phase16.py docs/results/phase16/closeout-<rev> --current
 """
+import asic_contract
 import argparse
 import csv
 import hashlib
@@ -127,16 +128,10 @@ def audit_metrics(directory):
 
 
 def audit_physical(directory):
-    for name in ("drc.magic.rpt",):
-        require("0" in (directory / name).read_text(), f"{name} is not clean")
-    # LVS: the netlist is logically equivalent (device classes match); only the
-    # top-level power pins differ, which is recorded as a residual.
-    lvs = (directory / "lvs.netgen.rpt").read_text()
-    require("Device classes" in lvs and "equivalent" in lvs,
-            "LVS report does not declare the device classes equivalent")
-    antenna = (directory / "antenna_summary.rpt").read_text()
-    require("violating" not in antenna.lower() or "0" in antenna,
-            "antenna summary shows violations")
+    # Integrity only. DRC, LVS and antenna are contract gates evaluated from
+    # counts in contract_gates(); the former substring checks could not fail.
+    for name in ("drc.magic.rpt", "lvs.netgen.rpt", "antenna_summary.rpt"):
+        require((directory / name).is_file(), f"{name} is missing")
     klayout = read(directory / "drc.klayout.json")
     require(not klayout or all(not value for value in klayout.values()),
             "KLayout DRC report is not clean")
@@ -163,9 +158,7 @@ def audit_timing(directory):
 
 def audit_verification(directory):
     check = (directory / "make-check.log").read_text()
-    gl = (directory / "gate-level-sim.log").read_text()
-    if "not yet run" not in gl:
-        require("PASS:" in gl, "gate-level simulation has no PASS line")
+    require((directory / "gate-level-sim.log").is_file(), "gate-level-sim.log is missing")
     check = (directory / "make-check.log").read_text()
     require(not re.search(r"(?m)^FAIL:", check), "make-check.log contains FAIL")
     require(not re.search(r"(?m)make(\[\d+\])?: \*\*\* .*Error", check), "make-check.log contains a make error")
@@ -204,17 +197,75 @@ def audit(directory, *, current=False):
     return summary
 
 
+# Phase 16 contract (docs/phase16.md "Verification and acceptance gates" and
+# the frozen 64 KiB ROM + 64 KiB RAM memory decision).
+TIER2_MANDATORY = ("reduce_parallel", "coremark", "fft", "conv2d_dot8", "conv2d_npu",
+                   "streaming_ecg", "cifar_cnn", "phase11-infer")
+FROZEN_MACROS = 64  # 64 KiB ROM + 64 KiB RAM in 2 KiB macros
+
+
+def contract_gates(directory):
+    """Evaluate every Phase 16 contract gate from the retained evidence (P17-C)."""
+    physical = directory / "physical"
+    metrics = asic_contract.load_metrics(physical / "metrics.csv")
+    check = (directory / "verification" / "make-check.log").read_text()
+    gl = (directory / "verification" / "gate-level-sim.log").read_text()
+    records = re.findall(r"(?m)^ASTERBENCH,version=10,.*$", check)
+    asic_records = [record for record in records if ",sync_memory=1," in record]
+    passed_gl = {name for name in re.findall(r"(?m)^=== (\S+) ===$", gl)
+                 if re.search(rf"(?s)=== {re.escape(name)} ===\s*PASS:", gl)}
+    macros = asic_contract.macros_from_area(metrics)
+    gates = [
+        asic_contract.make_check_gate(check),
+        asic_contract.synthesis_gate(metrics),
+        asic_contract.drc_lvs_gate(metrics),
+        asic_contract.antenna_gate(metrics),
+        asic_contract.slack_gate("setup slack >= 0 at every RC corner", metrics, "setup",
+                                 asic_contract.CORNERS),
+        asic_contract.slack_gate("hold slack >= 0 at every RC corner", metrics, "hold",
+                                 asic_contract.CORNERS),
+        asic_contract.gate("Tier 1: AsterBench catalog at RTL on the ASIC configuration",
+                           bool(asic_records),
+                           {"v10_records": len(records), "sync_memory_1_records": len(asic_records)}),
+        asic_contract.gate("Tier 2: SDF-annotated gate-level oracle for every mandatory workload",
+                           set(TIER2_MANDATORY) <= passed_gl and "Annotating SDF" in gl,
+                           {"passed": sorted(passed_gl),
+                            "missing": sorted(set(TIER2_MANDATORY) - passed_gl),
+                            "sdf_annotation_logged": "Annotating SDF" in gl}),
+        asic_contract.gate("area, Fmax and power recorded",
+                           all(key in metrics for key in ("design__instance__area", "power__total",
+                                                          "timing__setup__ws")),
+                           {"instance_area_um2": metrics.get("design__instance__area"),
+                            "power_total_w": metrics.get("power__total")}),
+        asic_contract.artifacts_gate(read(physical / "artifacts.json")),
+        asic_contract.gate("frozen memory map: 64 KiB ROM + 64 KiB RAM",
+                           macros >= FROZEN_MACROS,
+                           {"sram_macros": macros, "required": FROZEN_MACROS}),
+    ]
+    info = {
+        "route_drc_errors": asic_contract.count(metrics, "route__drc_errors"),
+        "electrical_violations_not_gated_by_this_contract": asic_contract.electrical(metrics),
+        "power_total_is_corner": "max_ff_n40C_1v95 (see docs/phase16.md Results)",
+    }
+    return gates, info
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("directory", type=Path)
     parser.add_argument("--current", action="store_true")
     args = parser.parse_args()
     try:
-        result = audit(args.directory, current=args.current)
+        audit(args.directory, current=args.current)
     except ValueError as error:
         raise SystemExit(f"FAIL: {error}")
-    print(json.dumps(result, indent=2, sort_keys=True))
-    print("PASS: Phase 16 signoff, gate-level simulation and frozen source")
+    print("PASS: Phase 16 bundle integrity (inventory, manifest, source snapshot)")
+    gates, info = contract_gates(args.directory)
+    complete, text = asic_contract.report("Phase 16 contract gates:", gates, info)
+    print(text)
+    if not complete:
+        raise SystemExit("FAIL: Phase 16 is INCOMPLETE: its contract gates are not all met")
+    print("PASS: Phase 16 contract complete")
 
 
 if __name__ == "__main__":

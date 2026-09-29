@@ -1,9 +1,11 @@
 # Phase 16: Full ASIC implementation and PPA
 
-Status: **PPA run complete; Phase 16 acceptance/signoff incomplete.** The
+Status: **incomplete — 4 of 11 contract gates pass** (Phase 17 audit). The
 `p16-f2` flow produced a GDS and post-route evidence for a reduced 16 KiB ROM /
-16 KiB RAM cut. It does not meet the original all-corner timing, routing DRC,
-LVS, full-memory, or Tier 2 workload gates. See [Results](#results).
+16 KiB RAM cut. `scripts/audit_phase16.py` now evaluates every gate from the
+retained evidence; it fails LVS, all-corner setup and hold, Tier 1 on the ASIC
+configuration, Tier 2, SPEF binding, and the frozen 64 KiB + 64 KiB memory map.
+See [Results](#results).
 Baseline: pushed v1.3 closeout `b3954ce`, plus the Phase 15 SKY130 flow
 infrastructure (`ba6c760`).
 The [README roadmap](../README.md#phase-16--full-asic-implementation-and-ppa)

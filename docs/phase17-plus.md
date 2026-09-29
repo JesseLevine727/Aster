@@ -1,6 +1,7 @@
 # Aster v2 performance roadmap: Phase 17 and beyond
 
-Status: **in progress — Phase 17 (measurement corrections and v2 contract)**.
+Status: **Phase 17 complete (29 September 2026); Phase 18 — the Aster core — is
+next.**
 Revised 29 September 2026; [section 7](#7-plan-revision--29-september-2026)
 records what changed from the first draft and why. This plan defines the
 performance-oriented successor to the functionally verified v1 system. It does
@@ -496,9 +497,11 @@ follows.
    of eight mandatory gate-level workloads passed
    at full size; and SDF annotation of those runs is not demonstrated. Phase 15
    also carries unreported electrical violations (2,262 max-slew and 274
-   max-capacitance at `max_ss`), and its recorded `power__total` (18.26 mW) is
-   likewise the `max_ff` corner (typical is 15.85 mW). These are recorded in
-   P17-C.
+   max-capacitance at `max_ss`), its recorded `power__total` (18.26 mW) is
+   likewise the `max_ff` corner (typical is 15.85 mW), its gate-level SDF
+   annotation left 36,809 timing paths unmatched, and its SPEF is not
+   hash-bound. The Phase 17 audits now report Phase 15 as incomplete (6/8
+   gates) and Phase 16 as incomplete (4/11).
 7. **Simulation and gate-level method.** The v1 default simulation memory model
    matches no physical target, and UART-based gate-level runs are too slow to
    be a practical gate; section 3 and section 5 now define the replacements.
