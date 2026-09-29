@@ -4,6 +4,12 @@ AsterBench v10 is the generic workload record family added after the Phase 11
 closeout. It covers the README workload catalog beyond the phased experiments.
 Earlier record versions (v2–v9) are unchanged.
 
+Phase 17 adds `conv2d_scalar_coh` as an auxiliary same-top baseline for the
+coherent DOT8/NPU Conv2D runs. The original `conv2d` workload remains the legacy
+`aster_minimal` CPU data point; these two scalar results are not interchangeable.
+The corrected engine-attributed coherent record contract is
+[`AsterBench v11`](asterbench-v11.md); it preserves v10 record semantics.
+
 Each workload emits one line:
 
 ```text
@@ -25,6 +31,8 @@ make coremark
 make dhrystone
 make reduce REDUCE_WORKERS=1        # or 2
 make conv-engine CONV_ENGINE=npu    # or dot8
+make conv-engine CONV_ENGINE=scalar_coh # coherent-top CPU baseline
+make phase17-conv-matrix            # same top/data for scalar, DOT8, and NPU
 make workloads                      # all of the above; part of make check
 ```
 
@@ -38,6 +46,7 @@ make workloads                      # all of the above; part of make check
 | `dhrystone` | cpu | CPU | Dhrystone 2.1, `iterations` runs | canonical final values |
 | `fft` | dsp | CPU | N=256 fixed-point radix-2 FFT | checksum oracle |
 | `conv2d` | dsp | CPU | 32×32 image, 5×5 kernel | checksum oracle |
+| `conv2d_scalar_coh` | dsp | scalar CPU on `aster_coherent_soc` | Same Conv2D as DOT8/NPU, but on the same top | checksum oracle |
 | `conv2d_dot8` | dsp | Xasterdot8 | im2col GEMM via packed INT8 | checksum oracle |
 | `conv2d_npu` | dsp | NPU | im2col GEMM via the 4×4 array | checksum oracle |
 | `reduce_scalar` | cpu | 1 hart | sum of a shared-RAM array | checksum oracle |
@@ -45,8 +54,11 @@ make workloads                      # all of the above; part of make check
 | `streaming_ecg` | system | CPU + DMA + DOT8 + NPU | per chunk: stage, DMA, DOT8 FIR, features, NPU classify | checksum oracle |
 | `cifar_cnn` | ml | NPU | 16×16 tiny CNN: conv 3→16, conv 16→32, ReLU/pool, fc 128→10 | artifact reference |
 
-`conv2d`, `conv2d_dot8` and `conv2d_npu` must all produce the same output and
-therefore the same checksum; that equality is the cross-engine correctness check.
+`conv2d_scalar_coh`, `conv2d_dot8` and `conv2d_npu` run on the coherent
+all-engine SoC with the same logical input and must produce the same checksum.
+`conv2d` remains the legacy `aster_minimal` scalar workload and is not a direct
+cycle-speedup baseline for those coherent-top methods. The Phase 17 matrix uses
+the coherent scalar path for same-top comparisons.
 
 ## Known limitations (documented, not hidden)
 
@@ -75,9 +87,11 @@ therefore the same checksum; that equality is the cross-engine correctness check
   record 100 MLII segment (samples 0–1023, ADC zero 1024, scale 4), baked by
   `scripts/gen_ecg_data.py` into `software/benchmarks/workload_ecg_data.h` and
   `docs/results/phase12/ecg_segment.json`. "Real time" means sustained per-chunk
-  throughput, not hard deadlines, because there are no interrupts or timers. The
-  record's `dma_bytes` is the DMA engine's byte-event count and
-  `accelerator_cycles` is the last NPU job's active-array cycles.
+  throughput, not hard deadlines, because there are no interrupts or timers.
+  Post-P17-A2 captures attribute `dma_bytes` to accepted DMA payload bytes only;
+  historical v10 captures may include NPU device stores. v10
+  `accelerator_cycles` is the last NPU job's active-array cycles; v11 defines
+  cumulative per-window engine counters.
 - **CIFAR-10** is a tiny quantized CNN: the 32×32 RGB input is downscaled 2×2
   to 16×16 to fit the 32 KiB NPU-visible RAM, and the network is two 3×3
   convolutions (3→16, 16→32), each with ReLU and 2×2 max pool, and a 128→10

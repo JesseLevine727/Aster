@@ -50,9 +50,10 @@ operand/result traffic dominates its compute.
 
 The published Conv2D cycle records also use different SoC tops and default
 asynchronous memory, while the ASIC top uses synchronous memory and a reduced
-memory cut. `dma_bytes` includes NPU device stores, and NPU `accelerator_cycles`
-is currently a last-job value rather than a sum over the workload. These are
-Phase 17 measurement-contract items, not harmless formatting details.
+memory cut. Historical v10 captures can count NPU stores as `dma_bytes`; Phase
+17-A2 now filters new DMA-byte events by requester. The v10 NPU
+`accelerator_cycles` field still reports only the last job, not the workload sum.
+These are Phase 17 measurement-contract items, not harmless formatting details.
 
 The next version must be designed around workload, bandwidth, timing, area, and
 energy budgets from the beginning. The historical v1 implementation and its
@@ -127,7 +128,10 @@ configuration, cache policy, compiler settings, and clock.
 
 The [detailed Phase 17+ plan](docs/phase17-plus.md) specifies the workload
 matrices, record contents, verification levels, frequency feasibility checks,
-and phase-by-phase acceptance gates.
+and phase-by-phase acceptance gates. Phase 17 is active; the
+[Phase 17 TODO](docs/phase17-todo.md) lists current work and open acceptance items,
+starting with the [AsterBench v11 measurement contract](docs/asterbench-v11.md),
+counter attribution, and a same-top benchmark baseline.
 
 ## Historical phase links
 

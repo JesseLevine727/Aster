@@ -1,8 +1,9 @@
 # Aster v2 performance roadmap: Phase 17 and beyond
 
-Status: **proposed engineering charter**. This plan defines the performance-oriented
-successor to the functionally verified v1 system. It does not retroactively alter
-v1 interfaces, measurements, or closeout bundles.
+Status: **in progress — measurement baseline and performance contract**. This plan
+defines the performance-oriented successor to the functionally verified v1
+system. It does not retroactively alter v1 interfaces, measurements, or closeout
+bundles. The live Phase 17 checklist is [`phase17-todo.md`](phase17-todo.md).
 
 The objective is to answer Aster's research questions with comparable evidence
 and produce an SoC whose CPU, memory system, accelerator, timing, and physical
@@ -119,6 +120,8 @@ compute-active cycles, tile/PE utilization, clock, configuration, output check,
 and source/toolchain/build provenance. Device counters must identify the actual
 requester: NPU stores are not DMA bytes. Cumulative counters sum every job in the
 measurement window; last-job counters are named and reported separately.
+The exact corrected coherent-workload schema is frozen in the
+[AsterBench v11 contract](asterbench-v11.md); v2–v10 remain historical formats.
 
 ### Throughput and PPA definitions
 
@@ -234,9 +237,9 @@ memory, CPU, frequency, area, and workload budgets before performance RTL work.
 
 **Work:**
 
-- repair v10 measurement semantics: separate DMA/NPU attribution, accumulate
-  per-window engine cycles, and test counter totals against an independent
-  transaction scoreboard;
+- introduce corrected v11 coherent-workload semantics for DMA/NPU attribution
+  and cumulative per-window engine totals; propagate DMA requester identity into
+  the DMA byte event while preserving v10 parsers and historical records;
 - establish one all-engine RTL baseline for scalar/multicore/DOT8/NPU comparisons
   with fixed top, timing, SRAM, and input data;
 - preserve the existing minimal-core numbers as a separate design point;

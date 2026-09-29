@@ -31,6 +31,7 @@ module aster_device_arbiter (
     output logic [31:0] npu_rdata,
     output logic m_valid,
     output logic m_device,
+    output logic m_dma,
     output logic m_owner,
     output logic m_instr,
     output logic [31:0] m_addr,
@@ -73,7 +74,7 @@ module aster_device_arbiter (
     assign busy = resetn && (state != IDLE || any_request || cpu_admit);
 
     always_comb begin
-        m_valid = 0; m_device = 0; m_owner = 0; m_instr = 0;
+        m_valid = 0; m_device = 0; m_dma = 0; m_owner = 0; m_instr = 0;
         m_addr = 0; m_wdata = 0; m_wstrb = 0;
         case (state)
             CPU: begin
@@ -84,6 +85,7 @@ module aster_device_arbiter (
             DMA: begin
                 m_valid = resetn && dma_valid;
                 m_device = 1;
+                m_dma = resetn;
                 m_addr = dma_addr; m_wdata = dma_wdata; m_wstrb = dma_wstrb;
             end
             NPU: begin
@@ -123,17 +125,18 @@ module aster_device_arbiter (
 
 `ifndef SYNTHESIS
     logic held;
-    logic [70:0] held_payload;
+    logic [71:0] held_payload;
     always_ff @(posedge clk) begin
         if (!resetn) held <= 0;
         else begin
-            if (held) assert (m_valid && {m_device, m_owner, m_instr, m_addr, m_wdata, m_wstrb} == held_payload)
+            if (held) assert (m_valid && {m_device, m_dma, m_owner, m_instr, m_addr, m_wdata, m_wstrb} == held_payload)
                 else $fatal(1, "device arbiter changed a held transaction");
             held <= m_valid && !m_ready;
-            held_payload <= {m_device, m_owner, m_instr, m_addr, m_wdata, m_wstrb};
+            held_payload <= {m_device, m_dma, m_owner, m_instr, m_addr, m_wdata, m_wstrb};
             if (state == DMA) assert (dma_valid) else $fatal(1, "DMA withdrew an admitted offer");
             if (state == NPU) assert (npu_valid) else $fatal(1, "NPU withdrew an admitted offer");
             assert (!(cpu_busy && state != CPU)) else $fatal(1, "CPU fabric escaped group lock");
+            assert (m_dma == (state == DMA)) else $fatal(1, "device arbiter DMA attribution is invalid");
         end
     end
 `endif

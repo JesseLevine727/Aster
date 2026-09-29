@@ -406,6 +406,7 @@ help:
 	@echo "  make coherent-litmus      Two-hart ordering and LR/SC progress trials with independent oracles"
 	@echo "  make phase1     Run CPU, runtime, memory-map and trap regressions"
 	@echo "  make phase1-matrix  Test Phase 1 with L1 off/on, async/sync memory"
+	@echo "  make phase17-conv-matrix  Same coherent-top scalar/DOT8/NPU Conv2D captures"
 	@echo "  make hello      Build and run Hello from Aster on the RTL CPU"
 	@echo "  make bench      Run AsterBench (BENCH_WORKLOAD=memcpy|walk_sequential|walk_random)"
 	@echo "  make cache      Run directed and seeded reference-model L1 tests"
@@ -1673,7 +1674,10 @@ reduce: $(REDUCE_SIM) $(REDUCE_HEX)
 	@$(PYTHON) scripts/workload_reference.py verify --name $(REDUCE_NAME) < $(BUILD_DIR)/$(REDUCE_NAME).record
 
 CONV_ENGINE ?= npu
-CONV_ENGINE_ID := $(if $(filter npu,$(CONV_ENGINE)),1,0)
+ifeq ($(filter $(CONV_ENGINE),dot8 npu scalar_coh),)
+$(error CONV_ENGINE must be dot8, npu or scalar_coh)
+endif
+CONV_ENGINE_ID := $(if $(filter npu,$(CONV_ENGINE)),1,$(if $(filter scalar_coh,$(CONV_ENGINE)),2,0))
 CONV_NAME := conv2d_$(CONV_ENGINE)
 CONV_FW_DIR := $(HELLO_DIR)/$(CONV_NAME)_i4
 CONV_ELF := $(CONV_FW_DIR)/conv.elf
@@ -1698,6 +1702,12 @@ conv-engine: $(REDUCE_SIM) $(CONV_HEX)
 	@$(REDUCE_SIM) +rom=$(CONV_HEX) +ram_fill=a5a5a5a5 > $(BUILD_DIR)/$(CONV_NAME).record
 	@$(PYTHON) scripts/asterbench_v10.py validate --name $(CONV_NAME) < $(BUILD_DIR)/$(CONV_NAME).record
 	@$(PYTHON) scripts/workload_reference.py verify --name $(CONV_NAME) < $(BUILD_DIR)/$(CONV_NAME).record
+
+.PHONY: phase17-conv-matrix
+phase17-conv-matrix:
+	@set -e; for engine in scalar_coh dot8 npu; do \
+		$(MAKE) --no-print-directory conv-engine CONV_ENGINE=$$engine; \
+	done
 
 ECG_CHUNKS ?= 16
 ECG_CHUNK ?= 64
@@ -1765,6 +1775,7 @@ workloads:
 	@$(MAKE) --no-print-directory dhrystone
 	@$(MAKE) --no-print-directory reduce REDUCE_WORKERS=1
 	@$(MAKE) --no-print-directory reduce REDUCE_WORKERS=2
+	@$(MAKE) --no-print-directory conv-engine CONV_ENGINE=scalar_coh
 	@$(MAKE) --no-print-directory conv-engine CONV_ENGINE=dot8
 	@$(MAKE) --no-print-directory conv-engine CONV_ENGINE=npu
 	@$(MAKE) --no-print-directory ecg

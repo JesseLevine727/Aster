@@ -12,14 +12,20 @@ int main(int argc, char** argv) {
         Verilated::commandArgs(argc, argv); Vaster_dma_perf d;
         std::mt19937 rng(0xa57e7);
         std::array<std::uint64_t, 14> expected{};
+        std::array<std::uint8_t, 14> delayed_increment{};
         bool running = false;
         auto step = [&]() {
             d.clk = 0; d.eval();
             if (!d.resetn || d.start) { expected.fill(0); running = d.resetn && d.start; }
             else if (d.freeze) running = false;
             else if (d.resume_counting) running = true;
-            else if (running) for (unsigned i = 0; i < 14; ++i) expected[i] += d.increments[i];
+            else if (running)
+                for (unsigned i = 0; i < 14; ++i) expected[i] += delayed_increment[i];
             d.clk = 1; d.eval();
+            // The RTL registers event inputs before they enter the counter
+            // bank; model the same one-cycle event latency independently.
+            if (!d.resetn) delayed_increment.fill(0);
+            else for (unsigned i = 0; i < 14; ++i) delayed_increment[i] = d.increments[i];
             require(d.running == running, "DMA common-window running state mismatch");
             for (unsigned i = 0; i < 14; ++i) require(d.counters[i] == expected[i], "DMA increment/command/carry mismatch");
         };

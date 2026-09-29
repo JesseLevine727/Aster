@@ -16,6 +16,12 @@ static void require(bool ok, const char* why) {
     if (!ok) throw std::runtime_error(why);
 }
 
+static std::uint32_t count_bytes(std::uint8_t mask) {
+    std::uint32_t total = 0;
+    for (unsigned lane = 0; lane < 4; ++lane) total += (mask >> lane) & 1u;
+    return total;
+}
+
 class NpuRuntime {
 public:
     Vaster_coherent_soc d;
@@ -33,6 +39,8 @@ public:
     bool aborting = false;
     std::uint64_t device_transactions = 0;
     std::uint64_t npu_device_transactions = 0;
+    std::uint64_t dma_payload_bytes = 0;
+    std::uint64_t dma_attributed_bytes = 0;
     std::uint64_t ram_snapshot_hash = 2166136261u;
     bool saw_npu_output = false;
     bool saw_npu_abort = false;
@@ -68,6 +76,9 @@ public:
     }
 
     void observe_before_rise() {
+        dma_attributed_bytes += d.dma_events[4];
+        if (d.dma_request_pending && d.dma_request_ready)
+            dma_payload_bytes += count_bytes(d.dma_request_mask);
         if (d.backing_valid && d.backing_device) {
             require(d.backing_addr >= 0x10000000u && d.backing_addr < 0x10008000u,
                     "NPU/DMA device request escaped shared RAM");
@@ -140,6 +151,8 @@ public:
                 "NPU was not cleanly complete at firmware PASS");
         require(device_transactions > 0u && npu_device_transactions > 0u,
                 "coherent device path observed no accepted NPU/DMA traffic");
+        require(dma_attributed_bytes == dma_payload_bytes,
+                "DMA byte counter included non-DMA device stores or missed DMA payload bytes");
     }
 
     void run_global_stop_abort() {

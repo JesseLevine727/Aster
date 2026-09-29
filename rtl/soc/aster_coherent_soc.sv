@@ -119,7 +119,7 @@ module aster_coherent_soc #(
     logic [1:0] memory_event, icache_access, icache_miss;
     logic f_valid, f_owner, f_instr, f_ready, f_atomic;
     logic cpu_busy, cpu_admit;
-    logic c_valid, c_device, c_owner, c_instr, c_ready;
+    logic c_valid, c_device, c_dma, c_owner, c_instr, c_ready;
     logic [31:0] c_addr, c_wdata, c_rdata;
     logic [3:0] c_mask;
     logic [1:0] reservation_clear;
@@ -323,7 +323,7 @@ module aster_coherent_soc #(
                 .dma_valid(valid), .dma_addr(address), .dma_wdata(data_out), .dma_wstrb(mask), .dma_ready(ready), .dma_rdata(data_in),
                 .npu_valid(npu_m_valid), .npu_addr(npu_m_addr), .npu_wdata(npu_m_wdata), .npu_wstrb(npu_m_wstrb),
                 .npu_ready(npu_m_ready), .npu_rdata(npu_m_rdata),
-                .m_valid(c_valid), .m_device(c_device), .m_owner(c_owner), .m_instr(c_instr),
+                .m_valid(c_valid), .m_device(c_device), .m_dma(c_dma), .m_owner(c_owner), .m_instr(c_instr),
                 .m_addr(c_addr), .m_wdata(c_wdata), .m_wstrb(c_mask), .m_ready(c_ready), .m_rdata(c_rdata), .busy(arb_busy)
             );
         end else begin : g_dma_only_arbiter
@@ -335,12 +335,18 @@ module aster_coherent_soc #(
                 .m_valid(c_valid), .m_device(c_device), .m_owner(c_owner), .m_instr(c_instr),
                 .m_addr(c_addr), .m_wdata(c_wdata), .m_wstrb(c_mask), .m_ready(c_ready), .m_rdata(c_rdata), .busy(arb_busy)
             );
+            // This arbitration mode has no NPU requester, so every device-side
+            // coherent-service transaction belongs to the DMA engine.
+            assign c_dma = c_device;
         end
         assign dma_events[0] = {2'b0, dma_busy};
         assign dma_events[1] = {2'b0, valid && !ready};
         assign dma_events[2] = {2'b0, read_event};
         assign dma_events[3] = {2'b0, write_event};
-        assign dma_events[4] = dma_store_commit ?
+        // device_store_commit also observes NPU output writes on the shared
+        // coherent device port. Count the payload only when the arbiter tag
+        // says this accepted device transaction belongs to DMA.
+        assign dma_events[4] = (dma_store_commit && c_dma) ?
             ({2'b0, m_mask[0]} + {2'b0, m_mask[1]} + {2'b0, m_mask[2]} + {2'b0, m_mask[3]}) : 3'd0;
         assign dma_events[5] = {2'b0, accepted && m_device && m_mask == 0};
         assign dma_events[6] = {2'b0, accepted && m_device && |m_mask};
@@ -358,6 +364,7 @@ module aster_coherent_soc #(
         );
     end else begin : g_no_dma
         assign cpu_admit = 1;
+        assign c_dma = 0;
         assign fabric_busy = cpu_busy || npu_busy || |dot8_busy;
         assign c_valid = f_valid; assign c_owner = f_owner; assign c_instr = f_instr;
         assign c_addr = f_addr; assign c_wdata = f_wdata; assign c_mask = f_mask; assign c_device = 0;

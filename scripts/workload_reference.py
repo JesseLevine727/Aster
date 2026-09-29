@@ -211,7 +211,7 @@ def expected_checksum(name: str, size: int, iterations: int, param: int, seed: i
         return sort_checksum(size, iterations, seed)
     if name == "fft":
         return fft_checksum(size, iterations, param, seed)
-    if name == "conv2d" or name in ("conv2d_npu", "conv2d_dot8"):
+    if name == "conv2d" or name in ("conv2d_scalar_coh", "conv2d_npu", "conv2d_dot8"):
         return conv2d_checksum(size, iterations, param, seed)
     if name in ("reduce_parallel", "reduce_scalar"):
         return reduce_checksum(size, iterations, param, seed)

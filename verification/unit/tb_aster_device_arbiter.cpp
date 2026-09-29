@@ -30,7 +30,8 @@ int main(int argc, char** argv) {
         r.d.cpu_busy = 0; r.d.eval();
         require(r.d.cpu_admit && !r.d.m_valid, "CPU was not admitted as first turn");
         r.tick();
-        require(r.d.m_valid && !r.d.m_device && r.d.m_addr == 0x20000000, "CPU offer was not selected");
+        require(r.d.m_valid && !r.d.m_device && !r.d.m_dma && r.d.m_addr == 0x20000000,
+                "CPU offer was not selected or was misattributed as DMA");
         r.d.cpu_busy = 1;
         r.d.m_ready = 0; r.d.eval(); r.d.eval();
         require(r.d.m_valid && r.d.m_addr == 0x20000000, "held CPU offer changed");
@@ -39,12 +40,14 @@ int main(int argc, char** argv) {
         r.d.dma_valid = 1; r.d.dma_addr = 0x10000000; r.d.dma_wdata = 0x11; r.d.dma_wstrb = 1;
         r.d.npu_valid = 1; r.d.npu_addr = 0x10000004; r.d.npu_wdata = 0x22; r.d.npu_wstrb = 2;
         r.tick();
-        require(r.d.m_valid && r.d.m_device && r.d.m_addr == 0x10000000, "DMA did not receive fair first device turn");
+        require(r.d.m_valid && r.d.m_device && r.d.m_dma && r.d.m_addr == 0x10000000,
+                "DMA did not receive fair first device turn with DMA attribution");
         r.d.m_ready = 1; r.tick();
         r.tick();
-        require(r.d.m_valid && r.d.m_device && r.d.m_addr == 0x10000004, "NPU did not receive next device turn");
+        require(r.d.m_valid && r.d.m_device && !r.d.m_dma && r.d.m_addr == 0x10000004,
+                "NPU did not receive next device turn with NPU attribution");
         r.d.m_ready = 0; r.d.eval();
-        require(r.d.m_addr == 0x10000004, "held NPU offer changed");
+        require(r.d.m_addr == 0x10000004 && !r.d.m_dma, "held NPU offer or DMA attribution changed");
         r.d.m_ready = 1; r.tick();
         std::cout << "PASS: CPU/DMA/NPU round-robin arbitration, whole-CPU lock, and held device offers\n";
         return 0;

@@ -1,7 +1,8 @@
 // AsterBench v10: engine-accelerated 2D convolution on the coherent SoC.
 // The signed-INT8 convolution is lowered to an im2col GEMM and executed by the
-// Xasterdot8 instruction (CONV_ENGINE=0) or the 4x4 NPU (CONV_ENGINE=1). The
-// output must match the scalar conv2d workload's independent oracle.
+// coherent scalar path (CONV_ENGINE=2), Xasterdot8 (CONV_ENGINE=0), or the
+// 4x4 NPU (CONV_ENGINE=1). All paths use the same coherent SoC and independent
+// output oracle for Phase 17 comparisons.
 #include <stdint.h>
 #include "aster.h"
 #include "aster_npu.h"
