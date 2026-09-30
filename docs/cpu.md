@@ -448,6 +448,11 @@ reviews; none changes the approved scope:
   so W forwards and writes a value straight from a register; every cycle
   count is unchanged (a load's result is still forwarded from W). The 18.6
   L1's second stage must leave room for the alignment in M2.
+- §5: a memory's `*_req_ready` never depends on its `*_req_valid` in the same
+  cycle. (A load or store waits in Execute for `d_req_ready` even when it is
+  misaligned and presents no request, so that the stall logic does not wait
+  for the forwarded address's alignment.) The CPU shells and the 18.6 L1
+  follow this.
 - §5: the instruction memory may allow any number of fetches in flight; the
   fetch unit itself never has more than nine (three live by the room rule,
   the rest discarded ones), and its counters hold that.
