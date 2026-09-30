@@ -144,6 +144,18 @@ DESIGNS = {
         "rom_image_module": None,
         "config": "asic/sky130/config.core_aster.json",
     },
+    # 18.1 flow correlation: core_aster with per-corner wire and via RC for the
+    # resizer (LAYERS_RC, VIAS_R: the SKY130 table LibreLane's pdk_compat.py
+    # carries commented out), instead of the tech LEF's single set.
+    "core_aster_rc": {
+        "rtl": ["rtl/aster_core/aster_core_pkg.sv", "rtl/aster_core/aster_core_fetch.sv",
+                "rtl/aster_core/aster_core.sv", "verification/core/timing_aster.sv"],
+        "defines": ["SYNTHESIS"],
+        "output": "timing_aster.v",
+        "rom_image": None,
+        "rom_image_module": None,
+        "config": "asic/sky130/config.core_aster_rc.json",
+    },
     # Phase 18 timing probe: a 2 KiB standard-cell (flip-flop) SRAM array, the
     # kind of array the 18.6 L1 caches use; its read path sizes the L1.
     "sram_array_2k": {

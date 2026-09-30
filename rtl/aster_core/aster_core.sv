@@ -11,7 +11,8 @@
 //
 // Pipeline (docs/cpu.md §4):
 // - Decode: decode, the register file read (a same-cycle write-back is
-//   forwarded), the load-use interlock, and the Decode redirect of a `jal` or a
+//   forwarded, by selects registered a cycle ahead), the load-use interlock,
+//   and the Decode redirect of a `jal` or a
 //   backward branch (predicted taken) with an aligned target, fired once per
 //   instruction on its first cycle in Decode.
 // - Execute: operands forwarded from M1, M2 and W (a load's value only from W;
@@ -150,11 +151,17 @@ module aster_core
     logic        w_write;
     logic [31:0] w_value;
 
-    function automatic logic [31:0] rf_read(input logic [4:0] r);
-        if (r == 5'd0) return 32'b0;
-        if (w_write && w.rd == r) return w_value;      // same-cycle write-back
-        return rf[r];
-    endfunction
+    // Decode's reads, indexed straight from the instruction's register fields.
+    // A same-cycle write-back is forwarded by the registered selects wt1/wt2
+    // (computed a cycle ahead, below), so no rd/rs compare sits on this path.
+    // (A fetch fault's operands are never used, so they need no masking.)
+    logic       wt1, wt2;
+    logic [4:0] d_rs1_index, d_rs2_index;
+    logic [31:0] d_rs1v, d_rs2v;
+    assign d_rs1_index = d_insn[19:15];
+    assign d_rs2_index = d_insn[24:20];
+    assign d_rs1v = d_rs1_index == 5'd0 ? 32'b0 : wt1 ? w_value : rf[d_rs1_index];
+    assign d_rs2v = d_rs2_index == 5'd0 ? 32'b0 : wt2 ? w_value : rf[d_rs2_index];
 
     // ----------------------------------------------------------------- Decode
     logic        d_valid, d_err, d_redirected;
@@ -309,6 +316,11 @@ module aster_core
         wn_rd     = m2.rd;
         wn_writes = m2_advance && m2.writes_rd;
     end
+    // The register-file write-through selects: next cycle's W writes the
+    // register next cycle's Decode instruction reads.
+    logic [4:0] dn_rs1, dn_rs2;
+    assign dn_rs1 = d_free ? f_insn[19:15] : d_insn[19:15];
+    assign dn_rs2 = d_free ? f_insn[24:20] : d_insn[24:20];
     function automatic logic [2:0] select(input logic [4:0] r);
         if (r == 5'd0) return 3'b000;
         if (m1n_writes && m1n_rd == r) return 3'b100;
@@ -348,6 +360,8 @@ module aster_core
             squash       <= 1'b0;
             fsel1        <= 3'b000;
             fsel2        <= 3'b000;
+            wt1          <= 1'b0;
+            wt2          <= 1'b0;
             d_valid      <= 1'b0;
             d_redirected <= 1'b0;
             e_valid      <= 1'b0;
@@ -362,6 +376,8 @@ module aster_core
             d_acc_last <= d_req_valid && d_req_ready;
             fsel1      <= select(en_rs1);
             fsel2      <= select(en_rs2);
+            wt1        <= wn_writes && wn_rd == dn_rs1;
+            wt2        <= wn_writes && wn_rd == dn_rs2;
 
             // Decode (a squashed instruction leaves: Decode is free)
             if (halted || kill) begin
@@ -386,8 +402,8 @@ module aster_core
                 e_err   <= d_err;
                 e_dec   <= d_dec;
                 e_pred  <= d_predict;
-                e_rs1v  <= rf_read(d_dec.rs1);
-                e_rs2v  <= rf_read(d_dec.rs2);
+                e_rs1v  <= d_rs1v;
+                e_rs2v  <= d_rs2v;
             end else begin
                 if (rs1_ready) e_rs1v <= rs1f;
                 if (rs2_ready) e_rs2v <= rs2f;

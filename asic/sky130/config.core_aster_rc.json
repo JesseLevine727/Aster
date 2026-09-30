@@ -1,0 +1,122 @@
+{
+    "DESIGN_NAME": "timing_aster",
+    "VERILOG_FILES": [
+        "dir::build/timing_aster.v"
+    ],
+    "CLOCK_PORT": "clk",
+    "CLOCK_PERIOD": 10.0,
+    "SYNTH_STRATEGY": "DELAY 1",
+    "RUN_POST_GRT_RESIZER_TIMING": true,
+    "PNR_SDC_FILE": "dir::constraints.core.sdc",
+    "SIGNOFF_SDC_FILE": "dir::constraints.core.sdc",
+    "EXTRA_EXCLUDED_CELLS": [
+        "sky130_fd_sc_hd__clkdlybuf4s*"
+    ],
+    "STA_EXTRA_CORNER_TCL_FILE": "dir::sta_named_paths.tcl",
+    "pdk::sky130*": {
+        "FP_CORE_UTIL": 40,
+        "CLOCK_PERIOD": 10.0,
+        "scl::sky130_fd_sc_hd": {
+            "CLOCK_PERIOD": 10.0
+        }
+    },
+    "LAYERS_RC": {
+        "*tt*": {
+            "li1": {
+                "res": 0.07176,
+                "cap": 0.0001499
+            },
+            "met1": {
+                "res": 0.0008929,
+                "cap": 0.000172375
+            },
+            "met2": {
+                "res": 0.0008929,
+                "cap": 0.000136233
+            },
+            "met3": {
+                "res": 0.0001567,
+                "cap": 0.000214962
+            },
+            "met4": {
+                "res": 0.0001567,
+                "cap": 0.000154087
+            },
+            "met5": {
+                "res": 1.781e-05,
+                "cap": 0.000154087
+            }
+        },
+        "*ff*": {
+            "li1": {
+                "res": 0.050232,
+                "cap": 0.00010493
+            },
+            "met1": {
+                "res": 0.00062503,
+                "cap": 0.0001206625
+            },
+            "met2": {
+                "res": 0.00062503,
+                "cap": 9.53631e-05
+            },
+            "met3": {
+                "res": 0.00010969,
+                "cap": 0.0001504734
+            },
+            "met4": {
+                "res": 0.00010969,
+                "cap": 0.0001078609
+            },
+            "met5": {
+                "res": 1.2467e-05,
+                "cap": 0.0001078609
+            }
+        },
+        "*ss*": {
+            "li1": {
+                "res": 0.093288,
+                "cap": 0.00019487
+            },
+            "met1": {
+                "res": 0.00116077,
+                "cap": 0.0002240875
+            },
+            "met2": {
+                "res": 0.00116077,
+                "cap": 0.0001771029
+            },
+            "met3": {
+                "res": 0.00020371,
+                "cap": 0.0002794506
+            },
+            "met4": {
+                "res": 0.00020371,
+                "cap": 0.0002003131
+            },
+            "met5": {
+                "res": 2.3153e-05,
+                "cap": 0.0002003131
+            }
+        }
+    },
+    "VIAS_R": {
+        "*": {
+            "mcon": {
+                "res": 0.009249146
+            },
+            "via": {
+                "res": 0.0045
+            },
+            "via2": {
+                "res": 0.003368786
+            },
+            "via3": {
+                "res": 0.000376635
+            },
+            "via4": {
+                "res": 5.8e-06
+            }
+        }
+    }
+}
