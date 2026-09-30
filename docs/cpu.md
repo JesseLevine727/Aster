@@ -443,6 +443,11 @@ reviews; none changes the approved scope:
   (the first run missed by 3.19 ns). No build with a direct redirect was
   timed; the question reopens only if the remaining 18.1 timing work closes
   `max_ss` with margin.
+- §4: a load's value is aligned and sign- or zero-extended as it leaves M2
+  (the data is registered at the end of M2 already aligned) rather than in W,
+  so W forwards and writes a value straight from a register; every cycle
+  count is unchanged (a load's result is still forwarded from W). The 18.6
+  L1's second stage must leave room for the alignment in M2.
 - §5: the instruction memory may allow any number of fetches in flight; the
   fetch unit itself never has more than nine (three live by the room rule,
   the rest discarded ones), and its counters hold that.

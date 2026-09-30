@@ -34,8 +34,9 @@
 //   cycle after (held while M1 waits), and its answer is registered at the end
 //   of M2 — an answer arriving in M1 (a one-cycle memory) is held until M2, and
 //   M2 waits for a late one. The commit point is the end of M1.
-// - W: load alignment and extension, the register write, and the RVFI record,
-//   registered (it appears in the cycle after W).
+// - W: the register write and the RVFI record, registered (it appears in the
+//   cycle after W). A load's value is aligned and extended as it leaves M2, so
+//   W's forwarded value comes straight from a register.
 //
 // Load-use: a Decode instruction that reads the result of a load in Execute
 // or M1 waits in Decode (2 or 1 cycles); a load's result is forwarded from W.
@@ -135,13 +136,13 @@ module aster_core
     // ------------------------------------------------------------------ fetch
     logic        d_redirect, e_flush, f_valid, f_error, d_take;
     logic [31:2] f_pc;
-    logic [31:0] f_insn, e_next_pc;
+    logic [31:0] f_insn, e_next_pc, e_redirect_target;
     logic [31:2] d_target;          // the Decode redirect's target (predecoded)
 
     aster_core_fetch #(.RESET_VECTOR(RESET_VECTOR)) fetch (
         .clk, .rst_n,
         .i_req_valid, .i_req_addr, .i_req_ready, .i_rsp_valid, .i_rsp_data, .i_rsp_error,
-        .d_redirect, .d_target, .e_flush, .e_target(e_next_pc[31:2]), .halt(halted),
+        .d_redirect, .d_target, .e_flush, .e_target(e_redirect_target[31:2]), .halt(halted),
         .redirecting(chk_i_redirect),
         .f_valid, .f_pc, .f_insn, .f_error, .d_take
     );
@@ -217,6 +218,10 @@ module aster_core
     assign e_btarget = e_pc + e_dec.imm;
     assign e_jtarget = {e_alu[31:1], 1'b0};
     assign e_next_pc = e_dec.jalr ? e_jtarget : (e_dec.jal || e_taken) ? e_btarget : e_link;
+    // When Execute redirects, its target is known without the compare: a
+    // `jalr`'s computed target, else the fall-through if Decode predicted the
+    // branch taken, else the branch target. The compare only decides whether.
+    assign e_redirect_target = e_dec.jalr ? e_jtarget : e_pred ? e_link : e_btarget;
     assign e_target_misaligned = (e_dec.jalr && e_jtarget[1]) || ((e_dec.jal || e_taken) && e_btarget[1]);
     // A load's or store's address has its own adder, and its alignment comes
     // from the two low bits alone, so the stall logic does not wait for a
@@ -292,7 +297,9 @@ module aster_core
     assign d_take    = d_free && !halted;
 
     // ------------------------------------------------------------ W values
-    assign w_value = w.load ? load_value(w.rdata, w.addr[1:0], w.funct3) : w.result;
+    // A load's value is aligned and extended as it leaves M2, so W forwards and
+    // writes a register (w.result); w.rdata keeps the word read, for RVFI.
+    assign w_value = w.result;
     assign w_write = w.valid && w.writes_rd;
 
     // ------------------------------------------------ forwarding selects
@@ -441,7 +448,11 @@ module aster_core
             end
 
             // W
-            w <= m2_advance ? m2_view : '0;
+            w <= '0;
+            if (m2_advance) begin
+                w <= m2_view;
+                if (m2_view.load) w.result <= load_value(m2_view.rdata, m2_view.addr[1:0], m2_view.funct3);
+            end
         end
     end
 
@@ -482,7 +493,7 @@ module aster_core
     assign rvfi_ixl  = 2'd1;
 
     logic unused;
-    assign unused = ^{meip, mtip, msip, HART_ID, d_raw, f_predecode[1:0], w.acc, w.got};
+    assign unused = ^{meip, mtip, msip, HART_ID, d_raw, f_predecode[1:0], e_redirect_target[1:0], w.acc, w.got, w.funct3};
 
 `ifndef SYNTHESIS
     always_ff @(posedge clk) begin
