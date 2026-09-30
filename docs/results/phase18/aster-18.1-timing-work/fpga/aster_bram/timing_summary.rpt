@@ -1,7 +1,7 @@
 Copyright 1986-2022 Xilinx, Inc. All Rights Reserved. Copyright 2022-2025 Advanced Micro Devices, Inc. All Rights Reserved.
 ---------------------------------------------------------------------------------------------------------------------------------------------
 | Tool Version : Vivado v.2025.1 (lin64) Build 6140274 Wed May 21 22:58:25 MDT 2025
-| Date         : Wed Sep 30 17:03:07 2026
+| Date         : Wed Sep 30 19:44:44 2026
 | Host         : gondor running 64-bit Ubuntu 24.04.5 LTS
 | Command      : report_timing_summary -max_paths 10 -file /home/elfo/Documents/Aster/build/timing/fpga/aster_bram/timing_summary.rpt
 | Design       : timing_aster_bram
@@ -138,7 +138,7 @@ Table of Contents
 
     WNS(ns)      TNS(ns)  TNS Failing Endpoints  TNS Total Endpoints      WHS(ns)      THS(ns)  THS Failing Endpoints  THS Total Endpoints     WPWS(ns)     TPWS(ns)  TPWS Failing Endpoints  TPWS Total Endpoints  
     -------      -------  ---------------------  -------------------      -------      -------  ---------------------  -------------------     --------     --------  ----------------------  --------------------  
-      0.054        0.000                      0                 3395        0.077        0.000                      0                 3395        3.750        0.000                       0                   915  
+      0.357        0.000                      0                 3391        0.108        0.000                      0                 3391        3.750        0.000                       0                   915  
 
 
 All user specified timing constraints are met.
@@ -161,7 +161,7 @@ clk    {0.000 5.000}      10.000          100.000
 
 Clock             WNS(ns)      TNS(ns)  TNS Failing Endpoints  TNS Total Endpoints      WHS(ns)      THS(ns)  THS Failing Endpoints  THS Total Endpoints     WPWS(ns)     TPWS(ns)  TPWS Failing Endpoints  TPWS Total Endpoints  
 -----             -------      -------  ---------------------  -------------------      -------      -------  ---------------------  -------------------     --------     --------  ----------------------  --------------------  
-clk                 0.054        0.000                      0                 3395        0.077        0.000                      0                 3395        3.750        0.000                       0                   915  
+clk                 0.357        0.000                      0                 3391        0.108        0.000                      0                 3391        3.750        0.000                       0                   915  
 
 
 ------------------------------------------------------------------------------------------------
@@ -192,447 +192,15 @@ Path Group    From Clock    To Clock          WNS(ns)      TNS(ns)  TNS Failing 
 From Clock:  clk
   To Clock:  clk
 
-Setup :            0  Failing Endpoints,  Worst Slack        0.054ns,  Total Violation        0.000ns
-Hold  :            0  Failing Endpoints,  Worst Slack        0.077ns,  Total Violation        0.000ns
+Setup :            0  Failing Endpoints,  Worst Slack        0.357ns,  Total Violation        0.000ns
+Hold  :            0  Failing Endpoints,  Worst Slack        0.108ns,  Total Violation        0.000ns
 PW    :            0  Failing Endpoints,  Worst Slack        3.750ns,  Total Violation        0.000ns
 ---------------------------------------------------------------------------------------------------
 
 
 Max Delay Paths
 --------------------------------------------------------------------------------------
-Slack (MET) :             0.054ns  (required time - arrival time)
-  Source:                 core/fsel1_reg[0]/C
-                            (rising edge-triggered cell FDRE clocked by clk  {rise@0.000ns fall@5.000ns period=10.000ns})
-  Destination:            bram_samples_request.ram_reg_2_0_1/WEA[0]
-                            (rising edge-triggered cell RAMB36E1 clocked by clk  {rise@0.000ns fall@5.000ns period=10.000ns})
-  Path Group:             clk
-  Path Type:              Setup (Max at Slow Process Corner)
-  Requirement:            10.000ns  (clk rise@10.000ns - clk rise@0.000ns)
-  Data Path Delay:        9.330ns  (logic 2.597ns (27.836%)  route 6.733ns (72.164%))
-  Logic Levels:           11  (CARRY4=4 LUT2=1 LUT3=2 LUT4=1 LUT5=2 LUT6=1)
-  Clock Path Skew:        -0.049ns (DCD - SCD + CPR)
-    Destination Clock Delay (DCD):    0.924ns = ( 10.924 - 10.000 ) 
-    Source Clock Delay      (SCD):    0.973ns
-    Clock Pessimism Removal (CPR):    0.000ns
-  Clock Uncertainty:      0.035ns  ((TSJ^2 + TIJ^2)^1/2 + DJ) / 2 + PE
-    Total System Jitter     (TSJ):    0.071ns
-    Total Input Jitter      (TIJ):    0.000ns
-    Discrete Jitter          (DJ):    0.000ns
-    Phase Error              (PE):    0.000ns
-
-    Location             Delay type                Incr(ns)  Path(ns)    Netlist Resource(s)
-  -------------------------------------------------------------------    -------------------
-                         (clock clk rise edge)        0.000     0.000 r  
-                                                      0.000     0.000 r  clk (IN)
-                         net (fo=914, unset)          0.973     0.973    core/clk
-    SLICE_X25Y21         FDRE                                         r  core/fsel1_reg[0]/C
-  -------------------------------------------------------------------    -------------------
-    SLICE_X25Y21         FDRE (Prop_fdre_C_Q)         0.456     1.429 r  core/fsel1_reg[0]/Q
-                         net (fo=32, routed)          1.111     2.540    core/fetch/m1[addr][1]_i_4
-    SLICE_X26Y20         LUT5 (Prop_lut5_I0_O)        0.124     2.664 r  core/fetch/e_rs1v[9]_i_3/O
-                         net (fo=3, routed)           0.438     3.102    core/fetch/fsel1_reg[0]_17
-    SLICE_X24Y21         LUT3 (Prop_lut3_I2_O)        0.124     3.226 r  core/fetch/e_rs1v[9]_i_2/O
-                         net (fo=8, routed)           0.842     4.068    core/fetch_n_78
-    SLICE_X28Y21         LUT2 (Prop_lut2_I0_O)        0.124     4.192 r  core/bram_samples_request.ram_reg_0_0_0_i_45/O
-                         net (fo=1, routed)           0.000     4.192    core/bram_samples_request.ram_reg_0_0_0_i_45_n_0
-    SLICE_X28Y21         CARRY4 (Prop_carry4_S[1]_CO[3])
-                                                      0.550     4.742 r  core/bram_samples_request.ram_reg_0_0_0_i_4/CO[3]
-                         net (fo=1, routed)           0.000     4.742    core/bram_samples_request.ram_reg_0_0_0_i_4_n_0
-    SLICE_X28Y22         CARRY4 (Prop_carry4_CI_CO[3])
-                                                      0.114     4.856 r  core/bram_samples_request.ram_reg_0_0_0_i_3/CO[3]
-                         net (fo=1, routed)           0.000     4.856    core/bram_samples_request.ram_reg_0_0_0_i_3_n_0
-    SLICE_X28Y23         CARRY4 (Prop_carry4_CI_CO[3])
-                                                      0.114     4.970 r  core/bram_samples_request.ram_reg_0_0_0_i_2/CO[3]
-                         net (fo=1, routed)           0.000     4.970    core/bram_samples_request.ram_reg_0_0_0_i_2_n_0
-    SLICE_X28Y24         CARRY4 (Prop_carry4_CI_O[3])
-                                                      0.313     5.283 f  core/observe_reg[23]_i_2/O[3]
-                         net (fo=2, routed)           1.022     6.305    core/d_req_addr[23]
-    SLICE_X29Y27         LUT4 (Prop_lut4_I0_O)        0.306     6.611 r  core/d_err1_i_3/O
-                         net (fo=1, routed)           0.774     7.384    core/d_err1_i_3_n_0
-    SLICE_X31Y27         LUT6 (Prop_lut6_I0_O)        0.124     7.508 f  core/d_err1_i_2/O
-                         net (fo=3, routed)           0.408     7.916    core/d_err1_i_2_0
-    SLICE_X29Y27         LUT3 (Prop_lut3_I2_O)        0.124     8.040 r  core/bram_samples_request.ram_reg_0_0_0_i_59/O
-                         net (fo=12, routed)          1.020     9.060    core/bram_samples_request.ram_reg_0_0_0_i_59_n_0
-    SLICE_X25Y17         LUT5 (Prop_lut5_I4_O)        0.124     9.184 r  core/bram_samples_request.ram_reg_2_0_0_i_2/O
-                         net (fo=3, routed)           1.119    10.303    core_n_91
-    RAMB36_X0Y3          RAMB36E1                                     r  bram_samples_request.ram_reg_2_0_1/WEA[0]
-  -------------------------------------------------------------------    -------------------
-
-                         (clock clk rise edge)       10.000    10.000 r  
-                                                      0.000    10.000 r  clk (IN)
-                         net (fo=914, unset)          0.924    10.924    clk
-    RAMB36_X0Y3          RAMB36E1                                     r  bram_samples_request.ram_reg_2_0_1/CLKARDCLK
-                         clock pessimism              0.000    10.924    
-                         clock uncertainty           -0.035    10.889    
-    RAMB36_X0Y3          RAMB36E1 (Setup_ramb36e1_CLKARDCLK_WEA[0])
-                                                     -0.532    10.357    bram_samples_request.ram_reg_2_0_1
-  -------------------------------------------------------------------
-                         required time                         10.357    
-                         arrival time                         -10.303    
-  -------------------------------------------------------------------
-                         slack                                  0.054    
-
-Slack (MET) :             0.072ns  (required time - arrival time)
-  Source:                 core/fsel1_reg[0]/C
-                            (rising edge-triggered cell FDRE clocked by clk  {rise@0.000ns fall@5.000ns period=10.000ns})
-  Destination:            bram_samples_request.ram_reg_0_0_7/WEA[0]
-                            (rising edge-triggered cell RAMB36E1 clocked by clk  {rise@0.000ns fall@5.000ns period=10.000ns})
-  Path Group:             clk
-  Path Type:              Setup (Max at Slow Process Corner)
-  Requirement:            10.000ns  (clk rise@10.000ns - clk rise@0.000ns)
-  Data Path Delay:        9.104ns  (logic 2.592ns (28.470%)  route 6.512ns (71.530%))
-  Logic Levels:           11  (CARRY4=4 LUT2=1 LUT3=2 LUT4=2 LUT5=1 LUT6=1)
-  Clock Path Skew:        -0.049ns (DCD - SCD + CPR)
-    Destination Clock Delay (DCD):    0.924ns = ( 10.924 - 10.000 ) 
-    Source Clock Delay      (SCD):    0.973ns
-    Clock Pessimism Removal (CPR):    0.000ns
-  Clock Uncertainty:      0.035ns  ((TSJ^2 + TIJ^2)^1/2 + DJ) / 2 + PE
-    Total System Jitter     (TSJ):    0.071ns
-    Total Input Jitter      (TIJ):    0.000ns
-    Discrete Jitter          (DJ):    0.000ns
-    Phase Error              (PE):    0.000ns
-
-    Location             Delay type                Incr(ns)  Path(ns)    Netlist Resource(s)
-  -------------------------------------------------------------------    -------------------
-                         (clock clk rise edge)        0.000     0.000 r  
-                                                      0.000     0.000 r  clk (IN)
-                         net (fo=914, unset)          0.973     0.973    core/clk
-    SLICE_X25Y21         FDRE                                         r  core/fsel1_reg[0]/C
-  -------------------------------------------------------------------    -------------------
-    SLICE_X25Y21         FDRE (Prop_fdre_C_Q)         0.456     1.429 r  core/fsel1_reg[0]/Q
-                         net (fo=32, routed)          1.111     2.540    core/fetch/m1[addr][1]_i_4
-    SLICE_X26Y20         LUT5 (Prop_lut5_I0_O)        0.124     2.664 r  core/fetch/e_rs1v[9]_i_3/O
-                         net (fo=3, routed)           0.438     3.102    core/fetch/fsel1_reg[0]_17
-    SLICE_X24Y21         LUT3 (Prop_lut3_I2_O)        0.124     3.226 r  core/fetch/e_rs1v[9]_i_2/O
-                         net (fo=8, routed)           0.842     4.068    core/fetch_n_78
-    SLICE_X28Y21         LUT2 (Prop_lut2_I0_O)        0.124     4.192 r  core/bram_samples_request.ram_reg_0_0_0_i_45/O
-                         net (fo=1, routed)           0.000     4.192    core/bram_samples_request.ram_reg_0_0_0_i_45_n_0
-    SLICE_X28Y21         CARRY4 (Prop_carry4_S[1]_CO[3])
-                                                      0.550     4.742 r  core/bram_samples_request.ram_reg_0_0_0_i_4/CO[3]
-                         net (fo=1, routed)           0.000     4.742    core/bram_samples_request.ram_reg_0_0_0_i_4_n_0
-    SLICE_X28Y22         CARRY4 (Prop_carry4_CI_CO[3])
-                                                      0.114     4.856 r  core/bram_samples_request.ram_reg_0_0_0_i_3/CO[3]
-                         net (fo=1, routed)           0.000     4.856    core/bram_samples_request.ram_reg_0_0_0_i_3_n_0
-    SLICE_X28Y23         CARRY4 (Prop_carry4_CI_CO[3])
-                                                      0.114     4.970 r  core/bram_samples_request.ram_reg_0_0_0_i_2/CO[3]
-                         net (fo=1, routed)           0.000     4.970    core/bram_samples_request.ram_reg_0_0_0_i_2_n_0
-    SLICE_X28Y24         CARRY4 (Prop_carry4_CI_O[3])
-                                                      0.313     5.283 f  core/observe_reg[23]_i_2/O[3]
-                         net (fo=2, routed)           1.022     6.305    core/d_req_addr[23]
-    SLICE_X29Y27         LUT4 (Prop_lut4_I0_O)        0.306     6.611 r  core/d_err1_i_3/O
-                         net (fo=1, routed)           0.774     7.384    core/d_err1_i_3_n_0
-    SLICE_X31Y27         LUT6 (Prop_lut6_I0_O)        0.124     7.508 f  core/d_err1_i_2/O
-                         net (fo=3, routed)           0.408     7.916    core/d_err1_i_2_0
-    SLICE_X29Y27         LUT3 (Prop_lut3_I2_O)        0.124     8.040 r  core/bram_samples_request.ram_reg_0_0_0_i_59/O
-                         net (fo=12, routed)          1.020     9.060    core/bram_samples_request.ram_reg_0_0_0_i_59_n_0
-    SLICE_X25Y17         LUT4 (Prop_lut4_I3_O)        0.119     9.179 r  core/bram_samples_request.ram_reg_0_0_5_i_2/O
-                         net (fo=3, routed)           0.898    10.077    core_n_101
-    RAMB36_X1Y2          RAMB36E1                                     r  bram_samples_request.ram_reg_0_0_7/WEA[0]
-  -------------------------------------------------------------------    -------------------
-
-                         (clock clk rise edge)       10.000    10.000 r  
-                                                      0.000    10.000 r  clk (IN)
-                         net (fo=914, unset)          0.924    10.924    clk
-    RAMB36_X1Y2          RAMB36E1                                     r  bram_samples_request.ram_reg_0_0_7/CLKARDCLK
-                         clock pessimism              0.000    10.924    
-                         clock uncertainty           -0.035    10.889    
-    RAMB36_X1Y2          RAMB36E1 (Setup_ramb36e1_CLKARDCLK_WEA[0])
-                                                     -0.740    10.149    bram_samples_request.ram_reg_0_0_7
-  -------------------------------------------------------------------
-                         required time                         10.149    
-                         arrival time                         -10.077    
-  -------------------------------------------------------------------
-                         slack                                  0.072    
-
-Slack (MET) :             0.081ns  (required time - arrival time)
-  Source:                 core/fsel1_reg[0]/C
-                            (rising edge-triggered cell FDRE clocked by clk  {rise@0.000ns fall@5.000ns period=10.000ns})
-  Destination:            bram_samples_request.ram_reg_1_0_2/WEA[0]
-                            (rising edge-triggered cell RAMB36E1 clocked by clk  {rise@0.000ns fall@5.000ns period=10.000ns})
-  Path Group:             clk
-  Path Type:              Setup (Max at Slow Process Corner)
-  Requirement:            10.000ns  (clk rise@10.000ns - clk rise@0.000ns)
-  Data Path Delay:        9.303ns  (logic 2.597ns (27.917%)  route 6.706ns (72.083%))
-  Logic Levels:           11  (CARRY4=4 LUT2=1 LUT3=2 LUT4=1 LUT5=2 LUT6=1)
-  Clock Path Skew:        -0.049ns (DCD - SCD + CPR)
-    Destination Clock Delay (DCD):    0.924ns = ( 10.924 - 10.000 ) 
-    Source Clock Delay      (SCD):    0.973ns
-    Clock Pessimism Removal (CPR):    0.000ns
-  Clock Uncertainty:      0.035ns  ((TSJ^2 + TIJ^2)^1/2 + DJ) / 2 + PE
-    Total System Jitter     (TSJ):    0.071ns
-    Total Input Jitter      (TIJ):    0.000ns
-    Discrete Jitter          (DJ):    0.000ns
-    Phase Error              (PE):    0.000ns
-
-    Location             Delay type                Incr(ns)  Path(ns)    Netlist Resource(s)
-  -------------------------------------------------------------------    -------------------
-                         (clock clk rise edge)        0.000     0.000 r  
-                                                      0.000     0.000 r  clk (IN)
-                         net (fo=914, unset)          0.973     0.973    core/clk
-    SLICE_X25Y21         FDRE                                         r  core/fsel1_reg[0]/C
-  -------------------------------------------------------------------    -------------------
-    SLICE_X25Y21         FDRE (Prop_fdre_C_Q)         0.456     1.429 r  core/fsel1_reg[0]/Q
-                         net (fo=32, routed)          1.111     2.540    core/fetch/m1[addr][1]_i_4
-    SLICE_X26Y20         LUT5 (Prop_lut5_I0_O)        0.124     2.664 r  core/fetch/e_rs1v[9]_i_3/O
-                         net (fo=3, routed)           0.438     3.102    core/fetch/fsel1_reg[0]_17
-    SLICE_X24Y21         LUT3 (Prop_lut3_I2_O)        0.124     3.226 r  core/fetch/e_rs1v[9]_i_2/O
-                         net (fo=8, routed)           0.842     4.068    core/fetch_n_78
-    SLICE_X28Y21         LUT2 (Prop_lut2_I0_O)        0.124     4.192 r  core/bram_samples_request.ram_reg_0_0_0_i_45/O
-                         net (fo=1, routed)           0.000     4.192    core/bram_samples_request.ram_reg_0_0_0_i_45_n_0
-    SLICE_X28Y21         CARRY4 (Prop_carry4_S[1]_CO[3])
-                                                      0.550     4.742 r  core/bram_samples_request.ram_reg_0_0_0_i_4/CO[3]
-                         net (fo=1, routed)           0.000     4.742    core/bram_samples_request.ram_reg_0_0_0_i_4_n_0
-    SLICE_X28Y22         CARRY4 (Prop_carry4_CI_CO[3])
-                                                      0.114     4.856 r  core/bram_samples_request.ram_reg_0_0_0_i_3/CO[3]
-                         net (fo=1, routed)           0.000     4.856    core/bram_samples_request.ram_reg_0_0_0_i_3_n_0
-    SLICE_X28Y23         CARRY4 (Prop_carry4_CI_CO[3])
-                                                      0.114     4.970 r  core/bram_samples_request.ram_reg_0_0_0_i_2/CO[3]
-                         net (fo=1, routed)           0.000     4.970    core/bram_samples_request.ram_reg_0_0_0_i_2_n_0
-    SLICE_X28Y24         CARRY4 (Prop_carry4_CI_O[3])
-                                                      0.313     5.283 f  core/observe_reg[23]_i_2/O[3]
-                         net (fo=2, routed)           1.022     6.305    core/d_req_addr[23]
-    SLICE_X29Y27         LUT4 (Prop_lut4_I0_O)        0.306     6.611 r  core/d_err1_i_3/O
-                         net (fo=1, routed)           0.774     7.384    core/d_err1_i_3_n_0
-    SLICE_X31Y27         LUT6 (Prop_lut6_I0_O)        0.124     7.508 f  core/d_err1_i_2/O
-                         net (fo=3, routed)           0.408     7.916    core/d_err1_i_2_0
-    SLICE_X29Y27         LUT3 (Prop_lut3_I2_O)        0.124     8.040 r  core/bram_samples_request.ram_reg_0_0_0_i_59/O
-                         net (fo=12, routed)          0.809     8.849    core/bram_samples_request.ram_reg_0_0_0_i_59_n_0
-    SLICE_X34Y24         LUT5 (Prop_lut5_I4_O)        0.124     8.973 r  core/bram_samples_request.ram_reg_1_0_0_i_2/O
-                         net (fo=3, routed)           1.303    10.276    core_n_95
-    RAMB36_X3Y2          RAMB36E1                                     r  bram_samples_request.ram_reg_1_0_2/WEA[0]
-  -------------------------------------------------------------------    -------------------
-
-                         (clock clk rise edge)       10.000    10.000 r  
-                                                      0.000    10.000 r  clk (IN)
-                         net (fo=914, unset)          0.924    10.924    clk
-    RAMB36_X3Y2          RAMB36E1                                     r  bram_samples_request.ram_reg_1_0_2/CLKARDCLK
-                         clock pessimism              0.000    10.924    
-                         clock uncertainty           -0.035    10.889    
-    RAMB36_X3Y2          RAMB36E1 (Setup_ramb36e1_CLKARDCLK_WEA[0])
-                                                     -0.532    10.357    bram_samples_request.ram_reg_1_0_2
-  -------------------------------------------------------------------
-                         required time                         10.357    
-                         arrival time                         -10.276    
-  -------------------------------------------------------------------
-                         slack                                  0.081    
-
-Slack (MET) :             0.089ns  (required time - arrival time)
-  Source:                 core/fsel1_reg[0]/C
-                            (rising edge-triggered cell FDRE clocked by clk  {rise@0.000ns fall@5.000ns period=10.000ns})
-  Destination:            bram_samples_request.ram_reg_0_0_6/WEA[0]
-                            (rising edge-triggered cell RAMB36E1 clocked by clk  {rise@0.000ns fall@5.000ns period=10.000ns})
-  Path Group:             clk
-  Path Type:              Setup (Max at Slow Process Corner)
-  Requirement:            10.000ns  (clk rise@10.000ns - clk rise@0.000ns)
-  Data Path Delay:        9.087ns  (logic 2.592ns (28.523%)  route 6.495ns (71.477%))
-  Logic Levels:           11  (CARRY4=4 LUT2=1 LUT3=2 LUT4=2 LUT5=1 LUT6=1)
-  Clock Path Skew:        -0.049ns (DCD - SCD + CPR)
-    Destination Clock Delay (DCD):    0.924ns = ( 10.924 - 10.000 ) 
-    Source Clock Delay      (SCD):    0.973ns
-    Clock Pessimism Removal (CPR):    0.000ns
-  Clock Uncertainty:      0.035ns  ((TSJ^2 + TIJ^2)^1/2 + DJ) / 2 + PE
-    Total System Jitter     (TSJ):    0.071ns
-    Total Input Jitter      (TIJ):    0.000ns
-    Discrete Jitter          (DJ):    0.000ns
-    Phase Error              (PE):    0.000ns
-
-    Location             Delay type                Incr(ns)  Path(ns)    Netlist Resource(s)
-  -------------------------------------------------------------------    -------------------
-                         (clock clk rise edge)        0.000     0.000 r  
-                                                      0.000     0.000 r  clk (IN)
-                         net (fo=914, unset)          0.973     0.973    core/clk
-    SLICE_X25Y21         FDRE                                         r  core/fsel1_reg[0]/C
-  -------------------------------------------------------------------    -------------------
-    SLICE_X25Y21         FDRE (Prop_fdre_C_Q)         0.456     1.429 r  core/fsel1_reg[0]/Q
-                         net (fo=32, routed)          1.111     2.540    core/fetch/m1[addr][1]_i_4
-    SLICE_X26Y20         LUT5 (Prop_lut5_I0_O)        0.124     2.664 r  core/fetch/e_rs1v[9]_i_3/O
-                         net (fo=3, routed)           0.438     3.102    core/fetch/fsel1_reg[0]_17
-    SLICE_X24Y21         LUT3 (Prop_lut3_I2_O)        0.124     3.226 r  core/fetch/e_rs1v[9]_i_2/O
-                         net (fo=8, routed)           0.842     4.068    core/fetch_n_78
-    SLICE_X28Y21         LUT2 (Prop_lut2_I0_O)        0.124     4.192 r  core/bram_samples_request.ram_reg_0_0_0_i_45/O
-                         net (fo=1, routed)           0.000     4.192    core/bram_samples_request.ram_reg_0_0_0_i_45_n_0
-    SLICE_X28Y21         CARRY4 (Prop_carry4_S[1]_CO[3])
-                                                      0.550     4.742 r  core/bram_samples_request.ram_reg_0_0_0_i_4/CO[3]
-                         net (fo=1, routed)           0.000     4.742    core/bram_samples_request.ram_reg_0_0_0_i_4_n_0
-    SLICE_X28Y22         CARRY4 (Prop_carry4_CI_CO[3])
-                                                      0.114     4.856 r  core/bram_samples_request.ram_reg_0_0_0_i_3/CO[3]
-                         net (fo=1, routed)           0.000     4.856    core/bram_samples_request.ram_reg_0_0_0_i_3_n_0
-    SLICE_X28Y23         CARRY4 (Prop_carry4_CI_CO[3])
-                                                      0.114     4.970 r  core/bram_samples_request.ram_reg_0_0_0_i_2/CO[3]
-                         net (fo=1, routed)           0.000     4.970    core/bram_samples_request.ram_reg_0_0_0_i_2_n_0
-    SLICE_X28Y24         CARRY4 (Prop_carry4_CI_O[3])
-                                                      0.313     5.283 f  core/observe_reg[23]_i_2/O[3]
-                         net (fo=2, routed)           1.022     6.305    core/d_req_addr[23]
-    SLICE_X29Y27         LUT4 (Prop_lut4_I0_O)        0.306     6.611 r  core/d_err1_i_3/O
-                         net (fo=1, routed)           0.774     7.384    core/d_err1_i_3_n_0
-    SLICE_X31Y27         LUT6 (Prop_lut6_I0_O)        0.124     7.508 f  core/d_err1_i_2/O
-                         net (fo=3, routed)           0.408     7.916    core/d_err1_i_2_0
-    SLICE_X29Y27         LUT3 (Prop_lut3_I2_O)        0.124     8.040 r  core/bram_samples_request.ram_reg_0_0_0_i_59/O
-                         net (fo=12, routed)          1.020     9.060    core/bram_samples_request.ram_reg_0_0_0_i_59_n_0
-    SLICE_X25Y17         LUT4 (Prop_lut4_I3_O)        0.119     9.179 r  core/bram_samples_request.ram_reg_0_0_5_i_2/O
-                         net (fo=3, routed)           0.881    10.060    core_n_101
-    RAMB36_X2Y3          RAMB36E1                                     r  bram_samples_request.ram_reg_0_0_6/WEA[0]
-  -------------------------------------------------------------------    -------------------
-
-                         (clock clk rise edge)       10.000    10.000 r  
-                                                      0.000    10.000 r  clk (IN)
-                         net (fo=914, unset)          0.924    10.924    clk
-    RAMB36_X2Y3          RAMB36E1                                     r  bram_samples_request.ram_reg_0_0_6/CLKARDCLK
-                         clock pessimism              0.000    10.924    
-                         clock uncertainty           -0.035    10.889    
-    RAMB36_X2Y3          RAMB36E1 (Setup_ramb36e1_CLKARDCLK_WEA[0])
-                                                     -0.740    10.149    bram_samples_request.ram_reg_0_0_6
-  -------------------------------------------------------------------
-                         required time                         10.149    
-                         arrival time                         -10.060    
-  -------------------------------------------------------------------
-                         slack                                  0.089    
-
-Slack (MET) :             0.104ns  (required time - arrival time)
-  Source:                 core/fsel1_reg[0]/C
-                            (rising edge-triggered cell FDRE clocked by clk  {rise@0.000ns fall@5.000ns period=10.000ns})
-  Destination:            bram_samples_request.ram_reg_0_0_4/WEA[0]
-                            (rising edge-triggered cell RAMB36E1 clocked by clk  {rise@0.000ns fall@5.000ns period=10.000ns})
-  Path Group:             clk
-  Path Type:              Setup (Max at Slow Process Corner)
-  Requirement:            10.000ns  (clk rise@10.000ns - clk rise@0.000ns)
-  Data Path Delay:        9.280ns  (logic 2.597ns (27.984%)  route 6.683ns (72.016%))
-  Logic Levels:           11  (CARRY4=4 LUT2=1 LUT3=2 LUT4=2 LUT5=1 LUT6=1)
-  Clock Path Skew:        -0.049ns (DCD - SCD + CPR)
-    Destination Clock Delay (DCD):    0.924ns = ( 10.924 - 10.000 ) 
-    Source Clock Delay      (SCD):    0.973ns
-    Clock Pessimism Removal (CPR):    0.000ns
-  Clock Uncertainty:      0.035ns  ((TSJ^2 + TIJ^2)^1/2 + DJ) / 2 + PE
-    Total System Jitter     (TSJ):    0.071ns
-    Total Input Jitter      (TIJ):    0.000ns
-    Discrete Jitter          (DJ):    0.000ns
-    Phase Error              (PE):    0.000ns
-
-    Location             Delay type                Incr(ns)  Path(ns)    Netlist Resource(s)
-  -------------------------------------------------------------------    -------------------
-                         (clock clk rise edge)        0.000     0.000 r  
-                                                      0.000     0.000 r  clk (IN)
-                         net (fo=914, unset)          0.973     0.973    core/clk
-    SLICE_X25Y21         FDRE                                         r  core/fsel1_reg[0]/C
-  -------------------------------------------------------------------    -------------------
-    SLICE_X25Y21         FDRE (Prop_fdre_C_Q)         0.456     1.429 r  core/fsel1_reg[0]/Q
-                         net (fo=32, routed)          1.111     2.540    core/fetch/m1[addr][1]_i_4
-    SLICE_X26Y20         LUT5 (Prop_lut5_I0_O)        0.124     2.664 r  core/fetch/e_rs1v[9]_i_3/O
-                         net (fo=3, routed)           0.438     3.102    core/fetch/fsel1_reg[0]_17
-    SLICE_X24Y21         LUT3 (Prop_lut3_I2_O)        0.124     3.226 r  core/fetch/e_rs1v[9]_i_2/O
-                         net (fo=8, routed)           0.842     4.068    core/fetch_n_78
-    SLICE_X28Y21         LUT2 (Prop_lut2_I0_O)        0.124     4.192 r  core/bram_samples_request.ram_reg_0_0_0_i_45/O
-                         net (fo=1, routed)           0.000     4.192    core/bram_samples_request.ram_reg_0_0_0_i_45_n_0
-    SLICE_X28Y21         CARRY4 (Prop_carry4_S[1]_CO[3])
-                                                      0.550     4.742 r  core/bram_samples_request.ram_reg_0_0_0_i_4/CO[3]
-                         net (fo=1, routed)           0.000     4.742    core/bram_samples_request.ram_reg_0_0_0_i_4_n_0
-    SLICE_X28Y22         CARRY4 (Prop_carry4_CI_CO[3])
-                                                      0.114     4.856 r  core/bram_samples_request.ram_reg_0_0_0_i_3/CO[3]
-                         net (fo=1, routed)           0.000     4.856    core/bram_samples_request.ram_reg_0_0_0_i_3_n_0
-    SLICE_X28Y23         CARRY4 (Prop_carry4_CI_CO[3])
-                                                      0.114     4.970 r  core/bram_samples_request.ram_reg_0_0_0_i_2/CO[3]
-                         net (fo=1, routed)           0.000     4.970    core/bram_samples_request.ram_reg_0_0_0_i_2_n_0
-    SLICE_X28Y24         CARRY4 (Prop_carry4_CI_O[3])
-                                                      0.313     5.283 f  core/observe_reg[23]_i_2/O[3]
-                         net (fo=2, routed)           1.022     6.305    core/d_req_addr[23]
-    SLICE_X29Y27         LUT4 (Prop_lut4_I0_O)        0.306     6.611 r  core/d_err1_i_3/O
-                         net (fo=1, routed)           0.774     7.384    core/d_err1_i_3_n_0
-    SLICE_X31Y27         LUT6 (Prop_lut6_I0_O)        0.124     7.508 f  core/d_err1_i_2/O
-                         net (fo=3, routed)           0.408     7.916    core/d_err1_i_2_0
-    SLICE_X29Y27         LUT3 (Prop_lut3_I2_O)        0.124     8.040 r  core/bram_samples_request.ram_reg_0_0_0_i_59/O
-                         net (fo=12, routed)          0.804     8.844    core/bram_samples_request.ram_reg_0_0_0_i_59_n_0
-    SLICE_X24Y16         LUT4 (Prop_lut4_I3_O)        0.124     8.968 r  core/bram_samples_request.ram_reg_0_0_2_i_2/O
-                         net (fo=2, routed)           1.285    10.253    core_n_98
-    RAMB36_X0Y1          RAMB36E1                                     r  bram_samples_request.ram_reg_0_0_4/WEA[0]
-  -------------------------------------------------------------------    -------------------
-
-                         (clock clk rise edge)       10.000    10.000 r  
-                                                      0.000    10.000 r  clk (IN)
-                         net (fo=914, unset)          0.924    10.924    clk
-    RAMB36_X0Y1          RAMB36E1                                     r  bram_samples_request.ram_reg_0_0_4/CLKARDCLK
-                         clock pessimism              0.000    10.924    
-                         clock uncertainty           -0.035    10.889    
-    RAMB36_X0Y1          RAMB36E1 (Setup_ramb36e1_CLKARDCLK_WEA[0])
-                                                     -0.532    10.357    bram_samples_request.ram_reg_0_0_4
-  -------------------------------------------------------------------
-                         required time                         10.357    
-                         arrival time                         -10.253    
-  -------------------------------------------------------------------
-                         slack                                  0.104    
-
-Slack (MET) :             0.108ns  (required time - arrival time)
-  Source:                 core/fsel1_reg[0]/C
-                            (rising edge-triggered cell FDRE clocked by clk  {rise@0.000ns fall@5.000ns period=10.000ns})
-  Destination:            bram_samples_request.ram_reg_0_0_3/WEA[0]
-                            (rising edge-triggered cell RAMB36E1 clocked by clk  {rise@0.000ns fall@5.000ns period=10.000ns})
-  Path Group:             clk
-  Path Type:              Setup (Max at Slow Process Corner)
-  Requirement:            10.000ns  (clk rise@10.000ns - clk rise@0.000ns)
-  Data Path Delay:        9.276ns  (logic 2.597ns (27.996%)  route 6.679ns (72.004%))
-  Logic Levels:           11  (CARRY4=4 LUT2=1 LUT3=2 LUT4=2 LUT5=1 LUT6=1)
-  Clock Path Skew:        -0.049ns (DCD - SCD + CPR)
-    Destination Clock Delay (DCD):    0.924ns = ( 10.924 - 10.000 ) 
-    Source Clock Delay      (SCD):    0.973ns
-    Clock Pessimism Removal (CPR):    0.000ns
-  Clock Uncertainty:      0.035ns  ((TSJ^2 + TIJ^2)^1/2 + DJ) / 2 + PE
-    Total System Jitter     (TSJ):    0.071ns
-    Total Input Jitter      (TIJ):    0.000ns
-    Discrete Jitter          (DJ):    0.000ns
-    Phase Error              (PE):    0.000ns
-
-    Location             Delay type                Incr(ns)  Path(ns)    Netlist Resource(s)
-  -------------------------------------------------------------------    -------------------
-                         (clock clk rise edge)        0.000     0.000 r  
-                                                      0.000     0.000 r  clk (IN)
-                         net (fo=914, unset)          0.973     0.973    core/clk
-    SLICE_X25Y21         FDRE                                         r  core/fsel1_reg[0]/C
-  -------------------------------------------------------------------    -------------------
-    SLICE_X25Y21         FDRE (Prop_fdre_C_Q)         0.456     1.429 r  core/fsel1_reg[0]/Q
-                         net (fo=32, routed)          1.111     2.540    core/fetch/m1[addr][1]_i_4
-    SLICE_X26Y20         LUT5 (Prop_lut5_I0_O)        0.124     2.664 r  core/fetch/e_rs1v[9]_i_3/O
-                         net (fo=3, routed)           0.438     3.102    core/fetch/fsel1_reg[0]_17
-    SLICE_X24Y21         LUT3 (Prop_lut3_I2_O)        0.124     3.226 r  core/fetch/e_rs1v[9]_i_2/O
-                         net (fo=8, routed)           0.842     4.068    core/fetch_n_78
-    SLICE_X28Y21         LUT2 (Prop_lut2_I0_O)        0.124     4.192 r  core/bram_samples_request.ram_reg_0_0_0_i_45/O
-                         net (fo=1, routed)           0.000     4.192    core/bram_samples_request.ram_reg_0_0_0_i_45_n_0
-    SLICE_X28Y21         CARRY4 (Prop_carry4_S[1]_CO[3])
-                                                      0.550     4.742 r  core/bram_samples_request.ram_reg_0_0_0_i_4/CO[3]
-                         net (fo=1, routed)           0.000     4.742    core/bram_samples_request.ram_reg_0_0_0_i_4_n_0
-    SLICE_X28Y22         CARRY4 (Prop_carry4_CI_CO[3])
-                                                      0.114     4.856 r  core/bram_samples_request.ram_reg_0_0_0_i_3/CO[3]
-                         net (fo=1, routed)           0.000     4.856    core/bram_samples_request.ram_reg_0_0_0_i_3_n_0
-    SLICE_X28Y23         CARRY4 (Prop_carry4_CI_CO[3])
-                                                      0.114     4.970 r  core/bram_samples_request.ram_reg_0_0_0_i_2/CO[3]
-                         net (fo=1, routed)           0.000     4.970    core/bram_samples_request.ram_reg_0_0_0_i_2_n_0
-    SLICE_X28Y24         CARRY4 (Prop_carry4_CI_O[3])
-                                                      0.313     5.283 f  core/observe_reg[23]_i_2/O[3]
-                         net (fo=2, routed)           1.022     6.305    core/d_req_addr[23]
-    SLICE_X29Y27         LUT4 (Prop_lut4_I0_O)        0.306     6.611 r  core/d_err1_i_3/O
-                         net (fo=1, routed)           0.774     7.384    core/d_err1_i_3_n_0
-    SLICE_X31Y27         LUT6 (Prop_lut6_I0_O)        0.124     7.508 f  core/d_err1_i_2/O
-                         net (fo=3, routed)           0.408     7.916    core/d_err1_i_2_0
-    SLICE_X29Y27         LUT3 (Prop_lut3_I2_O)        0.124     8.040 r  core/bram_samples_request.ram_reg_0_0_0_i_59/O
-                         net (fo=12, routed)          0.804     8.844    core/bram_samples_request.ram_reg_0_0_0_i_59_n_0
-    SLICE_X24Y16         LUT4 (Prop_lut4_I3_O)        0.124     8.968 r  core/bram_samples_request.ram_reg_0_0_2_i_2/O
-                         net (fo=2, routed)           1.281    10.249    core_n_98
-    RAMB36_X0Y2          RAMB36E1                                     r  bram_samples_request.ram_reg_0_0_3/WEA[0]
-  -------------------------------------------------------------------    -------------------
-
-                         (clock clk rise edge)       10.000    10.000 r  
-                                                      0.000    10.000 r  clk (IN)
-                         net (fo=914, unset)          0.924    10.924    clk
-    RAMB36_X0Y2          RAMB36E1                                     r  bram_samples_request.ram_reg_0_0_3/CLKARDCLK
-                         clock pessimism              0.000    10.924    
-                         clock uncertainty           -0.035    10.889    
-    RAMB36_X0Y2          RAMB36E1 (Setup_ramb36e1_CLKARDCLK_WEA[0])
-                                                     -0.532    10.357    bram_samples_request.ram_reg_0_0_3
-  -------------------------------------------------------------------
-                         required time                         10.357    
-                         arrival time                         -10.249    
-  -------------------------------------------------------------------
-                         slack                                  0.108    
-
-Slack (MET) :             0.135ns  (required time - arrival time)
+Slack (MET) :             0.357ns  (required time - arrival time)
   Source:                 core/fsel1_reg[0]/C
                             (rising edge-triggered cell FDRE clocked by clk  {rise@0.000ns fall@5.000ns period=10.000ns})
   Destination:            bram_samples_request.ram_reg_2_0_0/WEA[0]
@@ -640,8 +208,8 @@ Slack (MET) :             0.135ns  (required time - arrival time)
   Path Group:             clk
   Path Type:              Setup (Max at Slow Process Corner)
   Requirement:            10.000ns  (clk rise@10.000ns - clk rise@0.000ns)
-  Data Path Delay:        9.249ns  (logic 2.597ns (28.078%)  route 6.652ns (71.922%))
-  Logic Levels:           11  (CARRY4=4 LUT2=1 LUT3=2 LUT4=1 LUT5=2 LUT6=1)
+  Data Path Delay:        9.027ns  (logic 2.370ns (26.254%)  route 6.657ns (73.746%))
+  Logic Levels:           10  (CARRY4=3 LUT2=1 LUT3=2 LUT4=1 LUT5=2 LUT6=1)
   Clock Path Skew:        -0.049ns (DCD - SCD + CPR)
     Destination Clock Delay (DCD):    0.924ns = ( 10.924 - 10.000 ) 
     Source Clock Delay      (SCD):    0.973ns
@@ -657,54 +225,120 @@ Slack (MET) :             0.135ns  (required time - arrival time)
                          (clock clk rise edge)        0.000     0.000 r  
                                                       0.000     0.000 r  clk (IN)
                          net (fo=914, unset)          0.973     0.973    core/clk
-    SLICE_X25Y21         FDRE                                         r  core/fsel1_reg[0]/C
+    SLICE_X24Y20         FDRE                                         r  core/fsel1_reg[0]/C
   -------------------------------------------------------------------    -------------------
-    SLICE_X25Y21         FDRE (Prop_fdre_C_Q)         0.456     1.429 r  core/fsel1_reg[0]/Q
-                         net (fo=32, routed)          1.111     2.540    core/fetch/m1[addr][1]_i_4
-    SLICE_X26Y20         LUT5 (Prop_lut5_I0_O)        0.124     2.664 r  core/fetch/e_rs1v[9]_i_3/O
-                         net (fo=3, routed)           0.438     3.102    core/fetch/fsel1_reg[0]_17
-    SLICE_X24Y21         LUT3 (Prop_lut3_I2_O)        0.124     3.226 r  core/fetch/e_rs1v[9]_i_2/O
-                         net (fo=8, routed)           0.842     4.068    core/fetch_n_78
-    SLICE_X28Y21         LUT2 (Prop_lut2_I0_O)        0.124     4.192 r  core/bram_samples_request.ram_reg_0_0_0_i_45/O
-                         net (fo=1, routed)           0.000     4.192    core/bram_samples_request.ram_reg_0_0_0_i_45_n_0
-    SLICE_X28Y21         CARRY4 (Prop_carry4_S[1]_CO[3])
-                                                      0.550     4.742 r  core/bram_samples_request.ram_reg_0_0_0_i_4/CO[3]
-                         net (fo=1, routed)           0.000     4.742    core/bram_samples_request.ram_reg_0_0_0_i_4_n_0
-    SLICE_X28Y22         CARRY4 (Prop_carry4_CI_CO[3])
-                                                      0.114     4.856 r  core/bram_samples_request.ram_reg_0_0_0_i_3/CO[3]
-                         net (fo=1, routed)           0.000     4.856    core/bram_samples_request.ram_reg_0_0_0_i_3_n_0
-    SLICE_X28Y23         CARRY4 (Prop_carry4_CI_CO[3])
-                                                      0.114     4.970 r  core/bram_samples_request.ram_reg_0_0_0_i_2/CO[3]
-                         net (fo=1, routed)           0.000     4.970    core/bram_samples_request.ram_reg_0_0_0_i_2_n_0
-    SLICE_X28Y24         CARRY4 (Prop_carry4_CI_O[3])
-                                                      0.313     5.283 f  core/observe_reg[23]_i_2/O[3]
-                         net (fo=2, routed)           1.022     6.305    core/d_req_addr[23]
-    SLICE_X29Y27         LUT4 (Prop_lut4_I0_O)        0.306     6.611 r  core/d_err1_i_3/O
-                         net (fo=1, routed)           0.774     7.384    core/d_err1_i_3_n_0
-    SLICE_X31Y27         LUT6 (Prop_lut6_I0_O)        0.124     7.508 f  core/d_err1_i_2/O
-                         net (fo=3, routed)           0.408     7.916    core/d_err1_i_2_0
-    SLICE_X29Y27         LUT3 (Prop_lut3_I2_O)        0.124     8.040 r  core/bram_samples_request.ram_reg_0_0_0_i_59/O
-                         net (fo=12, routed)          1.020     9.060    core/bram_samples_request.ram_reg_0_0_0_i_59_n_0
-    SLICE_X25Y17         LUT5 (Prop_lut5_I4_O)        0.124     9.184 r  core/bram_samples_request.ram_reg_2_0_0_i_2/O
-                         net (fo=3, routed)           1.038    10.222    core_n_91
-    RAMB36_X1Y1          RAMB36E1                                     r  bram_samples_request.ram_reg_2_0_0/WEA[0]
+    SLICE_X24Y20         FDRE (Prop_fdre_C_Q)         0.456     1.429 r  core/fsel1_reg[0]/Q
+                         net (fo=32, routed)          1.402     2.831    core/fetch/m1[addr][1]_i_4
+    SLICE_X32Y21         LUT5 (Prop_lut5_I0_O)        0.124     2.955 r  core/fetch/e_rs1v[12]_i_3/O
+                         net (fo=3, routed)           0.366     3.322    core/fetch/fsel1_reg[0]_6
+    SLICE_X33Y21         LUT3 (Prop_lut3_I2_O)        0.124     3.446 r  core/fetch/e_rs1v[12]_i_2/O
+                         net (fo=8, routed)           0.872     4.318    core/fetch_n_99
+    SLICE_X30Y20         LUT2 (Prop_lut2_I0_O)        0.124     4.442 r  core/bram_samples_request.ram_reg_0_0_0_i_38/O
+                         net (fo=1, routed)           0.000     4.442    core/bram_samples_request.ram_reg_0_0_0_i_38_n_0
+    SLICE_X30Y20         CARRY4 (Prop_carry4_S[0]_CO[3])
+                                                      0.513     4.955 r  core/bram_samples_request.ram_reg_0_0_0_i_3/CO[3]
+                         net (fo=1, routed)           0.000     4.955    core/bram_samples_request.ram_reg_0_0_0_i_3_n_0
+    SLICE_X30Y21         CARRY4 (Prop_carry4_CI_CO[3])
+                                                      0.117     5.072 r  core/bram_samples_request.ram_reg_0_0_0_i_2/CO[3]
+                         net (fo=1, routed)           0.000     5.072    core/bram_samples_request.ram_reg_0_0_0_i_2_n_0
+    SLICE_X30Y22         CARRY4 (Prop_carry4_CI_O[2])
+                                                      0.239     5.311 f  core/observe_reg[23]_i_2/O[2]
+                         net (fo=2, routed)           0.919     6.230    core/d_req_addr[22]
+    SLICE_X33Y22         LUT4 (Prop_lut4_I1_O)        0.301     6.531 r  core/d_err1_i_3/O
+                         net (fo=1, routed)           0.571     7.103    core/d_err1_i_3_n_0
+    SLICE_X33Y23         LUT6 (Prop_lut6_I0_O)        0.124     7.227 f  core/d_err1_i_2/O
+                         net (fo=3, routed)           0.175     7.402    core/d_err1_i_2_0
+    SLICE_X33Y23         LUT3 (Prop_lut3_I2_O)        0.124     7.526 r  core/bram_samples_request.ram_reg_0_0_0_i_59/O
+                         net (fo=12, routed)          0.991     8.517    core/bram_samples_request.ram_reg_0_0_0_i_59_n_0
+    SLICE_X26Y26         LUT5 (Prop_lut5_I4_O)        0.124     8.641 r  core/bram_samples_request.ram_reg_2_0_0_i_2/O
+                         net (fo=3, routed)           1.359    10.000    core_n_91
+    RAMB36_X0Y6          RAMB36E1                                     r  bram_samples_request.ram_reg_2_0_0/WEA[0]
   -------------------------------------------------------------------    -------------------
 
                          (clock clk rise edge)       10.000    10.000 r  
                                                       0.000    10.000 r  clk (IN)
                          net (fo=914, unset)          0.924    10.924    clk
-    RAMB36_X1Y1          RAMB36E1                                     r  bram_samples_request.ram_reg_2_0_0/CLKARDCLK
+    RAMB36_X0Y6          RAMB36E1                                     r  bram_samples_request.ram_reg_2_0_0/CLKARDCLK
                          clock pessimism              0.000    10.924    
                          clock uncertainty           -0.035    10.889    
-    RAMB36_X1Y1          RAMB36E1 (Setup_ramb36e1_CLKARDCLK_WEA[0])
+    RAMB36_X0Y6          RAMB36E1 (Setup_ramb36e1_CLKARDCLK_WEA[0])
                                                      -0.532    10.357    bram_samples_request.ram_reg_2_0_0
   -------------------------------------------------------------------
                          required time                         10.357    
-                         arrival time                         -10.222    
+                         arrival time                         -10.000    
   -------------------------------------------------------------------
-                         slack                                  0.135    
+                         slack                                  0.357    
 
-Slack (MET) :             0.147ns  (required time - arrival time)
+Slack (MET) :             0.457ns  (required time - arrival time)
+  Source:                 core/fsel1_reg[0]/C
+                            (rising edge-triggered cell FDRE clocked by clk  {rise@0.000ns fall@5.000ns period=10.000ns})
+  Destination:            bram_samples_request.ram_reg_1_0_4/WEA[0]
+                            (rising edge-triggered cell RAMB36E1 clocked by clk  {rise@0.000ns fall@5.000ns period=10.000ns})
+  Path Group:             clk
+  Path Type:              Setup (Max at Slow Process Corner)
+  Requirement:            10.000ns  (clk rise@10.000ns - clk rise@0.000ns)
+  Data Path Delay:        8.703ns  (logic 2.363ns (27.152%)  route 6.340ns (72.848%))
+  Logic Levels:           10  (CARRY4=3 LUT2=1 LUT3=2 LUT4=1 LUT5=2 LUT6=1)
+  Clock Path Skew:        -0.049ns (DCD - SCD + CPR)
+    Destination Clock Delay (DCD):    0.924ns = ( 10.924 - 10.000 ) 
+    Source Clock Delay      (SCD):    0.973ns
+    Clock Pessimism Removal (CPR):    0.000ns
+  Clock Uncertainty:      0.035ns  ((TSJ^2 + TIJ^2)^1/2 + DJ) / 2 + PE
+    Total System Jitter     (TSJ):    0.071ns
+    Total Input Jitter      (TIJ):    0.000ns
+    Discrete Jitter          (DJ):    0.000ns
+    Phase Error              (PE):    0.000ns
+
+    Location             Delay type                Incr(ns)  Path(ns)    Netlist Resource(s)
+  -------------------------------------------------------------------    -------------------
+                         (clock clk rise edge)        0.000     0.000 r  
+                                                      0.000     0.000 r  clk (IN)
+                         net (fo=914, unset)          0.973     0.973    core/clk
+    SLICE_X24Y20         FDRE                                         r  core/fsel1_reg[0]/C
+  -------------------------------------------------------------------    -------------------
+    SLICE_X24Y20         FDRE (Prop_fdre_C_Q)         0.456     1.429 r  core/fsel1_reg[0]/Q
+                         net (fo=32, routed)          1.402     2.831    core/fetch/m1[addr][1]_i_4
+    SLICE_X32Y21         LUT5 (Prop_lut5_I0_O)        0.124     2.955 r  core/fetch/e_rs1v[12]_i_3/O
+                         net (fo=3, routed)           0.366     3.322    core/fetch/fsel1_reg[0]_6
+    SLICE_X33Y21         LUT3 (Prop_lut3_I2_O)        0.124     3.446 r  core/fetch/e_rs1v[12]_i_2/O
+                         net (fo=8, routed)           0.872     4.318    core/fetch_n_99
+    SLICE_X30Y20         LUT2 (Prop_lut2_I0_O)        0.124     4.442 r  core/bram_samples_request.ram_reg_0_0_0_i_38/O
+                         net (fo=1, routed)           0.000     4.442    core/bram_samples_request.ram_reg_0_0_0_i_38_n_0
+    SLICE_X30Y20         CARRY4 (Prop_carry4_S[0]_CO[3])
+                                                      0.513     4.955 r  core/bram_samples_request.ram_reg_0_0_0_i_3/CO[3]
+                         net (fo=1, routed)           0.000     4.955    core/bram_samples_request.ram_reg_0_0_0_i_3_n_0
+    SLICE_X30Y21         CARRY4 (Prop_carry4_CI_CO[3])
+                                                      0.117     5.072 r  core/bram_samples_request.ram_reg_0_0_0_i_2/CO[3]
+                         net (fo=1, routed)           0.000     5.072    core/bram_samples_request.ram_reg_0_0_0_i_2_n_0
+    SLICE_X30Y22         CARRY4 (Prop_carry4_CI_O[2])
+                                                      0.239     5.311 f  core/observe_reg[23]_i_2/O[2]
+                         net (fo=2, routed)           0.919     6.230    core/d_req_addr[22]
+    SLICE_X33Y22         LUT4 (Prop_lut4_I1_O)        0.301     6.531 r  core/d_err1_i_3/O
+                         net (fo=1, routed)           0.571     7.103    core/d_err1_i_3_n_0
+    SLICE_X33Y23         LUT6 (Prop_lut6_I0_O)        0.124     7.227 f  core/d_err1_i_2/O
+                         net (fo=3, routed)           0.175     7.402    core/d_err1_i_2_0
+    SLICE_X33Y23         LUT3 (Prop_lut3_I2_O)        0.124     7.526 r  core/bram_samples_request.ram_reg_0_0_0_i_59/O
+                         net (fo=12, routed)          0.991     8.517    core/bram_samples_request.ram_reg_0_0_0_i_59_n_0
+    SLICE_X26Y26         LUT5 (Prop_lut5_I4_O)        0.117     8.634 r  core/bram_samples_request.ram_reg_1_0_2_i_2/O
+                         net (fo=2, routed)           1.042     9.676    core_n_94
+    RAMB36_X2Y7          RAMB36E1                                     r  bram_samples_request.ram_reg_1_0_4/WEA[0]
+  -------------------------------------------------------------------    -------------------
+
+                         (clock clk rise edge)       10.000    10.000 r  
+                                                      0.000    10.000 r  clk (IN)
+                         net (fo=914, unset)          0.924    10.924    clk
+    RAMB36_X2Y7          RAMB36E1                                     r  bram_samples_request.ram_reg_1_0_4/CLKARDCLK
+                         clock pessimism              0.000    10.924    
+                         clock uncertainty           -0.035    10.889    
+    RAMB36_X2Y7          RAMB36E1 (Setup_ramb36e1_CLKARDCLK_WEA[0])
+                                                     -0.756    10.133    bram_samples_request.ram_reg_1_0_4
+  -------------------------------------------------------------------
+                         required time                         10.133    
+                         arrival time                          -9.676    
+  -------------------------------------------------------------------
+                         slack                                  0.457    
+
+Slack (MET) :             0.468ns  (required time - arrival time)
   Source:                 core/fsel1_reg[0]/C
                             (rising edge-triggered cell FDRE clocked by clk  {rise@0.000ns fall@5.000ns period=10.000ns})
   Destination:            bram_samples_request.ram_reg_1_0_6/WEA[0]
@@ -712,8 +346,8 @@ Slack (MET) :             0.147ns  (required time - arrival time)
   Path Group:             clk
   Path Type:              Setup (Max at Slow Process Corner)
   Requirement:            10.000ns  (clk rise@10.000ns - clk rise@0.000ns)
-  Data Path Delay:        9.034ns  (logic 2.593ns (28.702%)  route 6.441ns (71.298%))
-  Logic Levels:           11  (CARRY4=4 LUT2=1 LUT3=2 LUT4=1 LUT5=2 LUT6=1)
+  Data Path Delay:        8.916ns  (logic 2.370ns (26.582%)  route 6.546ns (73.418%))
+  Logic Levels:           10  (CARRY4=3 LUT2=1 LUT3=2 LUT4=1 LUT5=2 LUT6=1)
   Clock Path Skew:        -0.049ns (DCD - SCD + CPR)
     Destination Clock Delay (DCD):    0.924ns = ( 10.924 - 10.000 ) 
     Source Clock Delay      (SCD):    0.973ns
@@ -729,196 +363,536 @@ Slack (MET) :             0.147ns  (required time - arrival time)
                          (clock clk rise edge)        0.000     0.000 r  
                                                       0.000     0.000 r  clk (IN)
                          net (fo=914, unset)          0.973     0.973    core/clk
-    SLICE_X25Y21         FDRE                                         r  core/fsel1_reg[0]/C
+    SLICE_X24Y20         FDRE                                         r  core/fsel1_reg[0]/C
   -------------------------------------------------------------------    -------------------
-    SLICE_X25Y21         FDRE (Prop_fdre_C_Q)         0.456     1.429 r  core/fsel1_reg[0]/Q
-                         net (fo=32, routed)          1.111     2.540    core/fetch/m1[addr][1]_i_4
-    SLICE_X26Y20         LUT5 (Prop_lut5_I0_O)        0.124     2.664 r  core/fetch/e_rs1v[9]_i_3/O
-                         net (fo=3, routed)           0.438     3.102    core/fetch/fsel1_reg[0]_17
-    SLICE_X24Y21         LUT3 (Prop_lut3_I2_O)        0.124     3.226 r  core/fetch/e_rs1v[9]_i_2/O
-                         net (fo=8, routed)           0.842     4.068    core/fetch_n_78
-    SLICE_X28Y21         LUT2 (Prop_lut2_I0_O)        0.124     4.192 r  core/bram_samples_request.ram_reg_0_0_0_i_45/O
-                         net (fo=1, routed)           0.000     4.192    core/bram_samples_request.ram_reg_0_0_0_i_45_n_0
-    SLICE_X28Y21         CARRY4 (Prop_carry4_S[1]_CO[3])
-                                                      0.550     4.742 r  core/bram_samples_request.ram_reg_0_0_0_i_4/CO[3]
-                         net (fo=1, routed)           0.000     4.742    core/bram_samples_request.ram_reg_0_0_0_i_4_n_0
-    SLICE_X28Y22         CARRY4 (Prop_carry4_CI_CO[3])
-                                                      0.114     4.856 r  core/bram_samples_request.ram_reg_0_0_0_i_3/CO[3]
-                         net (fo=1, routed)           0.000     4.856    core/bram_samples_request.ram_reg_0_0_0_i_3_n_0
-    SLICE_X28Y23         CARRY4 (Prop_carry4_CI_CO[3])
-                                                      0.114     4.970 r  core/bram_samples_request.ram_reg_0_0_0_i_2/CO[3]
-                         net (fo=1, routed)           0.000     4.970    core/bram_samples_request.ram_reg_0_0_0_i_2_n_0
-    SLICE_X28Y24         CARRY4 (Prop_carry4_CI_O[3])
-                                                      0.313     5.283 f  core/observe_reg[23]_i_2/O[3]
-                         net (fo=2, routed)           1.022     6.305    core/d_req_addr[23]
-    SLICE_X29Y27         LUT4 (Prop_lut4_I0_O)        0.306     6.611 r  core/d_err1_i_3/O
-                         net (fo=1, routed)           0.774     7.384    core/d_err1_i_3_n_0
-    SLICE_X31Y27         LUT6 (Prop_lut6_I0_O)        0.124     7.508 f  core/d_err1_i_2/O
-                         net (fo=3, routed)           0.408     7.916    core/d_err1_i_2_0
-    SLICE_X29Y27         LUT3 (Prop_lut3_I2_O)        0.124     8.040 r  core/bram_samples_request.ram_reg_0_0_0_i_59/O
-                         net (fo=12, routed)          0.622     8.662    core/bram_samples_request.ram_reg_0_0_0_i_59_n_0
-    SLICE_X24Y28         LUT5 (Prop_lut5_I4_O)        0.120     8.782 r  core/bram_samples_request.ram_reg_1_0_5_i_2/O
-                         net (fo=3, routed)           1.225    10.007    core_n_97
-    RAMB36_X0Y5          RAMB36E1                                     r  bram_samples_request.ram_reg_1_0_6/WEA[0]
+    SLICE_X24Y20         FDRE (Prop_fdre_C_Q)         0.456     1.429 r  core/fsel1_reg[0]/Q
+                         net (fo=32, routed)          1.402     2.831    core/fetch/m1[addr][1]_i_4
+    SLICE_X32Y21         LUT5 (Prop_lut5_I0_O)        0.124     2.955 r  core/fetch/e_rs1v[12]_i_3/O
+                         net (fo=3, routed)           0.366     3.322    core/fetch/fsel1_reg[0]_6
+    SLICE_X33Y21         LUT3 (Prop_lut3_I2_O)        0.124     3.446 r  core/fetch/e_rs1v[12]_i_2/O
+                         net (fo=8, routed)           0.872     4.318    core/fetch_n_99
+    SLICE_X30Y20         LUT2 (Prop_lut2_I0_O)        0.124     4.442 r  core/bram_samples_request.ram_reg_0_0_0_i_38/O
+                         net (fo=1, routed)           0.000     4.442    core/bram_samples_request.ram_reg_0_0_0_i_38_n_0
+    SLICE_X30Y20         CARRY4 (Prop_carry4_S[0]_CO[3])
+                                                      0.513     4.955 r  core/bram_samples_request.ram_reg_0_0_0_i_3/CO[3]
+                         net (fo=1, routed)           0.000     4.955    core/bram_samples_request.ram_reg_0_0_0_i_3_n_0
+    SLICE_X30Y21         CARRY4 (Prop_carry4_CI_CO[3])
+                                                      0.117     5.072 r  core/bram_samples_request.ram_reg_0_0_0_i_2/CO[3]
+                         net (fo=1, routed)           0.000     5.072    core/bram_samples_request.ram_reg_0_0_0_i_2_n_0
+    SLICE_X30Y22         CARRY4 (Prop_carry4_CI_O[2])
+                                                      0.239     5.311 f  core/observe_reg[23]_i_2/O[2]
+                         net (fo=2, routed)           0.919     6.230    core/d_req_addr[22]
+    SLICE_X33Y22         LUT4 (Prop_lut4_I1_O)        0.301     6.531 r  core/d_err1_i_3/O
+                         net (fo=1, routed)           0.571     7.103    core/d_err1_i_3_n_0
+    SLICE_X33Y23         LUT6 (Prop_lut6_I0_O)        0.124     7.227 f  core/d_err1_i_2/O
+                         net (fo=3, routed)           0.175     7.402    core/d_err1_i_2_0
+    SLICE_X33Y23         LUT3 (Prop_lut3_I2_O)        0.124     7.526 r  core/bram_samples_request.ram_reg_0_0_0_i_59/O
+                         net (fo=12, routed)          0.920     8.446    core/bram_samples_request.ram_reg_0_0_0_i_59_n_0
+    SLICE_X25Y25         LUT5 (Prop_lut5_I4_O)        0.124     8.570 r  core/bram_samples_request.ram_reg_1_0_5_i_2/O
+                         net (fo=3, routed)           1.319     9.889    core_n_97
+    RAMB36_X0Y7          RAMB36E1                                     r  bram_samples_request.ram_reg_1_0_6/WEA[0]
   -------------------------------------------------------------------    -------------------
 
                          (clock clk rise edge)       10.000    10.000 r  
                                                       0.000    10.000 r  clk (IN)
                          net (fo=914, unset)          0.924    10.924    clk
-    RAMB36_X0Y5          RAMB36E1                                     r  bram_samples_request.ram_reg_1_0_6/CLKARDCLK
-                         clock pessimism              0.000    10.924    
-                         clock uncertainty           -0.035    10.889    
-    RAMB36_X0Y5          RAMB36E1 (Setup_ramb36e1_CLKARDCLK_WEA[0])
-                                                     -0.735    10.154    bram_samples_request.ram_reg_1_0_6
-  -------------------------------------------------------------------
-                         required time                         10.154    
-                         arrival time                         -10.007    
-  -------------------------------------------------------------------
-                         slack                                  0.147    
-
-Slack (MET) :             0.158ns  (required time - arrival time)
-  Source:                 core/fsel1_reg[0]/C
-                            (rising edge-triggered cell FDRE clocked by clk  {rise@0.000ns fall@5.000ns period=10.000ns})
-  Destination:            bram_samples_request.ram_reg_2_0_3/WEA[0]
-                            (rising edge-triggered cell RAMB36E1 clocked by clk  {rise@0.000ns fall@5.000ns period=10.000ns})
-  Path Group:             clk
-  Path Type:              Setup (Max at Slow Process Corner)
-  Requirement:            10.000ns  (clk rise@10.000ns - clk rise@0.000ns)
-  Data Path Delay:        9.226ns  (logic 2.597ns (28.148%)  route 6.629ns (71.852%))
-  Logic Levels:           11  (CARRY4=4 LUT2=1 LUT3=2 LUT4=1 LUT5=2 LUT6=1)
-  Clock Path Skew:        -0.049ns (DCD - SCD + CPR)
-    Destination Clock Delay (DCD):    0.924ns = ( 10.924 - 10.000 ) 
-    Source Clock Delay      (SCD):    0.973ns
-    Clock Pessimism Removal (CPR):    0.000ns
-  Clock Uncertainty:      0.035ns  ((TSJ^2 + TIJ^2)^1/2 + DJ) / 2 + PE
-    Total System Jitter     (TSJ):    0.071ns
-    Total Input Jitter      (TIJ):    0.000ns
-    Discrete Jitter          (DJ):    0.000ns
-    Phase Error              (PE):    0.000ns
-
-    Location             Delay type                Incr(ns)  Path(ns)    Netlist Resource(s)
-  -------------------------------------------------------------------    -------------------
-                         (clock clk rise edge)        0.000     0.000 r  
-                                                      0.000     0.000 r  clk (IN)
-                         net (fo=914, unset)          0.973     0.973    core/clk
-    SLICE_X25Y21         FDRE                                         r  core/fsel1_reg[0]/C
-  -------------------------------------------------------------------    -------------------
-    SLICE_X25Y21         FDRE (Prop_fdre_C_Q)         0.456     1.429 r  core/fsel1_reg[0]/Q
-                         net (fo=32, routed)          1.111     2.540    core/fetch/m1[addr][1]_i_4
-    SLICE_X26Y20         LUT5 (Prop_lut5_I0_O)        0.124     2.664 r  core/fetch/e_rs1v[9]_i_3/O
-                         net (fo=3, routed)           0.438     3.102    core/fetch/fsel1_reg[0]_17
-    SLICE_X24Y21         LUT3 (Prop_lut3_I2_O)        0.124     3.226 r  core/fetch/e_rs1v[9]_i_2/O
-                         net (fo=8, routed)           0.842     4.068    core/fetch_n_78
-    SLICE_X28Y21         LUT2 (Prop_lut2_I0_O)        0.124     4.192 r  core/bram_samples_request.ram_reg_0_0_0_i_45/O
-                         net (fo=1, routed)           0.000     4.192    core/bram_samples_request.ram_reg_0_0_0_i_45_n_0
-    SLICE_X28Y21         CARRY4 (Prop_carry4_S[1]_CO[3])
-                                                      0.550     4.742 r  core/bram_samples_request.ram_reg_0_0_0_i_4/CO[3]
-                         net (fo=1, routed)           0.000     4.742    core/bram_samples_request.ram_reg_0_0_0_i_4_n_0
-    SLICE_X28Y22         CARRY4 (Prop_carry4_CI_CO[3])
-                                                      0.114     4.856 r  core/bram_samples_request.ram_reg_0_0_0_i_3/CO[3]
-                         net (fo=1, routed)           0.000     4.856    core/bram_samples_request.ram_reg_0_0_0_i_3_n_0
-    SLICE_X28Y23         CARRY4 (Prop_carry4_CI_CO[3])
-                                                      0.114     4.970 r  core/bram_samples_request.ram_reg_0_0_0_i_2/CO[3]
-                         net (fo=1, routed)           0.000     4.970    core/bram_samples_request.ram_reg_0_0_0_i_2_n_0
-    SLICE_X28Y24         CARRY4 (Prop_carry4_CI_O[3])
-                                                      0.313     5.283 f  core/observe_reg[23]_i_2/O[3]
-                         net (fo=2, routed)           1.022     6.305    core/d_req_addr[23]
-    SLICE_X29Y27         LUT4 (Prop_lut4_I0_O)        0.306     6.611 r  core/d_err1_i_3/O
-                         net (fo=1, routed)           0.774     7.384    core/d_err1_i_3_n_0
-    SLICE_X31Y27         LUT6 (Prop_lut6_I0_O)        0.124     7.508 f  core/d_err1_i_2/O
-                         net (fo=3, routed)           0.408     7.916    core/d_err1_i_2_0
-    SLICE_X29Y27         LUT3 (Prop_lut3_I2_O)        0.124     8.040 r  core/bram_samples_request.ram_reg_0_0_0_i_59/O
-                         net (fo=12, routed)          0.904     8.944    core/bram_samples_request.ram_reg_0_0_0_i_59_n_0
-    SLICE_X39Y26         LUT5 (Prop_lut5_I4_O)        0.124     9.068 r  core/bram_samples_request.ram_reg_2_0_2_i_2/O
-                         net (fo=2, routed)           1.131    10.199    core_n_90
-    RAMB36_X3Y3          RAMB36E1                                     r  bram_samples_request.ram_reg_2_0_3/WEA[0]
-  -------------------------------------------------------------------    -------------------
-
-                         (clock clk rise edge)       10.000    10.000 r  
-                                                      0.000    10.000 r  clk (IN)
-                         net (fo=914, unset)          0.924    10.924    clk
-    RAMB36_X3Y3          RAMB36E1                                     r  bram_samples_request.ram_reg_2_0_3/CLKARDCLK
-                         clock pessimism              0.000    10.924    
-                         clock uncertainty           -0.035    10.889    
-    RAMB36_X3Y3          RAMB36E1 (Setup_ramb36e1_CLKARDCLK_WEA[0])
-                                                     -0.532    10.357    bram_samples_request.ram_reg_2_0_3
-  -------------------------------------------------------------------
-                         required time                         10.357    
-                         arrival time                         -10.199    
-  -------------------------------------------------------------------
-                         slack                                  0.158    
-
-Slack (MET) :             0.234ns  (required time - arrival time)
-  Source:                 core/fsel1_reg[0]/C
-                            (rising edge-triggered cell FDRE clocked by clk  {rise@0.000ns fall@5.000ns period=10.000ns})
-  Destination:            bram_samples_request.ram_reg_3_0_5/WEA[0]
-                            (rising edge-triggered cell RAMB36E1 clocked by clk  {rise@0.000ns fall@5.000ns period=10.000ns})
-  Path Group:             clk
-  Path Type:              Setup (Max at Slow Process Corner)
-  Requirement:            10.000ns  (clk rise@10.000ns - clk rise@0.000ns)
-  Data Path Delay:        9.150ns  (logic 2.597ns (28.382%)  route 6.553ns (71.618%))
-  Logic Levels:           11  (CARRY4=4 LUT2=1 LUT3=2 LUT4=1 LUT5=2 LUT6=1)
-  Clock Path Skew:        -0.049ns (DCD - SCD + CPR)
-    Destination Clock Delay (DCD):    0.924ns = ( 10.924 - 10.000 ) 
-    Source Clock Delay      (SCD):    0.973ns
-    Clock Pessimism Removal (CPR):    0.000ns
-  Clock Uncertainty:      0.035ns  ((TSJ^2 + TIJ^2)^1/2 + DJ) / 2 + PE
-    Total System Jitter     (TSJ):    0.071ns
-    Total Input Jitter      (TIJ):    0.000ns
-    Discrete Jitter          (DJ):    0.000ns
-    Phase Error              (PE):    0.000ns
-
-    Location             Delay type                Incr(ns)  Path(ns)    Netlist Resource(s)
-  -------------------------------------------------------------------    -------------------
-                         (clock clk rise edge)        0.000     0.000 r  
-                                                      0.000     0.000 r  clk (IN)
-                         net (fo=914, unset)          0.973     0.973    core/clk
-    SLICE_X25Y21         FDRE                                         r  core/fsel1_reg[0]/C
-  -------------------------------------------------------------------    -------------------
-    SLICE_X25Y21         FDRE (Prop_fdre_C_Q)         0.456     1.429 r  core/fsel1_reg[0]/Q
-                         net (fo=32, routed)          1.111     2.540    core/fetch/m1[addr][1]_i_4
-    SLICE_X26Y20         LUT5 (Prop_lut5_I0_O)        0.124     2.664 r  core/fetch/e_rs1v[9]_i_3/O
-                         net (fo=3, routed)           0.438     3.102    core/fetch/fsel1_reg[0]_17
-    SLICE_X24Y21         LUT3 (Prop_lut3_I2_O)        0.124     3.226 r  core/fetch/e_rs1v[9]_i_2/O
-                         net (fo=8, routed)           0.842     4.068    core/fetch_n_78
-    SLICE_X28Y21         LUT2 (Prop_lut2_I0_O)        0.124     4.192 r  core/bram_samples_request.ram_reg_0_0_0_i_45/O
-                         net (fo=1, routed)           0.000     4.192    core/bram_samples_request.ram_reg_0_0_0_i_45_n_0
-    SLICE_X28Y21         CARRY4 (Prop_carry4_S[1]_CO[3])
-                                                      0.550     4.742 r  core/bram_samples_request.ram_reg_0_0_0_i_4/CO[3]
-                         net (fo=1, routed)           0.000     4.742    core/bram_samples_request.ram_reg_0_0_0_i_4_n_0
-    SLICE_X28Y22         CARRY4 (Prop_carry4_CI_CO[3])
-                                                      0.114     4.856 r  core/bram_samples_request.ram_reg_0_0_0_i_3/CO[3]
-                         net (fo=1, routed)           0.000     4.856    core/bram_samples_request.ram_reg_0_0_0_i_3_n_0
-    SLICE_X28Y23         CARRY4 (Prop_carry4_CI_CO[3])
-                                                      0.114     4.970 r  core/bram_samples_request.ram_reg_0_0_0_i_2/CO[3]
-                         net (fo=1, routed)           0.000     4.970    core/bram_samples_request.ram_reg_0_0_0_i_2_n_0
-    SLICE_X28Y24         CARRY4 (Prop_carry4_CI_O[3])
-                                                      0.313     5.283 f  core/observe_reg[23]_i_2/O[3]
-                         net (fo=2, routed)           1.022     6.305    core/d_req_addr[23]
-    SLICE_X29Y27         LUT4 (Prop_lut4_I0_O)        0.306     6.611 r  core/d_err1_i_3/O
-                         net (fo=1, routed)           0.774     7.384    core/d_err1_i_3_n_0
-    SLICE_X31Y27         LUT6 (Prop_lut6_I0_O)        0.124     7.508 f  core/d_err1_i_2/O
-                         net (fo=3, routed)           0.408     7.916    core/d_err1_i_2_0
-    SLICE_X29Y27         LUT3 (Prop_lut3_I2_O)        0.124     8.040 r  core/bram_samples_request.ram_reg_0_0_0_i_59/O
-                         net (fo=12, routed)          0.586     8.627    core/bram_samples_request.ram_reg_0_0_0_i_59_n_0
-    SLICE_X23Y27         LUT5 (Prop_lut5_I4_O)        0.124     8.751 r  core/bram_samples_request.ram_reg_3_0_5_i_2/O
-                         net (fo=3, routed)           1.373    10.123    core_n_89
-    RAMB36_X0Y7          RAMB36E1                                     r  bram_samples_request.ram_reg_3_0_5/WEA[0]
-  -------------------------------------------------------------------    -------------------
-
-                         (clock clk rise edge)       10.000    10.000 r  
-                                                      0.000    10.000 r  clk (IN)
-                         net (fo=914, unset)          0.924    10.924    clk
-    RAMB36_X0Y7          RAMB36E1                                     r  bram_samples_request.ram_reg_3_0_5/CLKARDCLK
+    RAMB36_X0Y7          RAMB36E1                                     r  bram_samples_request.ram_reg_1_0_6/CLKARDCLK
                          clock pessimism              0.000    10.924    
                          clock uncertainty           -0.035    10.889    
     RAMB36_X0Y7          RAMB36E1 (Setup_ramb36e1_CLKARDCLK_WEA[0])
-                                                     -0.532    10.357    bram_samples_request.ram_reg_3_0_5
+                                                     -0.532    10.357    bram_samples_request.ram_reg_1_0_6
   -------------------------------------------------------------------
                          required time                         10.357    
-                         arrival time                         -10.123    
+                         arrival time                          -9.889    
   -------------------------------------------------------------------
-                         slack                                  0.234    
+                         slack                                  0.468    
+
+Slack (MET) :             0.473ns  (required time - arrival time)
+  Source:                 core/fsel1_reg[0]/C
+                            (rising edge-triggered cell FDRE clocked by clk  {rise@0.000ns fall@5.000ns period=10.000ns})
+  Destination:            bram_samples_request.ram_reg_1_0_7/WEA[0]
+                            (rising edge-triggered cell RAMB36E1 clocked by clk  {rise@0.000ns fall@5.000ns period=10.000ns})
+  Path Group:             clk
+  Path Type:              Setup (Max at Slow Process Corner)
+  Requirement:            10.000ns  (clk rise@10.000ns - clk rise@0.000ns)
+  Data Path Delay:        8.911ns  (logic 2.370ns (26.595%)  route 6.541ns (73.405%))
+  Logic Levels:           10  (CARRY4=3 LUT2=1 LUT3=2 LUT4=1 LUT5=2 LUT6=1)
+  Clock Path Skew:        -0.049ns (DCD - SCD + CPR)
+    Destination Clock Delay (DCD):    0.924ns = ( 10.924 - 10.000 ) 
+    Source Clock Delay      (SCD):    0.973ns
+    Clock Pessimism Removal (CPR):    0.000ns
+  Clock Uncertainty:      0.035ns  ((TSJ^2 + TIJ^2)^1/2 + DJ) / 2 + PE
+    Total System Jitter     (TSJ):    0.071ns
+    Total Input Jitter      (TIJ):    0.000ns
+    Discrete Jitter          (DJ):    0.000ns
+    Phase Error              (PE):    0.000ns
+
+    Location             Delay type                Incr(ns)  Path(ns)    Netlist Resource(s)
+  -------------------------------------------------------------------    -------------------
+                         (clock clk rise edge)        0.000     0.000 r  
+                                                      0.000     0.000 r  clk (IN)
+                         net (fo=914, unset)          0.973     0.973    core/clk
+    SLICE_X24Y20         FDRE                                         r  core/fsel1_reg[0]/C
+  -------------------------------------------------------------------    -------------------
+    SLICE_X24Y20         FDRE (Prop_fdre_C_Q)         0.456     1.429 r  core/fsel1_reg[0]/Q
+                         net (fo=32, routed)          1.402     2.831    core/fetch/m1[addr][1]_i_4
+    SLICE_X32Y21         LUT5 (Prop_lut5_I0_O)        0.124     2.955 r  core/fetch/e_rs1v[12]_i_3/O
+                         net (fo=3, routed)           0.366     3.322    core/fetch/fsel1_reg[0]_6
+    SLICE_X33Y21         LUT3 (Prop_lut3_I2_O)        0.124     3.446 r  core/fetch/e_rs1v[12]_i_2/O
+                         net (fo=8, routed)           0.872     4.318    core/fetch_n_99
+    SLICE_X30Y20         LUT2 (Prop_lut2_I0_O)        0.124     4.442 r  core/bram_samples_request.ram_reg_0_0_0_i_38/O
+                         net (fo=1, routed)           0.000     4.442    core/bram_samples_request.ram_reg_0_0_0_i_38_n_0
+    SLICE_X30Y20         CARRY4 (Prop_carry4_S[0]_CO[3])
+                                                      0.513     4.955 r  core/bram_samples_request.ram_reg_0_0_0_i_3/CO[3]
+                         net (fo=1, routed)           0.000     4.955    core/bram_samples_request.ram_reg_0_0_0_i_3_n_0
+    SLICE_X30Y21         CARRY4 (Prop_carry4_CI_CO[3])
+                                                      0.117     5.072 r  core/bram_samples_request.ram_reg_0_0_0_i_2/CO[3]
+                         net (fo=1, routed)           0.000     5.072    core/bram_samples_request.ram_reg_0_0_0_i_2_n_0
+    SLICE_X30Y22         CARRY4 (Prop_carry4_CI_O[2])
+                                                      0.239     5.311 f  core/observe_reg[23]_i_2/O[2]
+                         net (fo=2, routed)           0.919     6.230    core/d_req_addr[22]
+    SLICE_X33Y22         LUT4 (Prop_lut4_I1_O)        0.301     6.531 r  core/d_err1_i_3/O
+                         net (fo=1, routed)           0.571     7.103    core/d_err1_i_3_n_0
+    SLICE_X33Y23         LUT6 (Prop_lut6_I0_O)        0.124     7.227 f  core/d_err1_i_2/O
+                         net (fo=3, routed)           0.175     7.402    core/d_err1_i_2_0
+    SLICE_X33Y23         LUT3 (Prop_lut3_I2_O)        0.124     7.526 r  core/bram_samples_request.ram_reg_0_0_0_i_59/O
+                         net (fo=12, routed)          0.920     8.446    core/bram_samples_request.ram_reg_0_0_0_i_59_n_0
+    SLICE_X25Y25         LUT5 (Prop_lut5_I4_O)        0.124     8.570 r  core/bram_samples_request.ram_reg_1_0_5_i_2/O
+                         net (fo=3, routed)           1.315     9.884    core_n_97
+    RAMB36_X1Y9          RAMB36E1                                     r  bram_samples_request.ram_reg_1_0_7/WEA[0]
+  -------------------------------------------------------------------    -------------------
+
+                         (clock clk rise edge)       10.000    10.000 r  
+                                                      0.000    10.000 r  clk (IN)
+                         net (fo=914, unset)          0.924    10.924    clk
+    RAMB36_X1Y9          RAMB36E1                                     r  bram_samples_request.ram_reg_1_0_7/CLKARDCLK
+                         clock pessimism              0.000    10.924    
+                         clock uncertainty           -0.035    10.889    
+    RAMB36_X1Y9          RAMB36E1 (Setup_ramb36e1_CLKARDCLK_WEA[0])
+                                                     -0.532    10.357    bram_samples_request.ram_reg_1_0_7
+  -------------------------------------------------------------------
+                         required time                         10.357    
+                         arrival time                          -9.884    
+  -------------------------------------------------------------------
+                         slack                                  0.473    
+
+Slack (MET) :             0.484ns  (required time - arrival time)
+  Source:                 core/fsel1_reg[0]/C
+                            (rising edge-triggered cell FDRE clocked by clk  {rise@0.000ns fall@5.000ns period=10.000ns})
+  Destination:            bram_samples_request.ram_reg_2_0_2/WEA[0]
+                            (rising edge-triggered cell RAMB36E1 clocked by clk  {rise@0.000ns fall@5.000ns period=10.000ns})
+  Path Group:             clk
+  Path Type:              Setup (Max at Slow Process Corner)
+  Requirement:            10.000ns  (clk rise@10.000ns - clk rise@0.000ns)
+  Data Path Delay:        8.899ns  (logic 2.370ns (26.631%)  route 6.529ns (73.369%))
+  Logic Levels:           10  (CARRY4=3 LUT2=1 LUT3=2 LUT4=1 LUT5=2 LUT6=1)
+  Clock Path Skew:        -0.049ns (DCD - SCD + CPR)
+    Destination Clock Delay (DCD):    0.924ns = ( 10.924 - 10.000 ) 
+    Source Clock Delay      (SCD):    0.973ns
+    Clock Pessimism Removal (CPR):    0.000ns
+  Clock Uncertainty:      0.035ns  ((TSJ^2 + TIJ^2)^1/2 + DJ) / 2 + PE
+    Total System Jitter     (TSJ):    0.071ns
+    Total Input Jitter      (TIJ):    0.000ns
+    Discrete Jitter          (DJ):    0.000ns
+    Phase Error              (PE):    0.000ns
+
+    Location             Delay type                Incr(ns)  Path(ns)    Netlist Resource(s)
+  -------------------------------------------------------------------    -------------------
+                         (clock clk rise edge)        0.000     0.000 r  
+                                                      0.000     0.000 r  clk (IN)
+                         net (fo=914, unset)          0.973     0.973    core/clk
+    SLICE_X24Y20         FDRE                                         r  core/fsel1_reg[0]/C
+  -------------------------------------------------------------------    -------------------
+    SLICE_X24Y20         FDRE (Prop_fdre_C_Q)         0.456     1.429 r  core/fsel1_reg[0]/Q
+                         net (fo=32, routed)          1.402     2.831    core/fetch/m1[addr][1]_i_4
+    SLICE_X32Y21         LUT5 (Prop_lut5_I0_O)        0.124     2.955 r  core/fetch/e_rs1v[12]_i_3/O
+                         net (fo=3, routed)           0.366     3.322    core/fetch/fsel1_reg[0]_6
+    SLICE_X33Y21         LUT3 (Prop_lut3_I2_O)        0.124     3.446 r  core/fetch/e_rs1v[12]_i_2/O
+                         net (fo=8, routed)           0.872     4.318    core/fetch_n_99
+    SLICE_X30Y20         LUT2 (Prop_lut2_I0_O)        0.124     4.442 r  core/bram_samples_request.ram_reg_0_0_0_i_38/O
+                         net (fo=1, routed)           0.000     4.442    core/bram_samples_request.ram_reg_0_0_0_i_38_n_0
+    SLICE_X30Y20         CARRY4 (Prop_carry4_S[0]_CO[3])
+                                                      0.513     4.955 r  core/bram_samples_request.ram_reg_0_0_0_i_3/CO[3]
+                         net (fo=1, routed)           0.000     4.955    core/bram_samples_request.ram_reg_0_0_0_i_3_n_0
+    SLICE_X30Y21         CARRY4 (Prop_carry4_CI_CO[3])
+                                                      0.117     5.072 r  core/bram_samples_request.ram_reg_0_0_0_i_2/CO[3]
+                         net (fo=1, routed)           0.000     5.072    core/bram_samples_request.ram_reg_0_0_0_i_2_n_0
+    SLICE_X30Y22         CARRY4 (Prop_carry4_CI_O[2])
+                                                      0.239     5.311 f  core/observe_reg[23]_i_2/O[2]
+                         net (fo=2, routed)           0.919     6.230    core/d_req_addr[22]
+    SLICE_X33Y22         LUT4 (Prop_lut4_I1_O)        0.301     6.531 r  core/d_err1_i_3/O
+                         net (fo=1, routed)           0.571     7.103    core/d_err1_i_3_n_0
+    SLICE_X33Y23         LUT6 (Prop_lut6_I0_O)        0.124     7.227 f  core/d_err1_i_2/O
+                         net (fo=3, routed)           0.175     7.402    core/d_err1_i_2_0
+    SLICE_X33Y23         LUT3 (Prop_lut3_I2_O)        0.124     7.526 r  core/bram_samples_request.ram_reg_0_0_0_i_59/O
+                         net (fo=12, routed)          0.991     8.517    core/bram_samples_request.ram_reg_0_0_0_i_59_n_0
+    SLICE_X26Y26         LUT5 (Prop_lut5_I4_O)        0.124     8.641 r  core/bram_samples_request.ram_reg_2_0_0_i_2/O
+                         net (fo=3, routed)           1.232     9.872    core_n_91
+    RAMB36_X2Y8          RAMB36E1                                     r  bram_samples_request.ram_reg_2_0_2/WEA[0]
+  -------------------------------------------------------------------    -------------------
+
+                         (clock clk rise edge)       10.000    10.000 r  
+                                                      0.000    10.000 r  clk (IN)
+                         net (fo=914, unset)          0.924    10.924    clk
+    RAMB36_X2Y8          RAMB36E1                                     r  bram_samples_request.ram_reg_2_0_2/CLKARDCLK
+                         clock pessimism              0.000    10.924    
+                         clock uncertainty           -0.035    10.889    
+    RAMB36_X2Y8          RAMB36E1 (Setup_ramb36e1_CLKARDCLK_WEA[0])
+                                                     -0.532    10.357    bram_samples_request.ram_reg_2_0_2
+  -------------------------------------------------------------------
+                         required time                         10.357    
+                         arrival time                          -9.872    
+  -------------------------------------------------------------------
+                         slack                                  0.484    
+
+Slack (MET) :             0.502ns  (required time - arrival time)
+  Source:                 core/fsel1_reg[0]/C
+                            (rising edge-triggered cell FDRE clocked by clk  {rise@0.000ns fall@5.000ns period=10.000ns})
+  Destination:            bram_samples_request.ram_reg_0_0_5/WEA[0]
+                            (rising edge-triggered cell RAMB36E1 clocked by clk  {rise@0.000ns fall@5.000ns period=10.000ns})
+  Path Group:             clk
+  Path Type:              Setup (Max at Slow Process Corner)
+  Requirement:            10.000ns  (clk rise@10.000ns - clk rise@0.000ns)
+  Data Path Delay:        8.882ns  (logic 2.370ns (26.683%)  route 6.512ns (73.317%))
+  Logic Levels:           10  (CARRY4=3 LUT2=1 LUT3=2 LUT4=2 LUT5=1 LUT6=1)
+  Clock Path Skew:        -0.049ns (DCD - SCD + CPR)
+    Destination Clock Delay (DCD):    0.924ns = ( 10.924 - 10.000 ) 
+    Source Clock Delay      (SCD):    0.973ns
+    Clock Pessimism Removal (CPR):    0.000ns
+  Clock Uncertainty:      0.035ns  ((TSJ^2 + TIJ^2)^1/2 + DJ) / 2 + PE
+    Total System Jitter     (TSJ):    0.071ns
+    Total Input Jitter      (TIJ):    0.000ns
+    Discrete Jitter          (DJ):    0.000ns
+    Phase Error              (PE):    0.000ns
+
+    Location             Delay type                Incr(ns)  Path(ns)    Netlist Resource(s)
+  -------------------------------------------------------------------    -------------------
+                         (clock clk rise edge)        0.000     0.000 r  
+                                                      0.000     0.000 r  clk (IN)
+                         net (fo=914, unset)          0.973     0.973    core/clk
+    SLICE_X24Y20         FDRE                                         r  core/fsel1_reg[0]/C
+  -------------------------------------------------------------------    -------------------
+    SLICE_X24Y20         FDRE (Prop_fdre_C_Q)         0.456     1.429 r  core/fsel1_reg[0]/Q
+                         net (fo=32, routed)          1.402     2.831    core/fetch/m1[addr][1]_i_4
+    SLICE_X32Y21         LUT5 (Prop_lut5_I0_O)        0.124     2.955 r  core/fetch/e_rs1v[12]_i_3/O
+                         net (fo=3, routed)           0.366     3.322    core/fetch/fsel1_reg[0]_6
+    SLICE_X33Y21         LUT3 (Prop_lut3_I2_O)        0.124     3.446 r  core/fetch/e_rs1v[12]_i_2/O
+                         net (fo=8, routed)           0.872     4.318    core/fetch_n_99
+    SLICE_X30Y20         LUT2 (Prop_lut2_I0_O)        0.124     4.442 r  core/bram_samples_request.ram_reg_0_0_0_i_38/O
+                         net (fo=1, routed)           0.000     4.442    core/bram_samples_request.ram_reg_0_0_0_i_38_n_0
+    SLICE_X30Y20         CARRY4 (Prop_carry4_S[0]_CO[3])
+                                                      0.513     4.955 r  core/bram_samples_request.ram_reg_0_0_0_i_3/CO[3]
+                         net (fo=1, routed)           0.000     4.955    core/bram_samples_request.ram_reg_0_0_0_i_3_n_0
+    SLICE_X30Y21         CARRY4 (Prop_carry4_CI_CO[3])
+                                                      0.117     5.072 r  core/bram_samples_request.ram_reg_0_0_0_i_2/CO[3]
+                         net (fo=1, routed)           0.000     5.072    core/bram_samples_request.ram_reg_0_0_0_i_2_n_0
+    SLICE_X30Y22         CARRY4 (Prop_carry4_CI_O[2])
+                                                      0.239     5.311 f  core/observe_reg[23]_i_2/O[2]
+                         net (fo=2, routed)           0.919     6.230    core/d_req_addr[22]
+    SLICE_X33Y22         LUT4 (Prop_lut4_I1_O)        0.301     6.531 r  core/d_err1_i_3/O
+                         net (fo=1, routed)           0.571     7.103    core/d_err1_i_3_n_0
+    SLICE_X33Y23         LUT6 (Prop_lut6_I0_O)        0.124     7.227 f  core/d_err1_i_2/O
+                         net (fo=3, routed)           0.175     7.402    core/d_err1_i_2_0
+    SLICE_X33Y23         LUT3 (Prop_lut3_I2_O)        0.124     7.526 r  core/bram_samples_request.ram_reg_0_0_0_i_59/O
+                         net (fo=12, routed)          0.838     8.364    core/bram_samples_request.ram_reg_0_0_0_i_59_n_0
+    SLICE_X33Y15         LUT4 (Prop_lut4_I3_O)        0.124     8.488 r  core/bram_samples_request.ram_reg_0_0_5_i_2/O
+                         net (fo=3, routed)           1.367     9.855    core_n_101
+    RAMB36_X0Y2          RAMB36E1                                     r  bram_samples_request.ram_reg_0_0_5/WEA[0]
+  -------------------------------------------------------------------    -------------------
+
+                         (clock clk rise edge)       10.000    10.000 r  
+                                                      0.000    10.000 r  clk (IN)
+                         net (fo=914, unset)          0.924    10.924    clk
+    RAMB36_X0Y2          RAMB36E1                                     r  bram_samples_request.ram_reg_0_0_5/CLKARDCLK
+                         clock pessimism              0.000    10.924    
+                         clock uncertainty           -0.035    10.889    
+    RAMB36_X0Y2          RAMB36E1 (Setup_ramb36e1_CLKARDCLK_WEA[0])
+                                                     -0.532    10.357    bram_samples_request.ram_reg_0_0_5
+  -------------------------------------------------------------------
+                         required time                         10.357    
+                         arrival time                          -9.855    
+  -------------------------------------------------------------------
+                         slack                                  0.502    
+
+Slack (MET) :             0.506ns  (required time - arrival time)
+  Source:                 core/fsel1_reg[0]/C
+                            (rising edge-triggered cell FDRE clocked by clk  {rise@0.000ns fall@5.000ns period=10.000ns})
+  Destination:            bram_samples_request.ram_reg_1_0_3/WEA[0]
+                            (rising edge-triggered cell RAMB36E1 clocked by clk  {rise@0.000ns fall@5.000ns period=10.000ns})
+  Path Group:             clk
+  Path Type:              Setup (Max at Slow Process Corner)
+  Requirement:            10.000ns  (clk rise@10.000ns - clk rise@0.000ns)
+  Data Path Delay:        8.654ns  (logic 2.363ns (27.304%)  route 6.291ns (72.696%))
+  Logic Levels:           10  (CARRY4=3 LUT2=1 LUT3=2 LUT4=1 LUT5=2 LUT6=1)
+  Clock Path Skew:        -0.049ns (DCD - SCD + CPR)
+    Destination Clock Delay (DCD):    0.924ns = ( 10.924 - 10.000 ) 
+    Source Clock Delay      (SCD):    0.973ns
+    Clock Pessimism Removal (CPR):    0.000ns
+  Clock Uncertainty:      0.035ns  ((TSJ^2 + TIJ^2)^1/2 + DJ) / 2 + PE
+    Total System Jitter     (TSJ):    0.071ns
+    Total Input Jitter      (TIJ):    0.000ns
+    Discrete Jitter          (DJ):    0.000ns
+    Phase Error              (PE):    0.000ns
+
+    Location             Delay type                Incr(ns)  Path(ns)    Netlist Resource(s)
+  -------------------------------------------------------------------    -------------------
+                         (clock clk rise edge)        0.000     0.000 r  
+                                                      0.000     0.000 r  clk (IN)
+                         net (fo=914, unset)          0.973     0.973    core/clk
+    SLICE_X24Y20         FDRE                                         r  core/fsel1_reg[0]/C
+  -------------------------------------------------------------------    -------------------
+    SLICE_X24Y20         FDRE (Prop_fdre_C_Q)         0.456     1.429 r  core/fsel1_reg[0]/Q
+                         net (fo=32, routed)          1.402     2.831    core/fetch/m1[addr][1]_i_4
+    SLICE_X32Y21         LUT5 (Prop_lut5_I0_O)        0.124     2.955 r  core/fetch/e_rs1v[12]_i_3/O
+                         net (fo=3, routed)           0.366     3.322    core/fetch/fsel1_reg[0]_6
+    SLICE_X33Y21         LUT3 (Prop_lut3_I2_O)        0.124     3.446 r  core/fetch/e_rs1v[12]_i_2/O
+                         net (fo=8, routed)           0.872     4.318    core/fetch_n_99
+    SLICE_X30Y20         LUT2 (Prop_lut2_I0_O)        0.124     4.442 r  core/bram_samples_request.ram_reg_0_0_0_i_38/O
+                         net (fo=1, routed)           0.000     4.442    core/bram_samples_request.ram_reg_0_0_0_i_38_n_0
+    SLICE_X30Y20         CARRY4 (Prop_carry4_S[0]_CO[3])
+                                                      0.513     4.955 r  core/bram_samples_request.ram_reg_0_0_0_i_3/CO[3]
+                         net (fo=1, routed)           0.000     4.955    core/bram_samples_request.ram_reg_0_0_0_i_3_n_0
+    SLICE_X30Y21         CARRY4 (Prop_carry4_CI_CO[3])
+                                                      0.117     5.072 r  core/bram_samples_request.ram_reg_0_0_0_i_2/CO[3]
+                         net (fo=1, routed)           0.000     5.072    core/bram_samples_request.ram_reg_0_0_0_i_2_n_0
+    SLICE_X30Y22         CARRY4 (Prop_carry4_CI_O[2])
+                                                      0.239     5.311 f  core/observe_reg[23]_i_2/O[2]
+                         net (fo=2, routed)           0.919     6.230    core/d_req_addr[22]
+    SLICE_X33Y22         LUT4 (Prop_lut4_I1_O)        0.301     6.531 r  core/d_err1_i_3/O
+                         net (fo=1, routed)           0.571     7.103    core/d_err1_i_3_n_0
+    SLICE_X33Y23         LUT6 (Prop_lut6_I0_O)        0.124     7.227 f  core/d_err1_i_2/O
+                         net (fo=3, routed)           0.175     7.402    core/d_err1_i_2_0
+    SLICE_X33Y23         LUT3 (Prop_lut3_I2_O)        0.124     7.526 r  core/bram_samples_request.ram_reg_0_0_0_i_59/O
+                         net (fo=12, routed)          0.991     8.517    core/bram_samples_request.ram_reg_0_0_0_i_59_n_0
+    SLICE_X26Y26         LUT5 (Prop_lut5_I4_O)        0.117     8.634 r  core/bram_samples_request.ram_reg_1_0_2_i_2/O
+                         net (fo=2, routed)           0.993     9.627    core_n_94
+    RAMB36_X2Y6          RAMB36E1                                     r  bram_samples_request.ram_reg_1_0_3/WEA[0]
+  -------------------------------------------------------------------    -------------------
+
+                         (clock clk rise edge)       10.000    10.000 r  
+                                                      0.000    10.000 r  clk (IN)
+                         net (fo=914, unset)          0.924    10.924    clk
+    RAMB36_X2Y6          RAMB36E1                                     r  bram_samples_request.ram_reg_1_0_3/CLKARDCLK
+                         clock pessimism              0.000    10.924    
+                         clock uncertainty           -0.035    10.889    
+    RAMB36_X2Y6          RAMB36E1 (Setup_ramb36e1_CLKARDCLK_WEA[0])
+                                                     -0.756    10.133    bram_samples_request.ram_reg_1_0_3
+  -------------------------------------------------------------------
+                         required time                         10.133    
+                         arrival time                          -9.627    
+  -------------------------------------------------------------------
+                         slack                                  0.506    
+
+Slack (MET) :             0.508ns  (required time - arrival time)
+  Source:                 core/fsel2_reg[0]/C
+                            (rising edge-triggered cell FDRE clocked by clk  {rise@0.000ns fall@5.000ns period=10.000ns})
+  Destination:            core/m1_reg[result][24]/D
+                            (rising edge-triggered cell FDRE clocked by clk  {rise@0.000ns fall@5.000ns period=10.000ns})
+  Path Group:             clk
+  Path Type:              Setup (Max at Slow Process Corner)
+  Requirement:            10.000ns  (clk rise@10.000ns - clk rise@0.000ns)
+  Data Path Delay:        9.526ns  (logic 2.941ns (30.872%)  route 6.585ns (69.128%))
+  Logic Levels:           12  (CARRY4=4 LUT2=1 LUT3=3 LUT4=1 LUT5=1 LUT6=2)
+  Clock Path Skew:        -0.049ns (DCD - SCD + CPR)
+    Destination Clock Delay (DCD):    0.924ns = ( 10.924 - 10.000 ) 
+    Source Clock Delay      (SCD):    0.973ns
+    Clock Pessimism Removal (CPR):    0.000ns
+  Clock Uncertainty:      0.035ns  ((TSJ^2 + TIJ^2)^1/2 + DJ) / 2 + PE
+    Total System Jitter     (TSJ):    0.071ns
+    Total Input Jitter      (TIJ):    0.000ns
+    Discrete Jitter          (DJ):    0.000ns
+    Phase Error              (PE):    0.000ns
+
+    Location             Delay type                Incr(ns)  Path(ns)    Netlist Resource(s)
+  -------------------------------------------------------------------    -------------------
+                         (clock clk rise edge)        0.000     0.000 r  
+                                                      0.000     0.000 r  clk (IN)
+                         net (fo=914, unset)          0.973     0.973    core/clk
+    SLICE_X22Y18         FDRE                                         r  core/fsel2_reg[0]/C
+  -------------------------------------------------------------------    -------------------
+    SLICE_X22Y18         FDRE (Prop_fdre_C_Q)         0.518     1.491 r  core/fsel2_reg[0]/Q
+                         net (fo=32, routed)          1.710     3.201    core/fetch/sel[0]
+    SLICE_X33Y23         LUT5 (Prop_lut5_I0_O)        0.124     3.325 r  core/fetch/e_rs2v[13]_i_3/O
+                         net (fo=1, routed)           0.821     4.146    core/fetch/forward0[13]
+    SLICE_X32Y21         LUT3 (Prop_lut3_I2_O)        0.150     4.296 r  core/fetch/e_rs2v[13]_i_2/O
+                         net (fo=10, routed)          0.882     5.178    core/fetch/m1_reg[result][13]
+    SLICE_X35Y14         LUT3 (Prop_lut3_I2_O)        0.328     5.506 r  core/fetch/e_pc[13]_i_14/O
+                         net (fo=8, routed)           0.727     6.234    core/fetch/e_dec_reg[imm][13]
+    SLICE_X35Y8          LUT2 (Prop_lut2_I0_O)        0.124     6.358 r  core/fetch/e_pc[15]_i_20/O
+                         net (fo=1, routed)           0.000     6.358    core/fetch/e_pc[15]_i_20_n_0
+    SLICE_X35Y8          CARRY4 (Prop_carry4_S[1]_CO[3])
+                                                      0.550     6.908 r  core/fetch/e_pc_reg[15]_i_16/CO[3]
+                         net (fo=1, routed)           0.000     6.908    core/fetch/e_pc_reg[15]_i_16_n_0
+    SLICE_X35Y9          CARRY4 (Prop_carry4_CI_CO[3])
+                                                      0.114     7.022 r  core/fetch/e_pc_reg[23]_i_22/CO[3]
+                         net (fo=1, routed)           0.000     7.022    core/fetch/e_pc_reg[23]_i_22_n_0
+    SLICE_X35Y10         CARRY4 (Prop_carry4_CI_CO[3])
+                                                      0.114     7.136 r  core/fetch/e_pc_reg[23]_i_18/CO[3]
+                         net (fo=1, routed)           0.000     7.136    core/fetch/e_pc_reg[23]_i_18_n_0
+    SLICE_X35Y11         CARRY4 (Prop_carry4_CI_O[0])
+                                                      0.222     7.358 r  core/fetch/e_pc_reg[27]_i_14/O[0]
+                         net (fo=1, routed)           0.512     7.870    core/fetch/e_pc_reg[27]_i_14_n_7
+    SLICE_X37Y16         LUT3 (Prop_lut3_I2_O)        0.299     8.169 r  core/fetch/e_pc[24]_i_18/O
+                         net (fo=1, routed)           0.545     8.714    core/fetch/e_pc[24]_i_18_n_0
+    SLICE_X37Y18         LUT6 (Prop_lut6_I2_O)        0.124     8.838 r  core/fetch/e_pc[24]_i_11/O
+                         net (fo=1, routed)           0.431     9.269    core/fetch/e_pc[24]_i_11_n_0
+    SLICE_X35Y18         LUT6 (Prop_lut6_I4_O)        0.124     9.393 r  core/fetch/e_pc[24]_i_4/O
+                         net (fo=2, routed)           0.956    10.349    core/alu[24]
+    SLICE_X36Y20         LUT4 (Prop_lut4_I3_O)        0.150    10.499 r  core/m1[result][24]_i_1/O
+                         net (fo=1, routed)           0.000    10.499    core/e_slot[result][24]
+    SLICE_X36Y20         FDRE                                         r  core/m1_reg[result][24]/D
+  -------------------------------------------------------------------    -------------------
+
+                         (clock clk rise edge)       10.000    10.000 r  
+                                                      0.000    10.000 r  clk (IN)
+                         net (fo=914, unset)          0.924    10.924    core/clk
+    SLICE_X36Y20         FDRE                                         r  core/m1_reg[result][24]/C
+                         clock pessimism              0.000    10.924    
+                         clock uncertainty           -0.035    10.889    
+    SLICE_X36Y20         FDRE (Setup_fdre_C_D)        0.118    11.007    core/m1_reg[result][24]
+  -------------------------------------------------------------------
+                         required time                         11.007    
+                         arrival time                         -10.499    
+  -------------------------------------------------------------------
+                         slack                                  0.508    
+
+Slack (MET) :             0.512ns  (required time - arrival time)
+  Source:                 core/fsel1_reg[0]/C
+                            (rising edge-triggered cell FDRE clocked by clk  {rise@0.000ns fall@5.000ns period=10.000ns})
+  Destination:            bram_samples_request.ram_reg_3_0_1/WEA[0]
+                            (rising edge-triggered cell RAMB36E1 clocked by clk  {rise@0.000ns fall@5.000ns period=10.000ns})
+  Path Group:             clk
+  Path Type:              Setup (Max at Slow Process Corner)
+  Requirement:            10.000ns  (clk rise@10.000ns - clk rise@0.000ns)
+  Data Path Delay:        8.665ns  (logic 2.363ns (27.269%)  route 6.302ns (72.731%))
+  Logic Levels:           10  (CARRY4=3 LUT2=1 LUT3=2 LUT4=1 LUT5=2 LUT6=1)
+  Clock Path Skew:        -0.049ns (DCD - SCD + CPR)
+    Destination Clock Delay (DCD):    0.924ns = ( 10.924 - 10.000 ) 
+    Source Clock Delay      (SCD):    0.973ns
+    Clock Pessimism Removal (CPR):    0.000ns
+  Clock Uncertainty:      0.035ns  ((TSJ^2 + TIJ^2)^1/2 + DJ) / 2 + PE
+    Total System Jitter     (TSJ):    0.071ns
+    Total Input Jitter      (TIJ):    0.000ns
+    Discrete Jitter          (DJ):    0.000ns
+    Phase Error              (PE):    0.000ns
+
+    Location             Delay type                Incr(ns)  Path(ns)    Netlist Resource(s)
+  -------------------------------------------------------------------    -------------------
+                         (clock clk rise edge)        0.000     0.000 r  
+                                                      0.000     0.000 r  clk (IN)
+                         net (fo=914, unset)          0.973     0.973    core/clk
+    SLICE_X24Y20         FDRE                                         r  core/fsel1_reg[0]/C
+  -------------------------------------------------------------------    -------------------
+    SLICE_X24Y20         FDRE (Prop_fdre_C_Q)         0.456     1.429 r  core/fsel1_reg[0]/Q
+                         net (fo=32, routed)          1.402     2.831    core/fetch/m1[addr][1]_i_4
+    SLICE_X32Y21         LUT5 (Prop_lut5_I0_O)        0.124     2.955 r  core/fetch/e_rs1v[12]_i_3/O
+                         net (fo=3, routed)           0.366     3.322    core/fetch/fsel1_reg[0]_6
+    SLICE_X33Y21         LUT3 (Prop_lut3_I2_O)        0.124     3.446 r  core/fetch/e_rs1v[12]_i_2/O
+                         net (fo=8, routed)           0.872     4.318    core/fetch_n_99
+    SLICE_X30Y20         LUT2 (Prop_lut2_I0_O)        0.124     4.442 r  core/bram_samples_request.ram_reg_0_0_0_i_38/O
+                         net (fo=1, routed)           0.000     4.442    core/bram_samples_request.ram_reg_0_0_0_i_38_n_0
+    SLICE_X30Y20         CARRY4 (Prop_carry4_S[0]_CO[3])
+                                                      0.513     4.955 r  core/bram_samples_request.ram_reg_0_0_0_i_3/CO[3]
+                         net (fo=1, routed)           0.000     4.955    core/bram_samples_request.ram_reg_0_0_0_i_3_n_0
+    SLICE_X30Y21         CARRY4 (Prop_carry4_CI_CO[3])
+                                                      0.117     5.072 r  core/bram_samples_request.ram_reg_0_0_0_i_2/CO[3]
+                         net (fo=1, routed)           0.000     5.072    core/bram_samples_request.ram_reg_0_0_0_i_2_n_0
+    SLICE_X30Y22         CARRY4 (Prop_carry4_CI_O[2])
+                                                      0.239     5.311 f  core/observe_reg[23]_i_2/O[2]
+                         net (fo=2, routed)           0.919     6.230    core/d_req_addr[22]
+    SLICE_X33Y22         LUT4 (Prop_lut4_I1_O)        0.301     6.531 r  core/d_err1_i_3/O
+                         net (fo=1, routed)           0.571     7.103    core/d_err1_i_3_n_0
+    SLICE_X33Y23         LUT6 (Prop_lut6_I0_O)        0.124     7.227 f  core/d_err1_i_2/O
+                         net (fo=3, routed)           0.175     7.402    core/d_err1_i_2_0
+    SLICE_X33Y23         LUT3 (Prop_lut3_I2_O)        0.124     7.526 r  core/bram_samples_request.ram_reg_0_0_0_i_59/O
+                         net (fo=12, routed)          0.713     8.239    core/bram_samples_request.ram_reg_0_0_0_i_59_n_0
+    SLICE_X36Y19         LUT5 (Prop_lut5_I4_O)        0.117     8.356 r  core/bram_samples_request.ram_reg_3_0_0_i_2/O
+                         net (fo=3, routed)           1.282     9.638    core_n_87
+    RAMB36_X3Y1          RAMB36E1                                     r  bram_samples_request.ram_reg_3_0_1/WEA[0]
+  -------------------------------------------------------------------    -------------------
+
+                         (clock clk rise edge)       10.000    10.000 r  
+                                                      0.000    10.000 r  clk (IN)
+                         net (fo=914, unset)          0.924    10.924    clk
+    RAMB36_X3Y1          RAMB36E1                                     r  bram_samples_request.ram_reg_3_0_1/CLKARDCLK
+                         clock pessimism              0.000    10.924    
+                         clock uncertainty           -0.035    10.889    
+    RAMB36_X3Y1          RAMB36E1 (Setup_ramb36e1_CLKARDCLK_WEA[0])
+                                                     -0.739    10.150    bram_samples_request.ram_reg_3_0_1
+  -------------------------------------------------------------------
+                         required time                         10.150    
+                         arrival time                          -9.638    
+  -------------------------------------------------------------------
+                         slack                                  0.512    
+
+Slack (MET) :             0.563ns  (required time - arrival time)
+  Source:                 core/fsel1_reg[0]/C
+                            (rising edge-triggered cell FDRE clocked by clk  {rise@0.000ns fall@5.000ns period=10.000ns})
+  Destination:            bram_samples_request.ram_reg_3_0_2/WEA[0]
+                            (rising edge-triggered cell RAMB36E1 clocked by clk  {rise@0.000ns fall@5.000ns period=10.000ns})
+  Path Group:             clk
+  Path Type:              Setup (Max at Slow Process Corner)
+  Requirement:            10.000ns  (clk rise@10.000ns - clk rise@0.000ns)
+  Data Path Delay:        8.614ns  (logic 2.363ns (27.433%)  route 6.251ns (72.567%))
+  Logic Levels:           10  (CARRY4=3 LUT2=1 LUT3=2 LUT4=1 LUT5=2 LUT6=1)
+  Clock Path Skew:        -0.049ns (DCD - SCD + CPR)
+    Destination Clock Delay (DCD):    0.924ns = ( 10.924 - 10.000 ) 
+    Source Clock Delay      (SCD):    0.973ns
+    Clock Pessimism Removal (CPR):    0.000ns
+  Clock Uncertainty:      0.035ns  ((TSJ^2 + TIJ^2)^1/2 + DJ) / 2 + PE
+    Total System Jitter     (TSJ):    0.071ns
+    Total Input Jitter      (TIJ):    0.000ns
+    Discrete Jitter          (DJ):    0.000ns
+    Phase Error              (PE):    0.000ns
+
+    Location             Delay type                Incr(ns)  Path(ns)    Netlist Resource(s)
+  -------------------------------------------------------------------    -------------------
+                         (clock clk rise edge)        0.000     0.000 r  
+                                                      0.000     0.000 r  clk (IN)
+                         net (fo=914, unset)          0.973     0.973    core/clk
+    SLICE_X24Y20         FDRE                                         r  core/fsel1_reg[0]/C
+  -------------------------------------------------------------------    -------------------
+    SLICE_X24Y20         FDRE (Prop_fdre_C_Q)         0.456     1.429 r  core/fsel1_reg[0]/Q
+                         net (fo=32, routed)          1.402     2.831    core/fetch/m1[addr][1]_i_4
+    SLICE_X32Y21         LUT5 (Prop_lut5_I0_O)        0.124     2.955 r  core/fetch/e_rs1v[12]_i_3/O
+                         net (fo=3, routed)           0.366     3.322    core/fetch/fsel1_reg[0]_6
+    SLICE_X33Y21         LUT3 (Prop_lut3_I2_O)        0.124     3.446 r  core/fetch/e_rs1v[12]_i_2/O
+                         net (fo=8, routed)           0.872     4.318    core/fetch_n_99
+    SLICE_X30Y20         LUT2 (Prop_lut2_I0_O)        0.124     4.442 r  core/bram_samples_request.ram_reg_0_0_0_i_38/O
+                         net (fo=1, routed)           0.000     4.442    core/bram_samples_request.ram_reg_0_0_0_i_38_n_0
+    SLICE_X30Y20         CARRY4 (Prop_carry4_S[0]_CO[3])
+                                                      0.513     4.955 r  core/bram_samples_request.ram_reg_0_0_0_i_3/CO[3]
+                         net (fo=1, routed)           0.000     4.955    core/bram_samples_request.ram_reg_0_0_0_i_3_n_0
+    SLICE_X30Y21         CARRY4 (Prop_carry4_CI_CO[3])
+                                                      0.117     5.072 r  core/bram_samples_request.ram_reg_0_0_0_i_2/CO[3]
+                         net (fo=1, routed)           0.000     5.072    core/bram_samples_request.ram_reg_0_0_0_i_2_n_0
+    SLICE_X30Y22         CARRY4 (Prop_carry4_CI_O[2])
+                                                      0.239     5.311 f  core/observe_reg[23]_i_2/O[2]
+                         net (fo=2, routed)           0.919     6.230    core/d_req_addr[22]
+    SLICE_X33Y22         LUT4 (Prop_lut4_I1_O)        0.301     6.531 r  core/d_err1_i_3/O
+                         net (fo=1, routed)           0.571     7.103    core/d_err1_i_3_n_0
+    SLICE_X33Y23         LUT6 (Prop_lut6_I0_O)        0.124     7.227 f  core/d_err1_i_2/O
+                         net (fo=3, routed)           0.175     7.402    core/d_err1_i_2_0
+    SLICE_X33Y23         LUT3 (Prop_lut3_I2_O)        0.124     7.526 r  core/bram_samples_request.ram_reg_0_0_0_i_59/O
+                         net (fo=12, routed)          0.713     8.239    core/bram_samples_request.ram_reg_0_0_0_i_59_n_0
+    SLICE_X36Y19         LUT5 (Prop_lut5_I4_O)        0.117     8.356 r  core/bram_samples_request.ram_reg_3_0_0_i_2/O
+                         net (fo=3, routed)           1.231     9.587    core_n_87
+    RAMB36_X3Y2          RAMB36E1                                     r  bram_samples_request.ram_reg_3_0_2/WEA[0]
+  -------------------------------------------------------------------    -------------------
+
+                         (clock clk rise edge)       10.000    10.000 r  
+                                                      0.000    10.000 r  clk (IN)
+                         net (fo=914, unset)          0.924    10.924    clk
+    RAMB36_X3Y2          RAMB36E1                                     r  bram_samples_request.ram_reg_3_0_2/CLKARDCLK
+                         clock pessimism              0.000    10.924    
+                         clock uncertainty           -0.035    10.889    
+    RAMB36_X3Y2          RAMB36E1 (Setup_ramb36e1_CLKARDCLK_WEA[0])
+                                                     -0.739    10.150    bram_samples_request.ram_reg_3_0_2
+  -------------------------------------------------------------------
+                         required time                         10.150    
+                         arrival time                          -9.587    
+  -------------------------------------------------------------------
+                         slack                                  0.563    
 
 
 
@@ -926,15 +900,95 @@ Slack (MET) :             0.234ns  (required time - arrival time)
 
 Min Delay Paths
 --------------------------------------------------------------------------------------
-Slack (MET) :             0.077ns  (arrival time - required time)
-  Source:                 core/w_reg[result][24]/C
+Slack (MET) :             0.108ns  (arrival time - required time)
+  Source:                 core/fetch/rsp_pc_reg[4]/C
                             (rising edge-triggered cell FDRE clocked by clk  {rise@0.000ns fall@5.000ns period=10.000ns})
-  Destination:            core/rf_reg_r1_0_31_24_29/RAMA/I
+  Destination:            core/fetch/buf_pc_reg_0_3_0_5/RAMB/I
                             (rising edge-triggered cell RAMD32 clocked by clk  {rise@0.000ns fall@5.000ns period=10.000ns})
   Path Group:             clk
   Path Type:              Hold (Min at Fast Process Corner)
   Requirement:            0.000ns  (clk rise@0.000ns - clk rise@0.000ns)
-  Data Path Delay:        0.246ns  (logic 0.141ns (57.419%)  route 0.105ns (42.581%))
+  Data Path Delay:        0.276ns  (logic 0.141ns (51.080%)  route 0.135ns (48.920%))
+  Logic Levels:           0  
+  Clock Path Skew:        0.022ns (DCD - SCD - CPR)
+    Destination Clock Delay (DCD):    0.432ns
+    Source Clock Delay      (SCD):    0.410ns
+    Clock Pessimism Removal (CPR):    -0.000ns
+
+    Location             Delay type                Incr(ns)  Path(ns)    Netlist Resource(s)
+  -------------------------------------------------------------------    -------------------
+                         (clock clk rise edge)        0.000     0.000 r  
+                                                      0.000     0.000 r  clk (IN)
+                         net (fo=914, unset)          0.410     0.410    core/fetch/clk
+    SLICE_X23Y6          FDRE                                         r  core/fetch/rsp_pc_reg[4]/C
+  -------------------------------------------------------------------    -------------------
+    SLICE_X23Y6          FDRE (Prop_fdre_C_Q)         0.141     0.551 r  core/fetch/rsp_pc_reg[4]/Q
+                         net (fo=3, routed)           0.135     0.686    core/fetch/buf_pc_reg_0_3_0_5/DIB0
+    SLICE_X22Y7          RAMD32                                       r  core/fetch/buf_pc_reg_0_3_0_5/RAMB/I
+  -------------------------------------------------------------------    -------------------
+
+                         (clock clk rise edge)        0.000     0.000 r  
+                                                      0.000     0.000 r  clk (IN)
+                         net (fo=914, unset)          0.432     0.432    core/fetch/buf_pc_reg_0_3_0_5/WCLK
+    SLICE_X22Y7          RAMD32                                       r  core/fetch/buf_pc_reg_0_3_0_5/RAMB/CLK
+                         clock pessimism              0.000     0.432    
+    SLICE_X22Y7          RAMD32 (Hold_ramd32_CLK_I)
+                                                      0.146     0.578    core/fetch/buf_pc_reg_0_3_0_5/RAMB
+  -------------------------------------------------------------------
+                         required time                         -0.578    
+                         arrival time                           0.686    
+  -------------------------------------------------------------------
+                         slack                                  0.108    
+
+Slack (MET) :             0.113ns  (arrival time - required time)
+  Source:                 core/fetch/rsp_pc_reg[6]/C
+                            (rising edge-triggered cell FDRE clocked by clk  {rise@0.000ns fall@5.000ns period=10.000ns})
+  Destination:            core/fetch/buf_pc_reg_0_3_0_5/RAMC/I
+                            (rising edge-triggered cell RAMD32 clocked by clk  {rise@0.000ns fall@5.000ns period=10.000ns})
+  Path Group:             clk
+  Path Type:              Hold (Min at Fast Process Corner)
+  Requirement:            0.000ns  (clk rise@0.000ns - clk rise@0.000ns)
+  Data Path Delay:        0.279ns  (logic 0.141ns (50.602%)  route 0.138ns (49.398%))
+  Logic Levels:           0  
+  Clock Path Skew:        0.022ns (DCD - SCD - CPR)
+    Destination Clock Delay (DCD):    0.432ns
+    Source Clock Delay      (SCD):    0.410ns
+    Clock Pessimism Removal (CPR):    -0.000ns
+
+    Location             Delay type                Incr(ns)  Path(ns)    Netlist Resource(s)
+  -------------------------------------------------------------------    -------------------
+                         (clock clk rise edge)        0.000     0.000 r  
+                                                      0.000     0.000 r  clk (IN)
+                         net (fo=914, unset)          0.410     0.410    core/fetch/clk
+    SLICE_X21Y7          FDRE                                         r  core/fetch/rsp_pc_reg[6]/C
+  -------------------------------------------------------------------    -------------------
+    SLICE_X21Y7          FDRE (Prop_fdre_C_Q)         0.141     0.551 r  core/fetch/rsp_pc_reg[6]/Q
+                         net (fo=4, routed)           0.138     0.689    core/fetch/buf_pc_reg_0_3_0_5/DIC0
+    SLICE_X22Y7          RAMD32                                       r  core/fetch/buf_pc_reg_0_3_0_5/RAMC/I
+  -------------------------------------------------------------------    -------------------
+
+                         (clock clk rise edge)        0.000     0.000 r  
+                                                      0.000     0.000 r  clk (IN)
+                         net (fo=914, unset)          0.432     0.432    core/fetch/buf_pc_reg_0_3_0_5/WCLK
+    SLICE_X22Y7          RAMD32                                       r  core/fetch/buf_pc_reg_0_3_0_5/RAMC/CLK
+                         clock pessimism              0.000     0.432    
+    SLICE_X22Y7          RAMD32 (Hold_ramd32_CLK_I)
+                                                      0.144     0.576    core/fetch/buf_pc_reg_0_3_0_5/RAMC
+  -------------------------------------------------------------------
+                         required time                         -0.576    
+                         arrival time                           0.689    
+  -------------------------------------------------------------------
+                         slack                                  0.113    
+
+Slack (MET) :             0.120ns  (arrival time - required time)
+  Source:                 core/w_reg[result][15]/C
+                            (rising edge-triggered cell FDRE clocked by clk  {rise@0.000ns fall@5.000ns period=10.000ns})
+  Destination:            core/rf_reg_r1_0_31_12_17/RAMB_D1/I
+                            (rising edge-triggered cell RAMD32 clocked by clk  {rise@0.000ns fall@5.000ns period=10.000ns})
+  Path Group:             clk
+  Path Type:              Hold (Min at Fast Process Corner)
+  Requirement:            0.000ns  (clk rise@0.000ns - clk rise@0.000ns)
+  Data Path Delay:        0.266ns  (logic 0.141ns (53.024%)  route 0.125ns (46.976%))
   Logic Levels:           0  
   Clock Path Skew:        0.022ns (DCD - SCD - CPR)
     Destination Clock Delay (DCD):    0.432ns
@@ -946,35 +1000,35 @@ Slack (MET) :             0.077ns  (arrival time - required time)
                          (clock clk rise edge)        0.000     0.000 r  
                                                       0.000     0.000 r  clk (IN)
                          net (fo=914, unset)          0.410     0.410    core/clk
-    SLICE_X23Y25         FDRE                                         r  core/w_reg[result][24]/C
+    SLICE_X25Y23         FDRE                                         r  core/w_reg[result][15]/C
   -------------------------------------------------------------------    -------------------
-    SLICE_X23Y25         FDRE (Prop_fdre_C_Q)         0.141     0.551 r  core/w_reg[result][24]/Q
-                         net (fo=6, routed)           0.105     0.656    core/rf_reg_r1_0_31_24_29/DIA0
-    SLICE_X22Y25         RAMD32                                       r  core/rf_reg_r1_0_31_24_29/RAMA/I
+    SLICE_X25Y23         FDRE (Prop_fdre_C_Q)         0.141     0.551 r  core/w_reg[result][15]/Q
+                         net (fo=6, routed)           0.125     0.676    core/rf_reg_r1_0_31_12_17/DIB1
+    SLICE_X26Y22         RAMD32                                       r  core/rf_reg_r1_0_31_12_17/RAMB_D1/I
   -------------------------------------------------------------------    -------------------
 
                          (clock clk rise edge)        0.000     0.000 r  
                                                       0.000     0.000 r  clk (IN)
-                         net (fo=914, unset)          0.432     0.432    core/rf_reg_r1_0_31_24_29/WCLK
-    SLICE_X22Y25         RAMD32                                       r  core/rf_reg_r1_0_31_24_29/RAMA/CLK
+                         net (fo=914, unset)          0.432     0.432    core/rf_reg_r1_0_31_12_17/WCLK
+    SLICE_X26Y22         RAMD32                                       r  core/rf_reg_r1_0_31_12_17/RAMB_D1/CLK
                          clock pessimism              0.000     0.432    
-    SLICE_X22Y25         RAMD32 (Hold_ramd32_CLK_I)
-                                                      0.147     0.579    core/rf_reg_r1_0_31_24_29/RAMA
+    SLICE_X26Y22         RAMD32 (Hold_ramd32_CLK_I)
+                                                      0.124     0.556    core/rf_reg_r1_0_31_12_17/RAMB_D1
   -------------------------------------------------------------------
-                         required time                         -0.579    
-                         arrival time                           0.656    
+                         required time                         -0.556    
+                         arrival time                           0.676    
   -------------------------------------------------------------------
-                         slack                                  0.077    
+                         slack                                  0.120    
 
-Slack (MET) :             0.090ns  (arrival time - required time)
-  Source:                 core/fetch/rsp_pc_reg[24]/C
-                            (rising edge-triggered cell FDRE clocked by clk  {rise@0.000ns fall@5.000ns period=10.000ns})
-  Destination:            core/fetch/buf_pc_reg_0_3_18_23/RAMC/I
+Slack (MET) :             0.131ns  (arrival time - required time)
+  Source:                 core/fetch/rsp_pc_reg[31]/C
+                            (rising edge-triggered cell FDSE clocked by clk  {rise@0.000ns fall@5.000ns period=10.000ns})
+  Destination:            core/fetch/buf_pc_reg_0_3_24_29/RAMC_D1/I
                             (rising edge-triggered cell RAMD32 clocked by clk  {rise@0.000ns fall@5.000ns period=10.000ns})
   Path Group:             clk
   Path Type:              Hold (Min at Fast Process Corner)
   Requirement:            0.000ns  (clk rise@0.000ns - clk rise@0.000ns)
-  Data Path Delay:        0.255ns  (logic 0.141ns (55.250%)  route 0.114ns (44.750%))
+  Data Path Delay:        0.266ns  (logic 0.141ns (52.990%)  route 0.125ns (47.010%))
   Logic Levels:           0  
   Clock Path Skew:        0.022ns (DCD - SCD - CPR)
     Destination Clock Delay (DCD):    0.432ns
@@ -986,115 +1040,35 @@ Slack (MET) :             0.090ns  (arrival time - required time)
                          (clock clk rise edge)        0.000     0.000 r  
                                                       0.000     0.000 r  clk (IN)
                          net (fo=914, unset)          0.410     0.410    core/fetch/clk
-    SLICE_X17Y13         FDRE                                         r  core/fetch/rsp_pc_reg[24]/C
+    SLICE_X21Y14         FDSE                                         r  core/fetch/rsp_pc_reg[31]/C
   -------------------------------------------------------------------    -------------------
-    SLICE_X17Y13         FDRE (Prop_fdre_C_Q)         0.141     0.551 r  core/fetch/rsp_pc_reg[24]/Q
-                         net (fo=5, routed)           0.114     0.665    core/fetch/buf_pc_reg_0_3_18_23/DIC0
-    SLICE_X18Y13         RAMD32                                       r  core/fetch/buf_pc_reg_0_3_18_23/RAMC/I
-  -------------------------------------------------------------------    -------------------
-
-                         (clock clk rise edge)        0.000     0.000 r  
-                                                      0.000     0.000 r  clk (IN)
-                         net (fo=914, unset)          0.432     0.432    core/fetch/buf_pc_reg_0_3_18_23/WCLK
-    SLICE_X18Y13         RAMD32                                       r  core/fetch/buf_pc_reg_0_3_18_23/RAMC/CLK
-                         clock pessimism              0.000     0.432    
-    SLICE_X18Y13         RAMD32 (Hold_ramd32_CLK_I)
-                                                      0.144     0.576    core/fetch/buf_pc_reg_0_3_18_23/RAMC
-  -------------------------------------------------------------------
-                         required time                         -0.576    
-                         arrival time                           0.665    
-  -------------------------------------------------------------------
-                         slack                                  0.090    
-
-Slack (MET) :             0.104ns  (arrival time - required time)
-  Source:                 core/fetch/rsp_pc_reg[20]/C
-                            (rising edge-triggered cell FDRE clocked by clk  {rise@0.000ns fall@5.000ns period=10.000ns})
-  Destination:            core/fetch/buf_pc_reg_0_3_18_23/RAMA/I
-                            (rising edge-triggered cell RAMD32 clocked by clk  {rise@0.000ns fall@5.000ns period=10.000ns})
-  Path Group:             clk
-  Path Type:              Hold (Min at Fast Process Corner)
-  Requirement:            0.000ns  (clk rise@0.000ns - clk rise@0.000ns)
-  Data Path Delay:        0.273ns  (logic 0.141ns (51.644%)  route 0.132ns (48.356%))
-  Logic Levels:           0  
-  Clock Path Skew:        0.022ns (DCD - SCD - CPR)
-    Destination Clock Delay (DCD):    0.432ns
-    Source Clock Delay      (SCD):    0.410ns
-    Clock Pessimism Removal (CPR):    -0.000ns
-
-    Location             Delay type                Incr(ns)  Path(ns)    Netlist Resource(s)
-  -------------------------------------------------------------------    -------------------
-                         (clock clk rise edge)        0.000     0.000 r  
-                                                      0.000     0.000 r  clk (IN)
-                         net (fo=914, unset)          0.410     0.410    core/fetch/clk
-    SLICE_X17Y12         FDRE                                         r  core/fetch/rsp_pc_reg[20]/C
-  -------------------------------------------------------------------    -------------------
-    SLICE_X17Y12         FDRE (Prop_fdre_C_Q)         0.141     0.551 r  core/fetch/rsp_pc_reg[20]/Q
-                         net (fo=4, routed)           0.132     0.683    core/fetch/buf_pc_reg_0_3_18_23/DIA0
-    SLICE_X18Y13         RAMD32                                       r  core/fetch/buf_pc_reg_0_3_18_23/RAMA/I
-  -------------------------------------------------------------------    -------------------
-
-                         (clock clk rise edge)        0.000     0.000 r  
-                                                      0.000     0.000 r  clk (IN)
-                         net (fo=914, unset)          0.432     0.432    core/fetch/buf_pc_reg_0_3_18_23/WCLK
-    SLICE_X18Y13         RAMD32                                       r  core/fetch/buf_pc_reg_0_3_18_23/RAMA/CLK
-                         clock pessimism              0.000     0.432    
-    SLICE_X18Y13         RAMD32 (Hold_ramd32_CLK_I)
-                                                      0.147     0.579    core/fetch/buf_pc_reg_0_3_18_23/RAMA
-  -------------------------------------------------------------------
-                         required time                         -0.579    
-                         arrival time                           0.683    
-  -------------------------------------------------------------------
-                         slack                                  0.104    
-
-Slack (MET) :             0.119ns  (arrival time - required time)
-  Source:                 core/fetch/rsp_pc_reg[29]/C
-                            (rising edge-triggered cell FDRE clocked by clk  {rise@0.000ns fall@5.000ns period=10.000ns})
-  Destination:            core/fetch/buf_pc_reg_0_3_24_29/RAMB_D1/I
-                            (rising edge-triggered cell RAMD32 clocked by clk  {rise@0.000ns fall@5.000ns period=10.000ns})
-  Path Group:             clk
-  Path Type:              Hold (Min at Fast Process Corner)
-  Requirement:            0.000ns  (clk rise@0.000ns - clk rise@0.000ns)
-  Data Path Delay:        0.265ns  (logic 0.141ns (53.306%)  route 0.124ns (46.694%))
-  Logic Levels:           0  
-  Clock Path Skew:        0.022ns (DCD - SCD - CPR)
-    Destination Clock Delay (DCD):    0.432ns
-    Source Clock Delay      (SCD):    0.410ns
-    Clock Pessimism Removal (CPR):    -0.000ns
-
-    Location             Delay type                Incr(ns)  Path(ns)    Netlist Resource(s)
-  -------------------------------------------------------------------    -------------------
-                         (clock clk rise edge)        0.000     0.000 r  
-                                                      0.000     0.000 r  clk (IN)
-                         net (fo=914, unset)          0.410     0.410    core/fetch/clk
-    SLICE_X17Y15         FDRE                                         r  core/fetch/rsp_pc_reg[29]/C
-  -------------------------------------------------------------------    -------------------
-    SLICE_X17Y15         FDRE (Prop_fdre_C_Q)         0.141     0.551 r  core/fetch/rsp_pc_reg[29]/Q
-                         net (fo=5, routed)           0.124     0.675    core/fetch/buf_pc_reg_0_3_24_29/DIB1
-    SLICE_X18Y14         RAMD32                                       r  core/fetch/buf_pc_reg_0_3_24_29/RAMB_D1/I
+    SLICE_X21Y14         FDSE (Prop_fdse_C_Q)         0.141     0.551 r  core/fetch/rsp_pc_reg[31]/Q
+                         net (fo=4, routed)           0.125     0.676    core/fetch/buf_pc_reg_0_3_24_29/DIC1
+    SLICE_X22Y13         RAMD32                                       r  core/fetch/buf_pc_reg_0_3_24_29/RAMC_D1/I
   -------------------------------------------------------------------    -------------------
 
                          (clock clk rise edge)        0.000     0.000 r  
                                                       0.000     0.000 r  clk (IN)
                          net (fo=914, unset)          0.432     0.432    core/fetch/buf_pc_reg_0_3_24_29/WCLK
-    SLICE_X18Y14         RAMD32                                       r  core/fetch/buf_pc_reg_0_3_24_29/RAMB_D1/CLK
+    SLICE_X22Y13         RAMD32                                       r  core/fetch/buf_pc_reg_0_3_24_29/RAMC_D1/CLK
                          clock pessimism              0.000     0.432    
-    SLICE_X18Y14         RAMD32 (Hold_ramd32_CLK_I)
-                                                      0.124     0.556    core/fetch/buf_pc_reg_0_3_24_29/RAMB_D1
+    SLICE_X22Y13         RAMD32 (Hold_ramd32_CLK_I)
+                                                      0.114     0.546    core/fetch/buf_pc_reg_0_3_24_29/RAMC_D1
   -------------------------------------------------------------------
-                         required time                         -0.556    
-                         arrival time                           0.675    
+                         required time                         -0.546    
+                         arrival time                           0.676    
   -------------------------------------------------------------------
-                         slack                                  0.119    
+                         slack                                  0.131    
 
-Slack (MET) :             0.119ns  (arrival time - required time)
-  Source:                 core/fetch/rsp_pc_reg[17]/C
+Slack (MET) :             0.131ns  (arrival time - required time)
+  Source:                 core/fetch/rsp_pc_reg[16]/C
                             (rising edge-triggered cell FDRE clocked by clk  {rise@0.000ns fall@5.000ns period=10.000ns})
-  Destination:            core/fetch/buf_pc_reg_0_3_12_17/RAMB_D1/I
+  Destination:            core/fetch/buf_pc_reg_0_3_12_17/RAMB/I
                             (rising edge-triggered cell RAMD32 clocked by clk  {rise@0.000ns fall@5.000ns period=10.000ns})
   Path Group:             clk
   Path Type:              Hold (Min at Fast Process Corner)
   Requirement:            0.000ns  (clk rise@0.000ns - clk rise@0.000ns)
-  Data Path Delay:        0.265ns  (logic 0.141ns (53.194%)  route 0.124ns (46.806%))
+  Data Path Delay:        0.298ns  (logic 0.164ns (54.971%)  route 0.134ns (45.029%))
   Logic Levels:           0  
   Clock Path Skew:        0.022ns (DCD - SCD - CPR)
     Destination Clock Delay (DCD):    0.432ns
@@ -1106,27 +1080,147 @@ Slack (MET) :             0.119ns  (arrival time - required time)
                          (clock clk rise edge)        0.000     0.000 r  
                                                       0.000     0.000 r  clk (IN)
                          net (fo=914, unset)          0.410     0.410    core/fetch/clk
-    SLICE_X17Y12         FDRE                                         r  core/fetch/rsp_pc_reg[17]/C
+    SLICE_X22Y11         FDRE                                         r  core/fetch/rsp_pc_reg[16]/C
   -------------------------------------------------------------------    -------------------
-    SLICE_X17Y12         FDRE (Prop_fdre_C_Q)         0.141     0.551 r  core/fetch/rsp_pc_reg[17]/Q
-                         net (fo=4, routed)           0.124     0.675    core/fetch/buf_pc_reg_0_3_12_17/DIB1
-    SLICE_X18Y12         RAMD32                                       r  core/fetch/buf_pc_reg_0_3_12_17/RAMB_D1/I
+    SLICE_X22Y11         FDRE (Prop_fdre_C_Q)         0.164     0.574 r  core/fetch/rsp_pc_reg[16]/Q
+                         net (fo=4, routed)           0.134     0.708    core/fetch/buf_pc_reg_0_3_12_17/DIB0
+    SLICE_X22Y10         RAMD32                                       r  core/fetch/buf_pc_reg_0_3_12_17/RAMB/I
   -------------------------------------------------------------------    -------------------
 
                          (clock clk rise edge)        0.000     0.000 r  
                                                       0.000     0.000 r  clk (IN)
                          net (fo=914, unset)          0.432     0.432    core/fetch/buf_pc_reg_0_3_12_17/WCLK
-    SLICE_X18Y12         RAMD32                                       r  core/fetch/buf_pc_reg_0_3_12_17/RAMB_D1/CLK
+    SLICE_X22Y10         RAMD32                                       r  core/fetch/buf_pc_reg_0_3_12_17/RAMB/CLK
                          clock pessimism              0.000     0.432    
-    SLICE_X18Y12         RAMD32 (Hold_ramd32_CLK_I)
-                                                      0.124     0.556    core/fetch/buf_pc_reg_0_3_12_17/RAMB_D1
+    SLICE_X22Y10         RAMD32 (Hold_ramd32_CLK_I)
+                                                      0.146     0.578    core/fetch/buf_pc_reg_0_3_12_17/RAMB
   -------------------------------------------------------------------
-                         required time                         -0.556    
-                         arrival time                           0.675    
+                         required time                         -0.578    
+                         arrival time                           0.708    
   -------------------------------------------------------------------
-                         slack                                  0.119    
+                         slack                                  0.131    
 
-Slack (MET) :             0.120ns  (arrival time - required time)
+Slack (MET) :             0.132ns  (arrival time - required time)
+  Source:                 core/w_reg[trap]/C
+                            (rising edge-triggered cell FDRE clocked by clk  {rise@0.000ns fall@5.000ns period=10.000ns})
+  Destination:            core/trapped_reg/D
+                            (rising edge-triggered cell FDRE clocked by clk  {rise@0.000ns fall@5.000ns period=10.000ns})
+  Path Group:             clk
+  Path Type:              Hold (Min at Fast Process Corner)
+  Requirement:            0.000ns  (clk rise@0.000ns - clk rise@0.000ns)
+  Data Path Delay:        0.273ns  (logic 0.186ns (68.106%)  route 0.087ns (31.894%))
+  Logic Levels:           1  (LUT3=1)
+  Clock Path Skew:        0.022ns (DCD - SCD - CPR)
+    Destination Clock Delay (DCD):    0.432ns
+    Source Clock Delay      (SCD):    0.410ns
+    Clock Pessimism Removal (CPR):    -0.000ns
+
+    Location             Delay type                Incr(ns)  Path(ns)    Netlist Resource(s)
+  -------------------------------------------------------------------    -------------------
+                         (clock clk rise edge)        0.000     0.000 r  
+                                                      0.000     0.000 r  clk (IN)
+                         net (fo=914, unset)          0.410     0.410    core/clk
+    SLICE_X31Y6          FDRE                                         r  core/w_reg[trap]/C
+  -------------------------------------------------------------------    -------------------
+    SLICE_X31Y6          FDRE (Prop_fdre_C_Q)         0.141     0.551 r  core/w_reg[trap]/Q
+                         net (fo=1, routed)           0.087     0.638    core/w_reg[trap]__0
+    SLICE_X30Y6          LUT3 (Prop_lut3_I2_O)        0.045     0.683 r  core/trapped_i_2/O
+                         net (fo=1, routed)           0.000     0.683    core/trapped0
+    SLICE_X30Y6          FDRE                                         r  core/trapped_reg/D
+  -------------------------------------------------------------------    -------------------
+
+                         (clock clk rise edge)        0.000     0.000 r  
+                                                      0.000     0.000 r  clk (IN)
+                         net (fo=914, unset)          0.432     0.432    core/clk
+    SLICE_X30Y6          FDRE                                         r  core/trapped_reg/C
+                         clock pessimism              0.000     0.432    
+    SLICE_X30Y6          FDRE (Hold_fdre_C_D)         0.120     0.552    core/trapped_reg
+  -------------------------------------------------------------------
+                         required time                         -0.552    
+                         arrival time                           0.683    
+  -------------------------------------------------------------------
+                         slack                                  0.132    
+
+Slack (MET) :             0.138ns  (arrival time - required time)
+  Source:                 core/fetch/rsp_pc_reg[28]/C
+                            (rising edge-triggered cell FDRE clocked by clk  {rise@0.000ns fall@5.000ns period=10.000ns})
+  Destination:            core/fetch/buf_pc_reg_0_3_24_29/RAMB/I
+                            (rising edge-triggered cell RAMD32 clocked by clk  {rise@0.000ns fall@5.000ns period=10.000ns})
+  Path Group:             clk
+  Path Type:              Hold (Min at Fast Process Corner)
+  Requirement:            0.000ns  (clk rise@0.000ns - clk rise@0.000ns)
+  Data Path Delay:        0.305ns  (logic 0.164ns (53.750%)  route 0.141ns (46.250%))
+  Logic Levels:           0  
+  Clock Path Skew:        0.022ns (DCD - SCD - CPR)
+    Destination Clock Delay (DCD):    0.432ns
+    Source Clock Delay      (SCD):    0.410ns
+    Clock Pessimism Removal (CPR):    -0.000ns
+
+    Location             Delay type                Incr(ns)  Path(ns)    Netlist Resource(s)
+  -------------------------------------------------------------------    -------------------
+                         (clock clk rise edge)        0.000     0.000 r  
+                                                      0.000     0.000 r  clk (IN)
+                         net (fo=914, unset)          0.410     0.410    core/fetch/clk
+    SLICE_X22Y14         FDRE                                         r  core/fetch/rsp_pc_reg[28]/C
+  -------------------------------------------------------------------    -------------------
+    SLICE_X22Y14         FDRE (Prop_fdre_C_Q)         0.164     0.574 r  core/fetch/rsp_pc_reg[28]/Q
+                         net (fo=5, routed)           0.141     0.715    core/fetch/buf_pc_reg_0_3_24_29/DIB0
+    SLICE_X22Y13         RAMD32                                       r  core/fetch/buf_pc_reg_0_3_24_29/RAMB/I
+  -------------------------------------------------------------------    -------------------
+
+                         (clock clk rise edge)        0.000     0.000 r  
+                                                      0.000     0.000 r  clk (IN)
+                         net (fo=914, unset)          0.432     0.432    core/fetch/buf_pc_reg_0_3_24_29/WCLK
+    SLICE_X22Y13         RAMD32                                       r  core/fetch/buf_pc_reg_0_3_24_29/RAMB/CLK
+                         clock pessimism              0.000     0.432    
+    SLICE_X22Y13         RAMD32 (Hold_ramd32_CLK_I)
+                                                      0.146     0.578    core/fetch/buf_pc_reg_0_3_24_29/RAMB
+  -------------------------------------------------------------------
+                         required time                         -0.578    
+                         arrival time                           0.715    
+  -------------------------------------------------------------------
+                         slack                                  0.138    
+
+Slack (MET) :             0.138ns  (arrival time - required time)
+  Source:                 i_err1_reg/C
+                            (rising edge-triggered cell FDRE clocked by clk  {rise@0.000ns fall@5.000ns period=10.000ns})
+  Destination:            i_err2_reg/D
+                            (rising edge-triggered cell FDRE clocked by clk  {rise@0.000ns fall@5.000ns period=10.000ns})
+  Path Group:             clk
+  Path Type:              Hold (Min at Fast Process Corner)
+  Requirement:            0.000ns  (clk rise@0.000ns - clk rise@0.000ns)
+  Data Path Delay:        0.220ns  (logic 0.164ns (74.580%)  route 0.056ns (25.420%))
+  Logic Levels:           0  
+  Clock Path Skew:        0.022ns (DCD - SCD - CPR)
+    Destination Clock Delay (DCD):    0.432ns
+    Source Clock Delay      (SCD):    0.410ns
+    Clock Pessimism Removal (CPR):    -0.000ns
+
+    Location             Delay type                Incr(ns)  Path(ns)    Netlist Resource(s)
+  -------------------------------------------------------------------    -------------------
+                         (clock clk rise edge)        0.000     0.000 r  
+                                                      0.000     0.000 r  clk (IN)
+                         net (fo=914, unset)          0.410     0.410    clk
+    SLICE_X18Y11         FDRE                                         r  i_err1_reg/C
+  -------------------------------------------------------------------    -------------------
+    SLICE_X18Y11         FDRE (Prop_fdre_C_Q)         0.164     0.574 r  i_err1_reg/Q
+                         net (fo=1, routed)           0.056     0.630    i_err1
+    SLICE_X18Y11         FDRE                                         r  i_err2_reg/D
+  -------------------------------------------------------------------    -------------------
+
+                         (clock clk rise edge)        0.000     0.000 r  
+                                                      0.000     0.000 r  clk (IN)
+                         net (fo=914, unset)          0.432     0.432    clk
+    SLICE_X18Y11         FDRE                                         r  i_err2_reg/C
+                         clock pessimism              0.000     0.432    
+    SLICE_X18Y11         FDRE (Hold_fdre_C_D)         0.060     0.492    i_err2_reg
+  -------------------------------------------------------------------
+                         required time                         -0.492    
+                         arrival time                           0.630    
+  -------------------------------------------------------------------
+                         slack                                  0.138    
+
+Slack (MET) :             0.140ns  (arrival time - required time)
   Source:                 core/fetch/rsp_pc_reg[2]/C
                             (rising edge-triggered cell FDRE clocked by clk  {rise@0.000ns fall@5.000ns period=10.000ns})
   Destination:            core/fetch/buf_pc_reg_0_3_0_5/RAMA/I
@@ -1134,7 +1228,7 @@ Slack (MET) :             0.120ns  (arrival time - required time)
   Path Group:             clk
   Path Type:              Hold (Min at Fast Process Corner)
   Requirement:            0.000ns  (clk rise@0.000ns - clk rise@0.000ns)
-  Data Path Delay:        0.289ns  (logic 0.141ns (48.866%)  route 0.148ns (51.134%))
+  Data Path Delay:        0.308ns  (logic 0.164ns (53.227%)  route 0.144ns (46.773%))
   Logic Levels:           0  
   Clock Path Skew:        0.022ns (DCD - SCD - CPR)
     Destination Clock Delay (DCD):    0.432ns
@@ -1146,35 +1240,35 @@ Slack (MET) :             0.120ns  (arrival time - required time)
                          (clock clk rise edge)        0.000     0.000 r  
                                                       0.000     0.000 r  clk (IN)
                          net (fo=914, unset)          0.410     0.410    core/fetch/clk
-    SLICE_X15Y8          FDRE                                         r  core/fetch/rsp_pc_reg[2]/C
+    SLICE_X22Y6          FDRE                                         r  core/fetch/rsp_pc_reg[2]/C
   -------------------------------------------------------------------    -------------------
-    SLICE_X15Y8          FDRE (Prop_fdre_C_Q)         0.141     0.551 r  core/fetch/rsp_pc_reg[2]/Q
-                         net (fo=4, routed)           0.148     0.699    core/fetch/buf_pc_reg_0_3_0_5/DIA0
-    SLICE_X18Y8          RAMD32                                       r  core/fetch/buf_pc_reg_0_3_0_5/RAMA/I
+    SLICE_X22Y6          FDRE (Prop_fdre_C_Q)         0.164     0.574 r  core/fetch/rsp_pc_reg[2]/Q
+                         net (fo=4, routed)           0.144     0.718    core/fetch/buf_pc_reg_0_3_0_5/DIA0
+    SLICE_X22Y7          RAMD32                                       r  core/fetch/buf_pc_reg_0_3_0_5/RAMA/I
   -------------------------------------------------------------------    -------------------
 
                          (clock clk rise edge)        0.000     0.000 r  
                                                       0.000     0.000 r  clk (IN)
                          net (fo=914, unset)          0.432     0.432    core/fetch/buf_pc_reg_0_3_0_5/WCLK
-    SLICE_X18Y8          RAMD32                                       r  core/fetch/buf_pc_reg_0_3_0_5/RAMA/CLK
+    SLICE_X22Y7          RAMD32                                       r  core/fetch/buf_pc_reg_0_3_0_5/RAMA/CLK
                          clock pessimism              0.000     0.432    
-    SLICE_X18Y8          RAMD32 (Hold_ramd32_CLK_I)
+    SLICE_X22Y7          RAMD32 (Hold_ramd32_CLK_I)
                                                       0.147     0.579    core/fetch/buf_pc_reg_0_3_0_5/RAMA
   -------------------------------------------------------------------
                          required time                         -0.579    
-                         arrival time                           0.699    
+                         arrival time                           0.718    
   -------------------------------------------------------------------
-                         slack                                  0.120    
+                         slack                                  0.140    
 
-Slack (MET) :             0.123ns  (arrival time - required time)
-  Source:                 core/fetch/rsp_pc_reg[27]/C
+Slack (MET) :             0.141ns  (arrival time - required time)
+  Source:                 core/fetch/rsp_pc_reg[19]/C
                             (rising edge-triggered cell FDRE clocked by clk  {rise@0.000ns fall@5.000ns period=10.000ns})
-  Destination:            core/fetch/buf_pc_reg_0_3_24_29/RAMA_D1/I
+  Destination:            core/fetch/buf_pc_reg_0_3_12_17/RAMC_D1/I
                             (rising edge-triggered cell RAMD32 clocked by clk  {rise@0.000ns fall@5.000ns period=10.000ns})
   Path Group:             clk
   Path Type:              Hold (Min at Fast Process Corner)
   Requirement:            0.000ns  (clk rise@0.000ns - clk rise@0.000ns)
-  Data Path Delay:        0.265ns  (logic 0.141ns (53.306%)  route 0.124ns (46.694%))
+  Data Path Delay:        0.277ns  (logic 0.141ns (50.981%)  route 0.136ns (49.019%))
   Logic Levels:           0  
   Clock Path Skew:        0.022ns (DCD - SCD - CPR)
     Destination Clock Delay (DCD):    0.432ns
@@ -1186,145 +1280,25 @@ Slack (MET) :             0.123ns  (arrival time - required time)
                          (clock clk rise edge)        0.000     0.000 r  
                                                       0.000     0.000 r  clk (IN)
                          net (fo=914, unset)          0.410     0.410    core/fetch/clk
-    SLICE_X17Y15         FDRE                                         r  core/fetch/rsp_pc_reg[27]/C
+    SLICE_X21Y11         FDRE                                         r  core/fetch/rsp_pc_reg[19]/C
   -------------------------------------------------------------------    -------------------
-    SLICE_X17Y15         FDRE (Prop_fdre_C_Q)         0.141     0.551 r  core/fetch/rsp_pc_reg[27]/Q
-                         net (fo=5, routed)           0.124     0.675    core/fetch/buf_pc_reg_0_3_24_29/DIA1
-    SLICE_X18Y14         RAMD32                                       r  core/fetch/buf_pc_reg_0_3_24_29/RAMA_D1/I
+    SLICE_X21Y11         FDRE (Prop_fdre_C_Q)         0.141     0.551 r  core/fetch/rsp_pc_reg[19]/Q
+                         net (fo=4, routed)           0.136     0.687    core/fetch/buf_pc_reg_0_3_12_17/DIC1
+    SLICE_X22Y10         RAMD32                                       r  core/fetch/buf_pc_reg_0_3_12_17/RAMC_D1/I
   -------------------------------------------------------------------    -------------------
 
                          (clock clk rise edge)        0.000     0.000 r  
                                                       0.000     0.000 r  clk (IN)
-                         net (fo=914, unset)          0.432     0.432    core/fetch/buf_pc_reg_0_3_24_29/WCLK
-    SLICE_X18Y14         RAMD32                                       r  core/fetch/buf_pc_reg_0_3_24_29/RAMA_D1/CLK
+                         net (fo=914, unset)          0.432     0.432    core/fetch/buf_pc_reg_0_3_12_17/WCLK
+    SLICE_X22Y10         RAMD32                                       r  core/fetch/buf_pc_reg_0_3_12_17/RAMC_D1/CLK
                          clock pessimism              0.000     0.432    
-    SLICE_X18Y14         RAMD32 (Hold_ramd32_CLK_I)
-                                                      0.120     0.552    core/fetch/buf_pc_reg_0_3_24_29/RAMA_D1
+    SLICE_X22Y10         RAMD32 (Hold_ramd32_CLK_I)
+                                                      0.114     0.546    core/fetch/buf_pc_reg_0_3_12_17/RAMC_D1
   -------------------------------------------------------------------
-                         required time                         -0.552    
-                         arrival time                           0.675    
+                         required time                         -0.546    
+                         arrival time                           0.687    
   -------------------------------------------------------------------
-                         slack                                  0.123    
-
-Slack (MET) :             0.126ns  (arrival time - required time)
-  Source:                 core/fetch/rsp_pc_reg[23]/C
-                            (rising edge-triggered cell FDRE clocked by clk  {rise@0.000ns fall@5.000ns period=10.000ns})
-  Destination:            core/fetch/buf_pc_reg_0_3_18_23/RAMB_D1/I
-                            (rising edge-triggered cell RAMD32 clocked by clk  {rise@0.000ns fall@5.000ns period=10.000ns})
-  Path Group:             clk
-  Path Type:              Hold (Min at Fast Process Corner)
-  Requirement:            0.000ns  (clk rise@0.000ns - clk rise@0.000ns)
-  Data Path Delay:        0.272ns  (logic 0.141ns (51.842%)  route 0.131ns (48.158%))
-  Logic Levels:           0  
-  Clock Path Skew:        0.022ns (DCD - SCD - CPR)
-    Destination Clock Delay (DCD):    0.432ns
-    Source Clock Delay      (SCD):    0.410ns
-    Clock Pessimism Removal (CPR):    -0.000ns
-
-    Location             Delay type                Incr(ns)  Path(ns)    Netlist Resource(s)
-  -------------------------------------------------------------------    -------------------
-                         (clock clk rise edge)        0.000     0.000 r  
-                                                      0.000     0.000 r  clk (IN)
-                         net (fo=914, unset)          0.410     0.410    core/fetch/clk
-    SLICE_X17Y13         FDRE                                         r  core/fetch/rsp_pc_reg[23]/C
-  -------------------------------------------------------------------    -------------------
-    SLICE_X17Y13         FDRE (Prop_fdre_C_Q)         0.141     0.551 r  core/fetch/rsp_pc_reg[23]/Q
-                         net (fo=5, routed)           0.131     0.682    core/fetch/buf_pc_reg_0_3_18_23/DIB1
-    SLICE_X18Y13         RAMD32                                       r  core/fetch/buf_pc_reg_0_3_18_23/RAMB_D1/I
-  -------------------------------------------------------------------    -------------------
-
-                         (clock clk rise edge)        0.000     0.000 r  
-                                                      0.000     0.000 r  clk (IN)
-                         net (fo=914, unset)          0.432     0.432    core/fetch/buf_pc_reg_0_3_18_23/WCLK
-    SLICE_X18Y13         RAMD32                                       r  core/fetch/buf_pc_reg_0_3_18_23/RAMB_D1/CLK
-                         clock pessimism              0.000     0.432    
-    SLICE_X18Y13         RAMD32 (Hold_ramd32_CLK_I)
-                                                      0.124     0.556    core/fetch/buf_pc_reg_0_3_18_23/RAMB_D1
-  -------------------------------------------------------------------
-                         required time                         -0.556    
-                         arrival time                           0.682    
-  -------------------------------------------------------------------
-                         slack                                  0.126    
-
-Slack (MET) :             0.127ns  (arrival time - required time)
-  Source:                 core/w_reg[result][21]/C
-                            (rising edge-triggered cell FDRE clocked by clk  {rise@0.000ns fall@5.000ns period=10.000ns})
-  Destination:            core/rf_reg_r1_0_31_18_23/RAMB_D1/I
-                            (rising edge-triggered cell RAMD32 clocked by clk  {rise@0.000ns fall@5.000ns period=10.000ns})
-  Path Group:             clk
-  Path Type:              Hold (Min at Fast Process Corner)
-  Requirement:            0.000ns  (clk rise@0.000ns - clk rise@0.000ns)
-  Data Path Delay:        0.272ns  (logic 0.141ns (51.797%)  route 0.131ns (48.203%))
-  Logic Levels:           0  
-  Clock Path Skew:        0.022ns (DCD - SCD - CPR)
-    Destination Clock Delay (DCD):    0.432ns
-    Source Clock Delay      (SCD):    0.410ns
-    Clock Pessimism Removal (CPR):    -0.000ns
-
-    Location             Delay type                Incr(ns)  Path(ns)    Netlist Resource(s)
-  -------------------------------------------------------------------    -------------------
-                         (clock clk rise edge)        0.000     0.000 r  
-                                                      0.000     0.000 r  clk (IN)
-                         net (fo=914, unset)          0.410     0.410    core/clk
-    SLICE_X25Y27         FDRE                                         r  core/w_reg[result][21]/C
-  -------------------------------------------------------------------    -------------------
-    SLICE_X25Y27         FDRE (Prop_fdre_C_Q)         0.141     0.551 r  core/w_reg[result][21]/Q
-                         net (fo=6, routed)           0.131     0.682    core/rf_reg_r1_0_31_18_23/DIB1
-    SLICE_X26Y27         RAMD32                                       r  core/rf_reg_r1_0_31_18_23/RAMB_D1/I
-  -------------------------------------------------------------------    -------------------
-
-                         (clock clk rise edge)        0.000     0.000 r  
-                                                      0.000     0.000 r  clk (IN)
-                         net (fo=914, unset)          0.432     0.432    core/rf_reg_r1_0_31_18_23/WCLK
-    SLICE_X26Y27         RAMD32                                       r  core/rf_reg_r1_0_31_18_23/RAMB_D1/CLK
-                         clock pessimism              0.000     0.432    
-    SLICE_X26Y27         RAMD32 (Hold_ramd32_CLK_I)
-                                                      0.124     0.556    core/rf_reg_r1_0_31_18_23/RAMB_D1
-  -------------------------------------------------------------------
-                         required time                         -0.556    
-                         arrival time                           0.682    
-  -------------------------------------------------------------------
-                         slack                                  0.127    
-
-Slack (MET) :             0.127ns  (arrival time - required time)
-  Source:                 core/w_reg[result][2]/C
-                            (rising edge-triggered cell FDRE clocked by clk  {rise@0.000ns fall@5.000ns period=10.000ns})
-  Destination:            core/rf_reg_r1_0_31_0_5/RAMB/I
-                            (rising edge-triggered cell RAMD32 clocked by clk  {rise@0.000ns fall@5.000ns period=10.000ns})
-  Path Group:             clk
-  Path Type:              Hold (Min at Fast Process Corner)
-  Requirement:            0.000ns  (clk rise@0.000ns - clk rise@0.000ns)
-  Data Path Delay:        0.295ns  (logic 0.141ns (47.813%)  route 0.154ns (52.187%))
-  Logic Levels:           0  
-  Clock Path Skew:        0.022ns (DCD - SCD - CPR)
-    Destination Clock Delay (DCD):    0.432ns
-    Source Clock Delay      (SCD):    0.410ns
-    Clock Pessimism Removal (CPR):    -0.000ns
-
-    Location             Delay type                Incr(ns)  Path(ns)    Netlist Resource(s)
-  -------------------------------------------------------------------    -------------------
-                         (clock clk rise edge)        0.000     0.000 r  
-                                                      0.000     0.000 r  clk (IN)
-                         net (fo=914, unset)          0.410     0.410    core/clk
-    SLICE_X27Y18         FDRE                                         r  core/w_reg[result][2]/C
-  -------------------------------------------------------------------    -------------------
-    SLICE_X27Y18         FDRE (Prop_fdre_C_Q)         0.141     0.551 r  core/w_reg[result][2]/Q
-                         net (fo=6, routed)           0.154     0.705    core/rf_reg_r1_0_31_0_5/DIB0
-    SLICE_X26Y19         RAMD32                                       r  core/rf_reg_r1_0_31_0_5/RAMB/I
-  -------------------------------------------------------------------    -------------------
-
-                         (clock clk rise edge)        0.000     0.000 r  
-                                                      0.000     0.000 r  clk (IN)
-                         net (fo=914, unset)          0.432     0.432    core/rf_reg_r1_0_31_0_5/WCLK
-    SLICE_X26Y19         RAMD32                                       r  core/rf_reg_r1_0_31_0_5/RAMB/CLK
-                         clock pessimism              0.000     0.432    
-    SLICE_X26Y19         RAMD32 (Hold_ramd32_CLK_I)
-                                                      0.146     0.578    core/rf_reg_r1_0_31_0_5/RAMB
-  -------------------------------------------------------------------
-                         required time                         -0.578    
-                         arrival time                           0.705    
-  -------------------------------------------------------------------
-                         slack                                  0.127    
+                         slack                                  0.141    
 
 
 
@@ -1338,36 +1312,36 @@ Period(ns):         10.000
 Sources:            { clk }
 
 Check Type        Corner  Lib Pin             Reference Pin  Required(ns)  Actual(ns)  Slack(ns)  Location      Pin
-Min Period        n/a     RAMB36E1/CLKARDCLK  n/a            2.944         10.000      7.056      RAMB36_X2Y2   bram_samples_request.ram_reg_0_0_0/CLKARDCLK
-Min Period        n/a     RAMB36E1/CLKARDCLK  n/a            2.944         10.000      7.056      RAMB36_X1Y0   bram_samples_request.ram_reg_0_0_1/CLKARDCLK
-Min Period        n/a     RAMB36E1/CLKARDCLK  n/a            2.944         10.000      7.056      RAMB36_X2Y1   bram_samples_request.ram_reg_0_0_2/CLKARDCLK
-Min Period        n/a     RAMB36E1/CLKARDCLK  n/a            2.944         10.000      7.056      RAMB36_X0Y2   bram_samples_request.ram_reg_0_0_3/CLKARDCLK
-Min Period        n/a     RAMB36E1/CLKARDCLK  n/a            2.944         10.000      7.056      RAMB36_X0Y1   bram_samples_request.ram_reg_0_0_4/CLKARDCLK
-Min Period        n/a     RAMB36E1/CLKARDCLK  n/a            2.944         10.000      7.056      RAMB36_X1Y3   bram_samples_request.ram_reg_0_0_5/CLKARDCLK
-Min Period        n/a     RAMB36E1/CLKARDCLK  n/a            2.944         10.000      7.056      RAMB36_X2Y3   bram_samples_request.ram_reg_0_0_6/CLKARDCLK
-Min Period        n/a     RAMB36E1/CLKARDCLK  n/a            2.944         10.000      7.056      RAMB36_X1Y2   bram_samples_request.ram_reg_0_0_7/CLKARDCLK
-Min Period        n/a     RAMB36E1/CLKARDCLK  n/a            2.944         10.000      7.056      RAMB36_X3Y4   bram_samples_request.ram_reg_1_0_0/CLKARDCLK
-Min Period        n/a     RAMB36E1/CLKARDCLK  n/a            2.944         10.000      7.056      RAMB36_X2Y0   bram_samples_request.ram_reg_1_0_1/CLKARDCLK
-Low Pulse Width   Slow    RAMD32/CLK          n/a            1.250         5.000       3.750      SLICE_X18Y11  core/fetch/buf_err_reg_0_3_0_0/DP/CLK
-Low Pulse Width   Fast    RAMD32/CLK          n/a            1.250         5.000       3.750      SLICE_X18Y11  core/fetch/buf_err_reg_0_3_0_0/DP/CLK
-Low Pulse Width   Slow    RAMD32/CLK          n/a            1.250         5.000       3.750      SLICE_X18Y11  core/fetch/buf_err_reg_0_3_0_0/SP/CLK
-Low Pulse Width   Fast    RAMD32/CLK          n/a            1.250         5.000       3.750      SLICE_X18Y11  core/fetch/buf_err_reg_0_3_0_0/SP/CLK
-Low Pulse Width   Slow    RAMD32/CLK          n/a            1.250         5.000       3.750      SLICE_X22Y7   core/fetch/buf_insn_reg_0_3_0_5/RAMA/CLK
-Low Pulse Width   Fast    RAMD32/CLK          n/a            1.250         5.000       3.750      SLICE_X22Y7   core/fetch/buf_insn_reg_0_3_0_5/RAMA/CLK
-Low Pulse Width   Slow    RAMD32/CLK          n/a            1.250         5.000       3.750      SLICE_X22Y7   core/fetch/buf_insn_reg_0_3_0_5/RAMA_D1/CLK
-Low Pulse Width   Fast    RAMD32/CLK          n/a            1.250         5.000       3.750      SLICE_X22Y7   core/fetch/buf_insn_reg_0_3_0_5/RAMA_D1/CLK
-Low Pulse Width   Slow    RAMD32/CLK          n/a            1.250         5.000       3.750      SLICE_X22Y7   core/fetch/buf_insn_reg_0_3_0_5/RAMB/CLK
-Low Pulse Width   Fast    RAMD32/CLK          n/a            1.250         5.000       3.750      SLICE_X22Y7   core/fetch/buf_insn_reg_0_3_0_5/RAMB/CLK
-High Pulse Width  Slow    RAMD32/CLK          n/a            1.250         5.000       3.750      SLICE_X18Y11  core/fetch/buf_err_reg_0_3_0_0/DP/CLK
-High Pulse Width  Fast    RAMD32/CLK          n/a            1.250         5.000       3.750      SLICE_X18Y11  core/fetch/buf_err_reg_0_3_0_0/DP/CLK
-High Pulse Width  Slow    RAMD32/CLK          n/a            1.250         5.000       3.750      SLICE_X18Y11  core/fetch/buf_err_reg_0_3_0_0/SP/CLK
-High Pulse Width  Fast    RAMD32/CLK          n/a            1.250         5.000       3.750      SLICE_X18Y11  core/fetch/buf_err_reg_0_3_0_0/SP/CLK
-High Pulse Width  Slow    RAMD32/CLK          n/a            1.250         5.000       3.750      SLICE_X22Y7   core/fetch/buf_insn_reg_0_3_0_5/RAMA/CLK
-High Pulse Width  Fast    RAMD32/CLK          n/a            1.250         5.000       3.750      SLICE_X22Y7   core/fetch/buf_insn_reg_0_3_0_5/RAMA/CLK
-High Pulse Width  Slow    RAMD32/CLK          n/a            1.250         5.000       3.750      SLICE_X22Y7   core/fetch/buf_insn_reg_0_3_0_5/RAMA_D1/CLK
-High Pulse Width  Fast    RAMD32/CLK          n/a            1.250         5.000       3.750      SLICE_X22Y7   core/fetch/buf_insn_reg_0_3_0_5/RAMA_D1/CLK
-High Pulse Width  Slow    RAMD32/CLK          n/a            1.250         5.000       3.750      SLICE_X22Y7   core/fetch/buf_insn_reg_0_3_0_5/RAMB/CLK
-High Pulse Width  Fast    RAMD32/CLK          n/a            1.250         5.000       3.750      SLICE_X22Y7   core/fetch/buf_insn_reg_0_3_0_5/RAMB/CLK
+Min Period        n/a     RAMB36E1/CLKARDCLK  n/a            2.944         10.000      7.056      RAMB36_X1Y3   bram_samples_request.ram_reg_0_0_0/CLKARDCLK
+Min Period        n/a     RAMB36E1/CLKARDCLK  n/a            2.944         10.000      7.056      RAMB36_X2Y4   bram_samples_request.ram_reg_0_0_1/CLKARDCLK
+Min Period        n/a     RAMB36E1/CLKARDCLK  n/a            2.944         10.000      7.056      RAMB36_X0Y3   bram_samples_request.ram_reg_0_0_2/CLKARDCLK
+Min Period        n/a     RAMB36E1/CLKARDCLK  n/a            2.944         10.000      7.056      RAMB36_X0Y5   bram_samples_request.ram_reg_0_0_3/CLKARDCLK
+Min Period        n/a     RAMB36E1/CLKARDCLK  n/a            2.944         10.000      7.056      RAMB36_X0Y4   bram_samples_request.ram_reg_0_0_4/CLKARDCLK
+Min Period        n/a     RAMB36E1/CLKARDCLK  n/a            2.944         10.000      7.056      RAMB36_X0Y2   bram_samples_request.ram_reg_0_0_5/CLKARDCLK
+Min Period        n/a     RAMB36E1/CLKARDCLK  n/a            2.944         10.000      7.056      RAMB36_X2Y0   bram_samples_request.ram_reg_0_0_6/CLKARDCLK
+Min Period        n/a     RAMB36E1/CLKARDCLK  n/a            2.944         10.000      7.056      RAMB36_X1Y0   bram_samples_request.ram_reg_0_0_7/CLKARDCLK
+Min Period        n/a     RAMB36E1/CLKARDCLK  n/a            2.944         10.000      7.056      RAMB36_X2Y1   bram_samples_request.ram_reg_1_0_0/CLKARDCLK
+Min Period        n/a     RAMB36E1/CLKARDCLK  n/a            2.944         10.000      7.056      RAMB36_X1Y2   bram_samples_request.ram_reg_1_0_1/CLKARDCLK
+Low Pulse Width   Slow    RAMD32/CLK          n/a            1.250         5.000       3.750      SLICE_X26Y11  core/fetch/buf_err_reg_0_3_0_0/DP/CLK
+Low Pulse Width   Fast    RAMD32/CLK          n/a            1.250         5.000       3.750      SLICE_X26Y11  core/fetch/buf_err_reg_0_3_0_0/DP/CLK
+Low Pulse Width   Slow    RAMD32/CLK          n/a            1.250         5.000       3.750      SLICE_X26Y11  core/fetch/buf_err_reg_0_3_0_0/SP/CLK
+Low Pulse Width   Fast    RAMD32/CLK          n/a            1.250         5.000       3.750      SLICE_X26Y11  core/fetch/buf_err_reg_0_3_0_0/SP/CLK
+Low Pulse Width   Slow    RAMD32/CLK          n/a            1.250         5.000       3.750      SLICE_X22Y8   core/fetch/buf_insn_reg_0_3_0_5/RAMA/CLK
+Low Pulse Width   Fast    RAMD32/CLK          n/a            1.250         5.000       3.750      SLICE_X22Y8   core/fetch/buf_insn_reg_0_3_0_5/RAMA/CLK
+Low Pulse Width   Slow    RAMD32/CLK          n/a            1.250         5.000       3.750      SLICE_X22Y8   core/fetch/buf_insn_reg_0_3_0_5/RAMA_D1/CLK
+Low Pulse Width   Fast    RAMD32/CLK          n/a            1.250         5.000       3.750      SLICE_X22Y8   core/fetch/buf_insn_reg_0_3_0_5/RAMA_D1/CLK
+Low Pulse Width   Slow    RAMD32/CLK          n/a            1.250         5.000       3.750      SLICE_X22Y8   core/fetch/buf_insn_reg_0_3_0_5/RAMB/CLK
+Low Pulse Width   Fast    RAMD32/CLK          n/a            1.250         5.000       3.750      SLICE_X22Y8   core/fetch/buf_insn_reg_0_3_0_5/RAMB/CLK
+High Pulse Width  Slow    RAMD32/CLK          n/a            1.250         5.000       3.750      SLICE_X26Y11  core/fetch/buf_err_reg_0_3_0_0/DP/CLK
+High Pulse Width  Fast    RAMD32/CLK          n/a            1.250         5.000       3.750      SLICE_X26Y11  core/fetch/buf_err_reg_0_3_0_0/DP/CLK
+High Pulse Width  Slow    RAMD32/CLK          n/a            1.250         5.000       3.750      SLICE_X26Y11  core/fetch/buf_err_reg_0_3_0_0/SP/CLK
+High Pulse Width  Fast    RAMD32/CLK          n/a            1.250         5.000       3.750      SLICE_X26Y11  core/fetch/buf_err_reg_0_3_0_0/SP/CLK
+High Pulse Width  Slow    RAMD32/CLK          n/a            1.250         5.000       3.750      SLICE_X22Y8   core/fetch/buf_insn_reg_0_3_0_5/RAMA/CLK
+High Pulse Width  Fast    RAMD32/CLK          n/a            1.250         5.000       3.750      SLICE_X22Y8   core/fetch/buf_insn_reg_0_3_0_5/RAMA/CLK
+High Pulse Width  Slow    RAMD32/CLK          n/a            1.250         5.000       3.750      SLICE_X22Y8   core/fetch/buf_insn_reg_0_3_0_5/RAMA_D1/CLK
+High Pulse Width  Fast    RAMD32/CLK          n/a            1.250         5.000       3.750      SLICE_X22Y8   core/fetch/buf_insn_reg_0_3_0_5/RAMA_D1/CLK
+High Pulse Width  Slow    RAMD32/CLK          n/a            1.250         5.000       3.750      SLICE_X22Y8   core/fetch/buf_insn_reg_0_3_0_5/RAMB/CLK
+High Pulse Width  Fast    RAMD32/CLK          n/a            1.250         5.000       3.750      SLICE_X22Y8   core/fetch/buf_insn_reg_0_3_0_5/RAMB/CLK
 
 
 

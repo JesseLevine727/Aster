@@ -6,13 +6,13 @@ a two-stage memory access (a seven-stage core) and approved the revised cpu.md
 gate at about 3.7×. Milestone 18.1: the seven-stage RV32I RTL passes
 riscv-tests, arch-test I and random programs in lockstep, cycle for cycle with
 the CPI model on a memory that answers on time. Timing after the 18.1 timing
-work: the core meets 10 ns out of context on the FPGA (105.6 MHz; with a
-block RAM behind its ports, 100.5 and 110.0 MHz); on SKY130, in the flow
-chosen in 18.1, register to register 163–168 MHz typical and 84–88 MHz at the
+work: the core meets 10 ns out of context on the FPGA (113.1 MHz; with a
+block RAM behind its ports, 103.7 and 111.9 MHz); on SKY130, in the flow
+chosen in 18.1, register to register 164–168 MHz typical and 84–88 MHz at the
 slow corner (PicoRV32 104.6 MHz in the same flow), limited by Execute's
 datapath, and the request address to memory misses its 2 ns output budget
-by about 2.9 ns at the slow corner — how to close the rest is the open 18.1
-question (see "Milestone 18.1").** The CPU specification this
+by about 2.9–3.4 ns at the slow corner. The owner chose to keep closing the
+slow corner within 18.1 (see "Milestone 18.1").** The CPU specification this
 phase implements is [`cpu.md`](cpu.md) (approved 29 September 2026); the phase
 sits in the [v2 plan](phase17-plus.md#6-phase-17-sequence). Every milestone
 passes its verification layer and records its timing before the next starts.
@@ -484,9 +484,11 @@ already are) or replacing the write-through with a fourth forwarding source.
 **18.1 timing work after the first report (30 September 2026).** Seven RTL
 changes in six commits — the first five behavior-neutral (every cycle count
 unchanged, `make check` passing, planted bugs in each caught except ones that
-cannot change behavior); the sixth (`9ffb3ab`) changes cycle counts only under
-back-pressure and was not bug-planted; two of them change approved text and
-wait for the owner (cpu.md §9) — and four flow experiments. SKY130 runs are post-route at 10 ns in
+cannot change behavior); the sixth (`9ffb3ab`, a load or store waiting for
+ready even when misaligned) showed no measurable gain, and the owner rejected
+the port rule it needed, so it was reverted; the load alignment leaving M2
+(`3cf31ce`) changed approved §4 text and was confirmed by the owner (cpu.md
+§9) — and four flow experiments. SKY130 runs are post-route at 10 ns in
 the baseline flow unless noted; the slow corner is `max_ss_100C_1v60`:
 
 | Run | RTL (commit) | Flow | `nom_tt` fmax | `max_ss` setup | `max_ss` fmax | Area µm² |
@@ -502,7 +504,7 @@ the baseline flow unless noted; the slow corner is `max_ss_100C_1v60`:
 | `p18-aster-wr-nobuf1` | `209ddcb` | baseline without `buf_1` | 158.3 MHz | −2.312 ns | 81.2 MHz | 164,171 |
 | `p18-aster-wr-nobuf1-rc` | `209ddcb` | **chosen:** without `buf_1`, per-corner wire RC | 163.6 MHz | −1.435 ns | 87.5 MHz | 176,856 |
 | `p18-aster-wr-nobuf1-rc-u38` | `209ddcb` | chosen, 38% core utilization | 168.0 MHz | −1.900 ns | 84.0 MHz | 180,670 |
-| `p18-aster-sc-rc` | `9ffb3ab` + stall logic off the address alignment | chosen | 163.0 MHz | −1.644 ns | 85.9 MHz | 176,813 |
+| `p18-aster-sc-rc` | `9ffb3ab` + stall logic off the address alignment (since reverted) | chosen | 163.0 MHz | −1.644 ns | 85.9 MHz | 176,813 |
 | `p18-picorv32-nobuf1` | PicoRV32 | baseline without `buf_1` | 147.8 MHz | −3.055 ns | 76.6 MHz | 165,770 |
 | `p18-picorv32-nobuf1-rc` | PicoRV32 | chosen | 201.9 MHz | **+0.436 ns** | **104.6 MHz** | 175,177 |
 
@@ -524,23 +526,22 @@ extracted parasitics, so its numbers are not made optimistic by the change. **Th
 (`asic/sky130/config.core_aster.json`; PicoRV32 in the same flow:
 `make timing-asic-picorv32-chosen`). In it PicoRV32 closes 10 ns at the slow
 corner (104.6 MHz, from 83.5 in the baseline flow), and the Aster core
-reaches 84–88 MHz register to register (163–168 MHz typical) across three
-runs — a 38%-utilization floorplan moves the slow corner by 0.47 ns, the size
-of the effect a single run can resolve. The core's remaining register-to-
-register limit at the slow corner is Execute's datapath: the forwarded
-operand through the 32-bit ALU, compare and adders into M1 and into the
-registered redirect target, 1.4–1.9 ns short with few buffers left on it.
-The design's worst path overall is a port path: the request address
-(`d_req_addr`) against its 2 ns output budget, −2.94 ns at `max_ss` in the
-final run (−2.90 and −3.39 ns in the other two; +2.04 ns at `nom_tt`), with
-148 port endpoints failing there — the core-to-L1 request path, which the
+reaches 84.0 and 87.5 MHz register to register (163.6 and 168.0 MHz
+typical) in two runs of the current RTL (`209ddcb`) — a 38%-utilization
+floorplan moves the slow corner by 0.47 ns, the size of the effect a single
+run can resolve (the reverted `9ffb3ab` gave 85.9 MHz). The core's remaining
+register-to-register limit at the slow corner is Execute's datapath: the
+forwarded operand through the 32-bit ALU, compare and adders into M1 and
+into the registered redirect target, 1.4–1.9 ns short with few buffers left
+on it. The design's worst path overall is a port path: the request address
+(`d_req_addr`) against its 2 ns output budget, −2.90 and −3.39 ns at `max_ss`
+(+2.13 and +1.94 ns at `nom_tt`) — the core-to-L1 request path, which the
 open "core-to-SRAM port budgets" item must settle with the 18.6 L1. §4's two
-named port paths pass in the final run (+1.62 and +2.23 ns at `max_ss`) but
-move with placement (the `d_rsp_valid` path was −0.42 ns in the
-38%-utilization run). On the FPGA the final RTL (`9ffb3ab`) runs at 105.6 MHz
-out of context, 100.5 MHz with the block RAM in the §5 form and 110.0 MHz
-with the request registered (retained); earlier revisions measured up to
-113.1, 103.7 and 111.9 MHz (commit `209ddcb`, not retained). Evidence: [`results/phase18/aster-18.1-timing-work`](results/phase18/aster-18.1-timing-work/README.md).
+named port paths move with placement: `d_rsp_valid` +0.145 and −0.423 ns,
+`d_rsp_error` +1.726 and +1.508 ns at `max_ss`. On the FPGA the current RTL
+runs at 113.1 MHz out of context, 103.7 MHz with the block RAM in the §5 form
+and 111.9 MHz with the request registered (retained; the reverted `9ffb3ab`
+gave 105.6, 100.5 and 110.0 MHz). Evidence: [`results/phase18/aster-18.1-timing-work`](results/phase18/aster-18.1-timing-work/README.md).
 
 ## Milestones and gates
 

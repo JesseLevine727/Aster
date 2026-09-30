@@ -281,11 +281,7 @@ module aster_core
     assign d_req_wdata = e_wdata;
     assign d_req_be    = e_be;
 
-    // A load or store waits for d_req_ready even when it is misaligned and
-    // presents nothing, so the stall logic does not wait for the forwarded
-    // operand's alignment (docs/cpu.md §9: a memory's ready never depends on
-    // valid).
-    assign e_advance = e_live && e_ready && m1_free && !m1_trap && (!(e_dec.load || e_dec.store) || d_req_ready);
+    assign e_advance = e_live && e_ready && m1_free && !m1_trap && (!e_access || d_req_ready);
     assign e_free    = !e_live || e_advance;
     assign e_flush   = e_advance && e_mispredict;
 

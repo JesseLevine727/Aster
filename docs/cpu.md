@@ -121,10 +121,11 @@ memory behind each port is itself split into two register-to-register stages.
   `ebreak`, a fetch error carried with the instruction, a data-port error)
   is known by then.
 - **M2.** The data access's second memory stage (load data, AMO old value, or
-  `sc` result registered at its end) and the third multiplier stage.
-  Instructions in M2 and W have committed and always retire.
-- **W.** Load alignment and sign extension, register write, and retirement
-  (RVFI output, registered).
+  `sc` result registered at its end — a load's value aligned and sign- or
+  zero-extended; owner decision, 30 September 2026, §9) and the third
+  multiplier stage. Instructions in M2 and W have committed and always retire.
+- **W.** Register write and retirement (RVFI output, registered); W forwards
+  a load's value straight from its register.
 
 Hazards and penalties:
 
@@ -446,25 +447,12 @@ reviews; none changes the approved scope:
 - §5: the instruction memory may allow any number of fetches in flight; the
   fetch unit itself never has more than nine (three live by the room rule,
   the rest discarded ones), and its counters hold that.
-
-Proposed during the 18.1 timing work (30 September 2026), implemented, and
-**pending the owner's confirmation** — each changes approved text:
-
-- §4 (commit `3cf31ce`): a load's value is aligned and sign- or zero-extended
-  as it leaves M2 (registered at the end of M2 already aligned) rather than in
-  W, so W forwards and writes a value straight from a register; every cycle
-  count is unchanged. It takes the alignment off every forwarding path into
-  Execute, but it adds to M2's path, and the 18.6 L1's second stage must leave
-  room for it — the known SKY130 risk. (§4's W description is unchanged until
-  confirmed.)
-- §5 (commit `9ffb3ab`): a memory's `*_req_ready` never depends on its
-  `*_req_valid` in the same cycle, so a load or store may wait in Execute for
-  `d_req_ready` even when it is misaligned and presents nothing — which keeps
-  the forwarded address's alignment out of the stall logic. It restricts
-  every memory side (the CPU shells comply; the 18.6 L1 would), and under
-  back-pressure a misaligned access may now wait for ready before it traps.
-  No timing gain was measurable beyond run-to-run variation (the slow corner
-  went from −1.435 to −1.644 ns); if not confirmed, `9ffb3ab` is reverted.
+- §5 (not adopted): a rule that a memory's ready never depends on its valid,
+  so that a misaligned access could wait for ready without presenting, was
+  tried in the 18.1 timing work (`9ffb3ab`); it showed no gain beyond
+  run-to-run variation, and the owner rejected it (30 September 2026). It was
+  reverted: a misaligned access does not wait for ready, and §5's ports
+  carry no such restriction.
 
 Changes after approval, by the owner:
 
@@ -492,6 +480,13 @@ Changes after approval, by the owner:
   limiting fetches with `i_req_ready`. §1's CPI estimate, §7's
   conservative-comparison note, and the 18.1/18.6 rows of §8 follow. The
   revised §4–§5 were approved by the owner on 30 September 2026.
+- **30 September 2026 — load alignment leaves M2 (§4):** a load's value is
+  aligned and sign- or zero-extended as it leaves M2 (registered at the end of
+  M2 already aligned) rather than in W, so W forwards and writes a value
+  straight from a register. Every cycle count is unchanged; it takes the
+  alignment off every forwarding path into Execute (18.1 timing work, commit
+  `3cf31ce`). The 18.6 L1's second stage must leave room for it. Confirmed by
+  the owner.
 - **30 September 2026 — the gate's Conv2D (§7):** "scalar Conv2D" is the
   coherent SoC's scalar-engine build (`conv2d_scalar_coh`, the capture whose
   PicoRV32 CPI §1 quotes, from the same SoC as the scalar reduction), not the
