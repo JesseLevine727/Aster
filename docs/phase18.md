@@ -2,8 +2,8 @@
 
 Status: **in progress — milestone 18.0 (tooling) exit gate met; 18.1 prerequisites
 measured; the owner chose a two-stage memory access (a seven-stage core) and
-approved the revised cpu.md §4–§5; next, the CPU kernels in the shell and a
-trace-driven CPI model, then 18.1 RTL.** The CPU specification this
+approved the revised cpu.md §4–§5; the CPU kernels run in the shell and the
+CPI model projects the 18.7 gate at about 3.6×; next, 18.1 RTL.** The CPU specification this
 phase implements is [`cpu.md`](cpu.md) (approved 29 September 2026); the phase
 sits in the [v2 plan](phase17-plus.md#6-phase-17-sequence). Every milestone
 passes its verification layer and records its timing before the next starts.
@@ -118,7 +118,18 @@ corruption to be caught — 19 of 19.
   architectural (distance in the retired stream); from 18.1 the core also
   reports which forwarding and stall events it actually took.
 - Directed microarchitecture tests (from milestone 18.1).
-- The CPU-bound benchmark set for 18.7.
+- The CPU-bound benchmark set for 18.7 — the seven kernels of
+  [`cpu.md`](cpu.md) §7, built with their SoC compile flags (read from the
+  Makefile) against a shell platform (`verification/core/kernels/`: the SoC
+  `aster.h` with a run-ending console hook, a start-up that seeds the SoC
+  register-page constants the kernels check, and a 96 KiB layout). The SoC
+  register page is plain memory in the shells (`+io_page`) and in Spike; its
+  performance-counter page is a deterministic clock in both (each read of the
+  cycle word adds 1,000,000; Spike plugin `verification/core/spike/aster_clock.cc`),
+  so CoreMark's and Dhrystone's timers behave identically. Each kernel must
+  pass lockstep and print a passing AsterBench record; the shells time its
+  measurement window from the retirement of its window-opening store to that
+  of its closing store (`make core-kernels`, in `make check`).
 
 ### Timing and area
 
@@ -264,6 +275,29 @@ and −0.110 ns for `hs`.)
 Evidence: `pre18.1-flow-probes` (`picorv32-hs`, `sram-512b-andor-hs`); the
 library was added to the pinned PDK with `ciel fetch -l sky130_fd_sc_hs`.
 
+**CPU kernels in the shell, and the CPI model (30 September 2026).** All seven
+kernels pass on PicoRV32 in the look-ahead shell in lockstep with Spike, with
+their own self-checks passing. Measurement windows (zero-wait memory, the 18.7
+conditions) and the trace-driven model of the approved seven-stage pipeline
+over the same windows (`scripts/cpi_model.py`; it assumes no memory stalls
+and one fetch per cycle — an estimate, not RTL):
+
+| Kernel | Window instructions | PicoRV32 CPI | Seven-stage model CPI | Projected speedup | Five-stage model CPI |
+| --- | ---: | ---: | ---: | ---: | ---: |
+| CoreMark (1 iteration) | 284,864 | 5.249 | 1.609 | 3.26× | 1.323 |
+| Dhrystone | 492,302 | 4.237 | 1.596 | 2.65× | 1.324 |
+| sort/search | 420,942 | 4.277 | 1.654 | 2.59× | 1.332 |
+| FFT | 248,399 | 11.144 | 1.199 | 9.29× | 1.143 |
+| strided | 1,559 | 4.151 | 1.508 | 2.75× | 1.172 |
+| scalar Conv2D | 704,346 | 7.850 | 1.574 | 4.99× | 1.398 |
+| scalar reduction | 53,299 | 4.076 | 1.385 | 2.94× | 1.154 |
+
+Projected against the 18.7 gate: a geometric mean of about **3.6×**, lowest
+kernel **2.6×** (sort/search) — both clear of 2.0× and 1.5×. The two-stage
+memory access costs 5–29% in CPI against the five-stage rules (FFT least, as
+its time is in the multiplier). CoreMark's window count (284,864) is within
+one instruction of the SoC record's (284,865), which cross-checks the port.
+
 **SRAM macro SPICE characterization.** ngspice 47 with KLU (built into
 `~/tools/ngspice-47`) and the PDK's transistor netlist of the 2 KiB macro:
 a simulation of the whole macro did not finish 2 ns of simulated time within
@@ -363,10 +397,12 @@ as capacitance), as OpenRAM's own characterizer does.
   `d_rsp_error` in the cycle after acceptance; PicoRV32 passes at both
   latencies (it keeps one request in flight, so the two-in-flight path is
   first exercised by the Aster core)
-- [ ] **Before 18.1 RTL:** a trace-driven CPI model of the seven-stage pipeline
-  from the CPU kernels' Spike logs (evidence for the 1.5–1.9 estimate and the
-  2× margin); a stub DUT that keeps two requests in flight per port, to test
-  the shell's pipelined memory before the core does
+- [x] **Before 18.1 RTL:** the CPU kernels in the shell (7/7 on PicoRV32 in
+  lockstep) and a trace-driven CPI model of the seven-stage pipeline: 1.20–1.65
+  CPI, projected gate geometric mean about 3.6×, lowest kernel about 2.6×
+  (above)
+- [ ] **Before 18.1 RTL:** a stub DUT that keeps two requests in flight per
+  port, to test the shell's pipelined memory before the core does
 - [ ] **By the milestone named:** hazard coverage extended to distance 4 (the
   register-file write-through) and AMO/`lr`/`sc` classed as load-like
   producers (18.1); CSR write point and `minstret` read semantics (18.3);

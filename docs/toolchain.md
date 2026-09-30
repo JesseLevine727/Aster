@@ -55,6 +55,10 @@ host uses the DTC 1.6.1 shipped with Vivado on `PATH`. `make tools` checks both,
 and that `SPIKE_COMMIT` names the pinned commit. The CPU shell, the lockstep
 comparator and the test runners are described in [`phase18.md`](phase18.md).
 
+The CPU kernels run in Spike with an MMIO plugin, `aster_clock`
+(`verification/core/spike/aster_clock.cc`), which `make core-kernels` builds
+against the installed Spike headers (`SPIKE_ROOT`, default `~/tools/spike`).
+
 The conformance programs are vendored with checksums: `riscv-tests` at
 `2ebecad` (`vendor/riscv-tests`) and `riscv-arch-test` 3.10.0
 (`vendor/riscv-arch-test`). The arch-test programs are built with `-mno-relax`

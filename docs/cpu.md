@@ -148,11 +148,14 @@ first: a trap or interrupt at the commit point, the registered Execute
 redirect, a Decode redirect. An interrupt is taken only in a cycle in which M1
 holds a valid instruction, before the instruction after it; `mepc` receives
 that M1 instruction's next PC (its `pc_wdata`, the redirect target if it
-redirected). Rough estimate, to be measured in 18.7 (a trace-driven model from
-the kernels' Spike logs is planned before RTL): about 1.5–1.9 CPI on the CPU
-set. PicoRV32 measured 5.2–12.3 CPI with the v1 one-wait-state memory and
-about 4.2 CPI on `riscv-tests` in the zero-wait shell the gate uses, so the
-margin is smaller than the first figure suggests.
+redirected). The trace-driven model of these rules over the CPU kernels'
+measurement windows (`scripts/cpi_model.py`, 30 September 2026; an estimate
+that assumes no memory stalls, not a simulation) gives 1.20–1.65 CPI — 1.61
+CoreMark, 1.60 Dhrystone, 1.65 sort/search, 1.20 FFT, 1.51 strided, 1.57
+Conv2D, 1.39 reduction — against PicoRV32's 4.08–11.14 in the same zero-wait
+shell, a projected geometric-mean speedup of about 3.6× with the lowest
+kernel (sort/search) at about 2.6× ([`phase18.md`](phase18.md)). 18.7 measures
+the real core.
 A next-line or branch-target predictor in F1 is the first candidate if 18.7
 shows branch cost matters; dynamic prediction is added only if measurement
 shows it pays for its area and timing.

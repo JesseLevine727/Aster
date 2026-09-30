@@ -2084,14 +2084,14 @@ parallel-workloads:
 
 test: smoke phase1 hello bench cache uart fpga-sim linux-sim counters retirement npu-pe npu-array npu-engine npu-regs npu-driver npu-runtime npu-stop npu-bench-validate arbiter shared-fabric multicore-runtime parallel
 
-check: tools smoke phase1 hello bench cache uart fpga-sim linux-sim linux-dual-sim linux-coherent-sim counters retirement pcpi-probe dot8-unit npu-pe npu-array npu-engine npu-regs device-arbiter dma-counters l2-unit npu-driver npu-runtime npu-stop npu-bench-validate xe-bench-validate phase11-infer-validate workloads atomic-fabric atomic-runtime atomic-faults coherent-cache warm-stop coherent-counters coherent-soc timer-unit timer-firmware irq-unit timer-interrupt sram-unit sram-lint freeze-interfaces coherent-bench riscv-reference riscv-reference-negative coherent-litmus arbiter shared-fabric multicore-runtime multicore-adversarial parallel phase17-baseline-audit core-riscv-tests core-riscv-tests-stall core-arch-tests core-random-lockstep core-lockstep-selftest core-ports-tests
+check: tools smoke phase1 hello bench cache uart fpga-sim linux-sim linux-dual-sim linux-coherent-sim counters retirement pcpi-probe dot8-unit npu-pe npu-array npu-engine npu-regs device-arbiter dma-counters l2-unit npu-driver npu-runtime npu-stop npu-bench-validate xe-bench-validate phase11-infer-validate workloads atomic-fabric atomic-runtime atomic-faults coherent-cache warm-stop coherent-counters coherent-soc timer-unit timer-firmware irq-unit timer-interrupt sram-unit sram-lint freeze-interfaces coherent-bench riscv-reference riscv-reference-negative coherent-litmus arbiter shared-fabric multicore-runtime multicore-adversarial parallel phase17-baseline-audit core-riscv-tests core-riscv-tests-stall core-arch-tests core-random-lockstep core-lockstep-selftest core-ports-tests core-kernels
 
 # Phase 18 CPU shell: one CPU with a synchronous SRAM at 0x8000_0000 and an
 # RVFI trace for lockstep against Spike (docs/phase18.md).
 CORE_SHELL_DIR := $(BUILD_DIR)/core_shell_picorv32
 CORE_SHELL_SIM := $(CORE_SHELL_DIR)/core_shell_picorv32
 SPIKE ?= $(HOME)/tools/spike/bin/spike
-$(CORE_SHELL_SIM): vendor/picorv32/picorv32.v verification/core/shell_picorv32.sv verification/core/tb_core_shell.cpp Makefile
+$(CORE_SHELL_SIM): vendor/picorv32/picorv32.v verification/core/shell_picorv32.sv verification/core/tb_core_shell.cpp verification/core/shell_common.h Makefile
 	mkdir -p $(CORE_SHELL_DIR)
 	$(VERILATOR) --cc --exe --build --Wall --Wno-fatal $(VERILATOR_VENDOR_LINT_FLAGS) \
 		--top-module shell_picorv32 --Mdir $(CORE_SHELL_DIR)/obj -o $(abspath $@) \
@@ -2151,7 +2151,7 @@ core-lockstep-selftest: $(CORE_SHELL_SIM)
 # and these ports runs in it.
 CORE_PORTS_DIR := $(BUILD_DIR)/core_ports_picorv32
 CORE_PORTS_SIM := $(CORE_PORTS_DIR)/core_ports_picorv32
-$(CORE_PORTS_SIM): vendor/picorv32/picorv32.v verification/core/shell_picorv32_ports.sv verification/core/tb_core_ports.cpp Makefile
+$(CORE_PORTS_SIM): vendor/picorv32/picorv32.v verification/core/shell_picorv32_ports.sv verification/core/tb_core_ports.cpp verification/core/shell_common.h Makefile
 	mkdir -p $(CORE_PORTS_DIR)
 	$(VERILATOR) --cc --exe --build --Wall --Wno-fatal $(VERILATOR_VENDOR_LINT_FLAGS) \
 		--top-module shell_picorv32_ports --prefix Vcore_ports --Mdir $(CORE_PORTS_DIR)/obj -o $(abspath $@) \
@@ -2179,6 +2179,24 @@ core-ports-tests: $(CORE_PORTS_SIM)
 		--shell-arg +corrupt_write=3 --expect-status STORE_MISMATCH
 	@$(CORE_PORTS_TESTS) --build-dir $(CORE_TESTS_DIR)/ports-selftest --only rv32ui/sw \
 		--shell-arg +duplicate_tohost_write --expect-status STRAY_WRITE
+
+# The CPU kernels of docs/cpu.md §7 in the shell: built with their SoC compile
+# flags against the shell platform (verification/core/kernels), run on PicoRV32
+# in lockstep with Spike (whose aster_clock plugin gives the kernels' timers the
+# same deterministic clock as the shell), then the trace-driven CPI model of the
+# Aster core pipeline over the same windows (scripts/cpi_model.py).
+ASTER_CLOCK_PLUGIN := $(BUILD_DIR)/spike/libaster_clock.so
+SPIKE_ROOT ?= $(HOME)/tools/spike
+$(ASTER_CLOCK_PLUGIN): verification/core/spike/aster_clock.cc Makefile
+	mkdir -p $(dir $@)
+	g++ -std=c++17 -O2 -shared -fPIC -I$(SPIKE_ROOT)/include -o $@ $<
+
+.PHONY: core-kernels
+core-kernels: $(CORE_SHELL_SIM) $(ASTER_CLOCK_PLUGIN)
+	@mkdir -p $(CORE_TESTS_DIR)
+	@set -o pipefail; $(CORE_TESTS) --kernels --max-cycles 50000000 --build-dir $(CORE_TESTS_DIR)/kernels \
+		| tee $(CORE_TESTS_DIR)/kernels.log | tail -8 || { grep -v '^PASS' $(CORE_TESTS_DIR)/kernels.log; exit 1; }
+	@$(PYTHON) scripts/cpi_model.py $(CORE_TESTS_DIR)/kernels/kernels/*/*.spike
 
 # Timing and area of one core block at 10 ns (docs/phase18.md): Vivado out of
 # context on the PYNQ-Z1 part, and SKY130 through post-route STA (its period is

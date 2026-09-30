@@ -36,9 +36,13 @@
 //                                   accepted twice, as a core that issues a store
 //                                   twice would; the stray-write check must fail)
 //
+//           [+io_page] [+console=<file>]
+//
+// Memory regions, console, and the measurement window: shell_common.h.
 // The DUT's RVFI outputs are sampled after the rising edge, so they must be
 // registered (as riscv-formal requires), not combinational.
-// Output: "SHELL <status> cycles=<n> retired=<n>", where status is PASS,
+// Output: "SHELL <status> cycles=<n> retired=<n> [window_cycles=<n>
+// window_retired=<n>]", where status is PASS,
 // FAIL test=<n>, FAIL (partial tohost store), TRAP, TIMEOUT, BUS_ERROR,
 // STORE_MISMATCH, STRAY_WRITE or UNSUPPORTED_OP.
 #include "Vcore_ports.h"
@@ -48,38 +52,17 @@
 #include <cstdint>
 #include <cstdio>
 #include <deque>
-#include <fstream>
 #include <iostream>
 #include <random>
 #include <string>
 #include <vector>
 
+#include "shell_common.h"
+
+using shell::plusarg;
+
 namespace {
-constexpr std::uint32_t kBase = 0x80000000u;
-constexpr std::uint32_t kDefaultBytes = 0x18000u;
 constexpr int kLoad = 0, kStore = 1;
-
-std::string plusarg(const char* name) {
-    const char* value = Verilated::commandArgsPlusMatch(name);
-    std::string text = value ? value : "";
-    const std::string prefix = std::string("+") + name + "=";
-    return text.rfind(prefix, 0) == 0 ? text.substr(prefix.size()) : "";
-}
-
-struct Memory {
-    explicit Memory(std::uint32_t size) : bytes(size, 0) {}
-    std::vector<std::uint8_t> bytes;
-    bool contains(std::uint32_t address) const { return address >= kBase && address - kBase < bytes.size(); }
-    std::uint32_t read(std::uint32_t address) const {
-        const std::uint32_t o = (address & ~3u) - kBase;
-        return bytes[o] | (bytes[o + 1] << 8) | (bytes[o + 2] << 16) | (std::uint32_t(bytes[o + 3]) << 24);
-    }
-    void write(std::uint32_t address, std::uint32_t data, std::uint32_t mask) {
-        const std::uint32_t o = (address & ~3u) - kBase;
-        for (int lane = 0; lane < 4; ++lane)
-            if (mask & (1u << lane)) bytes[o + lane] = std::uint8_t(data >> (8 * lane));
-    }
-};
 
 // One port's response side: the responses owed, oldest first. `wait` counts
 // the cycles until the response is driven; the head responds when it is 0.
@@ -128,7 +111,7 @@ int main(int argc, char** argv) {
     std::mt19937 rng(stall ? std::stoul(plusarg("stall_seed")) : 0u);
     std::mt19937 garbage(0x5eed1234u);
     const std::uint32_t mem_bytes =
-        plusarg("mem_bytes").empty() ? kDefaultBytes : std::stoul(plusarg("mem_bytes"), nullptr, 16);
+        plusarg("mem_bytes").empty() ? shell::kDefaultBytes : std::stoul(plusarg("mem_bytes"), nullptr, 16);
     if (mem_bytes == 0 || mem_bytes % 4) { std::cerr << "+mem_bytes must be a nonzero multiple of 4\n"; return 2; }
     const bool duplicate_tohost_write = Verilated::commandArgsPlusMatch("duplicate_tohost_write")[0] != '\0';
     const int latency = plusarg("latency").empty() ? 2 : std::stoi(plusarg("latency"));
@@ -138,12 +121,14 @@ int main(int argc, char** argv) {
         return 2;
     }
 
-    Memory memory(mem_bytes);
-    std::ifstream image(bin, std::ios::binary);
-    std::vector<char> data((std::istreambuf_iterator<char>(image)), std::istreambuf_iterator<char>());
-    if (!image.good() && !image.eof()) { std::cerr << "cannot read " << bin << "\n"; return 2; }
-    if (data.size() > mem_bytes) { std::cerr << "image exceeds shell memory\n"; return 2; }
-    std::copy(data.begin(), data.end(), memory.bytes.begin());
+    shell::Memory memory(mem_bytes, shell::plusflag("io_page"));
+    if (const std::string error = shell::load_image(memory, bin); !error.empty()) { std::cerr << error << "\n"; return 2; }
+    shell::Observer observer;
+    observer.tohost = tohost;
+    if (!plusarg("console").empty() && !(observer.console = std::fopen(plusarg("console").c_str(), "w"))) {
+        std::cerr << "cannot write console " << plusarg("console") << "\n";
+        return 2;
+    }
 
     std::FILE* trace = nullptr;
     if (!plusarg("trace").empty() && !(trace = std::fopen(plusarg("trace").c_str(), "w"))) {
@@ -233,13 +218,8 @@ int main(int argc, char** argv) {
                 } else {
                     writes.pop_front();
                 }
-                if (!stop && (d.rvfi_mem_addr & ~3u) == tohost) {
-                    const std::uint32_t code = d.rvfi_mem_wdata;
-                    result = mask != 0xf ? "FAIL (partial tohost store)"
-                             : code == 1 ? "PASS"
-                                         : "FAIL test=" + std::to_string(code >> 1);
+                if (!stop && observer.store(d.rvfi_mem_addr, mask, d.rvfi_mem_wdata, cycles, retired, result))
                     stop = true;
-                }
             }
         }
         if (d.trap && !stop) { result = "TRAP"; stop = true; }
@@ -247,26 +227,10 @@ int main(int argc, char** argv) {
     }
     if (result == "PASS" && !writes.empty()) result = "STRAY_WRITE";
     if (trace) std::fclose(trace);
-    if (result == "PASS" && !plusarg("signature").empty()) {
-        const std::uint32_t begin = std::stoul(plusarg("sig_begin"), nullptr, 16);
-        const std::uint32_t end = std::stoul(plusarg("sig_end"), nullptr, 16);
-        if (!memory.contains(begin) || (end > begin && !memory.contains(end - 1))) {
-            std::cerr << "signature outside shell memory\n";
-            return 2;
-        }
-        std::FILE* signature = std::fopen(plusarg("signature").c_str(), "w");
-        if (!signature) {
-            std::cerr << "cannot write signature " << plusarg("signature") << "\n";
-            return 2;
-        }
-        for (std::uint32_t a = begin; a < end; a += 4) {
-            std::uint32_t word = 0;  // bytes past end_signature print as zero, as in Spike
-            for (std::uint32_t lane = 0; lane < 4 && a + lane < end; ++lane)
-                word |= std::uint32_t(memory.bytes[a + lane - kBase]) << (8 * lane);
-            std::fprintf(signature, "%08x\n", word);
-        }
-        std::fclose(signature);
+    if (observer.console) std::fclose(observer.console);
+    if (result == "PASS") {
+        if (const std::string error = shell::dump_signature(memory); !error.empty()) { std::cerr << error << "\n"; return 2; }
     }
-    std::cout << "SHELL " << result << " cycles=" << cycles << " retired=" << retired << "\n";
+    std::cout << "SHELL " << result << " cycles=" << cycles << " retired=" << retired << observer.window() << "\n";
     return result == "PASS" ? 0 : 1;
 }

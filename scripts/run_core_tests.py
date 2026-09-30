@@ -13,7 +13,10 @@ RVFI record. Traces, logs and signatures are deleted before each run, so a
 stale file can never stand in for a missing one. With `--arch` the programs
 are riscv-arch-test (3.10.0). With
 `--random N` they are N seeded constrained-random programs (scripts/rvgen.py),
-and the run reports read-after-write hazard coverage.
+and the run reports read-after-write hazard coverage. With `--kernels` they are
+the CPU kernels of docs/cpu.md §7, built with their SoC compile flags against
+the shell platform (verification/core/kernels/); each must also print a
+passing AsterBench record, and the run reports its measurement window.
 
 `--inject` instead proves the harness catches a deliberately corrupted run: it
 corrupts the raw DUT trace text (every field, dropped, duplicated and extra
@@ -27,6 +30,7 @@ from __future__ import annotations
 
 import argparse
 import os
+import shlex
 from dataclasses import dataclass
 import subprocess
 import sys
@@ -45,6 +49,27 @@ ENTRY = 0x80000000
 # Shell memory: 96 KiB for riscv-tests (the v2 SRAM), 2 MiB for arch-test
 # programs (matching env/link.ld and arch_env/link.ld).
 MEMORY_BYTES = {False: 0x18000, True: 0x200000}
+KERNEL_ENV = ROOT / "verification/core/kernels"
+IO_PAGE = (0x20000000, 0x10000)   # the SoC register page, plain memory for the kernels
+# In Spike the page's performance-counter 4 KiB is the aster_clock device
+# (verification/core/spike/aster_clock.cc), so plain memory skips it.
+CLOCK_PAGE = (0x20003000, 0x1000)
+ASTER_CLOCK = ROOT / "build/spike/libaster_clock.so"
+# The CPU set of docs/cpu.md §7: sources and the Makefile variable holding each
+# one's SoC compile flags (read with `make print-VAR`, so they cannot drift).
+# (sources, flags variable, make overrides); Dhrystone's vendor files use their own flags.
+KERNELS = {
+    "coremark": ([f"vendor/coremark/{name}.c" for name in
+                  ("core_main", "core_list_join", "core_matrix", "core_state", "core_util")]
+                 + ["software/benchmarks/coremark_port/core_portme.c"], "COREMARK_CFLAGS", []),
+    "dhrystone": (["software/benchmarks/dhrystone_port/dhry_port.c"], "DHRY_CFLAGS", []),
+    "sort_search": (["software/benchmarks/workload_sort_search.c"], "WORKLOAD_CFLAGS", []),
+    "fft": (["software/benchmarks/workload_fft.c"], "WORKLOAD_CFLAGS", []),
+    "strided": (["software/benchmarks/workload_strided.c"], "WORKLOAD_CFLAGS", []),
+    "conv2d": (["software/benchmarks/workload_conv2d.c"], "WORKLOAD_CFLAGS", []),
+    "reduction": (["software/benchmarks/workload_reduce.c"], "REDUCE_CFLAGS", ["REDUCE_WORKERS=1"]),
+}
+DHRYSTONE_VENDOR = (["vendor/dhrystone/dhry_1.c", "vendor/dhrystone/dhry_2.c"], "DHRY_VENDOR_CFLAGS")
 # A test that runs away (for example a failure that never reports) ends here;
 # the longest rv32ui/rv32um test takes a few thousand cycles.
 MAX_CYCLES = 200_000
@@ -100,7 +125,7 @@ def has_signature(symbols: dict) -> bool:
 
 
 def execute(args, isa: str, elf: Path, binary: Path, symbols: dict,
-            arch: bool = False) -> tuple[bool, str, str, str]:
+            arch: bool = False, kernel: bool = False) -> tuple[bool, str, str, str]:
     """Run the shell and Spike; returns (both exited 0, shell status line, trace text, Spike log text).
 
     Both also dump the begin_signature..end_signature words next to the ELF
@@ -112,7 +137,15 @@ def execute(args, isa: str, elf: Path, binary: Path, symbols: dict,
     memory = MEMORY_BYTES[arch]
     command = [str(args.sim), f"+bin={binary}", f"+tohost={symbols['tohost']:x}", f"+trace={trace}",
                f"+max_cycles={args.max_cycles}", f"+mem_bytes={memory:x}"]
-    spike_command = [str(args.spike), f"--isa={isa}", f"-m0x{ENTRY:08x}:0x{memory:x}",
+    regions = f"-m0x{ENTRY:08x}:0x{memory:x}"
+    if kernel:
+        console = elf.with_suffix(".console")
+        console.unlink(missing_ok=True)
+        command += ["+io_page", f"+console={console}"]
+        below, above = CLOCK_PAGE[0] - IO_PAGE[0], IO_PAGE[0] + IO_PAGE[1] - CLOCK_PAGE[0] - CLOCK_PAGE[1]
+        regions += (f",0x{IO_PAGE[0]:08x}:0x{below:x},0x{CLOCK_PAGE[0] + CLOCK_PAGE[1]:08x}:0x{above:x}"
+                    f" --extlib={ASTER_CLOCK} --device=aster_clock,0x{CLOCK_PAGE[0]:08x}")
+    spike_command = [str(args.spike), f"--isa={isa}", *regions.split(),
                      # the same bound as the shell: a DUT retires at most one
                      # instruction per cycle (the margin covers Spike's boot ROM)
                      f"--instructions={args.max_cycles + 64}", "--log-commits"]
@@ -300,6 +333,77 @@ def retired_check(status: str, trace_text: str) -> tuple[bool, str]:
     return True, ""
 
 
+def make_variable(name: str, overrides: list[str] = ()) -> list[str]:
+    """A Makefile variable (with command-line overrides) split as the recipe's shell would split it."""
+    result = run(["make", "-s", f"print-{name}", *overrides], check=True)
+    return shlex.split(result.stdout)
+
+
+def build_kernel(name: str, out_dir: Path, prefix: str) -> tuple[Path, Path, dict]:
+    """A CPU kernel with its SoC flags, against the shell platform, start-up and layout."""
+    sources, flags_variable, overrides = KERNELS[name]
+    out = out_dir / "kernels" / name
+    out.mkdir(parents=True, exist_ok=True)
+    # The shell's aster.h must win the include search: put its directory first.
+    shell = [f"-I{KERNEL_ENV}"]
+    flags = shell + make_variable(flags_variable, overrides)
+    objects = []
+    if name == "dhrystone":
+        vendor_sources, vendor_variable = DHRYSTONE_VENDOR
+        for source in vendor_sources:
+            obj = out / (Path(source).stem + ".o")
+            result = run([f"{prefix}gcc", *shell, *make_variable(vendor_variable), "-c", "-o", str(obj), source])
+            if result.returncode:
+                raise RuntimeError(f"build failed for {source}:\n{result.stderr}")
+            objects.append(str(obj))
+    elf, binary = out / f"{name}.elf", out / f"{name}.bin"
+    result = run([f"{prefix}gcc", *flags, f"-T{KERNEL_ENV / 'link.ld'}", "-o", str(elf),
+                  str(KERNEL_ENV / "start.S"), *sources, *objects, "-lgcc"])
+    if result.returncode:
+        raise RuntimeError(f"build failed for kernel {name}:\n{result.stderr}")
+    run([f"{prefix}objcopy", "-O", "binary", str(elf), str(binary)], check=True)
+    symbols = {line.split()[2]: int(line.split()[0], 16)
+               for line in run([f"{prefix}nm", str(elf)], check=True).stdout.splitlines() if len(line.split()) == 3}
+    return elf, binary, symbols
+
+
+def run_kernels(args, config, prefix: str) -> int:
+    if not ASTER_CLOCK.exists():
+        print(f"FAIL: {ASTER_CLOCK.relative_to(ROOT)} is missing (make core-kernels builds it)")
+        return 1
+    names = [args.only] if args.only else list(KERNELS)
+    failures, rows = [], []
+    for name in names:
+        elf, binary, symbols = build_kernel(name, args.build_dir, prefix)
+        passed, status, trace_text, log_text = execute(args, config["spike_isa"], elf, binary, symbols,
+                                                       kernel=True)
+        counted, count_message = retired_check(status, trace_text)
+        ok, message = lockstep_check(trace_text, log_text, symbols["tohost"], config["word_loads"])
+        console = elf.with_suffix(".console")
+        record = next((line for line in (console.read_text(errors="replace").splitlines() if console.exists() else [])
+                       if line.startswith("ASTERBENCH,")), "")
+        fields = dict(item.split("=", 1) for item in status.split()[2:] if "=" in item)
+        windowed = "window_cycles" in fields
+        record_ok = ",status=PASS," in record
+        passed = passed and counted and ok and record_ok and windowed
+        cpi = (int(fields["window_cycles"]) / int(fields["window_retired"])) if windowed else 0.0
+        print(f"{'PASS' if passed else 'FAIL'}: kernel {name} {status.removeprefix('SHELL ')}; "
+              f"lockstep: {message.splitlines()[0]}"
+              + ("" if record_ok else "; no passing AsterBench record") + ("" if windowed else "; no window")
+              + (f"; {count_message}" if not counted else "") + (f"; window CPI {cpi:.3f}" if windowed else ""))
+        if not passed:
+            failures.append(name)
+            if not ok:
+                print(message)
+        else:
+            rows.append((name, int(fields["window_cycles"]), int(fields["window_retired"])))
+    for name, cycles, retired in rows:
+        print(f"  {name:12s} window {cycles:>10d} cycles {retired:>9d} instructions  CPI {cycles / retired:.3f}")
+    print(f"{'PASS' if not failures else 'FAIL'}: {args.dut} {len(names) - len(failures)}/{len(names)} "
+          f"CPU kernels pass in lockstep with Spike")
+    return 1 if failures else 0
+
+
 def signature_check(elf: Path) -> tuple[bool, str]:
     dut_path, spike_path = elf.with_suffix(".sig.dut"), elf.with_suffix(".sig.spike")
     if not dut_path.exists() or not spike_path.exists():
@@ -412,6 +516,7 @@ def main() -> int:
     parser.add_argument("--build-dir", type=Path, default=ROOT / "build/core_tests")
     parser.add_argument("--only", help="run one test, e.g. rv32ui/add (or I/add-01 with --arch)")
     parser.add_argument("--arch", action="store_true", help="run riscv-arch-test with signature comparison")
+    parser.add_argument("--kernels", action="store_true", help="run the CPU kernels of docs/cpu.md §7")
     parser.add_argument("--random", type=int, metavar="N", help="run N constrained-random programs")
     parser.add_argument("--random-seed", type=int, default=1, help="seed of the first random program")
     parser.add_argument("--random-length", type=int, default=1500)
@@ -441,6 +546,9 @@ def main() -> int:
               f"{' '.join(args.shell_arg) or 'no shell arguments'}: shell reported {status!r}, "
               f"expected {args.expect_status}")
         return 0 if caught else 1
+
+    if args.kernels:
+        return run_kernels(args, config, prefix)
 
     if args.random is not None:
         if args.random < 1:
