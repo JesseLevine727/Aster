@@ -1,0 +1,19 @@
+{
+    "DESIGN_NAME": "timing_sram_andor_512b",
+    "VERILOG_FILES": [
+        "dir::build/timing_sram_andor_512b.v"
+    ],
+    "CLOCK_PORT": "clk",
+    "CLOCK_PERIOD": 10.0,
+    "SYNTH_STRATEGY": "DELAY 1",
+    "RUN_POST_GRT_RESIZER_TIMING": true,
+    "PNR_SDC_FILE": "dir::constraints.core.sdc",
+    "SIGNOFF_SDC_FILE": "dir::constraints.core.sdc",
+    "pdk::sky130*": {
+        "FP_CORE_UTIL": 30,
+        "CLOCK_PERIOD": 10.0,
+        "scl::sky130_fd_sc_hs": {
+            "CLOCK_PERIOD": 10.0
+        }
+    }
+}

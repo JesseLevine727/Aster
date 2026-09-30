@@ -1,4 +1,4 @@
-115c8dd69c22ae0140da4413f3ed0019a1f1a861e17552215f1bf9fa231c8d30  README.md
+5316ec23e0335c564930b32adc3e9ba6c26049dc8a135eeff48de7fbee28ce5a  README.md
 1e50e671fd06fac67c8a40931b94816ba5805635c205f6dbcab4f8087b087d02  asic/picorv32-area-0/56-openroad-stapostpnr/summary.rpt
 d830888af23b58a89328e1bc961fa9a11cf0c573e3b5a0cc3c0c2c3859623ce0  asic/picorv32-area-0/56-openroad-stapostpnr/worst_paths.txt
 e3e195c8be7fae7950dc227b2a2bd48f789f60a712b278262b3961756acec2a7  asic/picorv32-area-0/final/metrics.json
@@ -35,6 +35,12 @@ b0029ffc2df04a456322d6504424a5f129c88385490caa7214442717c34bbb42  asic/picorv32-
 f2b1b3bb2a12c7cdbe79e71da03ea7e06d21bafdd112302fa430720765271cfc  asic/picorv32-delay-2/max_rpt.sha256
 25476ac76675cfca2a8f9589706807397b017df63577054db6001edfd421af0b  asic/picorv32-delay-2/resolved.json
 a8e9fe5d46099c7bdcdad40b1d9fca3c1d16cfd43512aa4d863501b6f6e4e059  asic/picorv32-delay-2/summary.json
+74a56f0be80f4b781a6d81c53f11a6046fd5616609261eb435af94e94f4736f6  asic/picorv32-hs/56-openroad-stapostpnr/summary.rpt
+68cc6ca0f11ca45a5f7cf7b3466ea172688933fb8b4dc7e6b50a338b79629f4c  asic/picorv32-hs/56-openroad-stapostpnr/worst_paths.txt
+a54d17d9242223d1431ef0274a43ac0d1943ff6ee1c4d3fa71414824b9a1d148  asic/picorv32-hs/final/metrics.json
+a00350e778b17ed10daec1207eecdf5af6e304d93704647f9bc0b417e02c21e1  asic/picorv32-hs/max_rpt.sha256
+5a3537403e0a1f312a911ed55da11359f2e818e9000f26908f48d642aee15e05  asic/picorv32-hs/resolved.json
+96a4f7f090e14960686dd81377c1c8fc32bd52a9ba5a598613af3ead3c4cd4ef  asic/picorv32-hs/summary.json
 4923e2ad3914709ab820d69cc1a6f20e242dc5d8292449c3ceabd71f31c651c0  asic/sram-2k-mux/57-openroad-stapostpnr/summary.rpt
 b63b804378e8e72f899975b0b5f6f03c5fa38a655f37ea527fda972cd72c22bc  asic/sram-2k-mux/57-openroad-stapostpnr/worst_paths.txt
 7a07f883ca74e4bd4c738e451b116c5dfd08f85c329e4fa1bf76e0a419dd9855  asic/sram-2k-mux/final/metrics.json
@@ -47,6 +53,12 @@ c6667272cdf7409338a17c0e39988e4ea9c78d8ac68948e778f60225fb5c99e6  asic/sram-512b
 5794883157a539968594c7314532f5fe7f8d3c55d25b7b1f394e711206c3aa3d  asic/sram-512b-andor/max_rpt.sha256
 59119bad117cee68708b6ea8ed1f3b829243a19f3740e51391b1df3603caa542  asic/sram-512b-andor/resolved.json
 9016e8b38490ccd808c333450a37c9ef3bd4ee808d1ac7ba04ed26d2e9ee37ac  asic/sram-512b-andor/summary.json
+91ed068284addf2a72049a2a1c53f1739e2e9a731a4983174d736332af8cc1c8  asic/sram-512b-andor-hs/56-openroad-stapostpnr/summary.rpt
+b3ed3501d5f4f80033b9d3f4f0f7290336121e01875f39059f955fb9c0cbde19  asic/sram-512b-andor-hs/56-openroad-stapostpnr/worst_paths.txt
+d31cc275255c61ffba8e90137b6f1b431f670dfb09fe3f080d6925c1f39b1438  asic/sram-512b-andor-hs/final/metrics.json
+3c069540b515666943938ef2ac1e3e7b1ad1d1abb11be9da2b147d2148f434f9  asic/sram-512b-andor-hs/max_rpt.sha256
+88a82d6cda577dff4482fdb7920e967a7407449eb6af43156196f4ff118a54aa  asic/sram-512b-andor-hs/resolved.json
+4c887ad46349f261944f89eca300e4cef80b9f148df235dfa43dc1ccbad6267a  asic/sram-512b-andor-hs/summary.json
 87a824bcb625879fac5426d65e1325d4ab1c69fa979de241ad97c8bc1de6b967  asic/sram-512b-andor-pnr-margin-3ns/56-openroad-stapostpnr/summary.rpt
 9d3fbb3b87cd1c292a66d75092a625e3c2a01362a5b533082d24ba861f344537  asic/sram-512b-andor-pnr-margin-3ns/56-openroad-stapostpnr/worst_paths.txt
 806c5ac47cb3b91de29baa89c95cd61c38d8f7e07b54526958f95682ace1e73e  asic/sram-512b-andor-pnr-margin-3ns/final/metrics.json

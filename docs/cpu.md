@@ -250,9 +250,9 @@ Each milestone passes all applicable layers before the next milestone starts.
 
   Every per-kernel speedup is published next to the aggregate.
 
-  *Measurement conditions (proposed during the 18.0 review; to be confirmed by
-  the owner before any measurement):* the thresholds apply to unrounded
-  ratios. Both cores run in the same CPU shell against the same synchronous
+  *Measurement conditions (proposed during the 18.0 review; confirmed by the
+  owner on 30 September 2026, before any measurement):* the thresholds apply
+  to unrounded ratios. Both cores run in the same CPU shell against the same synchronous
   SRAM, one cycle from request to data: PicoRV32 through its look-ahead port
   (its best case) and the Aster core directly on its ports, without its L1
   caches, so the gate measures the cores alone (the L1 and SoC effects are
@@ -305,8 +305,8 @@ and 18.0 reviews; none changes the approved scope:
   the seven per-kernel speedups at least 2.0×, with no kernel below 1.5×, every
   per-kernel speedup published — declared by the owner before any measurement.
   The measurement conditions in §7 (unrounded ratios; both cores on the same
-  shell SRAM, dual-banked for instruction and data) were proposed in review and
-  await the owner's confirmation.
+  shell SRAM, dual-banked for instruction and data, the Aster core without its
+  L1) were proposed in review and confirmed by the owner on 30 September 2026.
 - §5: the RVFI field list made explicit (riscv-formal fields, exact byte masks,
   CSR fields from 18.3).
 - §6: the lockstep comparator is an offline script over a trace file rather

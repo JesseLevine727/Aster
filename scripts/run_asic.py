@@ -160,6 +160,27 @@ DESIGNS = {
         "rom_image_module": None,
         "config": "asic/sky130/config.sram_andor_512b.json",
     },
+    # The same blocks on the SKY130 high-speed cell library (sky130_fd_sc_hs).
+    "core_picorv32_hs": {
+        "rtl": ["vendor/picorv32/picorv32.v", "verification/core/timing_picorv32.sv"],
+        "defines": ["SYNTHESIS"],
+        "output": "timing_picorv32.v",
+        "rom_image": None,
+        "rom_image_module": None,
+        "config": "asic/sky130/config.core_picorv32_hs.json",
+        "macros": False,
+        "scl": "sky130_fd_sc_hs",
+    },
+    "sram_andor_512b_hs": {
+        "rtl": ["verification/core/timing_sram_array.sv"],
+        "defines": ["SYNTHESIS"],
+        "output": "timing_sram_andor_512b.v",
+        "rom_image": None,
+        "rom_image_module": None,
+        "config": "asic/sky130/config.sram_andor_512b_hs.json",
+        "macros": False,
+        "scl": "sky130_fd_sc_hs",
+    },
 }
 
 
@@ -283,20 +304,24 @@ def main():
     else:
         generate_rom_image(design)
 
-    lef, libs, gds, mag = pdk_macro_files(args.pdk_root)
-
     command = [LIBRELANE, "--docker-no-tty", "--dockerized", "--pdk-root", args.pdk_root]
     if args.to:
         command += ["-T", args.to]
     if args.run_tag:
         command += ["--run-tag", args.run_tag]
-    command += [
-        "--override-config", "EXTRA_LEFS=" + str(lef),
-        "--override-config", "EXTRA_LIBS=" + ",".join(str(lib) for lib in libs),
-        "--override-config", "EXTRA_GDS=" + str(gds),
-    ]
-    if mag.is_file():
-        command += ["--override-config", "MAGIC_DRC_MAGLEFS=" + str(mag)]
+    if design.get("scl"):       # a cell library other than the PDK default (hd)
+        command += ["--scl", design["scl"]]
+    # The SRAM macro views are built for the hd cell library; blocks without
+    # macros (such as the Phase 18 probes on other cell libraries) leave them out.
+    if design.get("macros", True):
+        lef, libs, gds, mag = pdk_macro_files(args.pdk_root)
+        command += [
+            "--override-config", "EXTRA_LEFS=" + str(lef),
+            "--override-config", "EXTRA_LIBS=" + ",".join(str(lib) for lib in libs),
+            "--override-config", "EXTRA_GDS=" + str(gds),
+        ]
+        if mag.is_file():
+            command += ["--override-config", "MAGIC_DRC_MAGLEFS=" + str(mag)]
     for step in args.skip_step:
         command += ["-S", step]
     command += args.librelane_args

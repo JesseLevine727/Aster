@@ -233,12 +233,33 @@ unmeasured. The options, for the owner:
 - **microarchitecture:** a two-stage memory access (a seven-stage core:
   F1 F2 D E M1 M2 W), or a small single-cycle L0/line buffer in front of a
   two-cycle L1, and earlier index decode;
-- **cells:** the SKY130 high-speed library (`sky130_fd_sc_hs`, not installed);
+- **cells:** the SKY130 high-speed library (`sky130_fd_sc_hs`) — measured
+  below: no help at the slow corner;
 - **target:** a lower SKY130 slow-corner frequency with 100 MHz kept for the
   FPGA and the typical corner. This changes a frozen target, so it needs the
   evidence and trade-off recorded ([`phase17-plus.md`](phase17-plus.md)); a
   50 MHz result is an intermediate milestone, not a silent substitute for the
   100 MHz goal.
+
+**High-speed cell library (owner-chosen trial, 30 September 2026).** The same
+blocks on `sky130_fd_sc_hs`, same flow as v2 (default constraints, `DELAY 1`;
+input drive and output load are each library's own PDK defaults, which only
+affect port paths):
+
+| Block | Library | `max_ss` slack / implied | `nom_tt` implied | Std-cell area |
+| --- | --- | ---: | ---: | ---: |
+| PicoRV32 | `hd` (v2) | −1.970 ns / 83.5 MHz | 166.0 MHz | 159,211 µm² |
+| PicoRV32 | `hs` | −1.944 ns / 83.7 MHz | 149.8 MHz | 223,373 µm² (+40%) |
+| 512 B array | `hd` | −5.391 ns / 15.39 ns | 7.83 ns | 298,610 µm² |
+| 512 B array | `hs` | −4.251 ns / 14.25 ns | 7.78 ns | 384,604 µm² (+29%) |
+
+At the slow corner the high-speed cells give PicoRV32 nothing and the array
+read 7%, still more than 4 ns over a cycle, for 30–40% more area. The option
+does not close the gap. (Register-to-register hold is met in all four runs;
+the arrays' remaining hold violations are on port paths, −0.871 ns for `hd`
+and −0.110 ns for `hs`.)
+Evidence: `pre18.1-flow-probes` (`picorv32-hs`, `sram-512b-andor-hs`); the
+library was added to the pinned PDK with `ciel fetch -l sky130_fd_sc_hs`.
 
 **SRAM macro SPICE characterization.** ngspice 47 with KLU (built into
 `~/tools/ngspice-47`) and the PDK's transistor netlist of the 2 KiB macro:
@@ -320,7 +341,8 @@ as capacitance), as OpenRAM's own characterizer does.
   corner** (options above): the core logic is near 100 MHz at `max_ss`
   (PicoRV32, 94.5 MHz with a first flow correction) but a single-cycle
   standard-cell array read measured 15.4 ns there (512 B; 13.1 ns in a
-  superseded run). Needed before the 18.1 pipeline is designed.
+  superseded run), and 14.25 ns with the high-speed cells, which the owner
+  chose to try first. Needed before the 18.1 pipeline is designed.
 - [x] **Aster-core shell:** a two-port shell (`verification/core/tb_core_ports.cpp`)
   with the Aster core's port protocol, independent back-pressure on each port,
   every retired store checked against the bus write the memory accepted, and
@@ -340,7 +362,10 @@ as capacitance), as OpenRAM's own characterizer does.
   per-kernel speedups (CoreMark CRC run, Dhrystone, sort/search, FFT, strided,
   scalar Conv2D, scalar reduction) is **≥ 2.0×** and **no kernel is below
   1.5×**; every per-kernel speedup is published with the aggregate. Declared
-  before any measurement ([`cpu.md`](cpu.md) §7).
+  before any measurement ([`cpu.md`](cpu.md) §7). Measurement conditions
+  confirmed by the owner on 30 September 2026: unrounded ratios; both cores on
+  the same one-cycle shell SRAM with separate instruction and data banks, the
+  Aster core without its L1.
 - [x] **Decided by the owner, 29 September 2026 — SRAM timing plan for 18.6.**
   The SKY130 macros' only liberty models are analytical and typical-corner
   ([`phase17-memory.md`](phase17-memory.md)), so no macro sits on the 10 ns
