@@ -401,8 +401,14 @@ as capacitance), as OpenRAM's own characterizer does.
   lockstep) and a trace-driven CPI model of the seven-stage pipeline: 1.20–1.65
   CPI, projected gate geometric mean about 3.6×, lowest kernel about 2.6×
   (above)
-- [ ] **Before 18.1 RTL:** a stub DUT that keeps two requests in flight per
-  port, to test the shell's pipelined memory before the core does
+- [x] **Before 18.1 RTL:** the shell's pipelined memory tested with two
+  requests in flight before the core relies on it — a unit test of the port
+  response model (`verification/core/test_shell_ports.cpp`, in `make
+  core-ports-tests`) with a requester presenting every cycle: answers in
+  order, one per cycle, never before their latency, never more than the
+  in-flight limit outstanding, and full rate with two in flight (1,000
+  requests in 1,002 cycles), across both latencies, three limits and 20
+  random-delay seeds; a mutant that ignores the limit fails it
 - [ ] **By the milestone named:** hazard coverage extended to distance 4 (the
   register-file write-through) and AMO/`lr`/`sc` classed as load-like
   producers (18.1); CSR write point and `minstret` read semantics (18.3);

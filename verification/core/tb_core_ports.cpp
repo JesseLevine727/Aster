@@ -58,37 +58,12 @@
 #include <vector>
 
 #include "shell_common.h"
+#include "shell_ports.h"
 
 using shell::plusarg;
 
 namespace {
 constexpr int kLoad = 0, kStore = 1;
-
-// One port's response side: the responses owed, oldest first. `wait` counts
-// the cycles until the response is driven; the head responds when it is 0.
-struct Response {
-    int wait;
-    std::uint32_t data;                   // read data; stores and errors answer with garbage
-    bool error;
-};
-
-struct Port {
-    std::deque<Response> owed;
-    bool responding() const { return !owed.empty() && owed.front().wait == 0; }
-    std::size_t remaining() const { return owed.size() - (responding() ? 1 : 0); }
-    // After an edge: the delivered response leaves, the others age by a cycle.
-    void advance() {
-        if (responding()) owed.pop_front();
-        for (Response& r : owed) if (r.wait > 0) --r.wait;
-    }
-    // A request accepted at this edge is answered `latency` cycles later, never
-    // before (or in the same cycle as) the response ahead of it.
-    void accept(int latency, int extra, std::uint32_t data, bool error) {
-        int wait = latency - 1 + extra;
-        if (!owed.empty()) wait = std::max(wait, owed.back().wait + 1);
-        owed.push_back({wait, data, error});
-    }
-};
 
 struct Write {
     std::uint32_t word;
@@ -147,7 +122,7 @@ int main(int argc, char** argv) {
     const std::uint64_t corrupt_write =
         plusarg("corrupt_write").empty() ? 0 : std::stoull(plusarg("corrupt_write"));
     std::uint64_t accepted_writes = 0;
-    Port iport, dport;
+    shell::Port iport, dport;
     bool d_error_next = false;              // d_rsp_error for the request accepted at the last edge
     bool d_error_cycle = false;             // a data request was accepted at the last edge
     std::deque<Write> writes;               // accepted data-port writes not yet matched to a retired store

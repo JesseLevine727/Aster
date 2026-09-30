@@ -2151,13 +2151,20 @@ core-lockstep-selftest: $(CORE_SHELL_SIM)
 # and these ports runs in it.
 CORE_PORTS_DIR := $(BUILD_DIR)/core_ports_picorv32
 CORE_PORTS_SIM := $(CORE_PORTS_DIR)/core_ports_picorv32
-$(CORE_PORTS_SIM): vendor/picorv32/picorv32.v verification/core/shell_picorv32_ports.sv verification/core/tb_core_ports.cpp verification/core/shell_common.h Makefile
+$(CORE_PORTS_SIM): vendor/picorv32/picorv32.v verification/core/shell_picorv32_ports.sv verification/core/tb_core_ports.cpp verification/core/shell_common.h verification/core/shell_ports.h Makefile
 	mkdir -p $(CORE_PORTS_DIR)
 	$(VERILATOR) --cc --exe --build --Wall --Wno-fatal $(VERILATOR_VENDOR_LINT_FLAGS) \
 		--top-module shell_picorv32_ports --prefix Vcore_ports --Mdir $(CORE_PORTS_DIR)/obj -o $(abspath $@) \
 		$(ROOT)/vendor/picorv32/picorv32.v $(ROOT)/verification/core/shell_picorv32_ports.sv \
 		$(ROOT)/verification/core/tb_core_ports.cpp
 	@touch $@  # Verilator does not relink when only the Makefile changed
+
+# The port response model on its own: order, one answer per cycle, latency,
+# the in-flight limit, and full rate with two in flight.
+CORE_PORTS_MODEL_TEST := $(CORE_PORTS_DIR)/test_shell_ports
+$(CORE_PORTS_MODEL_TEST): verification/core/test_shell_ports.cpp verification/core/shell_ports.h Makefile
+	mkdir -p $(dir $@)
+	g++ -std=c++17 -O2 -Wall -Wextra -Werror -Iverification/core -o $@ $<
 
 CORE_PORTS_TESTS = RISCV_PREFIX=$(RISCV_PREFIX) $(PYTHON) scripts/run_core_tests.py --dut picorv32 \
 	--sim $(CORE_PORTS_SIM) --spike $(SPIKE)
@@ -2167,7 +2174,8 @@ core-ports-sim: $(CORE_PORTS_SIM)
 # The two-port shell on riscv-tests (two-cycle memory, one-cycle memory, and
 # back-pressured) and arch-test, and its store and stray-write checks proven
 # to catch a bus write that differs from RVFI.
-core-ports-tests: $(CORE_PORTS_SIM)
+core-ports-tests: $(CORE_PORTS_SIM) $(CORE_PORTS_MODEL_TEST)
+	@$(CORE_PORTS_MODEL_TEST)
 	@mkdir -p $(CORE_TESTS_DIR)
 	@set -o pipefail; for mode in plain latency1 stall arch; do \
 		extra=$$(case $$mode in latency1) echo "--shell-arg +latency=1";; stall) echo "--stall-seed 5";; arch) echo "--arch";; esac); \
