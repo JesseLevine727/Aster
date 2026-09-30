@@ -1,5 +1,7 @@
 // Aster core fetch unit: stages F1 and F2 and the three-entry instruction
-// buffer (docs/cpu.md §4-§5).
+// buffer (docs/cpu.md §4-§5). The buffer is circular: taking an instruction
+// moves a head pointer and a new word is written into one entry, so no entry
+// is reloaded on every take (the take depends on the pipeline's stall chain).
 //
 // A fetch presented in a cycle and accepted at the edge that ends it is in F1
 // during the next cycle and in F2 the cycle after; the memory answers it at the
@@ -90,7 +92,9 @@ module aster_core_fetch #(
     logic [31:2] buf_pc   [DEPTH];
     logic [31:0] buf_insn [DEPTH];
     logic        buf_err  [DEPTH];
-    logic [1:0]  count;               // occupied buffer entries; entry 0 is the oldest
+    logic [1:0]  count;               // occupied buffer entries
+    logic [1:0]  head;                // the oldest entry (0-2)
+    logic [1:0]  tail;                // where the next word goes: head + count, modulo 3
 
     // --- request ---------------------------------------------------------
     logic [3:0] live_inflight;
@@ -131,9 +135,14 @@ module aster_core_fetch #(
     assign from_buffer = count != 2'd0;
     assign bypass      = !from_buffer && rsp_live && !early;
     assign f_valid     = (from_buffer || bypass) && !flush;
-    assign f_pc        = from_buffer ? buf_pc[0]   : rsp_pc;
-    assign f_insn      = from_buffer ? buf_insn[0] : i_rsp_data;
-    assign f_error     = from_buffer ? buf_err[0]  : i_rsp_error;
+    assign f_pc        = from_buffer ? buf_pc[head]   : rsp_pc;
+    assign f_insn      = from_buffer ? buf_insn[head] : i_rsp_data;
+    assign f_error     = from_buffer ? buf_err[head]  : i_rsp_error;
+
+    function automatic logic [1:0] mod3(input logic [2:0] value);
+        return value >= 3'd3 ? 2'(value - 3'd3) : value[1:0];
+    endfunction
+    assign tail = mod3({1'b0, head} + {1'b0, count});
 
     logic pop, push;
     assign pop  = f_valid && d_take && from_buffer;
@@ -153,6 +162,7 @@ module aster_core_fetch #(
             acc_last  <= 1'b0;
             rsp_pc    <= RESET_VECTOR[31:2];
             count     <= '0;
+            head      <= '0;
         end else begin
             inflight <= inflight_next;
             acc_last <= acc;
@@ -185,22 +195,17 @@ module aster_core_fetch #(
                 end
             end
 
-            // Buffer: flushed on a redirect or halt, else pop the head and/or
-            // append the live answer.
+            // Buffer: flushed on a redirect or halt, else take the head and/or
+            // append the live answer at the tail (a full buffer's tail is its
+            // head, freed by a take in the same cycle).
             if (flush) begin
                 count <= '0;
             end else begin
-                if (pop) begin
-                    for (int i = 0; i < DEPTH - 1; i++) begin
-                        buf_pc[i]   <= buf_pc[i + 1];
-                        buf_insn[i] <= buf_insn[i + 1];
-                        buf_err[i]  <= buf_err[i + 1];
-                    end
-                end
+                if (pop) head <= mod3({1'b0, head} + 3'd1);
                 if (push) begin
-                    buf_pc[count - {1'b0, pop}]   <= rsp_pc;
-                    buf_insn[count - {1'b0, pop}] <= i_rsp_data;
-                    buf_err[count - {1'b0, pop}]  <= i_rsp_error;
+                    buf_pc[tail]   <= rsp_pc;
+                    buf_insn[tail] <= i_rsp_data;
+                    buf_err[tail]  <= i_rsp_error;
                 end
                 count <= count - {1'b0, pop} + {1'b0, push};
             end
