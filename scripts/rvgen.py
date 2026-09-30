@@ -9,7 +9,8 @@ Spike of every retired instruction, including every register value.
 
 The stream is built to stress a pipeline, not to compute anything:
 - sources are drawn mostly from recently written registers, so read-after-write
-  distances of 1-3 (forwarding, load-use, multiply-use) are dense;
+  distances of 1-4 (forwarding, load-use, multiply-use, and the register
+  file's same-cycle write-through) are dense;
 - loads and stores of every width stay inside the data region, naturally
   aligned, through a reserved base register or through an address that was
   just computed or loaded (address hazards);
@@ -105,8 +106,8 @@ class Generator:
             self.emit(f"{op} x{self.src()}, {offset - 2048}(x{BASE})")
 
     def fillers(self) -> None:
-        """0-2 ALU instructions, so a pending use lands 1-3 instructions after its producer."""
-        for _ in range(self.rng.randint(0, 2)):
+        """0-3 ALU instructions, so a pending use lands 1-4 instructions after its producer."""
+        for _ in range(self.rng.randint(0, 3)):
             self.alu()
 
     def address_hazard(self) -> None:

@@ -27,8 +27,9 @@
 // Checks, besides the trace: each retired store must match, in word address,
 // byte mask and data, the oldest data-port write the memory accepted and not
 // yet matched (so a store whose bus write differs from its RVFI record fails),
-// and no accepted write may be left unmatched at the end. The run ends when
-// the store to tohost retires.
+// and no accepted write may be left unmatched at the end (a pass, or a trap:
+// no store younger than a trapping instruction may reach memory). The run
+// ends when the store to tohost retires, or at a trap.
 //
 // Protocol checks (docs/cpu.md §4-§5; shell_ports.h):
 // - I_REQ_UNSTABLE: a fetch presented and not accepted must be presented
@@ -68,12 +69,17 @@
 //                                   malformed byte enables, 5 more than two data
 //                                   requests in flight)
 //           [+io_page] [+console=<file>] [+kernel_end]
+//           [+retire_log=<file>]  (debugging: "order cycle pc" per retirement)
+//           [+bus_error_traps]     (a data access outside memory is answered with
+//                                   d_rsp_error and the run continues: the DUT must
+//                                   trap on it; by default the run stops, BUS_ERROR)
 //
 // Memory regions, console, and the measurement window: shell_common.h.
 // The DUT's RVFI outputs are sampled after the rising edge, so they must be
 // registered (as riscv-formal requires), not combinational.
 // Output: "SHELL <status> cycles=<n> retired=<n> [window_cycles=<n>
-// window_retired=<n>]", where status is PASS,
+// window_retired=<n>] fetch_errors=<n>" (fetches answered with i_rsp_error),
+// where status is PASS,
 // FAIL test=<n>, FAIL (partial tohost store), FAIL (kernel record), TRAP, TIMEOUT, BUS_ERROR,
 // STORE_MISMATCH, STRAY_WRITE, UNSUPPORTED_OP, I_REQ_UNSTABLE, D_REQ_UNSTABLE,
 // D_REQ_MALFORMED, D_INFLIGHT or RVFI_COMBINATIONAL.
@@ -136,6 +142,7 @@ int main(int argc, char** argv) {
         plusarg("mem_bytes").empty() ? shell::kDefaultBytes : std::stoul(plusarg("mem_bytes"), nullptr, 16);
     if (mem_bytes == 0 || mem_bytes % 4) { std::cerr << "+mem_bytes must be a nonzero multiple of 4\n"; return 2; }
     const bool duplicate_tohost_write = Verilated::commandArgsPlusMatch("duplicate_tohost_write")[0] != '\0';
+    const bool bus_error_traps = shell::plusflag("bus_error_traps");
     const int latency = plusarg("latency").empty() ? 2 : std::stoi(plusarg("latency"));
     const std::size_t max_inflight = plusarg("max_inflight").empty() ? 2 : std::stoul(plusarg("max_inflight"));
     if (latency < 1 || latency > 2 || max_inflight < 1) {
@@ -158,6 +165,11 @@ int main(int argc, char** argv) {
         std::cerr << "cannot write trace " << plusarg("trace") << "\n";
         return 2;
     }
+    std::FILE* retire_log = nullptr;     // debugging aid: "order cycle pc" per retirement
+    if (!plusarg("retire_log").empty() && !(retire_log = std::fopen(plusarg("retire_log").c_str(), "w"))) {
+        std::cerr << "cannot write retire log " << plusarg("retire_log") << "\n";
+        return 2;
+    }
 
     Vcore_ports d;
     d.selftest = plusarg("selftest").empty() ? 0 : std::stoul(plusarg("selftest"));
@@ -170,7 +182,7 @@ int main(int argc, char** argv) {
 
     const std::uint64_t corrupt_write =
         plusarg("corrupt_write").empty() ? 0 : std::stoull(plusarg("corrupt_write"));
-    std::uint64_t accepted_writes = 0;
+    std::uint64_t accepted_writes = 0, fetch_errors = 0;
     shell::Port iport, dport;
     bool d_error_next = false;              // d_rsp_error for the request accepted at the last edge
     bool d_error_cycle = false;             // a data request was accepted at the last edge
@@ -220,6 +232,7 @@ int main(int argc, char** argv) {
         d_error_cycle = d_accept;
         if (i_accept) {
             const bool error = !memory.executable(i_addr);
+            fetch_errors += error;
             iport.accept(latency, stall ? int(rng() % 3) : 0,
                          error ? std::uint32_t(garbage()) : memory.read(i_addr), error);
         }
@@ -228,7 +241,11 @@ int main(int argc, char** argv) {
             std::uint32_t rdata = std::uint32_t(garbage());
             d_error_next = error;
             if (d_op != kLoad && d_op != kStore) { result = "UNSUPPORTED_OP"; stop = true; }
-            else if (error) { result = "BUS_ERROR"; stop = true; }
+            else if (error) {
+                // Not performed; answered with d_rsp_error. By default the run
+                // stops here; with +bus_error_traps the DUT must trap on it.
+                if (!bus_error_traps) { result = "BUS_ERROR"; stop = true; }
+            }
             else if (d_op == kStore) {
                 const std::uint32_t written = ++accepted_writes == corrupt_write ? d_wdata ^ 0x01010101u : d_wdata;
                 memory.write(d_addr, written, d_be);
@@ -241,6 +258,9 @@ int main(int argc, char** argv) {
         }
         if (d.rvfi_valid && !stop) {
             if (!d.rvfi_trap) ++retired;
+            if (retire_log)
+                std::fprintf(retire_log, "%llu %llu %08x\n", (unsigned long long)d.rvfi_order,
+                             (unsigned long long)cycles, d.rvfi_pc_rdata);
             if (trace)
                 std::fprintf(trace, "%llu %08x %08x %u %u %08x %08x %x %x %08x %08x\n",
                              (unsigned long long)d.rvfi_order, d.rvfi_pc_rdata, d.rvfi_insn, d.rvfi_trap,
@@ -265,12 +285,15 @@ int main(int argc, char** argv) {
         if (d.trap && !stop) { result = "TRAP"; stop = true; }
         d.clk = 0; d.eval();
     }
-    if (result == "PASS" && !writes.empty()) result = "STRAY_WRITE";
+    // A run that ends in a trap must not have let a younger store reach memory.
+    if ((result == "PASS" || result == "TRAP") && !writes.empty()) result = "STRAY_WRITE";
     if (trace) std::fclose(trace);
+    if (retire_log) std::fclose(retire_log);
     if (observer.console) std::fclose(observer.console);
     if (result == "PASS") {
         if (const std::string error = shell::dump_signature(memory); !error.empty()) { std::cerr << error << "\n"; return 2; }
     }
-    std::cout << "SHELL " << result << " cycles=" << cycles << " retired=" << retired << observer.window() << "\n";
+    std::cout << "SHELL " << result << " cycles=" << cycles << " retired=" << retired << observer.window()
+              << " fetch_errors=" << fetch_errors << "\n";
     return result == "PASS" ? 0 : 1;
 }

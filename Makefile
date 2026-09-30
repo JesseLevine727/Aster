@@ -2084,7 +2084,7 @@ parallel-workloads:
 
 test: smoke phase1 hello bench cache uart fpga-sim linux-sim counters retirement npu-pe npu-array npu-engine npu-regs npu-driver npu-runtime npu-stop npu-bench-validate arbiter shared-fabric multicore-runtime parallel
 
-check: tools smoke phase1 hello bench cache uart fpga-sim linux-sim linux-dual-sim linux-coherent-sim counters retirement pcpi-probe dot8-unit npu-pe npu-array npu-engine npu-regs device-arbiter dma-counters l2-unit npu-driver npu-runtime npu-stop npu-bench-validate xe-bench-validate phase11-infer-validate workloads atomic-fabric atomic-runtime atomic-faults coherent-cache warm-stop coherent-counters coherent-soc timer-unit timer-firmware irq-unit timer-interrupt sram-unit sram-lint freeze-interfaces coherent-bench riscv-reference riscv-reference-negative coherent-litmus arbiter shared-fabric multicore-runtime multicore-adversarial parallel phase17-baseline-audit core-riscv-tests core-riscv-tests-stall core-arch-tests core-random-lockstep core-lockstep-selftest core-ports-tests core-kernels
+check: tools smoke phase1 hello bench cache uart fpga-sim linux-sim linux-dual-sim linux-coherent-sim counters retirement pcpi-probe dot8-unit npu-pe npu-array npu-engine npu-regs device-arbiter dma-counters l2-unit npu-driver npu-runtime npu-stop npu-bench-validate xe-bench-validate phase11-infer-validate workloads atomic-fabric atomic-runtime atomic-faults coherent-cache warm-stop coherent-counters coherent-soc timer-unit timer-firmware irq-unit timer-interrupt sram-unit sram-lint freeze-interfaces coherent-bench riscv-reference riscv-reference-negative coherent-litmus arbiter shared-fabric multicore-runtime multicore-adversarial parallel phase17-baseline-audit core-riscv-tests core-riscv-tests-stall core-arch-tests core-random-lockstep core-lockstep-selftest core-ports-tests core-kernels core-aster-fetch core-aster-tests
 
 # Phase 18 CPU shell: one CPU with a synchronous SRAM at 0x8000_0000 and an
 # RVFI trace for lockstep against Spike (docs/phase18.md).
@@ -2158,6 +2158,73 @@ $(CORE_PORTS_SIM): vendor/picorv32/picorv32.v verification/core/shell_picorv32_p
 		$(ROOT)/vendor/picorv32/picorv32.v $(ROOT)/verification/core/shell_picorv32_ports.sv \
 		$(ROOT)/verification/core/tb_core_ports.cpp
 	@touch $@  # Verilator does not relink when only the Makefile changed
+
+# The Aster core (rtl/aster_core, docs/cpu.md), built with its assertions on
+# and Verilator's lint warnings fatal. The fetch unit's randomized unit test
+# (verification/core/test_aster_fetch.cpp): the program-order stream under
+# random redirects, stalls and back-pressure, the request protocol, and the
+# one-fetch-per-cycle rate and 2/4-cycle redirect penalties at both latencies.
+ASTER_CORE_DIR := $(BUILD_DIR)/aster_core
+ASTER_FETCH_TEST := $(ASTER_CORE_DIR)/test_fetch
+$(ASTER_FETCH_TEST): rtl/aster_core/aster_core_fetch.sv verification/core/test_aster_fetch.cpp verification/core/shell_ports.h Makefile
+	mkdir -p $(ASTER_CORE_DIR)
+	$(VERILATOR) --cc --exe --build --assert --Wall --top-module aster_core_fetch \
+		--Mdir $(ASTER_CORE_DIR)/fetch_obj -o $(abspath $@) -CFLAGS "-I$(ROOT)/verification/core -std=c++17" \
+		$(ROOT)/rtl/aster_core/aster_core_fetch.sv $(ROOT)/verification/core/test_aster_fetch.cpp
+	@touch $@  # Verilator does not relink when only the Makefile changed
+
+.PHONY: core-aster-fetch
+core-aster-fetch: $(ASTER_FETCH_TEST)
+	@$(ASTER_FETCH_TEST)
+
+# The Aster core in the two-port shell (verification/core/shell_aster_ports.sv),
+# milestone 18.1 (RV32I). In lockstep with Spike, with the shell's store and
+# protocol checks: riscv-tests rv32ui and the directed tests on the two-cycle
+# memory, the one-cycle memory, back-pressure (also mixed with the one-cycle
+# memory), and room for three and four requests in flight; arch-test I;
+# constrained-random programs with hazard coverage, on time and back-pressured.
+# On the memories that answer on time, every program's cycle count must equal
+# the seven-stage CPI model's (--cpi-check). The trap-halt programs must stop
+# at their trap_pc, match Spike before it, and let no younger store reach
+# memory — on the two-cycle memory, the one-cycle memory, and two back-pressure
+# seeds (seeds 2 and 5 make bus_error_behind_load's error wait in M1).
+ASTER_CORE_RTL := rtl/aster_core/aster_core_pkg.sv rtl/aster_core/aster_core_fetch.sv rtl/aster_core/aster_core.sv
+ASTER_PORTS_SIM := $(ASTER_CORE_DIR)/core_ports_aster
+$(ASTER_PORTS_SIM): $(ASTER_CORE_RTL) verification/core/shell_aster_ports.sv verification/core/tb_core_ports.cpp verification/core/shell_common.h verification/core/shell_ports.h Makefile
+	mkdir -p $(ASTER_CORE_DIR)
+	$(VERILATOR) --cc --exe --build --assert --Wall --top-module shell_aster_ports --prefix Vcore_ports \
+		--Mdir $(ASTER_CORE_DIR)/ports_obj -o $(abspath $@) \
+		$(addprefix $(ROOT)/,$(ASTER_CORE_RTL)) $(ROOT)/verification/core/shell_aster_ports.sv \
+		$(ROOT)/verification/core/tb_core_ports.cpp
+	@touch $@  # Verilator does not relink when only the Makefile changed
+
+ASTER_TESTS = RISCV_PREFIX=$(RISCV_PREFIX) $(PYTHON) scripts/run_core_tests.py --dut aster \
+	--sim $(ASTER_PORTS_SIM) --spike $(SPIKE)
+ASTER_TRAP_HALT := $(basename $(notdir $(wildcard verification/core/trap_halt/*.S)))
+.PHONY: core-aster-sim core-aster-tests
+core-aster-sim: $(ASTER_PORTS_SIM)
+core-aster-tests: $(ASTER_PORTS_SIM)
+	@mkdir -p $(CORE_TESTS_DIR)
+	@set -o pipefail; for mode in plain latency1 stall latency1-stall inflight3 inflight4 arch arch-latency1 \
+			random random-latency1 random-stall; do \
+		extra=$$(case $$mode in plain) echo "--cpi-check";; latency1) echo "--cpi-check --shell-arg +latency=1";; \
+			stall) echo "--stall-seed 5";; latency1-stall) echo "--stall-seed 9 --shell-arg +latency=1";; \
+			inflight3) echo "--stall-seed 7 --shell-arg +max_inflight=3";; \
+			inflight4) echo "--stall-seed 7 --shell-arg +max_inflight=4";; \
+			arch) echo "--arch --cpi-check";; arch-latency1) echo "--arch --cpi-check --shell-arg +latency=1";; \
+			random) echo "--random $(CORE_RANDOM_PROGRAMS) --random-seed 1 --require-coverage --cpi-check";; \
+			random-latency1) echo "--random $(CORE_RANDOM_PROGRAMS) --random-seed 201 --require-coverage --cpi-check \
+				--shell-arg +latency=1";; \
+			random-stall) echo "--random $(CORE_RANDOM_PROGRAMS) --random-seed 101 --stall-seed 11 --require-coverage";; esac); \
+		$(ASTER_TESTS) $$extra --build-dir $(CORE_TESTS_DIR)/aster-$$mode | \
+			tee $(CORE_TESTS_DIR)/aster-$$mode.log | tail -1 || \
+			{ grep -v '^PASS' $(CORE_TESTS_DIR)/aster-$$mode.log; exit 1; }; \
+	done
+	@set -o pipefail; for test in $(ASTER_TRAP_HALT); do \
+		for memory in "" "--shell-arg +latency=1" "--stall-seed 2" "--stall-seed 5"; do \
+		$(ASTER_TESTS) --build-dir $(CORE_TESTS_DIR)/aster-trap-halt --only trap_halt/$$test --expect-status TRAP \
+			--shell-arg +bus_error_traps $$memory | tail -1 | cut -c1-150 || exit 1; \
+	done; done
 
 # The port response model on its own: order, one answer per cycle, latency,
 # the in-flight limit, and full rate with two in flight.
@@ -2246,6 +2313,29 @@ timing-fpga-picorv32:
 			$(ROOT)/vendor/picorv32/picorv32.v $(ROOT)/verification/core/timing_$$top.sv > run.out || exit 1; \
 		grep '^SUMMARY' run.out || exit 1; cd $(ROOT); \
 	done
+
+# The Aster core (milestone 18.1): the core alone, and with a two-cycle 128 KiB
+# dual-port block RAM behind its ports, so the paths from the memory's answer
+# back to the next request are timed too (docs/cpu.md §4) — in the §5 form
+# (the block RAM samples the request) and with the request registered first.
+.PHONY: timing-fpga-aster timing-asic-aster
+timing-fpga-aster:
+	@command -v $(VIVADO) >/dev/null || { echo "ERROR: Vivado not found (set VIVADO=/path/to/vivado)" >&2; exit 1; }
+	@for top in aster aster_bram aster_bram_reqreg; do \
+		tops=$$(case $$top in aster_bram_reqreg) echo "timing_aster_bram timing_aster_bram_reqreg";; *) echo timing_$$top;; esac); \
+		named=$$(case $$top in aster) echo "";; *) echo "d_rsp_valid_to_request=*d_v2_reg*>*d_v1_reg*;d_rsp_error_kill=*d_err1_reg*>*d_v1_reg*";; esac); \
+		mkdir -p $(TIMING_DIR)/fpga/$$top && cd $(TIMING_DIR)/fpga/$$top && \
+		OOC_NAMED_PATHS="$$named" $(VIVADO) -mode batch -nojournal -log vivado.log -source $(ROOT)/scripts/timing/vivado_ooc.tcl \
+			-tclargs $(abspath $(TIMING_DIR))/fpga/$$top timing_$$top $(TIMING_PERIOD_NS) \
+			$(addprefix $(ROOT)/,$(ASTER_CORE_RTL)) $$(for t in $$tops; do echo $(ROOT)/verification/core/$$t.sv; done) \
+			> run.out || exit 1; \
+		grep -E '^(SUMMARY|NAMED)' run.out || exit 1; cd $(ROOT); \
+	done
+
+timing-asic-aster:
+	$(PYTHON) scripts/run_asic.py --design core_aster --to OpenROAD.STAPostPNR --run-tag p18-aster -- --overwrite
+	@mkdir -p $(TIMING_DIR)/asic
+	@$(PYTHON) scripts/timing/sky130_summary.py asic/sky130/runs/p18-aster --json $(TIMING_DIR)/asic/aster.json
 
 timing-asic-picorv32:
 	$(PYTHON) scripts/run_asic.py --design core_picorv32 --to OpenROAD.STAPostPNR --run-tag p18-picorv32 -- --overwrite

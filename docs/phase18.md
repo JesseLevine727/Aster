@@ -1,9 +1,15 @@
 # Phase 18: Aster core — CPU, L1/SRAM interface, and 100 MHz feasibility
 
-Status: **in progress — milestone 18.0 (tooling) exit gate met; 18.1 prerequisites
-measured; the owner chose a two-stage memory access (a seven-stage core) and
-approved the revised cpu.md §4–§5; the CPU kernels run in the shell and the
-CPI model projects the 18.7 gate at about 3.7×; next, 18.1 RTL.** The CPU specification this
+Status: **in progress — milestone 18.0 (tooling) exit gate met; the owner chose
+a two-stage memory access (a seven-stage core) and approved the revised cpu.md
+§4–§5; the CPU kernels run in the shell and the CPI model projects the 18.7
+gate at about 3.7×. Milestone 18.1: the seven-stage RV32I RTL passes
+riscv-tests, arch-test I and random programs in lockstep, cycle for cycle with
+the CPI model on a memory that answers on time. First timing report: the core
+meets 10 ns out of context on the FPGA (102 MHz; with a block RAM behind its
+ports, 96–104 MHz depending on the memory's form); on SKY130 it reaches 134 MHz
+typical and 67 MHz at the slow corner, a broad miss dominated by weak
+buffering — next, the flow correlation and the write-through fix (see "Milestone 18.1").** The CPU specification this
 phase implements is [`cpu.md`](cpu.md) (approved 29 September 2026); the phase
 sits in the [v2 plan](phase17-plus.md#6-phase-17-sequence). Every milestone
 passes its verification layer and records its timing before the next starts.
@@ -297,8 +303,8 @@ fetch-buffer or data-port contention):
 
 | Kernel | Window instructions | PicoRV32 CPI | Seven-stage model CPI | Projected speedup | Five-stage model CPI |
 | --- | ---: | ---: | ---: | ---: | ---: |
-| CoreMark (1 iteration) | 284,865 | 5.249 | 1.609 | 3.26× | 1.323 |
-| Dhrystone | 492,302 | 4.237 | 1.596 | 2.65× | 1.324 |
+| CoreMark (1 iteration) | 284,865 | 5.249 | 1.567 | 3.35× | 1.303 |
+| Dhrystone | 492,302 | 4.237 | 1.585 | 2.67× | 1.320 |
 | sort/search | 420,942 | 4.277 | 1.654 | 2.59× | 1.332 |
 | FFT | 248,399 | 11.144 | 1.199 | 9.30× | 1.143 |
 | strided | 1,559 | 4.151 | 1.508 | 2.75× | 1.172 |
@@ -309,7 +315,7 @@ fetch-buffer or data-port contention):
 The gate's Conv2D is the coherent SoC's scalar build (`conv2d_scalar_coh`;
 owner decision, 30 September 2026, [`cpu.md`](cpu.md) §7); the minimal top's
 Conv2D stays in the runs as a cross-check outside the gate. Projected against
-the 18.7 gate over its seven kernels: a geometric mean of about **3.66×**,
+the 18.7 gate over its seven kernels: a geometric mean of about **3.68×**,
 lowest kernel **2.6×** (sort/search) — both clear of 2.0× and 1.5×. The
 two-stage memory access costs 5–29% in CPI against the five-stage rules (FFT
 least, as its time is in the multiplier). In the two-port shell at
@@ -323,6 +329,146 @@ an hour, with either a DC or a transient operating point, so full-macro
 simulation is not practical. The characterization for 18.6 will use a trimmed
 netlist (the accessed rows and columns, with the removed cells' loading kept
 as capacitance), as OpenRAM's own characterizer does.
+
+### Milestone 18.1: the seven-stage RV32I pipeline (30 September 2026)
+
+The RTL is in `rtl/aster_core/`: `aster_core_fetch.sv` (F1, F2 and the
+three-entry buffer), `aster_core_pkg.sv` (decoder, ALU, branch compare, load
+alignment) and `aster_core.sv` (Decode, Execute, M1, M2, W, forwarding, the
+load-use interlock, the data port, RVFI). Until traps arrive in 18.3, an
+instruction with a trap cause stops the core at the commit point (end of M1)
+as a trap record, with everything after it killed. Implementation choices
+settled in 18.1 are recorded in [`cpu.md`](cpu.md) §9: the Execute redirect's
+flush is registered (the wrong-path instructions are squashed — masked for a
+cycle), the Decode redirect fires in the first Decode cycle, a branch to its
+own fall-through never redirects, and the fetch unit holds up to nine fetches
+in flight (three live).
+
+**Verification** (all in `make check`):
+
+- **Fetch unit, on its own** (`make core-aster-fetch`): a randomized unit
+  test against the shell's memory model (`verification/core/test_aster_fetch.cpp`,
+  96 runs of 20,000 cycles over both latencies, memory limits of 2, 3, 4 and
+  16 fetches in flight, back-pressure, random Decode stalls, Decode and
+  Execute redirects, targets outside memory, and a halt) checks that Decode
+  receives exactly the program-order stream, the request protocol, the
+  in-flight limit and the RTL's assertions (buffer overflow, answers with
+  nothing in flight, more than nine in flight), and requires each corner to
+  be reached. Deterministic runs check one fetch per cycle, the 2- and
+  4-cycle redirect penalties (identical with a one-cycle memory), and the
+  deepest state — nine fetches in flight, six discarded — after which the
+  stream must still be exact.
+- **The core in the two-port shell** (`make core-aster-tests`), in lockstep
+  with Spike with exact byte masks and the shell's store and protocol checks:
+  - riscv-tests rv32ui (40; `fence_i` and `ma_data` wait for 18.4 and 18.3)
+    and the directed tests (42 programs) on the two-cycle memory, the
+    one-cycle memory, back-pressure, back-pressure with the one-cycle memory,
+    and back-pressure with room for three and four requests in flight;
+  - riscv-arch-test I (39/39);
+  - constrained-random programs with every read-after-write hazard bin
+    covered (51/51), on time and back-pressured;
+  - directed tests: wrong-path fetches that run off the end of memory and are
+    answered with `i_rsp_error` (the test requires such fetches — the core
+    makes 7 — and they must be discarded), and control transfers that wait in
+    Decode for a load (a redirect must be neither lost nor repeated);
+  - eleven trap-halt programs (an illegal instruction, misaligned `lw`, `lh`,
+    `lhu`, `sh`, `sw` and jump target, a load and a store the memory answers
+    with `d_rsp_error`, the same error while the access waits in M1, and a
+    right-path fetch outside memory) on the two-cycle memory, the one-cycle
+    memory and two back-pressure seeds: each must trap at its `trap_pc`, match
+    Spike in every record before it, and let no younger store reach memory
+    (the shell continues past a data-port error with `+bus_error_traps` and
+    fails an unmatched write after a trap as after a pass).
+- **Cycle-exact against the CPI model on a memory that answers on time.**
+  Every rv32ui, directed, arch-test and random program's cycle count must
+  equal the seven-stage model's plus 7, the start and the drain
+  (`--cpi-check`), on the two-cycle and the one-cycle memory; it does. (The
+  check compares whole programs and does not cover back-pressure.) The
+  one-cycle and two-cycle memories give identical counts, as §7's
+  conservative comparison requires.
+- **Planted bugs.** On the final RTL, 40 bugs planted in the pipeline (each
+  forwarding path and select, the operand capture while Execute waits, a
+  load's value forwarded early, the answer held from M1, M2 waiting for its
+  answer, the prediction flag, the Decode redirect and its once-only rule,
+  the squash of Decode and Execute, the request conditions, sign extension,
+  byte enables, the misalignment offset, branch compare, stall propagation,
+  the register file's write-through, the trap kill and gating, the data-port
+  error and its hold, a right-path fetch fault, the fall-through rule, RVFI
+  data, store-data forwarding, and six in the fetch unit): 37 are caught, the
+  performance-only ones by the cycle check (the held error only after
+  `bus_error_behind_load` was added for it). The three survivors cannot
+  change behavior: a load in M1 marked ready (the Decode interlock never lets
+  a dependent instruction into Execute then), and two forwarding-select
+  shortcuts that a stalled stage's priority or an empty stage's zeroed fields
+  make harmless. Of 15 bugs planted in the fetch unit alone, its unit test
+  catches 13 (the counter width only after the deepest-state run was added);
+  the two survivors cannot change behavior (a write already inside the
+  non-flush branch, and a priority case that cannot arise because Decode is
+  masked then).
+
+**Timing (step 4, first report).** FPGA, Vivado out of context on
+`xc7z020clg400-1` at 10 ns (`make timing-fpga-aster`; register-to-register):
+
+| Block | WNS | Implied fmax | LUTs | FFs | BRAM36 |
+| --- | ---: | ---: | ---: | ---: | ---: |
+| Core alone | +0.196 ns | 102.0 MHz | 1,688 | 767 | 0 |
+| Core + two-cycle 128 KiB block RAM, the §5 form (the block RAM samples the request; its output register is the second cycle) | −0.440 ns | 95.8 MHz | 1,820 | 869 | 32 |
+| Core + two-cycle block RAM with the request registered first (the block RAM read is the second cycle) | +0.364 ns | 103.8 MHz | 1,791 | 999 | 32 |
+
+The paths §4 names, from the register behind `d_rsp_valid` through the stall
+logic to the next request and from the one behind `d_rsp_error` through the
+kill, have +2.02 and +1.19 ns of slack in the §5 form and +2.24 and +1.94 ns
+with the request registered. The first run of the RTL missed by 3.2 ns
+(75.8 MHz alone, 74.3 MHz with the block RAM); its limiting path ran from
+Execute's forwarding compare through the operand mux, the branch compare,
+the trap logic and the mispredict decision into the enables of Decode,
+Execute and the fetch buffer. Four changes, none of them to behavior or to
+any cycle count, closed it: the Execute redirect's flush is registered (the
+squash), the mispredict no longer waits for the trap logic, the forwarding
+selects are computed a cycle ahead and registered, and loads and stores have
+their own address adder with alignment from the two low bits. The remaining
+miss in the §5 form (−0.14 to −0.78 ns across runs) is on the core-to-memory
+path — the forwarded base register, the address adder, the memory's region
+decode and the write enables of 32 block RAMs spread over the device; the
+fix, measured above, is for the memory side to register the request before
+the block RAM (same two-cycle latency, and the §4 structure of two
+register-to-register memory stages). That is a memory-side decision for the
+18.6 L1 and the Phase 20 fabric, recorded here for the owner.
+
+SKY130, the core alone through post-route STA at 10 ns in the same flow and
+constraints as the PicoRV32 baseline v2 (`make timing-asic-aster`; default
+flow, no setup margin; ports with 2 ns input and output delays):
+
+| Corner | Register-to-register setup | Implied fmax |
+| --- | ---: | ---: |
+| `nom_tt_025C_1v80` | +2.538 ns | 134.0 MHz |
+| `max_ss_100C_1v60` | −4.874 ns | 67.2 MHz |
+| `nom_ss_100C_1v60` | −4.327 ns | 69.8 MHz |
+| `max_ff_n40C_1v95` | +5.028 ns | 201.1 MHz |
+
+163,412 µm² of standard cells (18,891 cells, 1,763 flip-flops — 992 of them
+the register file), no routing DRC errors; register-to-register hold met at
+every corner (20 input-port hold violations at `max_ss`, worst −0.074 ns).
+At the slow corner this is below PicoRV32's 83.5 MHz in the same flow, and the
+miss is broad: 576 register-to-register endpoints fail at `max_ss`. The worst
+path (−4.874 ns) runs from a bit of Decode's `rs1` field (`d_insn[16]`)
+through the register file's same-cycle write-through compare (W's `rd`
+against `rs1`) to a 32-bit select and Execute's operand register
+(`e_rs1v[16]`); about 9 ns of it is chains of the smallest buffers (slews up
+to 1.8 ns at the slow corner) against about 4 ns of logic. The next path
+classes are within 0.7 ns: `halted` to the fetch unit's counters (−4.20 ns,
+five chained buffers), Decode's instruction to the fetch buffer and `d_pc`
+(−4.15 to −4.06 ns), `e_dec` to the forwarding selects (−3.94 ns). §4's two
+named port paths (input to `d_req_valid`, within 2 ns input and output
+delays): `d_rsp_valid` +1.035 ns and `d_rsp_error` −0.238 ns at `max_ss`
+(+3.379 and +2.773 ns at `nom_tt`). Placing and routing against 3 ns of extra
+setup margin, which gained PicoRV32 11 MHz, made the Aster core worse
+(−5.462 ns at `max_ss`, 64.7 MHz; run `p18-aster-pnr-margin`). Proposed
+fixes, the rest of 18.1's timing work: the flow correlation the checklist
+carries (per-corner wire RC, `LAYERS_RC`, so the resizer builds fanout trees
+for the real wires — the main lever, as the buffering dominates), and
+precomputing the write-through match a cycle early (as the forwarding selects
+already are) or replacing the write-through with a fourth forwarding source.
 
 ## Milestones and gates
 
@@ -419,7 +565,7 @@ as capacitance), as OpenRAM's own characterizer does.
   included, 8/8 on PicoRV32 in lockstep in both shells, each equal to its
   Phase 17 record in window instruction count and checksum) and a
   trace-driven CPI model of the seven-stage pipeline: 1.20–1.65 CPI,
-  projected gate geometric mean about 3.7× (3.665), lowest kernel about 2.6× (above)
+  projected gate geometric mean about 3.7× (3.683), lowest kernel about 2.6× (above)
 - [x] **Before 18.1 RTL:** the shell's pipelined memory tested with two
   requests in flight before the core relies on it — a unit test of the port
   response model (`verification/core/test_shell_ports.cpp`, in `make
@@ -452,18 +598,20 @@ as capacitance), as OpenRAM's own characterizer does.
   (`+selftest=1…5`, in `make core-ports-tests`, each failing without its
   check); unbroken PicoRV32 passes every mode. `chk_i_redirect` is a
   verification output: the Aster core drives it from its fetch unit.
-- [ ] **Aster-core shell, with the core (18.1):** exact RVFI byte masks (no
-  `word_loads`); the wrapper to the core's own reset and interrupt ports
-  (tied off until 18.3); a directed test in which wrong-path fetches run off
-  the end of memory and are answered with `i_rsp_error` and garbage, which
-  the core must discard. Errors the core must act on (a fetch or data-port
-  error that traps) need 18.3's traps, so their injection tests move there;
-  from 18.6, the signature read through the cache hierarchy
-- [ ] **Decode-redirect timing, for 18.1:** §4 does not say whether a `jal`
-  or a backward branch whose operands are not ready redirects on its first
-  cycle in Decode or only once its stall ends. The CPI model assumes the
-  latter (conservative: `lw; bne` back to a loop head costs 4 cycles, not 2);
-  18.1 settles it, and the model follows the RTL
+- [x] **Aster-core shell, with the core (18.1):** exact RVFI byte masks (no
+  `word_loads`); the wrapper (`shell_aster_ports.sv`) to the core's own reset
+  and interrupt ports (tied off until 18.3); a directed test in which
+  wrong-path fetches run off the end of memory and are answered with
+  `i_rsp_error` and garbage, which the core discards
+- [ ] **Aster-core shell, later:** errors the core must act on (a fetch or
+  data-port error that traps) need 18.3's traps, so their injection tests
+  come with them; from 18.6, the signature read through the cache hierarchy
+- [x] **Decode-redirect timing (settled in 18.1):** a `jal` or a backward
+  branch redirects on its first cycle in Decode, whether or not it then waits
+  for operands (`lw; bne` back to a loop head costs the load-use wait only).
+  The CPI model follows the RTL; with it CoreMark's projection rises from
+  3.26× to 3.35× and Dhrystone's from 2.65× to 2.67×, the gate's geometric
+  mean from 3.665× to 3.683×
 - [x] **Decided 29 September 2026 — how the 18.7 performance gate aggregates.**
   Speedup per kernel = PicoRV32 cycles ÷ Aster-core cycles over the same
   window. The gate passes only if the **geometric mean** of the seven

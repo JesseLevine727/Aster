@@ -6,8 +6,11 @@ corner, the worst register-to-register setup and hold slack against the SDC
 period, the period that setup slack implies (period - slack), and the max
 slew/capacitance violation counts; then standard-cell area and count. Only
 register-to-register paths set the implied period: an out-of-context block's
-port budgets are arbitrary. The slow corner that the v2 SKY130 target is judged
-at is max_ss_100C_1v60.
+port budgets are arbitrary (the worst hold slack over all paths, ports
+included, is reported beside it). The slow corner that the v2 SKY130 target is
+judged at is max_ss_100C_1v60. Paths a design names for its report
+(asic/sky130/sta_named_paths.tcl, NAMED-PATH blocks in each corner's sta.log)
+are summarized as their slack per corner.
 
     sky130_summary.py asic/sky130/runs/p18-picorv32 [--json out.json]
 
@@ -24,6 +27,22 @@ from pathlib import Path
 CORNERS = tuple(f"{rc}_{pvt}" for pvt in ("tt_025C_1v80", "ss_100C_1v60", "ff_n40C_1v95")
                 for rc in ("nom", "min", "max"))
 SLOW = "max_ss_100C_1v60"
+
+
+def named_paths(run: Path, corner: str) -> dict:
+    """{label: slack} from the NAMED-PATH blocks of the signoff STA's sta.log."""
+    steps = sorted(run.glob("*-openroad-stapostpnr"), key=lambda p: int(p.name.split("-")[0]))
+    if not steps or not (steps[-1] / corner / "sta.log").is_file():
+        return {}
+    found, label = {}, None
+    for line in (steps[-1] / corner / "sta.log").read_text(errors="replace").splitlines():
+        if line.startswith("NAMED-PATH-BEGIN "):
+            label = line.split(None, 1)[1].strip()
+        elif line.startswith("NAMED-PATH-END"):
+            label = None
+        elif label and line.rstrip().endswith(("slack (MET)", "slack (VIOLATED)")):
+            found[label] = round(float(line.split()[0]), 4)
+    return found
 
 
 def summarize(run: Path) -> dict:
@@ -46,7 +65,13 @@ def summarize(run: Path) -> dict:
             "implied_fmax_mhz": round(1000.0 / (period - setup), 1),
             "max_slew_violations": int(corner("design__max_slew_violation__count", name)),
             "max_cap_violations": int(corner("design__max_cap_violation__count", name)),
+            "hold_all_ws_ns": round(float(corner("timing__hold__ws", name)), 4),
+            "hold_all_violations": int(corner("timing__hold_vio__count", name)),
+            "setup_r2r_violations": int(corner("timing__setup_r2r_vio__count", name)),
         }
+        named = named_paths(run, name)
+        if named:
+            corners[name]["named_paths_slack_ns"] = named
     return {
         "run": run.name,
         "period_ns": period,

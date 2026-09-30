@@ -7,7 +7,8 @@ files a timing claim rests on into docs/results/phase18/<name>/ and writes
 SHA256SUMS over the folder:
 
 - from each Vivado directory (--fpga NAME=DIR): summary.txt, timing_summary.rpt,
-  utilization.rpt, clock.xdc, under fpga/NAME/;
+  utilization.rpt, clock.xdc, and named_paths.rpt when the run named paths,
+  under fpga/NAME/;
 - from each LibreLane run (--asic NAME=RUN): resolved.json, final/metrics.json,
   the post-route STA summary.rpt, each corner's worst register-to-register
   setup path verbatim (flip-flop to flip-flop; port paths, such as a reset
@@ -37,6 +38,7 @@ import sky130_summary  # noqa: E402
 
 RESULTS = ROOT / "docs/results/phase18"
 FPGA_FILES = ("summary.txt", "timing_summary.rpt", "utilization.rpt", "clock.xdc")
+FPGA_OPTIONAL = ("named_paths.rpt",)         # when the run named paths (OOC_NAMED_PATHS)
 WORST_PATH_CORNERS = ("nom_tt_025C_1v80", "max_tt_025C_1v80", "nom_ss_100C_1v60", "max_ss_100C_1v60")
 
 
@@ -58,6 +60,9 @@ def retain_fpga(source: Path, target: Path) -> None:
     target.mkdir(parents=True, exist_ok=True)
     for name in FPGA_FILES:
         shutil.copy2(source / name, target / name)
+    for name in FPGA_OPTIONAL:
+        if (source / name).is_file():
+            shutil.copy2(source / name, target / name)
 
 
 def retain_asic(run: Path, target: Path) -> None:

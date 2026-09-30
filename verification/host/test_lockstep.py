@@ -151,16 +151,18 @@ class HazardCoverage(unittest.TestCase):
             self.record(0x0000a103, rd=2),   # lw   x2, 0(x1)        (alu -> load-addr, d=1)
             self.record(0x00208233, rd=4),   # add  x4, x1, x2       (alu d=2, load d=1)
             self.record(0x0020a023),         # sw   x2, 0(x1)        (store-addr alu d=3; store-data load d=2)
-            self.record(0x02208333, rd=6),   # mul  x6, x1, x2       (muldiv consumer; x1 d=4 ignored)
+            self.record(0x02208333, rd=6),   # mul  x6, x1, x2       (muldiv: x1 alu d=4, x2 load d=3)
             self.record(0x00030463),         # beq  x6, x0, +8       (mul -> branch d=1)
+            self.record(0x000083b3, rd=7),   # add  x7, x1, x0       (x1 d=6: beyond distance 4, ignored)
         ]
         bins = run_core_tests.hazard_coverage(records)
         self.assertEqual(bins, {("alu", 1, "load-addr"): 1, ("alu", 2, "alu"): 1, ("load", 1, "alu"): 1,
                                 ("alu", 3, "store-addr"): 1, ("load", 2, "store-data"): 1,
-                                ("load", 3, "muldiv"): 1, ("mul", 1, "branch"): 1})
+                                ("alu", 4, "muldiv"): 1, ("load", 3, "muldiv"): 1, ("mul", 1, "branch"): 1})
 
     def test_required_bins_depend_on_extensions(self):
-        self.assertEqual(len(run_core_tests.required_bins("")), 3 * (3 * 3 + 3 + 3 + 2))
+        self.assertEqual(len(run_core_tests.required_bins("")), 4 * (3 * 3 + 3 + 3 + 2))
+        self.assertIn(("load", 4, "store-data"), run_core_tests.required_bins(""))
         self.assertTrue(all(p not in ("mul", "div") for p, _, _ in run_core_tests.required_bins("")))
         self.assertIn(("div", 3, "muldiv"), run_core_tests.required_bins("m"))
 
@@ -223,6 +225,47 @@ class KernelEndRule(unittest.TestCase):
     def test_parse_spike_without_the_end_is_rejected(self):
         with self.assertRaisesRegex(ValueError, "no kernel end"):
             lockstep.parse_spike(SPIKE[:4], ENTRY, TOHOST, end=lockstep.KernelEnd())
+
+
+class TrapCheck(unittest.TestCase):
+    """run_core_tests.trap_check: trap record at trap_pc, lockstep before it, and
+    Spike must not execute trap_pc."""
+
+    SPIKE = """core   0: 3 0x00001000 (0x00000297) x5  0x00001000
+core   0: 3 0x80000000 (0x00500513) x10 0x00000005
+core   0: 3 0x80000004 (0x00a00593) x11 0x0000000a
+""".splitlines()
+    TRACE = """0 80000000 00500513 0 10 00000005 00000000 0 0 00000000 00000000
+1 80000004 00a00593 0 11 0000000a 00000000 0 0 00000000 00000000
+2 80000008 00000000 1 0 00000000 00000000 0 0 00000000 00000000
+""".splitlines()
+    SYMBOLS = {"trap_pc": 0x80000008, "tohost": 0x80001000}
+
+    def check(self, trace=TRACE, spike=SPIKE, symbols=None):
+        return run_core_tests.trap_check("\n".join(trace), "\n".join(spike), symbols or self.SYMBOLS, False)
+
+    def test_a_trap_at_trap_pc_after_matching_records_passes(self):
+        ok, message = self.check()
+        self.assertTrue(ok, message)
+
+    def test_a_trap_elsewhere_fails(self):
+        ok, message = self.check(symbols={"trap_pc": 0x8000000c, "tohost": 0x80001000})
+        self.assertFalse(ok)
+        self.assertIn("expected trap_pc", message)
+
+    def test_a_differing_earlier_record_fails(self):
+        trace = list(self.TRACE)
+        trace[1] = "1 80000004 00a00593 0 11 0000000b 00000000 0 0 00000000 00000000"
+        self.assertFalse(self.check(trace=trace)[0])
+
+    def test_spike_executing_trap_pc_fails(self):
+        spike = self.SPIKE + ["core   0: 3 0x80000008 (0x00100613) x12 0x00000001"]
+        ok, message = self.check(spike=spike)
+        self.assertFalse(ok)
+        self.assertIn("without trapping", message)
+
+    def test_a_trace_without_a_trap_record_fails(self):
+        self.assertFalse(self.check(trace=self.TRACE[:2])[0])
 
 
 if __name__ == "__main__":

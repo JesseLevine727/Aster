@@ -50,6 +50,8 @@ import rvgen  # noqa: E402
 ENV = ROOT / "verification/core/env"
 TESTS = ROOT / "vendor/riscv-tests/isa"
 ARCH_ENV = ROOT / "verification/core/arch_env"
+DIRECTED = ROOT / "verification/core/directed"     # the "directed" suite
+TRAP_HALT = ROOT / "verification/core/trap_halt"   # 18.1 trap-halt programs (expected status TRAP)
 ARCH_TESTS = ROOT / "vendor/riscv-arch-test/riscv-test-suite"
 ENTRY = 0x80000000
 # Shell memory: 96 KiB for riscv-tests (the v2 SRAM), 2 MiB for arch-test
@@ -61,6 +63,11 @@ IO_PAGE = (0x20000000, 0x10000)   # the SoC register page, plain memory for the 
 # (verification/core/spike/aster_clock.cc), so plain memory skips it.
 CLOCK_PAGE = (0x20003000, 0x1000)
 ASTER_CLOCK = ROOT / "build/spike/libaster_clock.so"
+# --cpi-check: on a memory that answers on time, the Aster core's run takes the
+# model's cycles plus this: its first instruction enters Execute in the shell's
+# cycle 4 (fetch, F1, F2, Decode), and the shell counts the tohost store when its
+# RVFI record appears, four cycles after the store entered Execute.
+CPI_CHECK_OFFSET = 7
 KERNEL_MAX_CYCLES = 30_000_000    # the longest run (coherent scalar Conv2D, two-port shell at +latency=1) needs 8.5 M
 # The CPU set of docs/cpu.md §7: sources and the Makefile variable holding each
 # one's SoC compile flags (read with `make print-VAR`, so they cannot drift).
@@ -92,9 +99,11 @@ MAX_CYCLES = 200_000
 # What each DUT implements, and the tests it cannot run with a reason.
 DUTS = {
     "picorv32": {
-        "march": "rv32im", "spike_isa": "rv32im", "suites": ("rv32ui", "rv32um"),
+        "march": "rv32im", "spike_isa": "rv32im", "suites": ("rv32ui", "rv32um", "directed"),
         # PicoRV32 reports full-word RVFI read masks on sub-word loads.
         "word_loads": True,
+        # It fetches only the instruction it executes (no wrong-path fetches).
+        "prefetches": False,
         "skip": {
             "rv32ui/fence_i": "PicoRV32 has no Zifencei (self-modifying code)",
             "rv32ui/ma_data": "misaligned accesses trap by design (CATCH_MISALIGN), as in the v1 core",
@@ -102,6 +111,18 @@ DUTS = {
         # riscv-arch-test suites under rv32i_m/; A, Zifencei and privilege need
         # instructions or CSRs PicoRV32 does not have.
         "arch_suites": ("I", "M"),
+    },
+    # The Aster core (docs/cpu.md), in the two-port shell. Milestone 18.1: RV32I,
+    # with exact RVFI byte masks; each later milestone widens the ISA here.
+    "aster": {
+        "march": "rv32i", "spike_isa": "rv32i", "suites": ("rv32ui", "directed"),
+        "word_loads": False,
+        "prefetches": True,
+        "skip": {
+            "rv32ui/fence_i": "Zifencei comes in milestone 18.4",
+            "rv32ui/ma_data": "misaligned accesses trap, and traps come in milestone 18.3",
+        },
+        "arch_suites": ("I",),
     },
 }
 
@@ -122,7 +143,9 @@ def build(test: Path, march: str, out_dir: Path, prefix: str, arch: bool = False
         env = [f"-I{ARCH_ENV}", f"-I{ARCH_TESTS / 'env'}", "-DXLEN=32", "-DTEST_CASE_1=True",
                "-mno-relax", f"-T{ARCH_ENV / 'link.ld'}"]
     else:
-        env = [f"-I{ENV}", f"-I{TESTS / 'macros/scalar'}", f"-T{ENV / 'link.ld'}"]
+        # Directed tests end the shell memory at their shell_memory_end symbol.
+        layout = DIRECTED if test.parent == DIRECTED else ENV
+        env = [f"-I{ENV}", f"-I{TESTS / 'macros/scalar'}", f"-T{layout / 'link.ld'}"]
     result = run([f"{prefix}gcc", f"-march={march}", "-mabi=ilp32", "-nostdlib", "-nostartfiles", *env,
                   str(test), "-o", str(elf)])
     if result.returncode:
@@ -133,6 +156,51 @@ def build(test: Path, march: str, out_dir: Path, prefix: str, arch: bool = False
     if symbols.get("_start", symbols.get("rvtest_entry_point")) != ENTRY:
         raise RuntimeError(f"{test}: the entry point is not at 0x{ENTRY:08x}")
     return elf, binary, symbols
+
+
+def trap_check(trace_text: str, log_text: str, symbols: dict, word_loads: bool) -> tuple[bool, str]:
+    """A trap-halt program: the trace ends with a trap record at `trap_pc`, every
+    record before it matches Spike, and Spike itself does not execute `trap_pc`
+    there (it takes the trap, which --log-commits does not log)."""
+    try:
+        dut = lockstep.parse_trace(trace_text.splitlines())
+    except ValueError as error:
+        return False, f"trace rejected: {error}"
+    if not dut or not dut[-1].trap:
+        return False, "the trace does not end with a trap record"
+    if dut[-1].pc != symbols["trap_pc"]:
+        return False, f"trapped at 0x{dut[-1].pc:08x}, expected trap_pc 0x{symbols['trap_pc']:08x}"
+    before = dut[:-1]
+
+    def first(count: int) -> list:
+        seen = [0]
+
+        def enough(_record) -> bool:
+            seen[0] += 1
+            return seen[0] >= count
+        return lockstep.parse_spike(log_text.splitlines(), ENTRY, symbols["tohost"], end=enough)
+    try:
+        reference = first(len(before) + 1)          # one past the DUT's records, if Spike has it
+    except ValueError:
+        try:
+            reference = first(len(before)) if before else []
+        except ValueError as error:
+            return False, f"Spike's log: {error}"
+    if len(reference) > len(before) and reference[len(before)].pc == symbols["trap_pc"]:
+        return False, f"Spike executes trap_pc 0x{symbols['trap_pc']:08x} without trapping"
+    ok, message = lockstep.compare(before, reference[:len(before)], word_loads=word_loads) if before \
+        else (True, "no record before the trap")
+    return ok, f"trap at trap_pc; {message}"
+
+
+def suite_dir(suite: str) -> Path:
+    """A test suite's directory: the riscv-tests suites, or the shell's own directed ones."""
+    return {"directed": DIRECTED, "trap_halt": TRAP_HALT}.get(suite, TESTS / suite)
+
+
+def test_path(name: str) -> Path:
+    suite, stem = name.split("/")
+    return suite_dir(suite) / f"{stem}.S"
 
 
 def has_signature(symbols: dict) -> bool:
@@ -149,7 +217,7 @@ def execute(args, isa: str, elf: Path, binary: Path, symbols: dict,
     trace, log = elf.with_suffix(".trace"), elf.with_suffix(".spike")
     for stale in (trace, log, elf.with_suffix(".sig.dut"), elf.with_suffix(".sig.spike")):
         stale.unlink(missing_ok=True)
-    memory = MEMORY_BYTES[arch]
+    memory = symbols["shell_memory_end"] - ENTRY if "shell_memory_end" in symbols else MEMORY_BYTES[arch]
     command = [str(args.sim), f"+bin={binary}", f"+tohost={symbols['tohost']:x}", f"+trace={trace}",
                f"+max_cycles={args.max_cycles}", f"+mem_bytes={memory:x}"]
     regions = f"-m0x{ENTRY:08x}:0x{memory:x}"
@@ -300,14 +368,17 @@ def _producer(insn: int) -> str:
     opcode = insn & 0x7F
     if opcode == 0x33 and insn >> 25 == 1:
         return "mul" if (insn >> 12) & 7 < 4 else "div"
-    return {0x03: "load", 0x6F: "link", 0x67: "link"}.get(opcode, "alu")
+    # AMOs, lr and sc return their result from the memory, as a load does.
+    return {0x03: "load", 0x2F: "load", 0x6F: "link", 0x67: "link"}.get(opcode, "alu")
 
 
 def required_bins(extensions: str) -> list[tuple[str, int, str]]:
     """The read-after-write pairs a random run must exercise.
 
     Every producer feeds every data consumer (ALU operands, multiply/divide
-    operands, branch compare, store data) at distances 1-3. Address and
+    operands, branch compare, store data) at distances 1-4 (4: the producer in
+    W while the consumer reads the register file in Decode, the same-cycle
+    write-through of docs/cpu.md §4). Address and
     jump-target consumers read rs1 through the same forwarding path, and are
     required from the producers that realistically make addresses: ALU and
     load results, and link values for loads and `jalr`. (A multiply result or a
@@ -318,11 +389,11 @@ def required_bins(extensions: str) -> list[tuple[str, int, str]]:
     data = ["alu", "branch", "store-data"] + (["muldiv"] if muldiv else [])
     address = {"alu": ["load-addr", "store-addr", "jalr"], "load": ["load-addr", "store-addr", "jalr"],
                "link": ["load-addr", "jalr"]}
-    return [(p, d, c) for p in producers for d in (1, 2, 3) for c in data + address.get(p, [])]
+    return [(p, d, c) for p in producers for d in (1, 2, 3, 4) for c in data + address.get(p, [])]
 
 
 def hazard_coverage(records: list) -> dict[tuple[str, int, str], int]:
-    """Count (producer class, distance 1-3, consumer operand class) read-after-write pairs."""
+    """Count (producer class, distance 1-4, consumer operand class) read-after-write pairs."""
     bins: dict[tuple[str, int, str], int] = {}
     writer: dict[int, tuple[int, str]] = {}
     for index, record in enumerate(records):
@@ -334,7 +405,7 @@ def hazard_coverage(records: list) -> dict[tuple[str, int, str], int]:
             for register, consumer in zip(((record.insn >> 15) & 31, (record.insn >> 20) & 31), reads):
                 if consumer and register and register in writer:
                     distance = index - writer[register][0]
-                    if distance <= 3:
+                    if distance <= 4:
                         key = (writer[register][1], distance, consumer)
                         bins[key] = bins.get(key, 0) + 1
         if record.rd:
@@ -518,6 +589,7 @@ class Outcome:
     trace_text: str
     log_text: str
     tohost: int
+    symbols: dict
 
 
 def run_program(args, config, source: Path, prefix: str, arch: bool = False) -> Outcome:
@@ -531,11 +603,25 @@ def run_program(args, config, source: Path, prefix: str, arch: bool = False) -> 
     summary = f"{status.removeprefix('SHELL ')}; lockstep: {message.splitlines()[0]}; {signature_message}"
     if not counted:
         summary += f"; {count_message}"
+    # A directed test that defines shell_expect_fetch_errors must make a core
+    # that fetches ahead fetch outside memory on its wrong path (the shell
+    # counts those fetches); on a core that does not, it checks the program.
+    faulted = True
+    if "shell_expect_fetch_errors" in symbols and config["prefetches"]:
+        faulted = "fetch_errors=0" not in status.split() and "fetch_errors=" in status
+        if not faulted:
+            summary += "; no fetch outside memory, which this test requires"
     fields = {key: int(value) for key, value in
               (item.split("=", 1) for item in status.split()[2:] if "=" in item) if value.isdigit()}
-    return Outcome(passed and counted and ok and signed, summary, message,
+    timed = True
+    if args.cpi_check and ok:
+        records = lockstep.parse_spike(log_text.splitlines(), ENTRY, symbols["tohost"])
+        expected = cpi_model.cycles(records, cpi_model.SEVEN_STAGE) + CPI_CHECK_OFFSET
+        timed = fields.get("cycles") == expected
+        summary += f"; {'cycles match' if timed else 'cycles differ from'} the CPI model ({expected})"
+    return Outcome(passed and counted and ok and signed and faulted and timed, summary, message,
                    fields.get("cycles", 0), fields.get("retired", 0),
-                   trace_text, log_text, symbols["tohost"])
+                   trace_text, log_text, symbols["tohost"], symbols)
 
 
 def inject(args, config, prefix: str) -> int:
@@ -585,7 +671,7 @@ def run_random(args, config, prefix: str) -> int:
     wanted = required_bins(extensions)
     missing = [key for key in wanted if key not in coverage]
     print(f"coverage: {len(wanted) - len(missing)}/{len(wanted)} read-after-write bins "
-          f"(producer x distance 1-3 x consumer operand)" +
+          f"(producer x distance 1-4 x consumer operand)" +
           (f"; missing {', '.join(f'{p}/{d}/{c}' for p, d, c in missing[:12])}" if missing else ""))
     coverage_failed = bool(missing) and args.require_coverage
     mode = f", stall seed {args.stall_seed}" if args.stall_seed is not None else ""
@@ -616,6 +702,9 @@ def main() -> int:
                         help=f"shell cycle limit (default {MAX_CYCLES}; {KERNEL_MAX_CYCLES} with --kernels)")
     parser.add_argument("--aster-clock", type=Path, default=ASTER_CLOCK,
                         help="the Spike aster_clock plugin (for --kernels)")
+    parser.add_argument("--cpi-check", action="store_true",
+                        help="require each program's cycles to equal the seven-stage CPI model's (plus "
+                             f"{CPI_CHECK_OFFSET}); only for the Aster core on a memory that answers on time")
     parser.add_argument("--cpi-model", action="store_true",
                         help="with --kernels, tabulate the CPI model of the Aster core pipeline against this "
                              "shell's DUT (the §7 baseline is PicoRV32 in the look-ahead shell)")
@@ -626,6 +715,8 @@ def main() -> int:
     parser.add_argument("--inject", action="store_true",
                         help="prove the harness rejects a corrupted trace or reference log")
     args = parser.parse_args()
+    if args.cpi_check and (args.dut != "aster" or args.stall_seed is not None):
+        parser.error("--cpi-check is for the Aster core on a memory without back-pressure (no --stall-seed)")
     if args.max_cycles is None:
         args.max_cycles = KERNEL_MAX_CYCLES if args.kernels else MAX_CYCLES
     config = DUTS[args.dut]
@@ -635,10 +726,17 @@ def main() -> int:
         return inject(args, config, prefix)
 
     if args.expect_status:
-        test = TESTS / f"{args.only or 'rv32ui/sw'}.S"
+        test = test_path(args.only or "rv32ui/sw")
         run = run_program(args, config, test, prefix)
         status = run.summary.split(";")[0]
         caught = status.split()[0] == args.expect_status
+        if test.parent == TRAP_HALT and "trap_pc" not in run.symbols:
+            status += "; a trap-halt program must define trap_pc"
+            caught = False
+        if caught and args.expect_status == "TRAP" and "trap_pc" in run.symbols:
+            trapped, trap_message = trap_check(run.trace_text, run.log_text, run.symbols, config["word_loads"])
+            status += f"; {trap_message.splitlines()[0]}"
+            caught = trapped
         print(f"{'PASS' if caught else 'FAIL'}: {test.parent.name}/{test.stem} with "
               f"{' '.join(args.shell_arg) or 'no shell arguments'}: shell reported {status!r}, "
               f"expected {args.expect_status}")
@@ -660,8 +758,8 @@ def main() -> int:
                   for suite in config["arch_suites"]}
         tests = [arch_path(args.only)] if args.only else [p for paths in suites.values() for p in paths]
     else:
-        suites = {suite: sorted((TESTS / suite).glob("*.S")) for suite in config["suites"]}
-        tests = [TESTS / f"{args.only}.S"] if args.only else [p for paths in suites.values() for p in paths]
+        suites = {suite: sorted(suite_dir(suite).glob("*.S")) for suite in config["suites"]}
+        tests = [test_path(args.only)] if args.only else [p for paths in suites.values() for p in paths]
     empty = [suite for suite, paths in suites.items() if not paths]
     missing = [str(path) for path in tests if not path.is_file()]
     if (empty and not args.only) or missing:

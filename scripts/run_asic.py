@@ -133,6 +133,17 @@ DESIGNS = {
         "rom_image_module": None,
         "config": "asic/sky130/config.core_picorv32.json",
     },
+    # Phase 18.1: the Aster core (rtl/aster_core) as a 10 ns SKY130 block, in the
+    # same flow and constraints as core_picorv32; `make timing-asic-aster`.
+    "core_aster": {
+        "rtl": ["rtl/aster_core/aster_core_pkg.sv", "rtl/aster_core/aster_core_fetch.sv",
+                "rtl/aster_core/aster_core.sv", "verification/core/timing_aster.sv"],
+        "defines": ["SYNTHESIS"],
+        "output": "timing_aster.v",
+        "rom_image": None,
+        "rom_image_module": None,
+        "config": "asic/sky130/config.core_aster.json",
+    },
     # Phase 18 timing probe: a 2 KiB standard-cell (flip-flop) SRAM array, the
     # kind of array the 18.6 L1 caches use; its read path sizes the L1.
     "sram_array_2k": {

@@ -84,6 +84,17 @@ class CpiModel(unittest.TestCase):
         self.assertEqual(cpi_model.cycles(straight(LW_X1, CSRRS_X2_X1, rds=[1, 2]), SEVEN), 2 + 2)
         self.assertEqual(cpi_model.cycles(straight(LW_X1, CSRRSI_X2, rds=[1, 2]), SEVEN), 2)
 
+    def test_a_decode_redirect_overlaps_the_wait_for_its_operands(self):
+        # lw x1; bne x1, x0, -4 (backward, taken): the branch redirects from its first
+        # Decode cycle while it waits two cycles for the load, as the RTL does.
+        lw = lockstep.Retired(0x80000000, LW_X1, (1, 0), (0x80001000, 4), None)
+        bne = record(0x80000004, 0xfe009ee3)
+        self.assertEqual(cpi_model.cycles([lw, bne, record(0x80000000, NOP)], SEVEN), 5)
+
+    def test_a_branch_to_its_fall_through_never_redirects(self):
+        # beq x0, x0, +4: taken, but the next PC is the fall-through either way.
+        self.assertEqual(cpi_model.cycles([record(0x80000000, 0x00000263), record(0x80000004, NOP)], SEVEN), 2)
+
     def test_window_is_after_the_opening_store_through_the_closing_one(self):
         def store(value):
             return lockstep.Retired(0x80000000, 0x00f02023, None, (0x20003038, 4), value)

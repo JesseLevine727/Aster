@@ -4,17 +4,28 @@
 Reads a Spike commit log (the reference stream of a CPU kernel run in the core
 shell), keeps the kernel's measurement window — from the store of 1 to a
 window-control word to the store of 2, as the shells count it — and computes
-the cycle at which each instruction enters Execute under the pipeline's rules:
+the cycles at which each instruction occupies Decode and enters Execute under
+the pipeline's rules:
 
-- one instruction enters Execute per cycle, in order;
+- instructions occupy Decode and enter Execute one at a time, in order; an
+  instruction may occupy Decode from the cycle its predecessor enters
+  Execute, once the fetch unit has it: sequential instructions stream one per
+  cycle (the three-entry buffer covers Decode's stalls, so none is late);
 - an operand is ready for Execute one cycle after its producer entered
   Execute for ALU and link results, three cycles after for loads, AMOs, `lr`,
   `sc` and multiplies (forwarded from W), two after for Xasterdot8 (from M2);
 - the iterative divider holds Execute for DIVIDE_CYCLES;
-- `jal` and backward branches (predicted taken) redirect from Decode; a
-  branch whose direction differs from the static prediction, and `jalr`,
-  redirect from Execute; each redirect delays the next instruction by its
-  penalty.
+- `jal` and backward branches (predicted taken) redirect from Decode in their
+  first cycle there, whether or not they then wait for operands; a branch
+  whose direction differs from the static prediction, and `jalr`, redirect
+  from Execute as they leave it. The redirect's target reaches Decode
+  `decode_redirect + 1` cycles after the Decode cycle, or `execute_redirect`
+  cycles after the Execute cycle.
+
+For the seven-stage pipeline these are the rules the 18.1 RTL implements
+(rtl/aster_core), and on a memory that answers on time the RTL's cycle count
+equals the model's plus a fixed start and drain (checked for every program by
+scripts/run_core_tests.py --cpi-check).
 
 The five-stage rules of the 29 September specification are modelled alongside
 for comparison. The model assumes the memory answers every access on time (the
@@ -97,6 +108,8 @@ def cycles(records: list[lockstep.Retired], pipeline: Pipeline) -> int:
     ready = [0] * 32                  # cycle from which each register can be consumed in Execute
     execute = 0                       # cycle at which the current instruction enters Execute
     earliest = 0                      # earliest cycle the next instruction may enter Execute
+    available = 0                     # cycle from which the fetch unit can give the next one to Decode
+    decode_free = 0                   # cycle from which Decode is free (the previous one entered Execute)
     first = None
     for index, record in enumerate(records):
         insn = record.insn
@@ -104,7 +117,9 @@ def cycles(records: list[lockstep.Retired], pipeline: Pipeline) -> int:
         rs1, rs2 = (insn >> 15) & 31, (insn >> 20) & 31
         reads = _reads(insn)
         operand_ready = max([ready[r] for r, used in ((rs1, reads[0]), (rs2, reads[1])) if used and r] or [0])
-        execute = max(earliest, operand_ready)
+        decode = max(available, decode_free)
+        execute = max(decode + 1, earliest, operand_ready)
+        decode_free = execute
         first = execute if first is None else first
         muldiv = opcode == 0x33 and insn >> 25 == 1
         divide = muldiv and (insn >> 12) & 7 >= 4
@@ -122,16 +137,18 @@ def cycles(records: list[lockstep.Retired], pipeline: Pipeline) -> int:
         earliest = execute + occupancy
         following = records[index + 1] if index + 1 < len(records) else None
         taken = following is not None and following.pc != record.pc + 4
+        from_decode = decode + 1 + pipeline.decode_redirect
+        from_execute = execute + occupancy - 1 + pipeline.execute_redirect
         if opcode == 0x6F:                                    # jal
-            earliest += pipeline.decode_redirect
+            available = from_decode
         elif opcode == 0x67:                                  # jalr
-            earliest += pipeline.execute_redirect
-        elif opcode == 0x63:                                  # conditional branch, backward predicted taken
-            predicted = branch_offset(insn) < 0
-            if taken and predicted:
-                earliest += pipeline.decode_redirect
-            elif taken != predicted:
-                earliest += pipeline.execute_redirect
+            available = from_execute
+        elif opcode == 0x63 and taken != (branch_offset(insn) < 0):   # mispredicted (backward predicted taken)
+            available = from_execute
+        elif opcode == 0x63 and taken:                        # backward, taken as predicted
+            available = from_decode
+        else:
+            available += 1
     return execute - (first or 0) + 1
 
 

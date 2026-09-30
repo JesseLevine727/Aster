@@ -151,12 +151,15 @@ holds a valid instruction, before the instruction after it; `mepc` receives
 that M1 instruction's next PC (its `pc_wdata`, the redirect target if it
 redirected). The trace-driven model of these rules over the CPU kernels'
 measurement windows (`scripts/cpi_model.py`, 30 September 2026; an estimate
-that assumes no memory stalls, not a simulation) gives 1.20–1.65 CPI — 1.61
-CoreMark, 1.60 Dhrystone, 1.65 sort/search, 1.20 FFT, 1.51 strided, 1.40
+that assumes no memory stalls, not a simulation; refined in 18.1 to the
+RTL's fetch timing, which it matches cycle for cycle on RV32I programs when the
+memory answers on time)
+gives 1.20–1.65 CPI — 1.57
+CoreMark, 1.59 Dhrystone, 1.65 sort/search, 1.20 FFT, 1.51 strided, 1.40
 scalar Conv2D on the coherent SoC (the gate's), 1.39 reduction, and 1.57 for
 the minimal top's Conv2D (a cross-check outside the gate) — against
 PicoRV32's 4.08–11.14 in the same zero-wait shell, a projected
-geometric-mean speedup over the seven gate kernels of about 3.7× (3.665) with the lowest kernel
+geometric-mean speedup over the seven gate kernels of about 3.7× (3.683) with the lowest kernel
 (sort/search) at about 2.6× ([`phase18.md`](phase18.md)). 18.7 measures the
 real core.
 A next-line or branch-target predictor in F1 is the first candidate if 18.7
@@ -416,7 +419,26 @@ reviews; none changes the approved scope:
 - §4: "no wrong-path instruction ever issues … a redirect" means none takes
   effect: in the cycle an Execute misprediction resolves, a wrong-path `jal`
   in Decode may still present its target, and the fetch unit discards that
-  fetch at the same edge.
+  fetch a cycle later, when it presents the Execute redirect's target.
+- §4: the Execute redirect's flush is registered along with its target (for
+  timing: the branch compare then drives no pipeline register enable). The
+  instructions that entered Decode and Execute at the edge the redirect
+  resolved are squashed: masked in the next cycle — the cycle the target is
+  presented, in which they would otherwise have been — and gone after it; the
+  buffer is flushed at the end of that cycle. Every side effect of Decode and
+  Execute (data request, redirect, and from 18.2 on the divider start, CSR
+  writes, `ecall`/`ebreak`, `fence.i`) is gated by the squash-masked valid
+  bits, never the raw ones (the RTL asserts it). The observable behavior and
+  every cycle count are unchanged.
+- §4: a `jal` or a backward branch redirects from Decode in its first Decode
+  cycle, whether or not it then waits there for operands; a branch whose
+  target is its own fall-through (offset +4) never redirects, since its
+  direction cannot change the next PC. With these, the core's cycle count on a
+  memory that answers on time depends only on the instruction stream, and the
+  CPI model reproduces it exactly.
+- §5: the instruction memory may allow any number of fetches in flight; the
+  fetch unit itself never has more than nine (three live by the room rule,
+  the rest discarded ones), and its counters hold that.
 
 Changes after approval, by the owner:
 
