@@ -144,9 +144,15 @@ module aster_core_fetch #(
     endfunction
     assign tail = mod3({1'b0, head} + {1'b0, count});
 
-    logic pop, push;
-    assign pop  = f_valid && d_take && from_buffer;
-    assign push = rsp_live && !flush && !(f_valid && d_take && bypass);
+    logic pop, push, write;
+    assign pop   = f_valid && d_take && from_buffer;
+    assign push  = rsp_live && !flush && !(f_valid && d_take && bypass);   // the entry is counted
+    // Every live answer is written at the tail, whether or not Decode takes it
+    // directly (then it is not counted, and the next answer overwrites it), so
+    // the entries' write enables do not wait for the pipeline's stall chain.
+    // The tail is free whenever a live answer arrives: the room rule keeps
+    // occupied entries plus live fetches within three.
+    assign write = rsp_live && !flush;
 
     // --- state -----------------------------------------------------------
     logic [3:0] inflight_next;
@@ -202,7 +208,7 @@ module aster_core_fetch #(
                 count <= '0;
             end else begin
                 if (pop) head <= mod3({1'b0, head} + 3'd1);
-                if (push) begin
+                if (write) begin
                     buf_pc[tail]   <= rsp_pc;
                     buf_insn[tail] <= i_rsp_data;
                     buf_err[tail]  <= i_rsp_error;
@@ -216,6 +222,8 @@ module aster_core_fetch #(
     // The room rule guarantees that every live answer has an entry.
     always_ff @(posedge clk) begin
         if (rst_n && push && !pop) assert (count != 2'(DEPTH)) else $error("fetch buffer overflow");
+        // A written answer never lands on an occupied entry.
+        if (rst_n && write && !flush) assert (count != 2'(DEPTH) || pop) else $error("write over an occupied entry");
         if (rst_n && i_rsp_valid) assert (inflight != 4'd0) else $error("answer with no fetch in flight");
         if (rst_n && acc && !i_rsp_valid) assert (inflight < 4'd9) else $error("more than nine fetches in flight");
         // The core squashes Execute while an Execute redirect is presented.
