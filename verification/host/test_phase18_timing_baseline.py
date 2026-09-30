@@ -16,7 +16,17 @@ RESULTS = ROOT / "docs/results/phase18"
 BASELINES = [
     ("picorv32-baseline", "asic", "asic/picorv32.json", ["fpga"]),
     ("picorv32-baseline-v2", "asic/core", "asic/core/summary.json", ["fpga/core", "fpga/core_bram"]),
+    ("aster-18.1", "asic/aster", "asic/aster/summary.json", ["fpga/aster", "fpga/aster_bram", "fpga/aster_bram_reqreg"]),
+    ("aster-18.1", "asic/aster_pnr_margin", "asic/aster_pnr_margin/summary.json", []),
 ]
+
+
+def retained_part(recomputed, retained):
+    """The recomputed summary restricted to the fields the retained one records
+    (sky130_summary.py has since added fields; every retained value must recur)."""
+    if isinstance(retained, dict) and isinstance(recomputed, dict):
+        return {key: retained_part(recomputed.get(key), value) for key, value in retained.items()}
+    return recomputed
 
 
 class Phase18TimingBaselines(unittest.TestCase):
@@ -35,20 +45,20 @@ class Phase18TimingBaselines(unittest.TestCase):
 
     def test_sky130_summary_recomputes_from_retained_metrics(self):
         for name, run, summary_json, _ in BASELINES:
-            with self.subTest(folder=name):
+            with self.subTest(folder=f"{name}/{run}"):
                 summary = sky130_summary.summarize(RESULTS / name / run)
                 retained = json.loads((RESULTS / name / summary_json).read_text())
-                self.assertEqual({k: v for k, v in summary.items() if k != "run"},
-                                 {k: v for k, v in retained.items() if k != "run"})
+                retained.pop("run")
+                self.assertEqual(retained_part(summary, retained), retained)
 
     def test_retained_probe_summaries_recompute(self):
         probes = RESULTS / "pre18.1-flow-probes/asic"
         for run in sorted(probes.iterdir()):
             with self.subTest(run=run.name):
                 retained = json.loads((run / "summary.json").read_text())
+                retained.pop("run")
                 summary = sky130_summary.summarize(run)
-                self.assertEqual({k: v for k, v in summary.items() if k != "run"},
-                                 {k: v for k, v in retained.items() if k != "run"})
+                self.assertEqual(retained_part(summary, retained), retained)
 
     def test_v2_uses_the_corrected_constraints_and_chosen_strategy(self):
         resolved = json.loads((RESULTS / "picorv32-baseline-v2/asic/core/resolved.json").read_text())
@@ -56,6 +66,18 @@ class Phase18TimingBaselines(unittest.TestCase):
         self.assertTrue(resolved["RUN_POST_GRT_RESIZER_TIMING"])
         summary = sky130_summary.summarize(RESULTS / "picorv32-baseline-v2/asic/core")
         self.assertEqual(summary["corners"]["max_ss_100C_1v60"]["setup_r2r_ws_ns"], -1.9701)
+
+    def test_aster_18_1_names_the_paths_cpu_md_4_requires(self):
+        summary = json.loads((RESULTS / "aster-18.1/asic/aster/summary.json").read_text())
+        slow = summary["corners"]["max_ss_100C_1v60"]
+        self.assertEqual(slow["setup_r2r_ws_ns"], -4.8744)
+        self.assertEqual(set(slow["named_paths_slack_ns"]), {"d_rsp_valid_to_d_req_valid", "d_rsp_error_to_d_req_valid"})
+        for top in ("aster_bram", "aster_bram_reqreg"):
+            named = (RESULTS / "aster-18.1/fpga" / top / "named_paths.rpt").read_text()
+            for label in ("d_rsp_valid_to_request", "d_rsp_error_kill", "d_rsp_valid_worst", "d_rsp_error_worst"):
+                self.assertIn(f"label={label}", named)
+        # In the §5 form the request is sampled by the block RAMs' write enables.
+        self.assertIn("ram_reg", (RESULTS / "aster-18.1/fpga/aster_bram/named_paths.rpt").read_text())
 
     def test_fpga_summaries_agree_with_their_reports(self):
         for name, _, _, fpga_dirs in BASELINES:

@@ -436,6 +436,13 @@ reviews; none changes the approved scope:
   direction cannot change the next PC. With these, the core's cycle count on a
   memory that answers on time depends only on the instruction stream, and the
   CPI model reproduces it exactly.
+- §4: the Execute redirect stays registered, 4 cycles: at `max_ss` even the
+  paths into the registered redirect miss in the first 18.1 report (into
+  `e_pc` −3.91 ns, into the squash −2.97 ns), so a direct compare-to-fetch
+  path cannot fit there; on the FPGA the flush had to be registered as well
+  (the first run missed by 3.19 ns). No build with a direct redirect was
+  timed; the question reopens only if the remaining 18.1 timing work closes
+  `max_ss` with margin.
 - §5: the instruction memory may allow any number of fetches in flight; the
   fetch unit itself never has more than nine (three live by the room rule,
   the rest discarded ones), and its counters hold that.

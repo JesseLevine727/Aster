@@ -2323,7 +2323,8 @@ timing-fpga-aster:
 	@command -v $(VIVADO) >/dev/null || { echo "ERROR: Vivado not found (set VIVADO=/path/to/vivado)" >&2; exit 1; }
 	@for top in aster aster_bram aster_bram_reqreg; do \
 		tops=$$(case $$top in aster_bram_reqreg) echo "timing_aster_bram timing_aster_bram_reqreg";; *) echo timing_$$top;; esac); \
-		named=$$(case $$top in aster) echo "";; *) echo "d_rsp_valid_to_request=*d_v2_reg*>*d_v1_reg*;d_rsp_error_kill=*d_err1_reg*>*d_v1_reg*";; esac); \
+		request='*d_v1_reg*|*d_en_reg*|*ram_reg*'; \
+		named=$$(case $$top in aster) echo "";; *) echo "d_rsp_valid_to_request=*d_v2_reg*>$$request;d_rsp_error_kill=*d_err1_reg*>$$request;d_rsp_valid_worst=*d_v2_reg*>*;d_rsp_error_worst=*d_err1_reg*>*";; esac); \
 		mkdir -p $(TIMING_DIR)/fpga/$$top && cd $(TIMING_DIR)/fpga/$$top && \
 		OOC_NAMED_PATHS="$$named" $(VIVADO) -mode batch -nojournal -log vivado.log -source $(ROOT)/scripts/timing/vivado_ooc.tcl \
 			-tclargs $(abspath $(TIMING_DIR))/fpga/$$top timing_$$top $(TIMING_PERIOD_NS) \

@@ -13,8 +13,9 @@ SHA256SUMS over the folder:
   the post-route STA summary.rpt, each corner's worst register-to-register
   setup path verbatim (flip-flop to flip-flop; port paths, such as a reset
   input, are skipped; the full max.rpt files are several MB and their SHA-256
-  goes in asic/NAME/max_rpt.sha256), and the sky130_summary.py JSON, under
-  asic/NAME/.
+  goes in asic/NAME/max_rpt.sha256), the NAMED-PATH blocks of each corner's
+  sta.log when the design names paths (asic/sky130/sta_named_paths.tcl), and
+  the sky130_summary.py JSON, under asic/NAME/.
 
 A README.md already in the folder is kept (and checksummed); write it after
 retaining, then re-run with --rehash.
@@ -66,7 +67,7 @@ def retain_fpga(source: Path, target: Path) -> None:
 
 
 def retain_asic(run: Path, target: Path) -> None:
-    sta = sorted(run.glob("*-openroad-stapostpnr"))
+    sta = sorted(run.glob("*-openroad-stapostpnr"), key=lambda p: int(p.name.split("-")[0]))
     if not sta:
         raise SystemExit(f"{run}: no post-route STA step")
     sta = sta[-1]
@@ -93,6 +94,23 @@ def retain_asic(run: Path, target: Path) -> None:
         worst += [f"===== {corner} =====", block, ""]
         hashes.append(f"{sha256(report)}  {sta.name}/{corner}/max.rpt")
     (target / sta.name / "worst_paths.txt").write_text("\n".join(worst))
+    # Paths the design names for its report (asic/sky130/sta_named_paths.tcl):
+    # their NAMED-PATH blocks from each corner's sta.log, verbatim.
+    for corner in sky130_summary.CORNERS:
+        log = sta / corner / "sta.log"
+        if not log.is_file():
+            continue
+        blocks, keep = [], False
+        for line in log.read_text(errors="replace").splitlines():
+            if line.startswith("NAMED-PATH-BEGIN "):
+                keep = True
+            if keep:
+                blocks.append(line)
+            if line.startswith("NAMED-PATH-END"):
+                keep = False
+        if blocks:
+            (target / sta.name / corner).mkdir(parents=True, exist_ok=True)
+            (target / sta.name / corner / "named_paths.rpt").write_text("\n".join(blocks) + "\n")
     (target / "max_rpt.sha256").write_text("\n".join(hashes) + "\n")
     summary = sky130_summary.summarize(target)
     (target / "summary.json").write_text(json.dumps(summary, indent=2) + "\n")

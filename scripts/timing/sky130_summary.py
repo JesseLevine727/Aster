@@ -30,12 +30,17 @@ SLOW = "max_ss_100C_1v60"
 
 
 def named_paths(run: Path, corner: str) -> dict:
-    """{label: slack} from the NAMED-PATH blocks of the signoff STA's sta.log."""
+    """{label: slack} from the NAMED-PATH blocks of the signoff STA (the corner's
+    named_paths.rpt in a retained folder, else its sta.log)."""
     steps = sorted(run.glob("*-openroad-stapostpnr"), key=lambda p: int(p.name.split("-")[0]))
-    if not steps or not (steps[-1] / corner / "sta.log").is_file():
+    if not steps:
+        return {}
+    source = next((steps[-1] / corner / name for name in ("named_paths.rpt", "sta.log")
+                   if (steps[-1] / corner / name).is_file()), None)
+    if source is None:
         return {}
     found, label = {}, None
-    for line in (steps[-1] / corner / "sta.log").read_text(errors="replace").splitlines():
+    for line in source.read_text(errors="replace").splitlines():
         if line.startswith("NAMED-PATH-BEGIN "):
             label = line.split(None, 1)[1].strip()
         elif line.startswith("NAMED-PATH-END"):

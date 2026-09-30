@@ -160,6 +160,12 @@ class HazardCoverage(unittest.TestCase):
                                 ("alu", 3, "store-addr"): 1, ("load", 2, "store-data"): 1,
                                 ("alu", 4, "muldiv"): 1, ("load", 3, "muldiv"): 1, ("mul", 1, "branch"): 1})
 
+    def test_amos_produce_like_loads(self):
+        # amoadd.w x5, x2, (x1) then add x6, x5, x5: an AMO result is a load-class
+        # producer (read through both operands: two pairs)
+        records = [self.record(0x002082af, rd=5), self.record(0x00528333, rd=6)]
+        self.assertEqual(run_core_tests.hazard_coverage(records), {("load", 1, "alu"): 2})
+
     def test_required_bins_depend_on_extensions(self):
         self.assertEqual(len(run_core_tests.required_bins("")), 4 * (3 * 3 + 3 + 3 + 2))
         self.assertIn(("load", 4, "store-data"), run_core_tests.required_bins(""))

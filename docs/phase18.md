@@ -361,12 +361,14 @@ in flight (three live).
 - **The core in the two-port shell** (`make core-aster-tests`), in lockstep
   with Spike with exact byte masks and the shell's store and protocol checks:
   - riscv-tests rv32ui (40; `fence_i` and `ma_data` wait for 18.4 and 18.3)
-    and the directed tests (42 programs) on the two-cycle memory, the
+    plus the 2 directed tests, 42 programs, on the two-cycle memory, the
     one-cycle memory, back-pressure, back-pressure with the one-cycle memory,
     and back-pressure with room for three and four requests in flight;
-  - riscv-arch-test I (39/39);
+  - riscv-arch-test I (39/39), on the two-cycle and the one-cycle memory;
   - constrained-random programs with every read-after-write hazard bin
-    covered (51/51), on time and back-pressured;
+    covered at distances 1–4 (68/68; distance 4 is the register file's
+    same-cycle write-through), on the two-cycle memory, the one-cycle memory
+    and back-pressured;
   - directed tests: wrong-path fetches that run off the end of memory and are
     answered with `i_rsp_error` (the test requires such fetches — the core
     makes 7 — and they must be discarded), and control transfers that wait in
@@ -406,7 +408,8 @@ in flight (three live).
   non-flush branch, and a priority case that cannot arise because Decode is
   masked then).
 
-**Timing (step 4, first report).** FPGA, Vivado out of context on
+**Timing (step 4, first report;** evidence retained in
+[`results/phase18/aster-18.1`](results/phase18/aster-18.1/README.md)**).** FPGA, Vivado out of context on
 `xc7z020clg400-1` at 10 ns (`make timing-fpga-aster`; register-to-register):
 
 | Block | WNS | Implied fmax | LUTs | FFs | BRAM36 |
@@ -415,10 +418,14 @@ in flight (three live).
 | Core + two-cycle 128 KiB block RAM, the §5 form (the block RAM samples the request; its output register is the second cycle) | −0.440 ns | 95.8 MHz | 1,820 | 869 | 32 |
 | Core + two-cycle block RAM with the request registered first (the block RAM read is the second cycle) | +0.364 ns | 103.8 MHz | 1,791 | 999 | 32 |
 
-The paths §4 names, from the register behind `d_rsp_valid` through the stall
-logic to the next request and from the one behind `d_rsp_error` through the
-kill, have +2.02 and +1.19 ns of slack in the §5 form and +2.24 and +1.94 ns
-with the request registered. The first run of the RTL missed by 3.2 ns
+The paths §4 names — from the register behind `d_rsp_valid` through the
+stall logic to the next data request, and from the one behind `d_rsp_error`
+through the kill, ending at whatever samples `d_req_valid` (the block RAMs'
+write enables in the §5 form, the request register otherwise) — have +3.711
+and +3.168 ns of slack in the §5 form and +7.059 and +6.192 ns with the
+request registered. The worst paths from those two registers to anywhere end
+at the forwarding selects' precompute: +2.022 and +1.186 ns in the §5 form,
++2.236 and +1.942 ns with the request registered. The first run of the RTL missed by 3.2 ns
 (75.8 MHz alone, 74.3 MHz with the block RAM); its limiting path ran from
 Execute's forwarding compare through the operand mux, the branch compare,
 the trap logic and the mispredict decision into the enables of Decode,
@@ -427,7 +434,7 @@ any cycle count, closed it: the Execute redirect's flush is registered (the
 squash), the mispredict no longer waits for the trap logic, the forwarding
 selects are computed a cycle ahead and registered, and loads and stores have
 their own address adder with alignment from the two low bits. The remaining
-miss in the §5 form (−0.14 to −0.78 ns across runs) is on the core-to-memory
+miss in the §5 form (−0.440 ns on the final RTL) is on the core-to-memory
 path — the forwarded base register, the address adder, the memory's region
 decode and the write enables of 32 block RAMs spread over the device; the
 fix, measured above, is for the memory side to register the request before
@@ -574,11 +581,15 @@ already are) or replacing the write-through with a fourth forwarding source.
   in-flight limit outstanding, and full rate with two in flight (1,000
   requests in 1,002 cycles), across both latencies, three limits and 20
   random-delay seeds; a mutant that ignores the limit fails it
-- [ ] **By the milestone named:** hazard coverage extended to distance 4 (the
-  register-file write-through) and AMO/`lr`/`sc` classed as load-like
-  producers (18.1); CSR write point and `minstret` read semantics (18.3);
-  `fence.i` draining in-flight data accesses and flushing F1, F2, the buffer,
-  D and E (18.4)
+- [x] **18.1:** hazard coverage extended to distance 4 (the register-file
+  write-through; `rvgen` places uses 1–4 instructions after their producers,
+  68/68 bins on the Aster core, 112/112 with M on PicoRV32) and AMO/`lr`/`sc`
+  classed as load-like producers
+- [ ] **By the milestone named:** CSR write point and `minstret` read
+  semantics (18.3); `fence.i` draining in-flight data accesses and flushing
+  F1, F2, the buffer, D and E, and AMO operands (address and data) as hazard
+  consumers (18.4); a cover point that `bus_error_behind_load` really holds
+  its error in M1 (it depends on the stall seed)
 - [x] **Aster-core shell, 18.1 step 1 — protocol checks (30 September 2026):**
   the two-port shell now enforces the core's side of §4–§5 in every run: a
   fetch presented and not accepted must be presented unchanged in the next
@@ -603,9 +614,12 @@ already are) or replacing the write-through with a fourth forwarding source.
   and interrupt ports (tied off until 18.3); a directed test in which
   wrong-path fetches run off the end of memory and are answered with
   `i_rsp_error` and garbage, which the core discards
-- [ ] **Aster-core shell, later:** errors the core must act on (a fetch or
-  data-port error that traps) need 18.3's traps, so their injection tests
-  come with them; from 18.6, the signature read through the cache hierarchy
+- [x] **Error injection (18.1, as trap-halt):** a data-port error on a load,
+  on a store and while the access waits in M1, and a right-path fetch outside
+  memory, each stopping the core at its `trap_pc` (`+bus_error_traps`, the
+  trap-halt programs above)
+- [ ] **Aster-core shell, later:** the same errors taken as traps to a
+  handler (18.3); from 18.6, the signature read through the cache hierarchy
 - [x] **Decode-redirect timing (settled in 18.1):** a `jal` or a backward
   branch redirects on its first cycle in Decode, whether or not it then waits
   for operands (`lw; bne` back to a loop head costs the load-use wait only).

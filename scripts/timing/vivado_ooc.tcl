@@ -10,8 +10,9 @@
 #
 # Named paths (docs/cpu.md §4 requires some in every milestone's report): the
 # environment variable OOC_NAMED_PATHS, "label=from-pattern>to-pattern;...",
-# reports for each the worst path from the registers matching the first pattern
-# to those matching the second, as a "NAMED" line and in named_paths.rpt.
+# reports for each the worst path from the sequential cells matching the first
+# pattern to those matching the second ("|" separates alternatives; "*" is any),
+# as a "NAMED" line and in named_paths.rpt.
 if {$argc < 4} { error "usage: vivado_ooc.tcl <out-dir> <top> <period-ns> <source>..." }
 set out [file normalize [lindex $argv 0]]
 set top [lindex $argv 1]
@@ -61,9 +62,16 @@ if {[info exists ::env(OOC_NAMED_PATHS)] && $::env(OOC_NAMED_PATHS) ne ""} {
         lassign [split $item "="] label patterns
         lassign [split $patterns ">"] from to
         set sources [get_cells -hier -quiet -filter "NAME =~ $from && IS_SEQUENTIAL"]
-        set sinks [get_cells -hier -quiet -filter "NAME =~ $to && IS_SEQUENTIAL"]
-        if {![llength $sources] || ![llength $sinks]} { error "named path $label: no register matches $from or $to" }
-        set path [get_timing_paths -setup -from $sources -to $sinks -max_paths 1 -nworst 1]
+        if {![llength $sources]} { error "named path $label: no register matches $from" }
+        if {$to eq "*"} {
+            set path [get_timing_paths -setup -from $sources -max_paths 1 -nworst 1]
+        } else {
+            set alternatives {}
+            foreach pattern [split $to "|"] { lappend alternatives "NAME =~ $pattern" }
+            set sinks [get_cells -hier -quiet -filter "([join $alternatives { || }]) && IS_SEQUENTIAL"]
+            if {![llength $sinks]} { error "named path $label: no register matches $to" }
+            set path [get_timing_paths -setup -from $sources -to $sinks -max_paths 1 -nworst 1]
+        }
         set line "NAMED label=$label slack_ns=[get_property SLACK $path] from=[get_property STARTPOINT_PIN $path] to=[get_property ENDPOINT_PIN $path] levels=[get_property LOGIC_LEVELS $path]"
         puts $line
         puts $named $line
