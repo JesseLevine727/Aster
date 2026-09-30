@@ -316,8 +316,9 @@ Each milestone passes all applicable layers before the next milestone starts.
 - **Area:** reported per milestone (LUT/FF/DSP on the FPGA; cell area on
   SKY130).
 - **Performance:** the CPU set — the fixed-iteration CoreMark CRC run,
-  Dhrystone (adapted), sort/search, FFT, strided, scalar Conv2D, and scalar
-  reduction — runs on the new core and on PicoRV32 in the same memory shell,
+  Dhrystone (adapted), sort/search, FFT, strided, scalar Conv2D (the coherent
+  SoC's scalar-engine build, `conv2d_scalar_coh`; owner decision, 30 September
+  2026), and scalar reduction — runs on the new core and on PicoRV32 in the same memory shell,
   with the same compiler flags and measurement windows. A valid CoreMark score
   (real timer, at least ten seconds) is produced on the FPGA in Phase 21.
 - **Performance gate (declared 29 September 2026, before any measurement).**
@@ -414,3 +415,8 @@ Changes after approval, by the owner:
   limiting fetches with `i_req_ready`. §1's CPI estimate, §7's
   conservative-comparison note, and the 18.1/18.6 rows of §8 follow. The
   revised §4–§5 were approved by the owner on 30 September 2026.
+- **30 September 2026 — the gate's Conv2D (§7):** "scalar Conv2D" is the
+  coherent SoC's scalar-engine build (`conv2d_scalar_coh`, the capture whose
+  PicoRV32 CPI §1 quotes, from the same SoC as the scalar reduction), not the
+  minimal top's Conv2D, which stays in the shell runs as a cross-check
+  outside the gate. Decided before any measurement of the core.

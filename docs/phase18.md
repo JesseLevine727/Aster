@@ -302,19 +302,18 @@ fetch-buffer or data-port contention):
 | sort/search | 420,942 | 4.277 | 1.654 | 2.59× | 1.332 |
 | FFT | 248,399 | 11.144 | 1.199 | 9.30× | 1.143 |
 | strided | 1,559 | 4.151 | 1.508 | 2.75× | 1.172 |
-| Conv2D, minimal top (`minimal_conv2d`) | 704,346 | 7.850 | 1.574 | 4.99× | 1.398 |
-| scalar Conv2D, coherent SoC (`conv2d_scalar_coh`) | 971,011 | 7.358 | 1.397 | 5.27× | 1.279 |
+| Conv2D, minimal top (`minimal_conv2d`; cross-check, not a gate kernel) | 704,346 | 7.850 | 1.574 | 4.99× | 1.398 |
+| scalar Conv2D, coherent SoC (`conv2d_scalar_coh`; the gate's Conv2D) | 971,011 | 7.358 | 1.397 | 5.27× | 1.279 |
 | scalar reduction | 53,305 | 4.076 | 1.385 | 2.94× | 1.154 |
 
-Projected against the 18.7 gate: a geometric mean of about **3.6×** with
-either Conv2D build, lowest kernel **2.6×** (sort/search) — both clear of
-2.0× and 1.5×. The two-stage memory access costs 5–29% in CPI against the
-five-stage rules (FFT least, as its time is in the multiplier).
-§7 names "scalar Conv2D" and cpu.md §1 quotes PicoRV32's CPI for scalar
-Conv2D on the coherent SoC, while the minimal top has its own Conv2D build;
-which of the two is the gate's kernel is for the owner to settle before 18.7
-measures. In the two-port shell at `+latency=1` PicoRV32 runs 9–35% slower
-than in the look-ahead shell (its adapter cannot present the next address
+The gate's Conv2D is the coherent SoC's scalar build (`conv2d_scalar_coh`;
+owner decision, 30 September 2026, [`cpu.md`](cpu.md) §7); the minimal top's
+Conv2D stays in the runs as a cross-check outside the gate. Projected against
+the 18.7 gate over its seven kernels: a geometric mean of about **3.66×**,
+lowest kernel **2.6×** (sort/search) — both clear of 2.0× and 1.5×. The
+two-stage memory access costs 5–29% in CPI against the five-stage rules (FFT
+least, as its time is in the multiplier). In the two-port shell at
+`+latency=1` PicoRV32 runs 9–35% slower than in the look-ahead shell (its adapter cannot present the next address
 early), so the look-ahead shell remains the §7 baseline.
 
 **SRAM macro SPICE characterization.** ngspice 47 with KLU (built into

@@ -33,6 +33,7 @@ corruption to be rejected by a parser or the comparator.
 from __future__ import annotations
 
 import argparse
+import math
 import os
 import shlex
 from dataclasses import dataclass
@@ -64,8 +65,10 @@ KERNEL_MAX_CYCLES = 30_000_000    # the longest run (coherent scalar Conv2D, two
 # The CPU set of docs/cpu.md §7: sources and the Makefile variable holding each
 # one's SoC compile flags (read with `make print-VAR`, so they cannot drift).
 # (sources, flags variable, make overrides, Phase 17 baseline capture); Dhrystone's
-# vendor files use their own flags. Two Conv2D builds are listed: the minimal-top
-# scalar kernel and the coherent SoC's scalar engine (docs/phase18.md).
+# vendor files use their own flags. Two Conv2D builds are listed: the gate's, the
+# coherent SoC's scalar engine (docs/cpu.md §7), and the minimal top's, run as a
+# cross-check outside the gate.
+GATE_KERNELS = ("coremark", "dhrystone", "sort_search", "fft", "strided", "conv2d_scalar_coh", "reduction")
 KERNELS = {
     "coremark": ([f"vendor/coremark/{name}.c" for name in
                   ("core_main", "core_list_join", "core_matrix", "core_state", "core_util")]
@@ -477,7 +480,13 @@ def run_kernels(args, config, prefix: str) -> int:
               f"{'speedup':>8s} {'5-stage model':>13s}")
         for name, cycles, retired, seven, five, modelled in rows:
             print(f"  {name:18s} {retired:>12d} {cycles / retired:>13.3f} {seven / modelled:>13.3f} "
-                  f"{cycles / seven:>7.2f}x {five / modelled:>13.3f}")
+                  f"{cycles / seven:>7.2f}x {five / modelled:>13.3f}" + ("" if name in GATE_KERNELS else "  (not in the gate)"))
+        speedups = {name: cycles / seven for name, cycles, _, seven, _, _ in rows if name in GATE_KERNELS}
+        if len(speedups) == len(GATE_KERNELS):
+            geomean = math.prod(speedups.values()) ** (1 / len(speedups))
+            lowest = min(speedups, key=speedups.get)
+            print(f"  projected §7 gate (model, not a measurement): geometric mean {geomean:.3f}x, "
+                  f"lowest {lowest} {speedups[lowest]:.3f}x")
     print(f"{'PASS' if not failures else 'FAIL'}: {args.dut} {len(names) - len(failures)}/{len(names)} "
           f"CPU kernels pass in lockstep with Spike and match the Phase 17 baseline")
     return 1 if failures else 0
