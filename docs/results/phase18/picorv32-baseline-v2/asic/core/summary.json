@@ -1,0 +1,83 @@
+{
+  "run": "core",
+  "period_ns": 10.0,
+  "corners": {
+    "nom_tt_025C_1v80": {
+      "setup_r2r_ws_ns": 3.9741,
+      "hold_r2r_ws_ns": 0.3056,
+      "implied_period_ns": 6.026,
+      "implied_fmax_mhz": 166.0,
+      "max_slew_violations": 1199,
+      "max_cap_violations": 0
+    },
+    "min_tt_025C_1v80": {
+      "setup_r2r_ws_ns": 4.207,
+      "hold_r2r_ws_ns": 0.3032,
+      "implied_period_ns": 5.793,
+      "implied_fmax_mhz": 172.6,
+      "max_slew_violations": 948,
+      "max_cap_violations": 0
+    },
+    "max_tt_025C_1v80": {
+      "setup_r2r_ws_ns": 3.7623,
+      "hold_r2r_ws_ns": 0.3076,
+      "implied_period_ns": 6.238,
+      "implied_fmax_mhz": 160.3,
+      "max_slew_violations": 1482,
+      "max_cap_violations": 0
+    },
+    "nom_ss_100C_1v60": {
+      "setup_r2r_ws_ns": -1.4951,
+      "hold_r2r_ws_ns": 0.8271,
+      "implied_period_ns": 11.495,
+      "implied_fmax_mhz": 87.0,
+      "max_slew_violations": 4239,
+      "max_cap_violations": 51
+    },
+    "min_ss_100C_1v60": {
+      "setup_r2r_ws_ns": -0.9713,
+      "hold_r2r_ws_ns": 0.8221,
+      "implied_period_ns": 10.971,
+      "implied_fmax_mhz": 91.1,
+      "max_slew_violations": 3590,
+      "max_cap_violations": 32
+    },
+    "max_ss_100C_1v60": {
+      "setup_r2r_ws_ns": -1.9701,
+      "hold_r2r_ws_ns": 0.8327,
+      "implied_period_ns": 11.97,
+      "implied_fmax_mhz": 83.5,
+      "max_slew_violations": 4754,
+      "max_cap_violations": 67
+    },
+    "nom_ff_n40C_1v95": {
+      "setup_r2r_ws_ns": 6.1922,
+      "hold_r2r_ws_ns": 0.1026,
+      "implied_period_ns": 3.808,
+      "implied_fmax_mhz": 262.6,
+      "max_slew_violations": 321,
+      "max_cap_violations": 0
+    },
+    "min_ff_n40C_1v95": {
+      "setup_r2r_ws_ns": 6.2786,
+      "hold_r2r_ws_ns": 0.1021,
+      "implied_period_ns": 3.721,
+      "implied_fmax_mhz": 268.7,
+      "max_slew_violations": 246,
+      "max_cap_violations": 0
+    },
+    "max_ff_n40C_1v95": {
+      "setup_r2r_ws_ns": 5.9277,
+      "hold_r2r_ws_ns": 0.1013,
+      "implied_period_ns": 4.072,
+      "implied_fmax_mhz": 245.6,
+      "max_slew_violations": 526,
+      "max_cap_violations": 0
+    }
+  },
+  "stdcell_area_um2": 159211.0,
+  "stdcell_count": 17748,
+  "sequential_cells": 2076,
+  "utilization": 0.536,
+  "route_drc_errors": 0
+}

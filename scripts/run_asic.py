@@ -133,6 +133,33 @@ DESIGNS = {
         "rom_image_module": None,
         "config": "asic/sky130/config.core_picorv32.json",
     },
+    # Phase 18 timing probe: a 2 KiB standard-cell (flip-flop) SRAM array, the
+    # kind of array the 18.6 L1 caches use; its read path sizes the L1.
+    "sram_array_2k": {
+        "rtl": ["verification/core/timing_sram_array.sv"],
+        "defines": ["SYNTHESIS"],
+        "output": "timing_sram_array.v",
+        "rom_image": None,
+        "rom_image_module": None,
+        "config": "asic/sky130/config.sram_array_2k.json",
+    },
+    # The same arrays with a structured (one-hot word line, AND-OR) read.
+    "sram_andor_2k": {
+        "rtl": ["verification/core/timing_sram_array.sv"],
+        "defines": ["SYNTHESIS"],
+        "output": "timing_sram_andor_2k.v",
+        "rom_image": None,
+        "rom_image_module": None,
+        "config": "asic/sky130/config.sram_andor_2k.json",
+    },
+    "sram_andor_512b": {
+        "rtl": ["verification/core/timing_sram_array.sv"],
+        "defines": ["SYNTHESIS"],
+        "output": "timing_sram_andor_512b.v",
+        "rom_image": None,
+        "rom_image_module": None,
+        "config": "asic/sky130/config.sram_andor_512b.json",
+    },
 }
 
 

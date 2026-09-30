@@ -6,6 +6,9 @@
     "CLOCK_PORT": "clk",
     "CLOCK_PERIOD": 10.0,
 
+    "SYNTH_STRATEGY": "DELAY 1",
+    "RUN_POST_GRT_RESIZER_TIMING": true,
+
     "PNR_SDC_FILE": "dir::constraints.core.sdc",
     "SIGNOFF_SDC_FILE": "dir::constraints.core.sdc",
 

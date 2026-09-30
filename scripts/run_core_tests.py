@@ -118,6 +118,7 @@ def execute(args, isa: str, elf: Path, binary: Path, symbols: dict,
                      f"--instructions={args.max_cycles + 64}", "--log-commits"]
     if args.stall_seed is not None:
         command.append(f"+stall_seed={args.stall_seed}")
+    command += args.shell_arg
     if has_signature(symbols):
         command += [f"+signature={elf.with_suffix('.sig.dut')}",
                     f"+sig_begin={symbols['begin_signature']:x}", f"+sig_end={symbols['end_signature']:x}"]
@@ -418,6 +419,10 @@ def main() -> int:
                         help="fail a random run that misses a required hazard bin")
     parser.add_argument("--stall-seed", type=int, help="random memory back-pressure with this seed")
     parser.add_argument("--max-cycles", type=int, default=MAX_CYCLES)
+    parser.add_argument("--shell-arg", action="append", default=[], metavar="+PLUSARG",
+                        help="extra plusarg for the shell (repeatable)")
+    parser.add_argument("--expect-status", metavar="STATUS",
+                        help="self-test: pass only if the shell reports this status (e.g. STORE_MISMATCH)")
     parser.add_argument("--inject", action="store_true",
                         help="prove the harness rejects a corrupted trace or reference log")
     args = parser.parse_args()
@@ -426,6 +431,16 @@ def main() -> int:
 
     if args.inject:
         return inject(args, config, prefix)
+
+    if args.expect_status:
+        test = TESTS / f"{args.only or 'rv32ui/sw'}.S"
+        run = run_program(args, config, test, prefix)
+        status = run.summary.split(";")[0]
+        caught = status.split()[0] == args.expect_status
+        print(f"{'PASS' if caught else 'FAIL'}: {test.parent.name}/{test.stem} with "
+              f"{' '.join(args.shell_arg) or 'no shell arguments'}: shell reported {status!r}, "
+              f"expected {args.expect_status}")
+        return 0 if caught else 1
 
     if args.random is not None:
         if args.random < 1:

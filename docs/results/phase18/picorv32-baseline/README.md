@@ -1,5 +1,15 @@
 # Phase 18.0 — PicoRV32 timing baseline at 10 ns (retained evidence)
 
+**Superseded by [`../picorv32-baseline-v2`](../picorv32-baseline-v2/README.md)** (30 September
+2026): the SKY130 constraints used here lacked clock uncertainty, timing
+derate, a maximum-transition limit, and input drive and output load, so the
+SKY130 slacks below are optimistic; v2 also chooses the synthesis strategy by
+measurement. Kept unchanged below as the record of what 18.0 measured, with
+one correction: the resizer optimized at all nine corners (`RSZ_CORNERS` falls
+back to `STA_CORNERS`); `TIMING_VIOLATION_CORNERS ['*tt*']` only chose which
+corners fail the run, so "enforced timing only at the typical corners" below
+is wrong.
+
 The timed block is `timing_picorv32` (`verification/core/timing_picorv32.sv`):
 PicoRV32 with the v1 core's parameters except IRQ and PCPI (both off), and only
 its native memory port. Captured on 29 September 2026 from source revision

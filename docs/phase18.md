@@ -1,6 +1,8 @@
 # Phase 18: Aster core — CPU, L1/SRAM interface, and 100 MHz feasibility
 
-Status: **in progress — milestone 18.0 (tooling) exit gate met; 18.1 next.** The CPU specification this
+Status: **in progress — milestone 18.0 (tooling) exit gate met; 18.1 prerequisites
+measured; SKY130 flow correlation under way before an owner decision on
+slow-corner memory access (checklist).** The CPU specification this
 phase implements is [`cpu.md`](cpu.md) (approved 29 September 2026); the phase
 sits in the [v2 plan](phase17-plus.md#6-phase-17-sequence). Every milestone
 passes its verification layer and records its timing before the next starts.
@@ -132,7 +134,7 @@ except IRQ and PCPI, which are off, and only its memory port). Only
 register-to-register paths set the implied period: an out-of-context block's
 port budgets are arbitrary.
 
-### PicoRV32 baseline timing (18.0)
+### PicoRV32 baseline timing (18.0, superseded by v2 below)
 
 | Target (10 ns) | Worst reg-to-reg setup slack | Implied period / Fmax | Hold | Area |
 | --- | --- | --- | --- | --- |
@@ -147,20 +149,104 @@ Evidence, retained with checksums and a host test:
 (copied from the git-ignored `build/timing/fpga/picorv32/` and LibreLane run
 `asic/sky130/runs/p18-picorv32`); route DRC 0.
 
-**What it means for the Aster core.** The FPGA and the SKY130 typical corner
-have margin; the SKY130 slow corner misses 10 ns by 43% (70 MHz). That figure
-is partly the flow's: LibreLane ran its area-oriented default
-(`SYNTH_STRATEGY "AREA 0"`), enforced timing only at the typical corners, and
-mapped the slow-corner critical path — the divider's operand negation — as a
-long OR-gate ripple chain (see the retained README). The Aster core has more
-logic per cycle (single-cycle ALU and branch resolution, forwarding, the
-data-port kill of [`cpu.md`](cpu.md) §4), so the **SKY130 slow-corner 100 MHz
-target is the principal Phase 18 risk**. Before the 18.1 timing report: choose
-the synthesis strategy and corner enforcement, re-run this baseline with them,
-and time the core-to-SRAM ports (below). The 18.1 report then decides early
-whether the slow corner can close at 10 ns, and if not records the limiting
-path, the cycles-versus-period trade, and the proposal, as the frozen target
-requires (a 50 MHz result is an intermediate milestone, not a substitute).
+### Pre-18.1 measurements (30 September 2026)
+
+**Corrected PicoRV32 baseline (v2).** The 18.0 SKY130 runs used a constraint file
+without clock uncertainty, timing derate, a maximum-transition limit, or input
+drive and output load, so their slacks were optimistic. With LibreLane's
+default constraint set (`asic/sky130/constraints.core.sdc`) and the synthesis
+strategy chosen from four candidates (`DELAY 1`: best slow-corner slack for
+1.5% more area than the default), PicoRV32 at 10 ns gives, register to
+register: **+3.97 ns at `nom_tt` (166 MHz); −1.97 ns at `max_ss` (83.5 MHz)**.
+On the FPGA, the core alone has +3.19 ns (147 MHz); with the 96 KiB shell
+memory as block RAM inside the timed block, +1.61 ns (119 MHz), limited by
+the address routing to 32 block RAMs. Evidence and the strategy comparison:
+[`results/phase18/picorv32-baseline-v2`](results/phase18/picorv32-baseline-v2/README.md).
+Maximum-transition violations remain at every corner (4,754 at `max_ss`);
+clean electrical signoff is a Phase 20 gate.
+
+**L1 array probes: with LibreLane's default flow, a standard-cell array read
+did not close 10 ns at the slow corner.** The approved 18.6 plan puts
+standard-cell arrays on the single-cycle path. Standalone arrays with the
+core's port timing (address registered at one edge, read word registered at
+the next); the figures are implied periods (period − register-to-register
+slack, so they include setup, uncertainty, derate, and skew):
+
+| Array | `nom_tt` | `max_ss` | Std-cell area | Flow settings |
+| --- | ---: | ---: | ---: | --- |
+| 2 KiB, flip-flops, synthesized mux read | 8.37 ns | 17.66 ns | 1.14 mm² | `DELAY 1`, post-global-route timing and design repair, 50% utilization |
+| 512 B, flip-flops, one-hot word lines + AND-OR read | 7.83 ns | 15.39 ns | 0.30 mm² | `DELAY 1`, post-global-route timing repair, 30% utilization |
+| 2 KiB, one-hot word lines + AND-OR read | — | — | — | did not finish global routing (congestion) in over an hour at 30% utilization; stopped |
+
+Retained runs (these and the strategy comparison):
+[`results/phase18/pre18.1-flow-probes`](results/phase18/pre18.1-flow-probes/README.md).
+
+The 512 B array's worst slow-corner path takes 14.8 ns from the clock edge to
+the read-data register (clock-to-Q 1.1 ns; address fanout buffers 3.6 ns; a
+7-to-128 decoder 4.8 ns; word-line fanout 3.3 ns; the select 2.0 ns), and about
+7.7 ns of it is electrical-repair buffers, several of them weak `buf_1`/
+`clkbuf_2` cells, with transitions above the 0.75 ns limit. **This is not yet
+evidence about the technology:** the resizer believed the slow corner was met
+— after global routing it reported +0.03 ns for the 512 B array and +0.04 ns
+for PicoRV32 — while signoff extraction then found −5.39 ns and −1.97 ns. Its
+wire estimates (tech-LEF RC; `LAYERS_RC` unset) are optimistic against the
+signoff extraction rules, and LibreLane 3.0.14 has no timing repair after
+detailed routing. For comparison, the OpenRAM 2 KiB macro occupies 0.285 mm²
+(its timing model is not credible).
+
+What is established: with LibreLane's defaults, neither the arrays nor
+PicoRV32 (83.5 MHz) close 10 ns at `max_ss`, and the flow's own estimate does
+not predict signoff.
+
+**Flow correlation, first step: PicoRV32 within 6% of 100 MHz at `max_ss`.**
+Placing and routing against a tighter setup target —
+`constraints.core.pnr_margin.sdc`, the same constraints with 3 ns of extra
+*setup* clock uncertainty — while signing off at the real 10 ns
+(`constraints.core.sdc`) gives, register to register: **−0.583 ns at
+`max_ss` (94.5 MHz)**, −0.087 ns at `nom_ss` (99.1 MHz), +4.62 ns at `nom_tt`
+(186 MHz); worst hold +0.056 ns; standard-cell area 167,419 µm² (+5.2% over
+v2); maximum-transition violations 410 at `nom_tt`, 2,848 at `max_ss`; route
+DRC 0. (A first attempt that also applied the 3 ns to hold closed `max_ss` at
++0.451 ns, but with 20.7% more area, mostly needless hold buffers, and a
+different placement; it is superseded and kept only as labelled evidence.)
+The margin is empirical; calibrating the resizer's wire RC (`LAYERS_RC`)
+against the signoff extraction is the principled next step, in 18.1's timing
+work. PicoRV32 closing is necessary, not sufficient: the Aster core has more
+logic per cycle.
+
+**The array stays well short of a cycle.** The only clean array result is the
+default-flow one above (15.39 ns implied period at `max_ss` for 512 B). With
+the setup-only margin at 30% utilization, global routing failed on congestion
+in the re-route after timing repair (which had upsized 1,913 cells and
+inserted 158 buffers; the default-flow run at the same utilization routed); the attempt confounded by the hold margin
+reached 13.05 ns at 25% utilization, with its resizer not converged
+(−2.21 ns against its own target) and weak `buf_1` repair buffers (4.8 ns)
+still on the path. So a single-cycle read of a 512 B or larger standard-cell
+flip-flop array was not reached at `max_ss` in these runs; even a 3–4 ns
+improvement leaves no room in the same cycle for a tag compare and the use of
+the data. Latch arrays and banked arrays with a late select remain
+unmeasured. The options, for the owner:
+- **flow:** correlate the resizer with signoff (over-constraint, calibrated
+  `LAYERS_RC`), placement density and regions for the array;
+- **array organization:** banks with a late select, latch arrays (allowed by
+  the plan, not yet measured), structured placement;
+- **microarchitecture:** a two-stage memory access (a seven-stage core:
+  F1 F2 D E M1 M2 W), or a small single-cycle L0/line buffer in front of a
+  two-cycle L1, and earlier index decode;
+- **cells:** the SKY130 high-speed library (`sky130_fd_sc_hs`, not installed);
+- **target:** a lower SKY130 slow-corner frequency with 100 MHz kept for the
+  FPGA and the typical corner. This changes a frozen target, so it needs the
+  evidence and trade-off recorded ([`phase17-plus.md`](phase17-plus.md)); a
+  50 MHz result is an intermediate milestone, not a silent substitute for the
+  100 MHz goal.
+
+**SRAM macro SPICE characterization.** ngspice 47 with KLU (built into
+`~/tools/ngspice-47`) and the PDK's transistor netlist of the 2 KiB macro:
+a simulation of the whole macro did not finish 2 ns of simulated time within
+an hour, with either a DC or a transient operating point, so full-macro
+simulation is not practical. The characterization for 18.6 will use a trimmed
+netlist (the accessed rows and columns, with the removed cells' loading kept
+as capacitance), as OpenRAM's own characterizer does.
 
 ## Milestones and gates
 
@@ -213,14 +299,41 @@ requires (a 50 MHz result is an intermediate milestone, not a substitute).
   compared with Spike's by signature; lockstep extensions for 18.3–18.5
   specified in [`cpu.md`](cpu.md) §6; data-port timing versus the commit point,
   and `d_rsp_error` timing, specified in §4
-- [ ] **Before the 18.1 RTL timing report:** synthesis strategy and corner
-  enforcement chosen and the PicoRV32 baseline re-run with them; core-to-SRAM
-  port paths timed (the SRAM model inside the timed top, or declared port
-  budgets with in-to-reg and reg-to-out reports)
-- [ ] **Aster-core shell (18.1):** separate instruction and data ports with
-  independent back-pressure; each retired store checked against the bus write
-  the shell observed; exact RVFI byte masks (no `word_loads`); from 18.6, the
-  signature read through the cache hierarchy rather than the backing array
+- [x] **Before the 18.1 RTL timing report:** constraints corrected, synthesis
+  strategy chosen (`DELAY 1`) and the PicoRV32 baseline re-run (v2); on the
+  FPGA, core-to-memory paths timed with the memory inside the block. Corner
+  enforcement: the resizer already optimizes at all nine corners
+  (`RSZ_CORNERS` falls back to `STA_CORNERS`); `TIMING_VIOLATION_CORNERS`
+  only chooses which corners fail a run and stays at its default, since the
+  reports carry every corner
+- [x] **Flow correlation (first step):** placing and routing with 3 ns of
+  extra setup uncertainty against a 10 ns signoff brings PicoRV32 to −0.583 ns
+  at `max_ss` (94.5 MHz, +5.2% area); the 512 B array did not route with it at
+  30% utilization
+- [ ] **Flow correlation (18.1 timing work):** calibrate the resizer's wire RC
+  (`LAYERS_RC`) against the signoff extraction, tune the margin, and choose
+  the flow the Aster core is reported with
+- [ ] SKY130 core-to-SRAM port budgets for the Aster core, from the correlated
+  L1 array measurements (the array's write path, which is as long as its
+  read path, included)
+- [ ] **Open decision (owner): how memory is accessed at the SKY130 slow
+  corner** (options above): the core logic is near 100 MHz at `max_ss`
+  (PicoRV32, 94.5 MHz with a first flow correction) but a single-cycle
+  standard-cell array read measured 15.4 ns there (512 B; 13.1 ns in a
+  superseded run). Needed before the 18.1 pipeline is designed.
+- [x] **Aster-core shell:** a two-port shell (`verification/core/tb_core_ports.cpp`)
+  with the Aster core's port protocol, independent back-pressure on each port,
+  every retired store checked against the bus write the memory accepted, and
+  no unmatched write at the end; proven with PicoRV32 behind a port adapter —
+  48/48 riscv-tests plain and under stall, 47/47 arch-test, and a corrupted
+  bus write detected (`make core-ports-tests`, in `make check`)
+- [ ] **Aster-core shell, for 18.1:** exact RVFI byte masks (no `word_loads`);
+  a wrapper to the core's own reset and interrupt ports (the shell drives
+  PicoRV32's `resetn` and reads its `trap`); request-protocol checks (payload
+  stable while waiting; which withdrawals are allowed); injected
+  `d_rsp_error`/`i_rsp_error` responses; RVFI sampled as registered outputs
+  (the core must register them); from 18.6, the signature read through the
+  cache hierarchy
 - [x] **Decided 29 September 2026 — how the 18.7 performance gate aggregates.**
   Speedup per kernel = PicoRV32 cycles ÷ Aster-core cycles over the same
   window. The gate passes only if the **geometric mean** of the seven
@@ -246,6 +359,12 @@ requires (a 50 MHz result is an intermediate milestone, not a substitute).
      check the shipped model), run in the background during 18.1–18.5;
   4. derating the typical-corner model is used only as a labelled
      cross-check, never as the basis.
+
+  *30 September 2026:* item 1 was measured early, as planned; with
+  LibreLane's default flow a single-cycle standard-cell array read did not
+  close 10 ns at `max_ss`, and the flow's own estimate did not predict signoff
+  (see "Pre-18.1 measurements"). The flow is being correlated before the open
+  decision below. Items 2–4 stand.
 - [ ] 18.1 … 18.7 as in the table above
 
 ## Non-goals

@@ -1,0 +1,1 @@
+top=timing_picorv32 part=xc7z020clg400-1 period_ns=10.0 wns_ns=3.194 whs_ns=0.093 implied_period_ns=6.806 implied_fmax_mhz=146.9 luts=1478 ffs=1054 brams=0 dsps=0

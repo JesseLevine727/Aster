@@ -61,7 +61,13 @@ The conformance programs are vendored with checksums: `riscv-tests` at
 (see `scripts/run_core_tests.py`).
 
 Timing baselines (`make timing-fpga-picorv32`, `make timing-asic-picorv32`)
-use Vivado 2025.1 and the LibreLane/SKY130 setup below.
+use Vivado 2025.1 and the LibreLane/SKY130 setup below; `scripts/timing/retain.py`
+copies a result into a checksummed folder under `docs/results/phase18/`.
+
+For SRAM characterization (Phase 18.6), **ngspice 47** is built from the
+upstream release tarball (SHA-256 `894e6496…fdef675f`) into `~/tools/ngspice-47`
+with `--enable-klu --enable-openmp --with-x=no`; runs use the PDK's
+`libs.tech/ngspice/spinit` as `.spiceinit`.
 
 ## ASIC tools (Phases 15–16)
 

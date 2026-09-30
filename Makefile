@@ -2084,7 +2084,7 @@ parallel-workloads:
 
 test: smoke phase1 hello bench cache uart fpga-sim linux-sim counters retirement npu-pe npu-array npu-engine npu-regs npu-driver npu-runtime npu-stop npu-bench-validate arbiter shared-fabric multicore-runtime parallel
 
-check: tools smoke phase1 hello bench cache uart fpga-sim linux-sim linux-dual-sim linux-coherent-sim counters retirement pcpi-probe dot8-unit npu-pe npu-array npu-engine npu-regs device-arbiter dma-counters l2-unit npu-driver npu-runtime npu-stop npu-bench-validate xe-bench-validate phase11-infer-validate workloads atomic-fabric atomic-runtime atomic-faults coherent-cache warm-stop coherent-counters coherent-soc timer-unit timer-firmware irq-unit timer-interrupt sram-unit sram-lint freeze-interfaces coherent-bench riscv-reference riscv-reference-negative coherent-litmus arbiter shared-fabric multicore-runtime multicore-adversarial parallel phase17-baseline-audit core-riscv-tests core-riscv-tests-stall core-arch-tests core-random-lockstep core-lockstep-selftest
+check: tools smoke phase1 hello bench cache uart fpga-sim linux-sim linux-dual-sim linux-coherent-sim counters retirement pcpi-probe dot8-unit npu-pe npu-array npu-engine npu-regs device-arbiter dma-counters l2-unit npu-driver npu-runtime npu-stop npu-bench-validate xe-bench-validate phase11-infer-validate workloads atomic-fabric atomic-runtime atomic-faults coherent-cache warm-stop coherent-counters coherent-soc timer-unit timer-firmware irq-unit timer-interrupt sram-unit sram-lint freeze-interfaces coherent-bench riscv-reference riscv-reference-negative coherent-litmus arbiter shared-fabric multicore-runtime multicore-adversarial parallel phase17-baseline-audit core-riscv-tests core-riscv-tests-stall core-arch-tests core-random-lockstep core-lockstep-selftest core-ports-tests
 
 # Phase 18 CPU shell: one CPU with a synchronous SRAM at 0x8000_0000 and an
 # RVFI trace for lockstep against Spike (docs/phase18.md).
@@ -2146,21 +2146,58 @@ core-random-lockstep: $(CORE_SHELL_SIM)
 core-lockstep-selftest: $(CORE_SHELL_SIM)
 	@$(CORE_TESTS) --build-dir $(CORE_TESTS_DIR)/inject --inject
 
+# Two-port CPU shell (the Aster core's port protocol, docs/cpu.md §5), proven
+# first with PicoRV32 behind an adapter. Any DUT built with --prefix Vcore_ports
+# and these ports runs in it.
+CORE_PORTS_DIR := $(BUILD_DIR)/core_ports_picorv32
+CORE_PORTS_SIM := $(CORE_PORTS_DIR)/core_ports_picorv32
+$(CORE_PORTS_SIM): vendor/picorv32/picorv32.v verification/core/shell_picorv32_ports.sv verification/core/tb_core_ports.cpp Makefile
+	mkdir -p $(CORE_PORTS_DIR)
+	$(VERILATOR) --cc --exe --build --Wall --Wno-fatal $(VERILATOR_VENDOR_LINT_FLAGS) \
+		--top-module shell_picorv32_ports --prefix Vcore_ports --Mdir $(CORE_PORTS_DIR)/obj -o $(abspath $@) \
+		$(ROOT)/vendor/picorv32/picorv32.v $(ROOT)/verification/core/shell_picorv32_ports.sv \
+		$(ROOT)/verification/core/tb_core_ports.cpp
+	@touch $@  # Verilator does not relink when only the Makefile changed
+
+CORE_PORTS_TESTS = RISCV_PREFIX=$(RISCV_PREFIX) $(PYTHON) scripts/run_core_tests.py --dut picorv32 \
+	--sim $(CORE_PORTS_SIM) --spike $(SPIKE)
+.PHONY: core-ports-sim core-ports-tests
+core-ports-sim: $(CORE_PORTS_SIM)
+
+# The two-port shell on riscv-tests (plain and back-pressured) and arch-test,
+# and its store check proven to catch a bus write that differs from RVFI.
+core-ports-tests: $(CORE_PORTS_SIM)
+	@mkdir -p $(CORE_TESTS_DIR)
+	@set -o pipefail; for mode in plain stall arch; do \
+		extra=$$(case $$mode in stall) echo "--stall-seed 5";; arch) echo "--arch";; esac); \
+		$(CORE_PORTS_TESTS) $$extra --build-dir $(CORE_TESTS_DIR)/ports-$$mode | \
+			tee $(CORE_TESTS_DIR)/ports-$$mode.log | tail -1 || \
+			{ grep -v '^PASS' $(CORE_TESTS_DIR)/ports-$$mode.log; exit 1; }; \
+	done
+	@$(CORE_PORTS_TESTS) --build-dir $(CORE_TESTS_DIR)/ports-selftest --only rv32ui/sw \
+		--shell-arg +corrupt_write=3 --expect-status STORE_MISMATCH
+	@$(CORE_PORTS_TESTS) --build-dir $(CORE_TESTS_DIR)/ports-selftest --only rv32ui/sw \
+		--shell-arg +duplicate_tohost_write --expect-status STRAY_WRITE
+
 # Timing and area of one core block at 10 ns (docs/phase18.md): Vivado out of
 # context on the PYNQ-Z1 part, and SKY130 through post-route STA (its period is
 # CLOCK_PERIOD in asic/sky130/config.core_picorv32.json). Not part of `check`
 # (minutes; SKY130 needs the LibreLane container).
 TIMING_DIR := $(BUILD_DIR)/timing
 TIMING_PERIOD_NS ?= 10.0
-TIMING_PICORV32_SOURCES := vendor/picorv32/picorv32.v verification/core/timing_picorv32.sv
 .PHONY: timing-fpga-picorv32 timing-asic-picorv32
+# Two FPGA tops: the core alone (register-to-register paths) and the core with
+# the shell's 96 KiB memory as block RAM inside the timed block (core-to-memory
+# paths too).
 timing-fpga-picorv32:
 	@command -v $(VIVADO) >/dev/null || { echo "ERROR: Vivado not found (set VIVADO=/path/to/vivado)" >&2; exit 1; }
-	@mkdir -p $(TIMING_DIR)/fpga/picorv32
-	cd $(TIMING_DIR)/fpga/picorv32 && $(VIVADO) -mode batch -nojournal -log vivado.log \
-		-source $(ROOT)/scripts/timing/vivado_ooc.tcl -tclargs $(abspath $(TIMING_DIR))/fpga/picorv32 \
-		timing_picorv32 $(TIMING_PERIOD_NS) $(addprefix $(ROOT)/,$(TIMING_PICORV32_SOURCES)) > run.out
-	@grep '^SUMMARY' $(TIMING_DIR)/fpga/picorv32/run.out
+	@for top in picorv32 picorv32_bram; do \
+		mkdir -p $(TIMING_DIR)/fpga/$$top && cd $(TIMING_DIR)/fpga/$$top && \
+		$(VIVADO) -mode batch -nojournal -log vivado.log -source $(ROOT)/scripts/timing/vivado_ooc.tcl \
+			-tclargs $(abspath $(TIMING_DIR))/fpga/$$top timing_$$top $(TIMING_PERIOD_NS) \
+			$(ROOT)/vendor/picorv32/picorv32.v $(ROOT)/verification/core/timing_$$top.sv > run.out || exit 1; \
+		grep '^SUMMARY' run.out || exit 1; cd $(ROOT); \
+	done
 
 timing-asic-picorv32:
 	$(PYTHON) scripts/run_asic.py --design core_picorv32 --to OpenROAD.STAPostPNR --run-tag p18-picorv32 -- --overwrite

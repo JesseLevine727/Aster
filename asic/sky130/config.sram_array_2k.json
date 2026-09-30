@@ -1,0 +1,24 @@
+{
+    "DESIGN_NAME": "timing_sram_array",
+
+    "VERILOG_FILES": ["dir::build/timing_sram_array.v"],
+
+    "CLOCK_PORT": "clk",
+    "CLOCK_PERIOD": 10.0,
+
+    "SYNTH_STRATEGY": "DELAY 1",
+    "RUN_POST_GRT_RESIZER_TIMING": true,
+
+    "PNR_SDC_FILE": "dir::constraints.core.sdc",
+    "SIGNOFF_SDC_FILE": "dir::constraints.core.sdc",
+
+    "EXTRA_EXCLUDED_CELLS": ["sky130_fd_sc_hd__clkdlybuf4s*"],
+
+    "pdk::sky130*": {
+        "FP_CORE_UTIL": 50,
+        "CLOCK_PERIOD": 10.0,
+        "scl::sky130_fd_sc_hd": {
+            "CLOCK_PERIOD": 10.0
+        }
+    }
+}
