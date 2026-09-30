@@ -11,7 +11,9 @@ end_signature: the test data) to be identical in the shell's memory and
 Spike's at the end, which catches a store whose bus write differs from its
 RVFI record. Traces, logs and signatures are deleted before each run, so a
 stale file can never stand in for a missing one. With `--arch` the programs
-are riscv-arch-test (3.10.0).
+are riscv-arch-test (3.10.0). With
+`--random N` they are N seeded constrained-random programs (scripts/rvgen.py),
+and the run reports read-after-write hazard coverage.
 
 `--inject` instead proves the harness catches a deliberately corrupted run: it
 corrupts the raw DUT trace text (every field, dropped, duplicated and extra
@@ -33,6 +35,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "scripts"))
 import lockstep  # noqa: E402
+import rvgen  # noqa: E402
 
 ENV = ROOT / "verification/core/env"
 TESTS = ROOT / "vendor/riscv-tests/isa"
@@ -227,6 +230,61 @@ def spike_injections(lines: list[str], tohost: int) -> dict[str, list[str]]:
     }
 
 
+# --- read-after-write hazard coverage -------------------------------------------------
+
+# Operands each opcode reads, by consumer class: (rs1 class, rs2 class).
+_READS = {0x33: ("alu", "alu"), 0x13: ("alu", None), 0x03: ("load-addr", None),
+          0x23: ("store-addr", "store-data"), 0x63: ("branch", "branch"), 0x67: ("jalr", None)}
+HAZARD_PRODUCERS = ("alu", "load", "link", "mul", "div")
+HAZARD_CONSUMERS = ("alu", "muldiv", "load-addr", "store-addr", "store-data", "branch", "jalr")
+
+
+def _producer(insn: int) -> str:
+    opcode = insn & 0x7F
+    if opcode == 0x33 and insn >> 25 == 1:
+        return "mul" if (insn >> 12) & 7 < 4 else "div"
+    return {0x03: "load", 0x6F: "link", 0x67: "link"}.get(opcode, "alu")
+
+
+def required_bins(extensions: str) -> list[tuple[str, int, str]]:
+    """The read-after-write pairs a random run must exercise.
+
+    Every producer feeds every data consumer (ALU operands, multiply/divide
+    operands, branch compare, store data) at distances 1-3. Address and
+    jump-target consumers read rs1 through the same forwarding path, and are
+    required from the producers that realistically make addresses: ALU and
+    load results, and link values for loads and `jalr`. (A multiply result or a
+    code address used as a store address is legal but not a distinct hazard.)
+    """
+    muldiv = "m" in extensions
+    producers = ["alu", "load", "link"] + (["mul", "div"] if muldiv else [])
+    data = ["alu", "branch", "store-data"] + (["muldiv"] if muldiv else [])
+    address = {"alu": ["load-addr", "store-addr", "jalr"], "load": ["load-addr", "store-addr", "jalr"],
+               "link": ["load-addr", "jalr"]}
+    return [(p, d, c) for p in producers for d in (1, 2, 3) for c in data + address.get(p, [])]
+
+
+def hazard_coverage(records: list) -> dict[tuple[str, int, str], int]:
+    """Count (producer class, distance 1-3, consumer operand class) read-after-write pairs."""
+    bins: dict[tuple[str, int, str], int] = {}
+    writer: dict[int, tuple[int, str]] = {}
+    for index, record in enumerate(records):
+        opcode = record.insn & 0x7F
+        reads = _READS.get(opcode)
+        if reads:
+            if opcode == 0x33 and record.insn >> 25 == 1:
+                reads = ("muldiv", "muldiv")
+            for register, consumer in zip(((record.insn >> 15) & 31, (record.insn >> 20) & 31), reads):
+                if consumer and register and register in writer:
+                    distance = index - writer[register][0]
+                    if distance <= 3:
+                        key = (writer[register][1], distance, consumer)
+                        bins[key] = bins.get(key, 0) + 1
+        if record.rd:
+            writer[record.rd[0]] = (index, _producer(record.insn))
+    return bins
+
+
 def retired_check(status: str, trace_text: str) -> tuple[bool, str]:
     """The shell's own retired count must equal the non-trap records in its trace."""
     fields = dict(item.split("=", 1) for item in status.split()[2:] if "=" in item)
@@ -307,6 +365,39 @@ def inject(args, config, prefix: str) -> int:
     return 1 if missed else 0
 
 
+def run_random(args, config, prefix: str) -> int:
+    out = args.build_dir / "random"
+    out.mkdir(parents=True, exist_ok=True)
+    extensions = "m" if "m" in config["march"][4:] else ""
+    failures, total_cycles, total_retired, coverage = [], 0, 0, {}
+    for seed in range(args.random_seed, args.random_seed + args.random):
+        source = out / f"rvgen_{seed}.S"
+        source.write_text(rvgen.Generator(seed, extensions).program(args.random_length))
+        run = run_program(args, config, source, prefix)
+        print(f"{'PASS' if run.passed else 'FAIL'}: random seed {seed} {run.summary}")
+        if not run.passed:
+            failures.append(seed)
+            print(run.detail)
+            continue
+        total_cycles += run.cycles
+        total_retired += run.retired
+        for key, count in hazard_coverage(lockstep.parse_spike(run.log_text.splitlines(), ENTRY,
+                                                               run.tohost)).items():
+            coverage[key] = coverage.get(key, 0) + count
+    wanted = required_bins(extensions)
+    missing = [key for key in wanted if key not in coverage]
+    print(f"coverage: {len(wanted) - len(missing)}/{len(wanted)} read-after-write bins "
+          f"(producer x distance 1-3 x consumer operand)" +
+          (f"; missing {', '.join(f'{p}/{d}/{c}' for p, d, c in missing[:12])}" if missing else ""))
+    if missing and args.require_coverage:
+        failures.append("coverage")
+    mode = f", stall seed {args.stall_seed}" if args.stall_seed is not None else ""
+    print(f"{'PASS' if not failures else 'FAIL'}: {args.dut} {args.random - len(failures)}/{args.random} "
+          f"random programs pass in lockstep with Spike (seeds {args.random_seed}-"
+          f"{args.random_seed + args.random - 1}{mode}); {total_retired} instructions in {total_cycles} cycles")
+    return 1 if failures else 0
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument("--dut", choices=sorted(DUTS), required=True)
@@ -315,6 +406,11 @@ def main() -> int:
     parser.add_argument("--build-dir", type=Path, default=ROOT / "build/core_tests")
     parser.add_argument("--only", help="run one test, e.g. rv32ui/add (or I/add-01 with --arch)")
     parser.add_argument("--arch", action="store_true", help="run riscv-arch-test with signature comparison")
+    parser.add_argument("--random", type=int, metavar="N", help="run N constrained-random programs")
+    parser.add_argument("--random-seed", type=int, default=1, help="seed of the first random program")
+    parser.add_argument("--random-length", type=int, default=1500)
+    parser.add_argument("--require-coverage", action="store_true",
+                        help="fail a random run that misses a required hazard bin")
     parser.add_argument("--stall-seed", type=int, help="random memory back-pressure with this seed")
     parser.add_argument("--max-cycles", type=int, default=MAX_CYCLES)
     parser.add_argument("--inject", action="store_true",
@@ -325,6 +421,9 @@ def main() -> int:
 
     if args.inject:
         return inject(args, config, prefix)
+
+    if args.random:
+        return run_random(args, config, prefix)
 
     if args.arch:
         def arch_path(name: str) -> Path:

@@ -2084,7 +2084,7 @@ parallel-workloads:
 
 test: smoke phase1 hello bench cache uart fpga-sim linux-sim counters retirement npu-pe npu-array npu-engine npu-regs npu-driver npu-runtime npu-stop npu-bench-validate arbiter shared-fabric multicore-runtime parallel
 
-check: tools smoke phase1 hello bench cache uart fpga-sim linux-sim linux-dual-sim linux-coherent-sim counters retirement pcpi-probe dot8-unit npu-pe npu-array npu-engine npu-regs device-arbiter dma-counters l2-unit npu-driver npu-runtime npu-stop npu-bench-validate xe-bench-validate phase11-infer-validate workloads atomic-fabric atomic-runtime atomic-faults coherent-cache warm-stop coherent-counters coherent-soc timer-unit timer-firmware irq-unit timer-interrupt sram-unit sram-lint freeze-interfaces coherent-bench riscv-reference riscv-reference-negative coherent-litmus arbiter shared-fabric multicore-runtime multicore-adversarial parallel phase17-baseline-audit core-riscv-tests core-riscv-tests-stall core-arch-tests core-lockstep-selftest
+check: tools smoke phase1 hello bench cache uart fpga-sim linux-sim linux-dual-sim linux-coherent-sim counters retirement pcpi-probe dot8-unit npu-pe npu-array npu-engine npu-regs device-arbiter dma-counters l2-unit npu-driver npu-runtime npu-stop npu-bench-validate xe-bench-validate phase11-infer-validate workloads atomic-fabric atomic-runtime atomic-faults coherent-cache warm-stop coherent-counters coherent-soc timer-unit timer-firmware irq-unit timer-interrupt sram-unit sram-lint freeze-interfaces coherent-bench riscv-reference riscv-reference-negative coherent-litmus arbiter shared-fabric multicore-runtime multicore-adversarial parallel phase17-baseline-audit core-riscv-tests core-riscv-tests-stall core-arch-tests core-random-lockstep core-lockstep-selftest
 
 # Phase 18 CPU shell: one CPU with a synchronous SRAM at 0x8000_0000 and an
 # RVFI trace for lockstep against Spike (docs/phase18.md).
@@ -2104,7 +2104,7 @@ CORE_STALL_SEEDS ?= 1 2 3
 CORE_TESTS = RISCV_PREFIX=$(RISCV_PREFIX) $(PYTHON) scripts/run_core_tests.py --dut picorv32 \
 	--sim $(CORE_SHELL_SIM) --spike $(SPIKE)
 
-.PHONY: core-shell-sim core-riscv-tests core-riscv-tests-stall core-arch-tests core-lockstep-selftest
+.PHONY: core-shell-sim core-riscv-tests core-riscv-tests-stall core-arch-tests core-random-lockstep core-lockstep-selftest
 core-shell-sim: $(CORE_SHELL_SIM)
 
 # Each run keeps its full per-test log; the last line is the verdict, and a
@@ -2129,6 +2129,18 @@ core-arch-tests: $(CORE_SHELL_SIM)
 	@mkdir -p $(CORE_TESTS_DIR)
 	@set -o pipefail; $(CORE_TESTS) --arch --build-dir $(CORE_TESTS_DIR)/arch | tee $(CORE_TESTS_DIR)/arch.log | tail -1 || \
 		{ grep -v '^PASS' $(CORE_TESTS_DIR)/arch.log; exit 1; }
+
+# Seeded constrained-random programs (scripts/rvgen.py) in lockstep, plain and
+# under back-pressure; every required read-after-write hazard bin must be hit.
+CORE_RANDOM_PROGRAMS ?= 20
+core-random-lockstep: $(CORE_SHELL_SIM)
+	@mkdir -p $(CORE_TESTS_DIR)
+	@set -o pipefail; for mode in plain stall; do \
+		extra=$$([ $$mode = stall ] && echo "--stall-seed 11 --random-seed 101" || echo "--random-seed 1"); \
+		$(CORE_TESTS) --random $(CORE_RANDOM_PROGRAMS) --require-coverage $$extra \
+			--build-dir $(CORE_TESTS_DIR)/random-$$mode | tee $(CORE_TESTS_DIR)/random-$$mode.log | tail -2 || \
+			{ grep -v '^PASS' $(CORE_TESTS_DIR)/random-$$mode.log; exit 1; }; \
+	done
 
 # The harness must reject a corrupted DUT trace or Spike log in every field.
 core-lockstep-selftest: $(CORE_SHELL_SIM)

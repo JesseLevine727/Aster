@@ -138,6 +138,31 @@ class Lockstep(unittest.TestCase):
             lockstep.parse_trace(["0 80000000 00500513"])
 
 
+class HazardCoverage(unittest.TestCase):
+    @staticmethod
+    def record(insn, rd=None):
+        return lockstep.Retired(0x80000000, insn, (rd, 0) if rd else None, None, None)
+
+    def test_distances_and_classes(self):
+        records = [
+            self.record(0x00100093, rd=1),   # addi x1, x0, 1        (alu producer)
+            self.record(0x0000a103, rd=2),   # lw   x2, 0(x1)        (alu -> load-addr, d=1)
+            self.record(0x00208233, rd=4),   # add  x4, x1, x2       (alu d=2, load d=1)
+            self.record(0x0020a023),         # sw   x2, 0(x1)        (store-addr alu d=3; store-data load d=2)
+            self.record(0x02208333, rd=6),   # mul  x6, x1, x2       (muldiv consumer; x1 d=4 ignored)
+            self.record(0x00030463),         # beq  x6, x0, +8       (mul -> branch d=1)
+        ]
+        bins = run_core_tests.hazard_coverage(records)
+        self.assertEqual(bins, {("alu", 1, "load-addr"): 1, ("alu", 2, "alu"): 1, ("load", 1, "alu"): 1,
+                                ("alu", 3, "store-addr"): 1, ("load", 2, "store-data"): 1,
+                                ("load", 3, "muldiv"): 1, ("mul", 1, "branch"): 1})
+
+    def test_required_bins_depend_on_extensions(self):
+        self.assertEqual(len(run_core_tests.required_bins("")), 3 * (3 * 3 + 3 + 3 + 2))
+        self.assertTrue(all(p not in ("mul", "div") for p, _, _ in run_core_tests.required_bins("")))
+        self.assertIn(("div", 3, "muldiv"), run_core_tests.required_bins("m"))
+
+
 class SignatureCheck(unittest.TestCase):
     def check(self, dut, spike):
         import tempfile
