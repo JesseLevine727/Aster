@@ -99,7 +99,7 @@ corruption to be caught — 19 of 19.
   every RV32I computational, load, store, branch and jump instruction and every
   M instruction (not `fence`, `ecall` or `ebreak`); loads and stores of every
   width, including a load that overwrites its own base; forward branches;
-  bounded loops closed by four kinds of backward branch; `jal`/`jalr` calls
+  bounded loops closed by three kinds of backward branch (`bne`, `blt`, `bltu`); `jal`/`jalr` calls
   with varied `jalr` offsets and a set low bit, including `jalr x1, imm(x1)`;
   the `INT_MIN ÷ −1` case; and sources drawn mostly from the last three
   results, so forwarding and load-use cases are dense. Programs check nothing

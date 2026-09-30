@@ -134,7 +134,10 @@ class Generator:
 
     def muldiv(self) -> None:
         if self.rng.random() < 0.1:        # the signed-overflow case: INT_MIN / -1
-            dividend, divisor = self.dst(allow_x0=False), self.dst(allow_x0=False)
+            dividend = self.dst(allow_x0=False)
+            self.pinned.add(dividend)
+            divisor = self.dst(allow_x0=False)
+            self.pinned.discard(dividend)
             self.emit(f"li x{dividend}, 0x80000000")
             self.emit(f"li x{divisor}, -1")
             self.emit(f"{self.rng.choice(DIV)} x{self.dst()}, x{dividend}, x{divisor}")
@@ -195,9 +198,9 @@ class Generator:
         self.lines.append(f"{top}:")
         self.block(self.rng.randint(2, 8), depth + 1, in_loop=True)
         self.emit(f"addi x{COUNTER}, x{COUNTER}, -1")
-        # Equivalent loop-closing branches, so backward branches of several kinds occur.
+        # Equivalent loop-closing branches, so backward bne, blt and bltu all occur.
         self.emit(self.rng.choice([f"bnez x{COUNTER}, {top}", f"blt x0, x{COUNTER}, {top}",
-                                   f"bltu x0, x{COUNTER}, {top}", f"bne x0, x{COUNTER}, {top}"]))
+                                   f"bltu x0, x{COUNTER}, {top}"]))
 
     def call(self) -> None:
         leaf = self.fresh()

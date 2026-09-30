@@ -23,7 +23,9 @@ minimum periods of 0.13–1.96 ns, which are not credible. None is characterized
 at the standard-cell slow signoff corner (`ss`, 1.60 V, 100 °C). Any SKY130 timing
 claim through an SRAM therefore needs a registered macro interface that fits in
 half a cycle (≈4.5 ns at 100 MHz) plus an explicit derating or independent
-characterization, and must say which it used.
+characterization, and must say which it used. (Phase 18 resolves this by
+keeping every macro off the single-cycle path; see the owner-approved 18.6
+SRAM timing plan in [`phase18.md`](phase18.md).)
 
 ### What Phase 16 learned
 

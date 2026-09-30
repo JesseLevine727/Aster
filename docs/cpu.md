@@ -171,8 +171,9 @@ returned the next), which matches FPGA block RAM and, on SKY130, the
 standard-cell L1 arrays that sit on these ports. No SKY130 SRAM macro is on a
 single-cycle path: the macros form the backing store behind the L1 miss path,
 with registered inputs and outputs and a fixed multi-cycle access (the
-owner-approved 18.6 plan in [`phase18.md`](phase18.md) (the 18.6 SRAM timing plan)). That replaces the earlier requirement
-that a macro read fit half a cycle ([`phase17-memory.md`](phase17-memory.md)).
+owner-approved 18.6 SRAM timing plan in [`phase18.md`](phase18.md)). That
+replaces the earlier requirement that a macro read fit half a cycle
+([`phase17-memory.md`](phase17-memory.md)).
 
 ## 6. Verification
 
@@ -247,12 +248,20 @@ Each milestone passes all applicable layers before the next milestone starts.
   2. **no kernel is below 1.5×** (so the aggregate cannot hide a kernel the
      core handles badly).
 
-  Every per-kernel speedup is published next to the aggregate. The thresholds
-  apply to unrounded ratios. Both cores run in the same CPU shell against the
-  same synchronous SRAM (PicoRV32 through its look-ahead port, its best case;
-  the Aster core directly on its ports, without its L1 caches), so the gate
-  measures the cores alone; the L1 and SoC effects are measured separately (18.6
-  and Phase 20). The kernel inputs and sizes are those of the
+  Every per-kernel speedup is published next to the aggregate.
+
+  *Measurement conditions (proposed during the 18.0 review; to be confirmed by
+  the owner before any measurement):* the thresholds apply to unrounded
+  ratios. Both cores run in the same CPU shell against the same synchronous
+  SRAM, one cycle from request to data: PicoRV32 through its look-ahead port
+  (its best case) and the Aster core directly on its ports, without its L1
+  caches, so the gate measures the cores alone (the L1 and SoC effects are
+  measured separately, in 18.6 and Phase 20). The SRAM serves one instruction
+  fetch and one data access in the same cycle — separate instruction and data
+  banks, as the Option B memory decision intends — which the Aster core's two
+  ports use and single-ported PicoRV32 cannot.
+
+  The kernel inputs and sizes are those of the
   [retained Phase 17 baseline](results/phase17/baseline-56067a15815a/README.md),
   and the measurement windows are the kernels' own; changing any of them after
   measurement starts voids the comparison.
@@ -293,9 +302,11 @@ and 18.0 reviews; none changes the approved scope:
   plan in [`phase18.md`](phase18.md)), replacing the half-cycle macro-read
   requirement.
 - §1, §7, §8: the 2× performance gate is an aggregate — the geometric mean of
-  the seven per-kernel speedups at least 2.0×, with no kernel below 1.5×, on
-  unrounded ratios, both cores on the same shell SRAM — declared by the owner
-  before any measurement.
+  the seven per-kernel speedups at least 2.0×, with no kernel below 1.5×, every
+  per-kernel speedup published — declared by the owner before any measurement.
+  The measurement conditions in §7 (unrounded ratios; both cores on the same
+  shell SRAM, dual-banked for instruction and data) were proposed in review and
+  await the owner's confirmation.
 - §5: the RVFI field list made explicit (riscv-formal fields, exact byte masks,
   CSR fields from 18.3).
 - §6: the lockstep comparator is an offline script over a trace file rather
