@@ -448,6 +448,17 @@ def run_kernels(args, config, prefix: str) -> int:
                 problems.append(f"window retired {fields['window_retired']} != baseline {int(baseline['retired'], 16)}")
             if record_fields.get("checksum") != baseline["checksum"]:
                 problems.append(f"checksum {record_fields.get('checksum')} != baseline {baseline['checksum']}")
+        window = []
+        if ok and "window_retired" in fields:
+            # Spike's window, as the CPI model reads it, must be the shell's.
+            try:
+                reference = lockstep.parse_spike(log_text.splitlines(), ENTRY, symbols["tohost"],
+                                                 end=lockstep.KernelEnd())
+                window = cpi_model.window(reference)
+                if len(window) != int(fields["window_retired"]):
+                    problems.append(f"Spike's window holds {len(window)} instructions")
+            except ValueError as error:
+                problems.append(f"Spike's window: {error}")
         passed = passed and counted and ok and not problems
         print(f"{'PASS' if passed else 'FAIL'}: kernel {name} {status.removeprefix('SHELL ')}; "
               f"lockstep: {message.splitlines()[0]}" + "".join(f"; {p}" for p in problems))
@@ -457,13 +468,6 @@ def run_kernels(args, config, prefix: str) -> int:
                 print(message)
             continue
         if not args.cpi_model:
-            continue
-        reference = lockstep.parse_spike(log_text.splitlines(), ENTRY, symbols["tohost"], end=lockstep.KernelEnd())
-        window = cpi_model.window(reference)
-        if len(window) != int(fields["window_retired"]):
-            print(f"FAIL: kernel {name}: Spike's window holds {len(window)} instructions, "
-                  f"the shell's {fields['window_retired']}")
-            failures.append(name)
             continue
         rows.append((name, int(fields["window_cycles"]), int(fields["window_retired"]),
                      cpi_model.cycles(window, cpi_model.SEVEN_STAGE), cpi_model.cycles(window, cpi_model.FIVE_STAGE),

@@ -2197,7 +2197,9 @@ core-ports-tests: $(CORE_PORTS_SIM) $(CORE_PORTS_MODEL_TEST)
 # then again on the two-port shell at the §7 gate's one-cycle memory, where
 # PicoRV32 (through its adapter, without look-ahead) only proves the shell.
 ASTER_CLOCK_PLUGIN := $(BUILD_DIR)/spike/libaster_clock.so
-# The plugin is built against the headers of the Spike that loads it.
+# The plugin is built against the headers of the Spike that loads it (set
+# SPIKE_ROOT when SPIKE is not <root>/bin/spike; after switching to an older
+# Spike, delete the plugin, as make rebuilds it only for newer headers).
 SPIKE_ROOT ?= $(patsubst %/bin/spike,%,$(SPIKE))
 $(ASTER_CLOCK_PLUGIN): verification/core/spike/aster_clock.cc $(SPIKE_ROOT)/include/riscv/abstract_device.h Makefile
 	mkdir -p $(dir $@)
