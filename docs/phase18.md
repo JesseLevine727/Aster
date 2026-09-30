@@ -13,7 +13,8 @@ native Xasterdot8), together with the L1/SRAM interface that feeds it, so that i
 - retires the same architectural stream as an independent reference model
   (Spike) on conformance, directed, and constrained-random programs;
 - takes at least **2× fewer cycles** than PicoRV32 on the CPU-bound set in the
-  same memory shell;
+  same memory shell: the geometric mean of the seven per-kernel speedups is at
+  least 2.0×, and no kernel is below 1.5× ([`cpu.md`](cpu.md) §7);
 - meets **10 ns** timing out-of-context on the PYNQ-Z1 and in SKY130 block-level
   STA, or records the limiting path and its cost.
 
@@ -119,8 +120,9 @@ Committed scripts produce, for any core top:
 The same scripts run on PicoRV32 first, to record its baseline
 (`make timing-fpga-picorv32`, `make timing-asic-picorv32`; the timed top is
 `verification/core/timing_picorv32.sv`, PicoRV32 with the v1 core's parameters
-except IRQ and PCPI, which are off, and only its memory port). Only register-to-register paths set the implied period: an
-out-of-context block's port budgets are arbitrary.
+except IRQ and PCPI, which are off, and only its memory port). Only
+register-to-register paths set the implied period: an out-of-context block's
+port budgets are arbitrary.
 
 ### PicoRV32 baseline timing (18.0)
 
@@ -163,7 +165,7 @@ requires (a 50 MHz result is an intermediate milestone, not a substitute).
 | 18.4 | A extension, `fence`, `fence.i` | ua/arch-test A and Zifencei; atomic and self-modifying-code tests |
 | 18.5 | Xasterdot8 | v1 DOT8 reference tests on the core |
 | 18.6 | L1 caches with single-cycle hits; SRAM interface; runtime port | cache reference model, back-pressure, firmware regression |
-| 18.7 | Evaluation and feasibility | ≥2× fewer cycles than PicoRV32 on the CPU set in the same shell; 100 MHz feasibility report for FPGA and SKY130 |
+| 18.7 | Evaluation and feasibility | Against PicoRV32 on the CPU set in the same shell: geometric mean of the per-kernel speedups ≥2.0× and every kernel ≥1.5×, each kernel's speedup published; 100 MHz feasibility report for FPGA and SKY130 |
 
 ## Checklist
 
@@ -211,8 +213,13 @@ requires (a 50 MHz result is an intermediate milestone, not a substitute).
   independent back-pressure; each retired store checked against the bus write
   the shell observed; exact RVFI byte masks (no `word_loads`); from 18.6, the
   signature read through the cache hierarchy rather than the backing array
-- [ ] **Before measuring 18.7:** declare whether "≥2× fewer cycles" applies to
-  each kernel or to an aggregate (and which)
+- [x] **Decided 29 September 2026 — how the 18.7 performance gate aggregates.**
+  Speedup per kernel = PicoRV32 cycles ÷ Aster-core cycles over the same
+  window. The gate passes only if the **geometric mean** of the seven
+  per-kernel speedups (CoreMark CRC run, Dhrystone, sort/search, FFT, strided,
+  scalar Conv2D, scalar reduction) is **≥ 2.0×** and **no kernel is below
+  1.5×**; every per-kernel speedup is published with the aggregate. Declared
+  before any measurement ([`cpu.md`](cpu.md) §7).
 - [x] **Decided 29 September 2026 — SRAM timing plan for 18.6.** The SKY130
   macros' only liberty models are analytical and typical-corner
   ([`phase17-memory.md`](phase17-memory.md)), so no macro sits on the 10 ns

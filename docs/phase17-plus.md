@@ -79,7 +79,10 @@ with the memory point (a 96 KiB host-loaded unified SRAM;
 ([`cpu.md`](cpu.md)). The workload definitions and sizes are those of the
 [retained Phase 17 baseline](results/phase17/baseline-56067a15815a/README.md); compiler flags follow the
 current Makefile. Any target change must be recorded with the evidence and
-trade-off that motivated it.
+trade-off that motivated it. How the CPU target aggregates across the kernel
+set was declared on 29 September 2026, before any measurement: the geometric
+mean of the per-kernel speedups must be at least 2.0×, with no kernel below
+1.5× ([`cpu.md`](cpu.md) §7).
 
 ### 100 MHz feasibility
 
@@ -376,7 +379,8 @@ feasibility early.
   next), and an RVFI-compatible retirement port for lockstep and formal checking.
 - **Targets:** about 1.2–1.5 CPI on the CPU-bound set with single-cycle memory;
   at least 2× fewer cycles than PicoRV32 at the same clock and memory
-  configuration; 10 ns block timing out-of-context on the PYNQ-Z1 and in SKY130
+  configuration (geometric mean of the per-kernel speedups, no kernel below
+  1.5×; [`cpu.md`](cpu.md) §7); 10 ns block timing out-of-context on the PYNQ-Z1 and in SKY130
   block-level STA at the declared corners.
 
 **Milestones** (each passes its verification layer before the next starts):

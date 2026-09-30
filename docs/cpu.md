@@ -9,9 +9,11 @@ surrounding plan is [`phase17-plus.md`](phase17-plus.md#6-phase-17-sequence).
 
 - A single-issue, in-order, five-stage RV32IMA core designed in this project.
 - At least **2× fewer cycles** than the v1 PicoRV32 baseline on the fixed
-  CPU-bound set, at the same clock and memory configuration (about 1.2–1.5 CPI
-  with single-cycle memory). PicoRV32's measured CPI on that set, in the
-  retained Phase 17 baseline with the physical `sync1` memory, is 5.2–12.3:
+  CPU-bound set, at the same clock and memory configuration, judged by the
+  aggregate rule in §7 (the geometric mean of the per-kernel speedups at least
+  2×, and no kernel below 1.5×); about 1.2–1.5 CPI with single-cycle memory.
+  PicoRV32's measured CPI on that set, in the retained Phase 17 baseline with
+  the physical `sync1` memory, is 5.2–12.3:
   5.7 for the reduction and 10.0 for scalar Conv2D on the coherent SoC; 5.2
   sort/search, 5.8 strided, 6.4 Dhrystone, 6.7 CoreMark, 8.3 Conv2D and 12.3
   FFT on the minimal top (multiply-heavy code pays PicoRV32's serial
@@ -118,9 +120,10 @@ passed the commit point: no younger store, atomic, or side-effecting I/O load
 reaches memory ahead of an older trap. A presented request that the memory
 has not yet accepted (back-pressure) stays stable, except that it is withdrawn
 in a cycle in which the pipeline flushes; the memory side must not act on a
-request it has not accepted. Bus errors are recognized in Memory, before commit, and are precise. The
-kill is a short combinational path from the Memory-stage trap decision to
-`d_req_valid`; its timing is part of every milestone report. `d_rsp_error`
+request it has not accepted. Bus errors are recognized in Memory, before
+commit, and are precise. The kill is a short combinational path from the
+Memory-stage trap decision to `d_req_valid`; its timing is part of every
+milestone report. `d_rsp_error`
 must come from registered state on the memory side — for example an address
 decode made when the request was accepted and returned as a flag with the
 response — never from an SRAM macro's data output, whose falling-edge launch
@@ -223,9 +226,21 @@ Each milestone passes all applicable layers before the next milestone starts.
 - **Performance:** the CPU set — the fixed-iteration CoreMark CRC run,
   Dhrystone (adapted), sort/search, FFT, strided, scalar Conv2D, and scalar
   reduction — runs on the new core and on PicoRV32 in the same memory shell,
-  with the same compiler flags and measurement windows. The gate is at least
-  2× fewer cycles. A valid CoreMark score (real timer, at least ten seconds) is
-  produced on the FPGA in Phase 21.
+  with the same compiler flags and measurement windows. A valid CoreMark score
+  (real timer, at least ten seconds) is produced on the FPGA in Phase 21.
+- **Performance gate (declared 29 September 2026, before any measurement).**
+  For each of the seven kernels, the speedup is PicoRV32's cycles divided by
+  the Aster core's cycles over the same measurement window. The gate passes
+  only if both hold:
+  1. the **geometric mean** of the seven per-kernel speedups is **at least
+     2.0×** (every kernel counts equally, whatever its length, and one large
+     win cannot carry the rest); and
+  2. **no kernel is below 1.5×** (so the aggregate cannot hide a kernel the
+     core handles badly).
+
+  Every per-kernel speedup is published next to the aggregate. The kernel set,
+  inputs, and windows are those fixed above; changing any of them after
+  measurement starts voids the comparison.
 
 ## 8. Milestones
 
@@ -238,7 +253,7 @@ Each milestone passes all applicable layers before the next milestone starts.
 | 18.4 | A extension, `fence`, `fence.i` | Atomic and litmus tests on the core |
 | 18.5 | Xasterdot8 | v1 DOT8 reference tests |
 | 18.6 | L1 instruction/data caches with single-cycle hits; SRAM interface; runtime port | Cache reference model, stalls, firmware regression |
-| 18.7 | Evaluation | CPU set vs PicoRV32 (≥2×); 100 MHz feasibility report for FPGA and SKY130 |
+| 18.7 | Evaluation | CPU set vs PicoRV32 (§7 gate: geometric mean ≥2×, every kernel ≥1.5×); 100 MHz feasibility report for FPGA and SKY130 |
 
 ## 9. Approval
 
@@ -257,6 +272,9 @@ and 18.0 reviews; none changes the approved scope:
   the one-cycle load-use penalty hold together; when a request may be
   presented or withdrawn; `d_rsp_error` from registered state.
 - §5: the RVFI memory-field layout (riscv-formal's aligned layout).
+- §1, §7, §8: the 2× performance gate is an aggregate — the geometric mean of
+  the seven per-kernel speedups at least 2.0×, with no kernel below 1.5× —
+  declared by the owner before any measurement.
 - §5: the RVFI field list made explicit (riscv-formal fields, exact byte masks,
   CSR fields from 18.3).
 - §6: the lockstep comparator is an offline script over a trace file rather
