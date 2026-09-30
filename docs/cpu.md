@@ -1,9 +1,13 @@
 # Aster core — CPU specification (Phase 18)
 
-Status: **approved on 29 September 2026 (P17-E) — the Phase 18 contract.** This
-is the specification of the CPU that replaces PicoRV32 in v2. It is written before any RTL so that every milestone has
-a fixed target, interface, verification method, and timing/area gate. The
-surrounding plan is [`phase17-plus.md`](phase17-plus.md#6-phase-17-sequence).
+Status: **approved on 29 September 2026 (P17-E) — the Phase 18 contract.**
+*Revision in progress (30 September 2026): the owner chose a two-stage memory
+access, so §4 (five stages) and §5 (one request in flight) are being revised
+for a seven-stage pipeline (F1 F2 D E M1 M2 W); see [`phase18.md`](phase18.md).*
+
+This is the specification of the CPU that replaces PicoRV32 in v2. It is written
+before any RTL so that every milestone has a fixed target, interface,
+verification method, and timing/area gate. The surrounding plan is [`phase17-plus.md`](phase17-plus.md#6-phase-17-sequence).
 
 ## 1. Goals
 
@@ -301,6 +305,11 @@ and 18.0 reviews; none changes the approved scope:
 - §5: SKY130 macros are off the single-cycle path (the owner-approved 18.6 SRAM
   plan in [`phase18.md`](phase18.md)), replacing the half-cycle macro-read
   requirement.
+- 30 September 2026, owner decision: every instruction fetch and data access
+  spans two pipeline stages (a seven-stage core), because a single-cycle
+  standard-cell SRAM read did not fit 10 ns at the SKY130 slow corner, with
+  either cell library ([`phase18.md`](phase18.md), "Pre-18.1 measurements").
+  §4–§5 are revised accordingly.
 - §1, §7, §8: the 2× performance gate is an aggregate — the geometric mean of
   the seven per-kernel speedups at least 2.0×, with no kernel below 1.5×, every
   per-kernel speedup published — declared by the owner before any measurement.

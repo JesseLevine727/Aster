@@ -1,8 +1,8 @@
 # Phase 18: Aster core — CPU, L1/SRAM interface, and 100 MHz feasibility
 
 Status: **in progress — milestone 18.0 (tooling) exit gate met; 18.1 prerequisites
-measured; SKY130 flow correlation under way before an owner decision on
-slow-corner memory access (checklist).** The CPU specification this
+measured; the owner chose a two-stage memory access (a seven-stage core), and
+cpu.md §4–§5 are being revised for it before 18.1 RTL.** The CPU specification this
 phase implements is [`cpu.md`](cpu.md) (approved 29 September 2026); the phase
 sits in the [v2 plan](phase17-plus.md#6-phase-17-sequence). Every milestone
 passes its verification layer and records its timing before the next starts.
@@ -337,12 +337,17 @@ as capacitance), as OpenRAM's own characterizer does.
 - [ ] SKY130 core-to-SRAM port budgets for the Aster core, from the correlated
   L1 array measurements (the array's write path, which is as long as its
   read path, included)
-- [ ] **Open decision (owner): how memory is accessed at the SKY130 slow
-  corner** (options above): the core logic is near 100 MHz at `max_ss`
-  (PicoRV32, 94.5 MHz with a first flow correction) but a single-cycle
-  standard-cell array read measured 15.4 ns there (512 B; 13.1 ns in a
-  superseded run), and 14.25 ns with the high-speed cells, which the owner
-  chose to try first. Needed before the 18.1 pipeline is designed.
+- [x] **Decided by the owner, 30 September 2026 — two-stage memory access.**
+  The core logic is near 100 MHz at `max_ss` (PicoRV32, 94.5 MHz with a first
+  flow correction) but a single-cycle standard-cell array read measured
+  15.4 ns there (512 B; 13.1 ns in a superseded run), and 14.25 ns with the
+  high-speed cells, which the owner chose to try first. Every instruction
+  fetch and data access therefore spans two pipeline stages: the Aster core
+  becomes a seven-stage pipeline (F1 F2 D E M1 M2 W).
+- [ ] **18.1 entry:** revise [`cpu.md`](cpu.md) §4–§5 for seven stages (stage
+  contents, hazards and penalties, pipelined ports with two requests in
+  flight, the commit point and trap/bus-error timing) and review it before
+  RTL
 - [x] **Aster-core shell:** a two-port shell (`verification/core/tb_core_ports.cpp`)
   with the Aster core's port protocol, independent back-pressure on each port,
   every retired store checked against the bus write the memory accepted, and
