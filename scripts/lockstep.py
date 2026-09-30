@@ -12,8 +12,9 @@ store. The first difference is reported with the surrounding records.
 The DUT trace is checked for internal consistency as it is parsed: RVFI order
 numbers are consecutive, byte masks are contiguous and naturally aligned, a
 byte address (when the DUT reports one) agrees with its mask, an x0
-destination carries no value, and a record that both reads and writes memory
-(an AMO) does so with equal masks.
+destination carries no value, and only an AMO both reads and writes memory,
+with equal masks. Masks and data use riscv-formal's aligned layout: bit i of a
+mask is byte i of the aligned 32-bit word containing the access.
 
     lockstep.py --trace dut.trace --spike-log spike.log --tohost 0x80001000 [--entry 0x80000000]
 """
@@ -86,9 +87,9 @@ def parse_trace(lines) -> list[Retired]:
         mem = store = None
         if rmask:
             _lane(rmask, addr, line)
-        if rmask and wmask and rmask != wmask:
-            raise ValueError(f"a store reports a different read (only an AMO reads and writes, "
-                             f"with equal masks): {line.strip()!r}")
+        if rmask and wmask and (insn & 0x7F != 0x2F or rmask != wmask):
+            raise ValueError(f"a record both reads and writes memory, which only an AMO does "
+                             f"(with equal masks): {line.strip()!r}")
         if wmask or rmask:   # an AMO reports both masks; its store side is compared
             lane, size = _lane(wmask or rmask, addr, line)
             mem = ((addr & ~3) + lane, size)

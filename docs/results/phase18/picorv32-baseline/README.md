@@ -17,24 +17,30 @@ so the reports are copied here; `SHA256SUMS` covers every file in this folder.
 | SKY130 post-route, `max_ff_n40C_1v95` | +5.523 ns | 4.48 ns / 223.4 MHz | +0.265 ns | — |
 
 SKY130 cell count: 14,673 standard cells including 4,059 tap cells
-(5,079 µm²); 2,076 sequential cells; 46% utilization; route DRC 0.
+(5,079 µm²); 2,076 sequential cells; 46% utilization; route DRC 0. All nine
+LibreLane corners are in `asic/picorv32.json`; the worst typical-process corner
+is `max_tt_025C_1v80` (+2.725 ns reg-to-reg).
 
 ## Limits of this baseline
 
 - **Synthesis strategy.** The flow ran LibreLane's default `SYNTH_STRATEGY
   "AREA 0"`, enforced timing only at the typical corners
   (`TIMING_VIOLATION_CORNERS ['*tt*']`), and skipped post-global-route timing
-  repair. The slow-corner critical path (`worst_paths.txt`) runs from the
-  multiplier's operand register into the divider's operand negation, which the
-  area-oriented mapping builds as a long OR-gate ripple chain; Vivado's worst
-  path is the same logic on CARRY4 chains. The 70 MHz slow-corner figure
+  repair. The slow-corner critical path (`worst_paths.txt`) starts at PicoRV32's
+  shared operand register `reg_op1` (the net synthesis named
+  `pcpi_mul.pcpi_rs1[3]`) and ends in the divider's operand negation, which
+  the area-oriented mapping builds as a long OR-gate ripple chain; Vivado's
+  worst path is also in the divider (from `pcpi_div/pcpi_wait_q`, on CARRY4
+  chains). The 70 MHz slow-corner figure
   therefore measures this flow configuration as much as PicoRV32. The
   synthesis strategy for Phase 18 is chosen, and this baseline re-run with it,
   before the Aster core's first timing report (milestone 18.1).
-- **Ports are not timed.** Only register-to-register paths set the implied
-  period: the Vivado run leaves ports unconstrained and SKY130 applies a
-  nominal 20% I/O delay. Core-to-SRAM paths are timed from 18.1 with the SRAM
-  model inside the timed top or with declared port budgets.
+- **Port paths do not count.** Only register-to-register paths set the implied
+  period. The Vivado run leaves ports unconstrained; SKY130 times them against
+  a nominal 20% I/O delay (at `nom_tt` the overall worst path, +2.635 ns, is the
+  `resetn` input), which is not a real budget. Core-to-SRAM paths are timed
+  from 18.1 with the SRAM model inside the timed top or with declared port
+  budgets.
 
 ## Files
 

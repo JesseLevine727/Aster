@@ -21,7 +21,8 @@ import json
 import sys
 from pathlib import Path
 
-CORNERS = ("nom_tt_025C_1v80", "nom_ss_100C_1v60", "max_ss_100C_1v60", "nom_ff_n40C_1v95", "max_ff_n40C_1v95")
+CORNERS = tuple(f"{rc}_{pvt}" for pvt in ("tt_025C_1v80", "ss_100C_1v60", "ff_n40C_1v95")
+                for rc in ("nom", "min", "max"))
 SLOW = "max_ss_100C_1v60"
 
 

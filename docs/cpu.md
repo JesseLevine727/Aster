@@ -13,7 +13,7 @@ surrounding plan is [`phase17-plus.md`](phase17-plus.md#6-phase-17-sequence).
   with single-cycle memory). PicoRV32's measured CPI on that set, in the
   retained Phase 17 baseline with the physical `sync1` memory, is 5.2–12.3:
   5.7 for the reduction and 10.0 for scalar Conv2D on the coherent SoC; 5.2
-  sort/search, 5.8 strided, 6.4 Dhrystone, 6.8 CoreMark, 8.3 Conv2D and 12.3
+  sort/search, 5.8 strided, 6.4 Dhrystone, 6.7 CoreMark, 8.3 Conv2D and 12.3
   FFT on the minimal top (multiply-heavy code pays PicoRV32's serial
   multiplier).
 - **10 ns** block timing out-of-context on the PYNQ-Z1 (`xc7z020clg400-1`) and in
@@ -110,11 +110,15 @@ request while in Execute (address from the Execute adder) and the memory
 accepts it at the Execute→Memory edge; with a synchronous SRAM the response —
 load data, AMO old value, `sc` result, or `d_rsp_error` — arrives while the
 instruction is in Memory. That is what makes the load-use penalty one cycle.
-The request is not presented in a cycle in which the instruction in Memory
-traps or an interrupt is taken (the commit logic kills it), so when any access
-is accepted every older instruction has passed the commit point: no younger
-store, atomic, or side-effecting I/O load reaches memory ahead of an older
-trap. Bus errors are recognized in Memory, before commit, and are precise. The
+Execute presents a request only in a cycle in which Memory can take a new
+instruction (Memory is not waiting for a response), and not in a cycle in
+which the instruction in Memory traps or an interrupt is taken (the commit
+logic kills it). So when any access is accepted every older instruction has
+passed the commit point: no younger store, atomic, or side-effecting I/O load
+reaches memory ahead of an older trap. A presented request that the memory
+has not yet accepted (back-pressure) stays stable, except that it is withdrawn
+in a cycle in which the pipeline flushes; the memory side must not act on a
+request it has not accepted. Bus errors are recognized in Memory, before commit, and are precise. The
 kill is a short combinational path from the Memory-stage trap decision to
 `d_req_valid`; its timing is part of every milestone report. `d_rsp_error`
 must come from registered state on the memory side — for example an address
@@ -125,7 +129,8 @@ never reach the port.
 
 ## 5. Interfaces
 
-All ports use valid/ready handshakes, hold their request stable until accepted,
+All ports use valid/ready handshakes, hold their request stable until accepted
+(the one exception, a data request withdrawn on a pipeline flush, is in §4),
 and carry at most one outstanding request in the first version (a parameter
 reserves room for more).
 
@@ -143,8 +148,11 @@ coherence protocol can later own them.
 reset-vector parameter, and an RVFI retirement port with the riscv-formal
 fields: `valid`, `order`, `insn`, `trap`, `halt`, `intr`, `mode`, `ixl`,
 `rs1_addr`/`rs2_addr` and their read data, `rd_addr`/`rd_wdata`,
-`pc_rdata`/`pc_wdata`, and `mem_addr` (byte address) with **exact** byte masks
-`mem_rmask`/`mem_wmask` and `mem_rdata`/`mem_wdata`; from milestone 18.3 also the
+`pc_rdata`/`pc_wdata`, and `mem_addr` with **exact** byte masks
+`mem_rmask`/`mem_wmask` and `mem_rdata`/`mem_wdata` in riscv-formal's aligned
+layout (`RISCV_FORMAL_ALIGNED_MEM`): mask bit *i* and data byte *i* are byte *i*
+of the aligned 32-bit word containing the access, and `mem_addr` is that
+word's address or the byte address of the access's lowest byte; from milestone 18.3 also the
 `rvfi_csr_*` read/write masks and data for `mstatus`, `mie`, `mip`, `mtvec`,
 `mscratch`, `mepc`, `mcause`, and `mtval`. (PicoRV32 reports full-word read
 masks on sub-word loads; the Aster core must report exact masks.)
@@ -246,8 +254,9 @@ and 18.0 reviews; none changes the approved scope:
 - §1: PicoRV32's CPI range restated from the retained baseline (the earlier
   5.4–5.7 held for the reduction workload only).
 - §4: data-port timing relative to the commit point, so that precise traps and
-  the one-cycle load-use penalty hold together; `d_rsp_error` from registered
-  state.
+  the one-cycle load-use penalty hold together; when a request may be
+  presented or withdrawn; `d_rsp_error` from registered state.
+- §5: the RVFI memory-field layout (riscv-formal's aligned layout).
 - §5: the RVFI field list made explicit (riscv-formal fields, exact byte masks,
   CSR fields from 18.3).
 - §6: the lockstep comparator is an offline script over a trace file rather

@@ -98,8 +98,10 @@ class Lockstep(unittest.TestCase):
     def test_x0_write_value_and_store_with_spurious_read_are_rejected(self):
         with self.assertRaisesRegex(ValueError, "x0"):
             lockstep.parse_trace(["0 80000000 00500013 0 0 00000005 00000000 0 0 00000000 00000000"])
-        with self.assertRaisesRegex(ValueError, "different read"):
+        with self.assertRaisesRegex(ValueError, "only an AMO"):
             lockstep.parse_trace(["0 80000004 00a29023 0 0 00000000 80001000 3 c 00000000 00050000"])
+        with self.assertRaisesRegex(ValueError, "only an AMO"):   # a plain sh claiming an equal read
+            lockstep.parse_trace(["0 80000004 00a29023 0 0 00000000 80001000 c c 00000000 00050000"])
 
     def test_dropped_or_duplicated_record_is_rejected_by_order(self):
         with self.assertRaisesRegex(ValueError, "order"):

@@ -288,8 +288,11 @@ def hazard_coverage(records: list) -> dict[tuple[str, int, str], int]:
 def retired_check(status: str, trace_text: str) -> tuple[bool, str]:
     """The shell's own retired count must equal the non-trap records in its trace."""
     fields = dict(item.split("=", 1) for item in status.split()[2:] if "=" in item)
-    records = sum(1 for line in trace_text.splitlines() if line.strip() and line.split()[3] == "0")
-    if "retired" not in fields:
+    lines = [line.split() for line in trace_text.splitlines() if line.strip()]
+    if any(len(fields_) != 11 for fields_ in lines):
+        return False, "the trace has a malformed line"
+    records = sum(1 for fields_ in lines if fields_[3] == "0")
+    if not fields.get("retired", "").isdigit():
         return False, "the shell reported no retired count"
     if int(fields["retired"]) != records:
         return False, f"the shell retired {fields['retired']} instructions but its trace holds {records}"
@@ -334,9 +337,10 @@ def run_program(args, config, source: Path, prefix: str, arch: bool = False) -> 
     summary = f"{status.removeprefix('SHELL ')}; lockstep: {message.splitlines()[0]}; {signature_message}"
     if not counted:
         summary += f"; {count_message}"
-    fields = dict(item.split("=", 1) for item in status.split()[2:] if "=" in item)
+    fields = {key: int(value) for key, value in
+              (item.split("=", 1) for item in status.split()[2:] if "=" in item) if value.isdigit()}
     return Outcome(passed and counted and ok and signed, summary, message,
-                   int(fields.get("cycles", 0)), int(fields.get("retired", 0)),
+                   fields.get("cycles", 0), fields.get("retired", 0),
                    trace_text, log_text, symbols["tohost"])
 
 
@@ -429,12 +433,17 @@ def main() -> int:
         def arch_path(name: str) -> Path:
             suite, stem = name.split("/")
             return ARCH_TESTS / "rv32i_m" / suite / "src" / f"{stem}.S"
-        tests = ([arch_path(args.only)] if args.only else
-                 [path for suite in config["arch_suites"]
-                  for path in sorted((ARCH_TESTS / "rv32i_m" / suite / "src").glob("*.S"))])
+        suites = {suite: sorted((ARCH_TESTS / "rv32i_m" / suite / "src").glob("*.S"))
+                  for suite in config["arch_suites"]}
+        tests = [arch_path(args.only)] if args.only else [p for paths in suites.values() for p in paths]
     else:
-        tests = ([TESTS / f"{args.only}.S"] if args.only else
-                 [path for suite in config["suites"] for path in sorted((TESTS / suite).glob("*.S"))])
+        suites = {suite: sorted((TESTS / suite).glob("*.S")) for suite in config["suites"]}
+        tests = [TESTS / f"{args.only}.S"] if args.only else [p for paths in suites.values() for p in paths]
+    empty = [suite for suite, paths in suites.items() if not paths]
+    missing = [str(path) for path in tests if not path.is_file()]
+    if (empty and not args.only) or missing:
+        print(f"FAIL: {args.dut}: no programs found for {', '.join(empty + missing)}")
+        return 1
     failures, skipped, total_cycles, total_retired = [], [], 0, 0
     for test in tests:
         name = f"{test.parent.parent.name if args.arch else test.parent.name}/{test.stem}"
@@ -451,6 +460,9 @@ def main() -> int:
             total_cycles += run.cycles
             total_retired += run.retired
     ran = len(tests) - len(skipped)
+    if ran == 0:
+        print(f"FAIL: {args.dut}: no test ran ({len(skipped)} skipped)")
+        return 1
     mode = f", stall seed {args.stall_seed}" if args.stall_seed is not None else ""
     what = "riscv-arch-test programs" if args.arch else "tests"
     what += " pass in lockstep and by signature"

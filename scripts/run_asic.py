@@ -122,8 +122,9 @@ DESIGNS = {
         "rom_image_module": "aster_v1_asic_rom_image",
         "config": "asic/sky130/config.v1aplus.json",
     },
-    # Phase 18 baseline: PicoRV32 (v1 configuration) as a 10 ns SKY130 core block;
-    # run with --to OpenROAD.STAPrePNR for post-synthesis timing at every corner.
+    # Phase 18 baseline: PicoRV32 (v1 core parameters without IRQ and PCPI) as a
+    # 10 ns SKY130 core block; `make timing-asic-picorv32` runs it through
+    # OpenROAD.STAPostPNR (post-route timing at every corner).
     "core_picorv32": {
         "rtl": ["vendor/picorv32/picorv32.v", "verification/core/timing_picorv32.sv"],
         "defines": ["SYNTHESIS"],

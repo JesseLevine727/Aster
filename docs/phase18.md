@@ -63,10 +63,15 @@ requires the DUT's RVFI trace to equal that stream exactly — record for record
 and in length — comparing PC, instruction word, destination register write,
 memory access (byte address, size, store data), and trap. While parsing the
 trace it also rejects non-consecutive RVFI order numbers (a dropped or
-duplicated record), byte masks that are not one naturally aligned access, and
-byte addresses that disagree with their mask. A test passes only if the shell
-exits 0 reporting PASS, Spike exits 0, and lockstep passes. The first mismatch
-fails the run with both records and their context. Interrupt behavior is
+duplicated record), byte masks that are not one naturally aligned access, byte
+addresses that disagree with their mask, a value written to x0, and a record
+that both reads and writes memory unless it is an AMO with equal masks. A test
+passes only if the shell exits 0 reporting PASS with a retired count equal to
+its trace's, Spike exits 0, lockstep passes, and the program's data region
+(`begin_signature` to `end_signature`) is identical in the shell's memory and
+Spike's at the end. Traces, logs and signatures are deleted before each run,
+and a runner that finds no programs for a configured suite fails. The first
+mismatch fails the run with both records and their context. Interrupt behavior is
 asynchronous and is checked by self-checking directed tests instead of
 lockstep. The extensions the comparison needs for traps and CSRs (18.3),
 atomics (18.4), and Xasterdot8 (18.5) are specified in [`cpu.md`](cpu.md) §6.
@@ -208,11 +213,24 @@ requires (a 50 MHz result is an intermediate milestone, not a substitute).
   signature read through the cache hierarchy rather than the backing array
 - [ ] **Before measuring 18.7:** declare whether "≥2× fewer cycles" applies to
   each kernel or to an aggregate (and which)
-- [ ] **Open decision, due before 18.6:** how SKY130 slow-corner timing is
-  obtained for the SRAM macro, whose only liberty model is analytical and
-  typical-corner ([`phase17-memory.md`](phase17-memory.md)): characterization
-  with OpenRAM at `ss`/1.60 V/100 °C, or a documented derating. The frozen
-  target requires credible slow-corner SRAM timing.
+- [x] **Decided 29 September 2026 — SRAM timing plan for 18.6.** The SKY130
+  macros' only liberty models are analytical and typical-corner
+  ([`phase17-memory.md`](phase17-memory.md)), so no macro sits on the 10 ns
+  single-cycle path:
+  1. the L1 instruction and data arrays (a few KiB each, single-cycle hits) are
+     standard-cell latch or flip-flop arrays, timed by the foundry cell
+     libraries at every corner including `max_ss`; a standalone 2–4 KiB array
+     block is timed early (18.1–18.2), as the PicoRV32 baseline was, to size
+     the L1 from measurement;
+  2. the 96 KiB OpenRAM backing store sits behind the L1 miss path with
+     registered inputs and outputs and a fixed multi-cycle access, so its
+     falling-edge launch and slow-corner delay fall in a 15–20 ns window
+     instead of half a cycle; the miss cost is measured in 18.6/18.7;
+  3. the one macro type used is characterized with OpenRAM's SPICE
+     characterizer against the PDK models at `ss`/1.60 V/100 °C (and at `tt`, to
+     check the shipped model), run in the background during 18.1–18.5;
+  4. derating the typical-corner model is used only as a labelled
+     cross-check, never as the basis.
 - [ ] 18.1 … 18.7 as in the table above
 
 ## Non-goals
