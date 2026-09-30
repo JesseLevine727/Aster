@@ -1,9 +1,9 @@
 # Aster core — CPU specification (Phase 18)
 
 Status: **approved on 29 September 2026 (P17-E) — the Phase 18 contract.**
-*Revision in progress (30 September 2026): the owner chose a two-stage memory
-access, so §4 (five stages) and §5 (one request in flight) are being revised
-for a seven-stage pipeline (F1 F2 D E M1 M2 W); see [`phase18.md`](phase18.md).*
+*Revised 30 September 2026 (owner decision): a two-stage memory access, so a
+seven-stage pipeline (F1 F2 D E M1 M2 W) in §4 and pipelined ports in §5; the
+revision is pending the owner's review.*
 
 This is the specification of the CPU that replaces PicoRV32 in v2. It is written
 before any RTL so that every milestone has a fixed target, interface,
@@ -11,11 +11,13 @@ verification method, and timing/area gate. The surrounding plan is [`phase17-plu
 
 ## 1. Goals
 
-- A single-issue, in-order, five-stage RV32IMA core designed in this project.
+- A single-issue, in-order, seven-stage RV32IMA core designed in this project
+  (five stages until the 30 September 2026 revision; §4).
 - At least **2× fewer cycles** than the v1 PicoRV32 baseline on the fixed
   CPU-bound set, at the same clock and memory configuration, judged by the
   aggregate rule in §7 (the geometric mean of the per-kernel speedups at least
-  2×, and no kernel below 1.5×); about 1.2–1.5 CPI with single-cycle memory.
+  2×, and no kernel below 1.5×); an estimated 1.5–1.9 CPI with the seven-stage
+  pipeline of §4, to be measured in 18.7.
   PicoRV32's measured CPI on that set, in the retained Phase 17 baseline with
   the physical `sync1` memory, is 5.2–12.3:
   5.7 for the reduction and 10.0 for scalar Conv2D on the coherent SoC; 5.2
@@ -76,75 +78,144 @@ PicoRV32's custom IRQ instructions and fixed vector, so `start.S`,
 
 ## 4. Microarchitecture
 
-Five stages: **F**etch, **D**ecode, **E**xecute, **M**emory, **W**rite-back.
+Seven stages (revised 30 September 2026, owner decision): **F1** and **F2**
+(instruction fetch, one memory stage each), **D**ecode, **E**xecute, **M1** and
+**M2** (data access, one memory stage each), **W**rite-back. Every instruction
+fetch and data access spans two pipeline stages because a single-cycle read of
+512 B and 2 KiB standard-cell arrays did not fit 10 ns at the SKY130 slow corner
+in the pre-18.1 runs ([`phase18.md`](phase18.md), "Pre-18.1 measurements"); the
+memory behind each port is itself split into two register-to-register stages.
 
-- **Fetch.** The PC register addresses the instruction port; with a
-  single-cycle synchronous memory the instruction arrives when the instruction
-  enters Decode. Sequential fetch continues every cycle unless stalled or
-  redirected.
-- **Decode.** Decode, immediate generation, a two-read/one-write register file
-  that forwards a same-cycle write to its read ports, hazard detection, and
-  jump-target computation for `jal`.
-- **Execute.** ALU, branch compare and target, CSR read/modify, load/store
-  address generation, the first stage of the multiplier, and Xasterdot8's
-  first stage.
-- **Memory.** Data-port response, atomic operations, the second
-  multiplier/DOT8 stage, and exception/interrupt commit (the commit point is
-  the end of Memory). The data request itself is presented from Execute and
-  accepted at the Execute→Memory edge; see *Data-port timing and precise
-  traps* below.
-- **Write-back.** Register write and retirement (RVFI output).
+- **F1 / F2.** The next-PC logic presents a fetch request each cycle; the
+  memory accepts it at the edge where that instruction enters F1, runs its
+  two stages during F1 and F2, and the instruction word is registered at the
+  end of F2. Sequential fetch continues every cycle, so up to two fetches are
+  in flight. A **three-entry** instruction buffer (fetch latency plus one)
+  absorbs returning words while Decode is stalled. The fetch unit presents a
+  new sequential request only if the buffer's occupied entries plus the
+  fetches in flight plus this request fit in three — a decision made from
+  registered state only, with no combinational path from the memory's data or
+  from Decode's stall back to the request; with three entries this sustains
+  one fetch per cycle and never overflows (two entries would allow two fetches
+  every three cycles). A presented request not yet accepted counts as in
+  flight, so the room rule never withdraws it. A redirect presents its target
+  regardless of the room rule: it flushes the buffer, and fetches already in
+  flight are marked discarded, returning into no entry.
+- **D.** Decode, immediate generation, a two-read/one-write register file that
+  forwards a same-cycle write to its read ports, hazard detection, and the
+  target computation for `jal` and for backward branches, which are predicted
+  taken.
+- **E.** ALU, branch compare and target, `jalr` target, CSR read/modify,
+  load/store address generation, the data request (below), the first
+  multiplier and Xasterdot8 stage, and the iterative divider. A misprediction
+  or `jalr` resolves at the edge where it leaves E: at that edge the compare
+  result clears the valid bits entering E and D and flushes the instruction
+  buffer, so no wrong-path instruction ever issues a data request, CSR write,
+  redirect, or divider start; only the presentation of the target is
+  registered, to the next cycle. The redirect fires once, even if the
+  instruction waits in E for several cycles.
+- **M1.** The data access's first memory stage; the second multiplier/DOT8
+  stage; exception and interrupt commit — **the commit point is the end of
+  M1**. Every trap source (illegal instruction, misalignment, `ecall`,
+  `ebreak`, a fetch error carried with the instruction, a data-port error)
+  is known by then.
+- **M2.** The data access's second memory stage (load data, AMO old value, or
+  `sc` result registered at its end) and the third multiplier stage.
+  Instructions in M2 and W have committed and always retire.
+- **W.** Load alignment and sign extension, register write, and retirement
+  (RVFI output, registered).
 
 Hazards and penalties:
 
 | Case | Handling | Cost |
 | --- | --- | ---: |
-| ALU result → next instruction | forward from E/M and M/W to Execute | 0 |
-| Load → dependent next instruction | stall one cycle, then forward | 1 cycle |
-| `mul` → dependent instruction | pipelined over E and M, forwarded from W | up to 2 cycles |
-| `div`/`rem` | iterative (radix-2), stalls the pipeline | ≈33 cycles |
-| `jal` | redirect from Decode | 1 cycle |
-| Conditional branch | static prediction: backward taken, forward not taken, predicted in Decode; resolved in Execute | 1 cycle if predicted taken; 2 cycles if mispredicted |
-| `jalr` | resolved in Execute | 2 cycles |
-| Memory back-pressure | the stage waiting on a port stalls the pipeline behind it | as the memory returns |
+| ALU or link result → dependent instruction | forward from M1, M2, and W to Execute | 0 |
+| Load → dependent at distance 1 / 2 | stall, then forward from W | 2 / 1 cycles |
+| AMO, `lr`, `sc` result → dependent | as a load | 2 / 1 cycles |
+| Store whose data comes from a load at distance 1 / 2 | as a load-use (store data is presented from E) | 2 / 1 cycles |
+| `mul` → dependent | pipelined over E, M1, M2; forwarded from W | up to 2 cycles |
+| Xasterdot8 → dependent | pipelined over E and M1; forwarded from M2 and W | up to 1 cycle |
+| `div`/`rem` | iterative (radix-2) in E, stalls the pipeline | ≈33 cycles |
+| `jal`; conditional branch predicted taken (backward) | redirect from Decode, target presented the same cycle | 2 cycles |
+| Conditional branch mispredicted; `jalr` | resolved in Execute; the redirect is registered | 4 cycles |
+| Data-port back-pressure or an answer later than two cycles | the stage waiting on the port stalls the pipeline behind it | as the memory returns |
+| Instruction-port back-pressure or a late answer | bubbles enter Decode | as the memory returns |
 
-Dynamic branch prediction is added only if measurement on the CPU set shows it
-pays for its area and timing.
+The Execute redirect is registered so that the branch compare does not drive
+the instruction memory's address in the same cycle; if 18.1's timing shows the
+direct path fits at `max_ss`, it becomes 3 cycles. Redirect priority, highest
+first: a trap or interrupt at the commit point, the registered Execute
+redirect, a Decode redirect. An interrupt is taken only in a cycle in which M1
+holds a valid instruction, before the instruction after it; `mepc` receives
+that M1 instruction's next PC (its `pc_wdata`, the redirect target if it
+redirected). Rough estimate, to be measured in 18.7 (a trace-driven model from
+the kernels' Spike logs is planned before RTL): about 1.5–1.9 CPI on the CPU
+set. PicoRV32 measured 5.2–12.3 CPI with the v1 one-wait-state memory and
+about 4.2 CPI on `riscv-tests` in the zero-wait shell the gate uses, so the
+margin is smaller than the first figure suggests.
+A next-line or branch-target predictor in F1 is the first candidate if 18.7
+shows branch cost matters; dynamic prediction is added only if measurement
+shows it pays for its area and timing.
 
 **Data-port timing and precise traps.** A load, store, or atomic presents its
-request while in Execute (address from the Execute adder) and the memory
-accepts it at the Execute→Memory edge; with a synchronous SRAM the response —
-load data, AMO old value, `sc` result, or `d_rsp_error` — arrives while the
-instruction is in Memory. That is what makes the load-use penalty one cycle.
-Execute presents a request only in a cycle in which Memory can take a new
-instruction (Memory is not waiting for a response), and not in a cycle in
-which the instruction in Memory traps or an interrupt is taken (the commit
-logic kills it). So when any access is accepted every older instruction has
-passed the commit point: no younger store, atomic, or side-effecting I/O load
-reaches memory ahead of an older trap. A presented request that the memory
-has not yet accepted (back-pressure) stays stable, except that it is withdrawn
-in a cycle in which the pipeline flushes; the memory side must not act on a
-request it has not accepted. Bus errors are recognized in Memory, before
-commit, and are precise. The kill is a short combinational path from the
-Memory-stage trap decision (including `d_rsp_error`) to `d_req_valid`, and a
-full-rate load or store stream needs another from `d_rsp_valid` to
-`d_req_valid`; both are named in every milestone's timing report. An
+request while in Execute (address from the Execute adder); the memory accepts
+it at the Execute→M1 edge, reports an error for it during M1 (the cycle after
+acceptance), and returns its data by the end of M2. Execute presents a
+request only in a cycle in which M1 can take a new instruction, and not in a
+cycle in which the instruction in M1 traps or an interrupt is taken (the
+commit logic kills it). So when any access is accepted every older
+instruction has passed the commit point: no younger store, atomic, or
+side-effecting I/O load reaches memory ahead of an older trap. A presented
+data request that the memory has not accepted (back-pressure) stays stable,
+except that it is withdrawn in a cycle in which the pipeline flushes; the
+memory side must not act on a request it has not accepted. Bus errors are
+therefore recognized in M1, before commit, and are precise. The kill is a
+short combinational path from the M1 trap decision (including `d_rsp_error`)
+to `d_req_valid`. "M1 can take a new instruction" depends on M2 advancing,
+which depends on `d_rsp_valid` in that cycle, so a second path runs from
+`d_rsp_valid` through the pipeline stall to `d_req_valid`; both are named in
+every milestone's timing report, and the 18.6 L1 must decide hit or miss in
+its first stage so that `d_rsp_valid` is known early in M2. An
 instruction whose access the memory has accepted is never killed by an
 interrupt: interrupts are taken between instructions at the commit point, so
-the instruction in Memory completes and the interrupt is taken before the next
-one (a store or I/O load is never repeated after `mret`). `d_rsp_error`
-must come from registered state on the memory side — for example an address
-decode made when the request was accepted and returned as a flag with the
-response — never from an SRAM macro's data output, whose falling-edge launch
-leaves only half a cycle. Misaligned addresses are detected in Execute and
-never reach the port.
+the instruction in M1 completes and the interrupt is taken before the next one
+(a store or I/O load is never repeated after `mret`). `d_rsp_error` must come
+from registered state on the memory side — the address decode made when the
+request was accepted — never from an SRAM's data output; only such errors can
+be precise with the commit point at M1, so a later memory level (the Phase 20
+fabric, an L2) must report its errors the same way or as an imprecise
+interrupt. The core samples `d_rsp_error` in the cycle after acceptance and
+holds it if M1 stalls. Misaligned addresses are detected in Execute and never
+reach the port. Instruction fetches are speculative (wrong-path fetches are
+discarded), so the memory side answers a fetch from an I/O region with
+`i_rsp_error` without touching the device; it traps as an instruction access
+fault at the commit point.
 
 ## 5. Interfaces
 
-All ports use valid/ready handshakes, hold their request stable until accepted
-(the one exception, a data request withdrawn on a pipeline flush, is in §4),
-and carry at most one outstanding request in the first version (a parameter
-reserves room for more).
+All ports use valid/ready handshakes. A request presented and not yet
+accepted stays stable, with two exceptions: a data request is withdrawn on a
+pipeline flush (§4), and an instruction request is withdrawn or replaced on a
+redirect. The memory must not act on a request it has not accepted.
+
+**Timing (pipelined).** A request accepted at a clock edge is answered at the
+earliest one and normally two cycles later — the memory is built as two
+register-to-register stages. Every accepted request, including a store and an
+errored request, gets exactly one response, and responses return in
+acceptance order. Accesses also **take effect** in acceptance order: a
+later-accepted access observes every earlier-accepted write on the same port
+(including an AMO's), whatever stage the memory writes in. The memory may
+accept a request every cycle and holds `*_req_ready` low when it cannot take
+more. On the data port the core never has more than two requests in flight
+(M1 and M2 hold them). The instruction port may present a third fetch (the
+fetch buffer's room rule, or a redirect), so there the memory's
+`i_req_ready` enforces its own limit; two in flight suffice for one fetch per
+cycle. The core is built for two-cycle answers: a one-cycle answer (as from the
+CPU shell's SRAM) is held until its stage, and a longer one (a cache miss)
+stalls the pipeline. `d_rsp_error` is meaningful only in the cycle after an
+acceptance, where it reports that request's error whatever its data latency
+(§4); `i_rsp_error` travels with the instruction word and traps at the commit
+point.
 
 **Instruction port:** `i_req_valid`, `i_req_addr[31:2]`, `i_req_ready`;
 `i_rsp_valid`, `i_rsp_data[31:0]`, `i_rsp_error`.
@@ -152,9 +223,9 @@ reserves room for more).
 **Data port:** `d_req_valid`, `d_req_op` (load, store, `lr`, `sc`, or one of the
 AMO operations), `d_req_addr[31:0]`, `d_req_wdata[31:0]`, `d_req_be[3:0]`,
 `d_req_ready`; `d_rsp_valid`, `d_rsp_rdata[31:0]` (load data, AMO old value, or
-`sc` success), `d_rsp_error`. Atomic operations are executed by the memory side
-as one indivisible transaction, as the v1 atomic fabric does today, so the
-coherence protocol can later own them.
+`sc` success); `d_rsp_error` (timed as above). Atomic operations are executed
+by the memory side as one indivisible transaction, as the v1 atomic fabric does
+today, so the coherence protocol can later own them.
 
 **Other signals:** `clk`, `rst_n`, `meip`, `mtip`, `msip`, a hart-id parameter, a
 reset-vector parameter, and an RVFI retirement port with the riscv-formal
@@ -165,18 +236,20 @@ fields: `valid`, `order`, `insn`, `trap`, `halt`, `intr`, `mode`, `ixl`,
 layout (`RISCV_FORMAL_ALIGNED_MEM`): mask bit *i* and data byte *i* are byte *i*
 of the aligned 32-bit word containing the access, and `mem_addr` is that
 word's address (the lockstep comparator also accepts the byte address of the
-access's lowest byte, but riscv-formal checks the word address); from milestone 18.3 also the
-`rvfi_csr_*` read/write masks and data for `mstatus`, `mie`, `mip`, `mtvec`,
-`mscratch`, `mepc`, `mcause`, and `mtval`. (PicoRV32 reports full-word read
-masks on sub-word loads; the Aster core must report exact masks.)
+access's lowest byte, but riscv-formal checks the word address); from
+milestone 18.3 also the `rvfi_csr_*` read/write masks and data for `mstatus`,
+`mie`, `mip`, `mtvec`, `mscratch`, `mepc`, `mcause`, and `mtval`. RVFI outputs
+are registered. (PicoRV32 reports full-word read masks on sub-word loads; the
+Aster core must report exact masks.)
 
-The ports are shaped for synchronous SRAM (address presented in one cycle, data
-returned the next), which matches FPGA block RAM and, on SKY130, the
-standard-cell L1 arrays that sit on these ports. No SKY130 SRAM macro is on a
-single-cycle path: the macros form the backing store behind the L1 miss path,
-with registered inputs and outputs and a fixed multi-cycle access (the
-owner-approved 18.6 SRAM timing plan in [`phase18.md`](phase18.md)). That
-replaces the earlier requirement that a macro read fit half a cycle
+On the FPGA the memory behind each port is block RAM with its output
+register enabled (a two-cycle read); on SKY130 it is the L1's standard-cell
+arrays, each split into two stages. No SKY130 SRAM macro is on a
+register-to-register path shorter than its slow-corner access (to be
+characterized in 18.6): the macros form the backing store behind the L1 miss path, with registered inputs
+and outputs and a fixed multi-cycle access (the owner-approved 18.6 SRAM
+timing plan in [`phase18.md`](phase18.md)). That replaces the earlier
+requirement that a macro read fit half a cycle
 ([`phase17-memory.md`](phase17-memory.md)).
 
 ## 6. Verification
@@ -263,7 +336,10 @@ Each milestone passes all applicable layers before the next milestone starts.
   measured separately, in 18.6 and Phase 20). The SRAM serves one instruction
   fetch and one data access in the same cycle — separate instruction and data
   banks, as the Option B memory decision intends — which the Aster core's two
-  ports use and single-ported PicoRV32 cannot.
+  ports use and single-ported PicoRV32 cannot. The Aster core's two-stage
+  memory access gains nothing from a one-cycle SRAM, so this comparison is
+  conservative for the Aster core. (Procedure: the two-port shell runs with
+  `+latency=1`; its default is the two-cycle memory the core is built for.)
 
   The kernel inputs and sizes are those of the
   [retained Phase 17 baseline](results/phase17/baseline-56067a15815a/README.md),
@@ -275,12 +351,12 @@ Each milestone passes all applicable layers before the next milestone starts.
 | Milestone | Content | Exit |
 | --- | --- | --- |
 | 18.0 | Spike, lockstep harness, `riscv-arch-test`, timing scripts | Harness catches an injected mismatch |
-| 18.1 | RV32I pipeline on single-cycle memory | Conformance, random lockstep, first timing report |
+| 18.1 | RV32I seven-stage pipeline on the shell's memory | Conformance, random lockstep, first timing report |
 | 18.2 | M extension | Corner-case M tests, lockstep, timing |
 | 18.3 | Zicsr, traps, interrupts, counters | Trap/interrupt tests in every pipeline state |
 | 18.4 | A extension, `fence`, `fence.i` | Atomic and litmus tests on the core |
 | 18.5 | Xasterdot8 | v1 DOT8 reference tests |
-| 18.6 | L1 instruction/data caches with single-cycle hits; SRAM interface; runtime port | Cache reference model, stalls, firmware regression |
+| 18.6 | L1 instruction/data caches with two-stage pipelined hits; SRAM interface; runtime port | Cache reference model, stalls, firmware regression |
 | 18.7 | Evaluation | CPU set vs PicoRV32 (§7 gate: geometric mean ≥2×, every kernel ≥1.5×); 100 MHz feasibility report for FPGA and SKY130 |
 
 ## 9. Approval
@@ -291,33 +367,45 @@ and hazard policy with static branch prediction first (§4), and Spike as the
 golden model with the verification layers of §6. Changes after approval are
 recorded here with the evidence that motivated them.
 
-Clarifications during milestone 18.0 (29 September 2026), from the Phase 17
+Clarifications during milestone 18.0 (29–30 September 2026), from the Phase 17
 and 18.0 reviews; none changes the approved scope:
 
 - §1: PicoRV32's CPI range restated from the retained baseline (the earlier
   5.4–5.7 held for the reduction workload only).
-- §4: data-port timing relative to the commit point, so that precise traps and
-  the one-cycle load-use penalty hold together; when a request may be
-  presented or withdrawn; `d_rsp_error` from registered state.
-- §5: the RVFI memory-field layout (riscv-formal's aligned layout).
-- §4: the timed request paths named; an accepted access is never killed by an
-  interrupt.
-- §5: SKY130 macros are off the single-cycle path (the owner-approved 18.6 SRAM
-  plan in [`phase18.md`](phase18.md)), replacing the half-cycle macro-read
-  requirement.
-- 30 September 2026, owner decision: every instruction fetch and data access
-  spans two pipeline stages (a seven-stage core), because a single-cycle
-  standard-cell SRAM read did not fit 10 ns at the SKY130 slow corner, with
-  either cell library ([`phase18.md`](phase18.md), "Pre-18.1 measurements").
-  §4–§5 are revised accordingly.
-- §1, §7, §8: the 2× performance gate is an aggregate — the geometric mean of
-  the seven per-kernel speedups at least 2.0×, with no kernel below 1.5×, every
-  per-kernel speedup published — declared by the owner before any measurement.
-  The measurement conditions in §7 (unrounded ratios; both cores on the same
-  shell SRAM, dual-banked for instruction and data, the Aster core without its
-  L1) were proposed in review and confirmed by the owner on 30 September 2026.
-- §5: the RVFI field list made explicit (riscv-formal fields, exact byte masks,
-  CSR fields from 18.3).
+- §4: data-port timing relative to the commit point; when a request may be
+  presented or withdrawn; `d_rsp_error` from registered state; the timed
+  request paths named; an accepted access is never killed by an interrupt.
+  (Its "one-cycle load-use penalty" is superseded by the seven-stage revision
+  below.)
+- §5: the RVFI field list made explicit (riscv-formal fields, exact byte masks
+  in riscv-formal's aligned layout, CSR fields from 18.3).
 - §6: the lockstep comparator is an offline script over a trace file rather
   than a C++ testbench; the trap, CSR, AMO, and Xasterdot8 extensions are
   scheduled; the arch-test suite is pinned at 3.10.0.
+
+Changes after approval, by the owner:
+
+- **29 September 2026 — SRAM timing plan (§5):** SKY130 macros are off the
+  single-cycle path ([`phase18.md`](phase18.md), 18.6 plan), replacing the
+  half-cycle macro-read requirement.
+- **29–30 September 2026 — performance gate (§1, §7, §8):** an aggregate — the
+  geometric mean of the seven per-kernel speedups at least 2.0×, with no
+  kernel below 1.5×, every per-kernel speedup published — declared before any
+  measurement; the measurement conditions in §7 (unrounded ratios; both cores
+  on the same one-cycle, dual-banked shell SRAM, the Aster core without its L1)
+  were proposed in review and confirmed on 30 September.
+- **30 September 2026 — two-stage memory access (§1, §4, §5, §7, §8):** every
+  instruction fetch and data access spans two pipeline stages (a seven-stage
+  core), because a single-cycle read of standard-cell arrays did not fit 10 ns
+  at the SKY130 slow corner in the pre-18.1 runs — 512 B and 2 KiB with the
+  standard cells, 512 B with the high-speed cells ([`phase18.md`](phase18.md)).
+  §4: seven stages; a three-entry fetch buffer; the commit point at the end of
+  M1, with data-port errors reported the cycle after acceptance; load-use 2
+  cycles; Decode redirects 2 cycles, registered Execute redirects 4, with the
+  wrong-path instructions in D and entering E killed; interrupts taken with a
+  valid instruction in M1. §5: pipelined ports answering in one or (normally)
+  two cycles, one response per request, accesses taking effect in acceptance
+  order, at most two data requests in flight and the instruction memory
+  limiting fetches with `i_req_ready`. §1's CPI estimate, §7's
+  conservative-comparison note, and the 18.1/18.6 rows of §8 follow. The
+  revised §4–§5 await the owner's review.

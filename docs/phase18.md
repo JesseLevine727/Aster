@@ -1,15 +1,15 @@
 # Phase 18: Aster core — CPU, L1/SRAM interface, and 100 MHz feasibility
 
 Status: **in progress — milestone 18.0 (tooling) exit gate met; 18.1 prerequisites
-measured; the owner chose a two-stage memory access (a seven-stage core), and
-cpu.md §4–§5 are being revised for it before 18.1 RTL.** The CPU specification this
+measured; the owner chose a two-stage memory access (a seven-stage core);
+cpu.md §4–§5 are revised for it and await the owner's review before 18.1 RTL.** The CPU specification this
 phase implements is [`cpu.md`](cpu.md) (approved 29 September 2026); the phase
 sits in the [v2 plan](phase17-plus.md#6-phase-17-sequence). Every milestone
 passes its verification layer and records its timing before the next starts.
 
 ## Goal
 
-Design and verify Aster's own five-stage RV32IMA core (with Zicsr, Zifencei and
+Design and verify Aster's own seven-stage RV32IMA core (with Zicsr, Zifencei and
 native Xasterdot8), together with the L1/SRAM interface that feeds it, so that it:
 
 - retires the same architectural stream as an independent reference model
@@ -35,9 +35,10 @@ synchronous SRAM and nothing else:
   its look-ahead port (`mem_la_*`, one cycle ahead of `mem_valid`), so data is
   ready in the cycle `mem_valid` is high: PicoRV32's best case with a
   synchronous SRAM (the v1 SoC's `sync1` model adds a wait state). The Aster
-  core's ports are shaped for the same SRAM ([`cpu.md`](cpu.md) §5), so the
-  18.7 comparison runs both cores against identical memory timing, with
-  PicoRV32 at its best;
+  core runs in the two-port shell (`tb_core_ports.cpp`), whose memory answers
+  in two cycles by default (the core's design, [`cpu.md`](cpu.md) §5) or one
+  (`+latency=1`); the 18.7 comparison uses the one-cycle memory for both cores,
+  PicoRV32 at its best and the Aster core gaining nothing from it;
 - random back-pressure (`+stall_seed`: 0–3 wait states per access), and garbage
   on the read-data bus outside a response, so a core that samples it at the
   wrong time fails;
@@ -225,7 +226,8 @@ still on the path. So a single-cycle read of a 512 B or larger standard-cell
 flip-flop array was not reached at `max_ss` in these runs; even a 3–4 ns
 improvement leaves no room in the same cycle for a tag compare and the use of
 the data. Latch arrays and banked arrays with a late select remain
-unmeasured. The options, for the owner:
+unmeasured. The options were (the owner chose the two-stage memory access; see
+the checklist):
 - **flow:** correlate the resizer with signoff (over-constraint, calibrated
   `LAYERS_RC`), placement density and regions for the array;
 - **array organization:** banks with a late select, latch arrays (allowed by
@@ -279,7 +281,7 @@ as capacitance), as OpenRAM's own characterizer does.
 | 18.3 | Zicsr, traps, interrupts, counters | arch-test Zicsr; directed traps in every stage; interrupt tests in every pipeline state |
 | 18.4 | A extension, `fence`, `fence.i` | ua/arch-test A and Zifencei; atomic and self-modifying-code tests |
 | 18.5 | Xasterdot8 | v1 DOT8 reference tests on the core |
-| 18.6 | L1 caches with single-cycle hits; SRAM interface; runtime port | cache reference model, back-pressure, firmware regression |
+| 18.6 | L1 caches with two-stage pipelined hits; SRAM interface; runtime port | cache reference model, back-pressure, firmware regression |
 | 18.7 | Evaluation and feasibility | Against PicoRV32 on the CPU set in the same shell: geometric mean of the per-kernel speedups ≥2.0× and every kernel ≥1.5×, each kernel's speedup published; 100 MHz feasibility report for FPGA and SKY130 |
 
 ## Checklist
@@ -344,16 +346,31 @@ as capacitance), as OpenRAM's own characterizer does.
   high-speed cells, which the owner chose to try first. Every instruction
   fetch and data access therefore spans two pipeline stages: the Aster core
   becomes a seven-stage pipeline (F1 F2 D E M1 M2 W).
-- [ ] **18.1 entry:** revise [`cpu.md`](cpu.md) §4–§5 for seven stages (stage
+- [ ] **18.1 entry:** [`cpu.md`](cpu.md) §4–§5 revised for seven stages (stage
   contents, hazards and penalties, pipelined ports with two requests in
-  flight, the commit point and trap/bus-error timing) and review it before
-  RTL
+  flight, the commit point at the end of M1 and trap/bus-error timing) —
+  drafted 30 September 2026; owner review before RTL
 - [x] **Aster-core shell:** a two-port shell (`verification/core/tb_core_ports.cpp`)
   with the Aster core's port protocol, independent back-pressure on each port,
   every retired store checked against the bus write the memory accepted, and
   no unmatched write at the end; proven with PicoRV32 behind a port adapter —
   48/48 riscv-tests plain and under stall, 47/47 arch-test, and a corrupted
   bus write detected (`make core-ports-tests`, in `make check`)
+- [x] **Two-port shell memory follows the revised port contract** (cpu.md §5):
+  one- or two-cycle answers (`+latency`, default 2), up to two requests in
+  flight per port (`+max_inflight`), in order under random stalls, and
+  `d_rsp_error` in the cycle after acceptance; PicoRV32 passes at both
+  latencies (it keeps one request in flight, so the two-in-flight path is
+  first exercised by the Aster core)
+- [ ] **Before 18.1 RTL:** a trace-driven CPI model of the seven-stage pipeline
+  from the CPU kernels' Spike logs (evidence for the 1.5–1.9 estimate and the
+  2× margin); a stub DUT that keeps two requests in flight per port, to test
+  the shell's pipelined memory before the core does
+- [ ] **By the milestone named:** hazard coverage extended to distance 4 (the
+  register-file write-through) and AMO/`lr`/`sc` classed as load-like
+  producers (18.1); CSR write point and `minstret` read semantics (18.3);
+  `fence.i` draining in-flight data accesses and flushing F1, F2, the buffer,
+  D and E (18.4)
 - [ ] **Aster-core shell, for 18.1:** exact RVFI byte masks (no `word_loads`);
   a wrapper to the core's own reset and interrupt ports (the shell drives
   PicoRV32's `resetn` and reads its `trap`); request-protocol checks (payload
@@ -390,11 +407,12 @@ as capacitance), as OpenRAM's own characterizer does.
   4. derating the typical-corner model is used only as a labelled
      cross-check, never as the basis.
 
-  *30 September 2026:* item 1 was measured early, as planned; with
+  *30 September 2026:* item 1's "single-cycle hits" is replaced by the
+  owner's two-stage memory access decision (above): the L1 arrays are split
+  into two pipeline stages. Item 1 was measured early, as planned; with
   LibreLane's default flow a single-cycle standard-cell array read did not
   close 10 ns at `max_ss`, and the flow's own estimate did not predict signoff
-  (see "Pre-18.1 measurements"). The flow is being correlated before the open
-  decision below. Items 2–4 stand.
+  (see "Pre-18.1 measurements"), which led to that decision. Items 2–4 stand.
 - [ ] 18.1 … 18.7 as in the table above
 
 ## Non-goals

@@ -26,7 +26,7 @@ Each is a design input, not a tuning detail.
 | Property | Evidence | Consequence for v2 |
 | --- | --- | --- |
 | One memory transaction in flight across the SoC | `aster_atomic_fabric` serializes both harts; the device arbiter admits one of CPU/DMA/NPU; one `aster_coherent_cache` FSM serves both D-cache banks, device traffic, and flush | Per-core L1 that can hit in parallel; a memory system that allows more than one outstanding transaction |
-| Cache hits are slow | The coherent D-cache sits below the fabric: a load hit costs about seven wait cycles (qualifier, fabric check, four cache states, response) | The CPU and its L1 are designed together; single-cycle L1 hits are a Phase 18 requirement |
+| Cache hits are slow | The coherent D-cache sits below the fabric: a load hit costs about seven wait cycles (qualifier, fabric check, four cache states, response) | The CPU and its L1 are designed together; fully pipelined L1 hits (a hit every cycle, over two stages since the 30 September 2026 revision) are a Phase 18 requirement |
 | Multi-cycle CPU | PicoRV32 reduction workload: 53,299 retired instructions in 289,251 cycles (async memory) and 301,635 cycles (gate level, synchronous memory) — about 5.4–5.7 CPI | A pipelined CPU, measured against PicoRV32 in the same shell |
 | Starved NPU | Each operand byte is a separate 32-bit read; each 32-bit result is four byte stores; about 51 cycles per 4×4 array step by FSM trace. Phase 10 records: 16 compute cycles of 2,492 busy cycles (4×4×16), 124 of 14,608 (8×8×31) | Local operand buffers, full-word transfers, operand reuse; array utilization is a gate, not a by-product |
 | NPU shape mismatch | The headline Conv2D is M=784, N=1, K=25: one output column, at most 4 of 16 PEs active; batch-one MLP layers are also N=1 | The NPU needs a mapping for N=1 (for example K-split across columns) or utilization targets cannot apply to the workloads that matter |
@@ -381,13 +381,17 @@ feasibility early.
   pages stay.
 - **Microarchitecture:** single-issue, in-order, five stages (fetch, decode,
   execute, memory, write-back) with full forwarding and a one-cycle load-use
-  stall; branches resolve in execute with static backward-taken/forward-not-taken
+  stall (revised 30 September 2026: seven stages, F1 F2 D E M1 M2 W, with a
+  two-cycle load-use stall; [`cpu.md`](cpu.md) §4); branches resolve in execute with static backward-taken/forward-not-taken
   prediction (dynamic prediction only if measured to pay); pipelined multiplier;
   iterative divider.
 - **Interfaces:** separate instruction and data ports with valid/ready
   back-pressure, shaped for synchronous SRAM (address in one stage, data in the
-  next), and an RVFI-compatible retirement port for lockstep and formal checking.
-- **Targets:** about 1.2–1.5 CPI on the CPU-bound set with single-cycle memory;
+  next; revised 30 September 2026: pipelined, normally two cycles, up to two
+  requests in flight; [`cpu.md`](cpu.md) §5), and an RVFI-compatible retirement port for lockstep and formal checking.
+- **Targets:** about 1.2–1.5 CPI on the CPU-bound set with single-cycle memory
+  (revised 30 September 2026: a seven-stage core with two-stage memory access,
+  estimated 1.5–1.9 CPI; [`cpu.md`](cpu.md) §4);
   at least 2× fewer cycles than PicoRV32 at the same clock and memory
   configuration (geometric mean of the per-kernel speedups, no kernel below
   1.5×; [`cpu.md`](cpu.md) §7); 10 ns block timing out-of-context on the PYNQ-Z1 and in SKY130
@@ -398,12 +402,12 @@ feasibility early.
 | Milestone | Content | Gate |
 | --- | --- | --- |
 | 18.0 | Tooling: Spike, lockstep harness, `riscv-arch-test`, committed Vivado out-of-context and SKY130 block synthesis/STA scripts | Harness detects a deliberately injected mismatch |
-| 18.1 | RV32I pipeline on single-cycle tightly coupled memory | `riscv-tests`/arch tests, random lockstep, timing report |
+| 18.1 | RV32I pipeline on the shell's memory (seven stages since the 30 September 2026 revision) | `riscv-tests`/arch tests, random lockstep, timing report |
 | 18.2 | M extension | Same, plus multiply/divide corner cases |
 | 18.3 | Zicsr, traps, interrupts, counters | Trap/interrupt directed tests in every pipeline state |
 | 18.4 | A extension, `fence`/`fence.i` | Atomic tests and litmus programs on the core |
 | 18.5 | Xasterdot8 | Exhaustive-style DOT8 reference tests from v1 |
-| 18.6 | L1 instruction/data caches with single-cycle hits and the SRAM interface; runtime port | Cache reference model, stalls, firmware regression |
+| 18.6 | L1 instruction/data caches with two-stage pipelined hits (revised 30 September 2026) and the SRAM interface; runtime port | Cache reference model, stalls, firmware regression |
 | 18.7 | Evaluation and feasibility | CPU set versus PicoRV32 in the same shell; 100 MHz feasibility report for FPGA and SKY130 including SRAM read timing |
 
 **Exit:** a lockstep-verified core that meets the CPU cycle target, a memory
@@ -487,12 +491,14 @@ follows.
    configuration), corrects Phase 15/16 documents and audits without new ASIC
    runs, and moves valid CoreMark timing to the Aster core.
 2. **Aster designs its own CPU.** Instead of choosing among candidate cores,
-   Phase 18 designs and verifies a five-stage RV32IMA core with the
+   Phase 18 designs and verifies an in-order RV32IMA core (seven stages since
+   the 30 September 2026 revision) with the
    specification in section 6 and the verification method in section 5.
 3. **CPU and memory are designed together.** A new CPU dropped into the v1
    memory system would still pay about seven cycles per cache hit behind a
-   chip-wide serialized fabric. Single-cycle L1 hits and an SRAM-shaped
-   interface are part of Phase 18, not a later integration detail.
+   chip-wide serialized fabric. Pipelined L1 hits (two stages since the 30
+   September 2026 revision) and an SRAM-shaped interface are part of Phase 18,
+   not a later integration detail.
 4. **The NPU diagnosis is sharper.** The draft attributed the weak Conv2D result
    mainly to its N=1 shape. The array computes in under 1% of busy cycles even
    on shapes that fill it (section 1), and the 13.3× GEMM result is measured

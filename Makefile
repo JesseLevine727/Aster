@@ -2164,12 +2164,13 @@ CORE_PORTS_TESTS = RISCV_PREFIX=$(RISCV_PREFIX) $(PYTHON) scripts/run_core_tests
 .PHONY: core-ports-sim core-ports-tests
 core-ports-sim: $(CORE_PORTS_SIM)
 
-# The two-port shell on riscv-tests (plain and back-pressured) and arch-test,
-# and its store check proven to catch a bus write that differs from RVFI.
+# The two-port shell on riscv-tests (two-cycle memory, one-cycle memory, and
+# back-pressured) and arch-test, and its store and stray-write checks proven
+# to catch a bus write that differs from RVFI.
 core-ports-tests: $(CORE_PORTS_SIM)
 	@mkdir -p $(CORE_TESTS_DIR)
-	@set -o pipefail; for mode in plain stall arch; do \
-		extra=$$(case $$mode in stall) echo "--stall-seed 5";; arch) echo "--arch";; esac); \
+	@set -o pipefail; for mode in plain latency1 stall arch; do \
+		extra=$$(case $$mode in latency1) echo "--shell-arg +latency=1";; stall) echo "--stall-seed 5";; arch) echo "--arch";; esac); \
 		$(CORE_PORTS_TESTS) $$extra --build-dir $(CORE_TESTS_DIR)/ports-$$mode | \
 			tee $(CORE_TESTS_DIR)/ports-$$mode.log | tail -1 || \
 			{ grep -v '^PASS' $(CORE_TESTS_DIR)/ports-$$mode.log; exit 1; }; \

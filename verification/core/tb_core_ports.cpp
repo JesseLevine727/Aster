@@ -4,14 +4,19 @@
 // with Verilator `--prefix Vcore_ports` that has these ports can be the DUT:
 // the Aster core, or PicoRV32 through shell_picorv32_ports.sv.
 //
-// Memory: each port accepts a request at a clock edge when valid && ready and
-// answers it (valid for one cycle) in the next cycle — the synchronous SRAM the
-// core is designed for, able to serve an instruction fetch and a data access
-// in the same cycle (separate banks). At most one request is outstanding per
-// port: ready stays low while a response is still due, except in the cycle the
-// response is delivered, so back-to-back requests run at one per cycle.
-// Stall mode (+stall_seed) adds random ready-low cycles and 0-2 extra
-// response cycles per access on each port independently. Response data is
+// Memory (docs/cpu.md §5): each port accepts a request at a clock edge when
+// valid && ready and answers it `+latency` cycles later (1 or 2; default 2, the
+// Aster core's two-stage memory), valid for one cycle, in order; separate
+// instruction and data banks serve a fetch and a data access in the same
+// cycle. Requests are pipelined: up to `+max_inflight` (default 2) per port are
+// in flight, and ready is low when that many would remain after this cycle's
+// response. A data-port error is signalled on d_rsp_error in the cycle after
+// the request's acceptance, whatever its data latency (the address decode is
+// registered at acceptance); i_rsp_error travels with the instruction word.
+// Outside those cycles both error signals carry garbage, so a core that
+// samples them at the wrong time fails.
+// Stall mode (+stall_seed) adds random ready-low cycles and 0-2 extra response
+// cycles per access, per port, keeping responses in order. Response data is
 // garbage outside a response.
 //
 // Checks, besides the trace: each retired store must match, in word address,
@@ -21,7 +26,7 @@
 // the store to tohost retires.
 //
 // Plusargs: +bin=<file> +tohost=<hex> [+trace=<file>] [+max_cycles=<n>]
-//           [+stall_seed=<n>] [+mem_bytes=<hex>]
+//           [+stall_seed=<n>] [+mem_bytes=<hex>] [+latency=<1|2>] [+max_inflight=<n>]
 //           [+signature=<file> +sig_begin=<hex> +sig_end=<hex>]
 //           [+corrupt_write=<n>]  (self-test: the n-th accepted write reaches
 //                                   memory with bit 0 of each byte flipped, as a
@@ -39,6 +44,7 @@
 #include "Vcore_ports.h"
 #include "verilated.h"
 
+#include <algorithm>
 #include <cstdint>
 #include <cstdio>
 #include <deque>
@@ -75,13 +81,30 @@ struct Memory {
     }
 };
 
-// One port's response side: the response owed for the last accepted request.
+// One port's response side: the responses owed, oldest first. `wait` counts
+// the cycles until the response is driven; the head responds when it is 0.
+struct Response {
+    int wait;
+    std::uint32_t data;                   // read data; stores and errors answer with garbage
+    bool error;
+};
+
 struct Port {
-    bool pending = false;
-    int delay = 0;
-    std::uint32_t data = 0;               // read data; stores and errors answer with garbage
-    bool error = false;
-    bool responding() const { return pending && delay == 0; }
+    std::deque<Response> owed;
+    bool responding() const { return !owed.empty() && owed.front().wait == 0; }
+    std::size_t remaining() const { return owed.size() - (responding() ? 1 : 0); }
+    // After an edge: the delivered response leaves, the others age by a cycle.
+    void advance() {
+        if (responding()) owed.pop_front();
+        for (Response& r : owed) if (r.wait > 0) --r.wait;
+    }
+    // A request accepted at this edge is answered `latency` cycles later, never
+    // before (or in the same cycle as) the response ahead of it.
+    void accept(int latency, int extra, std::uint32_t data, bool error) {
+        int wait = latency - 1 + extra;
+        if (!owed.empty()) wait = std::max(wait, owed.back().wait + 1);
+        owed.push_back({wait, data, error});
+    }
 };
 
 struct Write {
@@ -108,6 +131,12 @@ int main(int argc, char** argv) {
         plusarg("mem_bytes").empty() ? kDefaultBytes : std::stoul(plusarg("mem_bytes"), nullptr, 16);
     if (mem_bytes == 0 || mem_bytes % 4) { std::cerr << "+mem_bytes must be a nonzero multiple of 4\n"; return 2; }
     const bool duplicate_tohost_write = Verilated::commandArgsPlusMatch("duplicate_tohost_write")[0] != '\0';
+    const int latency = plusarg("latency").empty() ? 2 : std::stoi(plusarg("latency"));
+    const std::size_t max_inflight = plusarg("max_inflight").empty() ? 2 : std::stoul(plusarg("max_inflight"));
+    if (latency < 1 || latency > 2 || max_inflight < 1) {
+        std::cerr << "+latency must be 1 or 2 and +max_inflight at least 1\n";
+        return 2;
+    }
 
     Memory memory(mem_bytes);
     std::ifstream image(bin, std::ios::binary);
@@ -134,6 +163,8 @@ int main(int argc, char** argv) {
         plusarg("corrupt_write").empty() ? 0 : std::stoull(plusarg("corrupt_write"));
     std::uint64_t accepted_writes = 0;
     Port iport, dport;
+    bool d_error_next = false;              // d_rsp_error for the request accepted at the last edge
+    bool d_error_cycle = false;             // a data request was accepted at the last edge
     std::deque<Write> writes;               // accepted data-port writes not yet matched to a retired store
     std::uint64_t cycles = 0, retired = 0;
     std::string result = "TIMEOUT";
@@ -141,15 +172,13 @@ int main(int argc, char** argv) {
     while (!stop && cycles < max_cycles) {
         // Low phase: drive responses and readiness for this cycle.
         d.i_rsp_valid = iport.responding();
-        d.i_rsp_data = iport.responding() ? iport.data : std::uint32_t(garbage());
-        d.i_rsp_error = iport.responding() && iport.error;
+        d.i_rsp_data = iport.responding() ? iport.owed.front().data : std::uint32_t(garbage());
+        d.i_rsp_error = iport.responding() ? iport.owed.front().error : garbage() & 1u;
         d.d_rsp_valid = dport.responding();
-        d.d_rsp_rdata = dport.responding() ? dport.data : std::uint32_t(garbage());
-        d.d_rsp_error = dport.responding() && dport.error;
-        const bool i_free = !iport.pending || iport.responding();
-        const bool d_free = !dport.pending || dport.responding();
-        d.i_req_ready = i_free && !(stall && rng() % 4 == 0);
-        d.d_req_ready = d_free && !(stall && rng() % 4 == 0);
+        d.d_rsp_rdata = dport.responding() ? dport.owed.front().data : std::uint32_t(garbage());
+        d.d_rsp_error = d_error_cycle ? d_error_next : garbage() & 1u;
+        d.i_req_ready = iport.remaining() < max_inflight && !(stall && rng() % 4 == 0);
+        d.d_req_ready = dport.remaining() < max_inflight && !(stall && rng() % 4 == 0);
         d.eval();
         const bool i_accept = d.i_req_valid && d.i_req_ready;
         const bool d_accept = d.d_req_valid && d.d_req_ready;
@@ -160,26 +189,30 @@ int main(int argc, char** argv) {
         d.clk = 1; d.eval();
         ++cycles;
         // Responses delivered in the cycle before this edge are consumed; others age.
-        for (Port* port : {&iport, &dport}) {
-            if (port->responding()) port->pending = false;
-            else if (port->pending) --port->delay;
-        }
+        iport.advance();
+        dport.advance();
+        d_error_next = false;
+        d_error_cycle = d_accept;
         if (i_accept) {
-            iport = Port{true, stall ? int(rng() % 3) : 0, std::uint32_t(garbage()), !memory.contains(i_addr)};
-            if (!iport.error) iport.data = memory.read(i_addr);
+            const bool error = !memory.contains(i_addr);
+            iport.accept(latency, stall ? int(rng() % 3) : 0,
+                         error ? std::uint32_t(garbage()) : memory.read(i_addr), error);
         }
         if (d_accept) {
-            dport = Port{true, stall ? int(rng() % 3) : 0, std::uint32_t(garbage()), !memory.contains(d_addr)};
+            const bool error = !memory.contains(d_addr);
+            std::uint32_t rdata = std::uint32_t(garbage());
+            d_error_next = error;
             if (d_op != kLoad && d_op != kStore) { result = "UNSUPPORTED_OP"; stop = true; }
-            else if (dport.error) { result = "BUS_ERROR"; stop = true; }
+            else if (error) { result = "BUS_ERROR"; stop = true; }
             else if (d_op == kStore) {
                 const std::uint32_t written = ++accepted_writes == corrupt_write ? d_wdata ^ 0x01010101u : d_wdata;
                 memory.write(d_addr, written, d_be);
                 writes.push_back({d_addr & ~3u, d_be, written});
                 if (duplicate_tohost_write && (d_addr & ~3u) == tohost) writes.push_back({d_addr & ~3u, d_be, written});
             } else {
-                dport.data = memory.read(d_addr);
+                rdata = memory.read(d_addr);
             }
+            dport.accept(latency, stall ? int(rng() % 3) : 0, rdata, error);
         }
         if (d.rvfi_valid && !stop) {
             if (!d.rvfi_trap) ++retired;

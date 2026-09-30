@@ -95,7 +95,7 @@ about the current design.
 | Target | Goal |
 | --- | --- |
 | Operating frequency | **100 MHz** post-route on PYNQ-Z1 and a 100 MHz SKY130 design target, with positive setup/hold slack at all required corners. Feasibility is an early gate; functional overclocking alone does not count. |
-| CPU | **Aster's own in-order RV32IMA core** (five-stage pipeline, designed and verified in Phase 18) with at least **2× fewer cycles** than v1 PicoRV32 on the fixed CPU-bound test set at the same clock and memory configuration. PicoRV32 remains the v1 reference point. |
+| CPU | **Aster's own in-order RV32IMA core** (seven-stage pipeline, designed and verified in Phase 18) with at least **2× fewer cycles** than v1 PicoRV32 on the fixed CPU-bound test set at the same clock and memory configuration. PicoRV32 remains the v1 reference point. |
 | INT8 NPU | 4×4 array: **3.2 GOPS theoretical peak at 100 MHz** when one MAC counts as two operations; at least 50% peak on predeclared dense GEMM shapes. Report MAC/s, utilization, and end-to-end time as well as GOPS. |
 | Multicore / offload | Measure scaling and crossovers end-to-end. Large GEMM and the selected MLP should benefit from the NPU; small jobs are allowed to lose and must remain in the results. |
 | Physical quality | Timing closure, zero routing/foundry DRC, zero LVS mismatch, zero antenna and electrical (slew/capacitance/fanout) violations, and workload-specific energy evidence. Memory capacity and die-area budget must be chosen together. |
@@ -151,7 +151,7 @@ configuration, cache policy, compiler settings, and clock.
 | Phase | Focus | Exit condition |
 | --- | --- | --- |
 | 17 | Correct the v1 measurements (v11 records, one same-top baseline), correct Phase 15/16 reporting and audits, choose the memory/area point, freeze the v2 contract and CPU specification | v11 records and the retained v1 baseline reproduce; audits enforce their gates; targets, memory point, and CPU specification are frozen. |
-| 18 | **Aster core:** design and verify our own five-stage RV32IMA CPU together with its L1/SRAM interface; early 100 MHz feasibility | Lockstep-verified against an independent reference model; ≥2× fewer cycles than PicoRV32 on the CPU set; block timing meets 10 ns on FPGA and SKY130, or the limiting path and its cost are quantified. |
+| 18 | **Aster core:** design and verify our own seven-stage RV32IMA CPU together with its L1/SRAM interface; early 100 MHz feasibility | Lockstep-verified against an independent reference model; ≥2× fewer cycles than PicoRV32 on the CPU set; block timing meets 10 ns on FPGA and SKY130, or the limiting path and its cost are quantified. |
 | 19 | NPU utilization and data movement | Local operand buffers, full-word transfers, pipelined address generation, cumulative counters; dense-GEMM utilization and end-to-end targets pass. |
 | 20 | Integrate CPU, multicore, caches, DMA, DOT8, NPU, and all workloads | Full workload matrix passes independent correctness and performance audits on the same declared configurations. |
 | 21 | PYNQ-Z1 implementation and physical workload study | All-engine overlay closes at 100 MHz and repeated physical captures match independent references. |

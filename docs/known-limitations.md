@@ -10,7 +10,7 @@ was updated on 2026-09-29 for v1.1–v1.3 and the
 | Limitation | Consequence | Planned |
 | --- | --- | --- |
 | No shared L2 in v1.0; coherence is MSI-like over shared RAM | L2 capacity/refill questions are unanswered in v1.0 | **resolved in v1.1** ([contract](l2.md)): a memory-side read-allocate/write-through L2, default off; see the [analysis](results/v1.1/closeout-bb881fc/analysis.md) |
-| All memory traffic, including cache hits, is serialized | One transaction is in flight across the SoC: both harts, DMA and the NPU share one fabric → arbiter → cache-controller path, and a D-cache load hit costs about seven cycles | v2: per-core L1 with single-cycle hits (Phase 18) and parallel hits (Phase 20) |
+| All memory traffic, including cache hits, is serialized | One transaction is in flight across the SoC: both harts, DMA and the NPU share one fabric → arbiter → cache-controller path, and a D-cache load hit costs about seven cycles | v2: per-core L1 with pipelined hits, one per cycle over two stages (Phase 18), and parallel hits (Phase 20) |
 | Single outstanding native request per hart | No memory-level parallelism; latency is exposed | out of scope for v1; v2 Aster core and memory system (Phase 18) |
 | No interrupt priority, nesting or preemption | A single level per hart; the handler runs to completion and services all enabled sources | v2 |
 | Fixed 4×4 INT8 NPU | CNN layers are tiled in software; utilization depends on tile shape | geometry **resolved in v1.2** ([2×2/4×4/8×8](npu-geometry.md), 4×4 default); the array is starved by its byte-wide data path — v2 Phase 19 |
