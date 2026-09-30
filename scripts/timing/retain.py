@@ -82,16 +82,19 @@ def retain_asic(run: Path, target: Path) -> None:
     for corner in WORST_PATH_CORNERS:
         report = sta / corner / "max.rpt"
         text = report.read_text()
-        start = 0
-        while True:
-            start = text.index("Startpoint:", start)
+        start, block = 0, None
+        while (start := text.find("Startpoint:", start)) != -1:
             end = text.index("\n", text.index("slack (", start))
-            block = text[start:end]
-            header = block[:block.index("Path Group")]        # start- and endpoint descriptions
+            candidate = text[start:end]
+            header = candidate[:candidate.index("Path Group")]    # start- and endpoint descriptions
             if header.count("flip-flop") == 2:
+                block = candidate
                 break
             start = end
-        worst += [f"===== {corner} =====", block, ""]
+        # A report can list only port paths when every register-to-register
+        # path is comfortably met; summary.json still has the worst slack.
+        worst += [f"===== {corner} =====",
+                  block or "(no flip-flop-to-flip-flop path among this report's paths)", ""]
         hashes.append(f"{sha256(report)}  {sta.name}/{corner}/max.rpt")
     (target / sta.name / "worst_paths.txt").write_text("\n".join(worst))
     # Paths the design names for its report (asic/sky130/sta_named_paths.tcl):

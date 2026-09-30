@@ -5,11 +5,12 @@ a two-stage memory access (a seven-stage core) and approved the revised cpu.md
 §4–§5; the CPU kernels run in the shell and the CPI model projects the 18.7
 gate at about 3.7×. Milestone 18.1: the seven-stage RV32I RTL passes
 riscv-tests, arch-test I and random programs in lockstep, cycle for cycle with
-the CPI model on a memory that answers on time. First timing report: the core
-meets 10 ns out of context on the FPGA (102 MHz; with a block RAM behind its
-ports, 96–104 MHz depending on the memory's form); on SKY130 it reaches 134 MHz
-typical and 67 MHz at the slow corner, a broad miss dominated by weak
-buffering — next, the flow correlation and the write-through fix (see "Milestone 18.1").** The CPU specification this
+the CPI model on a memory that answers on time. Timing after the 18.1 timing
+work: the core meets 10 ns out of context on the FPGA (105–113 MHz; with a
+block RAM behind its ports, 100–112 MHz); on SKY130, in the flow chosen in
+18.1, 163–168 MHz typical and 84–88 MHz at the slow corner (PicoRV32 104.6
+MHz in the same flow), limited by Execute's datapath — how to close the rest
+is the open 18.1 question (see "Milestone 18.1").** The CPU specification this
 phase implements is [`cpu.md`](cpu.md) (approved 29 September 2026); the phase
 sits in the [v2 plan](phase17-plus.md#6-phase-17-sequence). Every milestone
 passes its verification layer and records its timing before the next starts.
@@ -477,6 +478,54 @@ for the real wires — the main lever, as the buffering dominates), and
 precomputing the write-through match a cycle early (as the forwarding selects
 already are) or replacing the write-through with a fourth forwarding source.
 
+**18.1 timing work after the first report (30 September 2026).** Five RTL
+changes, each behavior-neutral (every cycle count unchanged, `make check`
+passing, planted bugs in each caught except ones that cannot change
+behavior), and four flow experiments. SKY130 runs are post-route at 10 ns in
+the baseline flow unless noted; the slow corner is `max_ss_100C_1v60`:
+
+| Run | RTL (commit) | Flow | `nom_tt` fmax | `max_ss` setup | `max_ss` fmax | Area µm² |
+| --- | --- | --- | ---: | ---: | ---: | ---: |
+| `p18-aster` (first report) | `9971ea1` | baseline | 134.0 MHz | −4.874 ns | 67.2 MHz | 163,412 |
+| `p18-aster-pnr-margin` | `9971ea1` | +3 ns setup margin in place and route | 130.3 MHz | −5.462 ns | 64.7 MHz | 164,972 |
+| `p18-aster-grt-repair` | `9971ea1` | design repair after global routing | 132.7 MHz | −5.000 ns | 66.7 MHz | 164,117 |
+| `p18-aster-wt` | `34cf6d5` write-through select registered | baseline | 147.5 MHz | −2.981 ns | 77.0 MHz | 165,426 |
+| `p18-aster-wt-rc` | `34cf6d5` | per-corner wire RC (`LAYERS_RC`, LibreLane's SKY130 table) | 132.5 MHz | −4.115 ns | 70.8 MHz | 172,781 |
+| `p18-aster-pd` | `9d29175` + predecoded Decode redirect, circular fetch buffer | baseline | 140.4 MHz | −3.864 ns | 72.1 MHz | 161,879 |
+| `p18-aster-ex` | `3cf31ce` + compare-free redirect target, loads aligned leaving M2 | baseline | 154.6 MHz | −2.811 ns | 78.1 MHz | 156,299 |
+| `p18-aster-wr` | `209ddcb` + buffer writes off the stall chain | baseline | 154.0 MHz | −3.528 ns | 73.9 MHz | 156,325 |
+| `p18-aster-wr-nobuf1` | `209ddcb` | baseline without `buf_1` | 158.3 MHz | −2.312 ns | 81.2 MHz | 164,171 |
+| `p18-aster-wr-nobuf1-rc` | `209ddcb` | **chosen:** without `buf_1`, per-corner wire RC | 163.6 MHz | −1.435 ns | 87.5 MHz | 176,856 |
+| `p18-aster-wr-nobuf1-rc-u38` | `209ddcb` | chosen, 38% core utilization | 168.0 MHz | −1.900 ns | 84.0 MHz | 180,670 |
+| `p18-aster-sc-rc` | `9ffb3ab` + stall logic off the address alignment | chosen | 163.0 MHz | −1.644 ns | 85.9 MHz | 176,813 |
+| `p18-picorv32-nobuf1` | PicoRV32 | baseline without `buf_1` | 147.8 MHz | −3.055 ns | 76.6 MHz | 165,770 |
+| `p18-picorv32-nobuf1-rc` | PicoRV32 | chosen | 201.9 MHz | **+0.436 ns** | **104.6 MHz** | 175,177 |
+
+What the runs show. In the baseline flow the typical corner tracks the RTL
+changes (134 → 154–158 MHz), but the slow corner moves by up to 0.7 ns
+between runs of RTL that only shortens paths: its worst paths are always a
+high-fanout control net that the resizer has buffered with chains of `buf_1`
+cells — adequate on its wire estimate, slow at signoff — and which net that
+is changes with placement (after global routing the resizer estimated about
+−2.7 ns where signoff found −4.9 ns, and stopped). Neither a setup margin nor
+design repair after global routing helps. Two settings together do, for both
+cores: no `buf_1`, and LibreLane's per-corner wire-RC table (alone, the table
+fixes slews but costs setup; alone, dropping `buf_1` helps the Aster core and
+hurts PicoRV32). **This is the flow the core is reported with from 18.1 on**
+(`asic/sky130/config.core_aster.json`; PicoRV32 in the same flow:
+`make timing-asic-picorv32-chosen`). In it PicoRV32 closes 10 ns at the slow
+corner (104.6 MHz, from 83.5 in the baseline flow), and the Aster core
+reaches 84–88 MHz (163–168 MHz typical) across three runs — a 38%-utilization
+floorplan moves the slow corner by 0.5 ns, the size of the effect a single
+run can resolve. The core's remaining slow-corner limit is Execute's
+datapath: the forwarded operand through the 32-bit ALU, compare and adders
+into M1 and into the registered redirect target, 1.4–1.9 ns short with few
+buffers left on it; §4's two port paths pass (+1.62 and +2.23 ns at
+`max_ss`). On the FPGA the RTL changes take the core from 102.0 to 105.6–113.1
+MHz out of context (variation across runs), and with the block RAM
+100.5–103.7 MHz in the §5 form and 110.0–111.9 MHz with the request
+registered. Evidence: [`results/phase18/aster-18.1-timing-work`](results/phase18/aster-18.1-timing-work/README.md).
+
 ## Milestones and gates
 
 | Milestone | Content | Exit gate |
@@ -539,9 +588,14 @@ already are) or replacing the write-through with a fourth forwarding source.
   extra setup uncertainty against a 10 ns signoff brings PicoRV32 to −0.583 ns
   at `max_ss` (94.5 MHz, +5.2% area); the 512 B array did not route with it at
   30% utilization
-- [ ] **Flow correlation (18.1 timing work):** calibrate the resizer's wire RC
-  (`LAYERS_RC`) against the signoff extraction, tune the margin, and choose
-  the flow the Aster core is reported with
+- [x] **Flow correlation (18.1 timing work, 30 September 2026):** the flow
+  the Aster core is reported with is chosen — the baseline flow plus
+  LibreLane's per-corner wire RC (`LAYERS_RC`, `VIAS_R`) and no `buf_1`
+  cells, which closes PicoRV32 at the slow corner (104.6 MHz) and gives the
+  Aster core 84–88 MHz there; the setup margin and design repair after
+  global routing were measured and rejected. A per-layer fit of the wire RC
+  to the signoff extraction was not needed to choose; it stays available if
+  18.7's feasibility report needs a tighter correlation
 - [ ] SKY130 core-to-SRAM port budgets for the Aster core, from the correlated
   L1 array measurements (the array's write path, which is as long as its
   read path, included)

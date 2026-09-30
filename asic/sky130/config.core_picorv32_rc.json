@@ -1,7 +1,7 @@
 {
-    "DESIGN_NAME": "timing_aster",
+    "DESIGN_NAME": "timing_picorv32",
     "VERILOG_FILES": [
-        "dir::build/timing_aster.v"
+        "dir::build/timing_picorv32.v"
     ],
     "CLOCK_PORT": "clk",
     "CLOCK_PERIOD": 10.0,
@@ -10,9 +10,9 @@
     "PNR_SDC_FILE": "dir::constraints.core.sdc",
     "SIGNOFF_SDC_FILE": "dir::constraints.core.sdc",
     "EXTRA_EXCLUDED_CELLS": [
-        "sky130_fd_sc_hd__clkdlybuf4s*"
+        "sky130_fd_sc_hd__clkdlybuf4s*",
+        "sky130_fd_sc_hd__buf_1"
     ],
-    "STA_EXTRA_CORNER_TCL_FILE": "dir::sta_named_paths.tcl",
     "pdk::sky130*": {
         "FP_CORE_UTIL": 40,
         "CLOCK_PERIOD": 10.0,

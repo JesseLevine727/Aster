@@ -2318,7 +2318,7 @@ timing-fpga-picorv32:
 # dual-port block RAM behind its ports, so the paths from the memory's answer
 # back to the next request are timed too (docs/cpu.md §4) — in the §5 form
 # (the block RAM samples the request) and with the request registered first.
-.PHONY: timing-fpga-aster timing-asic-aster
+.PHONY: timing-fpga-aster timing-asic-aster timing-asic-picorv32-chosen
 timing-fpga-aster:
 	@command -v $(VIVADO) >/dev/null || { echo "ERROR: Vivado not found (set VIVADO=/path/to/vivado)" >&2; exit 1; }
 	@for top in aster aster_bram aster_bram_reqreg; do \
@@ -2337,6 +2337,11 @@ timing-asic-aster:
 	$(PYTHON) scripts/run_asic.py --design core_aster --to OpenROAD.STAPostPNR --run-tag p18-aster -- --overwrite
 	@mkdir -p $(TIMING_DIR)/asic
 	@$(PYTHON) scripts/timing/sky130_summary.py asic/sky130/runs/p18-aster --json $(TIMING_DIR)/asic/aster.json
+
+timing-asic-picorv32-chosen:
+	$(PYTHON) scripts/run_asic.py --design core_picorv32_rc --to OpenROAD.STAPostPNR --run-tag p18-picorv32-chosen -- --overwrite
+	@mkdir -p $(TIMING_DIR)/asic
+	@$(PYTHON) scripts/timing/sky130_summary.py asic/sky130/runs/p18-picorv32-chosen --json $(TIMING_DIR)/asic/picorv32-chosen.json
 
 timing-asic-picorv32:
 	$(PYTHON) scripts/run_asic.py --design core_picorv32 --to OpenROAD.STAPostPNR --run-tag p18-picorv32 -- --overwrite

@@ -133,8 +133,11 @@ DESIGNS = {
         "rom_image_module": None,
         "config": "asic/sky130/config.core_picorv32.json",
     },
-    # Phase 18.1: the Aster core (rtl/aster_core) as a 10 ns SKY130 block, in the
-    # same flow and constraints as core_picorv32; `make timing-asic-aster`.
+    # Phase 18.1: the Aster core (rtl/aster_core) as a 10 ns SKY130 block;
+    # `make timing-asic-aster`. The flow chosen in 18.1 (docs/phase18.md): the
+    # core_picorv32 constraints and strategy, plus per-corner wire and via RC for
+    # the resizer (LAYERS_RC, VIAS_R: the SKY130 table LibreLane's pdk_compat.py
+    # carries commented out) and no buf_1 cells.
     "core_aster": {
         "rtl": ["rtl/aster_core/aster_core_pkg.sv", "rtl/aster_core/aster_core_fetch.sv",
                 "rtl/aster_core/aster_core.sv", "verification/core/timing_aster.sv"],
@@ -144,17 +147,15 @@ DESIGNS = {
         "rom_image_module": None,
         "config": "asic/sky130/config.core_aster.json",
     },
-    # 18.1 flow correlation: core_aster with per-corner wire and via RC for the
-    # resizer (LAYERS_RC, VIAS_R: the SKY130 table LibreLane's pdk_compat.py
-    # carries commented out), instead of the tech LEF's single set.
-    "core_aster_rc": {
-        "rtl": ["rtl/aster_core/aster_core_pkg.sv", "rtl/aster_core/aster_core_fetch.sv",
-                "rtl/aster_core/aster_core.sv", "verification/core/timing_aster.sv"],
+    # PicoRV32 in the flow chosen for the Aster core, for a same-flow baseline
+    # (18.1 flow correlation); `make timing-asic-picorv32-chosen`.
+    "core_picorv32_rc": {
+        "rtl": ["vendor/picorv32/picorv32.v", "verification/core/timing_picorv32.sv"],
         "defines": ["SYNTHESIS"],
-        "output": "timing_aster.v",
+        "output": "timing_picorv32.v",
         "rom_image": None,
         "rom_image_module": None,
-        "config": "asic/sky130/config.core_aster_rc.json",
+        "config": "asic/sky130/config.core_picorv32_rc.json",
     },
     # Phase 18 timing probe: a 2 KiB standard-cell (flip-flop) SRAM array, the
     # kind of array the 18.6 L1 caches use; its read path sizes the L1.

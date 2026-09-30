@@ -18,7 +18,10 @@ BASELINES = [
     ("picorv32-baseline-v2", "asic/core", "asic/core/summary.json", ["fpga/core", "fpga/core_bram"]),
     ("aster-18.1", "asic/aster", "asic/aster/summary.json", ["fpga/aster", "fpga/aster_bram", "fpga/aster_bram_reqreg"]),
     ("aster-18.1", "asic/aster_pnr_margin", "asic/aster_pnr_margin/summary.json", []),
-]
+] + [("aster-18.1-timing-work", f"asic/{run}", f"asic/{run}/summary.json",
+      ["fpga/aster", "fpga/aster_bram", "fpga/aster_bram_reqreg"] if run == "final_chosen" else [])
+     for run in ("grt_repair", "wt", "wt_rc", "pd", "ex", "wr", "wr_nobuf1", "wr_chosen", "wr_chosen_u38",
+                 "final_chosen", "picorv32_nobuf1", "picorv32_chosen")]
 
 
 def retained_part(recomputed, retained):
