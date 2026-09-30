@@ -2,8 +2,8 @@
 
 Status: **approved on 29 September 2026 (P17-E) — the Phase 18 contract.**
 *Revised 30 September 2026 (owner decision): a two-stage memory access, so a
-seven-stage pipeline (F1 F2 D E M1 M2 W) in §4 and pipelined ports in §5; the
-revision is pending the owner's review.*
+seven-stage pipeline (F1 F2 D E M1 M2 W) in §4 and pipelined ports in §5;
+the revision was approved by the owner the same day.*
 
 This is the specification of the CPU that replaces PicoRV32 in v2. It is written
 before any RTL so that every milestone has a fixed target, interface,
@@ -408,4 +408,4 @@ Changes after approval, by the owner:
   order, at most two data requests in flight and the instruction memory
   limiting fetches with `i_req_ready`. §1's CPI estimate, §7's
   conservative-comparison note, and the 18.1/18.6 rows of §8 follow. The
-  revised §4–§5 await the owner's review.
+  revised §4–§5 were approved by the owner on 30 September 2026.

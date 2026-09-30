@@ -1,8 +1,9 @@
 # Phase 18: Aster core — CPU, L1/SRAM interface, and 100 MHz feasibility
 
 Status: **in progress — milestone 18.0 (tooling) exit gate met; 18.1 prerequisites
-measured; the owner chose a two-stage memory access (a seven-stage core);
-cpu.md §4–§5 are revised for it and await the owner's review before 18.1 RTL.** The CPU specification this
+measured; the owner chose a two-stage memory access (a seven-stage core) and
+approved the revised cpu.md §4–§5; next, the CPU kernels in the shell and a
+trace-driven CPI model, then 18.1 RTL.** The CPU specification this
 phase implements is [`cpu.md`](cpu.md) (approved 29 September 2026); the phase
 sits in the [v2 plan](phase17-plus.md#6-phase-17-sequence). Every milestone
 passes its verification layer and records its timing before the next starts.
@@ -346,10 +347,10 @@ as capacitance), as OpenRAM's own characterizer does.
   high-speed cells, which the owner chose to try first. Every instruction
   fetch and data access therefore spans two pipeline stages: the Aster core
   becomes a seven-stage pipeline (F1 F2 D E M1 M2 W).
-- [ ] **18.1 entry:** [`cpu.md`](cpu.md) §4–§5 revised for seven stages (stage
-  contents, hazards and penalties, pipelined ports with two requests in
-  flight, the commit point at the end of M1 and trap/bus-error timing) —
-  drafted 30 September 2026; owner review before RTL
+- [x] **18.1 entry:** [`cpu.md`](cpu.md) §4–§5 revised for seven stages (stage
+  contents, hazards and penalties, pipelined ports, the commit point at the
+  end of M1 and trap/bus-error timing); reviewed twice and approved by the
+  owner on 30 September 2026
 - [x] **Aster-core shell:** a two-port shell (`verification/core/tb_core_ports.cpp`)
   with the Aster core's port protocol, independent back-pressure on each port,
   every retired store checked against the bus write the memory accepted, and
