@@ -16,6 +16,7 @@ from __future__ import annotations
 import argparse
 import hashlib
 import json
+import re
 import subprocess
 import sys
 from pathlib import Path
@@ -42,6 +43,9 @@ REPEATS = (1, 2)
 # One declared all-engine coherent SoC; the Makefile defaults, passed explicitly.
 COMMON = {"HART_COUNT": 2, "ENABLE_L1": 1, "L1_LINE_WORDS": 4, "L1_LINE_COUNT": 16,
           "ENABLE_L2": 0, "NPU_ROWS": 4, "NPU_COLS": 4}
+# The v1 SoC clock every record reports (CLOCK_HZ in rtl/soc/aster_multicore.sv).
+# The per-record validators pin it too; this check keeps the audit explicit.
+DECLARED_CLOCK_HZ = 31_250_000
 MNIST_METHODS = ("scalar", "multicore", "dot8", "npu")
 MNIST_MODEL = ROOT / "docs/results/phase11/model.json"
 CIFAR_MODEL = ROOT / "docs/results/workloads/cifar_model.json"
@@ -180,6 +184,13 @@ def check_model_config(model: str, sync_memory: int, memory_wait: int | None, wh
                 f"{where}: memory_wait={memory_wait} does not match memory model {model}")
 
 
+def check_top(record: dict, where: str) -> None:
+    require(record["harts"] == COMMON["HART_COUNT"] and record["l1"] == COMMON["ENABLE_L1"] and
+            record["line_words"] == COMMON["L1_LINE_WORDS"] and
+            record["line_count"] == COMMON["L1_LINE_COUNT"],
+            f"{where}: SoC top/cache configuration differs from the declared baseline")
+
+
 def validate_capture(capture: dict, text: str, model: str, mnist_model: dict,
                      cifar_model: dict) -> dict[str, object]:
     where = f"{model}/{capture['id']}"
@@ -191,10 +202,7 @@ def validate_capture(capture: dict, text: str, model: str, mnist_model: dict,
         else:
             reference.verify(record, capture["id"])
         check_model_config(model, record["sync_memory"], record["memory_wait"], where)
-        require(record["harts"] == COMMON["HART_COUNT"] and record["l1"] == COMMON["ENABLE_L1"] and
-                record["line_words"] == COMMON["L1_LINE_WORDS"] and
-                record["line_count"] == COMMON["L1_LINE_COUNT"],
-                f"{where}: SoC top/cache configuration differs from the declared baseline")
+        check_top(record, where)
         return record
     if capture["format"] == "v9":
         method = capture["method"]
@@ -218,7 +226,13 @@ def validate_capture(capture: dict, text: str, model: str, mnist_model: dict,
         require(len(summaries) == 1, f"{where}: expected exactly one v11 summary record")
         summary = v11.validate_line(summaries[0], name=f"mnist_mlp_{method}", category="ml")
         check_model_config(model, summary["sync_memory"], summary["memory_wait"], where)
+        check_top(summary, where)
         cycles_total = sum(r["h0_cycles"] for r in results)
+        # v9 h0_retired carries hart 0's memory-transaction counter (Phase 17 finding).
+        transactions = sum(int(fields["h0_retired"], 16) for fields in records)
+        require(summary["memory_transactions"] == transactions,
+                f"{where}: v11 memory_transactions {summary['memory_transactions']} != "
+                f"sum of the v9 image windows {transactions}")
         require(summary["cycles"] == cycles_total,
                 f"{where}: v11 cycles {summary['cycles']} != sum of the v9 image windows {cycles_total}")
         require(summary["checksum"] == mnist_checksum(mnist_model),
@@ -292,8 +306,9 @@ def check_engine_counters(model: str, parsed: dict[str, dict], texts: dict[str, 
 
 def check_clocks(model: str, parsed: dict[str, dict]) -> int:
     clocks = {cid: record["clock_hz"] for cid, record in parsed.items()}
-    require(len(set(clocks.values())) == 1, f"{model}: captures disagree on clock_hz: {clocks}")
-    return next(iter(clocks.values()))
+    require(set(clocks.values()) == {DECLARED_CLOCK_HZ},
+            f"{model}: captures do not all report the declared clock_hz {DECLARED_CLOCK_HZ}: {clocks}")
+    return DECLARED_CLOCK_HZ
 
 
 def summarize(bundle: Path) -> dict:
@@ -412,9 +427,12 @@ def audit(bundle: Path, *, current: bool = False) -> dict:
             second = (bundle / "records" / model / "r2" / f"{capture['id']}.record").read_bytes()
             require(first == second, f"{model}/{capture['id']}: determinism repeat differs")
 
+    # Firmware hashes are provenance: the images are build products outside the
+    # bundle, so the audit checks their form here and binds them through the
+    # source hash of the recorded revision above.
     for capture in manifest["captures"]:
-        require(len(capture.get("firmware_sha256", "")) == 64,
-                f"{capture['id']}: firmware hash is missing")
+        require(re.fullmatch(r"[0-9a-f]{64}", capture.get("firmware_sha256", "")) is not None,
+                f"{capture['id']}: firmware hash is missing or not a SHA-256 digest")
     summary = summarize(bundle)
     require(manifest.get("summary") == summary, "manifest summary differs from re-evaluation")
     return summary

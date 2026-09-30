@@ -1,4 +1,4 @@
-# Pinned public RV32A reference programs
+# Pinned public RISC-V reference programs
 
 Source: https://github.com/riscv-software-src/riscv-tests
 Revision: `2ebecad997fa58cd9e5724340ba75aa4b59bd1d0`.
@@ -25,3 +25,13 @@ not RISC-V architectural certification or a privileged-ISA claim.
 The owned negative-check helper changes a generated ROM instruction (the first
 AMO test's expected value), verifies that the original failure path is taken,
 and requires the harness to reject it. It never edits these vendored files.
+
+## Phase 18 addition
+
+On 2026-09-29 the RV32UI and RV32UM programs were added from the same pinned
+revision, unchanged: the 42 `isa/rv32ui/*.S` wrappers with their 42
+`isa/rv64ui/*.S` bodies, and the 8 self-contained `isa/rv32um/*.S` programs.
+They run on the Phase 18 CPU shell through its own test environment
+(`verification/core/env/`), in lockstep with Spike. `SHA256SUMS` lists every
+vendored file. On 2026-09-29 all 114 listed files were compared byte for byte
+with a fresh clone of upstream at `2ebecad`: none differs.

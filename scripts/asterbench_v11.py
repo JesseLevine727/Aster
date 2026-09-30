@@ -1,8 +1,11 @@
 #!/usr/bin/env python3
 """Strict AsterBench v11 validator for coherent-SoC workload records.
 
-v2-v10 remain implemented by their original validators. V11 reports both
-coherent hart banks and cumulative, requester-attributed engine totals.
+v2-v10 remain implemented by their original validators. V11 reports hart 0's
+coherent CPU counter bank (cycles, retired, memory and cache transactions), the
+DOT8 counters of both harts, and cumulative, requester-attributed DMA and NPU
+totals. Hart 1's CPU counters are not in v11; a multi-hart CPU breakdown is a
+Phase 20 record extension.
 """
 
 from __future__ import annotations

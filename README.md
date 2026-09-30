@@ -76,12 +76,13 @@ memory interface, and gives the accelerator a data path that can feed it.
 The published Conv2D ratios compared a scalar run on `aster_minimal` with
 DOT8/NPU runs on the coherent SoC, and every simulation used asynchronous,
 zero-wait memory that no physical target has. On one coherent SoC with the same
-input, the NPU is **2.06×** and DOT8 **0.96×** relative to scalar (not 1.24× and
-0.59×). The v10 `dma_bytes` field also counted NPU stores, and
+input and the physical synchronous memory (`sync1`), the NPU is **2.01×** and
+DOT8 **0.94×** relative to scalar (2.06× and 0.96× with the zero-wait
+idealization; not 1.24× and 0.59×). The v10 `dma_bytes` field also counted NPU stores, and
 `accelerator_cycles` reported only the last NPU job. Phase 17-A1–A4 fixed the
 attribution in RTL, added independent scoreboards, and moved the coherent
 workloads to corrected v11 records; the v11 Conv2D record shows the NPU array
-computing in 0.42% of the workload's cycles.
+computing in 0.41% of the workload's cycles (`sync1`).
 
 ## v2 performance targets
 

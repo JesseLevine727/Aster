@@ -219,7 +219,7 @@ an extrapolation from this run.
 | Max slew / max capacitance (`max_ss`) | 85,996 / 5,443 violations ❌ (the flow's `design__violations` summary reports 0) |
 | LVS | fails ❌ — netlists do not match (device and net counts differ); the top-level `vccd1` pin resolves to the `vssd1` node and the SRAM macro supply is disconnected |
 | Power (vectorless, 47 ns clock) | **62.1 mW** at `nom_tt`; the 70.1 mW `power__total` is the `max_ff` corner |
-| STA Fmax at the 47 ns SDC | `nom_tt` 40.96 MHz, `nom_ss` 22.12 MHz, `max_ss` 20.77 MHz (fails at 47 ns) |
+| STA Fmax at the 47 ns SDC | `nom_tt` ≈39.2 MHz, `nom_ss` ≈21.6 MHz, `max_ss` ≈20.7 MHz (fails at 47 ns), limited by the SRAM macro's half-cycle read path; OpenSTA's `report_clock_min_period` (40.96 / 22.12 / 20.77 MHz) leaves that path out — see the [evidence note](results/phase16/p16-f2-sta-evidence.md) |
 
 The flow used an **over-constrained 20 ns PnR SDC** and a **47 ns signoff SDC**.
 The reduced memory cut (16 KiB ROM/RAM, 16 macros) is what made this run
@@ -251,7 +251,8 @@ architectural rankings are node-independent versus the FPGA.
 instance area (2.56 mm² standard cells + 4.55 mm² macros), not a core area;
 21.3 MHz and 70.1 mW are corrected in the table above; the 1.24×/2.11× ratios
 compared a scalar run on `aster_minimal` with DOT8/NPU on the coherent top (on
-one top the NPU is 2.06× and DOT8 0.96× — see the
+one top with the physical `sync1` memory the NPU is 2.01× and DOT8 0.94×, or
+2.06× and 0.96× with the zero-wait idealization — see the
 [Phase 17 baseline](results/phase17/baseline-56067a15815a/README.md)); energy per MAC divided one vectorless
 whole-chip power figure among workloads; the Tier 1 cycle counts were RTL runs
 with zero-wait memory and the full 64 KiB map, not the ASIC's synchronous

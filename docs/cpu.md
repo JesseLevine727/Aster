@@ -10,8 +10,12 @@ surrounding plan is [`phase17-plus.md`](phase17-plus.md#6-phase-17-sequence).
 - A single-issue, in-order, five-stage RV32IMA core designed in this project.
 - At least **2× fewer cycles** than the v1 PicoRV32 baseline on the fixed
   CPU-bound set, at the same clock and memory configuration (about 1.2–1.5 CPI
-  with single-cycle memory, versus 5.4–5.7 CPI measured for PicoRV32 on the
-  coherent SoC).
+  with single-cycle memory). PicoRV32's measured CPI on that set, in the
+  retained Phase 17 baseline with the physical `sync1` memory, is 5.2–12.3:
+  5.7 for the reduction and 10.0 for scalar Conv2D on the coherent SoC; 5.2
+  sort/search, 5.8 strided, 6.4 Dhrystone, 6.8 CoreMark, 8.3 Conv2D and 12.3
+  FFT on the minimal top (multiply-heavy code pays PicoRV32's serial
+  multiplier).
 - **10 ns** block timing out-of-context on the PYNQ-Z1 (`xc7z020clg400-1`) and in
   SKY130 block-level STA at the declared corners, from the first milestone on.
 - Verified instruction by instruction against an independent reference model
@@ -78,8 +82,11 @@ Five stages: **F**etch, **D**ecode, **E**xecute, **M**emory, **W**rite-back.
 - **Execute.** ALU, branch compare and target, CSR read/modify, load/store
   address generation, the first stage of the multiplier, and Xasterdot8's
   first stage.
-- **Memory.** Data-port request and response, atomic operations, the second
-  multiplier/DOT8 stage, and exception/interrupt commit.
+- **Memory.** Data-port response, atomic operations, the second
+  multiplier/DOT8 stage, and exception/interrupt commit (the commit point is
+  the end of Memory). The data request itself is presented from Execute and
+  accepted at the Execute→Memory edge; see *Data-port timing and precise
+  traps* below.
 - **Write-back.** Register write and retirement (RVFI output).
 
 Hazards and penalties:
@@ -98,6 +105,24 @@ Hazards and penalties:
 Dynamic branch prediction is added only if measurement on the CPU set shows it
 pays for its area and timing.
 
+**Data-port timing and precise traps.** A load, store, or atomic presents its
+request while in Execute (address from the Execute adder) and the memory
+accepts it at the Execute→Memory edge; with a synchronous SRAM the response —
+load data, AMO old value, `sc` result, or `d_rsp_error` — arrives while the
+instruction is in Memory. That is what makes the load-use penalty one cycle.
+The request is not presented in a cycle in which the instruction in Memory
+traps or an interrupt is taken (the commit logic kills it), so when any access
+is accepted every older instruction has passed the commit point: no younger
+store, atomic, or side-effecting I/O load reaches memory ahead of an older
+trap. Bus errors are recognized in Memory, before commit, and are precise. The
+kill is a short combinational path from the Memory-stage trap decision to
+`d_req_valid`; its timing is part of every milestone report. `d_rsp_error`
+must come from registered state on the memory side — for example an address
+decode made when the request was accepted and returned as a flag with the
+response — never from an SRAM macro's data output, whose falling-edge launch
+leaves only half a cycle. Misaligned addresses are detected in Execute and
+never reach the port.
+
 ## 5. Interfaces
 
 All ports use valid/ready handshakes, hold their request stable until accepted,
@@ -115,8 +140,14 @@ as one indivisible transaction, as the v1 atomic fabric does today, so the
 coherence protocol can later own them.
 
 **Other signals:** `clk`, `rst_n`, `meip`, `mtip`, `msip`, a hart-id parameter, a
-reset-vector parameter, and an RVFI-compatible retirement port (order, PC,
-instruction, trap, register write, memory address/mask/data).
+reset-vector parameter, and an RVFI retirement port with the riscv-formal
+fields: `valid`, `order`, `insn`, `trap`, `halt`, `intr`, `mode`, `ixl`,
+`rs1_addr`/`rs2_addr` and their read data, `rd_addr`/`rd_wdata`,
+`pc_rdata`/`pc_wdata`, and `mem_addr` (byte address) with **exact** byte masks
+`mem_rmask`/`mem_wmask` and `mem_rdata`/`mem_wdata`; from milestone 18.3 also the
+`rvfi_csr_*` read/write masks and data for `mstatus`, `mie`, `mip`, `mtvec`,
+`mscratch`, `mepc`, `mcause`, and `mtval`. (PicoRV32 reports full-word read
+masks on sub-word loads; the Aster core must report exact masks.)
 
 The ports are shaped for synchronous SRAM (address presented in one cycle, data
 returned the next), which matches FPGA block RAM and a registered SKY130 macro
@@ -128,12 +159,35 @@ interface. On SKY130, a macro read must fit the half-cycle budget described in
 Each milestone passes all applicable layers before the next milestone starts.
 
 1. **Reference model.** Spike (`riscv-isa-sim`), built into `~/tools`, is the
-   golden model. A C++ testbench compares the RVFI retirement stream with Spike's
-   commit log instruction by instruction (PC, instruction, destination write,
-   memory access, trap). The harness must detect a deliberately injected
-   mismatch before it is trusted.
-2. **Conformance.** The vendored `riscv-tests` (rv32ui, rv32um, rv32ua) and the
-   official `riscv-arch-test` suite for I, M, A, Zicsr, and Zifencei.
+   golden model. The Verilator shell writes the RVFI retirement stream to a
+   trace file, and an offline comparator (`scripts/lockstep.py`) checks it
+   against Spike's commit log instruction by instruction (PC, instruction,
+   destination write, memory access, trap) up to and including the `tohost`
+   store. The harness must detect a deliberately injected mismatch in every
+   field before it is trusted. Extensions of the comparison, each due by the
+   milestone that needs it:
+   - **Traps (18.3):** `--log-commits` writes no record for a trapping
+     instruction; Spike's `-l` exception lines (`exception …, epc …`, `tval …`)
+     become trap records, and trap injection joins the self-test.
+   - **CSRs and Spike configuration (18.3):** CSR writes are compared through the
+     RVFI CSR fields; Spike runs with `--priv=m`, `--pmpregions=0`, and
+     `--isa=rv32ima_zicsr_zifencei_zicntr`. Values that legitimately differ are
+     allowlisted by name, never by position: `mcycle`/`cycle`/`time` reads,
+     `marchid`, and Spike's debug-trigger `tcontrol` update on `mret`; the
+     environment zeroes `minstret`, since Spike's boot ROM retires five
+     instructions first. Lockstep programs do not let an allowlisted value
+     reach later results; counter behavior is checked by self-checking tests.
+   - **Atomics (18.4):** both memory records of an AMO are parsed (done in
+     18.0); a failed `sc` has no memory record.
+   - **Xasterdot8 (18.5):** Spike does not know custom-0; an Aster extension
+     library (`--extlib`) implements DOT8 in Spike, so DOT8 programs run in
+     lockstep rather than being excluded.
+   - **I/O and interrupts:** the core shell has no devices; interrupts are
+     checked by self-checking directed tests (layer 3), and device-dependent
+     values in the SoC by the firmware oracles (layer 5).
+2. **Conformance.** The vendored `riscv-tests` (rv32ui, rv32um, rv32ua) and
+   `riscv-arch-test` 3.10.0 (I, M, A, Zifencei, and the privilege tests for
+   Zicsr and traps), compared by signature with Spike as well as in lockstep.
 3. **Directed microarchitecture tests.** Forwarding from every stage, load-use,
    multiply-use, branch/jump flush in both prediction directions, `fence.i`
    self-modifying code, CSR read-modify-write ordering, every exception class
@@ -185,3 +239,17 @@ with standard traps and the interrupt controller on `MEIP` (§2–3), the pipeli
 and hazard policy with static branch prediction first (§4), and Spike as the
 golden model with the verification layers of §6. Changes after approval are
 recorded here with the evidence that motivated them.
+
+Clarifications during milestone 18.0 (29 September 2026), from the Phase 17
+and 18.0 reviews; none changes the approved scope:
+
+- §1: PicoRV32's CPI range restated from the retained baseline (the earlier
+  5.4–5.7 held for the reduction workload only).
+- §4: data-port timing relative to the commit point, so that precise traps and
+  the one-cycle load-use penalty hold together; `d_rsp_error` from registered
+  state.
+- §5: the RVFI field list made explicit (riscv-formal fields, exact byte masks,
+  CSR fields from 18.3).
+- §6: the lockstep comparator is an offline script over a trace file rather
+  than a C++ testbench; the trap, CSR, AMO, and Xasterdot8 extensions are
+  scheduled; the arch-test suite is pinned at 3.10.0.

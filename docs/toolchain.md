@@ -44,6 +44,25 @@ make VIVADO=/path/to/vivado fpga
 If the RISC-V toolchain is not on `PATH`, prepend its `bin` directory before
 running the build. Do not commit generated toolchains or build output.
 
+## CPU reference model (Phase 18)
+
+Phase 18 checks every CPU in lockstep with **Spike** (`riscv-isa-sim`), built
+from upstream commit `0bff12123b1fd510e19e19634dd997dbade70e54` (2026-09-28)
+into `~/tools/spike` (`../configure --prefix=$HOME/tools/spike && make && make
+install`, then `git rev-parse HEAD > ~/tools/spike/SPIKE_COMMIT`); override its
+path with `SPIKE`. Spike runs the device-tree compiler `dtc` at start-up; this
+host uses the DTC 1.6.1 shipped with Vivado on `PATH`. `make tools` checks both,
+and that `SPIKE_COMMIT` names the pinned commit. The CPU shell, the lockstep
+comparator and the test runners are described in [`phase18.md`](phase18.md).
+
+The conformance programs are vendored with checksums: `riscv-tests` at
+`2ebecad` (`vendor/riscv-tests`) and `riscv-arch-test` 3.10.0
+(`vendor/riscv-arch-test`). The arch-test programs are built with `-mno-relax`
+(see `scripts/run_core_tests.py`).
+
+Timing baselines (`make timing-fpga-picorv32`, `make timing-asic-picorv32`)
+use Vivado 2025.1 and the LibreLane/SKY130 setup below.
+
 ## ASIC tools (Phases 15–16)
 
 The SKY130 flow is driven by `scripts/run_asic.py` and is separate from the

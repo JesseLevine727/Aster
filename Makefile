@@ -1539,8 +1539,8 @@ phase11-infer: $(PHASE11_SIM) $(PHASE11_HEX)
 .PHONY: phase11-infer-validate
 phase11-infer-validate: $(PHASE11_SIM) $(PHASE11_HEX)
 	@$(PHASE11_SIM) +rom=$(PHASE11_HEX) +ram_fill=a5a5a5a5 > $(BUILD_DIR)/mnist_$(PHASE11_METHOD).log
-	@$(PYTHON) scripts/asterbench_v9.py validate --model docs/results/phase11/model.json --method $(PHASE11_METHOD) --complete < $(BUILD_DIR)/mnist_$(PHASE11_METHOD).log | tail -1
-	@grep '^ASTERBENCH,version=11,' $(BUILD_DIR)/mnist_$(PHASE11_METHOD).log | \
+	@set -o pipefail; $(PYTHON) scripts/asterbench_v9.py validate --model docs/results/phase11/model.json --method $(PHASE11_METHOD) --complete < $(BUILD_DIR)/mnist_$(PHASE11_METHOD).log | tail -1
+	@set -o pipefail; grep '^ASTERBENCH,version=11,' $(BUILD_DIR)/mnist_$(PHASE11_METHOD).log | \
 		$(PYTHON) scripts/asterbench_v11.py validate --name mnist_mlp_$(PHASE11_METHOD)
 
 .PHONY: workload workload-firmware
@@ -2084,7 +2084,76 @@ parallel-workloads:
 
 test: smoke phase1 hello bench cache uart fpga-sim linux-sim counters retirement npu-pe npu-array npu-engine npu-regs npu-driver npu-runtime npu-stop npu-bench-validate arbiter shared-fabric multicore-runtime parallel
 
-check: tools smoke phase1 hello bench cache uart fpga-sim linux-sim linux-dual-sim linux-coherent-sim counters retirement pcpi-probe dot8-unit npu-pe npu-array npu-engine npu-regs device-arbiter dma-counters l2-unit npu-driver npu-runtime npu-stop npu-bench-validate xe-bench-validate phase11-infer-validate workloads atomic-fabric atomic-runtime atomic-faults coherent-cache warm-stop coherent-counters coherent-soc timer-unit timer-firmware irq-unit timer-interrupt sram-unit sram-lint freeze-interfaces coherent-bench riscv-reference riscv-reference-negative coherent-litmus arbiter shared-fabric multicore-runtime multicore-adversarial parallel phase17-baseline-audit
+check: tools smoke phase1 hello bench cache uart fpga-sim linux-sim linux-dual-sim linux-coherent-sim counters retirement pcpi-probe dot8-unit npu-pe npu-array npu-engine npu-regs device-arbiter dma-counters l2-unit npu-driver npu-runtime npu-stop npu-bench-validate xe-bench-validate phase11-infer-validate workloads atomic-fabric atomic-runtime atomic-faults coherent-cache warm-stop coherent-counters coherent-soc timer-unit timer-firmware irq-unit timer-interrupt sram-unit sram-lint freeze-interfaces coherent-bench riscv-reference riscv-reference-negative coherent-litmus arbiter shared-fabric multicore-runtime multicore-adversarial parallel phase17-baseline-audit core-riscv-tests core-riscv-tests-stall core-arch-tests core-lockstep-selftest
+
+# Phase 18 CPU shell: one CPU with a synchronous SRAM at 0x8000_0000 and an
+# RVFI trace for lockstep against Spike (docs/phase18.md).
+CORE_SHELL_DIR := $(BUILD_DIR)/core_shell_picorv32
+CORE_SHELL_SIM := $(CORE_SHELL_DIR)/core_shell_picorv32
+SPIKE ?= $(HOME)/tools/spike/bin/spike
+$(CORE_SHELL_SIM): vendor/picorv32/picorv32.v verification/core/shell_picorv32.sv verification/core/tb_core_shell.cpp Makefile
+	mkdir -p $(CORE_SHELL_DIR)
+	$(VERILATOR) --cc --exe --build --Wall --Wno-fatal $(VERILATOR_VENDOR_LINT_FLAGS) \
+		--top-module shell_picorv32 --Mdir $(CORE_SHELL_DIR)/obj -o $(abspath $@) \
+		$(ROOT)/vendor/picorv32/picorv32.v $(ROOT)/verification/core/shell_picorv32.sv \
+		$(ROOT)/verification/core/tb_core_shell.cpp
+	@touch $@  # Verilator does not relink when only the Makefile changed
+
+CORE_TESTS_DIR := $(BUILD_DIR)/core_tests
+CORE_STALL_SEEDS ?= 1 2 3
+CORE_TESTS = RISCV_PREFIX=$(RISCV_PREFIX) $(PYTHON) scripts/run_core_tests.py --dut picorv32 \
+	--sim $(CORE_SHELL_SIM) --spike $(SPIKE)
+
+.PHONY: core-shell-sim core-riscv-tests core-riscv-tests-stall core-arch-tests core-lockstep-selftest
+core-shell-sim: $(CORE_SHELL_SIM)
+
+# Each run keeps its full per-test log; the last line is the verdict, and a
+# failure prints every non-passing line.
+core-riscv-tests: $(CORE_SHELL_SIM)
+	@mkdir -p $(CORE_TESTS_DIR)
+	@set -o pipefail; $(CORE_TESTS) --build-dir $(CORE_TESTS_DIR)/plain | tee $(CORE_TESTS_DIR)/plain.log | tail -1 || \
+		{ grep -v '^PASS' $(CORE_TESTS_DIR)/plain.log; exit 1; }
+
+# The same tests with random memory back-pressure: the retired stream must not change.
+core-riscv-tests-stall: $(CORE_SHELL_SIM)
+	@mkdir -p $(CORE_TESTS_DIR)
+	@set -o pipefail; for seed in $(CORE_STALL_SEEDS); do \
+		$(CORE_TESTS) --build-dir $(CORE_TESTS_DIR)/stall$$seed --stall-seed $$seed | \
+			tee $(CORE_TESTS_DIR)/stall$$seed.log | tail -1 || \
+			{ grep -v '^PASS' $(CORE_TESTS_DIR)/stall$$seed.log; exit 1; }; \
+	done
+
+# riscv-arch-test 3.10.0 (vendor/riscv-arch-test): lockstep plus the signature
+# region compared word for word with Spike's.
+core-arch-tests: $(CORE_SHELL_SIM)
+	@mkdir -p $(CORE_TESTS_DIR)
+	@set -o pipefail; $(CORE_TESTS) --arch --build-dir $(CORE_TESTS_DIR)/arch | tee $(CORE_TESTS_DIR)/arch.log | tail -1 || \
+		{ grep -v '^PASS' $(CORE_TESTS_DIR)/arch.log; exit 1; }
+
+# The harness must reject a corrupted DUT trace or Spike log in every field.
+core-lockstep-selftest: $(CORE_SHELL_SIM)
+	@$(CORE_TESTS) --build-dir $(CORE_TESTS_DIR)/inject --inject
+
+# Timing and area of one core block at 10 ns (docs/phase18.md): Vivado out of
+# context on the PYNQ-Z1 part, and SKY130 through post-route STA (its period is
+# CLOCK_PERIOD in asic/sky130/config.core_picorv32.json). Not part of `check`
+# (minutes; SKY130 needs the LibreLane container).
+TIMING_DIR := $(BUILD_DIR)/timing
+TIMING_PERIOD_NS ?= 10.0
+TIMING_PICORV32_SOURCES := vendor/picorv32/picorv32.v verification/core/timing_picorv32.sv
+.PHONY: timing-fpga-picorv32 timing-asic-picorv32
+timing-fpga-picorv32:
+	@command -v $(VIVADO) >/dev/null || { echo "ERROR: Vivado not found (set VIVADO=/path/to/vivado)" >&2; exit 1; }
+	@mkdir -p $(TIMING_DIR)/fpga/picorv32
+	cd $(TIMING_DIR)/fpga/picorv32 && $(VIVADO) -mode batch -nojournal -log vivado.log \
+		-source $(ROOT)/scripts/timing/vivado_ooc.tcl -tclargs $(abspath $(TIMING_DIR))/fpga/picorv32 \
+		timing_picorv32 $(TIMING_PERIOD_NS) $(addprefix $(ROOT)/,$(TIMING_PICORV32_SOURCES)) > run.out
+	@grep '^SUMMARY' $(TIMING_DIR)/fpga/picorv32/run.out
+
+timing-asic-picorv32:
+	$(PYTHON) scripts/run_asic.py --design core_picorv32 --to OpenROAD.STAPostPNR --run-tag p18-picorv32 -- --overwrite
+	@mkdir -p $(TIMING_DIR)/asic
+	@$(PYTHON) scripts/timing/sky130_summary.py asic/sky130/runs/p18-picorv32 --json $(TIMING_DIR)/asic/picorv32.json
 
 # Print a make variable (used by scripts/phase17_baseline.py to find firmware images).
 print-%:

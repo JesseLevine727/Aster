@@ -11,8 +11,15 @@ class UpstreamReference(unittest.TestCase):
     def test_pinned_complete_subset(self):
         root = ROOT/"vendor/riscv-tests"
         names = ("amoadd_w", "amoand_w", "amomax_w", "amomaxu_w", "amomin_w", "amominu_w", "amoor_w", "amoswap_w", "amoxor_w", "lrsc")
+        rv32ui = ("add", "addi", "and", "andi", "auipc", "beq", "bge", "bgeu", "blt", "bltu", "bne",
+                  "fence_i", "jal", "jalr", "lb", "lbu", "ld_st", "lh", "lhu", "lui", "lw", "ma_data",
+                  "or", "ori", "sb", "sh", "simple", "sll", "slli", "slt", "slti", "sltiu", "sltu",
+                  "sra", "srai", "srl", "srli", "st_ld", "sub", "sw", "xor", "xori")
+        rv32um = ("div", "divu", "mul", "mulh", "mulhsu", "mulhu", "rem", "remu")
         wanted = {"LICENSE", "isa/macros/scalar/test_macros.h"} | {
-            f"isa/{arch}/{name}.S" for arch in ("rv32ua", "rv64ua") for name in names}
+            f"isa/{arch}/{name}.S" for arch in ("rv32ua", "rv64ua") for name in names} | {
+            f"isa/{arch}/{name}.S" for arch in ("rv32ui", "rv64ui") for name in rv32ui} | {
+            f"isa/rv32um/{name}.S" for name in rv32um}
         actual = {}
         for line in (root/"SHA256SUMS").read_text().splitlines():
             match = re.fullmatch(r"([0-9a-f]{64})  ([A-Za-z0-9_./]+)", line)
@@ -28,6 +35,8 @@ class UpstreamReference(unittest.TestCase):
         self.assertIn("2ebecad997fa58cd9e5724340ba75aa4b59bd1d0", (root/"UPSTREAM.md").read_text())
         for name in names:
             self.assertIn(f'#include "../rv64ua/{name}.S"', (root/f"isa/rv32ua/{name}.S").read_text())
+        for name in rv32ui:
+            self.assertIn(f'#include "../rv64ui/{name}.S"', (root/f"isa/rv32ui/{name}.S").read_text())
 
     def test_owned_environment_does_not_imply_privileged_core(self):
         env = (ROOT/"software/tests/riscv_reference/riscv_test.h").read_text()

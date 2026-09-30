@@ -493,7 +493,9 @@ follows.
    reports 85,996 max-slew and 5,443 max-capacitance violations while the flow
    summary shows zero violations; the 70.1 mW power figure is the `max_ff`
    corner (typical is 62.1 mW); the "~43 MHz TT" figure did not come from the
-   `p16-f2` signoff run, whose own STA reports 40.96 MHz at `nom_tt`; only one
+   `p16-f2` signoff run, whose own STA gives about 39.2 MHz at `nom_tt` once the
+   SRAM macro's half-cycle read path is included (OpenSTA's clock-period
+   report, 40.96 MHz, leaves it out); only one
    of eight mandatory gate-level workloads passed
    at full size; and SDF annotation of those runs is not demonstrated. Phase 15
    also carries unreported electrical violations (2,262 max-slew and 274

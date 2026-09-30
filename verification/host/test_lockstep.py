@@ -1,0 +1,165 @@
+"""The Phase 18 lockstep comparator matches and rejects synthetic traces."""
+
+from pathlib import Path
+import sys
+import unittest
+
+ROOT = Path(__file__).resolve().parents[2]
+sys.path.insert(0, str(ROOT / "scripts"))
+import lockstep
+import run_core_tests
+
+ENTRY, TOHOST = 0x80000000, 0x80001040
+
+SPIKE = """core   0: 3 0x00001000 (0x00000297) x5  0x00001000
+core   0: 3 0x80000000 (0x00500513) x10 0x00000005
+core   0: 3 0x80000004 (0x00a2a023) mem 0x80001000 0x00000005
+core   0: 3 0x80000008 (0x0012c683) x13 0x00000000 mem 0x80001001
+core   0: 3 0x8000000c (0x00a28223) mem 0x80001004 0x05
+core   0: 3 0x80000010 (0x00b5a52f) x10 0x00000005 mem 0x80001000 mem 0x80001000 0x0000000a
+core   0: 3 0x80000014 (0x04afa023) mem 0x80001040 0x00000001
+core   0: 3 0x80000018 (0x0000006f)
+""".splitlines()
+
+# order pc insn trap rd rd_wdata addr rmask wmask rdata wdata (exact byte masks)
+TRACE = """0 80000000 00500513 0 10 00000005 00000000 0 0 00000000 00000000
+1 80000004 00a2a023 0 0 00000000 80001000 0 f 00000000 00000005
+2 80000008 0012c683 0 13 00000000 80001000 2 0 00000500 00000000
+3 8000000c 00a28223 0 0 00000000 80001004 0 1 00000000 00000005
+4 80000010 00b5a52f 0 10 00000005 80001000 f f 00000005 0000000a
+5 80000014 04afa023 0 0 00000000 80001040 0 f 00000000 00000001
+""".splitlines()
+
+
+def replace(index, line, trace=TRACE):
+    return trace[:index] + [line] + trace[index + 1:]
+
+
+class Lockstep(unittest.TestCase):
+    def setUp(self):
+        self.spike = lockstep.parse_spike(SPIKE, ENTRY, TOHOST)
+        self.dut = lockstep.parse_trace(TRACE)
+
+    def compare(self, trace, **kwargs):
+        return lockstep.compare(lockstep.parse_trace(trace), self.spike, **kwargs)
+
+    def test_boot_rom_is_skipped_and_stream_ends_at_tohost(self):
+        self.assertEqual(self.spike[0].pc, ENTRY)
+        self.assertEqual(self.spike[-1].mem, (TOHOST, 4))
+        self.assertEqual(len(self.spike), 6)
+        ok, message = lockstep.compare(self.dut, self.spike)
+        self.assertTrue(ok, message)
+
+    def test_byte_lanes_normalize_to_byte_address_and_size(self):
+        self.assertEqual(self.dut[2].mem, (0x80001001, 1))   # lbu with rmask 0b0010
+        self.assertEqual(self.dut[3].mem, (0x80001004, 1))
+        self.assertEqual(self.dut[3].store, 0x05)
+
+    def test_amo_compares_its_store_side(self):
+        self.assertEqual(self.spike[4].mem, (0x80001000, 4))
+        self.assertEqual(self.spike[4].store, 0x0000000a)
+        self.assertEqual(self.spike[4].rd, (10, 5))
+        ok, message = self.compare(replace(4, "4 80000010 00b5a52f 0 10 00000005 80001000 f f 00000005 0000000b"))
+        self.assertFalse(ok)
+        self.assertIn("store", message.splitlines()[0])
+
+    def test_each_field_mismatch_is_reported(self):
+        cases = {
+            "pc": "0 80000004 00500513 0 10 00000005 00000000 0 0 00000000 00000000",
+            "insn": "0 80000000 00500593 0 10 00000005 00000000 0 0 00000000 00000000",
+            "rd": "0 80000000 00500513 0 11 00000005 00000000 0 0 00000000 00000000",
+            "trap": "0 80000000 00500513 1 10 00000005 00000000 0 0 00000000 00000000",
+        }
+        for field, line in cases.items():
+            with self.subTest(field=field):
+                ok, message = self.compare(replace(0, line))
+                self.assertFalse(ok)
+                self.assertIn(field, message.splitlines()[0])
+        ok, message = self.compare(replace(1, "1 80000004 00a2a023 0 0 00000000 80001000 0 f 00000000 00000006"))
+        self.assertFalse(ok)
+        self.assertIn("store", message.splitlines()[0])
+
+    def test_store_to_the_wrong_byte_lane_fails(self):
+        ok, message = self.compare(replace(3, "3 8000000c 00a28223 0 0 00000000 80001004 0 2 00000000 00000500"))
+        self.assertFalse(ok)
+        self.assertIn("mem", message.splitlines()[0])
+
+    def test_masks_must_be_one_aligned_access(self):
+        for mask in ("5", "9", "6", "7", "e"):
+            with self.subTest(mask=mask):
+                with self.assertRaisesRegex(ValueError, "naturally aligned"):
+                    lockstep.parse_trace([f"0 80000004 00a2a023 0 0 00000000 80001000 0 {mask} 00000000 00000000"])
+
+    def test_byte_address_must_agree_with_mask(self):
+        lockstep.parse_trace(["0 8000000c 00a28223 0 0 00000000 80001005 0 2 00000000 00000500"])
+        with self.assertRaisesRegex(ValueError, "disagrees"):
+            lockstep.parse_trace(["0 8000000c 00a28223 0 0 00000000 80001006 0 2 00000000 00000500"])
+
+    def test_x0_write_value_and_store_with_spurious_read_are_rejected(self):
+        with self.assertRaisesRegex(ValueError, "x0"):
+            lockstep.parse_trace(["0 80000000 00500013 0 0 00000005 00000000 0 0 00000000 00000000"])
+        with self.assertRaisesRegex(ValueError, "different read"):
+            lockstep.parse_trace(["0 80000004 00a29023 0 0 00000000 80001000 3 c 00000000 00050000"])
+
+    def test_dropped_or_duplicated_record_is_rejected_by_order(self):
+        with self.assertRaisesRegex(ValueError, "order"):
+            lockstep.parse_trace(TRACE[:2] + TRACE[3:])
+        with self.assertRaisesRegex(ValueError, "order"):
+            lockstep.parse_trace(TRACE[:3] + TRACE[2:])
+
+    def test_truncated_trace_fails(self):
+        for length in (1, 3, len(TRACE) - 1):
+            with self.subTest(length=length):
+                ok, message = self.compare(TRACE[:length])
+                self.assertFalse(ok)
+                self.assertIn(f"ended after {length} records", message)
+
+    def test_dut_longer_than_spike_fails(self):
+        extra = TRACE + ["6 80000018 0000006f 0 0 00000000 00000000 0 0 00000000 00000000"]
+        ok, message = self.compare(extra)
+        self.assertFalse(ok)
+        self.assertIn("after Spike's tohost store", message)
+
+    def test_spike_log_without_tohost_store_is_rejected(self):
+        with self.assertRaisesRegex(ValueError, "no store to tohost"):
+            lockstep.parse_spike(SPIKE[:6], ENTRY, TOHOST)
+        with self.assertRaisesRegex(ValueError, "never reached the entry"):
+            lockstep.parse_spike(SPIKE[:1], ENTRY, TOHOST)
+
+    def test_word_granular_loads_ignore_only_the_byte_offset(self):
+        word = replace(2, "2 80000008 0012c683 0 13 00000000 80001000 f 0 00000500 00000000")
+        self.assertFalse(self.compare(word)[0])
+        self.assertTrue(self.compare(word, word_loads=True)[0])
+        wrong_word = replace(2, "2 80000008 0012c683 0 13 00000000 80001004 f 0 00000500 00000000")
+        self.assertFalse(self.compare(wrong_word, word_loads=True)[0])
+
+    def test_malformed_trace_is_rejected(self):
+        with self.assertRaises(ValueError):
+            lockstep.parse_trace(["0 80000000 00500513"])
+
+
+class SignatureCheck(unittest.TestCase):
+    def check(self, dut, spike):
+        import tempfile
+        with tempfile.TemporaryDirectory() as temp:
+            elf = Path(temp) / "t.elf"
+            if dut is not None:
+                elf.with_suffix(".sig.dut").write_text(dut)
+            if spike is not None:
+                elf.with_suffix(".sig.spike").write_text(spike)
+            return run_core_tests.signature_check(elf)
+
+    def test_equal_signatures_pass(self):
+        ok, message = self.check("00000001\ndeadbeef\n", "00000001\ndeadbeef\n")
+        self.assertTrue(ok, message)
+
+    def test_differing_word_length_or_missing_file_fails(self):
+        self.assertIn("word 1 differs", self.check("00000001\ndeadbeef\n", "00000001\ndeadbeee\n")[1])
+        self.assertIn("lengths differ", self.check("00000001\n", "00000001\ndeadbeef\n")[1])
+        self.assertIn("lengths differ", self.check("00000001\ndeadbeef\n", "00000001\n")[1])
+        self.assertIn("not written", self.check(None, "00000001\n")[1])
+        self.assertIn("empty", self.check("", "")[1])
+
+
+if __name__ == "__main__":
+    unittest.main()

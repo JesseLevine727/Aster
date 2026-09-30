@@ -109,8 +109,15 @@ What the v11 records show:
   [`results/phase17/baseline-56067a15815a`](results/phase17/baseline-56067a15815a/README.md): 17 captures × 2
   memory models × 2 byte-identical repeats, audited by
   `scripts/audit_phase17_baseline.py` (run by `make check`); mutation tests show
-  the audit rejects a changed top, clock, memory mode, DMA attribution,
-  last-job-only NPU total, repeat, or source hash. Cross-check: the `sync1` MNIST
+  the audit rejects a changed top, clock (including one uniformly wrong for
+  every capture), memory mode, DMA attribution, last-job-only NPU total, MNIST
+  summary top, cycle or transaction sum, or checksum, malformed firmware hash,
+  repeat, or source hash. The recorded source hash is always checked against
+  the recorded revision; `--current` additionally requires the working tree to
+  equal that revision, so it fails by design once any later commit touches a
+  hashed path (documentation inside `rtl/` and `scripts/` included) — `make
+  check` runs the plain mode. Firmware hashes are provenance: the images are
+  build products outside the bundle, bound through the source hash. Cross-check: the `sync1` MNIST
   NPU inference of the v9-only firmware (462,953 cycles per image, 4.46×; retained
   at `dfcd8fc`) equalled the Phase 11 PYNQ-Z1 board capture exactly. The current
   firmware, which adds the v11 summary, is a different binary; its NPU run is
@@ -124,7 +131,11 @@ What the v11 records show:
 - [x] **P17-C — Correct Phase 15/16 reporting, without new ASIC runs.**
   - [x] Phase 16 documents state: per-corner setup/hold from the `p16-f2`
     signoff STA (hold fails at `nom_ff`, `max_tt`, `max_ff`); Fmax per corner
-    from that STA (`nom_tt` 40.96 MHz, `max_ss` 20.77 MHz at the 47 ns SDC);
+    from that STA (`nom_tt` ≈39.2 MHz, `max_ss` ≈20.7 MHz at the 47 ns SDC,
+    including the SRAM macro's half-cycle path, which OpenSTA's
+    `report_clock_min_period` figures of 40.96 and 20.77 MHz leave out — a
+    correction from the Phase 18 review; see
+    `docs/results/phase16/p16-f2-sta-evidence.md`);
     power with its corner (typical 62.1 mW; 70.1 mW is `max_ff`); LVS as a
     failing netlist mismatch in which `vccd1` resolves to `vssd1`; 106 routing
     DRC; 85,996 max-slew and 5,443 max-capacitance violations; Tier 2 as one

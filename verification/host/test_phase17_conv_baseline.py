@@ -15,7 +15,7 @@ NPU_JOB = {"tiles": 196, "read": 196 * 25 * (4 + 1), "written": 784 * 4,
            "compute": 196 * 25, "busy": 250_000}
 
 
-def record(name, cycles, *, sync_memory=0, dma_bytes=0, npu_jobs=None, dot8=False,
+def record(name, cycles, *, sync_memory=0, dma_bytes=0, dma_jobs=0, npu_jobs=None, dot8=False,
            npu_scale=None):
     if npu_jobs is None:
         npu_jobs = 4 if name == "conv2d_npu" else 0
@@ -44,12 +44,12 @@ def record(name, cycles, *, sync_memory=0, dma_bytes=0, npu_jobs=None, dot8=Fals
         "backing_transactions": f"0x{cycles // 8:016x}",
         "cache_accesses": f"0x{cycles // 4:016x}",
         "cache_misses": f"0x{cycles // 16:016x}",
-        "dma_jobs": 0,
-        "dma_completed_jobs": 0,
+        "dma_jobs": dma_jobs,
+        "dma_completed_jobs": dma_jobs,
         "dma_aborted_jobs": 0,
         "dma_error_jobs": 0,
         "dma_bytes": f"0x{dma_bytes:016x}",
-        "dma_job_cycles": "0x0000000000000000",
+        "dma_job_cycles": f"0x{200 * dma_jobs:016x}",
         "h0_dot8_accept": f"0x{100 if dot8 else 0:016x}",
         "h0_dot8_wait": f"0x{120 if dot8 else 0:016x}",
         "h0_dot8_complete": f"0x{100 if dot8 else 0:016x}",
@@ -97,9 +97,12 @@ class Phase17ConvBaseline(unittest.TestCase):
 
     def test_rejects_npu_output_misattributed_as_dma(self):
         records = valid_records()
+        # A well-formed record (the v11 validator accepts it): the audit's own
+        # attribution check must reject DMA activity in a no-DMA Conv2D.
         records["conv2d_npu"] = record("conv2d_npu", 4_636_733,
-                                        dma_bytes=12_544)
-        with self.assertRaises(baseline.bench.ValidationError):
+                                        dma_bytes=12_544, dma_jobs=1)
+        baseline.bench.validate_line(records["conv2d_npu"], name="conv2d_npu")
+        with self.assertRaisesRegex(baseline.bench.ValidationError, "DMA"):
             baseline.audit_records(records)
 
     def test_rejects_last_job_only_npu_totals(self):

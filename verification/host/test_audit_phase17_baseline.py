@@ -42,6 +42,23 @@ class Phase17BaselineAudit(unittest.TestCase):
             path.write_text("ASTERBENCH," + ",".join(f"{k}={v}" for k, v in fields.items()) + "\n")
         self.rehash(bundle)
 
+    def set_line_field(self, bundle, model, capture, version, key, value, repeats=audit.REPEATS):
+        """Edit `key` on every ASTERBENCH line of one version in a multi-line record."""
+        for repeat in repeats:
+            path = bundle / "records" / model / f"r{repeat}" / f"{capture}.record"
+            lines = path.read_text().splitlines(keepends=True)
+            edited = 0
+            for index, line in enumerate(lines):
+                if line.startswith(f"ASTERBENCH,version={version},"):
+                    fields = audit.fields_of(line)
+                    self.assertIn(key, fields)
+                    fields[key] = value(fields[key]) if callable(value) else value
+                    lines[index] = "ASTERBENCH," + ",".join(f"{k}={v}" for k, v in fields.items()) + "\n"
+                    edited += 1
+            self.assertGreater(edited, 0)
+            path.write_text("".join(lines))
+        self.rehash(bundle)
+
     def assert_rejected(self, bundle, pattern):
         with self.assertRaisesRegex(ValueError, pattern):
             audit.audit(bundle)
@@ -87,6 +104,43 @@ class Phase17BaselineAudit(unittest.TestCase):
             path.write_text("".join(lines))
         self.rehash(bundle)
         self.assert_rejected(bundle, "oracle")
+
+    def test_rejects_mnist_summary_on_another_top(self):
+        bundle = self.copy()
+        self.set_line_field(bundle, "sync1", "mnist_scalar", 11, "harts", "1")
+        self.assert_rejected(bundle, "top/cache configuration")
+
+    def test_rejects_uniformly_wrong_clock(self):
+        # Every capture agrees, but not with the declared SoC clock.
+        bundle = self.copy()
+        for capture in audit.CAPTURES:
+            for version in ((9, 11) if capture["format"] == "v9" else (int(capture["format"][1:]),)):
+                self.set_line_field(bundle, "async0", capture["id"], version, "clock_hz", "50000000")
+        self.assert_rejected(bundle, "clock_hz")  # the v9 validator also pins the fabric clock
+
+    def test_rejects_mnist_summary_cycles_not_summed(self):
+        bundle = self.copy()
+        self.set_line_field(bundle, "sync1", "mnist_dot8", 11, "cycles", lambda v: f"0x{int(v, 16) - 1:016x}")
+        self.assert_rejected(bundle, "sum of the v9 image windows")
+
+    def test_rejects_mnist_summary_transactions_not_summed(self):
+        bundle = self.copy()
+        self.set_line_field(bundle, "async0", "mnist_multicore", 11, "memory_transactions",
+                            lambda v: f"0x{int(v, 16) + 4:016x}")
+        self.assert_rejected(bundle, "memory_transactions")
+
+    def test_rejects_mnist_summary_checksum(self):
+        bundle = self.copy()
+        self.set_line_field(bundle, "sync1", "mnist_npu", 11, "checksum", lambda v: f"0x{int(v, 16) ^ 1:08x}")
+        self.assert_rejected(bundle, "checksum")
+
+    def test_rejects_malformed_firmware_hash(self):
+        bundle = self.copy()
+        path = bundle / "manifest.json"
+        manifest = json.loads(path.read_text())
+        manifest["captures"][0]["firmware_sha256"] = "g" * 64
+        path.write_text(json.dumps(manifest, indent=2, sort_keys=True) + "\n")
+        self.assert_rejected(bundle, "firmware hash")
 
     def test_rejects_nondeterministic_repeat(self):
         bundle = self.copy()
