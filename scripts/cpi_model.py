@@ -15,7 +15,8 @@ the pipeline's rules:
   Execute for ALU and link results, three cycles after for loads, AMOs, `lr`,
   `sc` and multiplies (forwarded from W), two after for Xasterdot8 (from M2);
 - the iterative divider holds Execute for DIVIDE_CYCLES;
-- `jal` and backward branches (predicted taken) redirect from Decode in their
+- `jal` and backward branches with a word-aligned target (predicted taken)
+  redirect from Decode in their
   first cycle there, whether or not they then wait for operands; a branch
   whose direction differs from the static prediction, and `jalr`, redirect
   from Execute as they leave it. The redirect's target reaches Decode
@@ -139,14 +140,21 @@ def cycles(records: list[lockstep.Retired], pipeline: Pipeline) -> int:
         taken = following is not None and following.pc != record.pc + 4
         from_decode = decode + 1 + pipeline.decode_redirect
         from_execute = execute + occupancy - 1 + pipeline.execute_redirect
+        # Decode predicts a jal, and a backward branch, taken only when the target
+        # is word-aligned (a halfword target traps if taken).
         if opcode == 0x6F:                                    # jal
             available = from_decode
         elif opcode == 0x67:                                  # jalr
             available = from_execute
-        elif opcode == 0x63 and taken != (branch_offset(insn) < 0):   # mispredicted (backward predicted taken)
-            available = from_execute
-        elif opcode == 0x63 and taken:                        # backward, taken as predicted
-            available = from_decode
+        elif opcode == 0x63:
+            offset = branch_offset(insn)
+            predicted = offset < 0 and offset % 4 == 0
+            if taken != predicted:                            # mispredicted
+                available = from_execute
+            elif taken:                                       # backward, taken as predicted
+                available = from_decode
+            else:
+                available += 1
         else:
             available += 1
     return execute - (first or 0) + 1

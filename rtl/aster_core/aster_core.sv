@@ -135,12 +135,13 @@ module aster_core
     // ------------------------------------------------------------------ fetch
     logic        d_redirect, e_flush, f_valid, f_error, d_take;
     logic [31:2] f_pc;
-    logic [31:0] f_insn, d_target, e_next_pc;
+    logic [31:0] f_insn, e_next_pc;
+    logic [31:2] d_target;          // the Decode redirect's target (predecoded)
 
     aster_core_fetch #(.RESET_VECTOR(RESET_VECTOR)) fetch (
         .clk, .rst_n,
         .i_req_valid, .i_req_addr, .i_req_ready, .i_rsp_valid, .i_rsp_data, .i_rsp_error,
-        .d_redirect, .d_target(d_target[31:2]), .e_flush, .e_target(e_next_pc[31:2]), .halt(halted),
+        .d_redirect, .d_target, .e_flush, .e_target(e_next_pc[31:2]), .halt(halted),
         .redirecting(chk_i_redirect),
         .f_valid, .f_pc, .f_insn, .f_error, .d_take
     );
@@ -168,15 +169,18 @@ module aster_core
     logic [31:0] d_pc, d_insn;
     decoded_t    d_raw, d_dec;
     logic        d_predict;
+    logic [32:0] f_predecode;       // {predict, target} of the instruction the fetch unit offers
 
     logic d_live;                   // Decode holds an instruction that is not squashed
     assign d_live   = d_valid && !squash;
     assign d_raw    = decode(d_insn);
     assign d_dec    = d_err ? decoded_t'('0) : d_raw;     // a fetch fault carries no operation
-    assign d_target = d_pc + d_dec.imm;
-    // jal, and a backward branch, redirect from Decode (the target must be aligned).
-    assign d_predict  = (d_dec.jal || (d_dec.branch && d_dec.imm[31])) && !d_target[1];
-    assign d_redirect = d_live && d_predict && !d_redirected && !halted;
+    // jal, and a backward branch, redirect from Decode (the target must be
+    // aligned). The decision and the target are predecoded as the instruction
+    // enters Decode and registered (d_predict, d_target), so the redirect is
+    // presented from registered state in the instruction's first Decode cycle.
+    assign f_predecode = predecode(f_insn, {f_pc, 2'b00});
+    assign d_redirect  = d_live && d_predict && !d_redirected && !halted;
 
     // --------------------------------------------------------------- Execute
     logic        e_valid, e_err, e_pred;
@@ -364,6 +368,7 @@ module aster_core
             wt2          <= 1'b0;
             d_valid      <= 1'b0;
             d_redirected <= 1'b0;
+            d_predict    <= 1'b0;
             e_valid      <= 1'b0;
             m1           <= '0;
             m2           <= '0;
@@ -388,6 +393,8 @@ module aster_core
                 d_insn       <= f_insn;
                 d_err        <= f_error;
                 d_redirected <= 1'b0;
+                d_predict    <= f_predecode[32] && !f_error;
+                d_target     <= f_predecode[31:2];
             end else if (d_redirect) begin
                 d_redirected <= 1'b1;
             end
@@ -475,7 +482,7 @@ module aster_core
     assign rvfi_ixl  = 2'd1;
 
     logic unused;
-    assign unused = ^{meip, mtip, msip, HART_ID, d_raw, d_target[0], w.acc, w.got};
+    assign unused = ^{meip, mtip, msip, HART_ID, d_raw, f_predecode[1:0], w.acc, w.got};
 
 `ifndef SYNTHESIS
     always_ff @(posedge clk) begin

@@ -91,6 +91,10 @@ class CpiModel(unittest.TestCase):
         bne = record(0x80000004, 0xfe009ee3)
         self.assertEqual(cpi_model.cycles([lw, bne, record(0x80000000, NOP)], SEVEN), 5)
 
+    def test_a_backward_branch_to_a_halfword_target_is_not_predicted(self):
+        # bne x0, x0, -6: backward, but its target is not word-aligned; not taken, no penalty
+        self.assertEqual(cpi_model.cycles([record(0x80000008, 0xfe001de3), record(0x8000000c, NOP)], SEVEN), 2)
+
     def test_a_branch_to_its_fall_through_never_redirects(self):
         # beq x0, x0, +4: taken, but the next PC is the fall-through either way.
         self.assertEqual(cpi_model.cycles([record(0x80000000, 0x00000263), record(0x80000004, NOP)], SEVEN), 2)

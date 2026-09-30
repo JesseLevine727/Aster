@@ -139,6 +139,21 @@ package aster_core_pkg;
         endcase
     endfunction
 
+    // Predecode, as an instruction enters Decode: {predicted taken from Decode,
+    // target}. A `jal`, or a conditional branch with a negative offset
+    // (backward, predicted taken), redirects from Decode when its target is
+    // aligned; the same fields decode() reads, so the two agree.
+    function automatic logic [32:0] predecode(input logic [31:0] insn, input logic [31:0] pc);
+        logic        jal, branch;
+        logic [31:0] imm, target;
+        jal    = insn[6:0] == 7'b1101111;
+        branch = insn[6:0] == 7'b1100011 && insn[14:12] != 3'd2 && insn[14:12] != 3'd3;
+        imm    = jal ? {{11{insn[31]}}, insn[31], insn[19:12], insn[20], insn[30:21], 1'b0}
+                     : {{19{insn[31]}}, insn[31], insn[7], insn[30:25], insn[11:8], 1'b0};
+        target = pc + imm;
+        return {(jal || (branch && insn[31])) && !target[1], target};
+    endfunction
+
     // A load's register value from the aligned 32-bit word it read.
     function automatic logic [31:0] load_value(input logic [31:0] word, input logic [1:0] offset,
                                                input logic [2:0] funct3);
