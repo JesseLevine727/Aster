@@ -6,7 +6,9 @@
 // for every configuration: answers in acceptance order, at most one per cycle,
 // none earlier than `latency` edges after acceptance, never more than
 // `max_inflight` requests outstanding, and — with no extra delay and two in
-// flight — one request accepted and answered per cycle.
+// flight — one request accepted and answered per cycle. Then the request
+// checks: StableCheck against held, changed, withdrawn and excused requests,
+// and well_formed against every byte-enable pattern and address offset.
 #include "shell_ports.h"
 
 #include <cstdio>
@@ -56,6 +58,65 @@ int run(int latency, std::size_t max_inflight, int seed, int count) {
     }
     return cycle;
 }
+
+void check(bool condition, const char* what) {
+    if (!condition) {
+        std::printf("FAIL: %s\n", what);
+        ++failures;
+    }
+}
+
+void request_checks() {
+    using shell::Request;
+    const Request store{true, 0x80000010u, 1, 0x1234u, 0xfu}, load{true, 0x80000010u, 0, 0x1234u, 0xfu};
+    {
+        shell::StableCheck c;
+        check(c.cycle(store, false, false).empty(), "a first presentation is never a violation");
+        check(c.cycle(store, false, false).empty(), "a held request passes");
+        check(c.cycle(store, true, false).empty(), "the held request is accepted");
+        Request next = store; next.addr += 4;
+        check(c.cycle(next, true, false).empty(), "after acceptance the next request may differ");
+    }
+    struct Case { Request later; bool excused; bool violation; const char* what; };
+    Request changed_data = store; changed_data.wdata ^= 1;
+    Request changed_addr = store; changed_addr.addr ^= 4;
+    Request changed_be = store; changed_be.be = 0x3;
+    Request changed_op = store; changed_op.op = 0;
+    Request withdrawn = store; withdrawn.valid = false;
+    const Case cases[] = {
+        {changed_data, false, true, "a store's data changed while waiting fails"},
+        {changed_addr, false, true, "an address changed while waiting fails"},
+        {changed_be, false, true, "byte enables changed while waiting fail"},
+        {changed_op, false, true, "an operation changed while waiting fails"},
+        {withdrawn, false, true, "a withdrawal while waiting fails"},
+        {changed_addr, true, false, "a replacement in an excused cycle passes"},
+        {withdrawn, true, false, "a withdrawal in an excused cycle passes"},
+    };
+    for (const Case& k : cases) {
+        shell::StableCheck c;
+        c.cycle(store, false, false);
+        check(c.cycle(k.later, false, k.excused).empty() != k.violation, k.what);
+    }
+    {
+        shell::StableCheck c;
+        Request other_data = load; other_data.wdata ^= 1;
+        c.cycle(load, false, false);
+        check(c.cycle(other_data, false, false).empty(), "a load's write data is not compared");
+    }
+    {
+        shell::StableCheck c;
+        c.cycle(store, true, false);
+        check(c.cycle(withdrawn, true, false).empty(), "a request accepted at once may be followed by nothing");
+    }
+    int legal = 0;
+    for (std::uint32_t be = 0; be < 16; ++be) {
+        for (std::uint32_t offset = 0; offset < 4; ++offset) legal += shell::well_formed(0x80000000u + offset, be);
+    }
+    // 7 legal patterns at a word address, plus each at its own byte offset when that is nonzero (0x2, 0x4, 0xc, 0x8).
+    check(legal == 7 + 4, "well_formed accepts exactly the aligned byte, halfword and word patterns");
+    check(!shell::well_formed(0x80000002u, 0x3), "a halfword's enables must match a byte address");
+    check(shell::well_formed(0x80000002u, 0xc) && shell::well_formed(0x80000000u, 0xc), "either address form passes");
+}
 }  // namespace
 
 int main() {
@@ -71,7 +132,8 @@ int main() {
     expect(two_two <= count + 3, "two in flight sustain one answer per cycle at latency 2", 2, 2, 0);
     expect(one_one <= count + 2, "one in flight sustains one answer per cycle at latency 1", 1, 1, 0);
     expect(one_two >= 2 * count - 2, "one in flight at latency 2 answers every other cycle", 2, 1, 0);
-    std::printf("%s: shell port model — %d configurations x 20 seeds, full rate %d cycles for %d requests\n",
-                failures ? "FAIL" : "PASS", 6, two_two, count);
+    request_checks();
+    std::printf("%s: shell port model — %d configurations x 20 seeds, full rate %d cycles for %d requests; "
+                "request checks\n", failures ? "FAIL" : "PASS", 6, two_two, count);
     return failures ? 1 : 0;
 }

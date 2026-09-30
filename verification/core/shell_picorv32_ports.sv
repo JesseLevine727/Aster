@@ -10,10 +10,21 @@
 // mem_instr selects and answers PicoRV32 (mem_ready) when the response returns.
 // PicoRV32 therefore sees one wait state per access here; this shell is for
 // verifying the harness, not for PicoRV32's timing (tb_core_shell.cpp is).
+//
+// PicoRV32 never redirects a presented fetch, so chk_i_redirect is 0.
+// `selftest` (from the shell's +selftest) breaks one protocol rule, to prove
+// the shell's checks catch it: 1 a store's data changes while it waits, 2 a
+// waiting fetch is withdrawn for a cycle, 3 rvfi_insn follows i_rsp_valid
+// combinationally, 4 a data request has malformed byte enables, 5 an accepted
+// data request is presented again, in cycles the memory is ready, until its
+// answer returns (more than two in flight when answers are late; it never
+// waits, so the stability check cannot fire first).
 module shell_picorv32_ports (
     input  logic        clk,
     input  logic        resetn,
+    input  logic [3:0]  selftest,
     output logic        trap,
+    output logic        chk_i_redirect,
     // instruction port
     output logic        i_req_valid,
     output logic [31:2] i_req_addr,
@@ -49,14 +60,18 @@ module shell_picorv32_ports (
     logic [31:0] mem_addr, mem_wdata, mem_rdata;
     logic [3:0]  mem_wstrb;
     logic        sent;          // the current transfer's request was accepted
+    logic        i_waited, d_waited;   // the port's request waited at the last edge (self-tests)
+    logic [31:0] insn;
 
-    assign i_req_valid = mem_valid && mem_instr && !sent;
+    assign chk_i_redirect = 1'b0;
+    assign i_req_valid = mem_valid && mem_instr && !sent && !(selftest == 4'd2 && i_waited);
     assign i_req_addr  = mem_addr[31:2];
-    assign d_req_valid = mem_valid && !mem_instr && !sent;
+    assign d_req_valid = mem_valid && !mem_instr && (!sent || (selftest == 4'd5 && d_req_ready));
     assign d_req_op    = mem_wstrb != 0 ? 4'd1 : 4'd0;
     assign d_req_addr  = mem_addr;
-    assign d_req_wdata = mem_wdata;
-    assign d_req_be    = mem_wstrb != 0 ? mem_wstrb : 4'hf;
+    assign d_req_wdata = mem_wdata ^ {31'b0, selftest == 4'd1 && d_waited};
+    assign d_req_be    = selftest == 4'd4 ? 4'h5 : mem_wstrb != 0 ? mem_wstrb : 4'hf;
+    assign rvfi_insn   = insn ^ {31'b0, selftest == 4'd3 && i_rsp_valid};
 
     assign mem_ready = sent && (mem_instr ? i_rsp_valid : d_rsp_valid);
     assign mem_rdata = mem_instr ? i_rsp_data : d_rsp_rdata;
@@ -65,6 +80,8 @@ module shell_picorv32_ports (
         if (!resetn) sent <= 1'b0;
         else if (mem_ready) sent <= 1'b0;
         else if ((i_req_valid && i_req_ready) || (d_req_valid && d_req_ready)) sent <= 1'b1;
+        i_waited <= resetn && i_req_valid && !i_req_ready;
+        d_waited <= resetn && d_req_valid && !d_req_ready;
     end
 
     logic unused;
@@ -99,7 +116,7 @@ module shell_picorv32_ports (
         .mem_addr(mem_addr), .mem_wdata(mem_wdata), .mem_wstrb(mem_wstrb), .mem_rdata(mem_rdata),
         .pcpi_wr(1'b0), .pcpi_rd(32'b0), .pcpi_wait(1'b0), .pcpi_ready(1'b0),
         .irq(32'b0),
-        .rvfi_valid(rvfi_valid), .rvfi_order(rvfi_order), .rvfi_insn(rvfi_insn),
+        .rvfi_valid(rvfi_valid), .rvfi_order(rvfi_order), .rvfi_insn(insn),
         .rvfi_trap(rvfi_trap), .rvfi_pc_rdata(rvfi_pc_rdata),
         .rvfi_rd_addr(rvfi_rd_addr), .rvfi_rd_wdata(rvfi_rd_wdata),
         .rvfi_mem_addr(rvfi_mem_addr), .rvfi_mem_rmask(rvfi_mem_rmask),

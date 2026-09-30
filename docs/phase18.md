@@ -3,7 +3,7 @@
 Status: **in progress — milestone 18.0 (tooling) exit gate met; 18.1 prerequisites
 measured; the owner chose a two-stage memory access (a seven-stage core) and
 approved the revised cpu.md §4–§5; the CPU kernels run in the shell and the
-CPI model projects the 18.7 gate at about 3.6×; next, 18.1 RTL.** The CPU specification this
+CPI model projects the 18.7 gate at about 3.7×; next, 18.1 RTL.** The CPU specification this
 phase implements is [`cpu.md`](cpu.md) (approved 29 September 2026); the phase
 sits in the [v2 plan](phase17-plus.md#6-phase-17-sequence). Every milestone
 passes its verification layer and records its timing before the next starts.
@@ -419,7 +419,7 @@ as capacitance), as OpenRAM's own characterizer does.
   included, 8/8 on PicoRV32 in lockstep in both shells, each equal to its
   Phase 17 record in window instruction count and checksum) and a
   trace-driven CPI model of the seven-stage pipeline: 1.20–1.65 CPI,
-  projected gate geometric mean about 3.6×, lowest kernel about 2.6× (above)
+  projected gate geometric mean about 3.7× (3.665), lowest kernel about 2.6× (above)
 - [x] **Before 18.1 RTL:** the shell's pipelined memory tested with two
   requests in flight before the core relies on it — a unit test of the port
   response model (`verification/core/test_shell_ports.cpp`, in `make
@@ -433,13 +433,32 @@ as capacitance), as OpenRAM's own characterizer does.
   producers (18.1); CSR write point and `minstret` read semantics (18.3);
   `fence.i` draining in-flight data accesses and flushing F1, F2, the buffer,
   D and E (18.4)
-- [ ] **Aster-core shell, for 18.1:** exact RVFI byte masks (no `word_loads`);
-  a wrapper to the core's own reset and interrupt ports (the shell drives
-  PicoRV32's `resetn` and reads its `trap`); request-protocol checks (payload
-  stable while waiting; which withdrawals are allowed); injected
-  `d_rsp_error`/`i_rsp_error` responses; RVFI sampled as registered outputs
-  (the core must register them); from 18.6, the signature read through the
-  cache hierarchy
+- [x] **Aster-core shell, 18.1 step 1 — protocol checks (30 September 2026):**
+  the two-port shell now enforces the core's side of §4–§5 in every run: a
+  fetch presented and not accepted must be presented unchanged in the next
+  cycle unless the DUT raises `chk_i_redirect` in that next cycle — the cycle
+  whose request is a redirect's target, or in which fetching has stopped —
+  `I_REQ_UNSTABLE`; a data request presented and not accepted must be
+  presented unchanged in the next cycle, always (a core presenting only when
+  M1 can take never needs §4's withdrawal on a flush: after a request waits,
+  M1 is empty) — `D_REQ_UNSTABLE`; data byte enables must be an aligned byte,
+  halfword or word consistent with the address — `D_REQ_MALFORMED`; never
+  more than two data requests in flight — `D_INFLIGHT`, active in a new
+  back-pressured mode with room for three (`+max_inflight=3`); and the RVFI
+  outputs must be registered (a value sampled after a rising edge may not
+  change before the next) — `RVFI_COMBINATIONAL`. The stability rule and the
+  byte-enable shapes are unit-tested (`test_shell_ports.cpp`); every check is
+  proven end to end on a PicoRV32 adapter that breaks that one rule
+  (`+selftest=1…5`, in `make core-ports-tests`, each failing without its
+  check); unbroken PicoRV32 passes every mode. `chk_i_redirect` is a
+  verification output: the Aster core drives it from its fetch unit.
+- [ ] **Aster-core shell, with the core (18.1):** exact RVFI byte masks (no
+  `word_loads`); the wrapper to the core's own reset and interrupt ports
+  (tied off until 18.3); a directed test in which wrong-path fetches run off
+  the end of memory and are answered with `i_rsp_error` and garbage, which
+  the core must discard. Errors the core must act on (a fetch or data-port
+  error that traps) need 18.3's traps, so their injection tests move there;
+  from 18.6, the signature read through the cache hierarchy
 - [ ] **Decode-redirect timing, for 18.1:** §4 does not say whether a `jal`
   or a backward branch whose operands are not ready redirects on its first
   cycle in Decode or only once its stall ends. The CPI model assumes the

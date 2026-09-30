@@ -83,6 +83,7 @@ KERNELS = {
                           "conv2d_scalar_coh"),
     "reduction": (["software/benchmarks/workload_reduce.c"], "REDUCE_CFLAGS", ["REDUCE_WORKERS=1"], "reduce_scalar"),
 }
+assert set(GATE_KERNELS) <= set(KERNELS), "every gate kernel is a listed kernel"
 DHRYSTONE_VENDOR = (["vendor/dhrystone/dhry_1.c", "vendor/dhrystone/dhry_2.c"], "DHRY_VENDOR_CFLAGS")
 # A test that runs away (for example a failure that never reports) ends here;
 # the longest rv32ui/rv32um test takes a few thousand cycles.

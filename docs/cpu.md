@@ -22,9 +22,9 @@ verification method, and timing/area gate. The surrounding plan is [`phase17-plu
   PicoRV32's measured CPI on that set, in the retained Phase 17 baseline with
   the physical `sync1` memory, is 5.2–12.3:
   5.7 for the reduction and 10.0 for scalar Conv2D on the coherent SoC; 5.2
-  sort/search, 5.8 strided, 6.4 Dhrystone, 6.7 CoreMark, 8.3 Conv2D and 12.3
-  FFT on the minimal top (multiply-heavy code pays PicoRV32's serial
-  multiplier).
+  sort/search, 5.8 strided, 6.4 Dhrystone, 6.7 CoreMark and 12.3 FFT on the
+  minimal top (multiply-heavy code pays PicoRV32's serial multiplier); the
+  minimal top's own Conv2D, 8.3, is a cross-check outside the gate (§7).
 - **10 ns** block timing out-of-context on the PYNQ-Z1 (`xc7z020clg400-1`) and in
   SKY130 block-level STA at the declared corners, from the first milestone on.
 - Verified instruction by instruction against an independent reference model
@@ -152,10 +152,11 @@ that M1 instruction's next PC (its `pc_wdata`, the redirect target if it
 redirected). The trace-driven model of these rules over the CPU kernels'
 measurement windows (`scripts/cpi_model.py`, 30 September 2026; an estimate
 that assumes no memory stalls, not a simulation) gives 1.20–1.65 CPI — 1.61
-CoreMark, 1.60 Dhrystone, 1.65 sort/search, 1.20 FFT, 1.51 strided, 1.57
-Conv2D on the minimal top and 1.40 scalar Conv2D on the coherent SoC, 1.39
-reduction — against PicoRV32's 4.08–11.14 in the same zero-wait shell, a
-projected geometric-mean speedup of about 3.6× with the lowest kernel
+CoreMark, 1.60 Dhrystone, 1.65 sort/search, 1.20 FFT, 1.51 strided, 1.40
+scalar Conv2D on the coherent SoC (the gate's), 1.39 reduction, and 1.57 for
+the minimal top's Conv2D (a cross-check outside the gate) — against
+PicoRV32's 4.08–11.14 in the same zero-wait shell, a projected
+geometric-mean speedup over the seven gate kernels of about 3.7× (3.665) with the lowest kernel
 (sort/search) at about 2.6× ([`phase18.md`](phase18.md)). 18.7 measures the
 real core.
 A next-line or branch-target predictor in F1 is the first candidate if 18.7
@@ -288,6 +289,13 @@ Each milestone passes all applicable layers before the next milestone starts.
    - **I/O and interrupts:** the core shell has no devices; interrupts are
      checked by self-checking directed tests (layer 3), and device-dependent
      values in the SoC by the firmware oracles (layer 5).
+   - **Port protocol (from 18.1):** the two-port shell checks the core's side
+     of §4–§5 every cycle — a waiting fetch stays stable except in a cycle
+     whose request is a redirect's target or in which fetching has stopped
+     (the core marks it, `chk_i_redirect`), a waiting data request always
+     stays stable, data byte enables are well formed, at most two data
+     requests are in flight, and the RVFI outputs are registered — and each
+     check is proven on a deliberately broken DUT ([`phase18.md`](phase18.md)).
 2. **Conformance.** The vendored `riscv-tests` (rv32ui, rv32um, rv32ua) and
    `riscv-arch-test` 3.10.0 (I, M, A, Zifencei, and the privilege tests for
    Zicsr and traps), compared by signature with Spike as well as in lockstep.
@@ -388,6 +396,27 @@ and 18.0 reviews; none changes the approved scope:
 - §6: the lockstep comparator is an offline script over a trace file rather
   than a C++ testbench; the trap, CSR, AMO, and Xasterdot8 extensions are
   scheduled; the arch-test suite is pinned at 3.10.0.
+
+Clarifications during milestone 18.1 (30 September 2026), from the 18.1
+reviews; none changes the approved scope:
+
+- §5: `d_req_addr` may be the access's byte address or its word address (low
+  bits zero); the memory uses the word address and `d_req_be`, which is an
+  aligned byte, halfword, or word. The Aster core presents the byte address.
+  Every memory side (the 18.6 L1, the Phase 20 fabric) follows this.
+- §5: an instruction request is replaced or withdrawn only in a cycle in
+  which the fetch unit presents a redirect's target or has stopped fetching —
+  for a Decode redirect its own cycle, for the registered Execute redirect the
+  cycle after the compare resolves (the compare does not change the request
+  in the cycle it resolves).
+- §4–§5: a data request that waits is never withdrawn: Execute presents only
+  when M1 can take, so after a request waits M1 is empty and no trap or
+  interrupt is taken there; the permission to withdraw on a flush is never
+  used, and the shell allows none.
+- §4: "no wrong-path instruction ever issues … a redirect" means none takes
+  effect: in the cycle an Execute misprediction resolves, a wrong-path `jal`
+  in Decode may still present its target, and the fetch unit discards that
+  fetch at the same edge.
 
 Changes after approval, by the owner:
 

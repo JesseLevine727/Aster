@@ -2,7 +2,10 @@
 // (docs/cpu.md §5) on one unified synchronous memory at 0x8000_0000, with an
 // RVFI trace for lockstep against Spike (scripts/lockstep.py). Any top built
 // with Verilator `--prefix Vcore_ports` that has these ports can be the DUT:
-// the Aster core, or PicoRV32 through shell_picorv32_ports.sv.
+// the Aster core through shell_aster_ports.sv, or PicoRV32 through
+// shell_picorv32_ports.sv — clk, resetn, a selftest[3:0] input (tied off
+// unless the DUT has self-test mutants), trap, chk_i_redirect, the two ports,
+// and the RVFI fields sampled below.
 //
 // Memory (docs/cpu.md §5): each port accepts a request at a clock edge when
 // valid && ready and answers it `+latency` cycles later (1 or 2; default 2, the
@@ -27,6 +30,25 @@
 // and no accepted write may be left unmatched at the end. The run ends when
 // the store to tohost retires.
 //
+// Protocol checks (docs/cpu.md §4-§5; shell_ports.h):
+// - I_REQ_UNSTABLE: a fetch presented and not accepted must be presented
+//   unchanged in the next cycle unless the DUT raises chk_i_redirect in that
+//   next cycle — the cycle whose request is a redirect's target, or in which
+//   fetching has stopped (never the cycle in which an Execute redirect
+//   resolves: its target is presented the cycle after);
+// - D_REQ_UNSTABLE: a data request presented and not accepted must be
+//   presented unchanged in the next cycle, always. §4 lets a flush withdraw
+//   one, but a core that presents only when M1 can take never needs to: after
+//   a request waits, M1 is empty, so no trap or interrupt is taken there;
+// - D_REQ_MALFORMED: a data request's byte enables must be an aligned byte,
+//   halfword or word consistent with its address;
+// - D_INFLIGHT: never more than two data requests in flight — accepted and
+//   not yet answered, stores included (visible only when +max_inflight is
+//   above 2 and answers are late, +stall_seed);
+// - RVFI_COMBINATIONAL: the RVFI outputs must be registered: a value sampled
+//   after a rising edge may not change before the next one, when the shell
+//   changes the responses and readiness.
+//
 // Plusargs: +bin=<file> +tohost=<hex> [+trace=<file>] [+max_cycles=<n>]
 //           [+stall_seed=<n>] [+mem_bytes=<hex>] [+latency=<1|2>] [+max_inflight=<n>]
 //           [+signature=<file> +sig_begin=<hex> +sig_end=<hex>]
@@ -38,6 +60,13 @@
 //                                   accepted twice, as a core that issues a store
 //                                   twice would; the stray-write check must fail)
 //
+//           [+selftest=<n>]      (self-test: drives the DUT's selftest input, which
+//                                   makes the PicoRV32 adapter break one protocol
+//                                   rule — 1 a store's data changes while waiting,
+//                                   2 a fetch is withdrawn while waiting, 3 an RVFI
+//                                   output follows an input combinationally, 4
+//                                   malformed byte enables, 5 more than two data
+//                                   requests in flight)
 //           [+io_page] [+console=<file>] [+kernel_end]
 //
 // Memory regions, console, and the measurement window: shell_common.h.
@@ -46,7 +75,8 @@
 // Output: "SHELL <status> cycles=<n> retired=<n> [window_cycles=<n>
 // window_retired=<n>]", where status is PASS,
 // FAIL test=<n>, FAIL (partial tohost store), FAIL (kernel record), TRAP, TIMEOUT, BUS_ERROR,
-// STORE_MISMATCH, STRAY_WRITE or UNSUPPORTED_OP.
+// STORE_MISMATCH, STRAY_WRITE, UNSUPPORTED_OP, I_REQ_UNSTABLE, D_REQ_UNSTABLE,
+// D_REQ_MALFORMED, D_INFLIGHT or RVFI_COMBINATIONAL.
 #include "Vcore_ports.h"
 #include "verilated.h"
 
@@ -57,6 +87,7 @@
 #include <iostream>
 #include <random>
 #include <string>
+#include <tuple>
 #include <vector>
 
 #include "shell_common.h"
@@ -72,6 +103,20 @@ struct Write {
     std::uint32_t mask;
     std::uint32_t data;
 };
+
+// The RVFI outputs the shell samples, for the registered-output check.
+struct Rvfi {
+    std::uint64_t order;
+    std::uint32_t valid, insn, trap, pc, rd, rd_wdata, addr, rmask, wmask, rdata, wdata;
+    auto tied() const { return std::tie(order, valid, insn, trap, pc, rd, rd_wdata, addr, rmask, wmask, rdata, wdata); }
+    bool operator==(const Rvfi& other) const { return tied() == other.tied(); }
+};
+
+Rvfi sample(const Vcore_ports& d) {
+    return {d.rvfi_order, d.rvfi_valid, d.rvfi_insn, d.rvfi_trap, d.rvfi_pc_rdata, d.rvfi_rd_addr,
+            d.rvfi_rd_wdata, d.rvfi_mem_addr, d.rvfi_mem_rmask, d.rvfi_mem_wmask, d.rvfi_mem_rdata,
+            d.rvfi_mem_wdata};
+}
 }  // namespace
 
 int main(int argc, char** argv) {
@@ -115,6 +160,7 @@ int main(int argc, char** argv) {
     }
 
     Vcore_ports d;
+    d.selftest = plusarg("selftest").empty() ? 0 : std::stoul(plusarg("selftest"));
     d.clk = 0; d.resetn = 0;
     d.i_req_ready = 0; d.i_rsp_valid = 0; d.i_rsp_data = 0; d.i_rsp_error = 0;
     d.d_req_ready = 0; d.d_rsp_valid = 0; d.d_rsp_rdata = 0; d.d_rsp_error = 0;
@@ -132,6 +178,9 @@ int main(int argc, char** argv) {
     std::uint64_t cycles = 0, retired = 0;
     std::string result = "TIMEOUT";
     bool stop = false;
+    shell::StableCheck i_stable, d_stable;
+    Rvfi registered{};
+    bool sampled = false;
     while (!stop && cycles < max_cycles) {
         // Low phase: drive responses and readiness for this cycle.
         d.i_rsp_valid = iport.responding();
@@ -149,8 +198,21 @@ int main(int argc, char** argv) {
         const std::uint32_t d_addr = d.d_req_addr, d_wdata = d.d_req_wdata, d_be = d.d_req_be;
         const int d_op = d.d_req_op;
 
+        // Protocol checks, on this cycle's settled request side.
+        if (sampled && !(sample(d) == registered)) { result = "RVFI_COMBINATIONAL"; break; }
+        const std::string i_violation =
+            i_stable.cycle({bool(d.i_req_valid), i_addr, 0, 0, 0}, d.i_req_ready, d.chk_i_redirect);
+        const std::string d_violation =
+            d_stable.cycle({bool(d.d_req_valid), d_addr, d_op, d_wdata, d_be}, d.d_req_ready, false);
+        if (!i_violation.empty()) { result = "I_REQ_UNSTABLE"; std::cerr << "instruction request " << i_violation << "\n"; break; }
+        if (!d_violation.empty()) { result = "D_REQ_UNSTABLE"; std::cerr << "data request " << d_violation << "\n"; break; }
+        if (d.d_req_valid && !shell::well_formed(d_addr, d_be)) { result = "D_REQ_MALFORMED"; break; }
+        if (d_accept && dport.remaining() >= 2) { result = "D_INFLIGHT"; break; }
+
         d.clk = 1; d.eval();
         ++cycles;
+        registered = sample(d);
+        sampled = true;
         // Responses delivered in the cycle before this edge are consumed; others age.
         iport.advance();
         dport.advance();

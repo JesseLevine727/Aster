@@ -2171,14 +2171,21 @@ CORE_PORTS_TESTS = RISCV_PREFIX=$(RISCV_PREFIX) $(PYTHON) scripts/run_core_tests
 .PHONY: core-ports-sim core-ports-tests
 core-ports-sim: $(CORE_PORTS_SIM)
 
-# The two-port shell on riscv-tests (two-cycle memory, one-cycle memory, and
-# back-pressured) and arch-test, and its store and stray-write checks proven
-# to catch a bus write that differs from RVFI.
+# The two-port shell on riscv-tests (two-cycle memory, one-cycle memory,
+# back-pressured, and back-pressured with room for three data requests so the
+# core's own two-in-flight limit is what holds) and arch-test; its store and
+# stray-write checks proven to catch a bus write that differs from RVFI, and
+# each protocol check (tb_core_ports.cpp) proven on a PicoRV32 adapter that
+# breaks that rule (+selftest).
+PORTS_SELFTESTS := 1:rv32ui/sw:D_REQ_UNSTABLE:--stall-seed=1 2:rv32ui/add:I_REQ_UNSTABLE:--stall-seed=1 \
+	3:rv32ui/add:RVFI_COMBINATIONAL: 4:rv32ui/lw:D_REQ_MALFORMED: \
+	5:rv32ui/lw:D_INFLIGHT:--stall-seed=7,--shell-arg=+max_inflight=3
 core-ports-tests: $(CORE_PORTS_SIM) $(CORE_PORTS_MODEL_TEST)
 	@$(CORE_PORTS_MODEL_TEST)
 	@mkdir -p $(CORE_TESTS_DIR)
-	@set -o pipefail; for mode in plain latency1 stall arch; do \
-		extra=$$(case $$mode in latency1) echo "--shell-arg +latency=1";; stall) echo "--stall-seed 5";; arch) echo "--arch";; esac); \
+	@set -o pipefail; for mode in plain latency1 stall inflight3 arch; do \
+		extra=$$(case $$mode in latency1) echo "--shell-arg +latency=1";; stall) echo "--stall-seed 5";; \
+			inflight3) echo "--stall-seed 7 --shell-arg +max_inflight=3";; arch) echo "--arch";; esac); \
 		$(CORE_PORTS_TESTS) $$extra --build-dir $(CORE_TESTS_DIR)/ports-$$mode | \
 			tee $(CORE_TESTS_DIR)/ports-$$mode.log | tail -1 || \
 			{ grep -v '^PASS' $(CORE_TESTS_DIR)/ports-$$mode.log; exit 1; }; \
@@ -2187,6 +2194,11 @@ core-ports-tests: $(CORE_PORTS_SIM) $(CORE_PORTS_MODEL_TEST)
 		--shell-arg +corrupt_write=3 --expect-status STORE_MISMATCH
 	@$(CORE_PORTS_TESTS) --build-dir $(CORE_TESTS_DIR)/ports-selftest --only rv32ui/sw \
 		--shell-arg +duplicate_tohost_write --expect-status STRAY_WRITE
+	@for case in $(PORTS_SELFTESTS); do \
+		IFS=: read -r number test status extra <<< "$$case"; \
+		$(CORE_PORTS_TESTS) --build-dir $(CORE_TESTS_DIR)/ports-selftest --only $$test $${extra//,/ } \
+			--shell-arg +selftest=$$number --expect-status $$status || exit 1; \
+	done
 
 # The CPU kernels of docs/cpu.md §7 in the shells: built from their SoC sources
 # and flags with only the shell's start-up and layout (verification/core/kernels),
