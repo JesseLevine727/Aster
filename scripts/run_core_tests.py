@@ -393,13 +393,14 @@ def run_random(args, config, prefix: str) -> int:
     print(f"coverage: {len(wanted) - len(missing)}/{len(wanted)} read-after-write bins "
           f"(producer x distance 1-3 x consumer operand)" +
           (f"; missing {', '.join(f'{p}/{d}/{c}' for p, d, c in missing[:12])}" if missing else ""))
-    if missing and args.require_coverage:
-        failures.append("coverage")
+    coverage_failed = bool(missing) and args.require_coverage
     mode = f", stall seed {args.stall_seed}" if args.stall_seed is not None else ""
-    print(f"{'PASS' if not failures else 'FAIL'}: {args.dut} {args.random - len(failures)}/{args.random} "
+    print(f"{'PASS' if not failures and not coverage_failed else 'FAIL'}: {args.dut} "
+          f"{args.random - len(failures)}/{args.random} "
           f"random programs pass in lockstep with Spike (seeds {args.random_seed}-"
-          f"{args.random_seed + args.random - 1}{mode}); {total_retired} instructions in {total_cycles} cycles")
-    return 1 if failures else 0
+          f"{args.random_seed + args.random - 1}{mode}); {total_retired} instructions in {total_cycles} cycles"
+          + ("; required coverage missed" if coverage_failed else ""))
+    return 1 if failures or coverage_failed else 0
 
 
 def main() -> int:
@@ -426,7 +427,9 @@ def main() -> int:
     if args.inject:
         return inject(args, config, prefix)
 
-    if args.random:
+    if args.random is not None:
+        if args.random < 1:
+            parser.error("--random needs at least one program")
         return run_random(args, config, prefix)
 
     if args.arch:

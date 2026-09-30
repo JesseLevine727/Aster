@@ -72,7 +72,10 @@ latch/flip-flop RAM in Phase 18 on measured area and timing.
 ## Recommendation
 
 **Option B:** a 96 KiB host-loaded unified SRAM built from 2 KiB macros in
-independent banks, with a registered macro interface budgeted to half a cycle,
+independent banks, with a registered macro interface budgeted to half a cycle
+(superseded on 29 September 2026 by the owner-approved Phase 18 plan, which
+keeps the macros behind the L1 miss path with a multi-cycle access; see the
+18.6 plan in [`phase18.md`](phase18.md)),
 and the die budget set from Phase 18's block-level area measurements plus the
 macro area. It keeps every workload in the catalog unchanged, avoids the
 unrouted 64-macro configuration, and matches how the Phase 16 ASIC already

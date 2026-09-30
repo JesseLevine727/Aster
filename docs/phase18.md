@@ -95,16 +95,24 @@ corruption to be caught — 19 of 19.
   from the Sail model; it is reconsidered at 18.3, when the core's
   configuration is final — see `vendor/riscv-arch-test/UPSTREAM.md`.)
 - A seeded constrained-random program generator (`scripts/rvgen.py`, built in
-  18.0 so that 18.1 starts with it): random register and data-region state,
-  every RV32I and M instruction, loads and stores of every width, forward
-  branches, bounded loops, `jal`/`jalr` calls, and sources drawn mostly from the
-  last three results, so forwarding and load-use cases are dense. Programs
-  check nothing themselves; lockstep checks every retired instruction.
-  Coverage is counted from the reference stream as read-after-write pairs —
-  producer (ALU, load, link, multiply, divide) × distance 1–3 × consumer
-  operand (ALU, multiply/divide, branch, store data, load and store address,
-  `jalr` target) — and a run fails if any required bin is missed (`make
-  core-random-lockstep`: 20 programs plain and 20 under back-pressure).
+  18.0 so that 18.1 starts with it): random register and data-region state;
+  every RV32I computational, load, store, branch and jump instruction and every
+  M instruction (not `fence`, `ecall` or `ebreak`); loads and stores of every
+  width, including a load that overwrites its own base; forward branches;
+  bounded loops closed by four kinds of backward branch; `jal`/`jalr` calls
+  with varied `jalr` offsets and a set low bit, including `jalr x1, imm(x1)`;
+  the `INT_MIN ÷ −1` case; and sources drawn mostly from the last three
+  results, so forwarding and load-use cases are dense. Programs check nothing
+  themselves; lockstep and the data-region signature check every retired
+  instruction. Coverage is counted from the reference stream as
+  read-after-write pairs — producer (ALU, load, link, multiply, divide) ×
+  distance 1–3 × consumer operand (ALU, multiply/divide, branch, store data,
+  load and store address, `jalr` target) — and a run fails if any required
+  bin is missed (`make core-random-lockstep`: 20 programs plain and 20 under
+  back-pressure). Over 100 seeds the thinnest bin averages 1.7 hits per
+  program and no window of five programs misses a bin. This coverage is
+  architectural (distance in the retired stream); from 18.1 the core also
+  reports which forwarding and stall events it actually took.
 - Directed microarchitecture tests (from milestone 18.1).
 - The CPU-bound benchmark set for 18.7.
 
@@ -196,7 +204,7 @@ requires (a 50 MHz result is an intermediate milestone, not a substitute).
   recorded (table above)
 - [x] 18.1 prerequisite: constrained-random generator and hazard coverage; on
   PicoRV32, 20/20 programs in lockstep plain and 20/20 under back-pressure,
-  84/84 required hazard bins each (about 149,000 instructions)
+  84/84 required hazard bins each (about 154,000 instructions)
 - [x] 18.0 review findings closed: harness pass-on-prefix, wrong-lane stores,
   TESTNUM=0 false pass, parallel-make race, memory-timing claim, stale-trace
   false pass (traces, logs and signatures are deleted before each run, the
@@ -220,8 +228,8 @@ requires (a 50 MHz result is an intermediate milestone, not a substitute).
   scalar Conv2D, scalar reduction) is **≥ 2.0×** and **no kernel is below
   1.5×**; every per-kernel speedup is published with the aggregate. Declared
   before any measurement ([`cpu.md`](cpu.md) §7).
-- [x] **Decided 29 September 2026 — SRAM timing plan for 18.6.** The SKY130
-  macros' only liberty models are analytical and typical-corner
+- [x] **Decided by the owner, 29 September 2026 — SRAM timing plan for 18.6.**
+  The SKY130 macros' only liberty models are analytical and typical-corner
   ([`phase17-memory.md`](phase17-memory.md)), so no macro sits on the 10 ns
   single-cycle path:
   1. the L1 instruction and data arrays (a few KiB each, single-cycle hits) are

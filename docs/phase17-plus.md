@@ -51,6 +51,16 @@ half-cycle budget, derate or re-characterize the macro for slow-corner claims,
 and compare macros against latch/flop RAM for small, fast arrays such as caches
 and NPU operand buffers.
 
+*Update (owner, 29 September 2026):* the Phase 18 plan resolves this by keeping
+every macro off the single-cycle path. The L1 arrays are standard-cell latch or
+flip-flop arrays timed by the foundry cell libraries at every corner (the
+macro's analytical, typical-only model cannot give credible single-cycle
+slow-corner timing, and a standalone array block is measured to size the L1);
+the macros are the backing store behind the L1 miss path with registered,
+multi-cycle access; and the macro is characterized in SPICE at the slow corner,
+with derating only as a cross-check. See the 18.6 plan in
+[`phase18.md`](phase18.md). NPU operand buffers are decided in Phase 19.
+
 ## 2. What v2 is trying to achieve
 
 The end system remains a small heterogeneous RISC-V SoC, not a general-purpose
@@ -65,7 +75,7 @@ goal to test and close, not a claim that the current RTL already meets it.
 | --- | --- | --- |
 | FPGA clock | **100 MHz** for the all-engine PYNQ-Z1 image | Routed timing has nonnegative setup and hold slack, zero failing endpoints, and the physical workload suite passes at the programmed clock. A functional run without timing closure does not count. |
 | SKY130 clock | **100 MHz design target** at the slow signoff corner | 10 ns SDC, setup and hold closed at every required corner, real SRAM models with credible slow-corner timing, clean post-route signoff. Phase 18 must demonstrate feasibility early. A 50 MHz result is an intermediate milestone, not a silent substitute for the 100 MHz goal. |
-| CPU | **Aster core**: our own in-order RV32IMA CPU with at least **2× fewer cycles** than the v1 PicoRV32 baseline on the predeclared CPU-bound kernel set at the same clock and memory configuration | Same firmware semantics, compiler settings, inputs, cache policy, and measurement window. Lockstep-verified against an independent reference model before any performance claim. |
+| CPU | **Aster core**: our own in-order RV32IMA CPU with at least **2× fewer cycles** than the v1 PicoRV32 baseline on the predeclared CPU-bound kernel set at the same clock and memory configuration (aggregation rule: [`cpu.md`](cpu.md) §7) | Same firmware semantics, compiler settings, inputs, cache policy, and measurement window. Lockstep-verified against an independent reference model before any performance claim. |
 | NPU peak | 4×4 INT8 array: 3.2 GOPS at 100 MHz, counting one MAC as two operations | Report peak separately from sustained throughput. Publish MAC/s as well as GOPS and state the MAC counting convention in every report. |
 | NPU utilization | At least **50% of peak** on predeclared dense GEMM cases with M, N, K ≥ 64, and a declared N=1 mapping with its own measured utilization | Independently checked outputs, cumulative active cycles over every job, active-PE utilization, memory bytes/cycle, and end-to-end latency. |
 | Accelerator speedup | At least **5×** over the optimized scalar implementation for large dense GEMM; at least **2×** end-to-end on the selected batch-one MLP | All methods run on the same SoC configuration and input. Include setup, transfer, and completion in end-to-end results; publish kernel-only results separately. Small workloads may be slower and remain in the report. |

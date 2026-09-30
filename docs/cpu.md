@@ -122,8 +122,13 @@ has not yet accepted (back-pressure) stays stable, except that it is withdrawn
 in a cycle in which the pipeline flushes; the memory side must not act on a
 request it has not accepted. Bus errors are recognized in Memory, before
 commit, and are precise. The kill is a short combinational path from the
-Memory-stage trap decision to `d_req_valid`; its timing is part of every
-milestone report. `d_rsp_error`
+Memory-stage trap decision (including `d_rsp_error`) to `d_req_valid`, and a
+full-rate load or store stream needs another from `d_rsp_valid` to
+`d_req_valid`; both are named in every milestone's timing report. An
+instruction whose access the memory has accepted is never killed by an
+interrupt: interrupts are taken between instructions at the commit point, so
+the instruction in Memory completes and the interrupt is taken before the next
+one (a store or I/O load is never repeated after `mret`). `d_rsp_error`
 must come from registered state on the memory side — for example an address
 decode made when the request was accepted and returned as a flag with the
 response — never from an SRAM macro's data output, whose falling-edge launch
@@ -155,15 +160,19 @@ fields: `valid`, `order`, `insn`, `trap`, `halt`, `intr`, `mode`, `ixl`,
 `mem_rmask`/`mem_wmask` and `mem_rdata`/`mem_wdata` in riscv-formal's aligned
 layout (`RISCV_FORMAL_ALIGNED_MEM`): mask bit *i* and data byte *i* are byte *i*
 of the aligned 32-bit word containing the access, and `mem_addr` is that
-word's address or the byte address of the access's lowest byte; from milestone 18.3 also the
+word's address (the lockstep comparator also accepts the byte address of the
+access's lowest byte, but riscv-formal checks the word address); from milestone 18.3 also the
 `rvfi_csr_*` read/write masks and data for `mstatus`, `mie`, `mip`, `mtvec`,
 `mscratch`, `mepc`, `mcause`, and `mtval`. (PicoRV32 reports full-word read
 masks on sub-word loads; the Aster core must report exact masks.)
 
 The ports are shaped for synchronous SRAM (address presented in one cycle, data
-returned the next), which matches FPGA block RAM and a registered SKY130 macro
-interface. On SKY130, a macro read must fit the half-cycle budget described in
-[`phase17-memory.md`](phase17-memory.md).
+returned the next), which matches FPGA block RAM and, on SKY130, the
+standard-cell L1 arrays that sit on these ports. No SKY130 SRAM macro is on a
+single-cycle path: the macros form the backing store behind the L1 miss path,
+with registered inputs and outputs and a fixed multi-cycle access (the
+owner-approved 18.6 plan in [`phase18.md`](phase18.md) (the 18.6 SRAM timing plan)). That replaces the earlier requirement
+that a macro read fit half a cycle ([`phase17-memory.md`](phase17-memory.md)).
 
 ## 6. Verification
 
@@ -238,8 +247,14 @@ Each milestone passes all applicable layers before the next milestone starts.
   2. **no kernel is below 1.5×** (so the aggregate cannot hide a kernel the
      core handles badly).
 
-  Every per-kernel speedup is published next to the aggregate. The kernel set,
-  inputs, and windows are those fixed above; changing any of them after
+  Every per-kernel speedup is published next to the aggregate. The thresholds
+  apply to unrounded ratios. Both cores run in the same CPU shell against the
+  same synchronous SRAM (PicoRV32 through its look-ahead port, its best case;
+  the Aster core directly on its ports, without its L1 caches), so the gate
+  measures the cores alone; the L1 and SoC effects are measured separately (18.6
+  and Phase 20). The kernel inputs and sizes are those of the
+  [retained Phase 17 baseline](results/phase17/baseline-56067a15815a/README.md),
+  and the measurement windows are the kernels' own; changing any of them after
   measurement starts voids the comparison.
 
 ## 8. Milestones
@@ -272,9 +287,15 @@ and 18.0 reviews; none changes the approved scope:
   the one-cycle load-use penalty hold together; when a request may be
   presented or withdrawn; `d_rsp_error` from registered state.
 - §5: the RVFI memory-field layout (riscv-formal's aligned layout).
+- §4: the timed request paths named; an accepted access is never killed by an
+  interrupt.
+- §5: SKY130 macros are off the single-cycle path (the owner-approved 18.6 SRAM
+  plan in [`phase18.md`](phase18.md)), replacing the half-cycle macro-read
+  requirement.
 - §1, §7, §8: the 2× performance gate is an aggregate — the geometric mean of
-  the seven per-kernel speedups at least 2.0×, with no kernel below 1.5× —
-  declared by the owner before any measurement.
+  the seven per-kernel speedups at least 2.0×, with no kernel below 1.5×, on
+  unrounded ratios, both cores on the same shell SRAM — declared by the owner
+  before any measurement.
 - §5: the RVFI field list made explicit (riscv-formal fields, exact byte masks,
   CSR fields from 18.3).
 - §6: the lockstep comparator is an offline script over a trace file rather

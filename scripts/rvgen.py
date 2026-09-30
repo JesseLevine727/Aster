@@ -124,7 +124,8 @@ class Generator:
         if self.rng.random() < 0.55:
             op, size = self.rng.choice(LOADS)
             offset = self.rng.randrange(-1024, 1024, size)
-            self.emit(f"{op} x{self.dst()}, {offset}(x{base})")
+            rd = base if self.rng.random() < 0.25 else self.dst()   # rd == rs1: the load replaces its base
+            self.emit(f"{op} x{rd}, {offset}(x{base})")
         else:
             op, size = self.rng.choice(STORES)
             offset = self.rng.randrange(-1024, 1024, size)
@@ -132,6 +133,12 @@ class Generator:
         self.pinned.discard(base)
 
     def muldiv(self) -> None:
+        if self.rng.random() < 0.1:        # the signed-overflow case: INT_MIN / -1
+            dividend, divisor = self.dst(allow_x0=False), self.dst(allow_x0=False)
+            self.emit(f"li x{dividend}, 0x80000000")
+            self.emit(f"li x{divisor}, -1")
+            self.emit(f"{self.rng.choice(DIV)} x{self.dst()}, x{dividend}, x{divisor}")
+            return
         if self.rng.random() < 0.3:        # load a corner operand first
             reg = self.dst()
             self.emit(f"li x{reg}, 0x{self.rng.choice(CORNERS):x}")
@@ -151,13 +158,36 @@ class Generator:
             self.emit(f"{op} x{self.dst()}, {self.rng.randrange(0, 16, size)}(x{link})")
             self.pinned.discard(link)
             return
-        if self.rng.random() < 0.25:           # jump and link forward: the link value is data
-            self.emit(f"jal x{self.dst()}, {target}")
-        else:
-            s1, s2 = self.src(), self.src()
-            self.emit(f"{self.rng.choice(BRANCH)} x{s1}, x{s2}, {target}")
+        if self.rng.random() < 0.3:            # jump and link forward: the link value is data
+            link = self.dst(allow_x0=False)
+            self.pinned.add(link)
+            self.emit(f"jal x{link}, {target}")
+            self.block(self.rng.randint(1, 6), depth + 1)
+            self.lines.append(f"{target}:")
+            self.fillers()
+            self.use_as_data(link)
+            self.pinned.discard(link)
+            return
+        s1, s2 = self.src(), self.src()
+        self.emit(f"{self.rng.choice(BRANCH)} x{s1}, x{s2}, {target}")
         self.block(self.rng.randint(1, 6), depth + 1)
         self.lines.append(f"{target}:")
+
+    def use_as_data(self, reg: int) -> None:
+        """Consume `reg` as an ALU, branch, store-data, or multiply/divide operand."""
+        kinds = ["alu", "branch", "store"] + (["muldiv"] if "m" in self.ext else [])
+        kind = self.rng.choice(kinds)
+        if kind == "alu":
+            self.emit(f"{self.rng.choice(ALU_R)} x{self.dst()}, x{reg}, x{self.src()}")
+        elif kind == "branch":                 # both outcomes continue at the next instruction
+            after = self.fresh()
+            self.emit(f"{self.rng.choice(BRANCH)} x{reg}, x{self.src()}, {after}")
+            self.lines.append(f"{after}:")
+        elif kind == "store":
+            op, size = self.rng.choice(STORES)
+            self.emit(f"{op} x{reg}, {self.rng.randrange(-2048, 2048, size)}(x{BASE})")
+        else:
+            self.emit(f"{self.rng.choice(MUL + DIV)} x{self.dst()}, x{reg}, x{self.src()}")
 
     def loop(self, depth: int) -> None:
         top = self.fresh()
@@ -165,7 +195,9 @@ class Generator:
         self.lines.append(f"{top}:")
         self.block(self.rng.randint(2, 8), depth + 1, in_loop=True)
         self.emit(f"addi x{COUNTER}, x{COUNTER}, -1")
-        self.emit(f"bnez x{COUNTER}, {top}")
+        # Equivalent loop-closing branches, so backward branches of several kinds occur.
+        self.emit(self.rng.choice([f"bnez x{COUNTER}, {top}", f"blt x0, x{COUNTER}, {top}",
+                                   f"bltu x0, x{COUNTER}, {top}", f"bne x0, x{COUNTER}, {top}"]))
 
     def call(self) -> None:
         leaf = self.fresh()
@@ -177,18 +209,22 @@ class Generator:
         self.leaves.extend(self.lines)
         self.lines = saved
         style = self.rng.random()
-        if style < 0.4:
+        if style < 0.35:
             self.emit(f"jal x{LINK}, {leaf}")
             return
-        target = self.dst(allow_x0=False)
+        # jalr computes (rs1 + imm) & ~1: vary the offset and set the low bit, so
+        # both the addition and the bit clearing are exercised. With rs1 = x1 the
+        # instruction also overwrites its own base (rd == rs1).
+        target = LINK if self.rng.random() < 0.25 else self.dst(allow_x0=False)
         self.pinned.add(target)
-        self.emit(f"la x{target}, {leaf}")
-        if style > 0.7:                        # the target comes from memory: load -> jalr
+        imm, low = self.rng.choice([0, 4, -4, 8]), self.rng.randint(0, 1)
+        self.emit(f"la x{target}, {leaf}{low - imm:+d}")
+        if style > 0.7 and target != LINK:     # the target comes from memory: load -> jalr
             slot = self.rng.randrange(-2048, 2048, 4)
             self.emit(f"sw x{target}, {slot}(x{BASE})")
             self.emit(f"lw x{target}, {slot}(x{BASE})")
         self.fillers()
-        self.emit(f"jalr x{LINK}, 0(x{target})")
+        self.emit(f"jalr x{LINK}, {imm}(x{target})")
         self.pinned.discard(target)
 
     def block(self, length: int, depth: int = 0, in_loop: bool = False) -> None:
