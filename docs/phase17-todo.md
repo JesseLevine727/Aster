@@ -1,10 +1,11 @@
 # Phase 17 TODO — correct the v1 baseline and freeze the v2 contract
 
-Status: **in progress — two exit items reopened (29 September 2026).** The MNIST
-MLP, a coherent-SoC workload, still emits only the v9 per-image record with
-last-job NPU counters, so "every coherent workload emits v11" is not yet true;
-and P17-F was ticked before the FPGA and benchmark READMEs were checked.
-Phase 18 starts after both close. Revised 29 September 2026
+Status: **complete (29 September 2026).** Every item below is closed and each
+exit-gate clause was re-checked against the evidence. The first completion
+claim was premature (MNIST still emitted only v9, and P17-F was ticked before two
+READMEs were reviewed); both were closed, verified with the full `make check`
+(210 PASS, 270 host tests) and the retained-baseline audit, before this status
+was set. Phase 18 (the Aster core) is next. Revised 29 September 2026
 (see the
 [plan revision](phase17-plus.md#7-plan-revision--29-september-2026)). Phase 17
 is deliberately lean: it corrects what v1 reports and fixes the v2 contract; it
@@ -157,12 +158,14 @@ What the v11 records show:
   [phase17-plus.md section 6](phase17-plus.md#6-phase-17-sequence). **Approved 29
   September 2026:** the section 2 targets are frozen and [`cpu.md`](cpu.md) is
   the Phase 18 contract.
-- [ ] **P17-F — Live documentation aligned.** README, architecture status,
+- [x] **P17-F — Live documentation aligned.** README, architecture status,
   subsystem READMEs, and the phase index describe the current state, and
-  historical claims are labelled with their original configuration. Open:
-  `fpga/pynq_z1/README.md` (still describes the 31.25 MHz Phase 2 setup),
-  `software/benchmarks/README.md` (stops at AsterBench v4), and the
-  verification/runtime guides.
+  historical claims are labelled with their original configuration. Done across
+  P17-H, the plan revision, and P17-C, then `fpga/pynq_z1/README.md` (current
+  status section), `software/benchmarks/README.md` (record-version index),
+  `rtl/accelerator/README.md`, and the verification/runtime guides; 0 broken
+  links in 63 live documents. The historical Phase 9 audit, which failed in its
+  plain mode since the tree moved past Phase 9, was fixed to match the others.
 
 ## Removed from the first draft
 
@@ -175,7 +178,10 @@ What the v11 records show:
 ## Phase 17 exit gate
 
 Phase 17 is complete when v11 records validate in Python and C++ against a
-shared mutation corpus and every coherent workload emits them; the retained v1
+shared mutation corpus and every coherent-SoC workload in the AsterBench catalog
+(reduction, Conv2D engines, ECG, CIFAR, and MNIST) emits them — the
+phase-specific v4–v8 study benches keep their historical formats, which report
+one engine job per record and so never had the last-job problem; the retained v1
 baseline exists and its audit rejects configuration or source drift; the
 Phase 15/16 documents and audits report their true status; and the memory/area
 point, v2 targets, and Aster core specification are approved. Phase 18 RTL

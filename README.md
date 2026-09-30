@@ -161,13 +161,12 @@ The [detailed Phase 17+ plan](docs/phase17-plus.md) specifies the diagnosis,
 CPU specification, workload matrices, record contents, verification levels,
 frequency feasibility checks, and phase-by-phase acceptance gates. It was
 revised on 29 September 2026; its final section records what changed and why.
-**Phase 17 is nearly complete** ([TODO and exit gate](docs/phase17-todo.md); two
-items reopened: MNIST v11 records and live documentation): corrected
+**Phase 17 is complete** ([TODO and exit gate](docs/phase17-todo.md)): corrected
 [AsterBench v11](docs/asterbench-v11.md) records, a
 [retained same-top v1 baseline](docs/results/phase17/baseline-56067a15815a/README.md)
 with a drift-rejecting audit, corrected Phase 15/16 reporting and audits, the
 96 KiB memory decision, and the approved [Aster core specification](docs/cpu.md).
-**Phase 18 — designing and verifying the Aster core — follows.**
+**Phase 18 — designing and verifying the Aster core — is next.**
 
 ## Historical phase links
 
