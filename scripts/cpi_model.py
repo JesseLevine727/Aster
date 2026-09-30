@@ -15,7 +15,7 @@ the pipeline's rules:
   Execute for ALU and link results, three cycles after for loads, AMOs, `lr`,
   `sc` and multiplies (forwarded from W), two after for Xasterdot8 (from M2);
 - the iterative divider holds Execute for DIVIDE_CYCLES;
-- `jal` and backward branches with a word-aligned target (predicted taken)
+- `jal`, and backward branches with a word-aligned target (predicted taken),
   redirect from Decode in their
   first cycle there, whether or not they then wait for operands; a branch
   whose direction differs from the static prediction, and `jalr`, redirect
@@ -140,8 +140,10 @@ def cycles(records: list[lockstep.Retired], pipeline: Pipeline) -> int:
         taken = following is not None and following.pc != record.pc + 4
         from_decode = decode + 1 + pipeline.decode_redirect
         from_execute = execute + occupancy - 1 + pipeline.execute_redirect
-        # Decode predicts a jal, and a backward branch, taken only when the target
-        # is word-aligned (a halfword target traps if taken).
+        # Decode predicts a backward branch taken only when its target is
+        # word-aligned (a halfword target traps if taken). A jal is always
+        # modelled as a Decode redirect: one with a halfword target traps (the
+        # RTL does not predict it), and trapping programs are not cycle-checked.
         if opcode == 0x6F:                                    # jal
             available = from_decode
         elif opcode == 0x67:                                  # jalr

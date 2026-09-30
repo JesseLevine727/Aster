@@ -30,7 +30,10 @@ the "Milestone 18.1" section of [`../../../phase18.md`](../../../phase18.md).
   5% derate, `SYNTH_STRATEGY "DELAY 1"`, post-global-route *timing* repair,
   `RUN_POST_GRT_RESIZER_TIMING`; design repair after global routing off, the
   default). Two runs:
-  - `asic/aster` — run `p18-aster`, the default flow; its signoff STA also
+  - `asic/aster` — run `p18-aster`, the default (baseline) flow, which
+    `config.core_aster.json` held then (it has since moved to the flow chosen
+    in the 18.1 timing work; this run's `resolved.json` records its settings);
+    its signoff STA also
     reports §4's two port paths (`asic/sky130/sta_named_paths.tcl`, per corner
     in `named_paths.rpt`). Step 57 is a signoff-only re-run of step 56 on the
     same routed design, adding that report: its `summary.rpt` is identical,

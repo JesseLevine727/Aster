@@ -443,19 +443,28 @@ reviews; none changes the approved scope:
   (the first run missed by 3.19 ns). No build with a direct redirect was
   timed; the question reopens only if the remaining 18.1 timing work closes
   `max_ss` with margin.
-- §4: a load's value is aligned and sign- or zero-extended as it leaves M2
-  (the data is registered at the end of M2 already aligned) rather than in W,
-  so W forwards and writes a value straight from a register; every cycle
-  count is unchanged (a load's result is still forwarded from W). The 18.6
-  L1's second stage must leave room for the alignment in M2.
-- §5: a memory's `*_req_ready` never depends on its `*_req_valid` in the same
-  cycle. (A load or store waits in Execute for `d_req_ready` even when it is
-  misaligned and presents no request, so that the stall logic does not wait
-  for the forwarded address's alignment.) The CPU shells and the 18.6 L1
-  follow this.
 - §5: the instruction memory may allow any number of fetches in flight; the
   fetch unit itself never has more than nine (three live by the room rule,
   the rest discarded ones), and its counters hold that.
+
+Proposed during the 18.1 timing work (30 September 2026), implemented, and
+**pending the owner's confirmation** — each changes approved text:
+
+- §4 (commit `3cf31ce`): a load's value is aligned and sign- or zero-extended
+  as it leaves M2 (registered at the end of M2 already aligned) rather than in
+  W, so W forwards and writes a value straight from a register; every cycle
+  count is unchanged. It takes the alignment off every forwarding path into
+  Execute, but it adds to M2's path, and the 18.6 L1's second stage must leave
+  room for it — the known SKY130 risk. (§4's W description is unchanged until
+  confirmed.)
+- §5 (commit `9ffb3ab`): a memory's `*_req_ready` never depends on its
+  `*_req_valid` in the same cycle, so a load or store may wait in Execute for
+  `d_req_ready` even when it is misaligned and presents nothing — which keeps
+  the forwarded address's alignment out of the stall logic. It restricts
+  every memory side (the CPU shells comply; the 18.6 L1 would), and under
+  back-pressure a misaligned access may now wait for ready before it traps.
+  No timing gain was measurable beyond run-to-run variation (the slow corner
+  went from −1.435 to −1.644 ns); if not confirmed, `9ffb3ab` is reverted.
 
 Changes after approval, by the owner:
 

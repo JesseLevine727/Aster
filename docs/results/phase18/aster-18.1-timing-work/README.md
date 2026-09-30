@@ -28,9 +28,12 @@ Vivado 2025.1, `xc7z020clg400-1`, out of context, 10 ns.
 are the SKY130 table LibreLane's `config/pdk_compat.py` carries commented out.
 Runs `p18-aster-wr-nobuf1*` and the PicoRV32 runs set `buf_1`'s exclusion by
 override; the chosen flow is now `asic/sky130/config.core_aster.json` and
-`config.core_picorv32_rc.json`. Each source revision's RTL was the one
-converted when its run started; the RTL of `9971ea1`, `34cf6d5`, `9d29175`,
-`3cf31ce`, `209ddcb` and `9ffb3ab` is in git.
+`config.core_picorv32_rc.json`. `scripts/run_asic.py` converts the RTL into
+one shared file when it is invoked, and a queued run reads that file when it
+starts; each run's revision above was checked against its own lint and
+synthesis logs (the source locations match sv2v output of that revision).
+The RTL of `9971ea1`, `34cf6d5`, `9d29175`, `3cf31ce`, `209ddcb` and `9ffb3ab`
+is in git.
 
 Where a corner's report lists only port paths (every register-to-register
 path comfortably met), `worst_paths.txt` says so; `summary.json` has the
