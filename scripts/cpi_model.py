@@ -21,7 +21,9 @@ for comparison. The model assumes the memory answers every access on time (the
 one-cycle shell SRAM, no cache misses) and a fetch per cycle; it is an
 estimate, not a simulation of the RTL.
 
-    cpi_model.py build/core_tests/kernels/fft/fft.spike [...more logs]
+    cpi_model.py build/core_tests/kernels/kernels/fft/fft.spike [...more logs]
+
+scripts/run_core_tests.py --kernels runs it over every kernel it checks.
 """
 
 from __future__ import annotations
@@ -34,7 +36,6 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 import lockstep  # noqa: E402
 
-WINDOW_CONTROLS = (0x20003038, 0x20003080)
 DIVIDE_CYCLES = 33
 
 
@@ -53,10 +54,16 @@ SEVEN_STAGE = Pipeline("seven-stage (approved 30 Sep)", load_ready=3, mul_ready=
 FIVE_STAGE = Pipeline("five-stage (29 Sep)", load_ready=2, mul_ready=3, dot8_ready=2,
                       decode_redirect=1, execute_redirect=2)
 
-# Operands each opcode reads: rs1, rs2.
+# Operands each opcode reads: rs1, rs2 (SYSTEM: see _reads).
 _READS = {0x33: (True, True), 0x13: (True, False), 0x03: (True, False), 0x23: (True, True),
-          0x63: (True, True), 0x67: (True, False), 0x2F: (True, True), 0x0B: (True, True),
-          0x73: (True, False)}
+          0x63: (True, True), 0x67: (True, False), 0x2F: (True, True), 0x0B: (True, True)}
+
+
+def _reads(insn: int) -> tuple[bool, bool]:
+    opcode = insn & 0x7F
+    if opcode == 0x73:              # csrrw/csrrs/csrrc read rs1; the csrr*i forms hold an immediate there
+        return (insn >> 12) & 7 in (1, 2, 3), False
+    return _READS.get(opcode, (False, False))
 
 
 def _signed(value: int, bits: int) -> int:
@@ -69,10 +76,12 @@ def branch_offset(insn: int) -> int:
 
 
 def window(records: list[lockstep.Retired]) -> list[lockstep.Retired]:
-    """The records after the window-opening store up to and including the closing one."""
+    """The records after the window-opening store up to and including the closing one
+    (word stores to a window-control word, as the shells count them)."""
     start = end = None
     for index, record in enumerate(records):
-        if record.store is not None and record.mem and record.mem[0] & ~3 in WINDOW_CONTROLS:
+        if (record.store is not None and not record.trap and record.mem and record.mem[1] == 4
+                and record.mem[0] & ~3 in lockstep.WINDOW_CONTROLS):
             if record.store == 1 and start is None:
                 start = index + 1
             elif record.store == 2 and start is not None:
@@ -93,7 +102,7 @@ def cycles(records: list[lockstep.Retired], pipeline: Pipeline) -> int:
         insn = record.insn
         opcode = insn & 0x7F
         rs1, rs2 = (insn >> 15) & 31, (insn >> 20) & 31
-        reads = _READS.get(opcode, (False, False))
+        reads = _reads(insn)
         operand_ready = max([ready[r] for r, used in ((rs1, reads[0]), (rs2, reads[1])) if used and r] or [0])
         execute = max(earliest, operand_ready)
         first = execute if first is None else first
@@ -127,7 +136,8 @@ def cycles(records: list[lockstep.Retired], pipeline: Pipeline) -> int:
 
 
 def model(log: Path) -> dict:
-    records = lockstep.parse_spike(log.read_text().splitlines(), 0x80000000, _tohost(log))
+    records = lockstep.parse_spike(log.read_text().splitlines(), 0x80000000, _tohost(log),
+                                   end=lockstep.KernelEnd())
     inside = window(records)
     return {"log": str(log), "instructions": len(inside),
             **{p.name: cycles(inside, p) for p in (SEVEN_STAGE, FIVE_STAGE)}}
@@ -135,8 +145,10 @@ def model(log: Path) -> dict:
 
 def _tohost(log: Path) -> int:
     """The tohost address, from the ELF next to the log."""
+    import os
     import subprocess
-    symbols = subprocess.run(["riscv32-unknown-elf-nm", str(log.with_suffix(".elf"))],
+    nm = os.environ.get("RISCV_PREFIX", "riscv32-unknown-elf-") + "nm"
+    symbols = subprocess.run([nm, str(log.with_suffix(".elf"))],
                              capture_output=True, text=True, check=True).stdout
     return next(int(line.split()[0], 16) for line in symbols.splitlines() if line.endswith(" tohost"))
 

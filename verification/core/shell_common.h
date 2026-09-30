@@ -11,6 +11,9 @@
 // (verification/core/spike/aster_clock.cc): each 32-bit read of 0x2000_3000
 // returns the previous value plus 1,000,000 (starting at 1,000,000), and
 // 0x2000_3004 reads 0, so the kernels' timers behave identically in both.
+// Only word loads of those two words are defined: a sub-word load reads the
+// page's plain bytes in Spike but applies the rule here, and lockstep reports
+// the difference.
 //
 // Observer (fed each retired, non-trapping store from the RVFI stream):
 // - tohost: a full-word store ends the run, 1 = pass, (test << 1) | 1 = fail;
@@ -20,7 +23,13 @@
 //   performance-counter control 0x2000_3038 or the coherent-counter control
 //   0x2000_3080) opens the window and a store of 2 closes it; the cycle and
 //   retired counts at those two retirements are reported as window_cycles and
-//   window_retired.
+//   window_retired;
+// - kernel end (+kernel_end): a CPU kernel prints its AsterBench record after
+//   closing its window and then spins; the run ends at the retirement of the
+//   console store of the newline that ends the first line beginning with 'A'
+//   after the window closed, as PASS if that line holds ",status=PASS," and
+//   as "FAIL (kernel record)" otherwise (the runner checks the record in full).
+//   scripts/lockstep.py cuts Spike's stream at the same store.
 #ifndef ASTER_SHELL_COMMON_H
 #define ASTER_SHELL_COMMON_H
 
@@ -62,6 +71,8 @@ struct Memory {
         return nullptr;
     }
     bool contains(std::uint32_t address) { return byte(address & ~3u) != nullptr; }
+    // Instructions are fetched from the main region only (never the io page).
+    bool executable(std::uint32_t address) { return address >= kBase && address - kBase < main.size(); }
     // One read per load: the clock words advance on every read.
     std::uint32_t read(std::uint32_t address) {
         if (!io.empty() && (address & ~3u) == kClockLow) return clock += kClockStep;
@@ -92,6 +103,9 @@ inline std::string load_image(Memory& memory, const std::string& path) {
 struct Observer {
     std::uint32_t tohost = 0;
     std::FILE* console = nullptr;
+    bool end_at_record = false;
+    bool line_start = true, record_line = false;
+    std::string record;
     bool window_open = false, window_closed = false;
     std::uint64_t open_cycles = 0, open_retired = 0, close_cycles = 0, close_retired = 0;
 
@@ -99,7 +113,17 @@ struct Observer {
     bool store(std::uint32_t address, std::uint32_t mask, std::uint32_t data, std::uint64_t cycles,
                std::uint64_t retired, std::string& result) {
         const std::uint32_t word = address & ~3u;
-        if (word == kConsole && console && (mask & 1u)) std::fputc(int(data & 0xffu), console);
+        if (word == kConsole && (mask & 1u)) {
+            const char character = char(data & 0xffu);
+            if (console) std::fputc(character, console);
+            if (line_start) record_line = window_closed && character == 'A';
+            line_start = character == '\n';
+            if (record_line) record += character;
+            if (end_at_record && record_line && character == '\n') {
+                result = record.find(",status=PASS,") != std::string::npos ? "PASS" : "FAIL (kernel record)";
+                return true;
+            }
+        }
         for (std::uint32_t control : kWindowControls) {
             if (word != control || mask != 0xfu) continue;
             if (data == 1u && !window_open) { window_open = true; open_cycles = cycles; open_retired = retired; }

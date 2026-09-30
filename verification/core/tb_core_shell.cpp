@@ -18,13 +18,17 @@
 // Plusargs: +bin=<flat binary at the memory base> +tohost=<hex address>
 //           [+trace=<file>] [+max_cycles=<n>] [+stall_seed=<n>] [+mem_bytes=<hex>]
 //           [+signature=<file> +sig_begin=<hex> +sig_end=<hex>]
-//           [+io_page] [+console=<file>]
+//           [+io_page] [+console=<file>] [+kernel_end]
 // With +signature, a passing run writes the words from sig_begin to sig_end in
 // Spike's +signature-granularity=4 format (one little-endian word per line).
-// Memory, console, and the measurement window: shell_common.h.
+// Memory, console, and the measurement window: shell_common.h. PicoRV32's
+// look-ahead port does not say whether a read is a fetch, so this shell cannot
+// refuse fetches from the io page as the two-port shell does; a jump into the
+// clock words would read differently here than in Spike, where they are not
+// executable, and lockstep would report it.
 // Output: one line "SHELL <status> cycles=<n> retired=<n>
 // [window_cycles=<n> window_retired=<n>]", where status is PASS,
-// FAIL test=<n>, TRAP, TIMEOUT, BUS_ERROR or LA_MISMATCH.
+// FAIL test=<n>, FAIL (kernel record), TRAP, TIMEOUT, BUS_ERROR or LA_MISMATCH.
 #include "Vshell_picorv32.h"
 #include "verilated.h"
 
@@ -60,6 +64,7 @@ int main(int argc, char** argv) {
     if (const std::string error = shell::load_image(memory, bin); !error.empty()) { std::cerr << error << "\n"; return 2; }
     shell::Observer observer;
     observer.tohost = tohost;
+    observer.end_at_record = shell::plusflag("kernel_end");
     if (!plusarg("console").empty() && !(observer.console = std::fopen(plusarg("console").c_str(), "w"))) {
         std::cerr << "cannot write console " << plusarg("console") << "\n";
         return 2;

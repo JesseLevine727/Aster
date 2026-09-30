@@ -28,6 +28,10 @@ NOP = 0x00000013           # addi x0, x0, 0
 MUL_X1 = 0x021080b3        # mul  x1, x1, x1
 DIV_X1 = 0x0210c0b3        # div  x1, x1, x1
 SW_X1 = 0x0010a023         # sw   x1, 0(x1)
+AMOADD_X1 = 0x0020a0af     # amoadd.w x1, x2, (x1)
+CSRRS_X2_X1 = 0x3000a173   # csrrs x2, mstatus, x1
+CSRRSI_X2 = 0x3000e173     # csrrsi x2, mstatus, 1 (the rs1 field is the immediate 1)
+ADD_X2_X0 = 0x00000133     # add  x2, x0, x0
 
 
 class CpiModel(unittest.TestCase):
@@ -61,6 +65,24 @@ class CpiModel(unittest.TestCase):
         self.assertEqual(cpi_model.cycles(fwd, FIVE), 2 + 2)
         # forward branch not taken: predicted correctly, no penalty
         self.assertEqual(cpi_model.cycles([record(0x80000000, 0x00000463), record(0x80000004, NOP)], SEVEN), 2)
+
+    def test_jalr_redirects_from_execute_and_backward_not_taken_is_mispredicted(self):
+        jalr = [record(0x80000000, 0x00008067), record(0x80000100, NOP)]            # jalr x0, 0(x1)
+        self.assertEqual(cpi_model.cycles(jalr, SEVEN), 2 + 4)
+        # beq x0, x0, -4 not taken: predicted taken, an Execute redirect
+        back = [record(0x80000004, 0xfe000ee3), record(0x80000008, NOP)]
+        self.assertEqual(cpi_model.cycles(back, SEVEN), 2 + 4)
+
+    def test_amo_results_wait_like_loads(self):
+        self.assertEqual(cpi_model.cycles(straight(AMOADD_X1, ADD_X2_X1, rds=[1, 2]), SEVEN), 2 + 2)
+
+    def test_x0_is_never_waited_on(self):
+        load_x0 = lockstep.Retired(0x80000000, 0x0000a003, (0, 0), None, None)   # lw x0, 0(x1)
+        self.assertEqual(cpi_model.cycles([load_x0, record(0x80000004, ADD_X2_X0, 2)], SEVEN), 2)
+
+    def test_only_register_csr_forms_read_rs1(self):
+        self.assertEqual(cpi_model.cycles(straight(LW_X1, CSRRS_X2_X1, rds=[1, 2]), SEVEN), 2 + 2)
+        self.assertEqual(cpi_model.cycles(straight(LW_X1, CSRRSI_X2, rds=[1, 2]), SEVEN), 2)
 
     def test_window_is_after_the_opening_store_through_the_closing_one(self):
         def store(value):

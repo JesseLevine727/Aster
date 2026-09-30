@@ -99,8 +99,41 @@ def parse_trace(lines) -> list[Retired]:
     return records
 
 
-def parse_spike(lines, entry: int, tohost: int) -> list[Retired]:
-    """Spike's commits from `entry` up to and including its first store to `tohost`."""
+CONSOLE = 0x20000000
+WINDOW_CONTROLS = (0x20003038, 0x20003080)
+
+
+class KernelEnd:
+    """The end of a CPU-kernel run, as the shells' observer defines it
+    (verification/core/shell_common.h): the console store of the newline that
+    ends the first line beginning with 'A' (the AsterBench record) after the
+    measurement window closed (a store of 2 to a window-control word)."""
+
+    def __init__(self):
+        self.window_open = self.window_closed = False
+        self.line_start, self.record_line = True, False
+
+    def __call__(self, record: Retired) -> bool:
+        if record.store is None or record.trap:
+            return False
+        word = record.mem[0] & ~3
+        if word in WINDOW_CONTROLS and record.mem[1] == 4:
+            if record.store == 1 and not self.window_open:
+                self.window_open = True
+            elif record.store == 2 and self.window_open:
+                self.window_closed = True
+        if word == CONSOLE and record.mem[0] == CONSOLE:
+            character = chr(record.store & 0xFF)
+            if self.line_start:
+                self.record_line = self.window_closed and character == "A"
+            self.line_start = character == "\n"
+            return self.record_line and character == "\n"
+        return False
+
+
+def parse_spike(lines, entry: int, tohost: int, end=None) -> list[Retired]:
+    """Spike's commits from `entry` up to and including its first store to
+    `tohost`, or the record for which `end(record)` holds (KernelEnd)."""
     records, started = [], False
     for line in lines:
         match = _SPIKE.match(line.strip())
@@ -124,9 +157,12 @@ def parse_spike(lines, entry: int, tohost: int) -> list[Retired]:
         records.append(Retired(pc, insn, rd, mem, store))
         if store is not None and mem[0] & ~3 == tohost & ~3:
             return records
+        if end is not None and end(records[-1]):
+            return records
     if not started:
         raise ValueError(f"Spike never reached the entry 0x{entry:08x}")
-    raise ValueError(f"Spike's log has no store to tohost 0x{tohost:08x}")
+    raise ValueError(f"Spike's log has no store to tohost 0x{tohost:08x}"
+                     + (" and no kernel end" if end is not None else ""))
 
 
 def word_granular_loads(records: list[Retired]) -> list[Retired]:

@@ -119,17 +119,25 @@ corruption to be caught — 19 of 19.
   reports which forwarding and stall events it actually took.
 - Directed microarchitecture tests (from milestone 18.1).
 - The CPU-bound benchmark set for 18.7 — the seven kernels of
-  [`cpu.md`](cpu.md) §7, built with their SoC compile flags (read from the
-  Makefile) against a shell platform (`verification/core/kernels/`: the SoC
-  `aster.h` with a run-ending console hook, a start-up that seeds the SoC
-  register-page constants the kernels check, and a 96 KiB layout). The SoC
-  register page is plain memory in the shells (`+io_page`) and in Spike; its
-  performance-counter page is a deterministic clock in both (each read of the
-  cycle word adds 1,000,000; Spike plugin `verification/core/spike/aster_clock.cc`),
-  so CoreMark's and Dhrystone's timers behave identically. Each kernel must
-  pass lockstep and print a passing AsterBench record; the shells time its
-  measurement window from the retirement of its window-opening store to that
-  of its closing store (`make core-kernels`, in `make check`).
+  [`cpu.md`](cpu.md) §7, built from their SoC sources, headers and compile
+  flags (read from the Makefile's defaults in a minimal environment, so a
+  parent `make`'s or the shell's variables cannot change them)
+  with only the shell's start-up and layout (`verification/core/kernels/`: a
+  start-up that seeds the SoC register-page constants the kernels check, and
+  a 96 KiB layout with at least 8 KiB of stack). The SoC register page is plain
+  memory in the shells (`+io_page`) and in Spike; its performance-counter page
+  is a deterministic clock in both (each word read of the cycle word adds
+  1,000,000; Spike plugin `verification/core/spike/aster_clock.cc`), so
+  CoreMark's and Dhrystone's timers behave identically. A kernel spins after
+  printing its record, so the shell ends the run at the console store of the
+  record's closing newline (`+kernel_end`) and the lockstep cuts Spike's
+  stream at the same store. Each kernel must pass lockstep, print a passing
+  AsterBench record, and match the retained Phase 17 baseline record of the
+  same build in window instruction count and checksum — a check that the
+  shell build runs the SoC's code. The shells time the measurement window
+  from the retirement of the window-opening store to that of the closing
+  store (`make core-kernels`, in `make check`: on PicoRV32 in the look-ahead
+  shell, the §7 baseline, and in the two-port shell at `+latency=1`).
 
 ### Timing and area
 
@@ -275,28 +283,39 @@ and −0.110 ns for `hs`.)
 Evidence: `pre18.1-flow-probes` (`picorv32-hs`, `sram-512b-andor-hs`); the
 library was added to the pinned PDK with `ciel fetch -l sky130_fd_sc_hs`.
 
-**CPU kernels in the shell, and the CPI model (30 September 2026).** All seven
+**CPU kernels in the shell, and the CPI model (30 September 2026).** All the
 kernels pass on PicoRV32 in the look-ahead shell in lockstep with Spike, with
-their own self-checks passing. Measurement windows (zero-wait memory, the 18.7
+their own self-checks passing and their window instruction counts and
+checksums equal to the retained Phase 17 records of the same builds (Conv2D
+is listed twice; see below). Measurement windows (zero-wait memory, the 18.7
 conditions) and the trace-driven model of the approved seven-stage pipeline
-over the same windows (`scripts/cpi_model.py`; it assumes no memory stalls
-and one fetch per cycle — an estimate, not RTL):
+over the same windows (`scripts/cpi_model.py`, an estimate, not RTL: it
+assumes every memory access is answered on time and a fetch every cycle
+outside redirects, applies the §4 hazard and redirect rules with static
+backward-taken prediction, and charges a divide 33 cycles; it does not model
+fetch-buffer or data-port contention):
 
 | Kernel | Window instructions | PicoRV32 CPI | Seven-stage model CPI | Projected speedup | Five-stage model CPI |
 | --- | ---: | ---: | ---: | ---: | ---: |
-| CoreMark (1 iteration) | 284,864 | 5.249 | 1.609 | 3.26× | 1.323 |
+| CoreMark (1 iteration) | 284,865 | 5.249 | 1.609 | 3.26× | 1.323 |
 | Dhrystone | 492,302 | 4.237 | 1.596 | 2.65× | 1.324 |
 | sort/search | 420,942 | 4.277 | 1.654 | 2.59× | 1.332 |
-| FFT | 248,399 | 11.144 | 1.199 | 9.29× | 1.143 |
+| FFT | 248,399 | 11.144 | 1.199 | 9.30× | 1.143 |
 | strided | 1,559 | 4.151 | 1.508 | 2.75× | 1.172 |
-| scalar Conv2D | 704,346 | 7.850 | 1.574 | 4.99× | 1.398 |
-| scalar reduction | 53,299 | 4.076 | 1.385 | 2.94× | 1.154 |
+| Conv2D, minimal top (`minimal_conv2d`) | 704,346 | 7.850 | 1.574 | 4.99× | 1.398 |
+| scalar Conv2D, coherent SoC (`conv2d_scalar_coh`) | 971,011 | 7.358 | 1.397 | 5.27× | 1.279 |
+| scalar reduction | 53,305 | 4.076 | 1.385 | 2.94× | 1.154 |
 
-Projected against the 18.7 gate: a geometric mean of about **3.6×**, lowest
-kernel **2.6×** (sort/search) — both clear of 2.0× and 1.5×. The two-stage
-memory access costs 5–29% in CPI against the five-stage rules (FFT least, as
-its time is in the multiplier). CoreMark's window count (284,864) is within
-one instruction of the SoC record's (284,865), which cross-checks the port.
+Projected against the 18.7 gate: a geometric mean of about **3.6×** with
+either Conv2D build, lowest kernel **2.6×** (sort/search) — both clear of
+2.0× and 1.5×. The two-stage memory access costs 5–29% in CPI against the
+five-stage rules (FFT least, as its time is in the multiplier).
+§7 names "scalar Conv2D" and cpu.md §1 quotes PicoRV32's CPI for scalar
+Conv2D on the coherent SoC, while the minimal top has its own Conv2D build;
+which of the two is the gate's kernel is for the owner to settle before 18.7
+measures. In the two-port shell at `+latency=1` PicoRV32 runs 9–35% slower
+than in the look-ahead shell (its adapter cannot present the next address
+early), so the look-ahead shell remains the §7 baseline.
 
 **SRAM macro SPICE characterization.** ngspice 47 with KLU (built into
 `~/tools/ngspice-47`) and the PDK's transistor netlist of the 2 KiB macro:
@@ -397,10 +416,11 @@ as capacitance), as OpenRAM's own characterizer does.
   `d_rsp_error` in the cycle after acceptance; PicoRV32 passes at both
   latencies (it keeps one request in flight, so the two-in-flight path is
   first exercised by the Aster core)
-- [x] **Before 18.1 RTL:** the CPU kernels in the shell (7/7 on PicoRV32 in
-  lockstep) and a trace-driven CPI model of the seven-stage pipeline: 1.20–1.65
-  CPI, projected gate geometric mean about 3.6×, lowest kernel about 2.6×
-  (above)
+- [x] **Before 18.1 RTL:** the CPU kernels in the shell (both Conv2D builds
+  included, 8/8 on PicoRV32 in lockstep in both shells, each equal to its
+  Phase 17 record in window instruction count and checksum) and a
+  trace-driven CPI model of the seven-stage pipeline: 1.20–1.65 CPI,
+  projected gate geometric mean about 3.6×, lowest kernel about 2.6× (above)
 - [x] **Before 18.1 RTL:** the shell's pipelined memory tested with two
   requests in flight before the core relies on it — a unit test of the port
   response model (`verification/core/test_shell_ports.cpp`, in `make
@@ -421,6 +441,11 @@ as capacitance), as OpenRAM's own characterizer does.
   `d_rsp_error`/`i_rsp_error` responses; RVFI sampled as registered outputs
   (the core must register them); from 18.6, the signature read through the
   cache hierarchy
+- [ ] **Decode-redirect timing, for 18.1:** §4 does not say whether a `jal`
+  or a backward branch whose operands are not ready redirects on its first
+  cycle in Decode or only once its stall ends. The CPI model assumes the
+  latter (conservative: `lw; bne` back to a loop head costs 4 cycles, not 2);
+  18.1 settles it, and the model follows the RTL
 - [x] **Decided 29 September 2026 — how the 18.7 performance gate aggregates.**
   Speedup per kernel = PicoRV32 cycles ÷ Aster-core cycles over the same
   window. The gate passes only if the **geometric mean** of the seven

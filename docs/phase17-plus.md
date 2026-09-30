@@ -391,7 +391,7 @@ feasibility early.
   requests in flight; [`cpu.md`](cpu.md) §5), and an RVFI-compatible retirement port for lockstep and formal checking.
 - **Targets:** about 1.2–1.5 CPI on the CPU-bound set with single-cycle memory
   (revised 30 September 2026: a seven-stage core with two-stage memory access,
-  estimated 1.5–1.9 CPI; [`cpu.md`](cpu.md) §4);
+  estimated 1.2–1.65 CPI by the trace-driven model; [`cpu.md`](cpu.md) §4);
   at least 2× fewer cycles than PicoRV32 at the same clock and memory
   configuration (geometric mean of the per-kernel speedups, no kernel below
   1.5×; [`cpu.md`](cpu.md) §7); 10 ns block timing out-of-context on the PYNQ-Z1 and in SKY130

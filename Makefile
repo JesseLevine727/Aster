@@ -2188,23 +2188,30 @@ core-ports-tests: $(CORE_PORTS_SIM) $(CORE_PORTS_MODEL_TEST)
 	@$(CORE_PORTS_TESTS) --build-dir $(CORE_TESTS_DIR)/ports-selftest --only rv32ui/sw \
 		--shell-arg +duplicate_tohost_write --expect-status STRAY_WRITE
 
-# The CPU kernels of docs/cpu.md §7 in the shell: built with their SoC compile
-# flags against the shell platform (verification/core/kernels), run on PicoRV32
-# in lockstep with Spike (whose aster_clock plugin gives the kernels' timers the
-# same deterministic clock as the shell), then the trace-driven CPI model of the
-# Aster core pipeline over the same windows (scripts/cpi_model.py).
+# The CPU kernels of docs/cpu.md §7 in the shells: built from their SoC sources
+# and flags with only the shell's start-up and layout (verification/core/kernels),
+# run on PicoRV32 in lockstep with Spike (whose aster_clock plugin gives the
+# kernels' timers the same deterministic clock as the shells) and checked
+# against the retained Phase 17 baseline records, with the trace-driven CPI
+# model of the Aster core pipeline over the same windows (scripts/cpi_model.py);
+# then again on the two-port shell at the §7 gate's one-cycle memory, where
+# PicoRV32 (through its adapter, without look-ahead) only proves the shell.
 ASTER_CLOCK_PLUGIN := $(BUILD_DIR)/spike/libaster_clock.so
-SPIKE_ROOT ?= $(HOME)/tools/spike
-$(ASTER_CLOCK_PLUGIN): verification/core/spike/aster_clock.cc Makefile
+# The plugin is built against the headers of the Spike that loads it.
+SPIKE_ROOT ?= $(patsubst %/bin/spike,%,$(SPIKE))
+$(ASTER_CLOCK_PLUGIN): verification/core/spike/aster_clock.cc $(SPIKE_ROOT)/include/riscv/abstract_device.h Makefile
 	mkdir -p $(dir $@)
 	g++ -std=c++17 -O2 -shared -fPIC -I$(SPIKE_ROOT)/include -o $@ $<
 
 .PHONY: core-kernels
-core-kernels: $(CORE_SHELL_SIM) $(ASTER_CLOCK_PLUGIN)
+core-kernels: $(CORE_SHELL_SIM) $(CORE_PORTS_SIM) $(ASTER_CLOCK_PLUGIN)
 	@mkdir -p $(CORE_TESTS_DIR)
-	@set -o pipefail; $(CORE_TESTS) --kernels --max-cycles 50000000 --build-dir $(CORE_TESTS_DIR)/kernels \
-		| tee $(CORE_TESTS_DIR)/kernels.log | tail -8 || { grep -v '^PASS' $(CORE_TESTS_DIR)/kernels.log; exit 1; }
-	@$(PYTHON) scripts/cpi_model.py $(CORE_TESTS_DIR)/kernels/kernels/*/*.spike
+	@set -o pipefail; $(CORE_TESTS) --kernels --cpi-model --aster-clock $(ASTER_CLOCK_PLUGIN) \
+		--build-dir $(CORE_TESTS_DIR)/kernels | tee $(CORE_TESTS_DIR)/kernels.log | tail -12 \
+		|| { grep -v '^PASS' $(CORE_TESTS_DIR)/kernels.log; exit 1; }
+	@set -o pipefail; $(CORE_PORTS_TESTS) --kernels --aster-clock $(ASTER_CLOCK_PLUGIN) --shell-arg +latency=1 \
+		--build-dir $(CORE_TESTS_DIR)/ports-kernels | tee $(CORE_TESTS_DIR)/ports-kernels.log | tail -12 \
+		|| { grep -v '^PASS' $(CORE_TESTS_DIR)/ports-kernels.log; exit 1; }
 
 # Timing and area of one core block at 10 ns (docs/phase18.md): Vivado out of
 # context on the PYNQ-Z1 part, and SKY130 through post-route STA (its period is

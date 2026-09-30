@@ -188,5 +188,42 @@ class SignatureCheck(unittest.TestCase):
         self.assertIn("empty", self.check("", "")[1])
 
 
+class KernelEndRule(unittest.TestCase):
+    """lockstep.KernelEnd must end where the shells' observer ends a kernel run."""
+
+    @staticmethod
+    def store(address, value, size=4):
+        return lockstep.Retired(0x80000000, 0, None, (address, size), value)
+
+    def console(self, text):
+        return [self.store(lockstep.CONSOLE, ord(c), 1) for c in text]
+
+    def ends(self, records):
+        end = lockstep.KernelEnd()
+        return [index for index, r in enumerate(records) if end(r)]
+
+    def test_ends_at_the_newline_of_the_first_record_line_after_the_window(self):
+        records = (self.console("Aster boot\n") + [self.store(0x20003038, 1), self.store(0x20003038, 2)]
+                   + self.console("note\nASTERBENCH,status=PASS\nAgain\n"))
+        # the run ends at the first such newline (a later 'A' line would match again)
+        self.assertEqual(self.ends(records)[0], len(records) - 7)
+
+    def test_no_end_before_the_window_closes_or_without_a_word_store(self):
+        self.assertEqual(self.ends(self.console("ASTERBENCH\n")), [])
+        opened = [self.store(0x20003080, 1), self.store(0x20003080, 2, 2)] + self.console("ASTERBENCH\n")
+        self.assertEqual(self.ends(opened), [])
+        closed = [self.store(0x20003080, 1), self.store(0x20003080, 2)] + self.console("ASTERBENCH\n")
+        self.assertEqual(self.ends(closed), [len(closed) - 1])
+
+    def test_console_stores_count_only_at_the_console_byte(self):
+        records = ([self.store(0x20003038, 1), self.store(0x20003038, 2), self.store(lockstep.CONSOLE + 1, ord("A"), 1)]
+                   + self.console("B\n") + [self.store(lockstep.CONSOLE + 1, ord("\n"), 1)])
+        self.assertEqual(self.ends(records), [])
+
+    def test_parse_spike_without_the_end_is_rejected(self):
+        with self.assertRaisesRegex(ValueError, "no kernel end"):
+            lockstep.parse_spike(SPIKE[:4], ENTRY, TOHOST, end=lockstep.KernelEnd())
+
+
 if __name__ == "__main__":
     unittest.main()

@@ -15,4 +15,6 @@ SECTIONS
     .bss (NOLOAD) : { __bss_start = .; *(.bss .bss.*) *(.sbss .sbss.*) *(COMMON) . = ALIGN(4); } > SHELL
     _end = .;
     _stack_top = ORIGIN(SHELL) + LENGTH(SHELL);
+    /* At least 8 KiB between the end of bss and the top of memory for the stack. */
+    ASSERT(_stack_top - _end >= 0x2000, "kernel leaves less than 8 KiB of stack in the shell memory")
 }

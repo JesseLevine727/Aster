@@ -2,8 +2,9 @@
 // register (Spike's boot ROM leaves values in t0/a0/a1), set the stack at the
 // top of the shell memory, seed the SoC register-page words the kernels check
 // (the page is plain memory in the shell and in Spike), clear .bss, and run
-// main. A kernel ends the run from aster_putc (kernels/aster.h); if main
-// returns, the run reports pass.
+// main. The kernels are built with the SoC's own headers; a kernel spins after
+// printing its AsterBench record, so the shell ends the run there (+kernel_end,
+// shell_common.h). If main returns, the store to tohost reports pass.
     .section .text.init, "ax", @progbits
     .globl _start
 _start:

@@ -16,8 +16,9 @@ verification method, and timing/area gate. The surrounding plan is [`phase17-plu
 - At least **2× fewer cycles** than the v1 PicoRV32 baseline on the fixed
   CPU-bound set, at the same clock and memory configuration, judged by the
   aggregate rule in §7 (the geometric mean of the per-kernel speedups at least
-  2×, and no kernel below 1.5×); an estimated 1.5–1.9 CPI with the seven-stage
-  pipeline of §4, to be measured in 18.7.
+  2×, and no kernel below 1.5×); an estimated 1.2–1.65 CPI with the seven-stage
+  pipeline of §4 (the trace-driven model of §4, which assumes no memory
+  stalls), to be measured in 18.7.
   PicoRV32's measured CPI on that set, in the retained Phase 17 baseline with
   the physical `sync1` memory, is 5.2–12.3:
   5.7 for the reduction and 10.0 for scalar Conv2D on the coherent SoC; 5.2
@@ -152,10 +153,11 @@ redirected). The trace-driven model of these rules over the CPU kernels'
 measurement windows (`scripts/cpi_model.py`, 30 September 2026; an estimate
 that assumes no memory stalls, not a simulation) gives 1.20–1.65 CPI — 1.61
 CoreMark, 1.60 Dhrystone, 1.65 sort/search, 1.20 FFT, 1.51 strided, 1.57
-Conv2D, 1.39 reduction — against PicoRV32's 4.08–11.14 in the same zero-wait
-shell, a projected geometric-mean speedup of about 3.6× with the lowest
-kernel (sort/search) at about 2.6× ([`phase18.md`](phase18.md)). 18.7 measures
-the real core.
+Conv2D on the minimal top and 1.40 scalar Conv2D on the coherent SoC, 1.39
+reduction — against PicoRV32's 4.08–11.14 in the same zero-wait shell, a
+projected geometric-mean speedup of about 3.6× with the lowest kernel
+(sort/search) at about 2.6× ([`phase18.md`](phase18.md)). 18.7 measures the
+real core.
 A next-line or branch-target predictor in F1 is the first candidate if 18.7
 shows branch cost matters; dynamic prediction is added only if measurement
 shows it pays for its area and timing.

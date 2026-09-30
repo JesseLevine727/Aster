@@ -14,7 +14,9 @@
 // the request's acceptance, whatever its data latency (the address decode is
 // registered at acceptance); i_rsp_error travels with the instruction word.
 // Outside those cycles both error signals carry garbage, so a core that
-// samples them at the wrong time fails.
+// samples them at the wrong time fails. Instruction fetches are served from
+// the main region only: a fetch from anywhere else, the io page included,
+// answers with i_rsp_error and does not read memory.
 // Stall mode (+stall_seed) adds random ready-low cycles and 0-2 extra response
 // cycles per access, per port, keeping responses in order. Response data is
 // garbage outside a response.
@@ -36,14 +38,14 @@
 //                                   accepted twice, as a core that issues a store
 //                                   twice would; the stray-write check must fail)
 //
-//           [+io_page] [+console=<file>]
+//           [+io_page] [+console=<file>] [+kernel_end]
 //
 // Memory regions, console, and the measurement window: shell_common.h.
 // The DUT's RVFI outputs are sampled after the rising edge, so they must be
 // registered (as riscv-formal requires), not combinational.
 // Output: "SHELL <status> cycles=<n> retired=<n> [window_cycles=<n>
 // window_retired=<n>]", where status is PASS,
-// FAIL test=<n>, FAIL (partial tohost store), TRAP, TIMEOUT, BUS_ERROR,
+// FAIL test=<n>, FAIL (partial tohost store), FAIL (kernel record), TRAP, TIMEOUT, BUS_ERROR,
 // STORE_MISMATCH, STRAY_WRITE or UNSUPPORTED_OP.
 #include "Vcore_ports.h"
 #include "verilated.h"
@@ -100,6 +102,7 @@ int main(int argc, char** argv) {
     if (const std::string error = shell::load_image(memory, bin); !error.empty()) { std::cerr << error << "\n"; return 2; }
     shell::Observer observer;
     observer.tohost = tohost;
+    observer.end_at_record = shell::plusflag("kernel_end");
     if (!plusarg("console").empty() && !(observer.console = std::fopen(plusarg("console").c_str(), "w"))) {
         std::cerr << "cannot write console " << plusarg("console") << "\n";
         return 2;
@@ -154,7 +157,7 @@ int main(int argc, char** argv) {
         d_error_next = false;
         d_error_cycle = d_accept;
         if (i_accept) {
-            const bool error = !memory.contains(i_addr);
+            const bool error = !memory.executable(i_addr);
             iport.accept(latency, stall ? int(rng() % 3) : 0,
                          error ? std::uint32_t(garbage()) : memory.read(i_addr), error);
         }

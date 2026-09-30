@@ -8,7 +8,6 @@
 //
 //   spike --extlib=libaster_clock.so --device=aster_clock,0x20003000 ...
 #include <riscv/abstract_device.h>
-#include <riscv/sim.h>
 
 #include <cstdint>
 #include <cstring>
