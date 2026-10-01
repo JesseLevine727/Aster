@@ -1,0 +1,1 @@
+top=timing_aster_bram_reqreg part=xc7z020clg400-1 period_ns=10.0 wns_ns=1.054 whs_ns=0.098 implied_period_ns=8.946 implied_fmax_mhz=111.8 luts=1703 ffs=815 brams=32 dsps=0

@@ -6,17 +6,14 @@ a two-stage memory access (a seven-stage core) and approved the revised cpu.md
 gate at about 3.7×. Milestone 18.1: the seven-stage RV32I RTL passes
 riscv-tests, arch-test I and random programs in lockstep, cycle for cycle with
 the CPI model on a memory that answers on time. Timing after the 18.1 timing
-work: the core meets 10 ns out of context on the FPGA (111.4 MHz; with a
-block RAM behind its ports, 101.6 and 114.8 MHz); on SKY130, in the flow
-chosen in 18.1 as corrected on 1 October (delay cells excluded: the resizer
-had been using them as buffers), register to register at the slow corner
-`233aa60`'s logic meets 10 ns in two of four floorplans (+0.461 ns at 38%, the
-configured utilization, and +0.363 ns at 40% — margins within the ~0.5 ns
-placement spread) and misses by 0.47 and 1.94 ns at 34 and 36% (36%'s failing
-paths all pass through one serial chain of 24 buffers built by setup repair;
-158–200 MHz typical); PicoRV32 104.3–105.2 MHz in the same flow across the
-same four floorplans; the request address still misses its 2 ns output
-budget at the slow corner, by 1.5–1.7 ns (see "Milestone 18.1").** The CPU specification this
+work (`941bff4`): the core meets 10 ns out of context on the FPGA (114.9 MHz;
+with a block RAM behind its ports, 101.9 and 111.8 MHz); on SKY130, in the
+flow chosen in 18.1 as corrected on 1 October (delay cells excluded: the
+resizer had been using them as buffers), register to register at the slow
+corner it meets 10 ns in all four floorplans swept, +0.373 to +0.495 ns
+(103.9–105.2 MHz; 195–198 MHz typical), with PicoRV32 at 104.3–105.2 MHz in
+the same flow and floorplans; the request address still misses its 2 ns
+output budget at the slow corner, by 1.6–1.7 ns (see "Milestone 18.1").** The CPU specification this
 phase implements is [`cpu.md`](cpu.md) (approved 29 September 2026); the phase
 sits in the [v2 plan](phase17-plus.md#6-phase-17-sequence). Every milestone
 passes its verification layer and records its timing before the next starts.
@@ -494,7 +491,9 @@ the port rule it needed, so it was reverted; the load alignment leaving M2
 (`3cf31ce`) changed approved §4 text and was confirmed by the owner (cpu.md
 §9) — four flow experiments, and (below the first conclusions) two more RTL
 changes and a utilization sweep, then one reverted experiment with a sweep of
-its own; "chosen" rows without a utilization ran at
+its own, the flow's correction (delay cells excluded) with sweeps of both
+cores, and the adopted select copies (`941bff4`) with a sweep; "chosen" rows
+without a utilization ran at
 40%, the configured value until the sweep. SKY130 runs are post-route at 10 ns in
 the baseline flow unless noted; the slow corner is `max_ss_100C_1v60`:
 
@@ -536,6 +535,10 @@ the baseline flow unless noted; the slow corner is `max_ss_100C_1v60`:
 | `p18-picorv32-nodly-u34` | PicoRV32 | corrected, 34% | 202.6 MHz | **+0.498 ns** | **105.2 MHz** | 158,336 |
 | `p18-aster-norebuf-u36` | `7dbcb50` | corrected, setup repair without rebuffering, 36% | 188.4 MHz | −1.072 ns | 90.3 MHz | 157,500 |
 | `p18-aster-norebuf-u38` | `7dbcb50` | the same, 38% | 198.7 MHz | −0.344 ns | 96.7 MHz | 156,210 |
+| `p18-aster-invc-u34` | `941bff4` inverted select copies for the stall logic | corrected, 34% | 196.1 MHz | **+0.495 ns** | **105.2 MHz** | 160,749 |
+| `p18-aster-invc-u36` | `941bff4` | corrected, 36% | 197.9 MHz | **+0.438 ns** | **104.6 MHz** | 159,704 |
+| `p18-aster-invc-u38` | `941bff4` | corrected, 38% | 194.9 MHz | **+0.382 ns** | **104.0 MHz** | 159,409 |
+| `p18-aster-invc-u40` | `941bff4` | corrected, 40% | 197.1 MHz | **+0.373 ns** | **103.9 MHz** | 157,671 |
 
 What the runs show. In the baseline flow the typical corner tracks the RTL
 changes (134 → 140–155 MHz), but the slow corner moves by up to 0.88 ns
@@ -630,10 +633,10 @@ its diff is retained) but did not test the idea: synthesis merged the two
 registers, keeping only the copy's name (1,776 flops, as without it), and that
 run's worst path (−2.683 ns at 38%, both §4 named paths failing) has a chain
 of 36 rebuffer cells on the low-bit output. A copy synthesis cannot merge
-(for example, one holding the inverted select) has not been tried; it is the
-one option found so far that leaves §4 unchanged. The others change §4: the
+(for example, one holding the inverted select) had not been tried then; it
+was the one option found that leaves §4 unchanged (the others change §4: the
 rejected ready/valid rule, or a pipeline change such as a skid register ahead
-of Execute.
+of Execute), and it is adopted below (`941bff4`).
 
 **The chosen flow's delay cells (1 October 2026).** Part of the
 floorplan-to-floorplan spread had a cause in the flow itself. With `buf_1`
@@ -650,8 +653,8 @@ placements where they missed the worst paths (PicoRV32 passed with two on its
 worst path). The inverted select copies — a copy
 synthesis cannot merge, run on `7dbcb50` after passing `make check` (not
 retained) — were caught by it: −1.551 ns at 38%, 241 of the 247 failing paths
-through delay cells; that run says nothing about the copies, which are set
-aside (their diff is retained). Excluding the delay cells as well (both
+through delay cells; that run says nothing about the copies (re-measured in
+the corrected flow below; its diff is retained). Excluding the delay cells as well (both
 configurations; hold repair then uses `clkbuf_1`, and hold is met on every
 path at every corner, worst +0.094 ns) leaves synthesis unchanged — the
 netlist is identical to the `233aa60` runs' — and moves `233aa60`'s logic to
@@ -678,10 +681,44 @@ its 2 ns output budget, by 1.55–1.72 ns (from about 2.1). The antenna check
 this timing flow runs finds one antenna-ratio violation in the Aster core's
 38% run (1.24, on a `met1` net) and one in PicoRV32's 36% run (1.05, `met1`),
 the only ones in these runs. The corrected flow is the
-configured one for both cores from now on; the readiness and select-copy
-results above were measured in the old flow and are open to re-measurement in
-it. Evidence:
+configured one for both cores from now on; the readiness result above was
+measured in the old flow (the select copies were re-measured in the corrected
+flow, below). Evidence:
 [`results/phase18/aster-18.1-delay-cells`](results/phase18/aster-18.1-delay-cells/README.md).
+
+**Inverted select copies for the stall logic (`941bff4`, adopted).** Every
+failing path of the corrected sweep started at a forwarding select. `941bff4`
+gives Execute's stall logic its own registered copies of the selects — rs1's
+four bits and rs2's two load bits, each holding the complement so that
+synthesis cannot merge them into the selects (a `keep`-marked plain copy was
+merged) — and takes readiness and rs1's two low bits (the alignment and byte
+enables) from them, so whether Execute advances no longer waits behind the
+32-bit operand mux's fanout. It is behavior-neutral: `make check` with every
+cycle count unchanged, simulation assertions that the copies and low bits
+agree with the selects, and four of five planted bugs caught with the
+assertions off (the fifth, rs2's readiness ignoring a load in M1, cannot
+change behavior: the load-use interlock keeps a consumer in Decode while its
+load is in Execute or M1). In the corrected flow the slow corner now meets
+10 ns register to register in all four floorplans: +0.495, +0.438, +0.382 and
++0.373 ns at 34/36/38/40% (105.2, 104.6, 104.0 and 103.9 MHz; 195–198 MHz
+typical; 157,671–160,749 µm²), with no failing register-to-register path at
+any corner, a 0.12 ns spread (PicoRV32's is 0.09 ns), no delay cells and
+rebuffer chains of 2 to 7 cells. Hold is met on every path at every corner
+(worst +0.055 ns, at 34%). Of §4's named port paths `d_rsp_valid` gains
+margin (+1.90 to +2.20 ns at `max_ss`, from +0.50 to +1.28) and `d_rsp_error`
+is about unchanged (+1.63 to +1.82 ns); the request address is the only
+failing port path, by 1.64–1.73 ns against its 2 ns budget — for 18.6. The
+34% run has one antenna-ratio violation (1.22, `met1`), and 510–648
+maximum-transition violations remain at `max_ss`, as in the other corrected
+runs. These are one run per floorplan; the margins (+0.37 ns and up) exceed
+the corrected flow's floorplan spread (0.12 ns here, 0.09 ns for PicoRV32),
+though not the ~0.5 ns run-to-run spread measured in the old flow. On the
+FPGA the core runs at 114.9 MHz out of context, 101.9 MHz with the block RAM
+in the §5 form — a thin +0.184 ns, its worst path from rs1's select through
+the address adder to the block RAMs' write enables — and 111.8 MHz with the
+request registered (from 111.4, 101.6 and 114.8: the request-registered top
+lost 3 MHz). The configured utilization stays 38%. Evidence:
+[`results/phase18/aster-18.1-select-copies`](results/phase18/aster-18.1-select-copies/README.md).
 
 ## Milestones and gates
 
@@ -755,13 +792,23 @@ it. Evidence:
   had buffered with delay cells; both cores' chosen configurations now
   exclude `dlygate4sd*` and `dlymetal6s*` as well (a test keeps the two
   configurations' settings equal). PicoRV32 104.3–105.2 MHz at `max_ss`
-  across 34–40%; the Aster core meets 10 ns register to register in two of
-  four floorplans (38%, 40%)
-- [ ] **Serial rebuffer chains, open:** setup repair occasionally builds a
-  long serial chain of buffers on one net (24 cells in the 36% run of the
-  corrected flow; up to 21 in baseline-flow runs and 36 in the old chosen
-  flow); turning rebuffering off costs more elsewhere; find a setting, or a
-  structure in the RTL, that avoids it before the 18.7 report
+  across 34–40%; `233aa60`'s logic meets 10 ns register to register in two of
+  four floorplans (38%, 40%), `941bff4`'s in all four (next item)
+- [x] **Slow corner closed register to register (18.1, `941bff4`):** with
+  inverted copies of the forwarding selects driving Execute's stall logic, 10 ns
+  is met at `max_ss` in all four floorplans swept (+0.373 to +0.495 ns,
+  103.9–105.2 MHz); port paths remain for 18.6
+- [ ] **For the owner — the direct Execute redirect (cpu.md §9):** §9 says
+  the question reopens only if the 18.1 timing work closes `max_ss` with
+  margin. It now closes register to register by +0.37 to +0.50 ns; a direct
+  compare-to-fetch path missed by about 3–4 ns in the first report, so this
+  margin does not make room for it. Recommendation: keep the registered
+  redirect (4 cycles)
+- [ ] **Serial rebuffer chains, to watch:** setup repair occasionally builds a
+  long serial chain of buffers on one net (24 cells in `233aa60`'s 36% run of
+  the corrected flow; up to 21 in baseline-flow runs and 36 in the old chosen
+  flow); with `941bff4` the longest is 7 and none is on a failing path, but
+  each milestone's sweep should check (`buffer_census.py`)
 - [x] **PicoRV32 swept in the corrected flow:** 34/36/38/40%, +0.498, +0.408,
   +0.420 and +0.427 ns at `max_ss` (104.3–105.2 MHz), a 0.09 ns spread
 - [ ] **Flow correlation, deferred:** calibrating the resizer's wire RC per
