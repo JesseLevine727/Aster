@@ -218,16 +218,17 @@ module aster_core
     assign e_result  = (e_dec.jal || e_dec.jalr) ? e_link : e_alu;
     assign e_taken   = e_dec.branch && branch_taken(e_dec.funct3, rs1f, rs2f);
     assign e_btarget = e_pc + e_dec.imm;
-    assign e_jtarget = {e_alu[31:1], 1'b0};
+    assign e_jtarget = {e_addr[31:1], 1'b0};       // rs1 + imm, from the address adder (not the ALU's mux)
     assign e_next_pc = e_dec.jalr ? e_jtarget : (e_dec.jal || e_taken) ? e_btarget : e_link;
     // When Execute redirects, its target is known without the compare: a
     // `jalr`'s computed target, else the fall-through if Decode predicted the
     // branch taken, else the branch target. The compare only decides whether.
     assign e_redirect_target = e_dec.jalr ? e_jtarget : e_pred ? e_link : e_btarget;
     assign e_target_misaligned = (e_dec.jalr && e_jtarget[1]) || ((e_dec.jal || e_taken) && e_btarget[1]);
-    // A load's or store's address has its own adder, and its alignment comes
-    // from the two low bits alone, so the stall logic does not wait for a
-    // 32-bit sum. (A fetch fault or an illegal encoding decodes as no access.)
+    // A load's or store's address (and a jalr's target) has its own adder, and
+    // its alignment comes from the two low bits alone, so the stall logic does
+    // not wait for a 32-bit sum. (A fetch fault or an illegal encoding decodes
+    // as no access.)
     assign e_addr    = rs1f + e_dec.imm;
     assign e_offset  = rs1f[1:0] + e_dec.imm[1:0];
     assign e_misaligned = (e_dec.load || e_dec.store) &&
