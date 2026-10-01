@@ -8,7 +8,7 @@ LibreLane 3.0.14, `hd` cells, 10 ns, post-route STA at nine corners.
 | Folder | Run | Source (RTL) | Flow |
 | --- | --- | --- | --- |
 | `asic/nodly_u34`, `nodly_u36`, `nodly_u38`, `nodly` | `p18-aster-nodly-u34`, `-u36`, `-u38`, `-u40` | `7dbcb50` (the synthesized RTL of `233aa60`) | chosen, with the delay cells also excluded; 34/36/38/40% |
-| `asic/picorv32_nodly` | `p18-picorv32-nodly` | PicoRV32 (`vendor/picorv32`) | the same, 40% |
+| `asic/picorv32_nodly`, `picorv32_nodly_u38`, `_u36`, `_u34` | `p18-picorv32-nodly`, `-nodly-u38`, `-u36`, `-u34` | PicoRV32 (`vendor/picorv32`) | the same, 40/38/36/34% (the three swept runs use the committed configuration, `8fe82f2`) |
 | `asic/norebuf_u36`, `norebuf_u38` | `p18-aster-norebuf-u36`, `-u38` | `7dbcb50` | as `nodly`, with rebuffering off in setup repair (`PL_RESIZER_SETUP_BUFFERING` and `GRT_RESIZER_SETUP_BUFFERING` false); 36/38% |
 | `asic/inv_u38` | `p18-aster-inv-u38` | `7dbcb50` plus inverted copies of the forwarding selects for Execute's stall logic, not in the history: `inv_copy.patch` is its diff against `7dbcb50` | the chosen flow before the change (delay cells allowed), 38% |
 
@@ -17,8 +17,9 @@ LibreLane 3.0.14, `hd` cells, 10 ns, post-route STA at nine corners.
 excluded, LibreLane's per-corner wire-RC table); both now also exclude
 `sky130_fd_sc_hd__dlygate4sd*` and `sky130_fd_sc_hd__dlymetal6s*`. Each run's
 `resolved.json` records its full configuration; the `nodly` and `norebuf`
-runs set the exclusions by override, with the values the configurations now
-hold.
+runs and `picorv32_nodly` set the exclusions by override, with the values the
+configurations now hold. The four PicoRV32 runs share one synthesized
+netlist.
 
 The `nodly` and `norebuf` runs share one synthesized netlist, which is
 identical to that of the `233aa60` runs in `../aster-18.1-timing-work`

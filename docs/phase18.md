@@ -14,9 +14,9 @@ had been using them as buffers), register to register at the slow corner
 configured utilization, and +0.363 ns at 40% — margins within the ~0.5 ns
 placement spread) and misses by 0.47 and 1.94 ns at 34 and 36% (36%'s failing
 paths all pass through one serial chain of 24 buffers built by setup repair;
-158–200 MHz typical); PicoRV32 104.5 MHz in the same flow, one placement at
-40%; the request address still misses its 2 ns output budget at the slow
-corner, by 1.5–1.7 ns (see "Milestone 18.1").** The CPU specification this
+158–200 MHz typical); PicoRV32 104.3–105.2 MHz in the same flow across the
+same four floorplans; the request address still misses its 2 ns output
+budget at the slow corner, by 1.5–1.7 ns (see "Milestone 18.1").** The CPU specification this
 phase implements is [`cpu.md`](cpu.md) (approved 29 September 2026); the phase
 sits in the [v2 plan](phase17-plus.md#6-phase-17-sequence). Every milestone
 passes its verification layer and records its timing before the next starts.
@@ -531,6 +531,9 @@ the baseline flow unless noted; the slow corner is `max_ss_100C_1v60`:
 | `p18-aster-nodly-u38` | `7dbcb50` | corrected, 38% | 192.8 MHz | **+0.461 ns** | **104.8 MHz** | 158,392 |
 | `p18-aster-nodly-u40` | `7dbcb50` | corrected, 40% | 200.1 MHz | **+0.363 ns** | **103.8 MHz** | 158,013 |
 | `p18-picorv32-nodly` | PicoRV32 | corrected (40%) | 200.2 MHz | **+0.427 ns** | **104.5 MHz** | 155,821 |
+| `p18-picorv32-nodly-u38` | PicoRV32 | corrected, 38% | 209.1 MHz | **+0.420 ns** | **104.4 MHz** | 157,322 |
+| `p18-picorv32-nodly-u36` | PicoRV32 | corrected, 36% | 204.1 MHz | **+0.408 ns** | **104.3 MHz** | 157,137 |
+| `p18-picorv32-nodly-u34` | PicoRV32 | corrected, 34% | 202.6 MHz | **+0.498 ns** | **105.2 MHz** | 158,336 |
 | `p18-aster-norebuf-u36` | `7dbcb50` | corrected, setup repair without rebuffering, 36% | 188.4 MHz | −1.072 ns | 90.3 MHz | 157,500 |
 | `p18-aster-norebuf-u38` | `7dbcb50` | the same, 38% | 198.7 MHz | −0.344 ns | 96.7 MHz | 156,210 |
 
@@ -650,7 +653,7 @@ retained) — were caught by it: −1.551 ns at 38%, 241 of the 247 failing path
 through delay cells; that run says nothing about the copies, which are set
 aside (their diff is retained). Excluding the delay cells as well (both
 configurations; hold repair then uses `clkbuf_1`, and hold is met on every
-path at every corner, worst +0.097 ns) leaves synthesis unchanged — the
+path at every corner, worst +0.094 ns) leaves synthesis unchanged — the
 netlist is identical to the `233aa60` runs' — and moves `233aa60`'s logic to
 +0.461, +0.363 and −0.465 ns at 38, 40 and 34% (from +0.168, −1.571 and
 −0.546), with 0, 0 and 3 failing register-to-register paths, 158–161 thousand
@@ -663,13 +666,18 @@ to 5; so the spread remains (−1.939 to +0.461 ns across the four floorplans),
 its extreme at 36% now from a chain, while 34%'s three failing paths start
 at rs2's forwarding select and pass through no chain. Turning rebuffering off in setup repair is no remedy
 (−1.072 ns at 36%, −0.344 at 38%). PicoRV32 in the corrected flow is
-unchanged, +0.427 ns (104.5 MHz, from 104.6), in one placement (40%) against
-the Aster core's four. In the four corrected (`nodly`) runs, §4's named port
+unchanged, +0.427 ns at 40% (104.5 MHz, from 104.6), and steady across the same
+four floorplans: +0.498, +0.408, +0.420 and +0.427 ns at 34/36/38/40%
+(104.3–105.2 MHz), a 0.09 ns spread against the Aster core's 2.4 ns (0.93 ns
+without the 36% run). In the same flow, the spread comes from the Aster core's
+forwarding-select paths, not the flow alone: its failing paths all start at
+the forwarding selects (at 36% through setup repair's chain). In the four corrected Aster (`nodly`) runs, §4's named port
 paths pass (`d_rsp_valid` +0.50 to +1.28 ns, `d_rsp_error` +1.46 to +1.69 ns at
 `max_ss`), and of the other port paths only the request address still misses
-its 2 ns output budget, by 1.55–1.72 ns (from about 2.1); the 38% run has one
-antenna-ratio violation (1.24 on a `met1` net, in the antenna check this
-timing flow runs), the only one in these runs. The corrected flow is the
+its 2 ns output budget, by 1.55–1.72 ns (from about 2.1). The antenna check
+this timing flow runs finds one antenna-ratio violation in the Aster core's
+38% run (1.24, on a `met1` net) and one in PicoRV32's 36% run (1.05, `met1`),
+the only ones in these runs. The corrected flow is the
 configured one for both cores from now on; the readiness and select-copy
 results above were measured in the old flow and are open to re-measurement in
 it. Evidence:
@@ -746,15 +754,16 @@ it. Evidence:
 - [x] **Flow corrected (18.1, 1 October 2026):** without `buf_1` the resizer
   had buffered with delay cells; both cores' chosen configurations now
   exclude `dlygate4sd*` and `dlymetal6s*` as well (a test keeps the two
-  configurations' exclusions equal). PicoRV32 104.5 MHz at `max_ss`; the Aster
-  core meets 10 ns register to register in two of four floorplans (38%, 40%)
+  configurations' settings equal). PicoRV32 104.3–105.2 MHz at `max_ss`
+  across 34–40%; the Aster core meets 10 ns register to register in two of
+  four floorplans (38%, 40%)
 - [ ] **Serial rebuffer chains, open:** setup repair occasionally builds a
   long serial chain of buffers on one net (24 cells in the 36% run of the
   corrected flow; up to 21 in baseline-flow runs and 36 in the old chosen
   flow); turning rebuffering off costs more elsewhere; find a setting, or a
   structure in the RTL, that avoids it before the 18.7 report
-- [ ] **PicoRV32 swept in the corrected flow, open:** it has one placement
-  (40%) against the Aster core's four; sweep it before the 18.7 comparison
+- [x] **PicoRV32 swept in the corrected flow:** 34/36/38/40%, +0.498, +0.408,
+  +0.420 and +0.427 ns at `max_ss` (104.3–105.2 MHz), a 0.09 ns spread
 - [ ] **Flow correlation, deferred:** calibrating the resizer's wire RC per
   layer against the signoff extraction (the stock table was used instead);
   needed if 18.7's feasibility report requires a tighter correlation

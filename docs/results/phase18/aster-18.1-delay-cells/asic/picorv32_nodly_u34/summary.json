@@ -1,0 +1,110 @@
+{
+  "run": "picorv32_nodly_u34",
+  "period_ns": 10.0,
+  "corners": {
+    "nom_tt_025C_1v80": {
+      "setup_r2r_ws_ns": 5.063,
+      "hold_r2r_ws_ns": 0.3015,
+      "implied_period_ns": 4.937,
+      "implied_fmax_mhz": 202.6,
+      "max_slew_violations": 0,
+      "max_cap_violations": 0,
+      "hold_all_ws_ns": 0.3015,
+      "hold_all_violations": 0,
+      "setup_r2r_violations": 0
+    },
+    "min_tt_025C_1v80": {
+      "setup_r2r_ws_ns": 5.1999,
+      "hold_r2r_ws_ns": 0.3018,
+      "implied_period_ns": 4.8,
+      "implied_fmax_mhz": 208.3,
+      "max_slew_violations": 0,
+      "max_cap_violations": 0,
+      "hold_all_ws_ns": 0.3018,
+      "hold_all_violations": 0,
+      "setup_r2r_violations": 0
+    },
+    "max_tt_025C_1v80": {
+      "setup_r2r_ws_ns": 4.9291,
+      "hold_r2r_ws_ns": 0.3016,
+      "implied_period_ns": 5.071,
+      "implied_fmax_mhz": 197.2,
+      "max_slew_violations": 0,
+      "max_cap_violations": 0,
+      "hold_all_ws_ns": 0.3016,
+      "hold_all_violations": 0,
+      "setup_r2r_violations": 0
+    },
+    "nom_ss_100C_1v60": {
+      "setup_r2r_ws_ns": 0.6029,
+      "hold_r2r_ws_ns": 0.8343,
+      "implied_period_ns": 9.397,
+      "implied_fmax_mhz": 106.4,
+      "max_slew_violations": 283,
+      "max_cap_violations": 0,
+      "hold_all_ws_ns": 0.4681,
+      "hold_all_violations": 0,
+      "setup_r2r_violations": 0
+    },
+    "min_ss_100C_1v60": {
+      "setup_r2r_ws_ns": 0.7032,
+      "hold_r2r_ws_ns": 0.8275,
+      "implied_period_ns": 9.297,
+      "implied_fmax_mhz": 107.6,
+      "max_slew_violations": 147,
+      "max_cap_violations": 0,
+      "hold_all_ws_ns": 0.5708,
+      "hold_all_violations": 0,
+      "setup_r2r_violations": 0
+    },
+    "max_ss_100C_1v60": {
+      "setup_r2r_ws_ns": 0.4982,
+      "hold_r2r_ws_ns": 0.842,
+      "implied_period_ns": 9.502,
+      "implied_fmax_mhz": 105.2,
+      "max_slew_violations": 478,
+      "max_cap_violations": 0,
+      "hold_all_ws_ns": 0.3456,
+      "hold_all_violations": 0,
+      "setup_r2r_violations": 0
+    },
+    "nom_ff_n40C_1v95": {
+      "setup_r2r_ws_ns": 6.8868,
+      "hold_r2r_ws_ns": 0.1013,
+      "implied_period_ns": 3.113,
+      "implied_fmax_mhz": 321.2,
+      "max_slew_violations": 0,
+      "max_cap_violations": 0,
+      "hold_all_ws_ns": 0.1013,
+      "hold_all_violations": 0,
+      "setup_r2r_violations": 0
+    },
+    "min_ff_n40C_1v95": {
+      "setup_r2r_ws_ns": 6.9623,
+      "hold_r2r_ws_ns": 0.1003,
+      "implied_period_ns": 3.038,
+      "implied_fmax_mhz": 329.2,
+      "max_slew_violations": 0,
+      "max_cap_violations": 0,
+      "hold_all_ws_ns": 0.1003,
+      "hold_all_violations": 0,
+      "setup_r2r_violations": 0
+    },
+    "max_ff_n40C_1v95": {
+      "setup_r2r_ws_ns": 6.7969,
+      "hold_r2r_ws_ns": 0.1026,
+      "implied_period_ns": 3.203,
+      "implied_fmax_mhz": 312.2,
+      "max_slew_violations": 0,
+      "max_cap_violations": 0,
+      "hold_all_ws_ns": 0.1026,
+      "hold_all_violations": 0,
+      "setup_r2r_violations": 0
+    }
+  },
+  "stdcell_area_um2": 158336.0,
+  "stdcell_count": 19484,
+  "sequential_cells": 2076,
+  "utilization": 0.4528,
+  "route_drc_errors": 0
+}

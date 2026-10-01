@@ -27,6 +27,7 @@ BASELINES = [
                  "rr", "rr_u38", "rr_u36", "rr_u34", "keepcopy_u38")
 ] + [("aster-18.1-delay-cells", f"asic/{run}", f"asic/{run}/summary.json", [])
      for run in ("nodly", "nodly_u38", "nodly_u36", "nodly_u34", "picorv32_nodly",
+                 "picorv32_nodly_u38", "picorv32_nodly_u36", "picorv32_nodly_u34",
                  "norebuf_u38", "norebuf_u36", "inv_u38")]
 
 
@@ -103,7 +104,8 @@ class Phase18TimingBaselines(unittest.TestCase):
         excluded = [set(config["EXTRA_EXCLUDED_CELLS"]) for config in configs]
         for cell in ("sky130_fd_sc_hd__buf_1", "sky130_fd_sc_hd__dlygate4sd*", "sky130_fd_sc_hd__dlymetal6s*"):
             self.assertIn(cell, excluded[0])
-        for name in ("nodly", "picorv32_nodly"):
+        for name in ("nodly", "nodly_u38", "nodly_u36", "nodly_u34", "picorv32_nodly",
+                     "picorv32_nodly_u38", "picorv32_nodly_u36", "picorv32_nodly_u34"):
             resolved = json.loads((RESULTS / "aster-18.1-delay-cells/asic" / name / "resolved.json").read_text())
             self.assertEqual(set(resolved["EXTRA_EXCLUDED_CELLS"]), excluded[0], name)
 

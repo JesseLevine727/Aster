@@ -304,6 +304,60 @@
    wire       buf_12             52
    max_cap    buf_6              44
    output     buf_2              42
+== p18-picorv32-nodly-u34
+   3325428f1f16dd32c11c983ad95f923d10756adcd0eaa2b1441928df8479589a  final/nl/timing_picorv32.nl.v
+   97824408fe926af6d8cce96e5ea70b72da429d32c50e6238851f19a6a4488739  56-openroad-stapostpnr/max_ss_100C_1v60/max.rpt
+   delay cells inserted by design repair: 0, by hold repair: 0
+   longest serial chain of rebuffer cells: 2
+   max_ss_100C_1v60: failing register-to-register paths listed 0, through a delay cell 0, most delay-cell time on one 0.00 ns
+   hold       clkbuf_1           3132
+   fanout     buf_2              1105
+   wire       buf_12             97
+   load_slew  buf_12             84
+   output     buf_2              69
+   wire       buf_6              47
+   fanout     clkbuf_4           39
+   input      buf_2              33
+   max_cap    buf_12             24
+   max_cap    buf_6              23
+   fanout     buf_6              20
+   load_slew  buf_8              20
+== p18-picorv32-nodly-u36
+   a7bd3cf197388733511fb66b2bcde4cd07ff87ec132efe90bd4401a04dbae233  final/nl/timing_picorv32.nl.v
+   52b9deb07b3b795e3fcf7466195b9ea30e5a50a79e7648a97b608f25cd65794c  56-openroad-stapostpnr/max_ss_100C_1v60/max.rpt
+   delay cells inserted by design repair: 0, by hold repair: 0
+   longest serial chain of rebuffer cells: 1
+   max_ss_100C_1v60: failing register-to-register paths listed 0, through a delay cell 0, most delay-cell time on one 0.00 ns
+   hold       clkbuf_1           3120
+   fanout     buf_2              1123
+   load_slew  buf_12             86
+   wire       buf_12             84
+   output     buf_2              69
+   wire       buf_6              43
+   fanout     clkbuf_4           41
+   input      buf_2              33
+   max_cap    buf_12             23
+   fanout     buf_6              17
+   max_cap    buf_8              15
+   rebuffer   buf_6              15
+== p18-picorv32-nodly-u38
+   18af75a02cc8006886760ddefe0d9063d4d362309d86d5c257c8af109bc17624  final/nl/timing_picorv32.nl.v
+   d22d6be400c86a4ca3e4497bb90b384ca8c0bdecf338f6efb05782894b1837bd  56-openroad-stapostpnr/max_ss_100C_1v60/max.rpt
+   delay cells inserted by design repair: 0, by hold repair: 0
+   longest serial chain of rebuffer cells: 2
+   max_ss_100C_1v60: failing register-to-register paths listed 0, through a delay cell 0, most delay-cell time on one 0.00 ns
+   hold       clkbuf_1           3130
+   fanout     buf_2              1120
+   wire       buf_12             95
+   load_slew  buf_12             81
+   output     buf_2              69
+   wire       buf_6              57
+   fanout     clkbuf_4           39
+   input      buf_2              34
+   max_cap    buf_12             27
+   fanout     buf_6              21
+   rebuffer   buf_6              21
+   max_cap    buf_6              20
 == p18-picorv32-nodly
    5bd396a395cde53226b3d8f2481ba88e96af0c80db1f368761edce43be2625ce  final/nl/timing_picorv32.nl.v
    8fede9a8aa0a5450464ff8ac578a6cbdefcad1a3c14f132bfbdf24fed269a75e  56-openroad-stapostpnr/max_ss_100C_1v60/max.rpt
