@@ -34,6 +34,7 @@ module shell_aster_ports (
     output logic [31:0] rvfi_insn,
     output logic        rvfi_trap,
     output logic [31:0] rvfi_pc_rdata,
+    output logic [31:0] rvfi_pc_wdata,
     output logic [4:0]  rvfi_rd_addr,
     output logic [31:0] rvfi_rd_wdata,
     output logic [31:0] rvfi_mem_addr,
@@ -54,7 +55,7 @@ module shell_aster_ports (
         .trapped(trap), .chk_i_redirect,
         .rvfi_valid, .rvfi_order, .rvfi_insn, .rvfi_trap, .rvfi_halt(), .rvfi_intr(), .rvfi_mode(), .rvfi_ixl(),
         .rvfi_rs1_addr(), .rvfi_rs2_addr(), .rvfi_rs1_rdata(), .rvfi_rs2_rdata(),
-        .rvfi_rd_addr, .rvfi_rd_wdata, .rvfi_pc_rdata, .rvfi_pc_wdata(),
+        .rvfi_rd_addr, .rvfi_rd_wdata, .rvfi_pc_rdata, .rvfi_pc_wdata,
         .rvfi_mem_addr, .rvfi_mem_rmask, .rvfi_mem_wmask, .rvfi_mem_rdata, .rvfi_mem_wdata
     );
     /* verilator lint_on PINCONNECTEMPTY */

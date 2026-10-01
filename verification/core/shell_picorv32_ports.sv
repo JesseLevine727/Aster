@@ -18,7 +18,8 @@
 // combinationally, 4 a data request has malformed byte enables, 5 an accepted
 // data request is presented again, in cycles the memory is ready, until its
 // answer returns (more than two in flight when answers are late; it never
-// waits, so the stability check cannot fire first).
+// waits, so the stability check cannot fire first), 6 rvfi_pc_wdata reports a
+// wrong next PC (bit 2 flipped).
 module shell_picorv32_ports (
     input  logic        clk,
     input  logic        resetn,
@@ -48,6 +49,7 @@ module shell_picorv32_ports (
     output logic [31:0] rvfi_insn,
     output logic        rvfi_trap,
     output logic [31:0] rvfi_pc_rdata,
+    output logic [31:0] rvfi_pc_wdata,
     output logic [4:0]  rvfi_rd_addr,
     output logic [31:0] rvfi_rd_wdata,
     output logic [31:0] rvfi_mem_addr,
@@ -61,7 +63,7 @@ module shell_picorv32_ports (
     logic [3:0]  mem_wstrb;
     logic        sent;          // the current transfer's request was accepted
     logic        i_waited, d_waited;   // the port's request waited at the last edge (self-tests)
-    logic [31:0] insn;
+    logic [31:0] insn, pc_wdata;
 
     assign chk_i_redirect = 1'b0;
     assign i_req_valid = mem_valid && mem_instr && !sent && !(selftest == 4'd2 && i_waited);
@@ -72,6 +74,7 @@ module shell_picorv32_ports (
     assign d_req_wdata = mem_wdata ^ {31'b0, selftest == 4'd1 && d_waited};
     assign d_req_be    = selftest == 4'd4 ? 4'h5 : mem_wstrb != 0 ? mem_wstrb : 4'hf;
     assign rvfi_insn   = insn ^ {31'b0, selftest == 4'd3 && i_rsp_valid};
+    assign rvfi_pc_wdata = pc_wdata ^ {29'b0, selftest == 4'd6, 2'b0};
 
     assign mem_ready = sent && (mem_instr ? i_rsp_valid : d_rsp_valid);
     assign mem_rdata = mem_instr ? i_rsp_data : d_rsp_rdata;
@@ -117,7 +120,7 @@ module shell_picorv32_ports (
         .pcpi_wr(1'b0), .pcpi_rd(32'b0), .pcpi_wait(1'b0), .pcpi_ready(1'b0),
         .irq(32'b0),
         .rvfi_valid(rvfi_valid), .rvfi_order(rvfi_order), .rvfi_insn(insn),
-        .rvfi_trap(rvfi_trap), .rvfi_pc_rdata(rvfi_pc_rdata),
+        .rvfi_trap(rvfi_trap), .rvfi_pc_rdata(rvfi_pc_rdata), .rvfi_pc_wdata(pc_wdata),
         .rvfi_rd_addr(rvfi_rd_addr), .rvfi_rd_wdata(rvfi_rd_wdata),
         .rvfi_mem_addr(rvfi_mem_addr), .rvfi_mem_rmask(rvfi_mem_rmask),
         .rvfi_mem_wmask(rvfi_mem_wmask), .rvfi_mem_rdata(rvfi_mem_rdata),

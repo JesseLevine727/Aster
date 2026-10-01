@@ -2246,7 +2246,7 @@ core-ports-sim: $(CORE_PORTS_SIM)
 # breaks that rule (+selftest).
 PORTS_SELFTESTS := 1:rv32ui/sw:D_REQ_UNSTABLE:--stall-seed=1 2:rv32ui/add:I_REQ_UNSTABLE:--stall-seed=1 \
 	3:rv32ui/add:RVFI_COMBINATIONAL: 4:rv32ui/lw:D_REQ_MALFORMED: \
-	5:rv32ui/lw:D_INFLIGHT:--stall-seed=7,--shell-arg=+max_inflight=3
+	5:rv32ui/lw:D_INFLIGHT:--stall-seed=7,--shell-arg=+max_inflight=3 6:rv32ui/add:PC_WDATA_MISMATCH:
 core-ports-tests: $(CORE_PORTS_SIM) $(CORE_PORTS_MODEL_TEST)
 	@$(CORE_PORTS_MODEL_TEST)
 	@mkdir -p $(CORE_TESTS_DIR)

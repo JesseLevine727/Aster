@@ -48,7 +48,10 @@
 //   above 2 and answers are late, +stall_seed);
 // - RVFI_COMBINATIONAL: the RVFI outputs must be registered: a value sampled
 //   after a rising edge may not change before the next one, when the shell
-//   changes the responses and readiness.
+//   changes the responses and readiness;
+// - PC_WDATA_MISMATCH: each retired record's rvfi_pc_wdata must be the next
+//   record's rvfi_pc_rdata (riscv-formal's pc_fwd; the trace itself carries
+//   only pc_rdata, so this is where the reported next PC is checked).
 //
 // Plusargs: +bin=<file> +tohost=<hex> [+trace=<file>] [+max_cycles=<n>]
 //           [+stall_seed=<n>] [+mem_bytes=<hex>] [+latency=<1|2>] [+max_inflight=<n>]
@@ -67,7 +70,7 @@
 //                                   2 a fetch is withdrawn while waiting, 3 an RVFI
 //                                   output follows an input combinationally, 4
 //                                   malformed byte enables, 5 more than two data
-//                                   requests in flight)
+//                                   requests in flight, 6 a wrong rvfi_pc_wdata)
 //           [+io_page] [+console=<file>] [+kernel_end]
 //           [+retire_log=<file>]  (debugging: "order cycle pc" per retirement)
 //           [+bus_error_traps]     (a data access outside memory is answered with
@@ -82,7 +85,7 @@
 // where status is PASS,
 // FAIL test=<n>, FAIL (partial tohost store), FAIL (kernel record), TRAP, TIMEOUT, BUS_ERROR,
 // STORE_MISMATCH, STRAY_WRITE, UNSUPPORTED_OP, I_REQ_UNSTABLE, D_REQ_UNSTABLE,
-// D_REQ_MALFORMED, D_INFLIGHT or RVFI_COMBINATIONAL.
+// D_REQ_MALFORMED, D_INFLIGHT, RVFI_COMBINATIONAL or PC_WDATA_MISMATCH.
 #include "Vcore_ports.h"
 #include "verilated.h"
 
@@ -113,13 +116,15 @@ struct Write {
 // The RVFI outputs the shell samples, for the registered-output check.
 struct Rvfi {
     std::uint64_t order;
-    std::uint32_t valid, insn, trap, pc, rd, rd_wdata, addr, rmask, wmask, rdata, wdata;
-    auto tied() const { return std::tie(order, valid, insn, trap, pc, rd, rd_wdata, addr, rmask, wmask, rdata, wdata); }
+    std::uint32_t valid, insn, trap, pc, pc_next, rd, rd_wdata, addr, rmask, wmask, rdata, wdata;
+    auto tied() const {
+        return std::tie(order, valid, insn, trap, pc, pc_next, rd, rd_wdata, addr, rmask, wmask, rdata, wdata);
+    }
     bool operator==(const Rvfi& other) const { return tied() == other.tied(); }
 };
 
 Rvfi sample(const Vcore_ports& d) {
-    return {d.rvfi_order, d.rvfi_valid, d.rvfi_insn, d.rvfi_trap, d.rvfi_pc_rdata, d.rvfi_rd_addr,
+    return {d.rvfi_order, d.rvfi_valid, d.rvfi_insn, d.rvfi_trap, d.rvfi_pc_rdata, d.rvfi_pc_wdata, d.rvfi_rd_addr,
             d.rvfi_rd_wdata, d.rvfi_mem_addr, d.rvfi_mem_rmask, d.rvfi_mem_wmask, d.rvfi_mem_rdata,
             d.rvfi_mem_wdata};
 }
@@ -191,6 +196,8 @@ int main(int argc, char** argv) {
     std::string result = "TIMEOUT";
     bool stop = false;
     shell::StableCheck i_stable, d_stable;
+    bool have_previous = false, previous_trap = false;
+    std::uint32_t previous_pc_wdata = 0;
     Rvfi registered{};
     bool sampled = false;
     while (!stop && cycles < max_cycles) {
@@ -257,6 +264,15 @@ int main(int argc, char** argv) {
             dport.accept(latency, stall ? int(rng() % 3) : 0, rdata, error);
         }
         if (d.rvfi_valid && !stop) {
+            // Each record's pc_wdata must be the next record's pc_rdata
+            // (riscv-formal's pc_fwd); after a trap the core stops in 18.1.
+            if (have_previous && !previous_trap && d.rvfi_pc_rdata != previous_pc_wdata) {
+                result = "PC_WDATA_MISMATCH";
+                stop = true;
+            }
+            have_previous = true;
+            previous_trap = d.rvfi_trap;
+            previous_pc_wdata = d.rvfi_pc_wdata;
             if (!d.rvfi_trap) ++retired;
             if (retire_log)
                 std::fprintf(retire_log, "%llu %llu %08x\n", (unsigned long long)d.rvfi_order,

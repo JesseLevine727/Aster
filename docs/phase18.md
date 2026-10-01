@@ -695,13 +695,20 @@ registered. Evidence: [`results/phase18/aster-18.1-timing-work`](results/phase18
   write-through; `rvgen` places uses 1–4 instructions after their producers,
   68/68 bins on the Aster core, 112/112 with M on PicoRV32) and AMO/`lr`/`sc`
   classed as load-like producers
-- [ ] **Lockstep of RVFI `pc_wdata` (found in the 18.1 timing work):** the
-  trace carries `pc_rdata` but not `pc_wdata`, so a wrong next-PC report that
-  the fetch path ignores (bit 0 of a `jalr` target) passes; add `pc_wdata` to
-  both shells' traces and check it against the next record's PC (riscv-formal's
-  `pc_fwd`), before 18.3's traps make it matter
+- [x] **RVFI `pc_wdata` checked (18.1):** the trace carries `pc_rdata` only, so
+  a wrong next-PC report that the fetch path ignores (bit 0 of a `jalr`
+  target) passed; the two-port shell now checks every retired record's
+  `pc_wdata` against the next record's `pc_rdata` (riscv-formal's `pc_fwd`,
+  `PC_WDATA_MISMATCH`), proven by a PicoRV32 adapter self-test (`+selftest=6`)
+  and by the planted Aster-core bug that passed before it — a `jalr` target
+  keeping bit 0 — now caught. The record after a trap is not checked while a
+  trap stops the core; from 18.3 a trap record's `pc_wdata` must be the
+  handler's address (see the 18.3 item). (The PicoRV32 look-ahead shell, the
+  §7 baseline, does not carry the check.)
 - [ ] **By the milestone named:** CSR write point and `minstret` read
-  semantics (18.3); `fence.i` draining in-flight data accesses and flushing
+  semantics, and the `pc_wdata` check extended to trap records (a trap
+  record's `pc_wdata` is the handler's address, matched by the next record)
+  (18.3); `fence.i` draining in-flight data accesses and flushing
   F1, F2, the buffer, D and E, and AMO operands (address and data) as hazard
   consumers (18.4); a cover point that `bus_error_behind_load` really holds
   its error in M1 (it depends on the stall seed)
