@@ -50,11 +50,12 @@
 //   end; M2 adds them into the 64-bit product, whose low or high word is
 //   registered into W. Its result is ready from W, as a load's is.
 // - Divide and remainder: an iterative radix-2 restoring divider in Execute,
-//   which holds Execute for DIVIDE_CYCLES (34): the operands' magnitudes are
-//   latched in the first cycle their values are ready, 32 steps follow, and
-//   the last cycle negates the result as the signs require (a divisor of zero
-//   gives a quotient of all ones and the dividend as remainder, as RISC-V
-//   specifies). Its result leaves Execute like an ALU result.
+//   which holds Execute for DIVIDE_CYCLES (36): the operands are latched in the
+//   first cycle their values are ready, turned into magnitudes in the next, 32
+//   steps follow, and a cycle registers the result with the sign the operands
+//   require (a divisor of zero gives a quotient of all ones and the dividend as
+//   remainder, as RISC-V specifies). Its result leaves Execute like an ALU
+//   result, from a register.
 //
 // Data port: Execute presents a request only when M1 can take an instruction
 // (M1 is empty or moving on) and M1 holds no trapping instruction, so at most
@@ -243,22 +244,26 @@ module aster_core
     assign e_operands = (!e_dec.uses_rs1 || rs1_ready) && (!e_dec.uses_rs2 || rs2_ready);
     assign e_ready    = e_operands && (!e_dec.div || div_done);
 
-    // Divider: div_count is 0 while idle, 1-32 while stepping, 33 when done.
+    // Divider: div_count is 0 while idle; the operands as read are latched as it
+    // starts (count 0 to 1), so no arithmetic follows the forwarding mux; count
+    // 1 turns them into magnitudes (and notes the signs and a zero divisor);
+    // counts 2-33 are the 32 steps; count 34 registers the result with its sign
+    // (div_result), so the result leaves Execute from a register; count 35 is
+    // done. A division holds Execute for DIVIDE_CYCLES = 36.
     logic [5:0]  div_count;
     logic [31:0] div_remainder, div_quotient, div_divisor, div_result;
-    logic        div_negate_q, div_negate_r, div_by_zero, div_rem;
-    logic        div_start, div_stepping;
+    logic        div_signed, div_negate_q, div_negate_r, div_by_zero, div_rem;
+    logic        div_start, div_signs, div_stepping, div_finish;
     logic [63:0] div_next;
     assign div_start    = e_live && e_dec.div && e_operands && div_count == 6'd0;
-    assign div_stepping = div_count != 6'd0 && div_count <= 6'd32;
-    assign div_next   = divide_step(div_remainder, div_quotient, div_divisor);
-    assign div_result = div_rem      ? (div_negate_r ? -div_remainder : div_remainder)
-                      : div_by_zero  ? 32'hFFFF_FFFF
-                      : div_negate_q ? -div_quotient : div_quotient;
+    assign div_signs    = div_count == 6'd1;
+    assign div_stepping = div_count >= 6'd2 && div_count <= 6'd33;
+    assign div_finish   = div_count == 6'd34;
+    assign div_next     = divide_step(div_remainder, div_quotient, div_divisor);
 
     assign e_alu     = alu(e_dec.alu_op, e_dec.a_pc ? e_pc : rs1f, e_dec.b_imm ? e_dec.imm : rs2f);
     assign e_link    = e_pc + 32'd4;
-    assign e_result  = (e_dec.jal || e_dec.jalr) ? e_link : e_dec.div ? div_result : e_alu;
+    assign e_result  = (e_dec.jal || e_dec.jalr) ? e_link : e_dec.div ? div_result : e_alu;   // div_result: a register
     assign e_taken   = e_dec.branch && branch_taken(e_dec.funct3, rs1f, rs2f);
     assign e_btarget = e_pc + e_dec.imm;
     assign e_jtarget = {e_addr[31:1], 1'b0};       // rs1 + imm, from the address adder (not the ALU's mux)
@@ -508,20 +513,28 @@ module aster_core
                 div_done  <= 1'b0;
             end else if (div_start) begin
                 div_count <= 6'd1;
-            end else if (div_stepping) begin
+            end else if (div_count != 6'd0 && div_count <= 6'd34) begin
                 div_count <= div_count + 6'd1;
-                div_done  <= div_count == 6'd32;
+                div_done  <= div_finish;
             end
             if (div_start) begin
-                div_remainder <= 32'b0;
-                div_quotient  <= (!e_dec.funct3[0] && rs1f[31]) ? -rs1f : rs1f;
-                div_divisor   <= (!e_dec.funct3[0] && rs2f[31]) ? -rs2f : rs2f;
-                div_negate_q  <= !e_dec.funct3[0] && (rs1f[31] ^ rs2f[31]);
-                div_negate_r  <= !e_dec.funct3[0] && rs1f[31];
-                div_by_zero   <= rs2f == 32'b0;
+                div_quotient  <= rs1f;
+                div_divisor   <= rs2f;
+                div_signed    <= !e_dec.funct3[0];
                 div_rem       <= e_dec.funct3[1];
+            end else if (div_signs) begin
+                div_remainder <= 32'b0;
+                div_quotient  <= (div_signed && div_quotient[31]) ? -div_quotient : div_quotient;
+                div_divisor   <= (div_signed && div_divisor[31]) ? -div_divisor : div_divisor;
+                div_negate_q  <= div_signed && (div_quotient[31] ^ div_divisor[31]);
+                div_negate_r  <= div_signed && div_quotient[31];
+                div_by_zero   <= div_divisor == 32'b0;
             end else if (div_stepping) begin
                 {div_remainder, div_quotient} <= div_next;
+            end else if (div_finish) begin
+                div_result <= div_rem      ? (div_negate_r ? -div_remainder : div_remainder)
+                            : div_by_zero  ? 32'hFFFF_FFFF
+                            : div_negate_q ? -div_quotient : div_quotient;
             end
 
             // M1
@@ -624,10 +637,10 @@ module aster_core
         // The divider runs only for a division in Execute, and Execute's
         // division leaves only with its result.
         if (rst_n && div_count != 6'd0) assert (e_live && e_dec.div) else $error("divider running without a division");
-        if (rst_n && e_advance && e_dec.div) assert (div_done && div_count == 6'd33) else $error("division left early");
+        if (rst_n && e_advance && e_dec.div) assert (div_done && div_count == 6'd35) else $error("division left early");
         // A finished division's result stays put while it waits to leave Execute.
         if (rst_n && div_done && $past(div_done) && $past(rst_n))
-            assert ($stable(div_quotient) && $stable(div_remainder)) else $error("division result changed while held");
+            assert ($stable(div_result)) else $error("division result changed while held");
         // A multiply never waits in M2 (it has no data access), which the
         // partial products' load enable relies on.
         if (rst_n && m2.valid && m2.mul) assert (m2_advance) else $error("a multiply waits in M2");

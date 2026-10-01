@@ -48,7 +48,7 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 import lockstep  # noqa: E402
 
-DIVIDE_CYCLES = 34                    # the 18.2 divider: operands latched, 32 steps, the sign fix
+DIVIDE_CYCLES = 36                    # the 18.2 divider: latch, magnitudes, 32 steps, signed result, done
 
 
 @dataclass(frozen=True)
