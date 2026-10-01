@@ -21,7 +21,8 @@ BASELINES = [
 ] + [("aster-18.1-timing-work", f"asic/{run}", f"asic/{run}/summary.json",
       ["fpga/aster", "fpga/aster_bram", "fpga/aster_bram_reqreg"] if run == "final_chosen" else [])
      for run in ("grt_repair", "wt", "wt_rc", "pd", "ex", "wr", "wr_nobuf1", "wr_chosen", "wr_chosen_u38",
-                 "final_chosen", "picorv32_nobuf1", "picorv32_chosen")]
+                 "final_chosen", "picorv32_nobuf1", "picorv32_chosen",
+                 "onehot", "onehot_u38", "jt", "jt_u38", "jt_u36", "jt_u34")]
 
 
 def retained_part(recomputed, retained):

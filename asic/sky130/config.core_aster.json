@@ -15,7 +15,7 @@
     ],
     "STA_EXTRA_CORNER_TCL_FILE": "dir::sta_named_paths.tcl",
     "pdk::sky130*": {
-        "FP_CORE_UTIL": 40,
+        "FP_CORE_UTIL": 38,
         "CLOCK_PERIOD": 10.0,
         "scl::sky130_fd_sc_hd": {
             "CLOCK_PERIOD": 10.0

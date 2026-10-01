@@ -6,13 +6,13 @@ a two-stage memory access (a seven-stage core) and approved the revised cpu.md
 gate at about 3.7×. Milestone 18.1: the seven-stage RV32I RTL passes
 riscv-tests, arch-test I and random programs in lockstep, cycle for cycle with
 the CPI model on a memory that answers on time. Timing after the 18.1 timing
-work: the core meets 10 ns out of context on the FPGA (113.1 MHz; with a
-block RAM behind its ports, 103.7 and 111.9 MHz); on SKY130, in the flow
-chosen in 18.1, register to register 164–168 MHz typical and 84–88 MHz at the
-slow corner (PicoRV32 104.6 MHz in the same flow), limited by Execute's
-datapath, and the request address to memory misses its 2 ns output budget
-by about 2.9–3.4 ns at the slow corner. The owner chose to keep closing the
-slow corner within 18.1 (see "Milestone 18.1").** The CPU specification this
+work: the core meets 10 ns out of context on the FPGA (111.4 MHz; with a
+block RAM behind its ports, 101.6 and 114.8 MHz); on SKY130, in the flow
+chosen in 18.1, register to register it closes 10 ns at the slow corner in
+one floorplan of a four-point sweep (101.7 MHz at 38% utilization) and is
+within 0.55 ns in two more (183–190 MHz typical; PicoRV32 104.6 MHz in the
+same flow); the request address to memory still misses its 2 ns output
+budget by about 2 ns at the slow corner (see "Milestone 18.1").** The CPU specification this
 phase implements is [`cpu.md`](cpu.md) (approved 29 September 2026); the phase
 sits in the [v2 plan](phase17-plus.md#6-phase-17-sequence). Every milestone
 passes its verification layer and records its timing before the next starts.
@@ -507,6 +507,12 @@ the baseline flow unless noted; the slow corner is `max_ss_100C_1v60`:
 | `p18-aster-sc-rc` | `9ffb3ab` + stall logic off the address alignment (since reverted) | chosen | 163.0 MHz | −1.644 ns | 85.9 MHz | 176,813 |
 | `p18-picorv32-nobuf1` | PicoRV32 | baseline without `buf_1` | 147.8 MHz | −3.055 ns | 76.6 MHz | 165,770 |
 | `p18-picorv32-nobuf1-rc` | PicoRV32 | chosen | 201.9 MHz | **+0.436 ns** | **104.6 MHz** | 175,177 |
+| `p18-aster-oh` | `bf247e8` one-hot forwarding selects | chosen | 175.4 MHz | −1.142 ns | 89.7 MHz | 171,464 |
+| `p18-aster-oh-u38` | `bf247e8` | chosen, 38% | 183.6 MHz | −0.152 ns | 98.5 MHz | 174,843 |
+| `p18-aster-jt-u34` | `233aa60` + jalr target from the address adder | chosen, 34% | 182.8 MHz | −0.546 ns | 94.8 MHz | 178,113 |
+| `p18-aster-jt-u36` | `233aa60` | chosen, 36% | 189.9 MHz | −0.190 ns | 98.1 MHz | 179,217 |
+| `p18-aster-jt-u38` | `233aa60` | chosen, 38% | 187.4 MHz | **+0.168 ns** | **101.7 MHz** | 177,562 |
+| `p18-aster-jt` | `233aa60` | chosen, 40% | 165.8 MHz | −1.571 ns | 86.4 MHz | 174,014 |
 
 What the runs show. In the baseline flow the typical corner tracks the RTL
 changes (134 → 140–155 MHz), but the slow corner moves by up to 0.88 ns
@@ -527,7 +533,7 @@ extracted parasitics, so its numbers are not made optimistic by the change. **Th
 `make timing-asic-picorv32-chosen`). In it PicoRV32 closes 10 ns at the slow
 corner (104.6 MHz, from 83.5 in the baseline flow), and the Aster core
 reaches 84.0 and 87.5 MHz register to register (163.6 and 168.0 MHz
-typical) in two runs of the current RTL (`209ddcb`) — a 38%-utilization
+typical) in two runs of `209ddcb` — a 38%-utilization
 floorplan moves the slow corner by 0.47 ns, the size of the effect a single
 run can resolve (the reverted `9ffb3ab` gave 85.9 MHz). The core's remaining
 register-to-register limit at the slow corner is Execute's datapath: the
@@ -538,10 +544,31 @@ on it. The design's worst path overall is a port path: the request address
 (+2.13 and +1.94 ns at `nom_tt`) — the core-to-L1 request path, which the
 open "core-to-SRAM port budgets" item must settle with the 18.6 L1. §4's two
 named port paths move with placement: `d_rsp_valid` +0.145 and −0.423 ns,
-`d_rsp_error` +1.726 and +1.508 ns at `max_ss`. On the FPGA the current RTL
+`d_rsp_error` +1.726 and +1.508 ns at `max_ss`. On the FPGA `209ddcb`
 runs at 113.1 MHz out of context, 103.7 MHz with the block RAM in the §5 form
 and 111.9 MHz with the request registered (retained; the reverted `9ffb3ab`
-gave 105.6, 100.5 and 110.0 MHz). Evidence: [`results/phase18/aster-18.1-timing-work`](results/phase18/aster-18.1-timing-work/README.md).
+gave 105.6, 100.5 and 110.0 MHz).
+
+**Execute's datapath, continued (the owner chose to keep closing the slow
+corner within 18.1).** Two more behavior-neutral changes: the forwarding
+selects are one-hot including "none", so the operand is an AND-OR of its four
+sources with no decode ahead of the select's fanout (`bf247e8`); and a
+`jalr`'s target comes from the address adder rather than the ALU's result mux
+(`233aa60`). The slow corner now closes register to register in one
+floorplan and is within 0.55 ns in two more of a four-point utilization
+sweep of `233aa60`: +0.168 ns at 38% (101.7 MHz, no failing register-to-
+register endpoint; 187.4 MHz typical), −0.190 ns at 36% (98.1 MHz), −0.546 ns
+at 34% (94.8 MHz) and −1.571 ns at 40% (86.4 MHz) — floorplan sensitivity
+larger than any single change's effect, so the sweep, not the best point, is
+the result. 38% is now the core's configured utilization
+(`config.core_aster.json`). §4's named port paths pass at 34–38% (+0.71 to
++1.09 ns for `d_rsp_valid`, +1.14 to +1.56 ns for `d_rsp_error` at `max_ss`;
+−0.45 ns for `d_rsp_valid` at 40%). The request address still misses its
+2 ns output budget by about 2.0–2.2 ns at the slow corner in every floorplan
+(all-path −1.98 to −2.17 ns) — the core-to-L1 port budget for 18.6; hold is
+met on every path. On the FPGA `233aa60` runs at 111.4 MHz out of context,
+101.6 MHz with the block RAM in the §5 form and 114.8 MHz with the request
+registered. Evidence: [`results/phase18/aster-18.1-timing-work`](results/phase18/aster-18.1-timing-work/README.md).
 
 ## Milestones and gates
 
@@ -657,6 +684,11 @@ gave 105.6, 100.5 and 110.0 MHz). Evidence: [`results/phase18/aster-18.1-timing-
   write-through; `rvgen` places uses 1–4 instructions after their producers,
   68/68 bins on the Aster core, 112/112 with M on PicoRV32) and AMO/`lr`/`sc`
   classed as load-like producers
+- [ ] **Lockstep of RVFI `pc_wdata` (found in the 18.1 timing work):** the
+  trace carries `pc_rdata` but not `pc_wdata`, so a wrong next-PC report that
+  the fetch path ignores (bit 0 of a `jalr` target) passes; add `pc_wdata` to
+  both shells' traces and check it against the next record's PC (riscv-formal's
+  `pc_fwd`), before 18.3's traps make it matter
 - [ ] **By the milestone named:** CSR write point and `minstret` read
   semantics (18.3); `fence.i` draining in-flight data accesses and flushing
   F1, F2, the buffer, D and E, and AMO operands (address and data) as hazard

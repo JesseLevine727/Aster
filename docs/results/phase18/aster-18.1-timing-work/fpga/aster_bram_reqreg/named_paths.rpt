@@ -1,8 +1,8 @@
-NAMED label=d_rsp_valid_to_request slack_ns=7.240 from=block/d_v2_reg/C to=block/request_registered.d_en_reg/D levels=2
+NAMED label=d_rsp_valid_to_request slack_ns=5.572 from=block/d_v2_reg/C to=block/request_registered.d_en_reg/D levels=4
 Copyright 1986-2022 Xilinx, Inc. All Rights Reserved. Copyright 2022-2025 Advanced Micro Devices, Inc. All Rights Reserved.
 ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 | Tool Version : Vivado v.2025.1 (lin64) Build 6140274 Wed May 21 22:58:25 MDT 2025
-| Date         : Wed Sep 30 19:45:46 2026
+| Date         : Wed Sep 30 21:20:32 2026
 | Host         : gondor running 64-bit Ubuntu 24.04.5 LTS
 | Command      : report_timing -of_objects [get_timing_paths -setup -from [get_cells -hier -quiet -filter {NAME =~ *d_v2_reg* && IS_SEQUENTIAL}] -to [get_cells -hier -quiet -filter {(NAME =~ *d_v1_reg* || NAME =~ *d_en_reg* || NAME =~ *ram_reg*) && IS_SEQUENTIAL}] -max_paths 1 -nworst 1] -return_string
 | Design       : timing_aster_bram_reqreg
@@ -13,7 +13,7 @@ Copyright 1986-2022 Xilinx, Inc. All Rights Reserved. Copyright 2022-2025 Advanc
 
 Timing Report
 
-Slack (MET) :             7.240ns  (required time - arrival time)
+Slack (MET) :             5.572ns  (required time - arrival time)
   Source:                 block/d_v2_reg/C
                             (rising edge-triggered cell FDRE clocked by clk  {rise@0.000ns fall@5.000ns period=10.000ns})
   Destination:            block/request_registered.d_en_reg/D
@@ -21,8 +21,8 @@ Slack (MET) :             7.240ns  (required time - arrival time)
   Path Group:             clk
   Path Type:              Setup (Max at Slow Process Corner)
   Requirement:            10.000ns  (clk rise@10.000ns - clk rise@0.000ns)
-  Data Path Delay:        2.757ns  (logic 0.766ns (27.783%)  route 1.991ns (72.217%))
-  Logic Levels:           2  (LUT4=1 LUT6=1)
+  Data Path Delay:        4.093ns  (logic 0.976ns (23.847%)  route 3.117ns (76.153%))
+  Logic Levels:           4  (LUT4=3 LUT6=1)
   Clock Path Skew:        -0.049ns (DCD - SCD + CPR)
     Destination Clock Delay (DCD):    0.924ns = ( 10.924 - 10.000 ) 
     Source Clock Delay      (SCD):    0.973ns
@@ -37,42 +37,48 @@ Slack (MET) :             7.240ns  (required time - arrival time)
   -------------------------------------------------------------------    -------------------
                          (clock clk rise edge)        0.000     0.000 r  
                                                       0.000     0.000 r  clk (IN)
-                         net (fo=1044, unset)         0.973     0.973    block/clk
-    SLICE_X20Y3          FDRE                                         r  block/d_v2_reg/C
+                         net (fo=1046, unset)         0.973     0.973    block/clk
+    SLICE_X35Y2          FDRE                                         r  block/d_v2_reg/C
   -------------------------------------------------------------------    -------------------
-    SLICE_X20Y3          FDRE (Prop_fdre_C_Q)         0.518     1.491 r  block/d_v2_reg/Q
-                         net (fo=15, routed)          0.864     2.355    block/core/fetch/d_v2
-    SLICE_X19Y2                                                       r  block/core/fetch/m2[valid]_i_2/I2
-    SLICE_X19Y2          LUT4 (Prop_lut4_I2_O)        0.124     2.479 r  block/core/fetch/m2[valid]_i_2/O
-                         net (fo=66, routed)          1.127     3.606    block/core/m2_free
-    SLICE_X22Y4                                                       r  block/core/request_registered.d_en_i_1/I0
-    SLICE_X22Y4          LUT6 (Prop_lut6_I0_O)        0.124     3.730 r  block/core/request_registered.d_en_i_1/O
-                         net (fo=1, routed)           0.000     3.730    block/request_registered.d_en0
-    SLICE_X22Y4          FDRE                                         r  block/request_registered.d_en_reg/D
+    SLICE_X35Y2          FDRE (Prop_fdre_C_Q)         0.456     1.429 r  block/d_v2_reg/Q
+                         net (fo=14, routed)          0.657     2.086    block/core/fetch/d_v2
+    SLICE_X36Y2                                                       r  block/core/fetch/m2[writes_rd]_i_2/I0
+    SLICE_X36Y2          LUT4 (Prop_lut4_I0_O)        0.124     2.210 r  block/core/fetch/m2[writes_rd]_i_2/O
+                         net (fo=62, routed)          0.993     3.203    block/core/fetch/d_v2_reg[0]
+    SLICE_X33Y2                                                       r  block/core/fetch/e_dec[branch]_i_8/I0
+    SLICE_X33Y2          LUT4 (Prop_lut4_I0_O)        0.124     3.327 f  block/core/fetch/e_dec[branch]_i_8/O
+                         net (fo=9, routed)           0.381     3.708    block/core/fetch/m1_reg[valid]
+    SLICE_X34Y1                                                       f  block/core/fetch/m1[load]_i_4/I5
+    SLICE_X34Y1          LUT6 (Prop_lut6_I5_O)        0.124     3.832 r  block/core/fetch/m1[load]_i_4/O
+                         net (fo=6, routed)           0.704     4.536    block/core/e_advance
+    SLICE_X32Y2                                                       r  block/core/request_registered.d_en_i_1/I1
+    SLICE_X32Y2          LUT4 (Prop_lut4_I1_O)        0.148     4.684 r  block/core/request_registered.d_en_i_1/O
+                         net (fo=1, routed)           0.382     5.066    block/request_registered.d_en0
+    SLICE_X33Y2          FDRE                                         r  block/request_registered.d_en_reg/D
   -------------------------------------------------------------------    -------------------
 
                          (clock clk rise edge)       10.000    10.000 r  
                                                       0.000    10.000 r  clk (IN)
-                         net (fo=1044, unset)         0.924    10.924    block/clk
-    SLICE_X22Y4          FDRE                                         r  block/request_registered.d_en_reg/C
+                         net (fo=1046, unset)         0.924    10.924    block/clk
+    SLICE_X33Y2          FDRE                                         r  block/request_registered.d_en_reg/C
                          clock pessimism              0.000    10.924    
                          clock uncertainty           -0.035    10.889    
-    SLICE_X22Y4          FDRE (Setup_fdre_C_D)        0.081    10.970    block/request_registered.d_en_reg
+    SLICE_X33Y2          FDRE (Setup_fdre_C_D)       -0.251    10.638    block/request_registered.d_en_reg
   -------------------------------------------------------------------
-                         required time                         10.970    
-                         arrival time                          -3.730    
+                         required time                         10.638    
+                         arrival time                          -5.066    
   -------------------------------------------------------------------
-                         slack                                  7.240    
+                         slack                                  5.572    
 
 
 
 
 
-NAMED label=d_rsp_error_kill slack_ns=6.432 from=block/d_err1_reg/C to=block/request_registered.d_en_reg/D levels=3
+NAMED label=d_rsp_error_kill slack_ns=5.714 from=block/d_err1_reg/C to=block/request_registered.d_en_reg/D levels=4
 Copyright 1986-2022 Xilinx, Inc. All Rights Reserved. Copyright 2022-2025 Advanced Micro Devices, Inc. All Rights Reserved.
 ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 | Tool Version : Vivado v.2025.1 (lin64) Build 6140274 Wed May 21 22:58:25 MDT 2025
-| Date         : Wed Sep 30 19:45:46 2026
+| Date         : Wed Sep 30 21:20:32 2026
 | Host         : gondor running 64-bit Ubuntu 24.04.5 LTS
 | Command      : report_timing -of_objects [get_timing_paths -setup -from [get_cells -hier -quiet -filter {NAME =~ *d_err1_reg* && IS_SEQUENTIAL}] -to [get_cells -hier -quiet -filter {(NAME =~ *d_v1_reg* || NAME =~ *d_en_reg* || NAME =~ *ram_reg*) && IS_SEQUENTIAL}] -max_paths 1 -nworst 1] -return_string
 | Design       : timing_aster_bram_reqreg
@@ -83,7 +89,7 @@ Copyright 1986-2022 Xilinx, Inc. All Rights Reserved. Copyright 2022-2025 Advanc
 
 Timing Report
 
-Slack (MET) :             6.432ns  (required time - arrival time)
+Slack (MET) :             5.714ns  (required time - arrival time)
   Source:                 block/d_err1_reg/C
                             (rising edge-triggered cell FDRE clocked by clk  {rise@0.000ns fall@5.000ns period=10.000ns})
   Destination:            block/request_registered.d_en_reg/D
@@ -91,8 +97,8 @@ Slack (MET) :             6.432ns  (required time - arrival time)
   Path Group:             clk
   Path Type:              Setup (Max at Slow Process Corner)
   Requirement:            10.000ns  (clk rise@10.000ns - clk rise@0.000ns)
-  Data Path Delay:        3.565ns  (logic 1.021ns (28.643%)  route 2.544ns (71.357%))
-  Logic Levels:           3  (LUT6=3)
+  Data Path Delay:        3.951ns  (logic 1.038ns (26.273%)  route 2.913ns (73.727%))
+  Logic Levels:           4  (LUT4=3 LUT6=1)
   Clock Path Skew:        -0.049ns (DCD - SCD + CPR)
     Destination Clock Delay (DCD):    0.924ns = ( 10.924 - 10.000 ) 
     Source Clock Delay      (SCD):    0.973ns
@@ -107,45 +113,48 @@ Slack (MET) :             6.432ns  (required time - arrival time)
   -------------------------------------------------------------------    -------------------
                          (clock clk rise edge)        0.000     0.000 r  
                                                       0.000     0.000 r  clk (IN)
-                         net (fo=1044, unset)         0.973     0.973    block/clk
-    SLICE_X22Y4          FDRE                                         r  block/d_err1_reg/C
+                         net (fo=1046, unset)         0.973     0.973    block/clk
+    SLICE_X34Y1          FDRE                                         r  block/d_err1_reg/C
   -------------------------------------------------------------------    -------------------
-    SLICE_X22Y4          FDRE (Prop_fdre_C_Q)         0.478     1.451 f  block/d_err1_reg/Q
-                         net (fo=5, routed)           0.852     2.303    block/core/fetch/d_err1
-    SLICE_X20Y4                                                       f  block/core/fetch/e_dec[rd][4]_i_5/I0
-    SLICE_X20Y4          LUT6 (Prop_lut6_I0_O)        0.295     2.598 f  block/core/fetch/e_dec[rd][4]_i_5/O
-                         net (fo=3, routed)           0.847     3.445    block/core/fetch_n_177
-    SLICE_X20Y5                                                       f  block/core/request_registered.d_en_i_2/I5
-    SLICE_X20Y5          LUT6 (Prop_lut6_I5_O)        0.124     3.569 r  block/core/request_registered.d_en_i_2/O
-                         net (fo=2, routed)           0.844     4.414    block/core/request_registered.d_en_i_2_n_0
-    SLICE_X22Y4                                                       r  block/core/request_registered.d_en_i_1/I2
-    SLICE_X22Y4          LUT6 (Prop_lut6_I2_O)        0.124     4.538 r  block/core/request_registered.d_en_i_1/O
-                         net (fo=1, routed)           0.000     4.538    block/request_registered.d_en0
-    SLICE_X22Y4          FDRE                                         r  block/request_registered.d_en_reg/D
+    SLICE_X34Y1          FDRE (Prop_fdre_C_Q)         0.518     1.491 f  block/d_err1_reg/Q
+                         net (fo=4, routed)           0.858     2.349    block/core/fetch/d_err1
+    SLICE_X34Y2                                                       f  block/core/fetch/m1_err_held_i_1/I1
+    SLICE_X34Y2          LUT4 (Prop_lut4_I1_O)        0.124     2.473 f  block/core/fetch/m1_err_held_i_1/O
+                         net (fo=6, routed)           0.588     3.061    block/core/fetch/m1_bus_err
+    SLICE_X33Y2                                                       f  block/core/fetch/e_dec[branch]_i_8/I3
+    SLICE_X33Y2          LUT4 (Prop_lut4_I3_O)        0.124     3.185 f  block/core/fetch/e_dec[branch]_i_8/O
+                         net (fo=9, routed)           0.381     3.566    block/core/fetch/m1_reg[valid]
+    SLICE_X34Y1                                                       f  block/core/fetch/m1[load]_i_4/I5
+    SLICE_X34Y1          LUT6 (Prop_lut6_I5_O)        0.124     3.690 r  block/core/fetch/m1[load]_i_4/O
+                         net (fo=6, routed)           0.704     4.394    block/core/e_advance
+    SLICE_X32Y2                                                       r  block/core/request_registered.d_en_i_1/I1
+    SLICE_X32Y2          LUT4 (Prop_lut4_I1_O)        0.148     4.542 r  block/core/request_registered.d_en_i_1/O
+                         net (fo=1, routed)           0.382     4.924    block/request_registered.d_en0
+    SLICE_X33Y2          FDRE                                         r  block/request_registered.d_en_reg/D
   -------------------------------------------------------------------    -------------------
 
                          (clock clk rise edge)       10.000    10.000 r  
                                                       0.000    10.000 r  clk (IN)
-                         net (fo=1044, unset)         0.924    10.924    block/clk
-    SLICE_X22Y4          FDRE                                         r  block/request_registered.d_en_reg/C
+                         net (fo=1046, unset)         0.924    10.924    block/clk
+    SLICE_X33Y2          FDRE                                         r  block/request_registered.d_en_reg/C
                          clock pessimism              0.000    10.924    
                          clock uncertainty           -0.035    10.889    
-    SLICE_X22Y4          FDRE (Setup_fdre_C_D)        0.081    10.970    block/request_registered.d_en_reg
+    SLICE_X33Y2          FDRE (Setup_fdre_C_D)       -0.251    10.638    block/request_registered.d_en_reg
   -------------------------------------------------------------------
-                         required time                         10.970    
-                         arrival time                          -4.538    
+                         required time                         10.638    
+                         arrival time                          -4.924    
   -------------------------------------------------------------------
-                         slack                                  6.432    
+                         slack                                  5.714    
 
 
 
 
 
-NAMED label=d_rsp_valid_worst slack_ns=2.471 from=block/d_v2_reg/C to=block/core/w_reg[result][28]/D levels=6
+NAMED label=d_rsp_valid_worst slack_ns=2.428 from=block/d_v2_reg/C to=block/core/w_reg[result][11]/D levels=4
 Copyright 1986-2022 Xilinx, Inc. All Rights Reserved. Copyright 2022-2025 Advanced Micro Devices, Inc. All Rights Reserved.
 ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 | Tool Version : Vivado v.2025.1 (lin64) Build 6140274 Wed May 21 22:58:25 MDT 2025
-| Date         : Wed Sep 30 19:45:46 2026
+| Date         : Wed Sep 30 21:20:32 2026
 | Host         : gondor running 64-bit Ubuntu 24.04.5 LTS
 | Command      : report_timing -of_objects [get_timing_paths -setup -from [get_cells -hier -quiet -filter {NAME =~ *d_v2_reg* && IS_SEQUENTIAL}] -max_paths 1 -nworst 1] -return_string
 | Design       : timing_aster_bram_reqreg
@@ -156,16 +165,16 @@ Copyright 1986-2022 Xilinx, Inc. All Rights Reserved. Copyright 2022-2025 Advanc
 
 Timing Report
 
-Slack (MET) :             2.471ns  (required time - arrival time)
+Slack (MET) :             2.428ns  (required time - arrival time)
   Source:                 block/d_v2_reg/C
                             (rising edge-triggered cell FDRE clocked by clk  {rise@0.000ns fall@5.000ns period=10.000ns})
-  Destination:            block/core/w_reg[result][28]/D
+  Destination:            block/core/w_reg[result][11]/D
                             (rising edge-triggered cell FDRE clocked by clk  {rise@0.000ns fall@5.000ns period=10.000ns})
   Path Group:             clk
   Path Type:              Setup (Max at Slow Process Corner)
   Requirement:            10.000ns  (clk rise@10.000ns - clk rise@0.000ns)
-  Data Path Delay:        7.524ns  (logic 1.933ns (25.691%)  route 5.591ns (74.309%))
-  Logic Levels:           6  (LUT3=1 LUT4=1 LUT5=4)
+  Data Path Delay:        7.517ns  (logic 1.204ns (16.016%)  route 6.313ns (83.984%))
+  Logic Levels:           4  (LUT4=1 LUT5=2 LUT6=1)
   Clock Path Skew:        -0.049ns (DCD - SCD + CPR)
     Destination Clock Delay (DCD):    0.924ns = ( 10.924 - 10.000 ) 
     Source Clock Delay      (SCD):    0.973ns
@@ -180,54 +189,48 @@ Slack (MET) :             2.471ns  (required time - arrival time)
   -------------------------------------------------------------------    -------------------
                          (clock clk rise edge)        0.000     0.000 r  
                                                       0.000     0.000 r  clk (IN)
-                         net (fo=1044, unset)         0.973     0.973    block/clk
-    SLICE_X20Y3          FDRE                                         r  block/d_v2_reg/C
+                         net (fo=1046, unset)         0.973     0.973    block/clk
+    SLICE_X35Y2          FDRE                                         r  block/d_v2_reg/C
   -------------------------------------------------------------------    -------------------
-    SLICE_X20Y3          FDRE (Prop_fdre_C_Q)         0.518     1.491 r  block/d_v2_reg/Q
-                         net (fo=15, routed)          0.864     2.355    block/core/d_v2
-    SLICE_X19Y2                                                       r  block/core/m2[got]_i_2/I3
-    SLICE_X19Y2          LUT4 (Prop_lut4_I3_O)        0.152     2.507 r  block/core/m2[got]_i_2/O
-                         net (fo=56, routed)          1.597     4.104    block/core/m2_view1
-    SLICE_X24Y20                                                      r  block/core/w[result][31]_i_4/I3
-    SLICE_X24Y20         LUT5 (Prop_lut5_I3_O)        0.361     4.465 r  block/core/w[result][31]_i_4/O
-                         net (fo=5, routed)           1.023     5.488    block/core/word[31]
-    SLICE_X27Y7                                                       r  block/core/w[result][15]_i_2/I2
-    SLICE_X27Y7          LUT5 (Prop_lut5_I2_O)        0.327     5.815 r  block/core/w[result][15]_i_2/O
-                         net (fo=2, routed)           0.444     6.259    block/core/w[result][15]_i_2_n_0
-    SLICE_X27Y7                                                       r  block/core/w[result][23]_i_3/I0
-    SLICE_X27Y7          LUT5 (Prop_lut5_I0_O)        0.124     6.383 r  block/core/w[result][23]_i_3/O
-                         net (fo=10, routed)          0.657     7.040    block/core/w[result][23]_i_3_n_0
-    SLICE_X29Y7                                                       r  block/core/w[result][31]_i_3/I2
-    SLICE_X29Y7          LUT3 (Prop_lut3_I2_O)        0.119     7.159 r  block/core/w[result][31]_i_3/O
-                         net (fo=8, routed)           1.006     8.165    block/core/w[result][31]_i_3_n_0
-    SLICE_X32Y16                                                      r  block/core/w[result][28]_i_1/I0
-    SLICE_X32Y16         LUT5 (Prop_lut5_I0_O)        0.332     8.497 r  block/core/w[result][28]_i_1/O
-                         net (fo=1, routed)           0.000     8.497    block/core/w[result][28]_i_1_n_0
-    SLICE_X32Y16         FDRE                                         r  block/core/w_reg[result][28]/D
+    SLICE_X35Y2          FDRE (Prop_fdre_C_Q)         0.456     1.429 r  block/d_v2_reg/Q
+                         net (fo=14, routed)          1.026     2.455    block/core/d_v2
+    SLICE_X36Y3                                                       r  block/core/m2[rdata][15]_i_3/I0
+    SLICE_X36Y3          LUT4 (Prop_lut4_I0_O)        0.124     2.579 r  block/core/m2[rdata][15]_i_3/O
+                         net (fo=55, routed)          2.755     5.334    block/core/m2[rdata][15]_i_3_n_0
+    SLICE_X12Y18                                                      r  block/core/w[result][27]_i_2/I3
+    SLICE_X12Y18         LUT5 (Prop_lut5_I3_O)        0.152     5.486 r  block/core/w[result][27]_i_2/O
+                         net (fo=4, routed)           1.082     6.567    block/core/w[result][27]_i_2_n_0
+    SLICE_X20Y5                                                       r  block/core/w[result][11]_i_3/I0
+    SLICE_X20Y5          LUT5 (Prop_lut5_I0_O)        0.348     6.915 f  block/core/w[result][11]_i_3/O
+                         net (fo=2, routed)           1.451     8.366    block/core/w[result][11]_i_3_n_0
+    SLICE_X35Y5                                                       f  block/core/w[result][11]_i_1/I2
+    SLICE_X35Y5          LUT6 (Prop_lut6_I2_O)        0.124     8.490 r  block/core/w[result][11]_i_1/O
+                         net (fo=1, routed)           0.000     8.490    block/core/w[result][11]_i_1_n_0
+    SLICE_X35Y5          FDRE                                         r  block/core/w_reg[result][11]/D
   -------------------------------------------------------------------    -------------------
 
                          (clock clk rise edge)       10.000    10.000 r  
                                                       0.000    10.000 r  clk (IN)
-                         net (fo=1044, unset)         0.924    10.924    block/core/clk
-    SLICE_X32Y16         FDRE                                         r  block/core/w_reg[result][28]/C
+                         net (fo=1046, unset)         0.924    10.924    block/core/clk
+    SLICE_X35Y5          FDRE                                         r  block/core/w_reg[result][11]/C
                          clock pessimism              0.000    10.924    
                          clock uncertainty           -0.035    10.889    
-    SLICE_X32Y16         FDRE (Setup_fdre_C_D)        0.079    10.968    block/core/w_reg[result][28]
+    SLICE_X35Y5          FDRE (Setup_fdre_C_D)        0.029    10.918    block/core/w_reg[result][11]
   -------------------------------------------------------------------
-                         required time                         10.968    
-                         arrival time                          -8.497    
+                         required time                         10.918    
+                         arrival time                          -8.490    
   -------------------------------------------------------------------
-                         slack                                  2.471    
+                         slack                                  2.428    
 
 
 
 
 
-NAMED label=d_rsp_error_worst slack_ns=3.166 from=block/d_err1_reg/C to=block/core/m1_reg[rdata][24]/R levels=3
+NAMED label=d_rsp_error_worst slack_ns=3.571 from=block/d_err1_reg/C to=block/core/e_dec_reg[imm][20]/R levels=5
 Copyright 1986-2022 Xilinx, Inc. All Rights Reserved. Copyright 2022-2025 Advanced Micro Devices, Inc. All Rights Reserved.
 ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 | Tool Version : Vivado v.2025.1 (lin64) Build 6140274 Wed May 21 22:58:25 MDT 2025
-| Date         : Wed Sep 30 19:45:46 2026
+| Date         : Wed Sep 30 21:20:32 2026
 | Host         : gondor running 64-bit Ubuntu 24.04.5 LTS
 | Command      : report_timing -of_objects [get_timing_paths -setup -from [get_cells -hier -quiet -filter {NAME =~ *d_err1_reg* && IS_SEQUENTIAL}] -max_paths 1 -nworst 1] -return_string
 | Design       : timing_aster_bram_reqreg
@@ -238,16 +241,16 @@ Copyright 1986-2022 Xilinx, Inc. All Rights Reserved. Copyright 2022-2025 Advanc
 
 Timing Report
 
-Slack (MET) :             3.166ns  (required time - arrival time)
+Slack (MET) :             3.571ns  (required time - arrival time)
   Source:                 block/d_err1_reg/C
                             (rising edge-triggered cell FDRE clocked by clk  {rise@0.000ns fall@5.000ns period=10.000ns})
-  Destination:            block/core/m1_reg[rdata][24]/R
+  Destination:            block/core/e_dec_reg[imm][20]/R
                             (rising edge-triggered cell FDRE clocked by clk  {rise@0.000ns fall@5.000ns period=10.000ns})
   Path Group:             clk
   Path Type:              Setup (Max at Slow Process Corner)
   Requirement:            10.000ns  (clk rise@10.000ns - clk rise@0.000ns)
-  Data Path Delay:        6.226ns  (logic 1.249ns (20.061%)  route 4.977ns (79.939%))
-  Logic Levels:           3  (LUT4=1 LUT5=1 LUT6=1)
+  Data Path Delay:        5.709ns  (logic 1.131ns (19.811%)  route 4.578ns (80.189%))
+  Logic Levels:           5  (LUT2=1 LUT4=3 LUT6=1)
   Clock Path Skew:        -0.049ns (DCD - SCD + CPR)
     Destination Clock Delay (DCD):    0.924ns = ( 10.924 - 10.000 ) 
     Source Clock Delay      (SCD):    0.973ns
@@ -262,35 +265,41 @@ Slack (MET) :             3.166ns  (required time - arrival time)
   -------------------------------------------------------------------    -------------------
                          (clock clk rise edge)        0.000     0.000 r  
                                                       0.000     0.000 r  clk (IN)
-                         net (fo=1044, unset)         0.973     0.973    block/clk
-    SLICE_X22Y4          FDRE                                         r  block/d_err1_reg/C
+                         net (fo=1046, unset)         0.973     0.973    block/clk
+    SLICE_X34Y1          FDRE                                         r  block/d_err1_reg/C
   -------------------------------------------------------------------    -------------------
-    SLICE_X22Y4          FDRE (Prop_fdre_C_Q)         0.478     1.451 r  block/d_err1_reg/Q
-                         net (fo=5, routed)           0.847     2.298    block/core/d_err1
-    SLICE_X21Y4                                                       r  block/core/m1_err_held_i_1/I0
-    SLICE_X21Y4          LUT4 (Prop_lut4_I0_O)        0.295     2.593 r  block/core/m1_err_held_i_1/O
-                         net (fo=5, routed)           0.682     3.276    block/core/m1_bus_err
-    SLICE_X20Y5                                                       r  block/core/e_dec[rd][4]_i_4/I2
-    SLICE_X20Y5          LUT5 (Prop_lut5_I2_O)        0.148     3.424 f  block/core/e_dec[rd][4]_i_4/O
-                         net (fo=18, routed)          0.517     3.940    block/core/e_dec[rs2][4]_i_1_n_0
-    SLICE_X18Y5                                                       f  block/core/m1[rdata][31]_i_1/I0
-    SLICE_X18Y5          LUT6 (Prop_lut6_I0_O)        0.328     4.268 r  block/core/m1[rdata][31]_i_1/O
-                         net (fo=32, routed)          2.930     7.199    block/core/m1[rdata][31]_i_1_n_0
-    SLICE_X36Y23         FDRE                                         r  block/core/m1_reg[rdata][24]/R
+    SLICE_X34Y1          FDRE (Prop_fdre_C_Q)         0.518     1.491 f  block/d_err1_reg/Q
+                         net (fo=4, routed)           0.858     2.349    block/core/fetch/d_err1
+    SLICE_X34Y2                                                       f  block/core/fetch/m1_err_held_i_1/I1
+    SLICE_X34Y2          LUT4 (Prop_lut4_I1_O)        0.124     2.473 f  block/core/fetch/m1_err_held_i_1/O
+                         net (fo=6, routed)           0.588     3.061    block/core/fetch/m1_bus_err
+    SLICE_X33Y2                                                       f  block/core/fetch/e_dec[branch]_i_8/I3
+    SLICE_X33Y2          LUT4 (Prop_lut4_I3_O)        0.124     3.185 f  block/core/fetch/e_dec[branch]_i_8/O
+                         net (fo=9, routed)           0.371     3.556    block/core/fetch/m1_reg[valid]
+    SLICE_X34Y1                                                       f  block/core/fetch/e_dec[branch]_i_5/I0
+    SLICE_X34Y1          LUT6 (Prop_lut6_I0_O)        0.124     3.680 f  block/core/fetch/e_dec[branch]_i_5/O
+                         net (fo=89, routed)          0.602     4.282    block/core/e_dec_reg[uses_rs2]_0
+    SLICE_X35Y3                                                       f  block/core/e_dec[branch]_i_2/I1
+    SLICE_X35Y3          LUT2 (Prop_lut2_I1_O)        0.124     4.406 r  block/core/e_dec[branch]_i_2/O
+                         net (fo=92, routed)          1.049     5.455    block/core/e_dec
+    SLICE_X30Y6                                                       r  block/core/e_dec[b_imm]_i_1/I0
+    SLICE_X30Y6          LUT4 (Prop_lut4_I0_O)        0.117     5.572 r  block/core/e_dec[b_imm]_i_1/O
+                         net (fo=31, routed)          1.110     6.682    block/core/e_dec[b_imm]_i_1_n_0
+    SLICE_X28Y13         FDRE                                         r  block/core/e_dec_reg[imm][20]/R
   -------------------------------------------------------------------    -------------------
 
                          (clock clk rise edge)       10.000    10.000 r  
                                                       0.000    10.000 r  clk (IN)
-                         net (fo=1044, unset)         0.924    10.924    block/core/clk
-    SLICE_X36Y23         FDRE                                         r  block/core/m1_reg[rdata][24]/C
+                         net (fo=1046, unset)         0.924    10.924    block/core/clk
+    SLICE_X28Y13         FDRE                                         r  block/core/e_dec_reg[imm][20]/C
                          clock pessimism              0.000    10.924    
                          clock uncertainty           -0.035    10.889    
-    SLICE_X36Y23         FDRE (Setup_fdre_C_R)       -0.524    10.365    block/core/m1_reg[rdata][24]
+    SLICE_X28Y13         FDRE (Setup_fdre_C_R)       -0.636    10.253    block/core/e_dec_reg[imm][20]
   -------------------------------------------------------------------
-                         required time                         10.365    
-                         arrival time                          -7.199    
+                         required time                         10.253    
+                         arrival time                          -6.682    
   -------------------------------------------------------------------
-                         slack                                  3.166    
+                         slack                                  3.571    
 
 
 

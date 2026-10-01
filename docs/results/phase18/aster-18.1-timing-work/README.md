@@ -20,7 +20,9 @@ Vivado 2025.1, `xc7z020clg400-1`, out of context, 10 ns.
 | `asic/final_chosen` | `p18-aster-sc-rc` | `9ffb3ab` (since reverted) | chosen |
 | `asic/picorv32_nobuf1` | `p18-picorv32-nobuf1` | PicoRV32 (`vendor/picorv32`) | baseline without `buf_1` |
 | `asic/picorv32_chosen` | `p18-picorv32-nobuf1-rc` | PicoRV32 | chosen |
-| `fpga/aster`, `fpga/aster_bram`, `fpga/aster_bram_reqreg` | Vivado | `209ddcb` (the current RTL: `9ffb3ab` was reverted) | as in `../aster-18.1` |
+| `asic/onehot`, `asic/onehot_u38` | `p18-aster-oh`, `-oh-u38` | `bf247e8` | chosen, 40% and 38% |
+| `asic/jt_u34`, `jt_u36`, `jt_u38`, `jt` | `p18-aster-jt-u34`, `-u36`, `-u38`, `p18-aster-jt` | `233aa60` | chosen, 34/36/38/40% |
+| `fpga/aster`, `fpga/aster_bram`, `fpga/aster_bram_reqreg` | Vivado | `233aa60` | as in `../aster-18.1` |
 
 "Baseline" is the PicoRV32 baseline v2 flow (`constraints.core.sdc`,
 `SYNTH_STRATEGY "DELAY 1"`, post-global-route timing repair). Each run's
