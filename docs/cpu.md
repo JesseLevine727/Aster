@@ -144,8 +144,8 @@ Hazards and penalties:
 | Instruction-port back-pressure or a late answer | bubbles enter Decode | as the memory returns |
 
 The Execute redirect is registered so that the branch compare does not drive
-the instruction memory's address in the same cycle; if 18.1's timing shows the
-direct path fits at `max_ss`, it becomes 3 cycles. Redirect priority, highest
+the instruction memory's address in the same cycle (18.1 left the direct path
+untried and the owner kept the registered redirect, §9). Redirect priority, highest
 first: a trap or interrupt at the commit point, the registered Execute
 redirect, a Decode redirect. An interrupt is taken only in a cycle in which M1
 holds a valid instruction, before the instruction after it; `mepc` receives
@@ -443,7 +443,10 @@ reviews; none changes the approved scope:
   path cannot fit there; on the FPGA the flush had to be registered as well
   (the first run missed by 3.19 ns). No build with a direct redirect was
   timed; the question reopens only if the remaining 18.1 timing work closes
-  `max_ss` with margin.
+  `max_ss` with margin. Checked when 18.1 closed (1 October 2026): `max_ss`
+  closes register to register by only +0.37 to +0.50 ns (`941bff4`), a thin
+  margin for putting the branch compare in front of the fetch address, and no
+  direct redirect was built; the owner kept the registered redirect.
 - §5: the instruction memory may allow any number of fetches in flight; the
   fetch unit itself never has more than nine (three live by the room rule,
   the rest discarded ones), and its counters hold that.

@@ -3,17 +3,18 @@
 Status: **in progress — milestone 18.0 (tooling) exit gate met; the owner chose
 a two-stage memory access (a seven-stage core) and approved the revised cpu.md
 §4–§5; the CPU kernels run in the shell and the CPI model projects the 18.7
-gate at about 3.7×. Milestone 18.1: the seven-stage RV32I RTL passes
-riscv-tests, arch-test I and random programs in lockstep, cycle for cycle with
-the CPI model on a memory that answers on time. Timing after the 18.1 timing
-work (`941bff4`): the core meets 10 ns out of context on the FPGA (114.9 MHz;
-with a block RAM behind its ports, 101.9 and 111.8 MHz); on SKY130, in the
-flow chosen in 18.1 as corrected on 1 October (delay cells excluded: the
-resizer had been using them as buffers), register to register at the slow
-corner it meets 10 ns in all four floorplans swept, +0.373 to +0.495 ns
-(103.9–105.2 MHz; 195–198 MHz typical), with PicoRV32 at 104.3–105.2 MHz in
-the same flow and floorplans; the request address still misses its 2 ns
-output budget at the slow corner, by 1.6–1.7 ns (see "Milestone 18.1").** The CPU specification this
+gate at about 3.7×. Milestone 18.1 (complete; owner, 1 October 2026): the
+seven-stage RV32I RTL passes riscv-tests, arch-test I and random programs in
+lockstep, cycle for cycle with the CPI model on a memory that answers on
+time. Timing after the 18.1 timing work (`941bff4`): the core meets 10 ns out
+of context on the FPGA (114.9 MHz; with a block RAM behind its ports, 101.9
+and 111.8 MHz); on SKY130, in the flow chosen in 18.1 as corrected on
+1 October (delay cells excluded: the resizer had been using them as buffers),
+register to register at the slow corner it meets 10 ns in all four
+floorplans swept, +0.373 to +0.495 ns (103.9–105.2 MHz; 195–198 MHz
+typical), with PicoRV32 at 104.3–105.2 MHz in the same flow and floorplans;
+the request address still misses its 2 ns output budget at the slow corner,
+by 1.6–1.7 ns (see "Milestone 18.1").** The CPU specification this
 phase implements is [`cpu.md`](cpu.md) (approved 29 September 2026); the phase
 sits in the [v2 plan](phase17-plus.md#6-phase-17-sequence). Every milestone
 passes its verification layer and records its timing before the next starts.
@@ -725,7 +726,7 @@ lost 3 MHz). The configured utilization stays 38%. Evidence:
 | Milestone | Content | Exit gate |
 | --- | --- | --- |
 | **18.0** | Spike; CPU shell with PicoRV32 and RVFI trace; lockstep comparator; `riscv-tests` in the shell; `riscv-arch-test` harness; timing scripts; PicoRV32 baseline timing | PicoRV32 passes lockstep on `riscv-tests`; the comparator catches an injected mismatch in every compared field; timing scripts report PicoRV32 on both targets — **met** (checklist below) |
-| 18.1 | RV32I pipeline | `riscv-tests` rv32ui and arch-test I in lockstep; random programs in lockstep; first timing report |
+| 18.1 | RV32I pipeline | `riscv-tests` rv32ui and arch-test I in lockstep; random programs in lockstep; first timing report — **met** (owner, 1 October 2026; "Milestone 18.1" below) |
 | 18.2 | M extension | um/arch-test M, multiply/divide corner cases, lockstep, timing |
 | 18.3 | Zicsr, traps, interrupts, counters | arch-test Zicsr; directed traps in every stage; interrupt tests in every pipeline state |
 | 18.4 | A extension, `fence`, `fence.i` | ua/arch-test A and Zifencei; atomic and self-modifying-code tests |
@@ -798,12 +799,13 @@ lost 3 MHz). The configured utilization stays 38%. Evidence:
   inverted copies of the forwarding selects driving Execute's stall logic, 10 ns
   is met at `max_ss` in all four floorplans swept (+0.373 to +0.495 ns,
   103.9–105.2 MHz); port paths remain for 18.6
-- [ ] **For the owner — the direct Execute redirect (cpu.md §9):** §9 says
-  the question reopens only if the 18.1 timing work closes `max_ss` with
-  margin. It now closes register to register by +0.37 to +0.50 ns; a direct
-  compare-to-fetch path missed by about 3–4 ns in the first report, so this
-  margin does not make room for it. Recommendation: keep the registered
-  redirect (4 cycles)
+- [x] **Decided by the owner, 1 October 2026 — the direct Execute redirect
+  (cpu.md §9):** §9 reopened the question if the 18.1 timing work closed
+  `max_ss` with margin; it closes register to register by only +0.37 to
+  +0.50 ns, a thin margin for putting the branch compare in front of the fetch
+  address (in the first report the paths into the registered redirect alone
+  missed by about 3–4 ns, cpu.md §9), and no direct redirect was built, so the
+  registered redirect (4 cycles) stays
 - [ ] **Serial rebuffer chains, to watch:** setup repair occasionally builds a
   long serial chain of buffers on one net (24 cells in `233aa60`'s 36% run of
   the corrected flow; up to 21 in baseline-flow runs and 36 in the old chosen
@@ -873,7 +875,9 @@ lost 3 MHz). The configured utilization stays 38%. Evidence:
   (18.3); `fence.i` draining in-flight data accesses and flushing
   F1, F2, the buffer, D and E, and AMO operands (address and data) as hazard
   consumers (18.4); a cover point that `bus_error_behind_load` really holds
-  its error in M1 (it depends on the stall seed)
+  its error in M1 (it depends on the stall seed); the two rv32ui programs
+  18.1 skipped, `ma_data` (misaligned accesses trap: 18.3) and `fence_i`
+  (18.4)
 - [x] **Aster-core shell, 18.1 step 1 — protocol checks (30 September 2026):**
   the two-port shell now enforces the core's side of §4–§5 in every run: a
   fetch presented and not accepted must be presented unchanged in the next
@@ -945,7 +949,8 @@ lost 3 MHz). The configured utilization stays 38%. Evidence:
   LibreLane's default flow a single-cycle standard-cell array read did not
   close 10 ns at `max_ss`, and the flow's own estimate did not predict signoff
   (see "Pre-18.1 measurements"), which led to that decision. Items 2–4 stand.
-- [ ] 18.1 … 18.7 as in the table above
+- [x] 18.1 as in the table above — complete (owner, 1 October 2026)
+- [ ] 18.2 … 18.7 as in the table above
 
 ## Non-goals
 
