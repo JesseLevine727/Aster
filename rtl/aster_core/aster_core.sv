@@ -500,6 +500,8 @@ module aster_core
 
 `ifndef SYNTHESIS
     always_ff @(posedge clk) begin
+        // The AND-OR operand mux needs exactly one forwarding select.
+        if (rst_n) assert ($onehot(fsel1) && $onehot(fsel2)) else $error("forwarding select not one-hot");
         if (rst_n && d_rsp_valid) assert (rsp_for_m2 || rsp_for_m1) else $error("data answer with no access in flight");
         // A squashed (wrong-path) instruction issues nothing.
         if (rst_n && squash) assert (!d_req_valid && !e_flush && !d_redirect) else $error("a squashed instruction acted");

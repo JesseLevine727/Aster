@@ -33,9 +33,12 @@ override; the chosen flow is now `asic/sky130/config.core_aster.json` and
 `config.core_picorv32_rc.json`. `scripts/run_asic.py` converts the RTL into
 one shared file when it is invoked, and a queued run reads that file when it
 starts; each run's revision above was checked against its own lint and
-synthesis logs (the source locations match sv2v output of that revision).
-The RTL of `9971ea1`, `34cf6d5`, `9d29175`, `3cf31ce`, `209ddcb` and `9ffb3ab`
-is in git.
+synthesis logs (the source locations match sv2v output of that revision), and
+for `bf247e8` and `233aa60` — whose conversions differ in one line only — by
+the timeline and the synthesized netlists (the `oh` runs share one netlist,
+the `jt` runs another). PicoRV32 ran at 40% utilization and was not swept.
+The RTL of `9971ea1`, `34cf6d5`, `9d29175`, `3cf31ce`, `209ddcb`, `9ffb3ab`,
+`bf247e8` and `233aa60` is in git.
 
 Where a corner's report lists only port paths (every register-to-register
 path comfortably met), `worst_paths.txt` says so; `summary.json` has the
