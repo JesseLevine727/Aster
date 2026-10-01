@@ -1,0 +1,146 @@
+{
+  "run": "nodly_u38",
+  "period_ns": 10.0,
+  "corners": {
+    "nom_tt_025C_1v80": {
+      "setup_r2r_ws_ns": 4.8133,
+      "hold_r2r_ws_ns": 0.2945,
+      "implied_period_ns": 5.187,
+      "implied_fmax_mhz": 192.8,
+      "max_slew_violations": 0,
+      "max_cap_violations": 0,
+      "hold_all_ws_ns": 0.2945,
+      "hold_all_violations": 0,
+      "setup_r2r_violations": 0,
+      "named_paths_slack_ns": {
+        "d_rsp_valid_to_d_req_valid": 3.436,
+        "d_rsp_error_to_d_req_valid": 3.698
+      }
+    },
+    "min_tt_025C_1v80": {
+      "setup_r2r_ws_ns": 4.8615,
+      "hold_r2r_ws_ns": 0.291,
+      "implied_period_ns": 5.138,
+      "implied_fmax_mhz": 194.6,
+      "max_slew_violations": 0,
+      "max_cap_violations": 0,
+      "hold_all_ws_ns": 0.291,
+      "hold_all_violations": 0,
+      "setup_r2r_violations": 0,
+      "named_paths_slack_ns": {
+        "d_rsp_valid_to_d_req_valid": 3.496,
+        "d_rsp_error_to_d_req_valid": 3.748
+      }
+    },
+    "max_tt_025C_1v80": {
+      "setup_r2r_ws_ns": 4.747,
+      "hold_r2r_ws_ns": 0.2978,
+      "implied_period_ns": 5.253,
+      "implied_fmax_mhz": 190.4,
+      "max_slew_violations": 0,
+      "max_cap_violations": 0,
+      "hold_all_ws_ns": 0.2978,
+      "hold_all_violations": 0,
+      "setup_r2r_violations": 0,
+      "named_paths_slack_ns": {
+        "d_rsp_valid_to_d_req_valid": 3.384,
+        "d_rsp_error_to_d_req_valid": 3.654
+      }
+    },
+    "nom_ss_100C_1v60": {
+      "setup_r2r_ws_ns": 0.5803,
+      "hold_r2r_ws_ns": 0.8181,
+      "implied_period_ns": 9.42,
+      "implied_fmax_mhz": 106.2,
+      "max_slew_violations": 366,
+      "max_cap_violations": 0,
+      "hold_all_ws_ns": 0.592,
+      "hold_all_violations": 0,
+      "setup_r2r_violations": 0,
+      "named_paths_slack_ns": {
+        "d_rsp_valid_to_d_req_valid": 1.373,
+        "d_rsp_error_to_d_req_valid": 1.707
+      }
+    },
+    "min_ss_100C_1v60": {
+      "setup_r2r_ws_ns": 0.6565,
+      "hold_r2r_ws_ns": 0.811,
+      "implied_period_ns": 9.343,
+      "implied_fmax_mhz": 107.0,
+      "max_slew_violations": 137,
+      "max_cap_violations": 0,
+      "hold_all_ws_ns": 0.668,
+      "hold_all_violations": 0,
+      "setup_r2r_violations": 0,
+      "named_paths_slack_ns": {
+        "d_rsp_valid_to_d_req_valid": 1.482,
+        "d_rsp_error_to_d_req_valid": 1.796
+      }
+    },
+    "max_ss_100C_1v60": {
+      "setup_r2r_ws_ns": 0.4609,
+      "hold_r2r_ws_ns": 0.8233,
+      "implied_period_ns": 9.539,
+      "implied_fmax_mhz": 104.8,
+      "max_slew_violations": 538,
+      "max_cap_violations": 0,
+      "hold_all_ws_ns": 0.5018,
+      "hold_all_violations": 0,
+      "setup_r2r_violations": 0,
+      "named_paths_slack_ns": {
+        "d_rsp_valid_to_d_req_valid": 1.282,
+        "d_rsp_error_to_d_req_valid": 1.633
+      }
+    },
+    "nom_ff_n40C_1v95": {
+      "setup_r2r_ws_ns": 6.7681,
+      "hold_r2r_ws_ns": 0.1019,
+      "implied_period_ns": 3.232,
+      "implied_fmax_mhz": 309.4,
+      "max_slew_violations": 0,
+      "max_cap_violations": 0,
+      "hold_all_ws_ns": 0.1019,
+      "hold_all_violations": 0,
+      "setup_r2r_violations": 0,
+      "named_paths_slack_ns": {
+        "d_rsp_valid_to_d_req_valid": 4.243,
+        "d_rsp_error_to_d_req_valid": 4.446
+      }
+    },
+    "min_ff_n40C_1v95": {
+      "setup_r2r_ws_ns": 6.8366,
+      "hold_r2r_ws_ns": 0.1009,
+      "implied_period_ns": 3.163,
+      "implied_fmax_mhz": 316.1,
+      "max_slew_violations": 0,
+      "max_cap_violations": 0,
+      "hold_all_ws_ns": 0.1009,
+      "hold_all_violations": 0,
+      "setup_r2r_violations": 0,
+      "named_paths_slack_ns": {
+        "d_rsp_valid_to_d_req_valid": 4.284,
+        "d_rsp_error_to_d_req_valid": 4.478
+      }
+    },
+    "max_ff_n40C_1v95": {
+      "setup_r2r_ws_ns": 6.6883,
+      "hold_r2r_ws_ns": 0.103,
+      "implied_period_ns": 3.312,
+      "implied_fmax_mhz": 302.0,
+      "max_slew_violations": 0,
+      "max_cap_violations": 0,
+      "hold_all_ws_ns": 0.103,
+      "hold_all_violations": 0,
+      "setup_r2r_violations": 0,
+      "named_paths_slack_ns": {
+        "d_rsp_valid_to_d_req_valid": 4.207,
+        "d_rsp_error_to_d_req_valid": 4.415
+      }
+    }
+  },
+  "stdcell_area_um2": 158392.0,
+  "stdcell_count": 18951,
+  "sequential_cells": 1774,
+  "utilization": 0.524,
+  "route_drc_errors": 0
+}

@@ -24,7 +24,10 @@ BASELINES = [
      for run in ("grt_repair", "wt", "wt_rc", "pd", "ex", "wr", "wr_nobuf1", "wr_chosen", "wr_chosen_u38",
                  "final_chosen", "picorv32_nobuf1", "picorv32_chosen",
                  "onehot", "onehot_u38", "jt", "jt_u38", "jt_u36", "jt_u34",
-                 "rr", "rr_u38", "rr_u36", "rr_u34", "keepcopy_u38")]
+                 "rr", "rr_u38", "rr_u36", "rr_u34", "keepcopy_u38")
+] + [("aster-18.1-delay-cells", f"asic/{run}", f"asic/{run}/summary.json", [])
+     for run in ("nodly", "nodly_u38", "nodly_u36", "nodly_u34", "picorv32_nodly",
+                 "norebuf_u38", "norebuf_u36", "inv_u38")]
 
 
 def retained_part(recomputed, retained):
@@ -84,6 +87,25 @@ class Phase18TimingBaselines(unittest.TestCase):
                 self.assertIn(f"label={label}", named)
         # In the §5 form the request is sampled by the block RAMs' write enables.
         self.assertIn("ram_reg", (RESULTS / "aster-18.1/fpga/aster_bram/named_paths.rpt").read_text())
+
+    def test_both_cores_use_one_chosen_flow_without_delay_buffers(self):
+        # The 18.7 comparison needs PicoRV32 and the Aster core in the same flow;
+        # with buf_1 excluded, the resizer otherwise buffers with delay cells.
+        configs = [json.loads((ROOT / "asic/sky130" / name).read_text())
+                   for name in ("config.core_aster.json", "config.core_picorv32_rc.json")]
+        # Everything but the design, its sources, its utilization and the Aster
+        # core's named-path report is shared.
+        own = {"DESIGN_NAME", "VERILOG_FILES", "STA_EXTRA_CORNER_TCL_FILE"}
+        shared = [{key: value for key, value in config.items() if key not in own} for config in configs]
+        for config in shared:
+            config["pdk::sky130*"] = {k: v for k, v in config["pdk::sky130*"].items() if k != "FP_CORE_UTIL"}
+        self.assertEqual(shared[0], shared[1])
+        excluded = [set(config["EXTRA_EXCLUDED_CELLS"]) for config in configs]
+        for cell in ("sky130_fd_sc_hd__buf_1", "sky130_fd_sc_hd__dlygate4sd*", "sky130_fd_sc_hd__dlymetal6s*"):
+            self.assertIn(cell, excluded[0])
+        for name in ("nodly", "picorv32_nodly"):
+            resolved = json.loads((RESULTS / "aster-18.1-delay-cells/asic" / name / "resolved.json").read_text())
+            self.assertEqual(set(resolved["EXTRA_EXCLUDED_CELLS"]), excluded[0], name)
 
     def test_fpga_summaries_agree_with_their_reports(self):
         for name, _, _, fpga_dirs in BASELINES:

@@ -1,0 +1,102 @@
+diff --git a/rtl/aster_core/aster_core.sv b/rtl/aster_core/aster_core.sv
+index 29aed86..6e52dcc 100644
+--- a/rtl/aster_core/aster_core.sv
++++ b/rtl/aster_core/aster_core.sv
+@@ -194,19 +194,29 @@ module aster_core
+     // Forwarding from the newest older instruction that writes the register, by
+     // the registered one-hot selects (computed below, a cycle ahead).
+     logic [3:0]  fsel1, fsel2;      // one-hot {M1, M2, W, none}
++    // Inverted copies of the selects for Execute's stall logic alone: rs1's
++    // drives the operand's two low bits (alignment and byte enables) and both
++    // drive readiness, so whether Execute advances does not wait behind the
++    // 32-bit operand mux's fanout. They hold the complement so that synthesis
++    // cannot merge them into the selects (a `keep`-marked copy was merged).
++    logic [3:0]  fsel1_n;
++    logic [3:2]  fsel2_n;
+     logic [31:0] rs1f, rs2f;
++    logic [1:0]  rs1f_lo;
+     logic        rs1_ready, rs2_ready;
+-    // {ready, value}. The select is one-hot (none included), so the operand is
+-    // an AND-OR of the four sources with no decode in front of the fanout; a
+-    // load's value is not ready before W.
+-    function automatic logic [32:0] forward(input logic [3:0] sel, input logic [31:0] held);
+-        logic [31:0] value;
+-        value = ({32{sel[3]}} & m1.result) | ({32{sel[2]}} & m2.result) |
+-                ({32{sel[1]}} & w_value)   | ({32{sel[0]}} & held);
+-        return {!(sel[3] && m1.load) && !(sel[2] && m2.load), value};
++    // The select is one-hot (none included), so the operand is an AND-OR of
++    // the four sources with no decode in front of the fanout.
++    function automatic logic [31:0] forward(input logic [3:0] sel, input logic [31:0] held);
++        return ({32{sel[3]}} & m1.result) | ({32{sel[2]}} & m2.result) |
++               ({32{sel[1]}} & w_value)   | ({32{sel[0]}} & held);
+     endfunction
+-    assign {rs1_ready, rs1f} = forward(fsel1, e_rs1v);
+-    assign {rs2_ready, rs2f} = forward(fsel2, e_rs2v);
++    assign rs1f    = forward(fsel1, e_rs1v);
++    assign rs2f    = forward(fsel2, e_rs2v);
++    assign rs1f_lo = ({2{!fsel1_n[3]}} & m1.result[1:0]) | ({2{!fsel1_n[2]}} & m2.result[1:0]) |
++                     ({2{!fsel1_n[1]}} & w_value[1:0])   | ({2{!fsel1_n[0]}} & e_rs1v[1:0]);
++    // A load's value is not ready before W.
++    assign rs1_ready = (fsel1_n[3] || !m1.load) && (fsel1_n[2] || !m2.load);
++    assign rs2_ready = (fsel2_n[3] || !m1.load) && (fsel2_n[2] || !m2.load);
+ 
+     logic        e_ready, e_taken, e_misaligned, e_target_misaligned, e_trap, e_access, e_mispredict;
+     logic [31:0] e_alu, e_addr, e_link, e_result, e_btarget, e_jtarget, e_wdata;
+@@ -230,7 +240,7 @@ module aster_core
+     // not wait for a 32-bit sum. (A fetch fault or an illegal encoding decodes
+     // as no access.)
+     assign e_addr    = rs1f + e_dec.imm;
+-    assign e_offset  = rs1f[1:0] + e_dec.imm[1:0];
++    assign e_offset  = rs1f_lo + e_dec.imm[1:0];
+     assign e_misaligned = (e_dec.load || e_dec.store) &&
+                           ((e_dec.funct3[1:0] == 2'd1 && e_offset[0]) || (e_dec.funct3[1:0] == 2'd2 && e_offset != 2'd0));
+     assign e_trap    = e_err || e_dec.illegal || e_misaligned || e_target_misaligned;
+@@ -335,6 +345,7 @@ module aster_core
+     logic [4:0] dn_rs1, dn_rs2;
+     assign dn_rs1 = d_free ? f_insn[19:15] : d_insn[19:15];
+     assign dn_rs2 = d_free ? f_insn[24:20] : d_insn[24:20];
++    logic [3:0] sel1_next, sel2_next;
+     function automatic logic [3:0] select(input logic [4:0] r);
+         if (r == 5'd0) return 4'b0001;
+         if (m1n_writes && m1n_rd == r) return 4'b1000;
+@@ -342,6 +353,8 @@ module aster_core
+         if (wn_writes && wn_rd == r) return 4'b0010;
+         return 4'b0001;
+     endfunction
++    assign sel1_next = select(en_rs1);
++    assign sel2_next = select(en_rs2);
+ 
+     // ----------------------------------------------------------- sequential
+     slot_t e_slot;
+@@ -374,6 +387,8 @@ module aster_core
+             squash       <= 1'b0;
+             fsel1        <= 4'b0001;
+             fsel2        <= 4'b0001;
++            fsel1_n      <= 4'b1110;
++            fsel2_n      <= 2'b11;
+             wt1          <= 1'b0;
+             wt2          <= 1'b0;
+             d_valid      <= 1'b0;
+@@ -389,8 +404,10 @@ module aster_core
+             halted     <= halted || kill;
+             squash     <= e_flush;
+             d_acc_last <= d_req_valid && d_req_ready;
+-            fsel1      <= select(en_rs1);
+-            fsel2      <= select(en_rs2);
++            fsel1      <= sel1_next;
++            fsel2      <= sel2_next;
++            fsel1_n    <= ~sel1_next;
++            fsel2_n    <= ~sel2_next[3:2];
+             wt1        <= wn_writes && wn_rd == dn_rs1;
+             wt2        <= wn_writes && wn_rd == dn_rs2;
+ 
+@@ -502,6 +519,9 @@ module aster_core
+     always_ff @(posedge clk) begin
+         // The AND-OR operand mux needs exactly one forwarding select.
+         if (rst_n) assert ($onehot(fsel1) && $onehot(fsel2)) else $error("forwarding select not one-hot");
++        // The stall logic's inverted copies agree with the selects.
++        if (rst_n) assert (fsel1_n == ~fsel1 && fsel2_n == ~fsel2[3:2] && rs1f_lo == rs1f[1:0])
++            else $error("inverted select copy differs");
+         if (rst_n && d_rsp_valid) assert (rsp_for_m2 || rsp_for_m1) else $error("data answer with no access in flight");
+         // A squashed (wrong-path) instruction issues nothing.
+         if (rst_n && squash) assert (!d_req_valid && !e_flush && !d_redirect) else $error("a squashed instruction acted");

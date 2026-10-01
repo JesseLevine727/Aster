@@ -33,7 +33,8 @@ Vivado 2025.1, `xc7z020clg400-1`, out of context, 10 ns.
 are the SKY130 table LibreLane's `config/pdk_compat.py` carries commented out.
 Runs `p18-aster-wr-nobuf1*` and the PicoRV32 runs set `buf_1`'s exclusion by
 override; the chosen flow is now `asic/sky130/config.core_aster.json` and
-`config.core_picorv32_rc.json`. `scripts/run_asic.py` converts the RTL into
+`config.core_picorv32_rc.json`, which since 1 October 2026 also exclude the
+delay cells (see [`../aster-18.1-delay-cells`](../aster-18.1-delay-cells/README.md)). `scripts/run_asic.py` converts the RTL into
 one shared file when it is invoked, and a queued run reads that file when it
 starts; each run's revision above was checked against its own lint and
 synthesis logs (the source locations match sv2v output of that revision), and

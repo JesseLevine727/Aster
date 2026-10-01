@@ -8,12 +8,15 @@ riscv-tests, arch-test I and random programs in lockstep, cycle for cycle with
 the CPI model on a memory that answers on time. Timing after the 18.1 timing
 work: the core meets 10 ns out of context on the FPGA (111.4 MHz; with a
 block RAM behind its ports, 101.6 and 114.8 MHz); on SKY130, in the flow
-chosen in 18.1, register to register at the slow corner `233aa60` meets 10 ns
-in one of four floorplans (+0.168 ns at 38%, a single placement with less
-margin than the ~0.5 ns run-to-run spread) and misses by 0.19, 0.55 and 1.57
-ns at 36, 34 and 40% (183–190 MHz typical at 34–38%; PicoRV32 104.6 MHz in
-the same flow at 40%); port paths to memory still miss at the slow corner,
-the request address by about 2.1 ns (see "Milestone 18.1").** The CPU specification this
+chosen in 18.1 as corrected on 1 October (delay cells excluded: the resizer
+had been using them as buffers), register to register at the slow corner
+`233aa60`'s logic meets 10 ns in two of four floorplans (+0.461 ns at 38%, the
+configured utilization, and +0.363 ns at 40% — margins within the ~0.5 ns
+placement spread) and misses by 0.47 and 1.94 ns at 34 and 36% (36%'s failing
+paths all pass through one serial chain of 24 buffers built by setup repair;
+158–200 MHz typical); PicoRV32 104.5 MHz in the same flow, one placement at
+40%; the request address still misses its 2 ns output budget at the slow
+corner, by 1.5–1.7 ns (see "Milestone 18.1").** The CPU specification this
 phase implements is [`cpu.md`](cpu.md) (approved 29 September 2026); the phase
 sits in the [v2 plan](phase17-plus.md#6-phase-17-sequence). Every milestone
 passes its verification layer and records its timing before the next starts.
@@ -522,6 +525,14 @@ the baseline flow unless noted; the slow corner is `max_ss_100C_1v60`:
 | `p18-aster-rr-u36` | `85a2607` | chosen, 36% | 175.2 MHz | −1.178 ns | 89.5 MHz | 179,025 |
 | `p18-aster-rr-u38` | `85a2607` | chosen, 38% | 178.7 MHz | −0.305 ns | 97.0 MHz | 178,145 |
 | `p18-aster-rr-u40` | `85a2607` | chosen, 40% | 181.8 MHz | −0.422 ns | 96.0 MHz | 174,621 |
+| `p18-aster-inv-u38` | `7dbcb50` + inverted copies of the selects for the stall logic (not in the history) | chosen, 38% | 173.5 MHz | −1.551 ns | 86.6 MHz | 175,605 |
+| `p18-aster-nodly-u34` | `7dbcb50` (`233aa60`'s synthesized RTL) | **corrected:** chosen with delay cells excluded, 34% | 185.6 MHz | −0.465 ns | 95.6 MHz | 160,710 |
+| `p18-aster-nodly-u36` | `7dbcb50` | corrected, 36% | 158.0 MHz | −1.939 ns | 83.8 MHz | 160,884 |
+| `p18-aster-nodly-u38` | `7dbcb50` | corrected, 38% | 192.8 MHz | **+0.461 ns** | **104.8 MHz** | 158,392 |
+| `p18-aster-nodly-u40` | `7dbcb50` | corrected, 40% | 200.1 MHz | **+0.363 ns** | **103.8 MHz** | 158,013 |
+| `p18-picorv32-nodly` | PicoRV32 | corrected (40%) | 200.2 MHz | **+0.427 ns** | **104.5 MHz** | 155,821 |
+| `p18-aster-norebuf-u36` | `7dbcb50` | corrected, setup repair without rebuffering, 36% | 188.4 MHz | −1.072 ns | 90.3 MHz | 157,500 |
+| `p18-aster-norebuf-u38` | `7dbcb50` | the same, 38% | 198.7 MHz | −0.344 ns | 96.7 MHz | 156,210 |
 
 What the runs show. In the baseline flow the typical corner tracks the RTL
 changes (134 → 140–155 MHz), but the slow corner moves by up to 0.88 ns
@@ -537,7 +548,11 @@ PicoRV32; alone, dropping `buf_1` helps the Aster core and hurts PicoRV32).
 It costs area — +13% on the Aster core at the same RTL (156,325 → 176,856
 µm²), +10% on PicoRV32 (159,211 → 175,177 µm²) — and leaves maximum-transition
 violations at the slow corner (837 and 1,199); signoff still uses the
-extracted parasitics, so its numbers are not made optimistic by the change. **This is the flow the core is reported with from 18.1 on**
+extracted parasitics, so its numbers are not made optimistic by the change.
+(Corrected on 1 October, below: without `buf_1` the resizer had buffered with
+delay cells, which caused most of that area cost — PicoRV32 is 155,821 µm² in
+the corrected flow — and, on PicoRV32, more than half of the violations (1,199
+to 539 at `max_ss`; on the Aster core 5–18% of them).) **This is the flow the core is reported with from 18.1 on**
 (`asic/sky130/config.core_aster.json`; PicoRV32 in the same flow, at 40%
 utilization and not swept:
 `make timing-asic-picorv32-chosen`). In it PicoRV32 closes 10 ns at the slow
@@ -617,6 +632,49 @@ one option found so far that leaves §4 unchanged. The others change §4: the
 rejected ready/valid rule, or a pipeline change such as a skid register ahead
 of Execute.
 
+**The chosen flow's delay cells (1 October 2026).** Part of the
+floorplan-to-floorplan spread had a cause in the flow itself. With `buf_1`
+excluded, the resizer's weakest remaining buffers are the delay cells
+(`dlygate4sd*`, `dlymetal6s*`; a `dlygate4sd3_1` takes 1.1 ns or more at
+`max_ss`, median about 1.45 ns), and design repair used them as fanout
+buffers: 850 to 1,011 in each chosen-flow run counted, of either core (2,400 to 2,800 delay cells counting
+hold repair's, which the baseline flow also uses; there design repair uses
+`buf_1` and no delay cells), on 187 of the 232 failing paths of `233aa60`'s
+40% run (up to 6.4 ns of them on one path) and 485 of 547 in the first run
+without `buf_1` (`scripts/timing/buffer_census.py`; a report lists one path
+per failing endpoint). The Aster runs that passed or nearly did were
+placements where they missed the worst paths (PicoRV32 passed with two on its
+worst path). The inverted select copies — a copy
+synthesis cannot merge, run on `7dbcb50` after passing `make check` (not
+retained) — were caught by it: −1.551 ns at 38%, 241 of the 247 failing paths
+through delay cells; that run says nothing about the copies, which are set
+aside (their diff is retained). Excluding the delay cells as well (both
+configurations; hold repair then uses `clkbuf_1`, and hold is met on every
+path at every corner, worst +0.097 ns) leaves synthesis unchanged — the
+netlist is identical to the `233aa60` runs' — and moves `233aa60`'s logic to
++0.461, +0.363 and −0.465 ns at 38, 40 and 34% (from +0.168, −1.571 and
+−0.546), with 0, 0 and 3 failing register-to-register paths, 158–161 thousand
+µm² (about −10%), and 186–200 MHz typical. At 36% it is worse, −1.939 ns
+(from −0.190): all five failing paths pass through one serial chain of 24
+`buf_6` rebuffer cells that post-CTS setup repair built on the forwarding-select
+path. Such chains predate the correction — up to 21 cells in baseline-flow
+runs and 36 in the keep-copy run — and the other corrected runs' longest is 3
+to 5; so the spread remains (−1.939 to +0.461 ns across the four floorplans),
+its extreme at 36% now from a chain, while 34%'s three failing paths start
+at rs2's forwarding select and pass through no chain. Turning rebuffering off in setup repair is no remedy
+(−1.072 ns at 36%, −0.344 at 38%). PicoRV32 in the corrected flow is
+unchanged, +0.427 ns (104.5 MHz, from 104.6), in one placement (40%) against
+the Aster core's four. In the four corrected (`nodly`) runs, §4's named port
+paths pass (`d_rsp_valid` +0.50 to +1.28 ns, `d_rsp_error` +1.46 to +1.69 ns at
+`max_ss`), and of the other port paths only the request address still misses
+its 2 ns output budget, by 1.55–1.72 ns (from about 2.1); the 38% run has one
+antenna-ratio violation (1.24 on a `met1` net, in the antenna check this
+timing flow runs), the only one in these runs. The corrected flow is the
+configured one for both cores from now on; the readiness and select-copy
+results above were measured in the old flow and are open to re-measurement in
+it. Evidence:
+[`results/phase18/aster-18.1-delay-cells`](results/phase18/aster-18.1-delay-cells/README.md).
+
 ## Milestones and gates
 
 | Milestone | Content | Exit gate |
@@ -685,6 +743,18 @@ of Execute.
   cells — closes PicoRV32 at the slow corner (104.6 MHz) and gives the Aster
   core 84–88 MHz there register to register; the setup margin and design
   repair after global routing were measured and rejected
+- [x] **Flow corrected (18.1, 1 October 2026):** without `buf_1` the resizer
+  had buffered with delay cells; both cores' chosen configurations now
+  exclude `dlygate4sd*` and `dlymetal6s*` as well (a test keeps the two
+  configurations' exclusions equal). PicoRV32 104.5 MHz at `max_ss`; the Aster
+  core meets 10 ns register to register in two of four floorplans (38%, 40%)
+- [ ] **Serial rebuffer chains, open:** setup repair occasionally builds a
+  long serial chain of buffers on one net (24 cells in the 36% run of the
+  corrected flow; up to 21 in baseline-flow runs and 36 in the old chosen
+  flow); turning rebuffering off costs more elsewhere; find a setting, or a
+  structure in the RTL, that avoids it before the 18.7 report
+- [ ] **PicoRV32 swept in the corrected flow, open:** it has one placement
+  (40%) against the Aster core's four; sweep it before the 18.7 comparison
 - [ ] **Flow correlation, deferred:** calibrating the resizer's wire RC per
   layer against the signoff extraction (the stock table was used instead);
   needed if 18.7's feasibility report requires a tighter correlation

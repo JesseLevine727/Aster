@@ -137,7 +137,8 @@ DESIGNS = {
     # `make timing-asic-aster`. The flow chosen in 18.1 (docs/phase18.md): the
     # core_picorv32 constraints and strategy, plus per-corner wire and via RC for
     # the resizer (LAYERS_RC, VIAS_R: the SKY130 table LibreLane's pdk_compat.py
-    # carries commented out) and no buf_1 cells.
+    # carries commented out), no buf_1 cells, and no delay cells (without buf_1
+    # the resizer had buffered with them; corrected on 1 October 2026).
     "core_aster": {
         "rtl": ["rtl/aster_core/aster_core_pkg.sv", "rtl/aster_core/aster_core_fetch.sv",
                 "rtl/aster_core/aster_core.sv", "verification/core/timing_aster.sv"],
