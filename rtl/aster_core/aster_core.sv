@@ -195,18 +195,20 @@ module aster_core
     // the registered one-hot selects (computed below, a cycle ahead).
     logic [3:0]  fsel1, fsel2;      // one-hot {M1, M2, W, none}
     logic [31:0] rs1f, rs2f;
+    logic        rs1_wait, rs2_wait;  // the operand waits for a load in M1 or M2 (registered)
     logic        rs1_ready, rs2_ready;
-    // {ready, value}. The select is one-hot (none included), so the operand is
-    // an AND-OR of the four sources with no decode in front of the fanout; a
-    // load's value is not ready before W.
-    function automatic logic [32:0] forward(input logic [3:0] sel, input logic [31:0] held);
-        logic [31:0] value;
-        value = ({32{sel[3]}} & m1.result) | ({32{sel[2]}} & m2.result) |
-                ({32{sel[1]}} & w_value)   | ({32{sel[0]}} & held);
-        return {!(sel[3] && m1.load) && !(sel[2] && m2.load), value};
+    // The select is one-hot (none included), so the operand is an AND-OR of the
+    // four sources with no decode in front of the fanout.
+    function automatic logic [31:0] forward(input logic [3:0] sel, input logic [31:0] held);
+        return ({32{sel[3]}} & m1.result) | ({32{sel[2]}} & m2.result) |
+               ({32{sel[1]}} & w_value)   | ({32{sel[0]}} & held);
     endfunction
-    assign {rs1_ready, rs1f} = forward(fsel1, e_rs1v);
-    assign {rs2_ready, rs2f} = forward(fsel2, e_rs2v);
+    assign rs1f      = forward(fsel1, e_rs1v);
+    assign rs2f      = forward(fsel2, e_rs2v);
+    // A load's value is not ready before W; whether an operand waits is
+    // computed a cycle ahead with the selects, so readiness is a register.
+    assign rs1_ready = !rs1_wait;
+    assign rs2_ready = !rs2_wait;
 
     logic        e_ready, e_taken, e_misaligned, e_target_misaligned, e_trap, e_access, e_mispredict;
     logic [31:0] e_alu, e_addr, e_link, e_result, e_btarget, e_jtarget, e_wdata;
@@ -309,23 +311,31 @@ module aster_core
     // The next contents of Execute, M1, M2 and W, as the sequential block below
     // loads them (a trapping producer is not excluded: whatever reads it is
     // younger and never commits).
+    // (A load that will trap is counted as a load here: whatever waits on it is
+    // younger and never commits.)
     logic [4:0] en_rs1, en_rs2, m1n_rd, m2n_rd, wn_rd;
-    logic       m1n_writes, m2n_writes, wn_writes;
+    logic       m1n_writes, m2n_writes, wn_writes, m1n_load, m2n_load;
     always_comb begin
         en_rs1 = e_free ? d_dec.rs1 : e_dec.rs1;
         en_rs2 = e_free ? d_dec.rs2 : e_dec.rs2;
         m1n_rd = m1.rd;
         m1n_writes = m1.valid && m1.writes_rd;
-        if (kill) m1n_writes = 1'b0;
-        else if (m1_free) begin
+        m1n_load = m1.valid && m1.load;
+        if (kill) begin
+            m1n_writes = 1'b0;
+            m1n_load   = 1'b0;
+        end else if (m1_free) begin
             m1n_rd     = e_dec.rd;
             m1n_writes = e_advance && e_dec.writes_rd;
+            m1n_load   = e_advance && e_dec.load;
         end
         m2n_rd = m2.rd;
         m2n_writes = m2.valid && m2.writes_rd;
+        m2n_load = m2.valid && m2.load;
         if (m2_free) begin
             m2n_rd     = m1.rd;
             m2n_writes = m1_advance && m1.writes_rd;
+            m2n_load   = m1_advance && m1.load;
         end
         wn_rd     = m2.rd;
         wn_writes = m2_advance && m2.writes_rd;
@@ -335,6 +345,7 @@ module aster_core
     logic [4:0] dn_rs1, dn_rs2;
     assign dn_rs1 = d_free ? f_insn[19:15] : d_insn[19:15];
     assign dn_rs2 = d_free ? f_insn[24:20] : d_insn[24:20];
+    logic [3:0] sel1_next, sel2_next;
     function automatic logic [3:0] select(input logic [4:0] r);
         if (r == 5'd0) return 4'b0001;
         if (m1n_writes && m1n_rd == r) return 4'b1000;
@@ -342,6 +353,8 @@ module aster_core
         if (wn_writes && wn_rd == r) return 4'b0010;
         return 4'b0001;
     endfunction
+    assign sel1_next = select(en_rs1);
+    assign sel2_next = select(en_rs2);
 
     // ----------------------------------------------------------- sequential
     slot_t e_slot;
@@ -374,6 +387,8 @@ module aster_core
             squash       <= 1'b0;
             fsel1        <= 4'b0001;
             fsel2        <= 4'b0001;
+            rs1_wait     <= 1'b0;
+            rs2_wait     <= 1'b0;
             wt1          <= 1'b0;
             wt2          <= 1'b0;
             d_valid      <= 1'b0;
@@ -389,8 +404,10 @@ module aster_core
             halted     <= halted || kill;
             squash     <= e_flush;
             d_acc_last <= d_req_valid && d_req_ready;
-            fsel1      <= select(en_rs1);
-            fsel2      <= select(en_rs2);
+            fsel1      <= sel1_next;
+            fsel2      <= sel2_next;
+            rs1_wait   <= (sel1_next[3] && m1n_load) || (sel1_next[2] && m2n_load);
+            rs2_wait   <= (sel2_next[3] && m1n_load) || (sel2_next[2] && m2n_load);
             wt1        <= wn_writes && wn_rd == dn_rs1;
             wt2        <= wn_writes && wn_rd == dn_rs2;
 
@@ -500,8 +517,13 @@ module aster_core
 
 `ifndef SYNTHESIS
     always_ff @(posedge clk) begin
-        // The AND-OR operand mux needs exactly one forwarding select.
+        // The AND-OR operand mux needs exactly one forwarding select, and the
+        // registered readiness agrees with the select.
         if (rst_n) assert ($onehot(fsel1) && $onehot(fsel2)) else $error("forwarding select not one-hot");
+        if (rst_n && e_live && !m1_trap)
+            assert (rs1_ready == (!(fsel1[3] && m1.load) && !(fsel1[2] && m2.load)) &&
+                    rs2_ready == (!(fsel2[3] && m1.load) && !(fsel2[2] && m2.load)))
+            else $error("registered readiness differs from the select's");
         if (rst_n && d_rsp_valid) assert (rsp_for_m2 || rsp_for_m1) else $error("data answer with no access in flight");
         // A squashed (wrong-path) instruction issues nothing.
         if (rst_n && squash) assert (!d_req_valid && !e_flush && !d_redirect) else $error("a squashed instruction acted");
