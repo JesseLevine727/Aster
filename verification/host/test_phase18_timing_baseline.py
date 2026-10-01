@@ -19,10 +19,12 @@ BASELINES = [
     ("aster-18.1", "asic/aster", "asic/aster/summary.json", ["fpga/aster", "fpga/aster_bram", "fpga/aster_bram_reqreg"]),
     ("aster-18.1", "asic/aster_pnr_margin", "asic/aster_pnr_margin/summary.json", []),
 ] + [("aster-18.1-timing-work", f"asic/{run}", f"asic/{run}/summary.json",
-      ["fpga/aster", "fpga/aster_bram", "fpga/aster_bram_reqreg"] if run == "final_chosen" else [])
+      {"final_chosen": ["fpga/aster", "fpga/aster_bram", "fpga/aster_bram_reqreg"],
+       "rr": ["fpga/rr_aster", "fpga/rr_aster_bram", "fpga/rr_aster_bram_reqreg"]}.get(run, []))
      for run in ("grt_repair", "wt", "wt_rc", "pd", "ex", "wr", "wr_nobuf1", "wr_chosen", "wr_chosen_u38",
                  "final_chosen", "picorv32_nobuf1", "picorv32_chosen",
-                 "onehot", "onehot_u38", "jt", "jt_u38", "jt_u36", "jt_u34")]
+                 "onehot", "onehot_u38", "jt", "jt_u38", "jt_u36", "jt_u34",
+                 "rr", "rr_u38", "rr_u36", "rr_u34", "keepcopy_u38")]
 
 
 def retained_part(recomputed, retained):

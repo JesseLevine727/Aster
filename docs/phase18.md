@@ -490,7 +490,8 @@ ready even when misaligned) showed no measurable gain, and the owner rejected
 the port rule it needed, so it was reverted; the load alignment leaving M2
 (`3cf31ce`) changed approved §4 text and was confirmed by the owner (cpu.md
 §9) — four flow experiments, and (below the first conclusions) two more RTL
-changes and a utilization sweep; "chosen" rows without a utilization ran at
+changes and a utilization sweep, then one reverted experiment with a sweep of
+its own; "chosen" rows without a utilization ran at
 40%, the configured value until the sweep. SKY130 runs are post-route at 10 ns in
 the baseline flow unless noted; the slow corner is `max_ss_100C_1v60`:
 
@@ -516,6 +517,11 @@ the baseline flow unless noted; the slow corner is `max_ss_100C_1v60`:
 | `p18-aster-jt-u36` | `233aa60` | chosen, 36% | 189.9 MHz | −0.190 ns | 98.1 MHz | 179,217 |
 | `p18-aster-jt-u38` | `233aa60` | chosen, 38% | 187.4 MHz | **+0.168 ns** | **101.7 MHz** | 177,562 |
 | `p18-aster-jt` | `233aa60` | chosen, 40% | 165.8 MHz | −1.571 ns | 86.4 MHz | 174,014 |
+| `p18-aster-rw-u38` | `85a2607` + a `keep`-marked low-bit copy of rs1's select (not in the history; merged in synthesis) | chosen, 38% | 156.6 MHz | −2.683 ns | 78.8 MHz | 175,511 |
+| `p18-aster-rr-u34` | `85a2607` registered operand readiness (reverted) | chosen, 34% | 172.2 MHz | −1.110 ns | 90.0 MHz | 181,445 |
+| `p18-aster-rr-u36` | `85a2607` | chosen, 36% | 175.2 MHz | −1.178 ns | 89.5 MHz | 179,025 |
+| `p18-aster-rr-u38` | `85a2607` | chosen, 38% | 178.7 MHz | −0.305 ns | 97.0 MHz | 178,145 |
+| `p18-aster-rr-u40` | `85a2607` | chosen, 40% | 181.8 MHz | −0.422 ns | 96.0 MHz | 174,621 |
 
 What the runs show. In the baseline flow the typical corner tracks the RTL
 changes (134 → 140–155 MHz), but the slow corner moves by up to 0.88 ns
@@ -580,6 +586,36 @@ the request address by about 2.0–2.2 ns (all-path −1.98 to −2.17 ns),
 for 18.6. Hold is met on every path. On the FPGA `233aa60` runs at 111.4 MHz out of context,
 101.6 MHz with the block RAM in the §5 form and 114.8 MHz with the request
 registered. Evidence: [`results/phase18/aster-18.1-timing-work`](results/phase18/aster-18.1-timing-work/README.md).
+
+**Tried and reverted: registered operand readiness.** At the slow corner,
+`233aa60`'s failing paths include, in every failing floorplan, paths from a
+forwarding select through Execute's stall logic (into Decode's hold, the
+selects themselves, the fetch buffer's count and the operand registers) and
+Execute's datapath into M1; at 34% and 40% also the register-file read into
+the operand registers (40%'s worst, −1.571 ns) and the register-file write,
+and at 40% paths inside fetch. `85a2607` computed whether an operand waits for a load
+in M1 or M2 a cycle ahead and registered it, so readiness no longer passes
+through the select's fanout; it was behavior-neutral (`make check`, cycle
+counts, planted bugs). Its sweep is no better: −1.110, −1.178, −0.305 and
+−0.422 ns at 34/36/38/40% (mean −0.754 ns against `233aa60`'s −0.535; no
+floorplan passes), and the FPGA is slower (108.8, 101.4 and 106.9 MHz against
+111.4, 101.6 and 114.8). At 40% and 36% its worst paths still run from a
+select through the misalignment check — which reads the forwarded operand's
+two low bits — into Decode's hold; at 38% the same route ends in the selects
+and in the new readiness registers, which themselves fail at 34–38% (worst
+−0.741 ns at 36%) because computing them put logic on the next-select cone;
+at 34% the worst is Execute's datapath (rs2's select through the ALU into
+M1). §4's `d_rsp_valid` path misses by 0.013 ns at 36%. Reverted in
+`b31761b`; the synthesized RTL is again `233aa60`'s. A `keep`-marked copy of
+rs1's select driving only those low bits was also run (not in the history;
+its diff is retained) but did not test the idea: synthesis merged the two
+registers, keeping only the copy's name (1,776 flops, as without it), and that
+run's worst path (−2.683 ns at 38%, both §4 named paths failing) has a chain
+of 36 rebuffer cells on the low-bit output. A copy synthesis cannot merge
+(for example, one holding the inverted select) has not been tried; it is the
+one option found so far that leaves §4 unchanged. The others change §4: the
+rejected ready/valid rule, or a pipeline change such as a skid register ahead
+of Execute.
 
 ## Milestones and gates
 
