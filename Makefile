@@ -2084,7 +2084,7 @@ parallel-workloads:
 
 test: smoke phase1 hello bench cache uart fpga-sim linux-sim counters retirement npu-pe npu-array npu-engine npu-regs npu-driver npu-runtime npu-stop npu-bench-validate arbiter shared-fabric multicore-runtime parallel
 
-check: tools smoke phase1 hello bench cache uart fpga-sim linux-sim linux-dual-sim linux-coherent-sim counters retirement pcpi-probe dot8-unit npu-pe npu-array npu-engine npu-regs device-arbiter dma-counters l2-unit npu-driver npu-runtime npu-stop npu-bench-validate xe-bench-validate phase11-infer-validate workloads atomic-fabric atomic-runtime atomic-faults coherent-cache warm-stop coherent-counters coherent-soc timer-unit timer-firmware irq-unit timer-interrupt sram-unit sram-lint freeze-interfaces coherent-bench riscv-reference riscv-reference-negative coherent-litmus arbiter shared-fabric multicore-runtime multicore-adversarial parallel phase17-baseline-audit core-riscv-tests core-riscv-tests-stall core-arch-tests core-random-lockstep core-lockstep-selftest core-ports-tests core-kernels core-aster-fetch core-aster-tests
+check: tools smoke phase1 hello bench cache uart fpga-sim linux-sim linux-dual-sim linux-coherent-sim counters retirement pcpi-probe dot8-unit npu-pe npu-array npu-engine npu-regs device-arbiter dma-counters l2-unit npu-driver npu-runtime npu-stop npu-bench-validate xe-bench-validate phase11-infer-validate workloads atomic-fabric atomic-runtime atomic-faults coherent-cache warm-stop coherent-counters coherent-soc timer-unit timer-firmware irq-unit timer-interrupt sram-unit sram-lint freeze-interfaces coherent-bench riscv-reference riscv-reference-negative coherent-litmus arbiter shared-fabric multicore-runtime multicore-adversarial parallel phase17-baseline-audit core-riscv-tests core-riscv-tests-stall core-arch-tests core-random-lockstep core-lockstep-selftest core-ports-tests core-kernels core-aster-fetch core-aster-tests core-aster-kernels
 
 # Phase 18 CPU shell: one CPU with a synchronous SRAM at 0x8000_0000 and an
 # RVFI trace for lockstep against Spike (docs/phase18.md).
@@ -2178,16 +2178,18 @@ core-aster-fetch: $(ASTER_FETCH_TEST)
 	@$(ASTER_FETCH_TEST)
 
 # The Aster core in the two-port shell (verification/core/shell_aster_ports.sv),
-# milestone 18.1 (RV32I). In lockstep with Spike, with the shell's store and
-# protocol checks: riscv-tests rv32ui and the directed tests on the two-cycle
-# memory, the one-cycle memory, back-pressure (also mixed with the one-cycle
-# memory), and room for three and four requests in flight; arch-test I;
-# constrained-random programs with hazard coverage, on time and back-pressured.
-# On the memories that answer on time, every program's cycle count must equal
-# the seven-stage CPI model's (--cpi-check). The trap-halt programs must stop
-# at their trap_pc, match Spike before it, and let no younger store reach
-# memory — on the two-cycle memory, the one-cycle memory, and two back-pressure
-# seeds (seeds 2 and 5 make bus_error_behind_load's error wait in M1).
+# milestones 18.1 and 18.2 (RV32IM). In lockstep with Spike, with the shell's
+# store and protocol checks: riscv-tests rv32ui and rv32um and the directed
+# tests on the two-cycle memory, the one-cycle memory, back-pressure (also
+# mixed with the one-cycle memory), and room for three and four requests in
+# flight; arch-test I and M; constrained-random programs with hazard coverage,
+# on time and back-pressured. On the memories that answer on time, every
+# program's cycle count must equal the seven-stage CPI model's (--cpi-check).
+# The trap-halt programs must stop at their trap_pc, match Spike before it, and
+# let no younger store reach memory — on the two-cycle memory, the one-cycle
+# memory, and three back-pressure seeds (seeds 2 and 5 make
+# bus_error_behind_load's error wait in M1; seed 4 lets muldiv_killed's
+# division run before the kill).
 ASTER_CORE_RTL := rtl/aster_core/aster_core_pkg.sv rtl/aster_core/aster_core_fetch.sv rtl/aster_core/aster_core.sv
 ASTER_PORTS_SIM := $(ASTER_CORE_DIR)/core_ports_aster
 $(ASTER_PORTS_SIM): $(ASTER_CORE_RTL) verification/core/shell_aster_ports.sv verification/core/tb_core_ports.cpp verification/core/shell_common.h verification/core/shell_ports.h Makefile
@@ -2221,7 +2223,7 @@ core-aster-tests: $(ASTER_PORTS_SIM)
 			{ grep -v '^PASS' $(CORE_TESTS_DIR)/aster-$$mode.log; exit 1; }; \
 	done
 	@set -o pipefail; for test in $(ASTER_TRAP_HALT); do \
-		for memory in "" "--shell-arg +latency=1" "--stall-seed 2" "--stall-seed 5"; do \
+		for memory in "" "--shell-arg +latency=1" "--stall-seed 2" "--stall-seed 4" "--stall-seed 5"; do \
 		$(ASTER_TESTS) --build-dir $(CORE_TESTS_DIR)/aster-trap-halt --only trap_halt/$$test --expect-status TRAP \
 			--shell-arg +bus_error_traps $$memory | tail -1 | cut -c1-150 || exit 1; \
 	done; done
@@ -2293,6 +2295,17 @@ core-kernels: $(CORE_SHELL_SIM) $(CORE_PORTS_SIM) $(ASTER_CLOCK_PLUGIN)
 	@set -o pipefail; $(CORE_PORTS_TESTS) --kernels --aster-clock $(ASTER_CLOCK_PLUGIN) --shell-arg +latency=1 \
 		--build-dir $(CORE_TESTS_DIR)/ports-kernels | tee $(CORE_TESTS_DIR)/ports-kernels.log | tail -12 \
 		|| { grep -v '^PASS' $(CORE_TESTS_DIR)/ports-kernels.log; exit 1; }
+
+# The CPU kernels of docs/cpu.md §7 on the Aster core, on the one-cycle memory
+# of the §7 measurement: in lockstep with Spike, matching the Phase 17 baseline,
+# and each measurement window taking exactly the CPI model's cycles.
+.PHONY: core-aster-kernels
+core-aster-kernels: $(ASTER_PORTS_SIM) $(ASTER_CLOCK_PLUGIN)
+	@mkdir -p $(CORE_TESTS_DIR)
+	@set -o pipefail; $(ASTER_TESTS) --kernels --cpi-model --cpi-check --aster-clock $(ASTER_CLOCK_PLUGIN) \
+		--shell-arg +latency=1 --build-dir $(CORE_TESTS_DIR)/aster-kernels \
+		| tee $(CORE_TESTS_DIR)/aster-kernels.log | tail -12 \
+		|| { grep -v '^PASS' $(CORE_TESTS_DIR)/aster-kernels.log; exit 1; }
 
 # Timing and area of one core block at 10 ns (docs/phase18.md): Vivado out of
 # context on the PYNQ-Z1 part, and SKY130 through post-route STA (its period is

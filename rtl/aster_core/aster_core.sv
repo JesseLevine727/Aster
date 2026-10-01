@@ -1,7 +1,7 @@
 // Aster core: the seven-stage, single-issue, in-order core of docs/cpu.md —
 // F1 F2 (aster_core_fetch), Decode, Execute, M1, M2, Write-back.
 //
-// Milestone 18.1: RV32I (aster_core_pkg). Traps are not yet taken (18.3): an
+// Milestones 18.1 and 18.2: RV32IM (aster_core_pkg). Traps are not yet taken (18.3): an
 // instruction with a trap cause — a fetch fault it carries, an illegal
 // encoding, a misaligned access or jump target, or a data-port error — stops
 // the core at the commit point, the end of M1. It retires as a trap record
@@ -38,9 +38,23 @@
 //   cycle after W). A load's value is aligned and extended as it leaves M2, so
 //   W's forwarded value comes straight from a register.
 //
-// Load-use: a Decode instruction that reads the result of a load in Execute
-// or M1 waits in Decode (2 or 1 cycles); a load's result is forwarded from W.
-// A store's data is read like any operand, so it waits the same way.
+// Load-use: a Decode instruction that reads the result of a load or a multiply
+// in Execute or M1 waits in Decode (2 or 1 cycles); a load's or multiply's
+// result is forwarded from W. A store's data is read like any operand, so it
+// waits the same way.
+//
+// M extension (18.2):
+// - Multiply: pipelined over Execute, M1 and M2. Execute's operands travel
+//   with the instruction (rs1v, rs2v); M1 forms four 17x17 signed partial
+//   products of the 33-bit sign- or zero-extended operands, registered at its
+//   end; M2 adds them into the 64-bit product, whose low or high word is
+//   registered into W. Its result is ready from W, as a load's is.
+// - Divide and remainder: an iterative radix-2 restoring divider in Execute,
+//   which holds Execute for DIVIDE_CYCLES (34): the operands' magnitudes are
+//   latched in the first cycle their values are ready, 32 steps follow, and
+//   the last cycle negates the result as the signs require (a divisor of zero
+//   gives a quotient of all ones and the dividend as remainder, as RISC-V
+//   specifies). Its result leaves Execute like an ALU result.
 //
 // Data port: Execute presents a request only when M1 can take an instruction
 // (M1 is empty or moving on) and M1 holds no trapping instruction, so at most
@@ -112,6 +126,8 @@ module aster_core
         logic        writes_rd;
         logic        load;
         logic        store;
+        logic        mul;
+        logic        late;          // a load or a multiply: its value is ready only in W
         logic        acc;           // its data request was accepted
         logic        got;           // its answer has arrived
         logic [2:0]  funct3;
@@ -214,18 +230,35 @@ module aster_core
     assign rs2f    = forward(fsel2, e_rs2v);
     assign rs1f_lo = ({2{!fsel1_n[3]}} & m1.result[1:0]) | ({2{!fsel1_n[2]}} & m2.result[1:0]) |
                      ({2{!fsel1_n[1]}} & w_value[1:0])   | ({2{!fsel1_n[0]}} & e_rs1v[1:0]);
-    // A load's value is not ready before W.
-    assign rs1_ready = (fsel1_n[3] || !m1.load) && (fsel1_n[2] || !m2.load);
-    assign rs2_ready = (fsel2_n[3] || !m1.load) && (fsel2_n[2] || !m2.load);
+    // A load's or multiply's value is not ready before W.
+    assign rs1_ready = (fsel1_n[3] || !m1.late) && (fsel1_n[2] || !m2.late);
+    assign rs2_ready = (fsel2_n[3] || !m1.late) && (fsel2_n[2] || !m2.late);
 
     logic        e_ready, e_taken, e_misaligned, e_target_misaligned, e_trap, e_access, e_mispredict;
     logic [31:0] e_alu, e_addr, e_link, e_result, e_btarget, e_jtarget, e_wdata;
     logic [1:0]  e_offset;
     logic [3:0]  e_be;
-    assign e_ready   = (!e_dec.uses_rs1 || rs1_ready) && (!e_dec.uses_rs2 || rs2_ready);
+    logic        e_operands;        // the operands' values are ready
+    logic        div_done;          // the divider holds Execute's division result
+    assign e_operands = (!e_dec.uses_rs1 || rs1_ready) && (!e_dec.uses_rs2 || rs2_ready);
+    assign e_ready    = e_operands && (!e_dec.div || div_done);
+
+    // Divider: div_count is 0 while idle, 1-32 while stepping, 33 when done.
+    logic [5:0]  div_count;
+    logic [31:0] div_remainder, div_quotient, div_divisor, div_result;
+    logic        div_negate_q, div_negate_r, div_by_zero, div_rem;
+    logic        div_start, div_stepping;
+    logic [63:0] div_next;
+    assign div_start    = e_live && e_dec.div && e_operands && div_count == 6'd0;
+    assign div_stepping = div_count != 6'd0 && div_count <= 6'd32;
+    assign div_next   = divide_step(div_remainder, div_quotient, div_divisor);
+    assign div_result = div_rem      ? (div_negate_r ? -div_remainder : div_remainder)
+                      : div_by_zero  ? 32'hFFFF_FFFF
+                      : div_negate_q ? -div_quotient : div_quotient;
+
     assign e_alu     = alu(e_dec.alu_op, e_dec.a_pc ? e_pc : rs1f, e_dec.b_imm ? e_dec.imm : rs2f);
     assign e_link    = e_pc + 32'd4;
-    assign e_result  = (e_dec.jal || e_dec.jalr) ? e_link : e_alu;
+    assign e_result  = (e_dec.jal || e_dec.jalr) ? e_link : e_dec.div ? div_result : e_alu;
     assign e_taken   = e_dec.branch && branch_taken(e_dec.funct3, rs1f, rs2f);
     assign e_btarget = e_pc + e_dec.imm;
     assign e_jtarget = {e_addr[31:1], 1'b0};       // rs1 + imm, from the address adder (not the ALU's mux)
@@ -298,16 +331,35 @@ module aster_core
     assign e_free    = !e_live || e_advance;
     assign e_flush   = e_advance && e_mispredict;
 
-    // Load-use interlock: the newest of Execute and M1 writing the register is a load.
+    // Load-use interlock: the newest of Execute and M1 writing the register is a
+    // load or a multiply.
     function automatic logic load_pending(input logic [4:0] r);
         if (r == 5'd0) return 1'b0;
-        if (e_live && e_dec.writes_rd && e_dec.rd == r) return e_dec.load;
-        return m1.valid && m1.writes_rd && m1.rd == r && m1.load;
+        if (e_live && e_dec.writes_rd && e_dec.rd == r) return e_dec.load || e_dec.mul;
+        return m1.valid && m1.writes_rd && m1.rd == r && m1.late;
     endfunction
     assign d_hazard  = (d_dec.uses_rs1 && load_pending(d_dec.rs1)) || (d_dec.uses_rs2 && load_pending(d_dec.rs2));
     assign d_advance = d_live && e_free && !d_hazard;
     assign d_free    = !d_live || d_advance;
     assign d_take    = d_free && !halted;
+
+    // ------------------------------------------------------------ multiplier
+    // M1: the operands, sign-extended for mulh (both), mulhsu (rs1) and mul (its
+    // low word does not depend on it), zero-extended otherwise, split into
+    // 17-bit signed halves (the low halves zero-extended), give four partial
+    // products, registered for M2. M2: their sum is the 64-bit product.
+    function automatic logic signed [33:0] partial(input logic [16:0] a, input logic [16:0] b);
+        return $signed(a) * $signed(b);
+    endfunction
+    logic [32:0] mul_a, mul_b;
+    logic signed [33:0] pp_ll, pp_lh, pp_hl, pp_hh;     // registered at the end of M1, for M2
+    logic [63:0] mul_product;
+    logic [31:0] mul_result;
+    assign mul_a = {m1.funct3[1:0] != 2'd3 && m1.rs1v[31], m1.rs1v};
+    assign mul_b = {m1.funct3[1] == 1'b0 && m1.rs2v[31], m1.rs2v};
+    assign mul_product = 64'($signed(pp_ll)) + (64'($signed(pp_lh)) << 16) + (64'($signed(pp_hl)) << 16)
+                       + (64'($signed(pp_hh)) << 32);
+    assign mul_result  = m2.funct3[1:0] == 2'd0 ? mul_product[31:0] : mul_product[63:32];
 
     // ------------------------------------------------------------ W values
     // A load's value is aligned and extended as it leaves M2, so W forwards and
@@ -365,6 +417,8 @@ module aster_core
         e_slot.writes_rd = e_dec.writes_rd && !e_trap;
         e_slot.load      = e_dec.load && !e_trap;
         e_slot.store     = e_dec.store && !e_trap;
+        e_slot.mul       = e_dec.mul && !e_trap;
+        e_slot.late      = (e_dec.load || e_dec.mul) && !e_trap;
         e_slot.acc       = e_access;
         e_slot.funct3    = e_dec.funct3;
         e_slot.rd        = e_dec.rd;
@@ -400,6 +454,8 @@ module aster_core
             w            <= '0;
             d_acc_last   <= 1'b0;
             m1_err_held  <= 1'b0;
+            div_count    <= 6'd0;
+            div_done     <= 1'b0;
         end else begin
             halted     <= halted || kill;
             squash     <= e_flush;
@@ -443,6 +499,31 @@ module aster_core
                 if (rs2_ready) e_rs2v <= rs2f;
             end
 
+            // Divider: its count restarts with each instruction Execute takes;
+            // the data registers load on a start and step while the count runs,
+            // so they are off the kill and Execute's advance (their values
+            // matter only while the count runs).
+            if (kill || e_free) begin
+                div_count <= 6'd0;
+                div_done  <= 1'b0;
+            end else if (div_start) begin
+                div_count <= 6'd1;
+            end else if (div_stepping) begin
+                div_count <= div_count + 6'd1;
+                div_done  <= div_count == 6'd32;
+            end
+            if (div_start) begin
+                div_remainder <= 32'b0;
+                div_quotient  <= (!e_dec.funct3[0] && rs1f[31]) ? -rs1f : rs1f;
+                div_divisor   <= (!e_dec.funct3[0] && rs2f[31]) ? -rs2f : rs2f;
+                div_negate_q  <= !e_dec.funct3[0] && (rs1f[31] ^ rs2f[31]);
+                div_negate_r  <= !e_dec.funct3[0] && rs1f[31];
+                div_by_zero   <= rs2f == 32'b0;
+                div_rem       <= e_dec.funct3[1];
+            end else if (div_stepping) begin
+                {div_remainder, div_quotient} <= div_next;
+            end
+
             // M1
             if (kill) begin
                 m1 <= '0;
@@ -453,6 +534,17 @@ module aster_core
             end
             m1_err_held <= m1_bus_err;
 
+            // The multiplier's partial products, for the multiply in M1, as it moves
+            // into M2. They load whenever M1 holds a multiply, not on M1's advance
+            // (which waits on the data port's answer): a multiply never waits in
+            // M2, so the products of the one there are never overwritten.
+            if (m1.mul) begin
+                pp_ll <= partial({1'b0, mul_a[15:0]}, {1'b0, mul_b[15:0]});
+                pp_lh <= partial({1'b0, mul_a[15:0]}, mul_b[32:16]);
+                pp_hl <= partial(mul_a[32:16], {1'b0, mul_b[15:0]});
+                pp_hh <= partial(mul_a[32:16], mul_b[32:16]);
+            end
+
             // M2 (the commit point has passed: a data-port error becomes the trap)
             if (m2_free) begin
                 m2 <= '0;
@@ -461,6 +553,7 @@ module aster_core
                     m2.trap      <= m1.trap || m1_bus_err;
                     m2.writes_rd <= m1.writes_rd && !m1_bus_err;
                     m2.load      <= m1.load && !m1_bus_err;
+                    m2.late      <= m1.late && !m1_bus_err;
                     m2.store     <= m1.store && !m1_bus_err;
                 end
             end else begin
@@ -472,6 +565,7 @@ module aster_core
             if (m2_advance) begin
                 w <= m2_view;
                 if (m2_view.load) w.result <= load_value(m2_view.rdata, m2_view.addr[1:0], m2_view.funct3);
+                else if (m2.mul) w.result <= mul_result;
             end
         end
     end
@@ -513,7 +607,8 @@ module aster_core
     assign rvfi_ixl  = 2'd1;
 
     logic unused;
-    assign unused = ^{meip, mtip, msip, HART_ID, d_raw, f_predecode[1:0], e_redirect_target[1:0], w.acc, w.got, w.funct3};
+    assign unused = ^{meip, mtip, msip, HART_ID, d_raw, f_predecode[1:0], e_redirect_target[1:0], w.acc, w.got, w.funct3,
+                     w.mul, w.late};
 
 `ifndef SYNTHESIS
     always_ff @(posedge clk) begin
@@ -524,7 +619,18 @@ module aster_core
             else $error("inverted select copy differs");
         if (rst_n && d_rsp_valid) assert (rsp_for_m2 || rsp_for_m1) else $error("data answer with no access in flight");
         // A squashed (wrong-path) instruction issues nothing.
-        if (rst_n && squash) assert (!d_req_valid && !e_flush && !d_redirect) else $error("a squashed instruction acted");
+        if (rst_n && squash) assert (!d_req_valid && !e_flush && !d_redirect && !div_start)
+            else $error("a squashed instruction acted");
+        // The divider runs only for a division in Execute, and Execute's
+        // division leaves only with its result.
+        if (rst_n && div_count != 6'd0) assert (e_live && e_dec.div) else $error("divider running without a division");
+        if (rst_n && e_advance && e_dec.div) assert (div_done && div_count == 6'd33) else $error("division left early");
+        // A finished division's result stays put while it waits to leave Execute.
+        if (rst_n && div_done && $past(div_done) && $past(rst_n))
+            assert ($stable(div_quotient) && $stable(div_remainder)) else $error("division result changed while held");
+        // A multiply never waits in M2 (it has no data access), which the
+        // partial products' load enable relies on.
+        if (rst_n && m2.valid && m2.mul) assert (m2_advance) else $error("a multiply waits in M2");
     end
 `endif
 endmodule

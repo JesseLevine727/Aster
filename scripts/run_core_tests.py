@@ -112,17 +112,18 @@ DUTS = {
         # instructions or CSRs PicoRV32 does not have.
         "arch_suites": ("I", "M"),
     },
-    # The Aster core (docs/cpu.md), in the two-port shell. Milestone 18.1: RV32I,
-    # with exact RVFI byte masks; each later milestone widens the ISA here.
+    # The Aster core (docs/cpu.md), in the two-port shell. Milestones 18.1 and
+    # 18.2: RV32IM, with exact RVFI byte masks; each later milestone widens the
+    # ISA here.
     "aster": {
-        "march": "rv32i", "spike_isa": "rv32i", "suites": ("rv32ui", "directed"),
+        "march": "rv32im", "spike_isa": "rv32im", "suites": ("rv32ui", "rv32um", "directed"),
         "word_loads": False,
         "prefetches": True,
         "skip": {
             "rv32ui/fence_i": "Zifencei comes in milestone 18.4",
             "rv32ui/ma_data": "misaligned accesses trap, and traps come in milestone 18.3",
         },
-        "arch_suites": ("I",),
+        "arch_suites": ("I", "M"),
     },
 }
 
@@ -534,6 +535,12 @@ def run_kernels(args, config, prefix: str) -> int:
                     problems.append(f"Spike's window holds {len(window)} instructions")
             except ValueError as error:
                 problems.append(f"Spike's window: {error}")
+        if args.cpi_check and window and "window_cycles" in fields:
+            # The Aster core's measurement window takes exactly the model's cycles
+            # (the window starts and ends mid-run, so no start or drain offset).
+            expected = cpi_model.cycles(window, cpi_model.SEVEN_STAGE)
+            if int(fields["window_cycles"]) != expected:
+                problems.append(f"window cycles {fields['window_cycles']} != the CPI model's {expected}")
         passed = passed and counted and ok and not problems
         print(f"{'PASS' if passed else 'FAIL'}: kernel {name} {status.removeprefix('SHELL ')}; "
               f"lockstep: {message.splitlines()[0]}" + "".join(f"; {p}" for p in problems))
@@ -547,6 +554,14 @@ def run_kernels(args, config, prefix: str) -> int:
         rows.append((name, int(fields["window_cycles"]), int(fields["window_retired"]),
                      cpi_model.cycles(window, cpi_model.SEVEN_STAGE), cpi_model.cycles(window, cpi_model.FIVE_STAGE),
                      len(window)))
+    if rows and args.dut == "aster":
+        # The Aster core against its own model: the measured CPI (and, with
+        # --cpi-check, exact agreement); the speedups are against PicoRV32's runs.
+        print(f"  {'kernel':18s} {'instructions':>12s} {'aster CPI':>13s} {'7-stage model':>13s}")
+        for name, cycles, retired, seven, _, modelled in rows:
+            print(f"  {name:18s} {retired:>12d} {cycles / retired:>13.3f} {seven / modelled:>13.3f}"
+                  + ("" if name in GATE_KERNELS else "  (not in the gate)"))
+        rows = []
     if rows:
         print(f"  {'kernel':18s} {'instructions':>12s} {args.dut + ' CPI':>13s} {'7-stage model':>13s} "
               f"{'speedup':>8s} {'5-stage model':>13s}")

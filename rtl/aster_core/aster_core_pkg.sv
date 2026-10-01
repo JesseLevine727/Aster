@@ -1,8 +1,8 @@
-// Aster core decoder, ALU and branch compare (docs/cpu.md §2, §4). Milestone
-// 18.1 implements RV32I; every other encoding — the M, A, Zicsr and Zifencei
-// instructions, `ecall`, `ebreak` and the rest of SYSTEM, custom-0 — decodes
-// as illegal until its milestone adds it. `fence` executes as a no-op: the
-// core's accesses take effect in order at one memory (docs/cpu.md §5).
+// Aster core decoder, ALU and branch compare (docs/cpu.md §2, §4). Milestones
+// 18.1 and 18.2 implement RV32IM; every other encoding — the A, Zicsr and
+// Zifencei instructions, `ecall`, `ebreak` and the rest of SYSTEM, custom-0 —
+// decodes as illegal until its milestone adds it. `fence` executes as a no-op:
+// the core's accesses take effect in order at one memory (docs/cpu.md §5).
 `timescale 1 ns / 1 ps
 package aster_core_pkg;
     typedef enum logic [3:0] {
@@ -26,6 +26,8 @@ package aster_core_pkg;
         logic        branch;
         logic        jal;
         logic        jalr;
+        logic        mul;             // mul, mulh, mulhsu, mulhu (funct3 0-3)
+        logic        div;             // div, divu, rem, remu (funct3 4-7)
         logic [2:0]  funct3;
     } decoded_t;
 
@@ -92,9 +94,13 @@ package aster_core_pkg;
                         3'd7: d.alu_op = ALU_AND;
                     endcase
                 end
-                5'b01100: begin                                   // OP (the M encodings, funct7 1, come in 18.2)
+                5'b01100: begin                                   // OP, and the M extension (funct7 1)
                     d.uses_rs1 = 1'b1; d.uses_rs2 = 1'b1; d.writes_rd = 1'b1;
-                    if (funct7 == 7'h00) begin
+                    if (funct7 == 7'h01) begin
+                        d.illegal = 1'b0;
+                        d.mul     = !funct3[2];
+                        d.div     = funct3[2];
+                    end else if (funct7 == 7'h00) begin
                         d.illegal = 1'b0;
                         unique case (funct3)
                             3'd0: d.alu_op = ALU_ADD;
@@ -118,6 +124,7 @@ package aster_core_pkg;
         if (d.illegal) begin
             d.uses_rs1 = 1'b0; d.uses_rs2 = 1'b0; d.writes_rd = 1'b0;
             d.load = 1'b0; d.store = 1'b0; d.branch = 1'b0; d.jal = 1'b0; d.jalr = 1'b0;
+            d.mul = 1'b0; d.div = 1'b0;
         end
         if (d.rd == 5'd0) d.writes_rd = 1'b0;
         return d;
@@ -166,6 +173,18 @@ package aster_core_pkg;
             3'd5: return {16'b0, shifted[15:0]};                // lhu
             default: return shifted;                            // lw (aligned: offset 0)
         endcase
+    endfunction
+
+    // One radix-2 restoring division step: {remainder, quotient} shifts left by
+    // one, the dividend's next bit entering the remainder, and the divisor is
+    // subtracted from the remainder when it fits, setting the quotient's new bit.
+    function automatic logic [63:0] divide_step(input logic [31:0] remainder, input logic [31:0] quotient,
+                                                input logic [31:0] divisor);
+        logic [32:0] shifted, difference;
+        shifted    = {remainder, quotient[31]};
+        difference = shifted - {1'b0, divisor};
+        return difference[32] ? {shifted[31:0], quotient[30:0], 1'b0}
+                              : {difference[31:0], quotient[30:0], 1'b1};
     endfunction
 
     function automatic logic branch_taken(input logic [2:0] funct3, input logic [31:0] a, input logic [31:0] b);
