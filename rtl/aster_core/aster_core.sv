@@ -192,16 +192,18 @@ module aster_core
     assign e_live = e_valid && !squash;
 
     // Forwarding from the newest older instruction that writes the register, by
-    // the registered selects {M1, M2, W} (computed below, a cycle ahead).
-    logic [2:0]  fsel1, fsel2;
+    // the registered one-hot selects (computed below, a cycle ahead).
+    logic [3:0]  fsel1, fsel2;      // one-hot {M1, M2, W, none}
     logic [31:0] rs1f, rs2f;
     logic        rs1_ready, rs2_ready;
-    function automatic logic [32:0] forward(input logic [2:0] sel, input logic [31:0] held);
-        // {ready, value}; a load's value is not ready before W
-        if (sel[2]) return {!m1.load, m1.result};
-        if (sel[1]) return {!m2.load, m2.result};
-        if (sel[0]) return {1'b1, w_value};
-        return {1'b1, held};
+    // {ready, value}. The select is one-hot (none included), so the operand is
+    // an AND-OR of the four sources with no decode in front of the fanout; a
+    // load's value is not ready before W.
+    function automatic logic [32:0] forward(input logic [3:0] sel, input logic [31:0] held);
+        logic [31:0] value;
+        value = ({32{sel[3]}} & m1.result) | ({32{sel[2]}} & m2.result) |
+                ({32{sel[1]}} & w_value)   | ({32{sel[0]}} & held);
+        return {!(sel[3] && m1.load) && !(sel[2] && m2.load), value};
     endfunction
     assign {rs1_ready, rs1f} = forward(fsel1, e_rs1v);
     assign {rs2_ready, rs2f} = forward(fsel2, e_rs2v);
@@ -332,12 +334,12 @@ module aster_core
     logic [4:0] dn_rs1, dn_rs2;
     assign dn_rs1 = d_free ? f_insn[19:15] : d_insn[19:15];
     assign dn_rs2 = d_free ? f_insn[24:20] : d_insn[24:20];
-    function automatic logic [2:0] select(input logic [4:0] r);
-        if (r == 5'd0) return 3'b000;
-        if (m1n_writes && m1n_rd == r) return 3'b100;
-        if (m2n_writes && m2n_rd == r) return 3'b010;
-        if (wn_writes && wn_rd == r) return 3'b001;
-        return 3'b000;
+    function automatic logic [3:0] select(input logic [4:0] r);
+        if (r == 5'd0) return 4'b0001;
+        if (m1n_writes && m1n_rd == r) return 4'b1000;
+        if (m2n_writes && m2n_rd == r) return 4'b0100;
+        if (wn_writes && wn_rd == r) return 4'b0010;
+        return 4'b0001;
     endfunction
 
     // ----------------------------------------------------------- sequential
@@ -369,8 +371,8 @@ module aster_core
         if (!rst_n) begin
             halted       <= 1'b0;
             squash       <= 1'b0;
-            fsel1        <= 3'b000;
-            fsel2        <= 3'b000;
+            fsel1        <= 4'b0001;
+            fsel2        <= 4'b0001;
             wt1          <= 1'b0;
             wt2          <= 1'b0;
             d_valid      <= 1'b0;
