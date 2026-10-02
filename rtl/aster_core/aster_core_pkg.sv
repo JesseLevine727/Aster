@@ -1,9 +1,14 @@
 // Aster core decoder, ALU and branch compare (docs/cpu.md §2, §4). Milestones
-// 18.1-18.3 implement RV32IM, Zicsr, `ecall`, `ebreak`, `mret` and `wfi` (a
-// no-op), with the machine-mode CSRs of docs/cpu.md §3; every other encoding —
-// the A and Zifencei instructions, the rest of SYSTEM, custom-0 — decodes as
-// illegal until its milestone adds it. `fence` executes as a no-op: the core's
-// accesses take effect in order at one memory (docs/cpu.md §5).
+// 18.1-18.4 implement RV32IMA, Zicsr, Zifencei, `ecall`, `ebreak`, `mret` and
+// `wfi` (a no-op), with the machine-mode CSRs of docs/cpu.md §3; every other
+// encoding — the rest of SYSTEM, custom-0 until 18.5 — decodes as illegal.
+// `fence` executes as a no-op: the core's accesses take effect in order at one
+// memory (docs/cpu.md §5). `fence.i` (any encoding with funct3 1, as Spike
+// decodes it) drains the data accesses in flight and refetches what follows.
+//
+// Atomics: `lr.w`, `sc.w` and the nine AMOs go to the data port as one
+// operation each (aq/rl are implied: the core's accesses are in order), coded
+// for d_req_op as AMO_*; their result comes from the memory, as a load's does.
 `timescale 1 ns / 1 ps
 package aster_core_pkg;
     // Execute's result, one-hot: decoded in Decode and registered, so Execute's
@@ -65,6 +70,11 @@ package aster_core_pkg;
         return c;
     endfunction
 
+    // d_req_op codes (docs/cpu.md §5).
+    localparam logic [3:0] OP_LOAD = 4'd0, OP_STORE = 4'd1, OP_LR = 4'd2, OP_SC = 4'd3,
+                           OP_SWAP = 4'd4, OP_ADD = 4'd5, OP_XOR = 4'd6, OP_AND = 4'd7, OP_OR = 4'd8,
+                           OP_MIN = 4'd9, OP_MAX = 4'd10, OP_MINU = 4'd11, OP_MAXU = 4'd12;
+
     typedef struct packed {
         logic        illegal;
         logic        uses_rs1;
@@ -90,6 +100,9 @@ package aster_core_pkg;
         logic        ebreak;
         logic        mret;
         logic        sys;             // csr or mret: Execute holds it until M1 is empty
+        logic        atomic;          // lr.w, sc.w or an AMO (also load; sc and AMOs also store)
+        logic [3:0]  amo_op;          // its d_req_op
+        logic        fencei;          // fence.i: Execute holds it until M1 and M2 are empty
         logic [2:0]  funct3;
     } decoded_t;
 
@@ -183,7 +196,31 @@ package aster_core_pkg;
                         if (funct3 == 3'd0) d.res.sub = 1'b1; else d.res.sra = 1'b1;
                     end
                 end
-                5'b00011: if (funct3 == 3'd0) d.illegal = 1'b0;   // fence (fence.i comes in 18.4)
+                5'b00011: begin                                   // fence (a no-op), fence.i
+                    d.illegal = funct3 > 3'd1;
+                    d.fencei  = funct3 == 3'd1;
+                end
+                5'b01011: if (funct3 == 3'd2) begin                // RV32A
+                    d.uses_rs1 = 1'b1; d.uses_rs2 = 1'b1; d.writes_rd = 1'b1; d.b_imm = 1'b1;
+                    d.atomic = 1'b1; d.load = 1'b1; d.store = 1'b1; d.illegal = 1'b0;
+                    unique case (insn[31:27])
+                        5'b00010: begin                           // lr.w (rs2 must be 0)
+                            d.amo_op = OP_LR; d.store = 1'b0; d.uses_rs2 = 1'b0;
+                            d.illegal = insn[24:20] != 5'd0;
+                        end
+                        5'b00011: d.amo_op = OP_SC;
+                        5'b00001: d.amo_op = OP_SWAP;
+                        5'b00000: d.amo_op = OP_ADD;
+                        5'b00100: d.amo_op = OP_XOR;
+                        5'b01100: d.amo_op = OP_AND;
+                        5'b01000: d.amo_op = OP_OR;
+                        5'b10000: d.amo_op = OP_MIN;
+                        5'b10100: d.amo_op = OP_MAX;
+                        5'b11000: d.amo_op = OP_MINU;
+                        5'b11100: d.amo_op = OP_MAXU;
+                        default:  d.illegal = 1'b1;
+                    endcase
+                end
                 5'b11100: begin                                   // SYSTEM
                     if (funct3 == 3'd0) begin
                         // ecall, ebreak, mret, and wfi (a no-op: an interrupt is
@@ -215,7 +252,7 @@ package aster_core_pkg;
             d.load = 1'b0; d.store = 1'b0; d.branch = 1'b0; d.jal = 1'b0; d.jalr = 1'b0;
             d.mul = 1'b0; d.div = 1'b0;
             d.csr = 1'b0; d.csr_write = 1'b0; d.csr_sel = '0; d.ecall = 1'b0; d.ebreak = 1'b0; d.mret = 1'b0;
-            d.sys = 1'b0;
+            d.sys = 1'b0; d.atomic = 1'b0; d.amo_op = '0; d.fencei = 1'b0;
             d.res = '0; d.res.add = 1'b1;
         end
         if (d.rd == 5'd0) d.writes_rd = 1'b0;
@@ -258,6 +295,23 @@ package aster_core_pkg;
                      : {{19{insn[31]}}, insn[31], insn[7], insn[30:25], insn[11:8], 1'b0};
         target = pc + imm;
         return {(jal || (branch && insn[31])) && !target[1], target};
+    endfunction
+
+    // An AMO's new value from the old one and rs2 (funct5 selects); for RVFI,
+    // and the CPU shell's memory computes the same.
+    function automatic logic [31:0] amo_value(input logic [4:0] funct5, input logic [31:0] old,
+                                              input logic [31:0] operand);
+        unique case (funct5)
+            5'b00000: return old + operand;
+            5'b00100: return old ^ operand;
+            5'b01100: return old & operand;
+            5'b01000: return old | operand;
+            5'b10000: return $signed(old) < $signed(operand) ? old : operand;
+            5'b10100: return $signed(old) > $signed(operand) ? old : operand;
+            5'b11000: return old < operand ? old : operand;
+            5'b11100: return old > operand ? old : operand;
+            default:  return operand;                           // amoswap (and sc's data)
+        endcase
     endfunction
 
     // A load's register value from the aligned 32-bit word it read.

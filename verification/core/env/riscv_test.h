@@ -23,7 +23,7 @@
 // (clearing the shell's lines with a store of 0 to its device, 0x3000_0000,
 // and counting it), emulates a misaligned load or store (the core traps on
 // them, as Spike does: rv32ui's `ma_data` runs through this), and fails the
-// test with code 1337 on any other trap.
+// test with code 1337 on any other trap, a misaligned atomic included.
 #ifndef ASTER_CORE_SHELL_ENV_H
 #define ASTER_CORE_SHELL_ENV_H
 
@@ -74,6 +74,7 @@ aster_trap_handler: \
     bltz t0, aster_interrupt; \
     li t1, CAUSE_MISALIGNED_LOAD; beq t0, t1, aster_misaligned; \
     li t1, CAUSE_MISALIGNED_STORE; beq t0, t1, aster_misaligned; \
+aster_unexpected: \
     li TESTNUM, 1337; \
     sll TESTNUM, TESTNUM, 1; or TESTNUM, TESTNUM, 1; ASTER_REPORT(TESTNUM) \
 aster_interrupt: \
@@ -95,6 +96,7 @@ aster_misaligned: \
     sw x31, ASTER_SLOT(31)(sp); \
     csrr t0, mscratch; sw t0, ASTER_SLOT(2)(sp); \
     csrr t0, mepc; lw t1, 0(t0);                  /* the instruction */ \
+    andi a2, t1, 0x7f; li a3, 0x2f; beq a2, a3, aster_unexpected;  /* an atomic: not emulated */ \
     csrr t0, mtval;                               /* the access's address */ \
     srli a1, t1, 12; andi a1, a1, 7;              /* funct3 */ \
     andi a2, t1, 0x20; bnez a2, 4f;               /* opcode 0x23: a store */ \

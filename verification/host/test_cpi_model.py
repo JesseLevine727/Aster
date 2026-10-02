@@ -32,6 +32,8 @@ AMOADD_X1 = 0x0020a0af     # amoadd.w x1, x2, (x1)
 CSRRS_X2_X1 = 0x3000a173   # csrrs x2, mstatus, x1
 CSRRSI_X2 = 0x3000e173     # csrrsi x2, mstatus, 1 (the rs1 field is the immediate 1)
 ADD_X2_X0 = 0x00000133     # add  x2, x0, x0
+FENCE_I = 0x0000100f       # fence.i
+FENCE = 0x0ff0000f         # fence iorw, iorw
 
 
 class CpiModel(unittest.TestCase):
@@ -75,6 +77,14 @@ class CpiModel(unittest.TestCase):
 
     def test_amo_results_wait_like_loads(self):
         self.assertEqual(cpi_model.cycles(straight(AMOADD_X1, ADD_X2_X1, rds=[1, 2]), SEVEN), 2 + 2)
+
+    def test_fence_i_drains_m1_and_m2_then_redirects_from_execute(self):
+        # alone: an Execute redirect (4); behind any instruction it first waits
+        # two cycles for M1 and M2 to empty (18.4); fence is free
+        self.assertEqual(cpi_model.cycles(straight(FENCE_I, NOP), SEVEN), 2 + 4)
+        self.assertEqual(cpi_model.cycles(straight(NOP, FENCE_I, NOP), SEVEN), 3 + 2 + 4)
+        self.assertEqual(cpi_model.cycles(straight(LW_X1, FENCE_I, NOP, rds=[1, None, None]), SEVEN), 3 + 2 + 4)
+        self.assertEqual(cpi_model.cycles(straight(FENCE, NOP), SEVEN), 2)
 
     def test_x0_is_never_waited_on(self):
         load_x0 = lockstep.Retired(0x80000000, 0x0000a003, (0, 0), None, None)   # lw x0, 0(x1)

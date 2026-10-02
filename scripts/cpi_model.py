@@ -17,6 +17,7 @@ the pipeline's rules:
 - the iterative divider holds Execute for DIVIDE_CYCLES;
 - a CSR instruction or `mret` (serializing) waits in Execute while M1 holds
   an instruction: one more cycle when it enters Execute right behind one;
+  `fence.i` waits while M1 or M2 holds one, and then redirects like `jalr`;
 - `jal`, and backward branches with a word-aligned target (predicted taken),
   redirect from Decode in their
   first cycle there, whether or not they then wait for operands; a branch
@@ -138,6 +139,9 @@ def cycles(records: list[lockstep.Retired], pipeline: Pipeline) -> int:
         serializing = not record.trap and opcode == 0x73 and ((insn >> 12) & 7 not in (0, 4) or insn == MRET)
         if serializing and execute == m1_busy:
             occupancy += 1                                    # waits for M1 to empty
+        fencei = not record.trap and opcode == 0x0F and (insn >> 12) & 7 == 1
+        if fencei:
+            occupancy = max(occupancy, m1_busy + 3 - execute)  # waits for M1 and M2 to empty
         m1_busy = execute + occupancy
         if record.rd:
             if opcode in (0x03, 0x2F):
@@ -161,7 +165,7 @@ def cycles(records: list[lockstep.Retired], pipeline: Pipeline) -> int:
             available = execute + occupancy - 1 + pipeline.trap_redirect
         elif opcode == 0x6F:                                  # jal
             available = from_decode
-        elif opcode == 0x67 or insn == MRET:                  # jalr, mret
+        elif opcode == 0x67 or insn == MRET or fencei:        # jalr, mret, fence.i
             available = from_execute
         elif opcode == 0x63:
             offset = branch_offset(insn)

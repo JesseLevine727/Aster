@@ -44,7 +44,7 @@ more than one outstanding miss. Each can be revisited later with measurements.
 | M | `mul`, `mulh`, `mulhsu`, `mulhu`, `div`, `divu`, `rem`, `remu` | pipelined multiplier, iterative divider |
 | A | `lr.w`, `sc.w`, `amoswap/add/and/or/xor/min/max/minu/maxu.w` | executed by the memory side as one atomic transaction (§5) |
 | Zicsr | CSR read/write/set/clear, register and immediate forms | machine-mode CSRs in §3 |
-| Zifencei | `fence.i` | flushes the fetch path and instruction cache |
+| Zifencei | `fence.i` | waits until every older data access has been answered, then flushes the fetch path and instruction cache |
 | Xasterdot8 | `dot8 rd, rs1, rs2`: `rd = Σᵢ sext(rs1.bᵢ) × sext(rs2.bᵢ)` | custom-0, `opcode=0x0b`, `funct3=0`, `funct7=0` — the v1 encoding, so v1 kernels run unchanged |
 
 Unimplemented or reserved encodings raise an illegal-instruction exception.
@@ -150,6 +150,7 @@ Hazards and penalties:
 | `jal`; conditional branch predicted taken (backward) | redirect from Decode, target presented the same cycle | 2 cycles |
 | Conditional branch mispredicted; `jalr`; `mret` | resolved in Execute; the redirect is registered | 4 cycles |
 | CSR instruction or `mret` | serializing: waits in Execute until M1 is empty | 1 cycle behind an instruction in M1 |
+| `fence.i` | waits in Execute until M1 and M2 are empty, then redirects to the next instruction | up to 2 cycles, then 4 |
 | Trap or interrupt | taken at the commit point; its redirect is registered (the Execute redirect's path) | 5 cycles after the last Execute cycle |
 | Data-port back-pressure or an answer later than two cycles | the stage waiting on the port stalls the pipeline behind it | as the memory returns |
 | Instruction-port back-pressure or a late answer | bubbles enter Decode | as the memory returns |
@@ -251,7 +252,14 @@ AMO operations), `d_req_addr[31:0]`, `d_req_wdata[31:0]`, `d_req_be[3:0]`,
 `d_req_ready`; `d_rsp_valid`, `d_rsp_rdata[31:0]` (load data, AMO old value, or
 `sc` success); `d_rsp_error` (timed as above). Atomic operations are executed
 by the memory side as one indivisible transaction, as the v1 atomic fabric does
-today, so the coherence protocol can later own them.
+today, so the coherence protocol can later own them. `d_req_op` (18.4): 0 load,
+1 store, 2 `lr`, 3 `sc`, 4–12 `amoswap`, `amoadd`, `amoxor`, `amoand`, `amoor`,
+`amomin`, `amomax`, `amominu`, `amomaxu` (a word each; the Phase 20 fabric maps
+them to the v1 fabric's `funct5` codes). The `lr` reservation is the memory
+side's: an `sc` succeeds only while it holds that word (answer 0, else 1), and
+every `sc` ends it; whether the hart's own store to the word, or a trap, also
+ends it is the memory side's choice (the v1 fabric ends it on any store to the
+word; the CPU shell follows Spike).
 
 **Other signals:** `clk`, `rst_n`, `meip`, `mtip`, `msip`, a hart-id parameter, a
 reset-vector parameter, and an RVFI retirement port with the riscv-formal
@@ -314,7 +322,14 @@ Each milestone passes all applicable layers before the next milestone starts.
      program that writes `misa` (riscv-tests `ma_fetch`) sets and clears `C`,
      which neither has, so both read back the same value.
    - **Atomics (18.4):** both memory records of an AMO are parsed (done in
-     18.0); a failed `sc` has no memory record.
+     18.0); a failed `sc` has no memory record. Spike also ends a reservation
+     at its own instruction-step boundaries (every 5,000 instructions, and at
+     a trap), which the core cannot know, so the runner gives the shell
+     Spike's `sc` outcomes in program order; the shell answers each `sc` as
+     Spike did and fails a run in which Spike's `sc` succeeded where the
+     shell's own reservation did not hold. The shell's instruction fetches
+     see a data-port write only once it has been answered (§5 orders accesses
+     within a port only), so `fence.i`'s wait is tested.
    - **Xasterdot8 (18.5):** Spike does not know custom-0; an Aster extension
      library (`--extlib`) implements DOT8 in Spike, so DOT8 programs run in
      lockstep rather than being excluded.
@@ -539,6 +554,48 @@ gate's "arch-test Zicsr", and `time`/`timeh` (below):
   Spike's logged writes to the hardwired-zero `mhpmevent` registers join the
   allowlist (above); the shell also checks that every load the memory accepts
   retires exactly once (an I/O load repeated after an interrupt would not).
+
+Clarifications during milestone 18.4 (2 October 2026), from building and
+verifying the A extension and `fence.i`, for the owner's review:
+
+- §4: `fence.i` waits in Execute until M1 and M2 are empty — every older data
+  access answered, so a fetch issued after it sees every older store — and
+  then redirects to the next instruction through the registered Execute
+  redirect, discarding F1, F2, the fetch buffer and Decode. There is no
+  instruction cache yet (18.6 adds its invalidation). `fence` needs nothing:
+  one data port whose accesses take effect in acceptance order (§5), which is
+  program order. For the same reason the `aq` and `rl` bits of the atomics
+  are accepted and need no action (Spike ignores them too).
+- §5: `d_req_op`'s codes as listed there. The core sends `lr`, `sc` and the
+  AMOs with the request's address and data and takes the answer as a load's
+  (a late result, forwarded from W). A misaligned `lr` raises a
+  load-misaligned exception and a misaligned `sc` or AMO a
+  store/AMO-misaligned one, without reaching the port; an error answer is a
+  load access fault for `lr` and a store/AMO access fault for `sc` and the
+  AMOs. `lr.w` with a non-zero `rs2` field and the RV64 (`.d`) forms are
+  illegal, as in Spike; `misa` gains `A`.
+- §5: the reservation belongs to the memory side, which decides whether the
+  hart's own store to the reserved word or a trap ends it (every `sc` does).
+  The CPU shell follows Spike: neither the hart's own stores nor interrupts
+  end it; an exception and every `sc` do. The v1 fabric ends it on any store
+  to the word, which the 18.6/Phase 20 memory side must keep or document.
+- §6: the shell answers each `sc` as Spike's run did (Spike also ends a
+  reservation at its instruction-step boundaries, which no core can predict)
+  and fails a run in which Spike's `sc` succeeded where its own reservation
+  did not hold (`SC_MISMATCH`). Instruction fetches in the shell see a data
+  write only after the edge at which the core takes its answer, so a
+  `fence.i` that did not wait for it fetches the old instruction whenever the
+  answer comes after the refetch — on the two-cycle memory and under
+  back-pressure, not on the one-cycle memory, where nothing is left to wait
+  for.
+- §6: the random interrupts arrive about every 20 cycles (was 40), which
+  covers every (interrupted, next) pair of instruction classes now that
+  atomics and fences are classes (81 pairs).
+- §8 (gate): "litmus tests" can only be single-hart on this core — a store,
+  an AMO and a load to one word observing each other in program order
+  (`directed/atomics`) and the `fence.i` ordering (`directed/smc`).
+  Multi-hart litmus tests need two cores sharing memory, which the Phase 20
+  coherent SoC provides.
 
 Changes after approval, by the owner:
 

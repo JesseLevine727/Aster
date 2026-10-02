@@ -64,14 +64,28 @@ t3_insn:
     lbu a3, 3(s1)
 t4_insn:
     sh a3, 6(s1)
+    // Atomics outside memory (18.4): lr is a load access fault, sc and an
+    // AMO a store/AMO access fault; a3 keeps its value.
+    li a3, 0x77
+t5_insn:
+    lr.w a3, (s1)
+t6_insn:
+    sc.w a3, s2, (s1)
+t7_insn:
+    amoswap.w a3, s2, (s1)
+    li t1, 0x77
+    bne a3, t1, fail
 
     li TESTNUM, 3
-    EXPECT_TRAPS(5)
+    EXPECT_TRAPS(8)
     EXPECT_TRAP(0, CAUSE_LOAD_ACCESS, t0_insn, 0x40000000)
     EXPECT_TRAP(1, CAUSE_STORE_ACCESS, t1_insn, 0x40000004)
     EXPECT_TRAP(2, CAUSE_LOAD_ACCESS, t2_insn, 0x40000008)
     EXPECT_TRAP(3, CAUSE_LOAD_ACCESS, t3_insn, 0x40000003)
     EXPECT_TRAP(4, CAUSE_STORE_ACCESS, t4_insn, 0x40000006)
+    EXPECT_TRAP(5, CAUSE_LOAD_ACCESS, t5_insn, 0x40000000)
+    EXPECT_TRAP(6, CAUSE_STORE_ACCESS, t6_insn, 0x40000000)
+    EXPECT_TRAP(7, CAUSE_STORE_ACCESS, t7_insn, 0x40000000)
     li TESTNUM, 4
     lw t1, 0(s0)
     bne t1, s2, fail

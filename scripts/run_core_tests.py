@@ -134,31 +134,32 @@ DUTS = {
         "skip": {
             "rv32ui/fence_i": "PicoRV32 has no Zifencei (self-modifying code)",
             "rv32ui/ma_data": "misaligned accesses trap by design (CATCH_MISALIGN), as in the v1 core",
+            "directed/atomics": "PicoRV32 has no native A (the Aster core's test, 18.4)",
+            "directed/smc": "PicoRV32 has no Zifencei (the Aster core's test, 18.4)",
         },
         # riscv-arch-test suites under rv32i_m/; A, Zifencei and privilege need
         # instructions or CSRs PicoRV32 does not have.
         "arch_suites": ("I", "M"), "arch_isa": "RV32IM", "arch_params": {},
         "spike_args": [], "spike_traps": False, "shell_args": [], "interrupt_suites": (),
     },
-    # The Aster core (docs/cpu.md), in the two-port shell. Milestones 18.1-18.3:
-    # RV32IM, Zicsr, traps, interrupts and counters, with exact RVFI byte masks;
-    # each later milestone widens the ISA here. Spike is configured as the core
-    # is (docs/cpu.md §6): machine mode only, no PMP, no debug triggers, `wfi`
-    # a no-op.
+    # The Aster core (docs/cpu.md), in the two-port shell. Milestones 18.1-18.4:
+    # RV32IMA, Zicsr, Zifencei, traps, interrupts and counters, with exact RVFI
+    # byte masks; 18.5 adds Xasterdot8 here. Spike is configured as the core is
+    # (docs/cpu.md §6): machine mode only, no PMP, no debug triggers, `wfi` a
+    # no-op.
     "aster": {
-        "march": "rv32im_zicsr", "spike_isa": "rv32im_zicsr_zicntr",
+        "march": "rv32ima_zicsr_zifencei", "spike_isa": "rv32ima_zicsr_zifencei_zicntr",
         "spike_args": ["--priv=m", "--pmpregions=0", "--triggers=0", "--wfi-as-nop"], "spike_traps": True,
         "shell_args": ["+bus_error_traps"],
-        "suites": ("rv32ui", "rv32um", "rv32mi", "directed", "traps", "interrupts"),
-        "interrupt_suites": ("rv32ui", "rv32um"),
+        "suites": ("rv32ui", "rv32um", "rv32ua", "rv32mi", "directed", "traps", "interrupts"),
+        "interrupt_suites": ("rv32ui", "rv32um", "rv32ua", "directed"),
         "word_loads": False,
         "prefetches": True,
         "skip": {
-            "rv32ui/fence_i": "Zifencei comes in milestone 18.4",
             "rv32mi/breakpoint": "no debug triggers (Sdtrig is not in docs/cpu.md §3; Spike runs with --triggers=0)",
             "rv32mi/pmpaddr": "no PMP (docs/cpu.md §3; Spike runs with --pmpregions=0)",
         },
-        "arch_suites": ("I", "M", "privilege"), "arch_isa": "RV32IMZicsr",
+        "arch_suites": ("I", "M", "A", "Zifencei", "privilege"), "arch_isa": "RV32IMAZicsr_Zifencei",
         "arch_params": {"hw_data_misaligned_support": "False"},
     },
 }
@@ -273,6 +274,7 @@ def execute(args, config: dict, elf: Path, binary: Path, symbols: dict, arch: bo
                     f"+sig_begin={symbols['begin_signature']:x}", f"+sig_end={symbols['end_signature']:x}"]
         spike_command += [f"+signature={elf.with_suffix('.sig.spike')}", "+signature-granularity=4"]
     shell = run(command, timeout=600)
+    first_command = command
     if shell_only:
         status = shell.stdout.strip() or f"(no status; exit {shell.returncode}) {shell.stderr.strip()}"
         return (shell.returncode == 0 and status.split()[:2] == ["SHELL", "PASS"], status,
@@ -293,12 +295,34 @@ def execute(args, config: dict, elf: Path, binary: Path, symbols: dict, arch: bo
     with log.open("w") as stream:
         spike = subprocess.run(spike_command + [str(elf)], cwd=ROOT, stdout=subprocess.DEVNULL,
                                stderr=stream, timeout=600)
+    # Spike's sc outcomes (docs/cpu.md §6, 18.4): Spike ends a reservation at
+    # its own step boundaries, which the core cannot know; the shell answers
+    # each sc as Spike did and checks its own reservation where Spike's held.
+    # (An +sc_outcomes the caller passes, as the shell's self-test does, stands.)
+    if not kernel and not any(item.startswith("+sc_outcomes=") for item in first_command):
+        outcomes = sc_outcomes(log.read_text(), symbols["tohost"])
+        if outcomes:
+            oracle = elf.with_suffix(".sc")
+            oracle.write_text(outcomes + "\n")
+            for stale in (trace, elf.with_suffix(".sig.dut")):
+                stale.unlink(missing_ok=True)
+            shell = run(first_command + [f"+sc_outcomes={oracle}"], timeout=600)
     status = shell.stdout.strip() or f"(no status; exit {shell.returncode}) {shell.stderr.strip()}"
     tokens = status.split()
     passed = shell.returncode == 0 and tokens[:2] == ["SHELL", "PASS"] and spike.returncode == 0
     if spike.returncode:
         status += f" [Spike exit {spike.returncode}]"
     return passed, status, trace.read_text() if trace.exists() else "", log.read_text()
+
+
+def sc_outcomes(log_text: str, tohost: int) -> str:
+    """Spike's sc.w outcomes in program order: S (it stored) or F."""
+    try:
+        records = lockstep.parse_spike(log_text.splitlines(), ENTRY, tohost)
+    except ValueError:
+        return ""
+    return "".join("S" if r.store is not None else "F" for r in records
+                   if not r.trap and r.insn is not None and r.insn & 0x7F == 0x2F and r.insn >> 27 == 0b00011)
 
 
 def lockstep_check(trace_text: str, log_text: str, tohost: int, word_loads: bool,
@@ -461,17 +485,20 @@ def spike_injections(lines: list[str], tohost: int) -> dict[str, list[str]]:
 
 # Operands each opcode reads, by consumer class: (rs1 class, rs2 class).
 _READS = {0x33: ("alu", "alu"), 0x13: ("alu", None), 0x03: ("load-addr", None),
-          0x23: ("store-addr", "store-data"), 0x63: ("branch", "branch"), 0x67: ("jalr", None)}
+          0x23: ("store-addr", "store-data"), 0x63: ("branch", "branch"), 0x67: ("jalr", None),
+          0x2F: ("amo-addr", "amo-data")}
 HAZARD_PRODUCERS = ("alu", "load", "link", "mul", "div", "csr")
-HAZARD_CONSUMERS = ("alu", "muldiv", "load-addr", "store-addr", "store-data", "branch", "jalr", "csr")
+HAZARD_CONSUMERS = ("alu", "muldiv", "load-addr", "store-addr", "store-data", "branch", "jalr", "csr",
+                    "amo-addr", "amo-data")
 
 
 def _producer(insn: int) -> str:
     opcode = insn & 0x7F
     if opcode == 0x33 and insn >> 25 == 1:
         return "mul" if (insn >> 12) & 7 < 4 else "div"
-    # AMOs, lr and sc return their result from the memory, as a load does.
-    return {0x03: "load", 0x2F: "load", 0x6F: "link", 0x67: "link", 0x73: "csr"}.get(opcode, "alu")
+    # AMOs, lr and sc return their result from the memory, as a load does, but
+    # are a class of their own so that each is required to be forwarded (18.4).
+    return {0x03: "load", 0x2F: "atomic", 0x6F: "link", 0x67: "link", 0x73: "csr"}.get(opcode, "alu")
 
 
 def required_bins(extensions: str) -> list[tuple[str, int, str]]:
@@ -483,14 +510,20 @@ def required_bins(extensions: str) -> list[tuple[str, int, str]]:
     write-through of docs/cpu.md §4). Address and
     jump-target consumers read rs1 through the same forwarding path, and are
     required from the producers that realistically make addresses: ALU and
-    load results, and link values for loads and `jalr`. (A multiply result or a
-    code address used as a store address is legal but not a distinct hazard.)
+    load results, link values for loads and `jalr`, and AMO results (a pointer
+    taken from memory atomically) for loads, stores and AMOs. (A multiply
+    result or a code address used as a store address is legal but not a
+    distinct hazard.)
     """
-    muldiv, zicsr = "m" in extensions.split(","), "zicsr" in extensions.split(",")
-    producers = ["alu", "load", "link"] + (["mul", "div"] if muldiv else []) + (["csr"] if zicsr else [])
-    data = ["alu", "branch", "store-data"] + (["muldiv"] if muldiv else []) + (["csr"] if zicsr else [])
-    address = {"alu": ["load-addr", "store-addr", "jalr"], "load": ["load-addr", "store-addr", "jalr"],
-               "link": ["load-addr", "jalr"]}
+    muldiv, zicsr, atomic = (name in extensions.split(",") for name in ("m", "zicsr", "a"))
+    producers = (["alu", "load", "link"] + (["mul", "div"] if muldiv else []) + (["csr"] if zicsr else [])
+                 + (["atomic"] if atomic else []))
+    data = (["alu", "branch", "store-data"] + (["muldiv"] if muldiv else []) + (["csr"] if zicsr else [])
+            + (["amo-data"] if atomic else []))
+    address = {"alu": ["load-addr", "store-addr", "jalr"] + (["amo-addr"] if atomic else []),
+               "load": ["load-addr", "store-addr", "jalr"] + (["amo-addr"] if atomic else []),
+               "link": ["load-addr", "jalr"],
+               "atomic": ["load-addr", "store-addr", "amo-addr"]}
     return [(p, d, c) for p in producers for d in (1, 2, 3, 4) for c in data + address.get(p, [])]
 
 
@@ -505,6 +538,8 @@ def hazard_coverage(records: list) -> dict[tuple[str, int, str], int]:
         reads = _READS.get(opcode)
         if opcode == 0x73 and (record.insn >> 12) & 7 in (1, 2, 3):
             reads = ("csr", None)                 # a CSR instruction's register source
+        if opcode == 0x2F and record.insn >> 27 == 0b00010:
+            reads = ("amo-addr", None)            # lr.w: rs2 is not an operand
         if reads:
             if opcode == 0x33 and record.insn >> 25 == 1:
                 reads = ("muldiv", "muldiv")
@@ -714,7 +749,7 @@ class Outcome:
 
 # --interrupts: the instruction classes whose every pair (interrupted after,
 # killed and re-executed after the handler) a run must produce.
-INTERRUPT_CLASSES = ("alu", "load", "store", "branch", "jump", "mul", "div")
+INTERRUPT_CLASSES = ("alu", "load", "store", "branch", "jump", "mul", "div", "atomic", "fence")
 MRET = 0x30200073
 
 
@@ -864,9 +899,12 @@ def run_random(args, config, prefix: str) -> int:
     # M if the DUT has it; with Zicsr, CSR instructions and traps in lockstep,
     # and under random interrupts only the CSR instructions an interrupt leaves
     # alone (the environment owns the trap vector and mscratch).
-    extensions = "m" if "m" in config["march"][4:].split("_")[0] else ""
+    base = config["march"][4:].split("_")[0]
+    extensions = ",".join(name for name in ("m", "a") if name in base)
     if "zicsr" in config["march"]:
         extensions += ",zicsr" if args.interrupts is None else ",irqcsr"
+    if "zifencei" in config["march"]:
+        extensions += ",zifencei"
     failures, total_cycles, total_retired, coverage = [], 0, 0, {}
     for seed in range(args.random_seed, args.random_seed + args.random):
         source = out / f"rvgen_{seed}.S"

@@ -39,13 +39,34 @@
 // DUT that stops on a trap (PicoRV32; the Aster core takes its traps) raises
 // `trap`.
 //
+// Instruction fetches see a data-port write only once the memory has answered
+// it (docs/cpu.md §5 orders accesses within a port, not across the two): a
+// fetch accepted before that answer has been taken — up to and including the
+// edge at which the core takes it — reads the word as it was. So code that
+// rewrites instructions must use fence.i, and fence.i must wait for the
+// writes' answers (18.4).
+//
+// Atomics (18.4; d_req_op 2 lr, 3 sc, 4-12 amoswap, add, xor, and, or, min,
+// max, minu, maxu): each is one indivisible operation on the word. lr reads it
+// and reserves it; sc writes only if the reservation holds that word, answers
+// 0 (written) or 1, and always ends the reservation; an AMO reads the old
+// value, writes the new one and answers the old. The reservation follows
+// Spike's: the hart's own stores do not end it, an exception does (Spike ends
+// its instruction step at one), an interrupt does not. Spike also ends it
+// at its own step boundaries (every 5,000 instructions), which the core cannot
+// know, so a run that compares with Spike passes Spike's sc outcomes
+// (+sc_outcomes=<file>: S or F per sc, in program order; every sc the memory
+// accepts is a right-path one, in order): the shell then answers each sc as
+// Spike did, and fails (SC_MISMATCH) if Spike's sc succeeded where the shell's
+// reservation did not hold, or if the counts differ.
+//
 // Interrupts (Aster core): the shell drives meip, mtip and msip, low unless a
 // program uses the interrupt device (+irq_device): a word at 0x3000_0000 whose
 // store sets the three lines, in mip's layout (bit 11 MEIP, 7 MTIP, 3 MSIP),
 // `value >> 16` cycles after the cycle following its acceptance, and whose
 // load returns them. With +irq_random=<seed> (which implies the device) the
 // shell also raises MEIP or MSIP at random, about once per +irq_period cycles
-// (default 40) while neither is high; a handler clears them with a store of 0.
+// (default 20) while neither is high; a handler clears them with a store of 0.
 //
 // Protocol checks (docs/cpu.md §4-§5; shell_ports.h):
 // - I_REQ_UNSTABLE: a fetch presented and not accepted must be presented
@@ -102,6 +123,7 @@
 //                                   d_rsp_error and the run continues: the DUT must
 //                                   trap on it; by default the run stops, BUS_ERROR)
 //           [+irq_device] [+irq_random=<seed>] [+irq_period=<n>]   (interrupts, above)
+//           [+sc_outcomes=<file>]  (atomics, above)
 //
 // Memory regions, console, and the measurement window: shell_common.h.
 // The DUT's RVFI outputs are sampled after the rising edge, so they must be
@@ -116,8 +138,8 @@
 // i_rsp_error; interrupt handler entries), where status is PASS,
 // FAIL test=<n>, FAIL (partial tohost store), FAIL (kernel record), TRAP, TIMEOUT, BUS_ERROR,
 // STORE_MISMATCH, STRAY_WRITE, UNSUPPORTED_OP, I_REQ_UNSTABLE, D_REQ_UNSTABLE,
-// D_REQ_MALFORMED, D_INFLIGHT, RVFI_COMBINATIONAL, PC_WDATA_MISMATCH, LOAD_MISMATCH or
-// STRAY_READ.
+// D_REQ_MALFORMED, D_INFLIGHT, RVFI_COMBINATIONAL, PC_WDATA_MISMATCH, LOAD_MISMATCH,
+// STRAY_READ or SC_MISMATCH.
 #include "Vcore_ports.h"
 #include "verilated.h"
 
@@ -138,7 +160,23 @@
 using shell::plusarg;
 
 namespace {
-constexpr int kLoad = 0, kStore = 1;
+constexpr int kLoad = 0, kStore = 1, kLr = 2, kSc = 3, kAmoFirst = 4, kAmoLast = 12;
+
+// An AMO's new value (d_req_op 4-12).
+std::uint32_t amo_value(int op, std::uint32_t old, std::uint32_t operand) {
+    const std::int32_t a = std::int32_t(old), b = std::int32_t(operand);
+    switch (op) {
+        case 5: return old + operand;
+        case 6: return old ^ operand;
+        case 7: return old & operand;
+        case 8: return old | operand;
+        case 9: return a < b ? old : operand;
+        case 10: return a > b ? old : operand;
+        case 11: return old < operand ? old : operand;
+        case 12: return old > operand ? old : operand;
+        default: return operand;                       // 4: amoswap
+    }
+}
 constexpr std::uint32_t kIrqDevice = 0x30000000u;
 // The CSR of each rvfi_csr_wvalid/wdata entry (shell_aster_ports.sv).
 constexpr std::uint32_t kCsrAddress[15] = {0x300, 0x310, 0x304, 0x344, 0x305, 0x340, 0x341, 0x342,
@@ -149,7 +187,7 @@ constexpr std::uint32_t kCsrAddress[15] = {0x300, 0x310, 0x304, 0x344, 0x305, 0x
 struct IrqLines {
     bool device = false, random = false;
     std::mt19937 rng{0};
-    std::uint32_t period = 40;
+    std::uint32_t period = 20;
     std::uint32_t level = 0, next_level = 0;
     long delay = -1;                         // cycles until next_level applies; -1 none pending
     void store(std::uint32_t value) { next_level = value & 0x888u; delay = long(value >> 16); }
@@ -171,6 +209,21 @@ struct Read {
     std::uint32_t word;
     std::uint32_t mask;
 };
+
+// A data-port write not yet answered: what the fetch port still sees there.
+struct Unanswered {
+    std::uint64_t sequence;                  // the access's place in the data port's answer order
+    std::uint32_t word;
+    std::uint32_t mask;
+    std::uint32_t old;
+};
+
+std::uint32_t lane_bytes(std::uint32_t mask) {
+    std::uint32_t bytes = 0;
+    for (int lane = 0; lane < 4; ++lane)
+        if (mask & (1u << lane)) bytes |= 0xffu << (8 * lane);
+    return bytes;
+}
 
 // The RVFI outputs the shell samples, for the registered-output check.
 struct Rvfi {
@@ -262,6 +315,33 @@ int main(int argc, char** argv) {
     const bool load_check = !shell::plusflag("skip_load_check");
     std::uint64_t accepted_reads = 0;
     std::deque<Read> reads;                 // accepted loads not yet matched to a retired load
+    std::deque<Unanswered> unanswered;      // data writes the fetch port does not see yet
+    std::uint64_t data_accepted = 0, data_answered = 0;
+    // A write performed at acceptance, kept from the fetch port until answered
+    // (only writes to memory the core can fetch from: an io-page read has effects).
+    auto write_data = [&](std::uint32_t address, std::uint32_t data, std::uint32_t mask) {
+        if (memory.executable(address))
+            unanswered.push_back({data_accepted, address & ~3u, mask, memory.read(address)});
+        memory.write(address, data, mask);
+    };
+    auto fetch_word = [&](std::uint32_t address) {
+        std::uint32_t value = memory.read(address);
+        for (auto it = unanswered.rbegin(); it != unanswered.rend(); ++it)   // the oldest last
+            if (it->word == (address & ~3u))
+                value = (value & ~lane_bytes(it->mask)) | (it->old & lane_bytes(it->mask));
+        return value;
+    };
+    bool reserved = false;                  // the lr reservation, and its word
+    std::uint32_t reserved_word = 0;
+    std::string sc_outcomes;                // Spike's sc outcomes (+sc_outcomes), and the next one
+    std::size_t sc_next = 0;
+    const bool sc_oracle = !plusarg("sc_outcomes").empty();
+    if (sc_oracle) {
+        std::FILE* file = std::fopen(plusarg("sc_outcomes").c_str(), "r");
+        if (!file) { std::cerr << "cannot read " << plusarg("sc_outcomes") << "\n"; return 2; }
+        for (int c; (c = std::fgetc(file)) != EOF;) if (c == 'S' || c == 'F') sc_outcomes += char(c);
+        std::fclose(file);
+    }
     std::uint64_t accepted_writes = 0, fetch_errors = 0, interrupts = 0;
     shell::Port iport, dport;
     bool d_error_next = false;              // d_rsp_error for the request accepted at the last edge
@@ -312,6 +392,7 @@ int main(int argc, char** argv) {
         sampled = true;
         // Responses delivered in the cycle before this edge are consumed; others age.
         iport.advance();
+        if (dport.responding()) ++data_answered;
         dport.advance();
         d_error_next = false;
         d_error_cycle = d_accept;
@@ -319,14 +400,16 @@ int main(int argc, char** argv) {
             const bool error = !memory.executable(i_addr);
             fetch_errors += error;
             iport.accept(latency, stall ? int(rng() % 3) : 0,
-                         error ? std::uint32_t(garbage()) : memory.read(i_addr), error);
+                         error ? std::uint32_t(garbage()) : fetch_word(i_addr), error);
         }
+        // The fetch above, accepted at the answer's edge, still read the old word.
+        while (!unanswered.empty() && unanswered.front().sequence < data_answered) unanswered.pop_front();
         if (d_accept) {
             const bool device = irq.device && (d_addr & ~3u) == kIrqDevice;
             const bool error = !device && !memory.contains(d_addr);
             std::uint32_t rdata = std::uint32_t(garbage());
             d_error_next = error;
-            if (d_op != kLoad && d_op != kStore) { result = "UNSUPPORTED_OP"; stop = true; }
+            if (d_op < kLoad || d_op > kAmoLast || (device && d_op > kStore)) { result = "UNSUPPORTED_OP"; stop = true; }
             else if (device) {
                 // The interrupt device: its stores are checked against RVFI like any other.
                 if (d_op == kStore) {
@@ -342,10 +425,42 @@ int main(int argc, char** argv) {
                 // Not performed; answered with d_rsp_error. By default the run
                 // stops here; with +bus_error_traps the DUT must trap on it.
                 if (!bus_error_traps) { result = "BUS_ERROR"; stop = true; }
+                if (d_op == kSc) reserved = false;
+            }
+            else if (d_op == kLr) {
+                rdata = memory.read(d_addr);
+                reads.push_back({d_addr & ~3u, d_be});
+                reserved = true;
+                reserved_word = d_addr & ~3u;
+            }
+            else if (d_op == kSc) {
+                const bool held = reserved && reserved_word == (d_addr & ~3u);
+                bool success = held;
+                reserved = false;
+                if (sc_oracle) {
+                    if (sc_next >= sc_outcomes.size()) { result = "SC_MISMATCH"; stop = true; }
+                    else {
+                        success = sc_outcomes[sc_next++] == 'S';
+                        if (success && !held) { result = "SC_MISMATCH"; stop = true; }
+                    }
+                }
+                if (success) {
+                    ++accepted_writes;
+                    write_data(d_addr, d_wdata, d_be);
+                    writes.push_back({d_addr & ~3u, d_be, d_wdata});
+                }
+                rdata = success ? 0u : 1u;
+            }
+            else if (d_op >= kAmoFirst) {
+                rdata = memory.read(d_addr);
+                const std::uint32_t written = amo_value(d_op, rdata, d_wdata);
+                ++accepted_writes;
+                write_data(d_addr, written, d_be);
+                writes.push_back({d_addr & ~3u, d_be, written});
             }
             else if (d_op == kStore) {
                 const std::uint32_t written = ++accepted_writes == corrupt_write ? d_wdata ^ 0x01010101u : d_wdata;
-                memory.write(d_addr, written, d_be);
+                write_data(d_addr, written, d_be);
                 writes.push_back({d_addr & ~3u, d_be, written});
                 if (duplicate_tohost_write && (d_addr & ~3u) == tohost) writes.push_back({d_addr & ~3u, d_be, written});
             } else {
@@ -354,8 +469,10 @@ int main(int argc, char** argv) {
                 if (++accepted_reads == duplicate_read) reads.push_back({d_addr & ~3u, d_be});
             }
             dport.accept(latency, stall ? int(rng() % 3) : 0, rdata, error);
+            ++data_accepted;
         }
         irq.edge();
+        if (d.rvfi_valid && !stop && d.rvfi_trap) reserved = false;   // an exception ends the reservation
         if (d.rvfi_valid && !stop) {
             // Each record's pc_wdata must be the next record's pc_rdata
             // (riscv-formal's pc_fwd; a trap record's is its handler's
@@ -414,6 +531,7 @@ int main(int argc, char** argv) {
     if ((result == "PASS" || result == "TRAP") && !writes.empty()) result = "STRAY_WRITE";
     if (load_check && (result == "PASS" || result == "TRAP") && reads.size() > (observer.end_at_record ? 3u : 0u))
         result = "STRAY_READ";
+    if (sc_oracle && result == "PASS" && sc_next != sc_outcomes.size()) result = "SC_MISMATCH";
     if (trace) std::fclose(trace);
     if (retire_log) std::fclose(retire_log);
     if (observer.console) std::fclose(observer.console);

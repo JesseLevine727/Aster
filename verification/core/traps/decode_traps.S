@@ -65,9 +65,16 @@ t12_insn:
     // time is read-only: a write is illegal (a read is not: csr_ordering).
 t13_insn:
     csrw time, a0
+    // lr.w with a nonzero rs2 field, and an RV64 AMO (amoadd.d): illegal; a
+    // fence.i with a nonzero immediate executes (as Spike decodes it).
+t14_insn:
+    .word 0x1014252f
+t15_insn:
+    .word 0x0064352f
+    .word 0x0010100f
 
     li TESTNUM, 3
-    EXPECT_TRAPS(14)
+    EXPECT_TRAPS(16)
     EXPECT_TRAP(0, CAUSE_ILLEGAL_INSTRUCTION, t0_insn, 0)
     EXPECT_TRAP(1, CAUSE_ILLEGAL_INSTRUCTION, t1_insn, 0xffffffff)
     EXPECT_TRAP(2, CAUSE_ILLEGAL_INSTRUCTION, t2_insn, 0x0001)
@@ -82,6 +89,8 @@ t13_insn:
     EXPECT_TRAP(11, CAUSE_MACHINE_ECALL, t11_insn, 0)
     EXPECT_TRAP_AT(12, CAUSE_BREAKPOINT, t12_insn, t12_insn, 0)
     EXPECT_TRAP(13, CAUSE_ILLEGAL_INSTRUCTION, t13_insn, 0xc0151073)
+    EXPECT_TRAP(14, CAUSE_ILLEGAL_INSTRUCTION, t14_insn, 0x1014252f)
+    EXPECT_TRAP(15, CAUSE_ILLEGAL_INSTRUCTION, t15_insn, 0x0064352f)
     li TESTNUM, 4
     lw t1, 4(s0)
     bne t1, s2, fail

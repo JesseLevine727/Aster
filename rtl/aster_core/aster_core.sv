@@ -1,8 +1,16 @@
 // Aster core: the seven-stage, single-issue, in-order core of docs/cpu.md —
 // F1 F2 (aster_core_fetch), Decode, Execute, M1, M2, Write-back.
 //
-// Milestones 18.1-18.3: RV32IM, Zicsr, machine-mode traps and interrupts, and
-// the counters (aster_core_pkg; docs/cpu.md §3).
+// Milestones 18.1-18.4: RV32IMA, Zicsr, Zifencei, machine-mode traps and
+// interrupts, and the counters (aster_core_pkg; docs/cpu.md §3).
+//
+// Atomics (18.4): an lr.w, sc.w or AMO is one data-port operation (d_req_op, a
+// word, address rs1), executed by the memory as one transaction; its result
+// (the word, sc's 0 or 1, the AMO's old value) comes back as a load's does,
+// so it is a late result for the interlock. fence.i waits in Execute until M1
+// and M2 are empty (every older data access has been answered) and then
+// redirects to the next instruction like a jalr, which refetches everything
+// after it.
 //
 // Traps (docs/cpu.md §3-§4): an instruction with a trap cause — a fetch fault
 // it carries, an illegal encoding, `ecall` or `ebreak`, a misaligned access or
@@ -113,7 +121,7 @@ module aster_core
     input  logic        i_rsp_valid,
     input  logic [31:0] i_rsp_data,
     input  logic        i_rsp_error,
-    // data port (d_req_op: 0 load, 1 store until 18.4)
+    // data port (d_req_op: aster_core_pkg's OP_* codes)
     output logic        d_req_valid,
     output logic [3:0]  d_req_op,
     output logic [31:0] d_req_addr,
@@ -218,7 +226,7 @@ module aster_core
     assign mie_value           = {20'b0, mie_meie, 3'b0, mie_mtie, 3'b0, mie_msie, 3'b0};
     assign mip_value           = {20'b0, mip_q[2], 3'b0, mip_q[1], 3'b0, mip_q[0], 3'b0};
     assign mcountinhibit_value = {29'b0, ir_inhibit, 1'b0, cy_inhibit};
-    localparam logic [31:0] MISA = 32'h4000_1100;       // RV32, I and M (A joins in 18.4)
+    localparam logic [31:0] MISA = 32'h4000_1101;       // RV32, I, M and A
 
     // ------------------------------------------------------------------ fetch
     logic        d_redirect, e_flush, f_valid, f_error, d_take;
@@ -320,7 +328,8 @@ module aster_core
     logic        div_done;          // the divider holds Execute's division result
     assign e_operands = (!e_dec.uses_rs1 || rs1_ready) && (!e_dec.uses_rs2 || rs2_ready);
     // A CSR instruction or mret waits until M1 is empty (serializing).
-    assign e_ready    = e_operands && (!e_dec.div || div_done) && (!e_dec.sys || !m1.valid);
+    assign e_ready    = e_operands && (!e_dec.div || div_done) && (!e_dec.sys || !m1.valid)
+                      && (!e_dec.fencei || (!m1.valid && !m2.valid));
 
     // Divider: div_count is 0 while idle; the operands as read are latched as it
     // starts (count 0 to 1), so no arithmetic follows the forwarding mux; count
@@ -380,7 +389,8 @@ module aster_core
     // `mret`, a `jalr`'s computed target, else the fall-through if Decode
     // predicted the branch taken, else the branch target. The compare only
     // decides whether.
-    assign e_redirect_target = e_dec.mret ? {mepc, 2'b00} : e_dec.jalr ? e_jtarget : e_pred ? e_link : e_btarget;
+    assign e_redirect_target = e_dec.mret ? {mepc, 2'b00} : e_dec.jalr ? e_jtarget
+                             : (e_pred || e_dec.fencei) ? e_link : e_btarget;
     assign e_target_misaligned = (e_dec.jalr && e_jtarget[1]) || ((e_dec.jal || e_taken) && e_btarget[1]);
     // A load's or store's address (and a jalr's target) has its own adder, and
     // its alignment comes from the two low bits alone, so the stall logic does
@@ -404,7 +414,8 @@ module aster_core
     // does not change the next PC. The trap logic is left out of this path: a
     // branch or jalr that traps (a misaligned target) traps at the commit
     // point, whose redirect replaces its own.
-    assign e_mispredict = e_dec.jalr || e_dec.mret || (e_dec.branch && e_taken != e_pred && e_dec.imm != 32'd4);
+    assign e_mispredict = e_dec.jalr || e_dec.mret || e_dec.fencei
+                       || (e_dec.branch && e_taken != e_pred && e_dec.imm != 32'd4);
 
     // ------------------------------------------------------------ M1, M2, W
     logic d_acc_last;               // a data request was accepted at the last edge (it is in M1)
@@ -464,7 +475,7 @@ module aster_core
     assign kill       = m1_stop && m1_advance;          // a trap or an interrupt is taken at this edge
 
     assign d_req_valid = e_live && e_access && e_ready && m1_free && !m1_stop;
-    assign d_req_op    = e_dec.store ? 4'd1 : 4'd0;
+    assign d_req_op    = e_dec.atomic ? e_dec.amo_op : e_dec.store ? OP_STORE : OP_LOAD;
     assign d_req_addr  = e_addr;
     assign d_req_wdata = e_wdata;
     assign d_req_be    = e_be;
@@ -830,6 +841,9 @@ module aster_core
         if (w_write) rf[w.rd] <= w_value;
     end
 
+    logic w_sc, w_amo;
+    assign w_sc  = w.insn[6:0] == 7'h2F && w.insn[31:27] == 5'b00011;
+    assign w_amo = w.insn[6:0] == 7'h2F && w.insn[31:28] != 4'b0001;    // neither lr nor sc
     always_ff @(posedge clk) begin
         if (!rst_n) begin
             rvfi_valid <= 1'b0;
@@ -849,11 +863,15 @@ module aster_core
         rvfi_rd_wdata  <= w_write ? w_value : 32'b0;
         rvfi_pc_rdata  <= w.pc;
         rvfi_pc_wdata  <= w.next_pc;
+        // Atomics: an sc reads nothing, and writes only if it succeeded (its
+        // answer is 0); an AMO reads the old value and writes the new, which
+        // RVFI recomputes here (the memory computed it).
         rvfi_mem_addr  <= (w.load || w.store) ? {w.addr[31:2], 2'b00} : 32'b0;
-        rvfi_mem_rmask <= w.load ? w.be : 4'b0;
-        rvfi_mem_wmask <= w.store ? w.be : 4'b0;
-        rvfi_mem_rdata <= w.load ? w.rdata : 32'b0;
-        rvfi_mem_wdata <= w.store ? w.wdata & {{8{w.be[3]}}, {8{w.be[2]}}, {8{w.be[1]}}, {8{w.be[0]}}} : 32'b0;
+        rvfi_mem_rmask <= w.load && !w_sc ? w.be : 4'b0;
+        rvfi_mem_wmask <= w.store && (!w_sc || w.rdata == 32'b0) ? w.be : 4'b0;
+        rvfi_mem_rdata <= w.load && !w_sc ? w.rdata : 32'b0;
+        rvfi_mem_wdata <= !w.store ? 32'b0 : w_amo ? amo_value(w.insn[31:27], w.rdata, w.rs2v)
+                        : w.wdata & {{8{w.be[3]}}, {8{w.be[2]}}, {8{w.be[1]}}, {8{w.be[0]}}};
     end
     assign rvfi_halt = 1'b0;
     assign rvfi_mode = 2'd3;

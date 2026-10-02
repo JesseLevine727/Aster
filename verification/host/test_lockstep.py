@@ -171,17 +171,68 @@ class HazardCoverage(unittest.TestCase):
                                 ("alu", 3, "store-addr"): 1, ("load", 2, "store-data"): 1,
                                 ("alu", 4, "muldiv"): 1, ("load", 3, "muldiv"): 1, ("mul", 1, "branch"): 1})
 
-    def test_amos_produce_like_loads(self):
-        # amoadd.w x5, x2, (x1) then add x6, x5, x5: an AMO result is a load-class
+    def test_atomic_results_are_their_own_producer_class(self):
+        # amoadd.w x5, x2, (x1) then add x6, x5, x5: an AMO result is an atomic
         # producer (read through both operands: two pairs)
         records = [self.record(0x002082af, rd=5), self.record(0x00528333, rd=6)]
-        self.assertEqual(run_core_tests.hazard_coverage(records), {("load", 1, "alu"): 2})
+        self.assertEqual(run_core_tests.hazard_coverage(records), {("atomic", 1, "alu"): 2})
 
     def test_required_bins_depend_on_extensions(self):
         self.assertEqual(len(run_core_tests.required_bins("")), 4 * (3 * 3 + 3 + 3 + 2))
         self.assertIn(("load", 4, "store-data"), run_core_tests.required_bins(""))
         self.assertTrue(all(p not in ("mul", "div") for p, _, _ in run_core_tests.required_bins("")))
         self.assertIn(("div", 3, "muldiv"), run_core_tests.required_bins("m"))
+
+    def test_required_bins_with_atomics(self):
+        # 18.4: AMO data from every producer, AMO addresses from ALU, load and
+        # AMO results, and AMO results to every data consumer and as addresses
+        bins = run_core_tests.required_bins("m,zicsr,a")
+        self.assertEqual(len(bins), 220)
+        self.assertIn(("mul", 1, "amo-data"), bins)
+        self.assertIn(("load", 1, "amo-addr"), bins)
+        self.assertIn(("atomic", 1, "amo-addr"), bins)
+        self.assertIn(("atomic", 2, "csr"), bins)
+        self.assertNotIn(("atomic", 1, "jalr"), bins)
+        self.assertNotIn(("link", 1, "amo-addr"), bins)
+        self.assertEqual(len(run_core_tests.required_bins("m,zicsr")), 152)
+
+    def test_amo_operands_and_lr_address_are_consumers(self):
+        records = [
+            self.record(0x00100093, rd=1),   # addi x1, x0, 1
+            self.record(0x00200113, rd=2),   # addi x2, x0, 2
+            self.record(0x002082af, rd=5),   # amoadd.w x5, x2, (x1): x1 d=2 address, x2 d=1 data
+            self.record(0x1000a2af, rd=5),   # lr.w x5, (x1): x1 d=3 address (rs2 is not read)
+            self.record(0x1820a32f, rd=6),   # sc.w x6, x2, (x1): x1 d=4, x2 d=3
+        ]
+        self.assertEqual(run_core_tests.hazard_coverage(records),
+                         {("alu", 2, "amo-addr"): 1, ("alu", 1, "amo-data"): 1, ("alu", 3, "amo-addr"): 1,
+                          ("alu", 4, "amo-addr"): 1, ("alu", 3, "amo-data"): 1})
+
+
+class ScOutcomes(unittest.TestCase):
+    """The runner hands the shell Spike's sc outcomes in program order (18.4)."""
+
+    SPIKE = """core   0: 3 0x00001000 (0x00000297) x5  0x00001000
+core   0: 0x80000000 (0x1000a2af) lr.w    t0, (ra)
+core   0: 3 0x80000000 (0x1000a2af) x5  0x00000007 mem 0x80001000
+core   0: 0x80000004 (0x1820a32f) sc.w    t1, sp, (ra)
+core   0: 3 0x80000004 (0x1820a32f) x6  0x00000000 mem 0x80001000 0x00000002
+core   0: 0x80000008 (0x1820a32f) sc.w    t1, sp, (ra)
+core   0: 3 0x80000008 (0x1820a32f) x6  0x00000001
+core   0: 0x8000000c (0x1820a32f) sc.w    t1, sp, (ra)
+core   0: exception trap_store_address_misaligned, epc 0x8000000c
+core   0:           tval 0x80001001
+core   0: 0x80000010 (0x002082af) amoadd.w t0, sp, (ra)
+core   0: 3 0x80000010 (0x002082af) x5  0x00000002 mem 0x80001000 mem 0x80001000 0x00000004
+core   0: 0x80000014 (0x04afa023) sw      a0, 64(t6)
+core   0: 3 0x80000014 (0x04afa023) mem 0x80001040 0x00000001
+"""
+
+    def test_successes_and_failures_in_order_skipping_traps_and_amos(self):
+        self.assertEqual(run_core_tests.sc_outcomes(self.SPIKE, TOHOST), "SF")
+
+    def test_unparsable_log_gives_no_outcomes(self):
+        self.assertEqual(run_core_tests.sc_outcomes(self.SPIKE.splitlines()[0], TOHOST), "")
 
 
 class SignatureCheck(unittest.TestCase):

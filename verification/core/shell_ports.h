@@ -50,8 +50,8 @@ struct Request {
 // it is accepted, except that the core may withdraw or replace it in a cycle
 // it marks as excused (a redirect on the instruction port, a pipeline flush
 // on the data port). Write data is compared only for operations that write
-// (op != 0; when 18.4 adds `lr`, whose write data is don't-care, it joins the
-// loads here). Call once per cycle with the request and the memory's readiness;
+// (not a load, op 0, or an `lr`, op 2, whose write data is don't-care). Call
+// once per cycle with the request and the memory's readiness;
 // returns "" or what was violated.
 struct StableCheck {
     bool waiting = false;           // last cycle's request was presented and not accepted
@@ -62,7 +62,7 @@ struct StableCheck {
         if (waiting && !excused) {
             if (!request.valid) violation = "withdrawn while waiting";
             else if (request.addr != held.addr || request.op != held.op || request.be != held.be ||
-                     (held.op != 0 && request.wdata != held.wdata))
+                     (held.op != 0 && held.op != 2 && request.wdata != held.wdata))
                 violation = "changed while waiting";
         }
         waiting = request.valid && !ready;

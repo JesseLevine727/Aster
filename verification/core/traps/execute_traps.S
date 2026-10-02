@@ -7,6 +7,7 @@
 // backward branch only when its target is aligned, so this one is resolved in
 // Execute too); a trapping branch's own redirect is replaced by the trap's.
 // Untaken branches and a `jalr` target with only bit 0 set do not trap.
+// lr.w, sc.w and an AMO on a misaligned address trap too (18.4).
 #include "trap_test.h"
 
 RVTEST_RV32M
@@ -68,8 +69,18 @@ t9_insn:
     beqz a2, 6b + 2               // backward and taken: traps, resumes below
     beqz x0, 6b                   // backward, taken to an aligned target (predicted)
 8:
+    // Atomics on a misaligned word (18.4): lr is a misaligned load, sc and an
+    // AMO a misaligned store/AMO; none reaches the data port.
+    li TESTNUM, 8
+    addi t0, s0, 1
+t10_insn:
+    lr.w a1, (t0)
+t11_insn:
+    sc.w a1, a2, (t0)
+t12_insn:
+    amoadd.w a1, a2, (t0)
     li TESTNUM, 6
-    EXPECT_TRAPS(10)
+    EXPECT_TRAPS(13)
     EXPECT_TRAP_AT(0, CAUSE_MISALIGNED_LOAD, t0_insn, data, 1)
     EXPECT_TRAP_AT(1, CAUSE_MISALIGNED_LOAD, t1_insn, data, 3)
     EXPECT_TRAP_AT(2, CAUSE_MISALIGNED_LOAD, t2_insn, data, 2)
@@ -80,6 +91,9 @@ t9_insn:
     EXPECT_TRAP_AT(7, CAUSE_MISALIGNED_FETCH, t7_insn, t7_insn, 6)
     EXPECT_TRAP_AT(8, CAUSE_MISALIGNED_FETCH, t8_insn, t8_insn, 10)
     EXPECT_TRAP_AT(9, CAUSE_MISALIGNED_FETCH, t9_insn, t9_insn, -10)
+    EXPECT_TRAP_AT(10, CAUSE_MISALIGNED_LOAD, t10_insn, data, 1)
+    EXPECT_TRAP_AT(11, CAUSE_MISALIGNED_STORE, t11_insn, data, 1)
+    EXPECT_TRAP_AT(12, CAUSE_MISALIGNED_STORE, t12_insn, data, 1)
     li TESTNUM, 7
     lw t1, 0(s0)                  // no misaligned store changed memory
     li t2, 0x03020100

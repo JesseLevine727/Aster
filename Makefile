@@ -2178,22 +2178,26 @@ core-aster-fetch: $(ASTER_FETCH_TEST)
 	@$(ASTER_FETCH_TEST)
 
 # The Aster core in the two-port shell (verification/core/shell_aster_ports.sv),
-# milestones 18.1-18.3 (RV32IM, Zicsr, traps, interrupts, counters). In
-# lockstep with Spike (configured as the core is: machine mode only, no PMP or
-# debug triggers), with the shell's store and protocol checks: riscv-tests
-# rv32ui, rv32um and rv32mi, the directed tests and the directed traps (an
-# exception from every stage it can occur in), plus the self-checking
-# interrupt programs in the shell alone, on the two-cycle memory, the
+# milestones 18.1-18.4 (RV32IMA, Zicsr, Zifencei, traps, interrupts,
+# counters). In lockstep with Spike (configured as the core is: machine mode
+# only, no PMP or debug triggers; the shell answers each sc as Spike did), with
+# the shell's store, load and protocol checks (and instruction fetches that
+# see a data write only once it is answered): riscv-tests rv32ui, rv32um,
+# rv32ua and rv32mi, the directed tests (atomics, self-modifying code) and the
+# directed traps (an exception from every stage it can occur in), plus the
+# self-checking programs in the shell alone, on the two-cycle memory, the
 # one-cycle memory, back-pressure (also mixed with the one-cycle memory), and
-# room for three and four requests in flight; arch-test I, M and privilege;
-# constrained-random programs with CSR instructions and exceptions and with
-# hazard coverage, on time and back-pressured; and random interrupts over
-# rv32ui/rv32um and random programs, each run's stream with the handlers cut
+# room for three and four requests in flight; arch-test I, M, A, Zifencei and
+# privilege; constrained-random programs with atomics, fences, CSR
+# instructions and exceptions and with hazard coverage, on time and
+# back-pressured; and random interrupts over rv32ui/rv32um/rv32ua, the
+# directed tests and random programs, each run's stream with the handlers cut
 # out equal to Spike's, covering every (interrupted, next) instruction class
 # pair. On the memories that answer on time, every program's cycle count must
 # equal the seven-stage CPI model's (--cpi-check). The comparator must catch
 # corrupted CSR writes and trap records (--inject on a trapping program), and
-# the shell a load performed twice (+duplicate_read).
+# the shell a load performed twice (+duplicate_read) and an sc answered as
+# Spike's when its own reservation did not hold (SC_MISMATCH).
 ASTER_CORE_RTL := rtl/aster_core/aster_core_pkg.sv rtl/aster_core/aster_core_fetch.sv rtl/aster_core/aster_core.sv
 ASTER_PORTS_SIM := $(ASTER_CORE_DIR)/core_ports_aster
 $(ASTER_PORTS_SIM): $(ASTER_CORE_RTL) verification/core/shell_aster_ports.sv verification/core/tb_core_ports.cpp verification/core/shell_common.h verification/core/shell_ports.h Makefile
@@ -2234,6 +2238,9 @@ core-aster-tests: $(ASTER_PORTS_SIM)
 	@$(ASTER_TESTS) --build-dir $(CORE_TESTS_DIR)/aster-inject --inject --only traps/decode_traps | tail -1
 	@$(ASTER_TESTS) --build-dir $(CORE_TESTS_DIR)/aster-selftest --only rv32ui/lw \
 		--shell-arg +duplicate_read=3 --expect-status LOAD_MISMATCH
+	@mkdir -p $(CORE_TESTS_DIR)/aster-selftest && printf 'SSSSSSSSSSSSSSSS\n' > $(CORE_TESTS_DIR)/aster-selftest/all_succeed.sc
+	@$(ASTER_TESTS) --build-dir $(CORE_TESTS_DIR)/aster-selftest --only directed/atomics \
+		--shell-arg +sc_outcomes=$(CORE_TESTS_DIR)/aster-selftest/all_succeed.sc --expect-status SC_MISMATCH
 
 # The port response model on its own: order, one answer per cycle, latency,
 # the in-flight limit, and full rate with two in flight.

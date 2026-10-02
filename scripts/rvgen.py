@@ -18,6 +18,16 @@ The stream is built to stress a pipeline, not to compute anything:
   counter register, and `jal`/`jalr` call and return from local leaf blocks;
 - M operations draw operands from the corner values (0, 1, -1, INT_MIN,
   INT_MAX) as well as random ones;
+- with A (`--ext m,a`, the Aster core from 18.4): every AMO on aligned words
+  of the data region, through an address just computed or loaded; lr.w/sc.w
+  pairs with work between them, an sc to another word, and an sc with no lr
+  (whatever Spike's reservation does at its step boundaries, the runner hands
+  the shell Spike's sc outcomes); pointers read from memory by an AMO or lr
+  and used as load, store and AMO addresses, and AMO, lr and sc results used
+  as data;
+- with Zifencei (`--ext ...,zifencei`, the Aster core from 18.4): fence.i
+  (no code is rewritten: the directed smc test does that) and fence in its
+  forms;
 - with Zicsr (`--ext m,zicsr`, the Aster core from 18.3): CSR instructions in
   every form — read-modify-writes of mtval, mcause, mepc and mie, mstatus.MPIE
   set and cleared, reads of minstret(h), misa and mhartid (never a value
@@ -59,7 +69,9 @@ DIV = ["div", "divu", "rem", "remu"]
 CSR_WRITABLE = ["mtval", "mcause", "mepc", "mie"]          # mie: harmless while mstatus.MIE stays clear
 CSR_READABLE = ["minstret", "minstreth", "misa", "mhartid", "mstatus", "mtval", "mcause", "mepc", "mie"]
 IRQ_CSR_READABLE = ["mie", "mcountinhibit", "misa", "mhartid"]
-ILLEGAL = [0x00000000, 0xFFFFFFFF, 0x00000001, 0x02051513, 0x7C002073]   # (fence.i: 18.4)
+AMOS = ["amoswap.w", "amoadd.w", "amoxor.w", "amoand.w", "amoor.w", "amomin.w", "amomax.w", "amominu.w", "amomaxu.w"]
+ILLEGAL = [0x00000000, 0xFFFFFFFF, 0x00000001, 0x02051513, 0x7C002073]
+FENCES = ["fence", "fence rw, rw", "fence r, w", "fence w, r", "fence.tso"]
 TRAP_HANDLER = [
     "    .align 2",
     "    .global mtvec_handler",
@@ -152,7 +164,7 @@ class Generator:
         else:                                  # pointer chase: store the base, load it back
             delta, slot = 0, self.rng.randrange(-2048, 2048, 4)
             self.emit(f"sw x{BASE}, {slot}(x{BASE})")
-            self.emit(f"lw x{base}, {slot}(x{BASE})")
+            self.read_pointer(base, slot)
         self.fillers()
         if self.rng.random() < 0.55:
             op, size = self.rng.choice(LOADS)
@@ -179,8 +191,63 @@ class Generator:
             reg = self.dst()
             self.emit(f"li x{reg}, 0x{self.rng.choice(CORNERS):x}")
         op = self.rng.choice(MUL if self.rng.random() < 0.6 else DIV)
-        s1, s2 = self.src(), self.src()
-        self.emit(f"{op} x{self.dst()}, x{s1}, x{s2}")
+        s1, s2, rd = self.src(), self.src(), self.dst()
+        self.emit(f"{op} x{rd}, x{s1}, x{s2}")
+        if rd and self.rng.random() < 0.2:     # the result as data, 1-4 instructions later
+            self.pinned.add(rd)
+            self.fillers()
+            self.use_as_data(rd)
+            self.pinned.discard(rd)
+
+    def atomic(self) -> None:
+        """An AMO, an lr.w/sc.w pair, or a lone sc.w, on an aligned word of the data region."""
+        if self.rng.random() < 0.3:            # on the base's word, right behind the last result
+            s2 = self.src()
+            self.emit(f"{self.rng.choice(AMOS)} x{self.dst()}, x{s2}, (x{BASE})")
+            return
+        base = self.dst(allow_x0=False)
+        self.pinned.add(base)
+        offset = self.rng.randrange(-2048, 2048, 4)
+        if self.rng.random() < 0.7:
+            self.emit(f"addi x{base}, x{BASE}, {offset}")
+        else:                                  # the address comes from memory
+            slot = self.rng.randrange(-2048, 2048, 4)
+            self.emit(f"addi x{base}, x{BASE}, {offset}")
+            self.emit(f"sw x{base}, {slot}(x{BASE})")
+            self.read_pointer(base, slot)
+        self.fillers()
+        kind = self.rng.random()
+        if kind < 0.55:
+            s2, rd = self.src(), self.dst()
+            self.emit(f"{self.rng.choice(AMOS)} x{rd}, x{s2}, (x{base})")
+        elif kind < 0.9:
+            self.emit(f"lr.w x{self.dst()}, (x{base})")
+            self.fillers()
+            if self.rng.random() < 0.2:        # to another word: it fails
+                other = self.dst(allow_x0=False)
+                self.emit(f"addi x{other}, x{base}, 4")
+                base = other
+            s2, rd = self.src(), self.dst()
+            self.emit(f"sc.w x{rd}, x{s2}, (x{base})")
+        else:                                  # no lr just before
+            s2, rd = self.src(), self.dst()
+            self.emit(f"sc.w x{rd}, x{s2}, (x{base})")
+        self.pinned.discard(base)
+        if rd and self.rng.random() < 0.35:    # the result as data, 1-4 instructions later
+            self.pinned.add(rd)
+            self.fillers()
+            self.use_as_data(rd)
+            self.pinned.discard(rd)
+
+    def read_pointer(self, reg: int, slot: int) -> None:
+        """Read the pointer stored at slot(BASE) into reg: a load, or (with A) an
+        AMO that leaves it unchanged or an lr."""
+        if "a" not in self.ext.split(",") or self.rng.random() < 0.5:
+            self.emit(f"lw x{reg}, {slot}(x{BASE})")
+            return
+        self.emit(f"addi x{reg}, x{BASE}, {slot}")
+        self.emit(self.rng.choice([f"amoor.w x{reg}, x0, (x{reg})", f"amoadd.w x{reg}, x0, (x{reg})",
+                                   f"amoxor.w x{reg}, x0, (x{reg})", f"lr.w x{reg}, (x{reg})"]))
 
     def irq_csr(self) -> None:
         """Under random interrupts: mie (MEIE and MSIE only), mcountinhibit, reads."""
@@ -298,6 +365,7 @@ class Generator:
     def use_as_data(self, reg: int) -> None:
         """Consume `reg` as an ALU, branch, store-data, multiply/divide or CSR-source operand."""
         kinds = (["alu", "branch", "store"] + (["muldiv"] if "m" in self.ext else [])
+                 + (["amo-data"] if "a" in self.ext.split(",") else [])
                  + (["csr"] if "zicsr" in self.ext else []) + (["csr-irq"] if "irqcsr" in self.ext else []))
         kind = self.rng.choice(kinds)
         if kind == "alu":
@@ -309,6 +377,8 @@ class Generator:
         elif kind == "store":
             op, size = self.rng.choice(STORES)
             self.emit(f"{op} x{reg}, {self.rng.randrange(-2048, 2048, size)}(x{BASE})")
+        elif kind == "amo-data":               # on the base's own word, so it can follow at distance 1
+            self.emit(f"{self.rng.choice(AMOS)} x{self.dst()}, x{reg}, (x{BASE})")
         elif kind == "csr":
             op = self.rng.choice(["csrrw", "csrrs", "csrrc"])
             self.emit(f"{op} x{self.dst()}, {self.rng.choice(CSR_WRITABLE)}, x{reg}")
@@ -368,6 +438,12 @@ class Generator:
             elif "irqcsr" in self.ext and self.rng.random() < 0.05:
                 self.irq_csr()
                 continue
+            if "a" in self.ext.split(",") and self.rng.random() < 0.06:
+                self.atomic()
+                continue
+            if "zifencei" in self.ext.split(",") and self.rng.random() < 0.02:
+                self.emit("fence.i" if self.rng.random() < 0.6 else self.rng.choice(FENCES))
+                continue
             choice = self.rng.random()
             if choice < 0.45:
                 self.alu()
@@ -416,7 +492,7 @@ def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument("--seed", type=int, required=True)
     parser.add_argument("--length", type=int, default=2000, help="top-level instructions (blocks add more)")
-    parser.add_argument("--ext", default="m", help="extensions beyond I to use, comma-separated: m, zicsr")
+    parser.add_argument("--ext", default="m", help="extensions beyond I to use, comma-separated: m, a, zicsr")
     parser.add_argument("-o", "--output", type=Path, required=True)
     args = parser.parse_args()
     args.output.write_text(Generator(args.seed, args.ext).program(args.length))
