@@ -5,9 +5,17 @@
 // the core's accesses take effect in order at one memory (docs/cpu.md §5).
 `timescale 1 ns / 1 ps
 package aster_core_pkg;
-    typedef enum logic [3:0] {
-        ALU_ADD, ALU_SUB, ALU_SLL, ALU_SLT, ALU_SLTU, ALU_XOR, ALU_SRL, ALU_SRA, ALU_OR, ALU_AND, ALU_B
-    } alu_op_e;
+    // Execute's result, one-hot: decoded in Decode and registered, so Execute's
+    // result is an AND-OR of its sources with no decode after them.
+    typedef struct packed {
+        logic add;                    // rs1 + operand B
+        logic sub;                    // rs1 - rs2
+        logic sll, slt, sltu, bxor, srl, sra, bor, band;
+        logic imm;                    // the immediate (lui)
+        logic pc_imm;                 // the PC plus the immediate (auipc), from the branch-target adder
+        logic link;                   // the PC plus 4 (jal, jalr)
+        logic div;                    // the divider's result
+    } result_t;
 
     typedef struct packed {
         logic        illegal;
@@ -18,9 +26,8 @@ package aster_core_pkg;
         logic [4:0]  rs2;
         logic [4:0]  rd;
         logic [31:0] imm;
-        alu_op_e     alu_op;
-        logic        a_pc;            // ALU operand A is the PC (auipc)
-        logic        b_imm;           // ALU operand B is the immediate
+        result_t     res;             // one-hot
+        logic        b_imm;           // operand B is the immediate
         logic        load;
         logic        store;
         logic        branch;
@@ -49,22 +56,22 @@ package aster_core_pkg;
         d.rs2     = insn[24:20];
         d.rd      = insn[11:7];
         d.funct3  = funct3;
-        d.alu_op  = ALU_ADD;
+        d.res.add = 1'b1;             // no result written: any one source
         d.illegal = 1'b1;
         if (insn[1:0] == 2'b11) begin
             unique case (insn[6:2])
                 5'b01101: begin                                   // lui
-                    d.illegal = 1'b0; d.writes_rd = 1'b1; d.imm = imm_u; d.alu_op = ALU_B; d.b_imm = 1'b1;
+                    d.illegal = 1'b0; d.writes_rd = 1'b1; d.imm = imm_u; d.res = '0; d.res.imm = 1'b1;
                 end
                 5'b00101: begin                                   // auipc
-                    d.illegal = 1'b0; d.writes_rd = 1'b1; d.imm = imm_u; d.a_pc = 1'b1; d.b_imm = 1'b1;
+                    d.illegal = 1'b0; d.writes_rd = 1'b1; d.imm = imm_u; d.res = '0; d.res.pc_imm = 1'b1;
                 end
                 5'b11011: begin                                   // jal
-                    d.illegal = 1'b0; d.writes_rd = 1'b1; d.imm = imm_j; d.jal = 1'b1;
+                    d.illegal = 1'b0; d.writes_rd = 1'b1; d.imm = imm_j; d.jal = 1'b1; d.res = '0; d.res.link = 1'b1;
                 end
                 5'b11001: if (funct3 == 3'd0) begin               // jalr
                     d.illegal = 1'b0; d.uses_rs1 = 1'b1; d.writes_rd = 1'b1; d.imm = imm_i; d.jalr = 1'b1;
-                    d.b_imm = 1'b1;
+                    d.b_imm = 1'b1; d.res = '0; d.res.link = 1'b1;
                 end
                 5'b11000: if (funct3 != 3'd2 && funct3 != 3'd3) begin   // branches
                     d.illegal = 1'b0; d.uses_rs1 = 1'b1; d.uses_rs2 = 1'b1; d.imm = imm_b; d.branch = 1'b1;
@@ -80,18 +87,19 @@ package aster_core_pkg;
                 5'b00100: begin                                   // OP-IMM
                     d.uses_rs1 = 1'b1; d.writes_rd = 1'b1; d.imm = imm_i; d.b_imm = 1'b1;
                     d.illegal = 1'b0;
+                    d.res = '0;
                     unique case (funct3)
-                        3'd0: d.alu_op = ALU_ADD;
-                        3'd1: begin d.alu_op = ALU_SLL; d.illegal = funct7 != 7'h00; end
-                        3'd2: d.alu_op = ALU_SLT;
-                        3'd3: d.alu_op = ALU_SLTU;
-                        3'd4: d.alu_op = ALU_XOR;
+                        3'd0: d.res.add = 1'b1;
+                        3'd1: begin d.res.sll = 1'b1; d.illegal = funct7 != 7'h00; end
+                        3'd2: d.res.slt = 1'b1;
+                        3'd3: d.res.sltu = 1'b1;
+                        3'd4: d.res.bxor = 1'b1;
                         3'd5: begin
-                            d.alu_op = funct7 == 7'h20 ? ALU_SRA : ALU_SRL;
+                            if (funct7 == 7'h20) d.res.sra = 1'b1; else d.res.srl = 1'b1;
                             d.illegal = funct7 != 7'h00 && funct7 != 7'h20;
                         end
-                        3'd6: d.alu_op = ALU_OR;
-                        3'd7: d.alu_op = ALU_AND;
+                        3'd6: d.res.bor = 1'b1;
+                        3'd7: d.res.band = 1'b1;
                     endcase
                 end
                 5'b01100: begin                                   // OP, and the M extension (funct7 1)
@@ -100,21 +108,24 @@ package aster_core_pkg;
                         d.illegal = 1'b0;
                         d.mul     = !funct3[2];
                         d.div     = funct3[2];
+                        if (funct3[2]) begin d.res = '0; d.res.div = 1'b1; end    // a multiply's result comes from W
                     end else if (funct7 == 7'h00) begin
                         d.illegal = 1'b0;
+                        d.res = '0;
                         unique case (funct3)
-                            3'd0: d.alu_op = ALU_ADD;
-                            3'd1: d.alu_op = ALU_SLL;
-                            3'd2: d.alu_op = ALU_SLT;
-                            3'd3: d.alu_op = ALU_SLTU;
-                            3'd4: d.alu_op = ALU_XOR;
-                            3'd5: d.alu_op = ALU_SRL;
-                            3'd6: d.alu_op = ALU_OR;
-                            3'd7: d.alu_op = ALU_AND;
+                            3'd0: d.res.add = 1'b1;
+                            3'd1: d.res.sll = 1'b1;
+                            3'd2: d.res.slt = 1'b1;
+                            3'd3: d.res.sltu = 1'b1;
+                            3'd4: d.res.bxor = 1'b1;
+                            3'd5: d.res.srl = 1'b1;
+                            3'd6: d.res.bor = 1'b1;
+                            3'd7: d.res.band = 1'b1;
                         endcase
                     end else if (funct7 == 7'h20 && (funct3 == 3'd0 || funct3 == 3'd5)) begin
                         d.illegal = 1'b0;
-                        d.alu_op = funct3 == 3'd0 ? ALU_SUB : ALU_SRA;
+                        d.res = '0;
+                        if (funct3 == 3'd0) d.res.sub = 1'b1; else d.res.sra = 1'b1;
                     end
                 end
                 5'b00011: if (funct3 == 3'd0) d.illegal = 1'b0;   // fence (fence.i comes in 18.4)
@@ -130,20 +141,25 @@ package aster_core_pkg;
         return d;
     endfunction
 
-    function automatic logic [31:0] alu(input alu_op_e op, input logic [31:0] a, input logic [31:0] b);
-        unique case (op)
-            ALU_ADD:  return a + b;
-            ALU_SUB:  return a - b;
-            ALU_SLL:  return a << b[4:0];
-            ALU_SLT:  return {31'b0, $signed(a) < $signed(b)};
-            ALU_SLTU: return {31'b0, a < b};
-            ALU_XOR:  return a ^ b;
-            ALU_SRL:  return a >> b[4:0];
-            ALU_SRA:  return $unsigned($signed(a) >>> b[4:0]);
-            ALU_OR:   return a | b;
-            ALU_AND:  return a & b;
-            default:  return b;               // ALU_B
-        endcase
+    // Execute's result: the selected source (sel is one-hot). Operand A is rs1;
+    // operand B is rs2 or the immediate.
+    function automatic logic [31:0] result(input result_t sel, input logic [31:0] a, input logic [31:0] b,
+                                           input logic [31:0] imm, input logic [31:0] pc_imm,
+                                           input logic [31:0] link, input logic [31:0] quotient);
+        return ({32{sel.add}}    & (a + b))
+             | ({32{sel.sub}}    & (a - b))
+             | ({32{sel.sll}}    & (a << b[4:0]))
+             | ({32{sel.slt}}    & {31'b0, $signed(a) < $signed(b)})
+             | ({32{sel.sltu}}   & {31'b0, a < b})
+             | ({32{sel.bxor}}   & (a ^ b))
+             | ({32{sel.srl}}    & (a >> b[4:0]))
+             | ({32{sel.sra}}    & $unsigned($signed(a) >>> b[4:0]))
+             | ({32{sel.bor}}    & (a | b))
+             | ({32{sel.band}}   & (a & b))
+             | ({32{sel.imm}}    & imm)
+             | ({32{sel.pc_imm}} & pc_imm)
+             | ({32{sel.link}}   & link)
+             | ({32{sel.div}}    & quotient);
     endfunction
 
     // Predecode, as an instruction enters Decode: {predicted taken from Decode,

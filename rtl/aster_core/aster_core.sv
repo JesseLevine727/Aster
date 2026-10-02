@@ -237,7 +237,7 @@ module aster_core
     assign rs2_ready = (fsel2_n[3] || !m1.late) && (fsel2_n[2] || !m2.late);
 
     logic        e_ready, e_taken, e_misaligned, e_target_misaligned, e_trap, e_access, e_mispredict;
-    logic [31:0] e_alu, e_addr, e_link, e_result, e_btarget, e_jtarget, e_wdata;
+    logic [31:0] e_addr, e_link, e_result, e_btarget, e_jtarget, e_wdata;
     logic [1:0]  e_offset;
     logic [3:0]  e_be;
     logic        e_operands;        // the operands' values are ready
@@ -262,9 +262,12 @@ module aster_core
     assign div_finish   = div_count == 6'd34;
     assign div_next     = divide_step(div_remainder, div_quotient, div_divisor);
 
-    assign e_alu     = alu(e_dec.alu_op, e_dec.a_pc ? e_pc : rs1f, e_dec.b_imm ? e_dec.imm : rs2f);
+    // The result is one-hot selected (e_dec.res, decoded in Decode): no decode
+    // follows the forwarded operands, and operand A is rs1 alone (auipc takes
+    // the branch-target adder's PC plus immediate; lui takes the immediate).
     assign e_link    = e_pc + 32'd4;
-    assign e_result  = (e_dec.jal || e_dec.jalr) ? e_link : e_dec.div ? div_result : e_alu;   // div_result: a register
+    assign e_result  = result(e_dec.res, rs1f, e_dec.b_imm ? e_dec.imm : rs2f, e_dec.imm, e_btarget, e_link,
+                              div_result);
     assign e_taken   = e_dec.branch && branch_taken(e_dec.funct3, rs1f, rs2f);
     assign e_btarget = e_pc + e_dec.imm;
     assign e_jtarget = {e_addr[31:1], 1'b0};       // rs1 + imm, from the address adder (not the ALU's mux)
@@ -600,6 +603,20 @@ module aster_core
             end else begin
                 m1 <= m1_view;
             end
+            // M1's data fields load whenever M1 is free, valid or not: m1.valid
+            // qualifies them (an M1 that is not valid is never forwarded from,
+            // multiplied, or moved on), so Execute's late advance and the kill
+            // stay off their inputs.
+            if (m1_free) begin
+                m1.result  <= e_slot.result;
+                m1.addr    <= e_slot.addr;
+                m1.wdata   <= e_slot.wdata;
+                m1.rs1v    <= e_slot.rs1v;
+                m1.rs2v    <= e_slot.rs2v;
+                m1.pc      <= e_slot.pc;
+                m1.next_pc <= e_slot.next_pc;
+                m1.insn    <= e_slot.insn;
+            end
             m1_err_held <= m1_bus_err;
 
             // The multiplier's carry-save vectors, for the multiply in M1, as it moves
@@ -675,8 +692,10 @@ module aster_core
 
 `ifndef SYNTHESIS
     always_ff @(posedge clk) begin
-        // The AND-OR operand mux needs exactly one forwarding select.
+        // The AND-OR operand mux needs exactly one forwarding select, and the
+        // AND-OR result exactly one source.
         if (rst_n) assert ($onehot(fsel1) && $onehot(fsel2)) else $error("forwarding select not one-hot");
+        if (rst_n && e_valid && !e_err) assert ($onehot(e_dec.res)) else $error("result select not one-hot");
         // The stall logic's inverted copies agree with the selects.
         if (rst_n) assert (fsel1_n == ~fsel1 && fsel2_n == ~fsel2[3:2] && rs1f_lo == rs1f[1:0])
             else $error("inverted select copy differs");
