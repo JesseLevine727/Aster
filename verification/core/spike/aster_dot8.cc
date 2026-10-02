@@ -90,7 +90,8 @@ class aster_dot8_t : public extension_t {
     std::vector<csr_t_p> get_csrs(processor_t& proc) const override {
         state_t* state = proc.get_state();
         return {std::make_shared<without_coprocessor_t>(&proc, state->mie, reg_t(1) << IRQ_COP),
-                std::make_shared<without_coprocessor_t>(&proc, state->mstatus, reg_t(SSTATUS_XS))};
+                // the CSR instructions' mstatus (on RV32, a view of the low half)
+                std::make_shared<without_coprocessor_t>(&proc, state->csrmap.at(CSR_MSTATUS), reg_t(SSTATUS_XS))};
     }
 
     std::vector<disasm_insn_t*> get_disasms(const processor_t*) override {

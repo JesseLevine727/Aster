@@ -635,7 +635,8 @@ verifying Xasterdot8, for the owner's review:
   (`conv2d_dot8`) runs in the shell, matching its Phase 17 baseline record.
   On the Aster core it is no faster than the scalar engine (1,365,828 window
   cycles against 1,356,221, with 18% more instructions), as on v1's SoC
-  (10.34 against 9.73 million cycles): the engine's DOT8 path packs bytes at
+  (10.34 against 9.73 million cycles, the Phase 17 baseline's sync1
+  records): the engine's DOT8 path packs bytes at
   a cost close to the multiplies it saves — a matter for the software
   (Phase 19/20), not the core.
 

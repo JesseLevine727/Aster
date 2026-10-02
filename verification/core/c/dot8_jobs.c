@@ -2,9 +2,12 @@
 // hart of the Aster core, in lockstep with Spike. The dot, FIR and GEMM
 // kernels of software/benchmarks/dot8_kernels.c, scalar and Xasterdot8, run
 // over every alignment of their two inputs (4 x 4) and sizes covering empty
-// inputs, the scalar tails and the packed loop; each result is compared with
-// an independent scalar reference, the words around the outputs must keep
-// their guard values, and the inputs must be unchanged. (v1 runs 736 jobs on
+// inputs, the scalar tails and the packed loop; each job has its own data, as
+// in v1 (all zero, all -128, -128 against 127, alternating, or pseudo-random:
+// on a checkerboard of the 4 x 4 alignments at every size, so every alignment
+// of each input meets random data); each result is compared with an
+// independent scalar reference, the words around the outputs must keep their
+// guard values, and the inputs must be unchanged. (v1 runs 736 jobs on
 // two harts with DMA beside them; the sizes here are trimmed to keep the
 // Spike log small: dot to 64, FIR and GEMM to 13.) Then, as v1's runtime does,
 // lr.w, dot8, sc.w sixteen times (the reservation survives the dot8) and a
@@ -14,22 +17,38 @@
 #include "dot8_kernels.h"
 
 enum { BUFFER = 96, OFFSET = 8, YWORDS = 24, YOFFSET = 4 };   // the inputs end by byte 75
-static uint8_t input_a[BUFFER] __attribute__((aligned(64)));
-static uint8_t input_b[BUFFER] __attribute__((aligned(64)));
+// The inputs, filled a word at a time (a byte loop per job would double the run).
+static uint32_t words_a[BUFFER / 4] __attribute__((aligned(64)));
+static uint32_t words_b[BUFFER / 4] __attribute__((aligned(64)));
+#define input_a ((uint8_t *)words_a)
+#define input_b ((uint8_t *)words_b)
 static uint32_t output[YWORDS] __attribute__((aligned(64)));
 static uint32_t reservation_word;
 
 static const uint32_t dot_sizes[] = {0, 1, 2, 3, 4, 5, 7, 8, 15, 16, 31, 64};
 static const uint32_t other_sizes[] = {0, 1, 3, 4, 5, 8, 13};
 
-static uint8_t pattern(uint32_t i, uint32_t seed, uint32_t bank) {
-    switch (seed & 7) {
-        case 0: return 0;
-        case 1: return 128;
-        case 2: return bank ? 127 : 128;
-        case 3: return (i & 1) ? 127 : 128;
-        default: return (uint8_t)((seed >> ((i & 3) * 8)) ^ (i * 73u) ^ (i >> 3) ^ (bank * 0x5bu));
+// A job's input words (bank 0: A, 1: B): v1's patterns, by the seed's low bits.
+static void pattern(uint32_t seed, uint32_t *a, uint32_t *b) {
+    uint32_t state = seed;
+    for (uint32_t i = 0; i < BUFFER / 4; ++i) {
+        switch (seed & 7) {
+            case 0: a[i] = b[i] = 0; break;
+            case 1: a[i] = b[i] = 0x80808080u; break;
+            case 2: a[i] = 0x80808080u; b[i] = 0x7f7f7f7fu; break;
+            case 3: a[i] = b[i] = 0x7f807f80u; break;
+            default:
+                state = state * 1664525u + 1013904223u; a[i] = state;
+                state = state * 1664525u + 1013904223u; b[i] = state;
+        }
     }
+}
+static int unchanged(uint32_t seed) {
+    static uint32_t a[BUFFER / 4], b[BUFFER / 4];
+    pattern(seed, a, b);
+    for (uint32_t i = 0; i < BUFFER / 4; ++i)
+        if (words_a[i] != a[i] || words_b[i] != b[i]) return 0;
+    return 1;
 }
 static uint32_t guard(uint32_t i, uint32_t seed) { return 0x6d5a0000u ^ (i * 0x01010101u) ^ seed; }
 static uint32_t outputs(uint32_t kind) { return kind == 0 ? 1 : kind == 1 ? 8 : 15; }
@@ -95,18 +114,17 @@ int main(void) {
         const uint32_t *sizes = kind == 0 ? dot_sizes : other_sizes;
         uint32_t count = kind == 0 ? sizeof dot_sizes / sizeof dot_sizes[0]
                                    : sizeof other_sizes / sizeof other_sizes[0];
-        for (uint32_t index = 0; index < count; ++index) {
-            uint32_t n = sizes[index], seed = 0xa57e8000u ^ ((kind * 16 + index) * 0x9e3779b9u);
-            for (uint32_t i = 0; i < BUFFER; ++i) { input_a[i] = pattern(i, seed, 0); input_b[i] = pattern(i, seed, 1); }
+        for (uint32_t index = 0; index < count; ++index)
             for (uint32_t sa = 0; sa < 4; ++sa)
                 for (uint32_t sb = 0; sb < 4; ++sb) {
+                    // The low three bits choose the pattern (4-7: pseudo-random).
+                    uint32_t n = sizes[index], type = ((sa ^ sb ^ index) & 1) ? jobs & 3 : 4 + (jobs & 3);
+                    uint32_t seed = ((0xa57e8000u ^ (++jobs * 0x9e3779b9u)) & ~7u) | type;
+                    pattern(seed, words_a, words_b);
                     int failed = job(kind, n, sa, sb, seed);
                     if (failed) return failed;
-                    ++jobs;
+                    if (!unchanged(seed)) return 4;
                 }
-            for (uint32_t i = 0; i < BUFFER; ++i)
-                if (input_a[i] != pattern(i, seed, 0) || input_b[i] != pattern(i, seed, 1)) return 4;
-        }
     }
     if (jobs != 16 * (12 + 7 + 7)) return 5;
     if (!reservations()) return 6;
