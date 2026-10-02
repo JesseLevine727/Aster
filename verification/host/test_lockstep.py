@@ -436,5 +436,17 @@ class ArchCase(unittest.TestCase):
         self.assertEqual(self.case(plain, "picorv32"), ["TEST_CASE_1=True"])
 
 
+class RandomGenerator(unittest.TestCase):
+    """rvgen returns every register it reserves for a sequence to the pool."""
+
+    def test_no_register_stays_reserved(self):
+        import rvgen
+        for ext in ("m", "m,zicsr", "m,a,zicsr,zifencei", "m,a,irqcsr,zifencei"):
+            for seed in range(1, 6):
+                generator = rvgen.Generator(seed, ext)
+                generator.program(4000)
+                self.assertEqual(generator.pinned, set(), f"seed {seed}, --ext {ext}")
+
+
 if __name__ == "__main__":
     unittest.main()

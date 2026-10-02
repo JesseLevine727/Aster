@@ -223,12 +223,12 @@ class Generator:
         elif kind < 0.9:
             self.emit(f"lr.w x{self.dst()}, (x{base})")
             self.fillers()
-            if self.rng.random() < 0.2:        # to another word: it fails
-                other = self.dst(allow_x0=False)
-                self.emit(f"addi x{other}, x{base}, 4")
-                base = other
+            address = base
+            if self.rng.random() < 0.2:        # to another word of the region: it fails
+                address = self.dst(allow_x0=False)
+                self.emit(f"addi x{address}, x{base}, {4 if offset < 2044 else -4}")
             s2, rd = self.src(), self.dst()
-            self.emit(f"sc.w x{rd}, x{s2}, (x{base})")
+            self.emit(f"sc.w x{rd}, x{s2}, (x{address})")
         else:                                  # no lr just before
             s2, rd = self.src(), self.dst()
             self.emit(f"sc.w x{rd}, x{s2}, (x{base})")
