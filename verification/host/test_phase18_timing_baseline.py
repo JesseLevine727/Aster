@@ -34,9 +34,12 @@ BASELINES = [
      for run in ("invc", "invc_u38", "invc_u36", "invc_u34")
 ] + [("aster-18.2", f"asic/{run}", f"asic/{run}/summary.json",
       {"m_u38": ["fpga/m_aster", "fpga/m_aster_bram", "fpga/m_aster_bram_reqreg"],
-       "m4_u40": ["fpga/m4_aster", "fpga/m4_aster_bram", "fpga/m4_aster_bram_reqreg"]}.get(run, []))
+       "m4_u40": ["fpga/m4_aster", "fpga/m4_aster_bram", "fpga/m4_aster_bram_reqreg"],
+       "m5_u36": ["fpga/m5_aster", "fpga/m5_aster_bram", "fpga/m5_aster_bram_reqreg"]}.get(run, []))
      for run in ("m_u38", "m2_u34", "m2_u36", "m2_u38", "m2_u40", "m2nb_u38", "m2nb_u40",
-                 "m3_u34", "m3_u36", "m3_u38", "m3_u40", "m3ss_u38", "m4_u34", "m4_u36", "m4_u38", "m4_u40")]
+                 "m3_u34", "m3_u36", "m3_u38", "m3_u40", "m3ss_u38", "m4_u34", "m4_u36", "m4_u38", "m4_u40",
+                 "m4_u42", "m4_u44", "m4_u46", "m5_u34", "m5_u36", "m5_u38", "m5_u40", "m5_u44",
+                 "m6_u34", "m6_u36", "m6_u38", "m6_u40", "m6_u44")]
 
 
 def retained_part(recomputed, retained):

@@ -15,13 +15,17 @@ chosen flow as corrected (`../aster-18.1-delay-cells`); FPGA: Vivado 2025.1,
 | `asic/m3_u34`, `m3_u36`, `m3_u38`, `m3_u40` | `p18-aster-m3-u34` … `-u40` | carry-save multiplier compressing to two vectors in M1, not in the history: `asic/m3_u38/two_vector.patch` is its diff against `bdfa836` | chosen with `SYNTH_MUL_BOOTH` (no multiply operator left, so it maps none), 34/36/38/40% |
 | `asic/m3ss_u38` | `p18-aster-m3ss-u38` | as `m3` | as `m3`, synthesized at `max_ss_100C_1v60` (`SYNTH_CORNER`), 38% |
 | `asic/m4_u34`, `m4_u36`, `m4_u38`, `m4_u40` | `p18-aster-m4-u34` … `-u40` | `bdfa836` (carry-save multiplier, four vectors out of M1) | chosen (no Booth setting), 34/36/38/40% |
+| `asic/m4_u42`, `m4_u44`, `m4_u46` | `p18-aster-m4-u42` … `-u46` | `bdfa836` | chosen, 42/44/46% |
+| `asic/m5_u34`, `m5_u36`, `m5_u38`, `m5_u40`, `m5_u44` | `p18-aster-m5-u34` … `-u44` | `42a1f1f` (one-hot result select; M1 data loaded when free) | chosen, 34/36/38/40/44% |
+| `asic/m6_u34` … `m6_u44` | `p18-aster-m6-u34` … `-u44` | `42a1f1f` plus high-half select copies and a carry-select multiply add, reverted and not in the history: `asic/m6_u38/m6.patch` is its diff against `42a1f1f` (synthesis merged the high-half copies with the stall logic's inverted copies, which hold the same value: 2,221 flops against 42a1f1f's 2,219) | chosen, 34/36/38/40/44% |
 | `fpga/m_aster`, `m_aster_bram`, `m_aster_bram_reqreg` | Vivado | `4f42794` | the three tops of `../aster-18.1` |
 | `fpga/m4_aster`, `m4_aster_bram`, `m4_aster_bram_reqreg` | Vivado | `bdfa836` | the same |
+| `fpga/m5_aster`, `m5_aster_bram`, `m5_aster_bram_reqreg` | Vivado | `42a1f1f` | the same |
 
 Each run's `resolved.json` records its full configuration. Runs of one RTL
 share one synthesized netlist where their synthesis settings agree: the four
-`m2` runs, the four `m3` runs and the four `m4` runs each (one conversion,
-then `--skip-convert`), and the two `m2nb` runs another; `m3ss` differs in its
+`m2` runs, the four `m3` runs, the seven `m4` runs, the five `m5` runs and the
+five `m6` runs each (one conversion, then `--skip-convert`), and the two `m2nb` runs another; `m3ss` differs in its
 synthesis corner. The
 `m3` netlists have the two carry-save registers of `two_vector.patch`
 (`mul_sum`, `mul_carry`; 2,113 flops), the `m4` netlists the four vectors
@@ -34,6 +38,6 @@ cap (a core run peaks near 4 GB).
 `p18-aster-m-u40` was stopped before it finished (the sweep of `4f42794` was
 cut short when its result was clear) and is not retained.
 
-`buffer_census.txt` is `scripts/timing/buffer_census.py` over the sixteen
-SKY130 runs: no delay cells, and the failing register-to-register paths at
+`buffer_census.txt` is `scripts/timing/buffer_census.py` over the 29 SKY130
+runs: no delay cells, and the failing register-to-register paths at
 `max_ss` per run (one per failing endpoint).

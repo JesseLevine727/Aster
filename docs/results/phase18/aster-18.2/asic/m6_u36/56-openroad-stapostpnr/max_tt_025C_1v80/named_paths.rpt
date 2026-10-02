@@ -1,0 +1,81 @@
+NAMED-PATH-BEGIN d_rsp_valid_to_d_req_valid
+Startpoint: d_rsp_valid (input port clocked by clk)
+Endpoint: d_req_valid (output port clocked by clk)
+Path Group: clk
+Path Type: max
+
+   Delay     Time   Description
+-----------------------------------------------------------
+   0.000    0.000   clock clk (rise edge)
+   0.000    0.000   clock network delay (propagated)
+   2.000    2.000 ^ input external delay
+   0.011    2.011 ^ d_rsp_valid (in)
+   0.252    2.263 ^ input35/X (sky130_fd_sc_hd__buf_2)
+   0.194    2.457 ^ wire2942/X (sky130_fd_sc_hd__buf_12)
+   0.455    2.912 ^ fanout2941/X (sky130_fd_sc_hd__buf_2)
+   0.293    3.205 ^ _14384_/X (sky130_fd_sc_hd__or3b_4)
+   0.111    3.316 ^ fanout1370/X (sky130_fd_sc_hd__buf_12)
+   0.156    3.472 ^ fanout1369/X (sky130_fd_sc_hd__buf_8)
+   0.161    3.632 ^ fanout1368/X (sky130_fd_sc_hd__buf_12)
+   0.211    3.843 v _14389_/Y (sky130_fd_sc_hd__o2111ai_4)
+   0.200    4.043 v rebuffer3012/X (sky130_fd_sc_hd__buf_6)
+   0.323    4.366 ^ _14390_/Y (sky130_fd_sc_hd__nor2_4)
+   0.301    4.667 ^ _14391_/X (sky130_fd_sc_hd__and3_4)
+   0.130    4.798 ^ output109/X (sky130_fd_sc_hd__buf_8)
+   0.003    4.800 ^ d_req_valid (out)
+            4.800   data arrival time
+
+  10.000   10.000   clock clk (rise edge)
+   0.000   10.000   clock network delay (propagated)
+  -0.250    9.750   clock uncertainty
+   0.000    9.750   clock reconvergence pessimism
+  -2.000    7.750   output external delay
+            7.750   data required time
+-----------------------------------------------------------
+            7.750   data required time
+           -4.800   data arrival time
+-----------------------------------------------------------
+            2.950   slack (MET)
+
+
+NAMED-PATH-END
+NAMED-PATH-BEGIN d_rsp_error_to_d_req_valid
+Startpoint: d_rsp_error (input port clocked by clk)
+Endpoint: d_req_valid (output port clocked by clk)
+Path Group: clk
+Path Type: max
+
+   Delay     Time   Description
+-----------------------------------------------------------
+   0.000    0.000   clock clk (rise edge)
+   0.000    0.000   clock network delay (propagated)
+   2.000    2.000 v input external delay
+   0.011    2.011 v d_rsp_error (in)
+   0.086    2.097 v hold3994/X (sky130_fd_sc_hd__clkbuf_1)
+   0.163    2.260 v input2/X (sky130_fd_sc_hd__buf_2)
+   0.215    2.475 v hold3995/X (sky130_fd_sc_hd__clkbuf_1)
+   0.265    2.740 v _14375_/Y (sky130_fd_sc_hd__nand2b_2)
+   0.157    2.897 v _14376_/X (sky130_fd_sc_hd__o211a_2)
+   0.343    3.240 ^ _14378_/Y (sky130_fd_sc_hd__o21ai_4)
+   0.279    3.518 v _14389_/Y (sky130_fd_sc_hd__o2111ai_4)
+   0.200    3.719 v rebuffer3012/X (sky130_fd_sc_hd__buf_6)
+   0.323    4.042 ^ _14390_/Y (sky130_fd_sc_hd__nor2_4)
+   0.301    4.343 ^ _14391_/X (sky130_fd_sc_hd__and3_4)
+   0.130    4.473 ^ output109/X (sky130_fd_sc_hd__buf_8)
+   0.003    4.476 ^ d_req_valid (out)
+            4.476   data arrival time
+
+  10.000   10.000   clock clk (rise edge)
+   0.000   10.000   clock network delay (propagated)
+  -0.250    9.750   clock uncertainty
+   0.000    9.750   clock reconvergence pessimism
+  -2.000    7.750   output external delay
+            7.750   data required time
+-----------------------------------------------------------
+            7.750   data required time
+           -4.476   data arrival time
+-----------------------------------------------------------
+            3.274   slack (MET)
+
+
+NAMED-PATH-END

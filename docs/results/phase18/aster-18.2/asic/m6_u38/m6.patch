@@ -1,0 +1,89 @@
+diff --git a/rtl/aster_core/aster_core.sv b/rtl/aster_core/aster_core.sv
+index b91030a..3bcd026 100644
+--- a/rtl/aster_core/aster_core.sv
++++ b/rtl/aster_core/aster_core.sv
+@@ -219,17 +219,24 @@ module aster_core
+     // cannot merge them into the selects (a `keep`-marked copy was merged).
+     logic [3:0]  fsel1_n;
+     logic [3:2]  fsel2_n;
++    // Inverted copies of the selects drive the operands' high halves (bits
++    // 31:16), and the selects the low halves, so each select bit drives half
++    // the operand mux.
++    logic [3:0]  fsel1_hn, fsel2_hn;
+     logic [31:0] rs1f, rs2f;
+     logic [1:0]  rs1f_lo;
+     logic        rs1_ready, rs2_ready;
+     // The select is one-hot (none included), so the operand is an AND-OR of
+     // the four sources with no decode in front of the fanout.
+-    function automatic logic [31:0] forward(input logic [3:0] sel, input logic [31:0] held);
+-        return ({32{sel[3]}} & m1.result) | ({32{sel[2]}} & m2.result) |
+-               ({32{sel[1]}} & w_value)   | ({32{sel[0]}} & held);
++    function automatic logic [31:0] forward(input logic [3:0] sel, input logic [3:0] sel_hn,
++                                            input logic [31:0] held);
++        return {({16{!sel_hn[3]}} & m1.result[31:16]) | ({16{!sel_hn[2]}} & m2.result[31:16]) |
++                ({16{!sel_hn[1]}} & w_value[31:16])   | ({16{!sel_hn[0]}} & held[31:16]),
++                ({16{sel[3]}} & m1.result[15:0]) | ({16{sel[2]}} & m2.result[15:0]) |
++                ({16{sel[1]}} & w_value[15:0])   | ({16{sel[0]}} & held[15:0])};
+     endfunction
+-    assign rs1f    = forward(fsel1, e_rs1v);
+-    assign rs2f    = forward(fsel2, e_rs2v);
++    assign rs1f    = forward(fsel1, fsel1_hn, e_rs1v);
++    assign rs2f    = forward(fsel2, fsel2_hn, e_rs2v);
+     assign rs1f_lo = ({2{!fsel1_n[3]}} & m1.result[1:0]) | ({2{!fsel1_n[2]}} & m2.result[1:0]) |
+                      ({2{!fsel1_n[1]}} & w_value[1:0])   | ({2{!fsel1_n[0]}} & e_rs1v[1:0]);
+     // A load's or multiply's value is not ready before W.
+@@ -363,6 +370,9 @@ module aster_core
+     logic [32:0] mul_a, mul_b;
+     logic [3:0][63:0] mul_rows;                          // registered at the end of M1, for M2
+     logic [2:0][63:0] mul_m2;
++    logic [1:0][63:0] mul_pair;
++    logic [32:0] mul_low;
++    logic [31:0] mul_high0, mul_high1;
+     logic [63:0] mul_product;
+     logic [31:0] mul_result;
+     assign mul_a = {m1.funct3[1:0] != 2'd3 && m1.rs1v[31], m1.rs1v};
+@@ -419,8 +429,14 @@ module aster_core
+         mul_m2[0] = mul_rows[0] ^ mul_rows[1] ^ mul_rows[2];
+         mul_m2[1] = ((mul_rows[0] & mul_rows[1]) | (mul_rows[0] & mul_rows[2]) | (mul_rows[1] & mul_rows[2])) << 1;
+         mul_m2[2] = mul_rows[3];
+-        mul_product = (mul_m2[0] ^ mul_m2[1] ^ mul_m2[2])
+-                    + (((mul_m2[0] & mul_m2[1]) | (mul_m2[0] & mul_m2[2]) | (mul_m2[1] & mul_m2[2])) << 1);
++        mul_pair[0] = mul_m2[0] ^ mul_m2[1] ^ mul_m2[2];
++        mul_pair[1] = ((mul_m2[0] & mul_m2[1]) | (mul_m2[0] & mul_m2[2]) | (mul_m2[1] & mul_m2[2])) << 1;
++        // Carry-select: the low word is a 32-bit add; the high word is chosen
++        // between its two possible sums by the low word's carry.
++        mul_low   = {1'b0, mul_pair[0][31:0]} + {1'b0, mul_pair[1][31:0]};
++        mul_high0 = mul_pair[0][63:32] + mul_pair[1][63:32];
++        mul_high1 = mul_pair[0][63:32] + mul_pair[1][63:32] + 32'd1;
++        mul_product = {mul_low[32] ? mul_high1 : mul_high0, mul_low[31:0]};
+     end
+     assign mul_result  = m2.funct3[1:0] == 2'd0 ? mul_product[31:0] : mul_product[63:32];
+ 
+@@ -506,6 +522,8 @@ module aster_core
+             fsel2        <= 4'b0001;
+             fsel1_n      <= 4'b1110;
+             fsel2_n      <= 2'b11;
++            fsel1_hn     <= 4'b1110;
++            fsel2_hn     <= 4'b1110;
+             wt1          <= 1'b0;
+             wt2          <= 1'b0;
+             d_valid      <= 1'b0;
+@@ -527,6 +545,8 @@ module aster_core
+             fsel2      <= sel2_next;
+             fsel1_n    <= ~sel1_next;
+             fsel2_n    <= ~sel2_next[3:2];
++            fsel1_hn   <= ~sel1_next;
++            fsel2_hn   <= ~sel2_next;
+             wt1        <= wn_writes && wn_rd == dn_rs1;
+             wt2        <= wn_writes && wn_rd == dn_rs2;
+ 
+@@ -697,7 +717,8 @@ module aster_core
+         if (rst_n) assert ($onehot(fsel1) && $onehot(fsel2)) else $error("forwarding select not one-hot");
+         if (rst_n && e_valid && !e_err) assert ($onehot(e_dec.res)) else $error("result select not one-hot");
+         // The stall logic's inverted copies agree with the selects.
+-        if (rst_n) assert (fsel1_n == ~fsel1 && fsel2_n == ~fsel2[3:2] && rs1f_lo == rs1f[1:0])
++        if (rst_n) assert (fsel1_n == ~fsel1 && fsel2_n == ~fsel2[3:2] && rs1f_lo == rs1f[1:0]
++                           && fsel1_hn == ~fsel1 && fsel2_hn == ~fsel2)
+             else $error("inverted select copy differs");
+         if (rst_n && d_rsp_valid) assert (rsp_for_m2 || rsp_for_m1) else $error("data answer with no access in flight");
+         // A squashed (wrong-path) instruction issues nothing.

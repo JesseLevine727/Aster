@@ -15,13 +15,13 @@ floorplans swept, +0.373 to +0.495 ns (103.9–105.2 MHz; 195–198 MHz
 typical), with PicoRV32 at 104.3–105.2 MHz in the same flow and floorplans;
 the request address still misses its 2 ns output budget at the slow corner,
 by 1.6–1.7 ns (see "Milestone 18.1"). Milestone 18.2 (the M extension,
-`bdfa836`): RV32IM passes rv32ui/um, arch-test I and M and random programs in
+through `42a1f1f`): RV32IM passes rv32ui/um, arch-test I and M and random programs in
 lockstep, cycle for cycle with the CPI model, and the eight CPU kernels run
 on the RTL in lockstep, each window exactly the model's cycles — a measured
 3.68× geometric mean over PicoRV32 (lowest 2.59×); the FPGA meets 10 ns
-(107.3 MHz); on SKY130 the slow corner meets 10 ns in one of four floorplans
-(+0.078 ns at 40%) and misses by 0.34–0.73 ns in the others, still being
-closed (see "Milestone 18.2").** The CPU specification this
+(108.0 MHz at `42a1f1f`); on SKY130 at `42a1f1f` the slow corner meets 10 ns
+at 36% (+0.038 ns) and misses by 0.02–0.52 ns at 34, 38, 40 and 44%, still
+being closed (see "Milestone 18.2").** The CPU specification this
 phase implements is [`cpu.md`](cpu.md) (approved 29 September 2026); the phase
 sits in the [v2 plan](phase17-plus.md#6-phase-17-sequence). Every milestone
 passes its verification layer and records its timing before the next starts.
@@ -819,13 +819,13 @@ Over the gate's seven kernels: geometric mean **3.68×**, lowest **2.59×**
 the 18.7 gate, before 18.3–18.6 add to the core (the §7 conditions: both cores
 on the one-cycle shell SRAM, the Aster core without its L1).
 
-**Timing.** On the FPGA both versions measured meet 10 ns out of context: `4f42794`
+**Timing.** On the FPGA every version measured meets 10 ns out of context: `4f42794`
 at 107.6 MHz (101.4 with the block RAM in the §5 form, 106.3 with the request
 registered; the multiplier in 4 DSP blocks), `bdfa836` at 107.3 (101.9, 105.0;
 with the carry-save multiplier the core uses 3,236 LUTs, against 2,092, and no DSP).
 On SKY130 the M extension grew the core's standard-cell area by about
-65–104% (about 160 thousand µm² in 18.1; 326 thousand for `4f42794`,
-261–267 thousand for `bdfa836`), and the slow corner missed — in the multiplier, the
+57–104% (about 160 thousand µm² in 18.1; 326 thousand for `4f42794`,
+259–267 thousand for `bdfa836`, 252–258 thousand for `42a1f1f`), and the slow corner missed — in the multiplier, the
 divider's negations, and, as the area grew, Execute's paths that had closed
 in 18.1. Runs at `max_ss`, register to register, in the corrected chosen flow
 (evidence: [`results/phase18/aster-18.2`](results/phase18/aster-18.2/README.md)):
@@ -848,6 +848,19 @@ in 18.1. Runs at `max_ss`, register to register, in the corrected chosen flow
 | `p18-aster-m4-u36` | `bdfa836` | 36% | 180.7 MHz | −0.733 ns | 93.2 MHz | 262,357 |
 | `p18-aster-m4-u38` | `bdfa836` | 38% | 191.8 MHz | −0.480 ns | 95.4 MHz | 260,998 |
 | `p18-aster-m4-u40` | `bdfa836` | 40% | 190.5 MHz | **+0.078 ns** | **100.8 MHz** | 260,531 |
+| `p18-aster-m4-u42` | `bdfa836` | 42% | 188.7 MHz | −0.505 ns | 95.2 MHz | 259,443 |
+| `p18-aster-m4-u44` | `bdfa836` | 44% | 187.0 MHz | −0.225 ns | 97.8 MHz | 259,814 |
+| `p18-aster-m4-u46` | `bdfa836` | 46% | 181.4 MHz | −0.399 ns | 96.2 MHz | 260,388 |
+| `p18-aster-m5-u34` | `42a1f1f`: one-hot result select, M1 data loaded when free | 34% | 190.9 MHz | −0.094 ns | 99.1 MHz | 258,163 |
+| `p18-aster-m5-u36` | `42a1f1f` | 36% | 188.6 MHz | **+0.038 ns** | **100.4 MHz** | 257,972 |
+| `p18-aster-m5-u38` | `42a1f1f` | 38% | 177.8 MHz | −0.520 ns | 95.1 MHz | 255,784 |
+| `p18-aster-m5-u40` | `42a1f1f` | 40% | 187.1 MHz | −0.020 ns | 99.8 MHz | 252,938 |
+| `p18-aster-m5-u44` | `42a1f1f` | 44% | 184.1 MHz | −0.109 ns | 98.9 MHz | 251,620 |
+| `p18-aster-m6-u34` | `42a1f1f` + high-half select copies, carry-select multiply add (reverted; not in the history) | 34% | 183.1 MHz | −0.378 ns | 96.4 MHz | 261,719 |
+| `p18-aster-m6-u36` | the same | 36% | 176.3 MHz | −1.027 ns | 90.7 MHz | 256,674 |
+| `p18-aster-m6-u38` | the same | 38% | 173.5 MHz | −1.249 ns | 88.9 MHz | 257,824 |
+| `p18-aster-m6-u40` | the same | 40% | 183.5 MHz | −0.812 ns | 92.5 MHz | 256,923 |
+| `p18-aster-m6-u44` | the same | 44% | 184.9 MHz | −0.389 ns | 96.3 MHz | 254,809 |
 
 The first run's failures were the multiplier's M1 stage (to −1.97 ns) and the
 divider's negations of the forwarded operand and of its result (to −1.94 ns);
@@ -877,9 +890,32 @@ named paths pass in every `bdfa836` run (`d_rsp_valid` +0.08 to +0.79 ns,
 `d_rsp_error` +0.78 to +1.46 ns); of the other port paths the request address
 misses its 2 ns output budget by 2.03–2.53 ns (from 1.6–1.7 in 18.1),
 `i_req_addr` by up to 0.38 ns at 34, 36 and 38% (it passed in 18.1's final
-runs, +0.15 to +0.70 ns), and at 36% `d_req_valid` and `d_req_wdata` by up to 0.30 ns. The
-slow corner is not closed in 18.2 yet; the owner chose to keep closing it
-within 18.2.
+runs, +0.15 to +0.70 ns), and at 36% `d_req_valid` and `d_req_wdata` by up
+to 0.30 ns.
+
+Utilization is not the lever: `bdfa836` at 42, 44 and 46% gave −0.505, −0.225
+and −0.399 ns, every failing path the forwarding select through Execute's ALU
+into M1's result. `42a1f1f` makes Execute's result a one-hot select decoded in
+Decode (no op decode after the forwarded operands; operand A is rs1 alone —
+`auipc` takes the branch-target adder, `lui` the immediate, add and subtract
+their own adders) and loads M1's data fields whenever M1 is free (`m1.valid`
+qualifies them), so Execute's late advance and the kill are off their inputs;
+it is behavior-neutral (`make check`; six planted bugs, all caught). Its sweep
+is −0.094, +0.038, −0.520, −0.020 and −0.109 ns at 34/36/38/40/44% (1, 0, 2,
+2 and 6 failing paths; 178–191 MHz typical; 252–258 thousand µm²): Execute
+into M1's result at 34, 38 and 40%, M2's product into W at 44%. Hold is met
+everywhere (worst +0.047 ns) and §4's named paths pass (`d_rsp_valid` +0.93
+to +1.26 ns), but the request address misses its output budget by 2.79–3.01
+ns (from 2.03–2.53 for `bdfa836`), and `i_req_addr` and `d_req_valid` by up to
+0.44 ns. On the FPGA `42a1f1f` runs at 108.0, 102.8 and 106.1 MHz. A further
+step — inverted copies of the forwarding selects for the operands' high
+halves and a carry-select multiply add — was worse at every floorplan
+(−0.378 to −1.249 ns, divider paths failing again) and was reverted (its diff
+is retained); synthesis had merged the new high-half copies with the stall
+logic's inverted copies, which hold the same value, so the step tested the
+carry-select add but not the split select fanout; at this size, changes of a few hundred picoseconds are within
+the variation from one run to the next. The slow corner is not closed in 18.2
+yet; the owner chose to keep closing it within 18.2.
 
 ## Milestones and gates
 
@@ -1110,9 +1146,10 @@ within 18.2.
   close 10 ns at `max_ss`, and the flow's own estimate did not predict signoff
   (see "Pre-18.1 measurements"), which led to that decision. Items 2–4 stand.
 - [x] 18.1 as in the table above — complete (owner, 1 October 2026)
-- [ ] **18.2 slow corner, open:** `bdfa836` meets 10 ns register to register
-  at `max_ss` at 40% (+0.078 ns) and misses by 0.340, 0.733 and 0.480 ns at
-  34, 36 and 38%; the owner chose to keep closing it within 18.2
+- [ ] **18.2 slow corner, open:** `42a1f1f` meets 10 ns register to register
+  at `max_ss` at 36% (+0.038 ns) and misses by 0.094, 0.520, 0.020 and 0.109
+  ns at 34, 38, 40 and 44%; the request address misses its 2 ns output budget
+  by 2.79–3.01 ns (18.6); the owner chose to keep closing it within 18.2
 - [ ] **A long-stall memory mode, by 18.6:** the shell's back-pressure adds at
   most two cycles, so a finished division never waits in Execute (its result
   is asserted to hold); 18.6's cache misses will need a mode with long stalls,
