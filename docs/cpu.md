@@ -609,7 +609,7 @@ memory side must keep (below):
   coherent SoC provides.
 
 Clarifications during milestone 18.5 (2 October 2026), from building and
-verifying Xasterdot8, for the owner's review:
+verifying Xasterdot8. The owner accepted them with 18.5 (2 October 2026):
 
 - §4: `dot8` is computed in M1 — the four products of the operands' signed
   bytes and their sum, from the operands Execute passes on — rather than

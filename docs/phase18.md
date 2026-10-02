@@ -40,8 +40,8 @@ tests and random programs with atomics and fences pass in lockstep, cycle for
 cycle with the CPI model, with the shell answering each `sc` as Spike did;
 about 60,000 random interrupts, now over the directed tests too; the kernels
 are unchanged; the FPGA meets 10 ns (108.3 MHz; 104.7 and 108.0 MHz with
-block RAM; see "Milestone 18.4"). Milestone 18.5 (Xasterdot8; evidence
-complete, awaiting the owner's sign-off, 2 October 2026; `b087ab2`): v1's
+block RAM; see "Milestone 18.4"). Milestone 18.5 (Xasterdot8; complete,
+owner, 2 October 2026; `b087ab2`): v1's
 DOT8 reference tests on the core — the unit test's exhaustive arithmetic,
 the probe's register-field matrix and illegal encodings, the runtime's
 dot/FIR/GEMM jobs — with a Spike extension putting the DOT8 programs in
@@ -1357,8 +1357,8 @@ rule (any store to the word ends it) to be kept or documented by the
 The Aster core runs Xasterdot8 (`b087ab2`): `dot8 rd, rs1, rs2` — custom-0,
 funct3 0, funct7 0, v1's encoding — writes the sum of the four products of the
 operands' signed bytes, sign-extended. The choices made in building it are
-listed in [`cpu.md`](cpu.md) §9 ("Clarifications during milestone 18.5") for
-the owner's review:
+listed in [`cpu.md`](cpu.md) §9 ("Clarifications during milestone 18.5"),
+which the owner accepted at sign-off (below):
 
 - **In the pipeline.** The products and their sum are computed in M1 from the
   operands Execute passes on, and the value enters M2 with the instruction,
@@ -1479,6 +1479,13 @@ write enable. The paths §4 names: `d_rsp_valid` to the next request
 +3.231 ns, the `d_rsp_error` kill +2.599 ns (§5 form). Evidence:
 [`results/phase18/aster-18.5`](results/phase18/aster-18.5/README.md).
 
+**Signed off.** The owner signed off 18.5 on 2 October 2026, accepting
+cpu.md §9's 18.5 clarifications: dot8 computed in M1 with the hazard
+table's timing, `misa.X` set, custom-0 funct7 2–4 illegal (v1's runtime
+returns from interrupts with `mret` once the SoC moves to the Aster core,
+Phase 20), and the DOT8 Conv2D's lack of speed-up left to the software
+(Phase 19/20). ACT4 is decided separately (checklist).
+
 ## Milestones and gates
 
 | Milestone | Content | Exit gate |
@@ -1488,7 +1495,7 @@ write enable. The paths §4 names: `d_rsp_valid` to the next request
 | 18.2 | M extension | um/arch-test M, multiply/divide corner cases, lockstep, timing — **met** (owner, 1 October 2026; "Milestone 18.2" below) |
 | 18.3 | Zicsr, traps, interrupts, counters | arch-test Zicsr; directed traps in every stage; interrupt tests in every pipeline state — **met** (owner, 2 October 2026; "Milestone 18.3"; riscv-arch-test 3.10.0 has no Zicsr suite: its privilege suite and riscv-tests rv32mi stand in, as the owner accepted) |
 | 18.4 | A extension, `fence`, `fence.i` | ua/arch-test A and Zifencei; atomic and self-modifying-code tests — **met** (owner, 2 October 2026; "Milestone 18.4"; the litmus tests of cpu.md §8 are single-hart until two cores share memory, as the owner accepted) |
-| 18.5 | Xasterdot8 | v1 DOT8 reference tests on the core — evidence complete, awaiting the owner (2 October 2026; "Milestone 18.5") |
+| 18.5 | Xasterdot8 | v1 DOT8 reference tests on the core — **met** (owner, 2 October 2026; "Milestone 18.5") |
 | 18.6 | L1 caches with two-stage pipelined hits; SRAM interface; runtime port | cache reference model, back-pressure, firmware regression |
 | 18.7 | Evaluation and feasibility | Against PicoRV32 on the CPU set in the same shell: geometric mean of the per-kernel speedups ≥2.0× and every kernel ≥1.5×, each kernel's speedup published; 100 MHz feasibility report for the FPGA (SKY130 dropped, 1 October 2026) |
 
@@ -1739,13 +1746,14 @@ write enable. The paths §4 names: `d_rsp_valid` to the next request
   the added CSRs, `time`/`timeh` as the core's own time counter, and the
   privilege suite and rv32mi standing in for "arch-test Zicsr" (cpu.md §9)
 - [ ] riscv-arch-test 4.x (ACT4): reconsider when the ISA is final, at 18.5
-  (owner, 2 October 2026) — the ISA is final with 18.5; the decision is put to
-  the owner at 18.5's sign-off (Ruby and opam are installed here, Sail is not)
+  (owner, 2 October 2026) — the ISA is final with 18.5; at 18.5's sign-off
+  the owner asked for the case for and against before deciding (Ruby and
+  opam are installed here, Sail is not)
 - [x] 18.4 as in the table above — complete (owner, 2 October 2026), with
   cpu.md §9's 18.4 clarifications (single-hart litmus tests; the
   reservation rules the memory side must keep)
-- [ ] 18.5 as in the table above — evidence complete; awaiting the owner's
-  sign-off and decisions on cpu.md §9's 18.5 clarifications
+- [x] 18.5 as in the table above — complete (owner, 2 October 2026), with
+  cpu.md §9's 18.5 clarifications
 - [ ] 18.6 … 18.7 as in the table above
 
 ## Non-goals
