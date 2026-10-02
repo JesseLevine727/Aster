@@ -33,7 +33,14 @@ and by about 23,000 random interrupts whose streams, with the handlers cut
 out, equal Spike's; the kernels are unchanged; `time`/`timeh` read the
 core's own time counter (the owner's choice at sign-off); the FPGA meets
 10 ns (107.7 MHz; 101.8 and 104.6 MHz with block RAM; see "Milestone
-18.3").** The CPU specification this
+18.3"). Milestone 18.4 (the A extension, `fence`, `fence.i`; evidence
+complete, awaiting the owner's sign-off, 2 October 2026; `d53c46e`): rv32ua,
+`fence_i`, arch-test A and Zifencei, directed atomics and self-modifying-code
+tests and random programs with atomics and fences pass in lockstep, cycle for
+cycle with the CPI model, with the shell answering each `sc` as Spike did;
+about 60,000 random interrupts, now over the directed tests too; the kernels
+are unchanged; the FPGA meets 10 ns (108.3 MHz; 104.7 and 108.0 MHz with
+block RAM; see "Milestone 18.4").** The CPU specification this
 phase implements is [`cpu.md`](cpu.md) (approved 29 September 2026); the phase
 sits in the [v2 plan](phase17-plus.md#6-phase-17-sequence). Every milestone
 passes its verification layer and records its timing before the next starts.
@@ -1188,6 +1195,147 @@ request-registered form at 104.6 MHz (+0.439 ns; its worst path is a forwarded
 operand's, from `fsel2`, as in 18.2 — not Decode's CSR decode, as at `705b5f9`) (evidence:
 [`results/phase18/aster-18.3-time`](results/phase18/aster-18.3-time/README.md)).
 
+### Milestone 18.4: the A extension, `fence` and `fence.i` (2 October 2026)
+
+The Aster core is RV32IMA with Zicsr and Zifencei (`d53c46e`). The choices
+made in building it are listed in [`cpu.md`](cpu.md) §9 ("Clarifications
+during milestone 18.4") for the owner's review:
+
+- **Atomics.** `lr.w`, `sc.w` and the nine AMOs decode as a load and a store
+  (`lr` as a load) and go to the data port as one request with §5's
+  `d_req_op` (2 `lr`, 3 `sc`, 4–12 the AMOs); the memory side performs them
+  and holds the reservation. Their result is a late result, forwarded from W
+  like a load's (load-use 2/1 cycles), and both the address and the AMO's
+  data are operands forwarded like a store's. A misaligned `lr` raises a
+  load-misaligned exception and a misaligned `sc` or AMO a
+  store/AMO-misaligned one in Execute, before the port; an error answer is a
+  load (`lr`) or store/AMO access fault at the commit point, as a load's or
+  store's. `lr.w` with a non-zero `rs2` field and the `.d` forms are illegal.
+  `aq` and `rl` need no action: one data port, accesses in program order.
+  `misa` reads `A`.
+- **`fence.i`** waits in Execute until M1 and M2 are empty — every older data
+  access has been answered — and then redirects to the next instruction
+  through the registered Execute redirect, discarding everything fetched
+  after it (up to 2 cycles, then 4). `fence` is free.
+- **RVFI.** An AMO reports its read (the old value) and its write (the value
+  the memory computed, recomputed from the old value and `rs2`); `lr` a read;
+  a successful `sc` a write and a failed `sc` no memory access.
+
+Verification (`make core-aster-tests`, in `make check`):
+
+- **The memory side, in the shell.** The shell performs the atomics as §5's
+  memory side does and holds the reservation as Spike does (the hart's own
+  stores and interrupts leave it; an exception and every `sc` end it). Spike
+  also ends a reservation at its own step boundaries, so the runner reads
+  Spike's `sc` outcomes and hands them to the shell, which answers each `sc`
+  as Spike's did and fails the run (`SC_MISMATCH`) where Spike's `sc`
+  succeeded and its own reservation did not hold, or the counts differ
+  (proven in `make core-aster-tests` with every `sc` claimed successful). The
+  shell's instruction fetches now see a data write only after the edge at
+  which the core takes its answer — §5 orders accesses within a port only —
+  so a `fence.i` that did not wait for the older stores fetches the old
+  instruction.
+- **Conformance, in lockstep and by signature, cycle for cycle with the CPI
+  model** (which now models `fence.i`): riscv-tests rv32ua (10; `lrsc` runs
+  1,029 `sc`s, four of them failing in Spike) and rv32ui `fence_i` (now
+  run), with rv32ui, rv32um, rv32mi, the directed tests and the directed
+  traps, and the four self-checking interrupt programs in the shell alone —
+  89 tests in six memory modes; riscv-arch-test A (9) and Zifencei (1) with I, M and
+  privilege, 72/72 on both memories.
+- **Directed atomics** (`directed/atomics`, lockstep and self-checking):
+  addresses forwarded from an ALU result and a load (load-use), AMO data from
+  a multiply, a division and a load; AMO, `lr` and `sc` results forwarded at
+  distance 1 to an ALU, a branch, a store's data and the next AMO's address;
+  every AMO at the sign and wrap corners; `rd` = x0, `rs1` and `rs2`; `sc`
+  succeeding, failing with no reservation and on another word (ending the
+  reservation), a second `lr` moving the reservation, work and the hart's own
+  store between `lr` and `sc`; and single-hart ordering — a store, an AMO and
+  a load to one word observing each other in program order. Traps:
+  misaligned `lr`, `sc` and AMO (`execute_traps`), each as a port error
+  (`m1_traps`, `rd` unchanged), and `lr.w` with `rs2` ≠ 0 and `amoadd.d`
+  illegal, a `fence.i` with a non-zero immediate executed
+  (`decode_traps`). The environment's trap handler fails a misaligned atomic
+  instead of emulating it.
+- **Self-modifying code** (`directed/smc`, lockstep and self-checking): an
+  instruction rewritten right behind its store and run after `fence.i`, a
+  loop rewriting its own body 40 times, and a rewrite behind a load, in every
+  memory mode and under random interrupts. Of three planted `fence.i` bugs,
+  no redirect fails the program in all six memory modes; no wait at all fails
+  it on the two-cycle memory and in all four back-pressured modes, and the
+  cycle count (the CPI check) on the one-cycle memory, where the store is
+  always answered before the refetch; waiting for M1 alone fails it in all
+  four back-pressured modes, and the cycle count on both unstalled memories.
+- **Constrained-random programs** now emit atomics (AMOs on fresh and
+  forwarded addresses, `lr`/`sc` pairs with work between, `sc`s to the other
+  word and alone, pointers read from memory by an AMO or `lr` and used as
+  addresses), `fence.i` and `fence` in its forms; the hazard coverage counts
+  atomic results as a producer class of their own and the AMO address and
+  data as consumers: 220/220 bins in each of the three modes (172/172 under
+  random interrupts), and 240 more programs matched the CPI model cycle for
+  cycle on both memories. (A register the generator reserved for an `sc` to
+  another word was never released, shrinking its pool; found by the second
+  review, fixed, and now a host test.)
+- **Random interrupts**, with atomics and fences as two more instruction
+  classes (81 pairs): the shell now raises one about every 20 cycles (was 40,
+  which left one or two pairs uncovered); 60,441 interrupts in `make
+  core-aster-tests` (4,801 over rv32ui, rv32um, rv32ua and now the
+  directed tests — `atomics` and `smc` among them — reaching 32 of the
+  pairs; 14,835, 25,318 and 15,487 over random programs on the two-cycle memory,
+  back-pressured and the one-cycle memory, each reaching all 81), every run's
+  stream with its handlers cut out equal to Spike's.
+- **The CPU kernels** run unchanged and cycle-exact (`make
+  core-aster-kernels`). The PicoRV32 suites pass, with `directed/atomics`
+  and `directed/smc` skipped with their reasons (no native A, no Zifencei);
+  its random programs differ (multiply and divide results are now also used
+  as data on purpose) and keep full coverage.
+- **Planted bugs** (assertions off): twelve new ones in the atomics' decode
+  and RVFI, `fence.i`'s decode, redirect, target and drain, and `misa`, all
+  caught; with 18.3's, 63 planted, 59 caught (the four 18.3 accepted as
+  equivalent or unobservable). The comparator rejects 19 of 19 injected
+  corruptions of an AMO run (`rv32ua/amoadd_w`).
+- **Review.** The milestone's watchdog review found no functional bug; it
+  ran its own `fence.i` and atomics programs (`fence.i` behind a load, a
+  multiply, a division, a CSR write and an AMO, back to back and at a loop's
+  head; code rewritten by `amoadd`, `sc`, `sh` and `sb`) in five memory modes
+  and under interrupts, and nine planted bugs of its own, all but an
+  equivalent one caught. It found the tests weaker than they should be in
+  four places, all fixed: the shell let a fetch at the very edge of a
+  store's answer see the new word, so on the two-cycle memory a `fence.i`
+  that did not wait passed every program (it now fails `smc`); random
+  programs had no `fence` or `fence.i`, and the directed tests never ran
+  under interrupts (both added, with fences an interrupt class); atomic
+  results counted as loads in the hazard coverage, so no bin required one to
+  be forwarded (now a class of their own, used as data and as addresses);
+  and the self-test of `SC_MISMATCH` relied on the simulator taking the
+  first of two `+sc_outcomes` (the runner now leaves a given one alone). It
+  also noted that the shell's request-stability check still compared an
+  `lr`'s don't-care write data (relaxed, as the comment said), and that the
+  shell ends a reservation when the trap record retires, which a handler's
+  `lr` accepted earlier could in principle precede (none does; it would be a
+  false `SC_MISMATCH`, not a false pass), and that recording a written
+  word's old value read the I/O page's clock (now recorded only where the
+  core can fetch).
+
+**Timing** (FPGA, out of context, 10 ns; `d53c46e`): the core alone
+meets it at 108.3 MHz (+0.763 ns; 2,808 LUTs, 1,359 flip-flops, 4 DSPs,
+against 18.3's 107.7 MHz and 2,736 LUTs at sign-off), with the block RAM in
+the §5 form at 104.7 MHz (+0.448 ns) and with the request registered at
+108.0 MHz (+0.745 ns). No path particular to the atomics or `fence.i` is
+the worst (their decode and request logic is shared with the loads and
+stores); the worst are of 18.3's kinds: in the core alone, from `mie`
+through the interrupt decision and the kill into Execute's instruction
+register (7 LUT levels); in the §5 form,
+18.2's forwarded operand through the address adder and the block RAM's range
+decode into its write enable; with the request registered, from the
+instruction in Decode through its hazard check into Decode's advance (the
+enable of the predecoded redirect target; 8 levels), much as at 18.3's
+`705b5f9`. Of the paths §4
+names, `d_rsp_valid` to the next request has +3.455 ns (18.3: +2.881 ns) and
+the `d_rsp_error` kill +1.622 ns (18.3: +2.227 ns; six LUT levels against
+five, from the error through the kill and Execute's advance into the block
+RAM's write enable). Evidence:
+[`results/phase18/aster-18.4`](results/phase18/aster-18.4/README.md).
+
 ## Milestones and gates
 
 | Milestone | Content | Exit gate |
@@ -1196,7 +1344,7 @@ operand's, from `fsel2`, as in 18.2 — not Decode's CSR decode, as at `705b5f9`
 | 18.1 | RV32I pipeline | `riscv-tests` rv32ui and arch-test I in lockstep; random programs in lockstep; first timing report — **met** (owner, 1 October 2026; "Milestone 18.1" below) |
 | 18.2 | M extension | um/arch-test M, multiply/divide corner cases, lockstep, timing — **met** (owner, 1 October 2026; "Milestone 18.2" below) |
 | 18.3 | Zicsr, traps, interrupts, counters | arch-test Zicsr; directed traps in every stage; interrupt tests in every pipeline state — **met** (owner, 2 October 2026; "Milestone 18.3"; riscv-arch-test 3.10.0 has no Zicsr suite: its privilege suite and riscv-tests rv32mi stand in, as the owner accepted) |
-| 18.4 | A extension, `fence`, `fence.i` | ua/arch-test A and Zifencei; atomic and self-modifying-code tests |
+| 18.4 | A extension, `fence`, `fence.i` | ua/arch-test A and Zifencei; atomic and self-modifying-code tests — evidence complete, awaiting the owner (2 October 2026; "Milestone 18.4"; the litmus tests of cpu.md §8 are single-hart until two cores share memory) |
 | 18.5 | Xasterdot8 | v1 DOT8 reference tests on the core |
 | 18.6 | L1 caches with two-stage pipelined hits; SRAM interface; runtime port | cache reference model, back-pressure, firmware regression |
 | 18.7 | Evaluation and feasibility | Against PicoRV32 on the CPU set in the same shell: geometric mean of the per-kernel speedups ≥2.0× and every kernel ≥1.5×, each kernel's speedup published; 100 MHz feasibility report for the FPGA (SKY130 dropped, 1 October 2026) |
@@ -1342,13 +1490,16 @@ operand's, from `fsel2`, as in 18.2 — not Decode's CSR decode, as at `705b5f9`
   `pc_wdata` is the handler's address, matched by the next record), and
   `ma_data` (the environment's handler emulates the misaligned access) —
   "Milestone 18.3"
-- [ ] **By the milestone named:** `fence.i` draining in-flight data accesses
-  and flushing F1, F2, the buffer, D and E, and AMO operands (address and
-  data) as hazard consumers (18.4); a cover point that a data-port error
+- [x] **By 18.4:** `fence.i` draining in-flight data accesses and flushing
+  F1, F2, the buffer, D and the instruction entering E (`directed/smc` under back-pressure, with the
+  shell's fetches blind to unanswered writes), AMO operands (address and
+  data) as hazard consumers and atomic results as producers, and `fence_i` —
+  "Milestone 18.4"
+- [ ] **By the milestone named:** a cover point that a data-port error
   really waits in M1 and that a division really runs before a trap kills it
   (both depend on the stall seed; `traps/m1_traps` reaches them in today's
   modes, measured with an instrumented copy of the RTL, but nothing enforces
-  it); `fence_i` (18.4)
+  it)
 - [x] **Aster-core shell, 18.1 step 1 — protocol checks (30 September 2026):**
   the two-port shell now enforces the core's side of §4–§5 in every run: a
   fetch presented and not accepted must be presented unchanged in the next
@@ -1446,7 +1597,10 @@ operand's, from `fsel2`, as in 18.2 — not Decode's CSR decode, as at `705b5f9`
   privilege suite and rv32mi standing in for "arch-test Zicsr" (cpu.md §9)
 - [ ] riscv-arch-test 4.x (ACT4): reconsider when the ISA is final, at 18.5
   (owner, 2 October 2026)
-- [ ] 18.4 … 18.7 as in the table above
+- [ ] 18.4 as in the table above — evidence complete; awaiting the owner's
+  sign-off and decisions on cpu.md §9's 18.4 clarifications (single-hart
+  litmus tests; the reservation rules the memory side must keep)
+- [ ] 18.5 … 18.7 as in the table above
 
 ## Non-goals
 
