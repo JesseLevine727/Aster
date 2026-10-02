@@ -1,0 +1,288 @@
+== p18-aster-m-u38
+   c7ca243fc33b5ac488e9c15b71befcae802e829608ca8fc1603b6546b23d36a3  final/nl/timing_aster.nl.v
+   cc3ced59bad846e8ddb7a316b50de4d6479fff26a73672d40b056a25e3965dda  56-openroad-stapostpnr/max_ss_100C_1v60/max.rpt
+   delay cells inserted by design repair: 0, by hold repair: 0
+   longest serial chain of rebuffer cells: 5
+   max_ss_100C_1v60: failing register-to-register paths listed 302, through a delay cell 0, most delay-cell time on one 0.00 ns
+   hold       clkbuf_1           3194
+   fanout     buf_2              1392
+   rebuffer   buf_6              731
+   fanout     buf_6              269
+   fanout     buf_12             267
+   wire       buf_6              211
+   wire       buf_12             186
+   load_slew  buf_12             149
+   fanout     buf_8              145
+   fanout     clkbuf_4           140
+   fanout     buf_4              108
+   max_cap    buf_6              82
+== p18-aster-m2-u34
+   1128243259c1bbe3fb470b617e56331b0cead3aec6444c8838f29c972241f04d  final/nl/timing_aster.nl.v
+   90b44966e680fd305343d5143cb09bf2f91db5112b4867180aed0b426a24de77  56-openroad-stapostpnr/max_ss_100C_1v60/max.rpt
+   delay cells inserted by design repair: 0, by hold repair: 0
+   longest serial chain of rebuffer cells: 10
+   max_ss_100C_1v60: failing register-to-register paths listed 479, through a delay cell 0, most delay-cell time on one 0.00 ns
+   hold       clkbuf_1           3332
+   fanout     buf_2              1625
+   rebuffer   buf_6              565
+   fanout     buf_12             215
+   wire       buf_12             212
+   fanout     buf_6              181
+   wire       buf_6              176
+   load_slew  buf_12             167
+   fanout     clkbuf_4           136
+   fanout     buf_4              117
+   fanout     buf_8              98
+   output     buf_2              88
+== p18-aster-m2-u36
+   b113f2e537ebe6f3278c28a5d328bb3073952007bc062a7c10721ef92286a459  final/nl/timing_aster.nl.v
+   9f042d0d4475bfff3a9897d1ccef5e77dc381749a456ba9ae6bd21b348acb89b  56-openroad-stapostpnr/max_ss_100C_1v60/max.rpt
+   delay cells inserted by design repair: 0, by hold repair: 0
+   longest serial chain of rebuffer cells: 3
+   max_ss_100C_1v60: failing register-to-register paths listed 493, through a delay cell 0, most delay-cell time on one 0.00 ns
+   hold       clkbuf_1           3326
+   fanout     buf_2              1624
+   rebuffer   buf_6              524
+   fanout     buf_12             225
+   wire       buf_12             225
+   wire       buf_6              180
+   fanout     buf_6              179
+   load_slew  buf_12             161
+   fanout     clkbuf_4           142
+   max_cap    buf_6              96
+   fanout     buf_8              93
+   fanout     buf_4              87
+== p18-aster-m2-u38
+   4f6b6f861160eea9f2a843ef16ad686587d726a130190cbb92030c7d906ccec6  final/nl/timing_aster.nl.v
+   4c7fd845b8cd0661c8f7d3e561ab7b448a6a142a50f886d60d7dc7821bcc35ec  56-openroad-stapostpnr/max_ss_100C_1v60/max.rpt
+   delay cells inserted by design repair: 0, by hold repair: 0
+   longest serial chain of rebuffer cells: 4
+   max_ss_100C_1v60: failing register-to-register paths listed 377, through a delay cell 0, most delay-cell time on one 0.00 ns
+   hold       clkbuf_1           3293
+   fanout     buf_2              1644
+   rebuffer   buf_6              556
+   wire       buf_12             218
+   fanout     buf_6              204
+   wire       buf_6              181
+   fanout     buf_12             178
+   fanout     clkbuf_4           149
+   load_slew  buf_12             123
+   fanout     buf_4              96
+   output     buf_2              85
+   fanout     buf_8              84
+== p18-aster-m2-u40
+   2cc011dd31d05d3761ad0e4a53892cf636455f738384d6bd1d3afc8b9fdc4bd9  final/nl/timing_aster.nl.v
+   d9fc8000da63f984072ccfefaaa62b35b951d1e233bf69c489bb57b301cfb375  56-openroad-stapostpnr/max_ss_100C_1v60/max.rpt
+   delay cells inserted by design repair: 0, by hold repair: 0
+   longest serial chain of rebuffer cells: 6
+   max_ss_100C_1v60: failing register-to-register paths listed 377, through a delay cell 0, most delay-cell time on one 0.00 ns
+   hold       clkbuf_1           3308
+   fanout     buf_2              1578
+   rebuffer   buf_6              535
+   fanout     buf_12             228
+   wire       buf_12             210
+   fanout     buf_6              171
+   wire       buf_6              168
+   fanout     clkbuf_4           141
+   fanout     buf_8              121
+   fanout     buf_4              110
+   load_slew  buf_12             90
+   output     buf_2              80
+== p18-aster-m2nb-u38
+   a95e170933bf4ea68d04a1b4457bf0b25f880dd883ddbf35ec6355345169b684  final/nl/timing_aster.nl.v
+   9931f730b413a6caadb1e6b0b202baad74048e9419057812d3f9e9cc76a0c6d2  56-openroad-stapostpnr/max_ss_100C_1v60/max.rpt
+   delay cells inserted by design repair: 0, by hold repair: 0
+   longest serial chain of rebuffer cells: 3
+   max_ss_100C_1v60: failing register-to-register paths listed 162, through a delay cell 0, most delay-cell time on one 0.00 ns
+   hold       clkbuf_1           3353
+   fanout     buf_2              1409
+   rebuffer   buf_6              830
+   fanout     buf_6              248
+   wire       buf_12             223
+   fanout     buf_12             213
+   wire       buf_6              197
+   fanout     clkbuf_4           174
+   load_slew  buf_12             127
+   fanout     buf_4              125
+   fanout     buf_8              125
+   max_cap    buf_6              103
+== p18-aster-m2nb-u40
+   cc306b6ce18fc26d050548a6fefa6ec112f83db930aebeee21461bba276c350f  final/nl/timing_aster.nl.v
+   5700bb229e357ca496c76f8e8d1a197f706166ce91c059de9f3095f7d3f2cd92  56-openroad-stapostpnr/max_ss_100C_1v60/max.rpt
+   delay cells inserted by design repair: 0, by hold repair: 0
+   longest serial chain of rebuffer cells: 3
+   max_ss_100C_1v60: failing register-to-register paths listed 360, through a delay cell 0, most delay-cell time on one 0.00 ns
+   hold       clkbuf_1           3297
+   fanout     buf_2              1415
+   rebuffer   buf_6              721
+   fanout     buf_12             291
+   fanout     buf_6              248
+   wire       buf_6              187
+   wire       buf_12             170
+   fanout     clkbuf_4           154
+   load_slew  buf_12             122
+   fanout     buf_8              117
+   max_cap    buf_6              100
+   fanout     buf_4              96
+== p18-aster-m3-u34
+   c8cd84ab796b8770df3f3435142dcc12f42b4b9e3bc3ffaf16294a2efc5848fd  final/nl/timing_aster.nl.v
+   8bff5f3eba09bd7ac65d2c850d445f5a7868b005e543745b920dd31d17b2793f  56-openroad-stapostpnr/max_ss_100C_1v60/max.rpt
+   delay cells inserted by design repair: 0, by hold repair: 0
+   longest serial chain of rebuffer cells: 4
+   max_ss_100C_1v60: failing register-to-register paths listed 43, through a delay cell 0, most delay-cell time on one 0.00 ns
+   hold       clkbuf_1           3207
+   fanout     buf_2              1526
+   rebuffer   buf_6              952
+   wire       buf_6              293
+   fanout     buf_12             237
+   wire       buf_12             227
+   fanout     clkbuf_4           216
+   load_slew  buf_12             188
+   fanout     buf_6              185
+   fanout     buf_8              100
+   max_cap    buf_6              97
+   fanout     buf_4              91
+== p18-aster-m3-u36
+   d524c81d00ea9d764d33ab2b497b6b81dd95acf2c2c19a1bb89802e6d2a15d87  final/nl/timing_aster.nl.v
+   abea6f11e8cf55ad3b88dff932bb41eb9be9b554556a990ca9fbbfb631e12fe3  56-openroad-stapostpnr/max_ss_100C_1v60/max.rpt
+   delay cells inserted by design repair: 0, by hold repair: 0
+   longest serial chain of rebuffer cells: 3
+   max_ss_100C_1v60: failing register-to-register paths listed 271, through a delay cell 0, most delay-cell time on one 0.00 ns
+   hold       clkbuf_1           3237
+   fanout     buf_2              1664
+   rebuffer   buf_6              570
+   wire       buf_6              285
+   wire       buf_12             227
+   fanout     buf_6              192
+   fanout     clkbuf_4           186
+   fanout     buf_12             185
+   load_slew  buf_12             179
+   max_cap    buf_6              97
+   wire       buf_4              93
+   fanout     buf_4              85
+== p18-aster-m3-u38
+   b360cd709f86a793f6c0ea0a483c0bbb364453cd41190d7b16020b37835c8ba7  final/nl/timing_aster.nl.v
+   2835825abb007bc92bd91d8acead7c31fcce741d79f8443c6d657c105f3f2551  56-openroad-stapostpnr/max_ss_100C_1v60/max.rpt
+   delay cells inserted by design repair: 0, by hold repair: 0
+   longest serial chain of rebuffer cells: 3
+   max_ss_100C_1v60: failing register-to-register paths listed 224, through a delay cell 0, most delay-cell time on one 0.00 ns
+   hold       clkbuf_1           3284
+   fanout     buf_2              1686
+   rebuffer   buf_6              589
+   wire       buf_6              293
+   wire       buf_12             242
+   fanout     buf_12             220
+   fanout     buf_6              182
+   fanout     clkbuf_4           144
+   load_slew  buf_12             130
+   max_cap    buf_6              110
+   fanout     buf_8              95
+   max_cap    buf_12             90
+== p18-aster-m3-u40
+   ff5700b3e72b0540838fbd0bdb7a07d9fffed263511fb32efb331fa16947ad92  final/nl/timing_aster.nl.v
+   17a19a2cb416fa2c166ffc7a05a95420c6b7f49b1c309c321858eeb9acb97eee  56-openroad-stapostpnr/max_ss_100C_1v60/max.rpt
+   delay cells inserted by design repair: 0, by hold repair: 0
+   longest serial chain of rebuffer cells: 3
+   max_ss_100C_1v60: failing register-to-register paths listed 270, through a delay cell 0, most delay-cell time on one 0.00 ns
+   hold       clkbuf_1           3278
+   fanout     buf_2              1598
+   rebuffer   buf_6              552
+   wire       buf_6              288
+   fanout     buf_12             250
+   fanout     buf_6              196
+   wire       buf_12             186
+   load_slew  buf_12             170
+   fanout     clkbuf_4           157
+   max_cap    buf_6              96
+   fanout     buf_8              93
+   fanout     buf_4              88
+== p18-aster-m3ss-u38
+   f666897e2316da512e8e9ca1a33d1d8494efd5bb08aae95a36e0bc800fbf03b9  final/nl/timing_aster.nl.v
+   434c266486155944804e20cf54cf6764b666f510fcb0679599994336250775c7  56-openroad-stapostpnr/max_ss_100C_1v60/max.rpt
+   delay cells inserted by design repair: 0, by hold repair: 0
+   longest serial chain of rebuffer cells: 4
+   max_ss_100C_1v60: failing register-to-register paths listed 161, through a delay cell 0, most delay-cell time on one 0.00 ns
+   hold       clkbuf_1           3230
+   fanout     buf_2              1703
+   rebuffer   buf_6              446
+   wire       buf_6              246
+   wire       buf_12             227
+   load_slew  buf_12             197
+   fanout     clkbuf_4           170
+   fanout     buf_12             170
+   fanout     buf_6              152
+   max_cap    buf_6              114
+   fanout     buf_8              93
+   wire       buf_4              89
+== p18-aster-m4-u34
+   3d4ab42ad04aa008ed80b6f7312463605d7f7b6741fb39f0f5d382eeff2d28a2  final/nl/timing_aster.nl.v
+   8cde2c0987e9e5b9af17759df0157977fd2b5db36d352d26b2ceae5a94ef12ee  56-openroad-stapostpnr/max_ss_100C_1v60/max.rpt
+   delay cells inserted by design repair: 0, by hold repair: 0
+   longest serial chain of rebuffer cells: 4
+   max_ss_100C_1v60: failing register-to-register paths listed 5, through a delay cell 0, most delay-cell time on one 0.00 ns
+   hold       clkbuf_1           3500
+   fanout     buf_2              1342
+   rebuffer   buf_6              524
+   wire       buf_6              208
+   fanout     buf_6              201
+   fanout     buf_12             172
+   wire       buf_12             168
+   fanout     clkbuf_4           155
+   fanout     buf_4              114
+   load_slew  buf_12             94
+   fanout     buf_8              88
+   max_cap    buf_6              67
+== p18-aster-m4-u36
+   7412629d91642a15ee4021ef812b31599fcd138ef7c582dfb870e7aca7e25c53  final/nl/timing_aster.nl.v
+   95e0be3853feabf41b151917a430cd222e27bad593ae8aed11befc0ae25dc498  56-openroad-stapostpnr/max_ss_100C_1v60/max.rpt
+   delay cells inserted by design repair: 0, by hold repair: 0
+   longest serial chain of rebuffer cells: 4
+   max_ss_100C_1v60: failing register-to-register paths listed 115, through a delay cell 0, most delay-cell time on one 0.00 ns
+   hold       clkbuf_1           3425
+   fanout     buf_2              1387
+   rebuffer   buf_6              430
+   wire       buf_6              196
+   fanout     buf_12             192
+   fanout     buf_6              169
+   fanout     clkbuf_4           162
+   wire       buf_12             143
+   fanout     buf_4              101
+   fanout     buf_8              93
+   load_slew  buf_12             86
+   max_cap    buf_6              69
+== p18-aster-m4-u38
+   d811296cbef317aca95315d3d70621bd42daba1a7945132536bb897ba54c5c25  final/nl/timing_aster.nl.v
+   dae4f5f985d1fc1be73b545d5be86e5e6452c0d65af1ded87ae98155d072ba79  56-openroad-stapostpnr/max_ss_100C_1v60/max.rpt
+   delay cells inserted by design repair: 0, by hold repair: 0
+   longest serial chain of rebuffer cells: 4
+   max_ss_100C_1v60: failing register-to-register paths listed 3, through a delay cell 0, most delay-cell time on one 0.00 ns
+   hold       clkbuf_1           3388
+   fanout     buf_2              1371
+   rebuffer   buf_6              419
+   fanout     buf_6              180
+   wire       buf_6              180
+   fanout     clkbuf_4           173
+   fanout     buf_12             171
+   wire       buf_12             140
+   fanout     buf_4              114
+   max_cap    buf_6              82
+   fanout     buf_8              72
+   load_slew  buf_12             68
+== p18-aster-m4-u40
+   d05d1250d93866b43b257e5ed7144bc225e17d94fd58fac875d42801f39e0781  final/nl/timing_aster.nl.v
+   1a86672b89885ac3e075edcc611ddbac1c5161f079a322bad0cd9eb394b93d5a  56-openroad-stapostpnr/max_ss_100C_1v60/max.rpt
+   delay cells inserted by design repair: 0, by hold repair: 0
+   longest serial chain of rebuffer cells: 4
+   max_ss_100C_1v60: failing register-to-register paths listed 0, through a delay cell 0, most delay-cell time on one 0.00 ns
+   hold       clkbuf_1           3378
+   fanout     buf_2              1381
+   rebuffer   buf_6              433
+   wire       buf_6              198
+   fanout     buf_6              192
+   fanout     clkbuf_4           166
+   fanout     buf_12             162
+   fanout     buf_4              116
+   wire       buf_12             113
+   fanout     buf_8              80
+   max_cap    buf_6              74
+   input      buf_2              62

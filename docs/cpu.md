@@ -137,7 +137,7 @@ Hazards and penalties:
 | Store whose data comes from a load at distance 1 / 2 | as a load-use (store data is presented from E) | 2 / 1 cycles |
 | `mul` → dependent | pipelined over E, M1, M2; forwarded from W | up to 2 cycles |
 | Xasterdot8 → dependent | pipelined over E and M1; forwarded from M2 and W | up to 1 cycle |
-| `div`/`rem` | iterative (radix-2) in E, stalls the pipeline | ≈33 cycles |
+| `div`/`rem` | iterative (radix-2) in E, stalls the pipeline | 36 cycles (18.2) |
 | `jal`; conditional branch predicted taken (backward) | redirect from Decode, target presented the same cycle | 2 cycles |
 | Conditional branch mispredicted; `jalr` | resolved in Execute; the redirect is registered | 4 cycles |
 | Data-port back-pressure or an answer later than two cycles | the stage waiting on the port stalls the pipeline behind it | as the memory returns |
@@ -152,9 +152,9 @@ holds a valid instruction, before the instruction after it; `mepc` receives
 that M1 instruction's next PC (its `pc_wdata`, the redirect target if it
 redirected). The trace-driven model of these rules over the CPU kernels'
 measurement windows (`scripts/cpi_model.py`, 30 September 2026; an estimate
-that assumes no memory stalls, not a simulation; refined in 18.1 to the
-RTL's fetch timing, which it matches cycle for cycle on RV32I programs when the
-memory answers on time)
+that assumes no memory stalls, not a simulation; refined in 18.1 and 18.2 to
+the RTL's timing, which it matches cycle for cycle on RV32IM programs and on
+the CPU kernels' measurement windows when the memory answers on time)
 gives 1.20–1.65 CPI — 1.57
 CoreMark, 1.59 Dhrystone, 1.65 sort/search, 1.20 FFT, 1.51 strided, 1.40
 scalar Conv2D on the coherent SoC (the gate's), 1.39 reduction, and 1.57 for

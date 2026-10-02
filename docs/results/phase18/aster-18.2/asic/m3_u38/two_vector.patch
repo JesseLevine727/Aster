@@ -1,0 +1,69 @@
+diff --git a/rtl/aster_core/aster_core.sv b/rtl/aster_core/aster_core.sv
+index 88a2072..ecdfde1 100644
+--- a/rtl/aster_core/aster_core.sv
++++ b/rtl/aster_core/aster_core.sv
+@@ -354,12 +354,12 @@ module aster_core
+     // low word does not depend on it), zero-extended otherwise, as 33-bit two's
+     // complement values; radix-4 Booth partial products (17 rows, each
+     // sign-extended to 64 bits, and a row of the negations' +1s) compressed by
+-    // 3:2 carry-save adders (18 -> 12 -> 8 -> 6 -> 4) to four vectors,
+-    // registered for M2 — no carry propagates in M1. M2 compresses them
+-    // (4 -> 3 -> 2) and adds the pair: the 64-bit product.
++    // 3:2 carry-save adders (18 -> 12 -> 8 -> 6 -> 4 -> 3 -> 2) to a sum and a
++    // carry vector, registered for M2 — no carry propagates in M1. M2: their
++    // 64-bit sum is the product.
+     logic [32:0] mul_a, mul_b;
+-    logic [3:0][63:0] mul_rows;                          // registered at the end of M1, for M2
+-    logic [2:0][63:0] mul_m2;
++    logic [63:0] mul_cs_sum, mul_cs_carry;              // M1's carry-save pair
++    logic [63:0] mul_sum, mul_carry;                    // registered at the end of M1, for M2
+     logic [63:0] mul_product;
+     logic [31:0] mul_result;
+     assign mul_a = {m1.funct3[1:0] != 2'd3 && m1.rs1v[31], m1.rs1v};
+@@ -369,6 +369,7 @@ module aster_core
+     logic [7:0][63:0]  mul_l2;
+     logic [5:0][63:0]  mul_l3;
+     logic [3:0][63:0]  mul_l4;
++    logic [2:0][63:0]  mul_l5;
+     always_comb begin
+         logic [33:0] bx;
+         logic [63:0] ax, multiple;
+@@ -410,15 +411,13 @@ module aster_core
+             mul_l4[2*g+1] = ((mul_l3[3*g] & mul_l3[3*g+1]) | (mul_l3[3*g] & mul_l3[3*g+2])
+                            | (mul_l3[3*g+1] & mul_l3[3*g+2])) << 1;
+         end
++        mul_l5[0] = mul_l4[0] ^ mul_l4[1] ^ mul_l4[2];
++        mul_l5[1] = ((mul_l4[0] & mul_l4[1]) | (mul_l4[0] & mul_l4[2]) | (mul_l4[1] & mul_l4[2])) << 1;
++        mul_l5[2] = mul_l4[3];
++        mul_cs_sum   = mul_l5[0] ^ mul_l5[1] ^ mul_l5[2];
++        mul_cs_carry = ((mul_l5[0] & mul_l5[1]) | (mul_l5[0] & mul_l5[2]) | (mul_l5[1] & mul_l5[2])) << 1;
+     end
+-    // M2: the last two carry-save levels and the carry-propagating add.
+-    always_comb begin
+-        mul_m2[0] = mul_rows[0] ^ mul_rows[1] ^ mul_rows[2];
+-        mul_m2[1] = ((mul_rows[0] & mul_rows[1]) | (mul_rows[0] & mul_rows[2]) | (mul_rows[1] & mul_rows[2])) << 1;
+-        mul_m2[2] = mul_rows[3];
+-        mul_product = (mul_m2[0] ^ mul_m2[1] ^ mul_m2[2])
+-                    + (((mul_m2[0] & mul_m2[1]) | (mul_m2[0] & mul_m2[2]) | (mul_m2[1] & mul_m2[2])) << 1);
+-    end
++    assign mul_product = mul_sum + mul_carry;
+     assign mul_result  = m2.funct3[1:0] == 2'd0 ? mul_product[31:0] : mul_product[63:32];
+ 
+     // ------------------------------------------------------------ W values
+@@ -602,11 +601,14 @@ module aster_core
+             end
+             m1_err_held <= m1_bus_err;
+ 
+-            // The multiplier's carry-save vectors, for the multiply in M1, as it moves
++            // The multiplier's carry-save pair, for the multiply in M1, as it moves
+             // into M2. They load whenever M1 holds a multiply, not on M1's advance
+             // (which waits on the data port's answer): a multiply never waits in
+             // M2, so the products of the one there are never overwritten.
+-            if (m1.mul) mul_rows <= mul_l4;
++            if (m1.mul) begin
++                mul_sum   <= mul_cs_sum;
++                mul_carry <= mul_cs_carry;
++            end
+ 
+             // M2 (the commit point has passed: a data-port error becomes the trap)
+             if (m2_free) begin

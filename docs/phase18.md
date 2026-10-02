@@ -14,7 +14,14 @@ register to register at the slow corner it meets 10 ns in all four
 floorplans swept, +0.373 to +0.495 ns (103.9–105.2 MHz; 195–198 MHz
 typical), with PicoRV32 at 104.3–105.2 MHz in the same flow and floorplans;
 the request address still misses its 2 ns output budget at the slow corner,
-by 1.6–1.7 ns (see "Milestone 18.1").** The CPU specification this
+by 1.6–1.7 ns (see "Milestone 18.1"). Milestone 18.2 (the M extension,
+`bdfa836`): RV32IM passes rv32ui/um, arch-test I and M and random programs in
+lockstep, cycle for cycle with the CPI model, and the eight CPU kernels run
+on the RTL in lockstep, each window exactly the model's cycles — a measured
+3.68× geometric mean over PicoRV32 (lowest 2.59×); the FPGA meets 10 ns
+(107.3 MHz); on SKY130 the slow corner meets 10 ns in one of four floorplans
+(+0.078 ns at 40%) and misses by 0.34–0.73 ns in the others, still being
+closed (see "Milestone 18.2").** The CPU specification this
 phase implements is [`cpu.md`](cpu.md) (approved 29 September 2026); the phase
 sits in the [v2 plan](phase17-plus.md#6-phase-17-sequence). Every milestone
 passes its verification layer and records its timing before the next starts.
@@ -721,6 +728,159 @@ request registered (from 111.4, 101.6 and 114.8: the request-registered top
 lost 3 MHz). The configured utilization stays 38%. Evidence:
 [`results/phase18/aster-18.1-select-copies`](results/phase18/aster-18.1-select-copies/README.md).
 
+### Milestone 18.2: the M extension (1 October 2026)
+
+The Aster core implements RV32IM (`4f42794`, revised for timing in `d74408d`
+and `bdfa836`):
+
+- **Multiply** (`mul`, `mulh`, `mulhsu`, `mulhu`), pipelined over Execute, M1
+  and M2 as §4 says. The operands travel with the instruction; M1 forms the
+  radix-4 Booth partial products of the 33-bit sign- or zero-extended operands
+  (17 rows, each sign-extended to 64 bits, and a row of the negations' +1s)
+  and compresses them with 3:2 carry-save adders to four vectors, registered
+  at its end, so no carry propagates in M1; M2 compresses the four to two and
+  adds them into the 64-bit product, whose low or high word is registered into
+  W (`bdfa836`; the first version formed four 17×17 products in M1). The result is
+  ready from W, as a load's is, so the load-use interlock and Execute's
+  readiness treat "load or multiply" as one late result: 2 and 1 cycles at
+  distances 1 and 2 (§4). The partial products load whenever M1 holds a
+  multiply rather than on M1's advance (which waits on the data port's
+  answer): a multiply never waits in M2, which the RTL asserts.
+- **Divide and remainder**, an iterative radix-2 restoring divider in Execute
+  that holds Execute for 36 cycles (§4's table, revised from "≈33"): the
+  operands are latched as read in the first cycle their values are ready (no
+  arithmetic after the forwarding mux), the next cycle turns them into
+  magnitudes and notes the signs and a zero divisor, 32 steps follow, and a
+  cycle registers the result with its sign, so the result leaves Execute
+  from a register, like an ALU result. A divisor of zero gives a quotient of
+  all ones and the dividend as remainder, and −2³¹ / −1 gives −2³¹ and 0, as
+  RISC-V specifies. Only the divider's count resets when Execute takes a new
+  instruction or a trap kills it; its data registers load on a start and step
+  while the count runs, which keeps them off those nets. The CPI model's
+  `DIVIDE_CYCLES` follows (36).
+
+Verification (`make core-aster-tests`, `make core-aster-kernels`):
+
+- riscv-tests rv32ui and rv32um and the directed tests, 52/52, in lockstep
+  and by signature with Spike in all six memory modes, cycle for cycle with
+  the CPI model on the memories that answer on time; arch-test I and M, 47/47,
+  also cycle for cycle;
+- constrained-random programs with all eight M operations (about 5,800 per
+  run of 20), 112/112 read-after-write bins (multiply and divide results into
+  every consumer at distances 1–4), on time and back-pressured;
+- `directed/wrongpath_muldiv`: a multiply or divide squashed on a
+  mispredicted path (after a taken forward branch or a `jalr`, the one squashed
+  in Execute) does nothing — confirmed to put a squashed division in Execute,
+  where the RTL asserts it never starts;
+- `trap_halt/muldiv_killed`: a division and a multiply behind a load that the
+  memory answers with an error; on the back-pressure seed added for it (4) the
+  division is running when the trap kills it (checked: killed at count 1);
+- assertions: a squashed division never starts, the divider runs only for
+  Execute's division, a division leaves Execute only when done, a multiply
+  never waits in M2, and a finished division's result holds while it waits
+  (the shell's memory never stalls long enough for that today; 18.6's cache
+  misses will);
+- planted bugs with the assertions off, over the versions: 25 of 33 caught
+  (the carry-save multiplier's six all by rv32um; `4f42794`'s message counts
+  15 of 21 for the first two rounds, which were 14); the eight survivors are
+  equivalent or unreachable (a squashed start, which Execute's reset clears at
+  the same edge; the divider not resetting on a kill, cleared a cycle later
+  when Execute empties; the multiply's M1 and M2 readiness terms, two
+  mutants, which the interlock makes unreachable; partial products loaded every cycle; the
+  divider's data loaded for a squashed division; the divider's data stepping
+  when done, which needs a 30-cycle stall; stepping enabled in the magnitude
+  cycle, which the magnitude branch shadows). The carry-save multiplier's
+  arithmetic was also checked on its own against exact products, over 3
+  million vectors including corner values.
+
+**The CPU kernels on the Aster core.** With M in place, the eight CPU kernels
+run on the RTL in the two-port shell: in lockstep with Spike, with their
+self-checks passing and their window instruction counts and checksums equal
+to the Phase 17 records — and each measurement window takes exactly the CPI
+model's cycles (`make core-aster-kernels`, part of `make check`, requires the
+equality on the one-cycle memory of §7, and was shown to fail on a perturbed
+model; the two-cycle memory gives the same cycles). The
+model's projection is therefore now a measurement of the RTL's cycles. Against
+PicoRV32 in the look-ahead shell (the §7 baseline), measured window cycles:
+
+| Kernel | PicoRV32 cycles | Aster core cycles | Aster core CPI | Speedup |
+| --- | ---: | ---: | ---: | ---: |
+| CoreMark (1 iteration) | 1,495,136 | 446,348 | 1.567 | 3.35× |
+| Dhrystone | 2,085,683 | 783,326 | 1.591 | 2.66× |
+| sort/search | 1,800,445 | 696,118 | 1.654 | 2.59× |
+| FFT | 2,768,064 | 297,863 | 1.199 | 9.29× |
+| strided | 6,472 | 2,351 | 1.508 | 2.75× |
+| scalar Conv2D, coherent SoC (the gate's) | 7,144,621 | 1,356,221 | 1.397 | 5.27× |
+| scalar reduction | 217,275 | 73,811 | 1.385 | 2.94× |
+| Conv2D, minimal top (not a gate kernel) | 5,529,285 | 1,108,394 | 1.574 | 4.99× |
+
+Over the gate's seven kernels: geometric mean **3.68×**, lowest **2.59×**
+(sort/search), against the gate's 2.0× and 1.5× — the cycle side of
+the 18.7 gate, before 18.3–18.6 add to the core (the §7 conditions: both cores
+on the one-cycle shell SRAM, the Aster core without its L1).
+
+**Timing.** On the FPGA both versions measured meet 10 ns out of context: `4f42794`
+at 107.6 MHz (101.4 with the block RAM in the §5 form, 106.3 with the request
+registered; the multiplier in 4 DSP blocks), `bdfa836` at 107.3 (101.9, 105.0;
+with the carry-save multiplier the core uses 3,236 LUTs, against 2,092, and no DSP).
+On SKY130 the M extension grew the core's standard-cell area by about
+65–104% (about 160 thousand µm² in 18.1; 326 thousand for `4f42794`,
+261–267 thousand for `bdfa836`), and the slow corner missed — in the multiplier, the
+divider's negations, and, as the area grew, Execute's paths that had closed
+in 18.1. Runs at `max_ss`, register to register, in the corrected chosen flow
+(evidence: [`results/phase18/aster-18.2`](results/phase18/aster-18.2/README.md)):
+
+| Run | RTL | Utilization | `nom_tt` fmax | `max_ss` setup | `max_ss` fmax | Area µm² |
+| --- | --- | ---: | ---: | ---: | ---: | ---: |
+| `p18-aster-m-u38` | `4f42794` | 38% | 157.0 MHz | −1.971 ns | 83.5 MHz | 326,461 |
+| `p18-aster-m2-u34` | `d74408d` (Booth in synthesis) | 34% | 150.7 MHz | −3.003 ns | 76.9 MHz | 300,997 |
+| `p18-aster-m2-u36` | `d74408d` | 36% | 153.0 MHz | −3.103 ns | 76.3 MHz | 298,819 |
+| `p18-aster-m2-u38` | `d74408d` | 38% | 148.9 MHz | −2.707 ns | 78.7 MHz | 297,517 |
+| `p18-aster-m2-u40` | `d74408d` | 40% | 151.7 MHz | −2.141 ns | 82.4 MHz | 295,615 |
+| `p18-aster-m2nb-u38` | `d74408d` without Booth | 38% | 147.1 MHz | −2.622 ns | 79.2 MHz | 332,141 |
+| `p18-aster-m2nb-u40` | `d74408d` without Booth | 40% | 155.7 MHz | −2.101 ns | 82.6 MHz | 328,649 |
+| `p18-aster-m3-u34` | carry-save, two vectors out of M1 (not in the history) | 34% | 175.3 MHz | −0.488 ns | 95.4 MHz | 314,793 |
+| `p18-aster-m3-u36` | the same | 36% | 169.1 MHz | −0.869 ns | 92.0 MHz | 301,110 |
+| `p18-aster-m3-u38` | the same | 38% | 170.1 MHz | −1.226 ns | 89.1 MHz | 301,399 |
+| `p18-aster-m3-u40` | the same | 40% | 170.3 MHz | −0.984 ns | 91.0 MHz | 298,686 |
+| `p18-aster-m3ss-u38` | the same, synthesized at `max_ss` (`SYNTH_CORNER`) | 38% | 170.3 MHz | −0.963 ns | 91.2 MHz | 294,475 |
+| `p18-aster-m4-u34` | `bdfa836`: carry-save, four vectors out of M1 | 34% | 188.3 MHz | −0.340 ns | 96.7 MHz | 266,956 |
+| `p18-aster-m4-u36` | `bdfa836` | 36% | 180.7 MHz | −0.733 ns | 93.2 MHz | 262,357 |
+| `p18-aster-m4-u38` | `bdfa836` | 38% | 191.8 MHz | −0.480 ns | 95.4 MHz | 260,998 |
+| `p18-aster-m4-u40` | `bdfa836` | 40% | 190.5 MHz | **+0.078 ns** | **100.8 MHz** | 260,531 |
+
+The first run's failures were the multiplier's M1 stage (to −1.97 ns) and the
+divider's negations of the forwarded operand and of its result (to −1.94 ns);
+`d74408d` moved the negations off those paths into the divider's own cycles,
+where as register-to-register paths they still failed in every `d74408d` run
+(worst −3.103 ns) and in most two-vector runs (to −0.765 ns), but in no
+`bdfa836` run; it also turned on Booth multipliers in synthesis for both
+cores (PicoRV32's timing build has no multiply operator, and its netlist with
+the setting is byte-identical to its swept runs'), which did not help
+materially: the multiplier's own worst paths were −2.304, −2.279, −2.437 and
+−2.141 ns at 34–40% with Booth, −2.622 and −2.101 ns at 38 and 40% without.
+Synthesis maps for the typical corner (no `SYNTH_CORNER` is
+set); one run mapped at the slow corner gave −0.963 ns against −1.226 (161
+failing paths against 224), a gain smaller than the spread across floorplans,
+so it was not adopted without repeats. The written-out carry-save multiplier
+(`bdfa836`) takes the multiplier out of the failing paths at 34, 38 and 40%
+(at 36% 14 of the 115 failing paths still run into or out of its M1
+registers, to −0.291 ns) and brings the sweep to −0.340, −0.733, −0.480 and
++0.078 ns (5, 115, 3 and 0 failing register-to-register paths), 181–192 MHz
+typical; the Booth setting was
+removed again, as no multiply operator is left in either core. What fails now
+differs by floorplan: Execute's datapath into M1 (34%), the stall chain's
+enable trees from W's forwarded value (36%), the branch target into fetch
+(38%). Hold is met on every path at every corner (worst +0.062 ns in the
+`bdfa836` runs, +0.059 over all sixteen). §4's
+named paths pass in every `bdfa836` run (`d_rsp_valid` +0.08 to +0.79 ns,
+`d_rsp_error` +0.78 to +1.46 ns); of the other port paths the request address
+misses its 2 ns output budget by 2.03–2.53 ns (from 1.6–1.7 in 18.1),
+`i_req_addr` by up to 0.38 ns at 34, 36 and 38% (it passed in 18.1's final
+runs, +0.15 to +0.70 ns), and at 36% `d_req_valid` and `d_req_wdata` by up to 0.30 ns. The
+slow corner is not closed in 18.2 yet; the owner chose to keep closing it
+within 18.2.
+
 ## Milestones and gates
 
 | Milestone | Content | Exit gate |
@@ -950,6 +1110,13 @@ lost 3 MHz). The configured utilization stays 38%. Evidence:
   close 10 ns at `max_ss`, and the flow's own estimate did not predict signoff
   (see "Pre-18.1 measurements"), which led to that decision. Items 2–4 stand.
 - [x] 18.1 as in the table above — complete (owner, 1 October 2026)
+- [ ] **18.2 slow corner, open:** `bdfa836` meets 10 ns register to register
+  at `max_ss` at 40% (+0.078 ns) and misses by 0.340, 0.733 and 0.480 ns at
+  34, 36 and 38%; the owner chose to keep closing it within 18.2
+- [ ] **A long-stall memory mode, by 18.6:** the shell's back-pressure adds at
+  most two cycles, so a finished division never waits in Execute (its result
+  is asserted to hold); 18.6's cache misses will need a mode with long stalls,
+  which will exercise it
 - [ ] 18.2 … 18.7 as in the table above
 
 ## Non-goals
