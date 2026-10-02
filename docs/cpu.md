@@ -556,7 +556,10 @@ gate's "arch-test Zicsr", and `time`/`timeh` (below):
   retires exactly once (an I/O load repeated after an interrupt would not).
 
 Clarifications during milestone 18.4 (2 October 2026), from building and
-verifying the A extension and `fence.i`, for the owner's review:
+verifying the A extension and `fence.i`. The owner accepted them with 18.4
+(2 October 2026), including the two that needed a decision — litmus tests
+single-hart until two cores share memory, and the reservation rules the
+memory side must keep (below):
 
 - §4: `fence.i` waits in Execute until M1 and M2 are empty — every older data
   access answered, so a fetch issued after it sees every older store — and

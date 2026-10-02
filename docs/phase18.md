@@ -33,8 +33,8 @@ and by about 23,000 random interrupts whose streams, with the handlers cut
 out, equal Spike's; the kernels are unchanged; `time`/`timeh` read the
 core's own time counter (the owner's choice at sign-off); the FPGA meets
 10 ns (107.7 MHz; 101.8 and 104.6 MHz with block RAM; see "Milestone
-18.3"). Milestone 18.4 (the A extension, `fence`, `fence.i`; evidence
-complete, awaiting the owner's sign-off, 2 October 2026; `d53c46e`): rv32ua,
+18.3"). Milestone 18.4 (the A extension, `fence`, `fence.i`; complete,
+owner, 2 October 2026; `d53c46e`): rv32ua,
 `fence_i`, arch-test A and Zifencei, directed atomics and self-modifying-code
 tests and random programs with atomics and fences pass in lockstep, cycle for
 cycle with the CPI model, with the shell answering each `sc` as Spike did;
@@ -1199,7 +1199,7 @@ operand's, from `fsel2`, as in 18.2 — not Decode's CSR decode, as at `705b5f9`
 
 The Aster core is RV32IMA with Zicsr and Zifencei (`d53c46e`). The choices
 made in building it are listed in [`cpu.md`](cpu.md) §9 ("Clarifications
-during milestone 18.4") for the owner's review:
+during milestone 18.4"), which the owner accepted at sign-off (below):
 
 - **Atomics.** `lr.w`, `sc.w` and the nine AMOs decode as a load and a store
   (`lr` as a load) and go to the data port as one request with §5's
@@ -1336,6 +1336,14 @@ five, from the error through the kill and Execute's advance into the block
 RAM's write enable). Evidence:
 [`results/phase18/aster-18.4`](results/phase18/aster-18.4/README.md).
 
+**Signed off.** The owner signed off 18.4 on 2 October 2026, accepting
+cpu.md §9's 18.4 clarifications: litmus tests single-hart until the Phase 20
+coherent SoC puts two cores on shared memory, and the reservation as the
+memory side's — the shell following Spike (the hart's own stores and
+interrupts keep it; an exception and every `sc` end it), the v1 fabric's
+rule (any store to the word ends it) to be kept or documented by the
+18.6/Phase 20 memory side.
+
 ## Milestones and gates
 
 | Milestone | Content | Exit gate |
@@ -1344,7 +1352,7 @@ RAM's write enable). Evidence:
 | 18.1 | RV32I pipeline | `riscv-tests` rv32ui and arch-test I in lockstep; random programs in lockstep; first timing report — **met** (owner, 1 October 2026; "Milestone 18.1" below) |
 | 18.2 | M extension | um/arch-test M, multiply/divide corner cases, lockstep, timing — **met** (owner, 1 October 2026; "Milestone 18.2" below) |
 | 18.3 | Zicsr, traps, interrupts, counters | arch-test Zicsr; directed traps in every stage; interrupt tests in every pipeline state — **met** (owner, 2 October 2026; "Milestone 18.3"; riscv-arch-test 3.10.0 has no Zicsr suite: its privilege suite and riscv-tests rv32mi stand in, as the owner accepted) |
-| 18.4 | A extension, `fence`, `fence.i` | ua/arch-test A and Zifencei; atomic and self-modifying-code tests — evidence complete, awaiting the owner (2 October 2026; "Milestone 18.4"; the litmus tests of cpu.md §8 are single-hart until two cores share memory) |
+| 18.4 | A extension, `fence`, `fence.i` | ua/arch-test A and Zifencei; atomic and self-modifying-code tests — **met** (owner, 2 October 2026; "Milestone 18.4"; the litmus tests of cpu.md §8 are single-hart until two cores share memory, as the owner accepted) |
 | 18.5 | Xasterdot8 | v1 DOT8 reference tests on the core |
 | 18.6 | L1 caches with two-stage pipelined hits; SRAM interface; runtime port | cache reference model, back-pressure, firmware regression |
 | 18.7 | Evaluation and feasibility | Against PicoRV32 on the CPU set in the same shell: geometric mean of the per-kernel speedups ≥2.0× and every kernel ≥1.5×, each kernel's speedup published; 100 MHz feasibility report for the FPGA (SKY130 dropped, 1 October 2026) |
@@ -1597,9 +1605,9 @@ RAM's write enable). Evidence:
   privilege suite and rv32mi standing in for "arch-test Zicsr" (cpu.md §9)
 - [ ] riscv-arch-test 4.x (ACT4): reconsider when the ISA is final, at 18.5
   (owner, 2 October 2026)
-- [ ] 18.4 as in the table above — evidence complete; awaiting the owner's
-  sign-off and decisions on cpu.md §9's 18.4 clarifications (single-hart
-  litmus tests; the reservation rules the memory side must keep)
+- [x] 18.4 as in the table above — complete (owner, 2 October 2026), with
+  cpu.md §9's 18.4 clarifications (single-hart litmus tests; the
+  reservation rules the memory side must keep)
 - [ ] 18.5 … 18.7 as in the table above
 
 ## Non-goals
