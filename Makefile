@@ -2178,14 +2178,18 @@ core-aster-fetch: $(ASTER_FETCH_TEST)
 	@$(ASTER_FETCH_TEST)
 
 # The Aster core in the two-port shell (verification/core/shell_aster_ports.sv),
-# milestones 18.1-18.4 (RV32IMA, Zicsr, Zifencei, traps, interrupts,
-# counters). In lockstep with Spike (configured as the core is: machine mode
-# only, no PMP or debug triggers; the shell answers each sc as Spike did), with
+# milestones 18.1-18.5 (RV32IMA, Zicsr, Zifencei, Xasterdot8, traps,
+# interrupts, counters). In lockstep with Spike (configured as the core is:
+# machine mode only, no PMP or debug triggers, Xasterdot8 from the aster_dot8
+# extension; the shell answers each sc as Spike did), with
 # the shell's store, load and protocol checks (and instruction fetches that
 # see a data write only once it is answered): riscv-tests rv32ui, rv32um,
-# rv32ua and rv32mi, the directed tests (atomics, self-modifying code) and the
-# directed traps (an exception from every stage it can occur in), plus the
-# self-checking programs in the shell alone, on the two-cycle memory, the
+# rv32ua and rv32mi, the directed tests (atomics, self-modifying code, dot8
+# and its register-field matrix) and the directed traps (an exception from
+# every stage it can occur in; every illegal custom encoding), plus the
+# self-checking programs in the shell alone (interrupts; dot8's exhaustive
+# arithmetic) and the C programs (v1's DOT8 kernels, scalar and dot8), on the
+# two-cycle memory, the
 # one-cycle memory, back-pressure (also mixed with the one-cycle memory), and
 # room for three and four requests in flight; arch-test I, M, A, Zifencei and
 # privilege; constrained-random programs with atomics, fences, CSR
@@ -2208,11 +2212,14 @@ $(ASTER_PORTS_SIM): $(ASTER_CORE_RTL) verification/core/shell_aster_ports.sv ver
 		$(ROOT)/verification/core/tb_core_ports.cpp
 	@touch $@  # Verilator does not relink when only the Makefile changed
 
+# Xasterdot8 in Spike (verification/core/spike/aster_dot8.cc; docs/cpu.md §6,
+# 18.5): every Aster-core run loads it (its rule is with the clock plugin's).
+ASTER_DOT8_PLUGIN := $(BUILD_DIR)/spike/libaster_dot8.so
 ASTER_TESTS = RISCV_PREFIX=$(RISCV_PREFIX) $(PYTHON) scripts/run_core_tests.py --dut aster \
-	--sim $(ASTER_PORTS_SIM) --spike $(SPIKE)
+	--sim $(ASTER_PORTS_SIM) --spike $(SPIKE) --aster-dot8 $(ASTER_DOT8_PLUGIN)
 .PHONY: core-aster-sim core-aster-tests
 core-aster-sim: $(ASTER_PORTS_SIM)
-core-aster-tests: $(ASTER_PORTS_SIM)
+core-aster-tests: $(ASTER_PORTS_SIM) $(ASTER_DOT8_PLUGIN)
 	@mkdir -p $(CORE_TESTS_DIR)
 	@set -o pipefail; for mode in plain latency1 stall latency1-stall inflight3 inflight4 arch arch-latency1 \
 			random random-latency1 random-stall irq random-irq random-irq-stall random-irq-latency1; do \
@@ -2303,6 +2310,9 @@ SPIKE_ROOT ?= $(patsubst %/bin/spike,%,$(SPIKE))
 $(ASTER_CLOCK_PLUGIN): verification/core/spike/aster_clock.cc $(SPIKE_ROOT)/include/riscv/abstract_device.h Makefile
 	mkdir -p $(dir $@)
 	g++ -std=c++17 -O2 -shared -fPIC -I$(SPIKE_ROOT)/include -o $@ $<
+$(ASTER_DOT8_PLUGIN): verification/core/spike/aster_dot8.cc $(SPIKE_ROOT)/include/riscv/extension.h Makefile
+	mkdir -p $(dir $@)
+	g++ -std=c++17 -O2 -shared -fPIC -I$(SPIKE_ROOT)/include -o $@ $<
 
 .PHONY: core-kernels
 core-kernels: $(CORE_SHELL_SIM) $(CORE_PORTS_SIM) $(ASTER_CLOCK_PLUGIN)
@@ -2316,13 +2326,14 @@ core-kernels: $(CORE_SHELL_SIM) $(CORE_PORTS_SIM) $(ASTER_CLOCK_PLUGIN)
 
 # The CPU kernels of docs/cpu.md §7 on the Aster core, on the one-cycle memory
 # of the §7 measurement: in lockstep with Spike, matching the Phase 17 baseline,
-# and each measurement window taking exactly the CPI model's cycles.
+# and each measurement window taking exactly the CPI model's cycles; with them,
+# outside the gate, the Conv2D engine built for Xasterdot8 (conv2d_dot8, 18.5).
 .PHONY: core-aster-kernels
-core-aster-kernels: $(ASTER_PORTS_SIM) $(ASTER_CLOCK_PLUGIN)
+core-aster-kernels: $(ASTER_PORTS_SIM) $(ASTER_CLOCK_PLUGIN) $(ASTER_DOT8_PLUGIN)
 	@mkdir -p $(CORE_TESTS_DIR)
 	@set -o pipefail; $(ASTER_TESTS) --kernels --cpi-model --cpi-check --aster-clock $(ASTER_CLOCK_PLUGIN) \
 		--shell-arg +latency=1 --build-dir $(CORE_TESTS_DIR)/aster-kernels \
-		| tee $(CORE_TESTS_DIR)/aster-kernels.log | tail -12 \
+		| tee $(CORE_TESTS_DIR)/aster-kernels.log | tail -14 \
 		|| { grep -v '^PASS' $(CORE_TESTS_DIR)/aster-kernels.log; exit 1; }
 
 # Timing and area of one core block at 10 ns (docs/phase18.md): Vivado out of

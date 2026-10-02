@@ -1,7 +1,8 @@
 // Aster core decoder, ALU and branch compare (docs/cpu.md §2, §4). Milestones
-// 18.1-18.4 implement RV32IMA, Zicsr, Zifencei, `ecall`, `ebreak`, `mret` and
-// `wfi` (a no-op), with the machine-mode CSRs of docs/cpu.md §3; every other
-// encoding — the rest of SYSTEM, custom-0 until 18.5 — decodes as illegal.
+// 18.1-18.5 implement RV32IMA, Zicsr, Zifencei, Xasterdot8, `ecall`, `ebreak`,
+// `mret` and `wfi` (a no-op), with the machine-mode CSRs of docs/cpu.md §3;
+// every other encoding — the rest of SYSTEM and of custom-0 — decodes as
+// illegal.
 // `fence` executes as a no-op: the core's accesses take effect in order at one
 // memory (docs/cpu.md §5). `fence.i` (any encoding with funct3 1, as Spike
 // decodes it) drains the data accesses in flight and refetches what follows.
@@ -103,6 +104,7 @@ package aster_core_pkg;
         logic        atomic;          // lr.w, sc.w or an AMO (also load; sc and AMOs also store)
         logic [3:0]  amo_op;          // its d_req_op
         logic        fencei;          // fence.i: Execute holds it until M1 and M2 are empty
+        logic        dot8;            // Xasterdot8's dot8 (custom-0, funct3 0, funct7 0): computed in M1
         logic [2:0]  funct3;
     } decoded_t;
 
@@ -221,6 +223,9 @@ package aster_core_pkg;
                         default:  d.illegal = 1'b1;
                     endcase
                 end
+                5'b00010: if (funct3 == 3'd0 && funct7 == 7'h00) begin   // custom-0: Xasterdot8's dot8
+                    d.illegal = 1'b0; d.uses_rs1 = 1'b1; d.uses_rs2 = 1'b1; d.writes_rd = 1'b1; d.dot8 = 1'b1;
+                end
                 5'b11100: begin                                   // SYSTEM
                     if (funct3 == 3'd0) begin
                         // ecall, ebreak, mret, and wfi (a no-op: an interrupt is
@@ -252,7 +257,7 @@ package aster_core_pkg;
             d.load = 1'b0; d.store = 1'b0; d.branch = 1'b0; d.jal = 1'b0; d.jalr = 1'b0;
             d.mul = 1'b0; d.div = 1'b0;
             d.csr = 1'b0; d.csr_write = 1'b0; d.csr_sel = '0; d.ecall = 1'b0; d.ebreak = 1'b0; d.mret = 1'b0;
-            d.sys = 1'b0; d.atomic = 1'b0; d.amo_op = '0; d.fencei = 1'b0;
+            d.sys = 1'b0; d.atomic = 1'b0; d.amo_op = '0; d.fencei = 1'b0; d.dot8 = 1'b0;
             d.res = '0; d.res.add = 1'b1;
         end
         if (d.rd == 5'd0) d.writes_rd = 1'b0;

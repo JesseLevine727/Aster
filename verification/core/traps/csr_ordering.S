@@ -22,6 +22,10 @@
 // - mret: mstatus.MIE from MPIE and MPIE set (no interrupt is pending), and
 //   `csrw mepc` right before `mret`; a `csrw mtvec` right before a trap that
 //   then goes to the new handler; `wfi` as a no-op.
+// - No coprocessor (18.5): mie's bit 12 and mstatus.XS (and SD) read 0 after
+//   a write. Spike makes them writable for any custom extension (a RoCC
+//   coprocessor's interrupt and state); the aster_dot8 extension keeps them
+//   clear there too. (Only those bits are set: Spike's MTIP is high.)
 #include "trap_test.h"
 
 RVTEST_RV32M
@@ -235,6 +239,19 @@ trap0:
     li TESTNUM, 8
     EXPECT_TRAPS(1)               // the ecall (the ebreak went to other_handler)
     EXPECT_TRAP(0, CAUSE_MACHINE_ECALL, trap0, 0)
+
+    li TESTNUM, 9
+    li t0, 0x1000
+    csrs mie, t0
+    csrr t1, mie
+    and t1, t1, t0
+    bnez t1, fail
+    li t0, 0x18000
+    csrs mstatus, t0
+    csrr t1, mstatus
+    li t2, 0x80018000
+    and t1, t1, t2
+    bnez t1, fail
     RVTEST_PASS
     TEST_PASSFAIL
     TRAP_HANDLER

@@ -59,7 +59,7 @@ Machine mode only. Implemented CSRs:
 
 | CSR | Behavior |
 | --- | --- |
-| `misa`, `mvendorid`, `marchid`, `mimpid`, `mhartid`, `mconfigptr` | read-only identity; `mhartid` from a parameter; `misa` names the extensions implemented (I and M from 18.3, A from 18.4) and ignores writes (`mconfigptr`: 18.3) |
+| `misa`, `mvendorid`, `marchid`, `mimpid`, `mhartid`, `mconfigptr` | read-only identity; `mhartid` from a parameter; `misa` names the extensions implemented (I and M from 18.3, A from 18.4, X for Xasterdot8 from 18.5) and ignores writes (`mconfigptr`: 18.3) |
 | `mstatus`, `mstatush` | `MIE`, `MPIE`; `MPP` reads as machine mode; `mstatush` reads 0 (18.3) |
 | `mtvec` | direct mode (vectored mode optional later); bits 1:0 read 0 |
 | `mepc`, `mcause`, `mtval`, `mscratch` | standard (`mepc` bits 1:0 read 0: no C) |
@@ -331,8 +331,16 @@ Each milestone passes all applicable layers before the next milestone starts.
      see a data-port write only once it has been answered (§5 orders accesses
      within a port only), so `fence.i`'s wait is tested.
    - **Xasterdot8 (18.5):** Spike does not know custom-0; an Aster extension
-     library (`--extlib`) implements DOT8 in Spike, so DOT8 programs run in
-     lockstep rather than being excluded.
+     library (`--extlib`, `verification/core/spike/aster_dot8.cc`, enabled by
+     `_xasterdot8` in Spike's ISA string, which also sets `misa.X`) implements
+     DOT8 in Spike, so DOT8 programs run in lockstep rather than being
+     excluded. Spike treats any custom extension as a RoCC coprocessor,
+     with an interrupt (`mie` bit 12 writable) and state that `mstatus.XS`
+     tracks (XS writable, and SD with it); the core has neither, so the
+     library keeps those bits clear. The exhaustive arithmetic check (a
+     270 MB Spike log per run) runs self-checking in the shell alone in
+     every memory mode; it was run once in lockstep. C programs (v1's DOT8
+     kernels) run in lockstep from `verification/core/c`.
    - **I/O and interrupts:** the core shell has no devices but, from 18.3, an
      interrupt device that raises the core's interrupt lines; interrupts are
      checked by self-checking directed tests (layer 3), by random interrupts
@@ -599,6 +607,37 @@ memory side must keep (below):
   (`directed/atomics`) and the `fence.i` ordering (`directed/smc`).
   Multi-hart litmus tests need two cores sharing memory, which the Phase 20
   coherent SoC provides.
+
+Clarifications during milestone 18.5 (2 October 2026), from building and
+verifying Xasterdot8, for the owner's review:
+
+- §4: `dot8` is computed in M1 — the four products of the operands' signed
+  bytes and their sum, from the operands Execute passes on — rather than
+  split over Execute and M1 as §4's stage list says. The cycle behaviour is
+  the hazard table's: the value enters M2 with the instruction and is
+  forwarded from M2 and W, so a reader waits one cycle in Decode at distance
+  1 (and, if M1 waits on the memory, a reader in Execute waits too). Doing
+  the products in Execute would put them behind its forwarded operands, the
+  core's critical path; in M1 they start from a register.
+- §2, §3: `misa`'s X bit is set (a non-standard extension is present), as
+  Spike sets it for `_xasterdot8`.
+- §2: every other custom-0 encoding is illegal, including funct7 2–4,
+  which v1's PicoRV32 decoded as `retirq`, `maskirq` and `waitirq` (its
+  interrupt instructions): "v1 kernels run unchanged" holds for the DOT8
+  kernels, but v1's runtime returns from interrupts with `retirq` (`.word
+  0x0400000b`), which becomes `mret` when the SoC moves to the Aster core
+  (Phase 20).
+- §6: the Spike extension keeps `mie` bit 12 and `mstatus.XS` clear
+  (above); the exhaustive arithmetic runs in the shell alone, self-checking
+  against `mul`; the shell gains C programs in lockstep, for v1's DOT8
+  kernels.
+- §7 (outside the gate): the coherent Conv2D engine built for Xasterdot8
+  (`conv2d_dot8`) runs in the shell, matching its Phase 17 baseline record.
+  On the Aster core it is no faster than the scalar engine (1,365,828 window
+  cycles against 1,356,221, with 18% more instructions), as on v1's SoC
+  (10.34 against 9.73 million cycles): the engine's DOT8 path packs bytes at
+  a cost close to the multiplies it saves — a matter for the software
+  (Phase 19/20), not the core.
 
 Changes after approval, by the owner:
 

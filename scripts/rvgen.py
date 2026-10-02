@@ -25,6 +25,9 @@ The stream is built to stress a pipeline, not to compute anything:
   the shell Spike's sc outcomes); pointers read from memory by an AMO or lr
   and used as load, store and AMO addresses, and AMO, lr and sc results used
   as data;
+- with Xasterdot8 (`--ext ...,xasterdot8`, the Aster core from 18.5): dot8
+  (`.insn r 0x0b, 0, 0`) on random and corner bytes (-128, 127, -1, 1),
+  with operands from every producer and its result used as data;
 - with Zifencei (`--ext ...,zifencei`, the Aster core from 18.4): fence.i
   (no code is rewritten: the directed smc test does that) and fence in its
   forms;
@@ -70,7 +73,9 @@ CSR_WRITABLE = ["mtval", "mcause", "mepc", "mie"]          # mie: harmless while
 CSR_READABLE = ["minstret", "minstreth", "misa", "mhartid", "mstatus", "mtval", "mcause", "mepc", "mie"]
 IRQ_CSR_READABLE = ["mie", "mcountinhibit", "misa", "mhartid"]
 AMOS = ["amoswap.w", "amoadd.w", "amoxor.w", "amoand.w", "amoor.w", "amomin.w", "amomax.w", "amominu.w", "amomaxu.w"]
-ILLEGAL = [0x00000000, 0xFFFFFFFF, 0x00000001, 0x02051513, 0x7C002073]
+# (the last two: custom-0 with funct3 or funct7 not 0, which Xasterdot8 leaves illegal)
+ILLEGAL = [0x00000000, 0xFFFFFFFF, 0x00000001, 0x02051513, 0x7C002073, 0x0000100B, 0x0200000B]
+DOT8_CORNERS = [0x80808080, 0x7F7F7F7F, 0x807F807F, 0xFF01FF01, 0x01010101, 0xFFFFFFFF, 0x80FF7F01]
 FENCES = ["fence", "fence rw, rw", "fence r, w", "fence w, r", "fence.tso"]
 TRAP_HANDLER = [
     "    .align 2",
@@ -249,6 +254,20 @@ class Generator:
         self.emit(self.rng.choice([f"amoor.w x{reg}, x0, (x{reg})", f"amoadd.w x{reg}, x0, (x{reg})",
                                    f"amoxor.w x{reg}, x0, (x{reg})", f"lr.w x{reg}, (x{reg})"]))
 
+    def dot8(self) -> None:
+        """Xasterdot8's dot8, sometimes on corner bytes, its result sometimes used as data."""
+        s1 = None
+        if self.rng.random() < 0.3:            # a corner word as the first operand
+            s1 = self.dst(allow_x0=False)
+            self.emit(f"li x{s1}, 0x{self.rng.choice(DOT8_CORNERS):x}")
+        s1, s2, rd = s1 if s1 is not None else self.src(), self.src(), self.dst()
+        self.emit(f".insn r 0x0b, 0, 0, x{rd}, x{s1}, x{s2}")
+        if rd and self.rng.random() < 0.3:     # the result as data, 1-4 instructions later
+            self.pinned.add(rd)
+            self.fillers()
+            self.use_as_data(rd)
+            self.pinned.discard(rd)
+
     def irq_csr(self) -> None:
         """Under random interrupts: mie (MEIE and MSIE only), mcountinhibit, reads."""
         kind = self.rng.random()
@@ -366,6 +385,7 @@ class Generator:
         """Consume `reg` as an ALU, branch, store-data, multiply/divide or CSR-source operand."""
         kinds = (["alu", "branch", "store"] + (["muldiv"] if "m" in self.ext else [])
                  + (["amo-data"] if "a" in self.ext.split(",") else [])
+                 + (["dot8"] if "xasterdot8" in self.ext.split(",") else [])
                  + (["csr"] if "zicsr" in self.ext else []) + (["csr-irq"] if "irqcsr" in self.ext else []))
         kind = self.rng.choice(kinds)
         if kind == "alu":
@@ -379,6 +399,11 @@ class Generator:
             self.emit(f"{op} x{reg}, {self.rng.randrange(-2048, 2048, size)}(x{BASE})")
         elif kind == "amo-data":               # on the base's own word, so it can follow at distance 1
             self.emit(f"{self.rng.choice(AMOS)} x{self.dst()}, x{reg}, (x{BASE})")
+        elif kind == "dot8":
+            if self.rng.random() < 0.5:
+                self.emit(f".insn r 0x0b, 0, 0, x{self.dst()}, x{reg}, x{self.src()}")
+            else:
+                self.emit(f".insn r 0x0b, 0, 0, x{self.dst()}, x{self.src()}, x{reg}")
         elif kind == "csr":
             op = self.rng.choice(["csrrw", "csrrs", "csrrc"])
             self.emit(f"{op} x{self.dst()}, {self.rng.choice(CSR_WRITABLE)}, x{reg}")
@@ -441,7 +466,10 @@ class Generator:
             if "a" in self.ext.split(",") and self.rng.random() < 0.06:
                 self.atomic()
                 continue
-            if "zifencei" in self.ext.split(",") and self.rng.random() < 0.02:
+            if "xasterdot8" in self.ext.split(",") and self.rng.random() < 0.04:
+                self.dot8()
+                continue
+            if "zifencei" in self.ext.split(",") and self.rng.random() < 0.03:
                 self.emit("fence.i" if self.rng.random() < 0.6 else self.rng.choice(FENCES))
                 continue
             choice = self.rng.random()

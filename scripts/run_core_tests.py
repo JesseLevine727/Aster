@@ -78,6 +78,14 @@ ARCH_ENV = ROOT / "verification/core/arch_env"
 DIRECTED = ROOT / "verification/core/directed"     # the "directed" suite
 TRAPS = ROOT / "verification/core/traps"           # directed exceptions, in lockstep (18.3)
 INTERRUPTS = ROOT / "verification/core/interrupts" # self-checking programs in the shell alone (18.3)
+SELFCHECK = ROOT / "verification/core/selfcheck"   # self-checking programs too long for a Spike log (18.5)
+C_TESTS = ROOT / "verification/core/c"             # C programs in lockstep (18.5): start.S, then main
+# Each C test's other sources, and the flags (the v1 software's, for the shell).
+C_SOURCES = {"dot8_jobs": ["software/benchmarks/dot8_kernels.c"]}
+C_FLAGS = ["-O2", "-ffreestanding", "-fno-pic", "-fno-stack-protector", "-msmall-data-limit=0",
+           "-Wall", "-Wextra", "-Werror", "-Isoftware/drivers", "-Isoftware/benchmarks"]
+SELFCHECK_MAX_CYCLES = 12_000_000     # dot8_arith: 3.9 M on time, 6 M back-pressured
+C_MAX_CYCLES = 6_000_000              # dot8_jobs: 1.5 M on time
 SPIKE_STEP = 5000                                  # Spike's INTERLEAVE: a trap ends its step early
 ARCH_TESTS = ROOT / "vendor/riscv-arch-test/riscv-test-suite"
 ENTRY = 0x80000000
@@ -90,6 +98,7 @@ IO_PAGE = (0x20000000, 0x10000)   # the SoC register page, plain memory for the 
 # (verification/core/spike/aster_clock.cc), so plain memory skips it.
 CLOCK_PAGE = (0x20003000, 0x1000)
 ASTER_CLOCK = ROOT / "build/spike/libaster_clock.so"
+ASTER_DOT8 = ROOT / "build/spike/libaster_dot8.so"
 # --cpi-check: on a memory that answers on time, the Aster core's run takes the
 # model's cycles plus this: its first instruction enters Execute in the shell's
 # cycle 4 (fetch, F1, F2, Decode), and the shell counts the tohost store when its
@@ -101,7 +110,9 @@ KERNEL_MAX_CYCLES = 30_000_000    # the longest run (coherent scalar Conv2D, two
 # (sources, flags variable, make overrides, Phase 17 baseline capture); Dhrystone's
 # vendor files use their own flags. Two Conv2D builds are listed: the gate's, the
 # coherent SoC's scalar engine (docs/cpu.md §7), and the minimal top's, run as a
-# cross-check outside the gate.
+# cross-check outside the gate. The same engine built for Xasterdot8
+# (conv2d_dot8, a v1 DOT8 workload; 18.5) runs outside the gate on a DUT with
+# Xasterdot8 only.
 GATE_KERNELS = ("coremark", "dhrystone", "sort_search", "fft", "strided", "conv2d_scalar_coh", "reduction")
 KERNELS = {
     "coremark": ([f"vendor/coremark/{name}.c" for name in
@@ -116,7 +127,10 @@ KERNELS = {
                            "software/drivers/aster_npu.c"], "CONV_CFLAGS", ["CONV_ENGINE=scalar_coh"],
                           "conv2d_scalar_coh"),
     "reduction": (["software/benchmarks/workload_reduce.c"], "REDUCE_CFLAGS", ["REDUCE_WORKERS=1"], "reduce_scalar"),
+    "conv2d_dot8": (["software/benchmarks/workload_conv2d_engine.c", "software/benchmarks/xe_kernels.c",
+                     "software/drivers/aster_npu.c"], "CONV_CFLAGS", ["CONV_ENGINE=dot8"], "conv2d_dot8"),
 }
+DOT8_KERNELS = ("conv2d_dot8",)
 assert set(GATE_KERNELS) <= set(KERNELS), "every gate kernel is a listed kernel"
 DHRYSTONE_VENDOR = (["vendor/dhrystone/dhry_1.c", "vendor/dhrystone/dhry_2.c"], "DHRY_VENDOR_CFLAGS")
 # A test that runs away (for example a failure that never reports) ends here;
@@ -136,22 +150,25 @@ DUTS = {
             "rv32ui/ma_data": "misaligned accesses trap by design (CATCH_MISALIGN), as in the v1 core",
             "directed/atomics": "PicoRV32 has no native A (the Aster core's test, 18.4)",
             "directed/smc": "PicoRV32 has no Zifencei (the Aster core's test, 18.4)",
+            **{f"directed/{name}": "the shell's PicoRV32 has no Xasterdot8 (v1's is a PCPI unit; the Aster core's test, 18.5)"
+               for name in ("dot8", "dot8_fields_0", "dot8_fields_1", "dot8_fields_2", "dot8_fields_3")},
         },
         # riscv-arch-test suites under rv32i_m/; A, Zifencei and privilege need
         # instructions or CSRs PicoRV32 does not have.
         "arch_suites": ("I", "M"), "arch_isa": "RV32IM", "arch_params": {},
         "spike_args": [], "spike_traps": False, "shell_args": [], "interrupt_suites": (),
     },
-    # The Aster core (docs/cpu.md), in the two-port shell. Milestones 18.1-18.4:
-    # RV32IMA, Zicsr, Zifencei, traps, interrupts and counters, with exact RVFI
-    # byte masks; 18.5 adds Xasterdot8 here. Spike is configured as the core is
-    # (docs/cpu.md §6): machine mode only, no PMP, no debug triggers, `wfi` a
-    # no-op.
+    # The Aster core (docs/cpu.md), in the two-port shell. Milestones 18.1-18.5:
+    # RV32IMA, Zicsr, Zifencei, Xasterdot8 (emitted with .insn; in Spike, the
+    # aster_dot8 extension), traps, interrupts and counters, with exact RVFI
+    # byte masks. Spike is configured as the core is (docs/cpu.md §6): machine
+    # mode only, no PMP, no debug triggers, `wfi` a no-op.
     "aster": {
-        "march": "rv32ima_zicsr_zifencei", "spike_isa": "rv32ima_zicsr_zifencei_zicntr",
+        "march": "rv32ima_zicsr_zifencei", "spike_isa": "rv32ima_zicsr_zifencei_zicntr_xasterdot8",
+        "dot8": True,
         "spike_args": ["--priv=m", "--pmpregions=0", "--triggers=0", "--wfi-as-nop"], "spike_traps": True,
         "shell_args": ["+bus_error_traps"],
-        "suites": ("rv32ui", "rv32um", "rv32ua", "rv32mi", "directed", "traps", "interrupts"),
+        "suites": ("rv32ui", "rv32um", "rv32ua", "rv32mi", "directed", "traps", "interrupts", "selfcheck", "c"),
         "interrupt_suites": ("rv32ui", "rv32um", "rv32ua", "directed"),
         "word_loads": False,
         "prefetches": True,
@@ -200,7 +217,13 @@ def build(test: Path, march: str, out_dir: Path, prefix: str, arch: bool = False
     out = out_dir / (test.parent.parent.name if arch else test.parent.name)
     out.mkdir(parents=True, exist_ok=True)
     elf, binary = out / f"{test.stem}.elf", out / f"{test.stem}.bin"
-    if arch:
+    if test.suffix == ".c":
+        # A C test: the shell start-up, the program and its other sources.
+        sources = [str(C_TESTS / "start.S"), str(test), *(str(ROOT / name) for name in C_SOURCES.get(test.stem, []))]
+        command = [f"{prefix}gcc", f"-march={march}", "-mabi=ilp32", "-nostdlib", "-nostartfiles", *C_FLAGS,
+                   *(f"-D{define}" for define in defines), f"-T{DIRECTED / 'link.ld'}", *sources,
+                   "-o", str(elf), "-lgcc"]
+    elif arch:
         # The 3.x test format: the macros come from the program's applicable
         # RVTEST_CASE (arch_case; the caller passes them). Its LA macro aligns
         # with RVC enabled; without -mno-relax the linker trims that padding to
@@ -210,11 +233,13 @@ def build(test: Path, march: str, out_dir: Path, prefix: str, arch: bool = False
     else:
         # Directed tests end the shell memory at their shell_memory_end symbol.
         # encoding.h (the CSR and cause names) comes with the vendored arch-test.
-        layout = DIRECTED if test.parent in (DIRECTED, TRAPS, INTERRUPTS) else ENV
+        layout = DIRECTED if test.parent in (DIRECTED, TRAPS, INTERRUPTS, SELFCHECK) else ENV
         env = [f"-I{ENV}", f"-I{TESTS / 'macros/scalar'}", f"-I{ARCH_TESTS / 'env'}", f"-T{layout / 'link.ld'}"]
-    env += [f"-D{define}" for define in defines]
-    result = run([f"{prefix}gcc", f"-march={march}", "-mabi=ilp32", "-nostdlib", "-nostartfiles", *env,
-                  str(test), "-o", str(elf)])
+    if test.suffix != ".c":
+        env += [f"-D{define}" for define in defines]
+        command = [f"{prefix}gcc", f"-march={march}", "-mabi=ilp32", "-nostdlib", "-nostartfiles", *env,
+                   str(test), "-o", str(elf)]
+    result = run(command)
     if result.returncode:
         raise RuntimeError(f"build failed for {test}:\n{result.stderr}")
     run([f"{prefix}objcopy", "-O", "binary", str(elf), str(binary)], check=True)
@@ -227,12 +252,13 @@ def build(test: Path, march: str, out_dir: Path, prefix: str, arch: bool = False
 
 def suite_dir(suite: str) -> Path:
     """A test suite's directory: the riscv-tests suites, or the shell's own directed ones."""
-    return {"directed": DIRECTED, "traps": TRAPS, "interrupts": INTERRUPTS}.get(suite, TESTS / suite)
+    return {"directed": DIRECTED, "traps": TRAPS, "interrupts": INTERRUPTS,
+            "selfcheck": SELFCHECK, "c": C_TESTS}.get(suite, TESTS / suite)
 
 
 def test_path(name: str) -> Path:
     suite, stem = name.split("/")
-    return suite_dir(suite) / f"{stem}.S"
+    return suite_dir(suite) / f"{stem}.{'c' if suite == 'c' else 'S'}"
 
 
 def has_signature(symbols: dict) -> bool:
@@ -240,18 +266,20 @@ def has_signature(symbols: dict) -> bool:
 
 
 def execute(args, config: dict, elf: Path, binary: Path, symbols: dict, arch: bool = False,
-            kernel: bool = False, shell_only: bool = False, shell_extra: tuple = ()) -> tuple[bool, str, str, str]:
+            kernel: bool = False, shell_only: bool = False, shell_extra: tuple = (),
+            max_cycles: int | None = None) -> tuple[bool, str, str, str]:
     """Run the shell and Spike; returns (both exited 0, shell status line, trace text, Spike log text).
 
     Both also dump the begin_signature..end_signature words next to the ELF
     (.sig.dut, .sig.spike) when the program has that region.
     """
     trace, log = elf.with_suffix(".trace"), elf.with_suffix(".spike")
+    max_cycles = max_cycles or args.max_cycles
     for stale in (trace, log, elf.with_suffix(".sig.dut"), elf.with_suffix(".sig.spike")):
         stale.unlink(missing_ok=True)
     memory = symbols["shell_memory_end"] - ENTRY if "shell_memory_end" in symbols else MEMORY_BYTES[arch]
     command = [str(args.sim), f"+bin={binary}", f"+tohost={symbols['tohost']:x}", f"+trace={trace}",
-               f"+max_cycles={args.max_cycles}", f"+mem_bytes={memory:x}"]
+               f"+max_cycles={max_cycles}", f"+mem_bytes={memory:x}"]
     regions = f"-m0x{ENTRY:08x}:0x{memory:x}"
     if kernel:
         console = elf.with_suffix(".console")
@@ -260,10 +288,12 @@ def execute(args, config: dict, elf: Path, binary: Path, symbols: dict, arch: bo
         below, above = CLOCK_PAGE[0] - IO_PAGE[0], IO_PAGE[0] + IO_PAGE[1] - CLOCK_PAGE[0] - CLOCK_PAGE[1]
         regions += (f",0x{IO_PAGE[0]:08x}:0x{below:x},0x{CLOCK_PAGE[0] + CLOCK_PAGE[1]:08x}:0x{above:x}"
                     f" --extlib={args.aster_clock} --device=aster_clock,0x{CLOCK_PAGE[0]:08x}")
-    spike_command = [str(args.spike), f"--isa={config['spike_isa']}", *config["spike_args"], *regions.split(),
+    extensions = [f"--extlib={args.aster_dot8}"] if config.get("dot8") else []
+    spike_command = [str(args.spike), *extensions, f"--isa={config['spike_isa']}", *config["spike_args"],
+                     *regions.split(),
                      # the same bound as the shell: a DUT retires at most one
                      # instruction per cycle (the margin covers Spike's boot ROM)
-                     f"--instructions={args.max_cycles + 64}", "--log-commits"]
+                     f"--instructions={max_cycles + 64}", "--log-commits"]
     if config["spike_traps"] and not kernel:
         spike_command.append("-l")              # exception lines: the trap records
     if args.stall_seed is not None:
@@ -283,13 +313,13 @@ def execute(args, config: dict, elf: Path, binary: Path, symbols: dict, arch: bo
         # Each trap ends one of Spike's steps early, and Spike counts the whole step.
         traps = sum(1 for line in trace.read_text().splitlines() if line.split()[3:4] == ["1"])
         spike_command = [item if not item.startswith("--instructions=")
-                         else f"--instructions={args.max_cycles + 64 + SPIKE_STEP * (traps + 1)}"
+                         else f"--instructions={max_cycles + 64 + SPIKE_STEP * (traps + 1)}"
                          for item in spike_command]
     if kernel:
         # A kernel spins after its record, so Spike is bounded by what the shell
         # retired (plus its boot ROM) rather than by a tohost store.
         retired = next((int(item.split("=", 1)[1]) for item in shell.stdout.split()
-                        if item.startswith("retired=")), args.max_cycles)
+                        if item.startswith("retired=")), max_cycles)
         spike_command = [item if not item.startswith("--instructions=") else f"--instructions={retired + 64}"
                          for item in spike_command]
     with log.open("w") as stream:
@@ -486,10 +516,10 @@ def spike_injections(lines: list[str], tohost: int) -> dict[str, list[str]]:
 # Operands each opcode reads, by consumer class: (rs1 class, rs2 class).
 _READS = {0x33: ("alu", "alu"), 0x13: ("alu", None), 0x03: ("load-addr", None),
           0x23: ("store-addr", "store-data"), 0x63: ("branch", "branch"), 0x67: ("jalr", None),
-          0x2F: ("amo-addr", "amo-data")}
-HAZARD_PRODUCERS = ("alu", "load", "link", "mul", "div", "csr")
+          0x2F: ("amo-addr", "amo-data"), 0x0B: ("dot8", "dot8")}
+HAZARD_PRODUCERS = ("alu", "load", "link", "mul", "div", "csr", "atomic", "dot8")
 HAZARD_CONSUMERS = ("alu", "muldiv", "load-addr", "store-addr", "store-data", "branch", "jalr", "csr",
-                    "amo-addr", "amo-data")
+                    "amo-addr", "amo-data", "dot8")
 
 
 def _producer(insn: int) -> str:
@@ -498,7 +528,9 @@ def _producer(insn: int) -> str:
         return "mul" if (insn >> 12) & 7 < 4 else "div"
     # AMOs, lr and sc return their result from the memory, as a load does, but
     # are a class of their own so that each is required to be forwarded (18.4).
-    return {0x03: "load", 0x2F: "atomic", 0x6F: "link", 0x67: "link", 0x73: "csr"}.get(opcode, "alu")
+    # dot8's value comes from M2 (18.5): a class of its own too.
+    return {0x03: "load", 0x2F: "atomic", 0x6F: "link", 0x67: "link", 0x73: "csr",
+            0x0B: "dot8"}.get(opcode, "alu")
 
 
 def required_bins(extensions: str) -> list[tuple[str, int, str]]:
@@ -513,13 +545,14 @@ def required_bins(extensions: str) -> list[tuple[str, int, str]]:
     load results, link values for loads and `jalr`, and AMO results (a pointer
     taken from memory atomically) for loads, stores and AMOs. (A multiply
     result or a code address used as a store address is legal but not a
-    distinct hazard.)
+    distinct hazard.) With Xasterdot8, its results are a producer and its
+    operands a data consumer.
     """
-    muldiv, zicsr, atomic = (name in extensions.split(",") for name in ("m", "zicsr", "a"))
+    muldiv, zicsr, atomic, dot8 = (name in extensions.split(",") for name in ("m", "zicsr", "a", "xasterdot8"))
     producers = (["alu", "load", "link"] + (["mul", "div"] if muldiv else []) + (["csr"] if zicsr else [])
-                 + (["atomic"] if atomic else []))
+                 + (["atomic"] if atomic else []) + (["dot8"] if dot8 else []))
     data = (["alu", "branch", "store-data"] + (["muldiv"] if muldiv else []) + (["csr"] if zicsr else [])
-            + (["amo-data"] if atomic else []))
+            + (["amo-data"] if atomic else []) + (["dot8"] if dot8 else []))
     address = {"alu": ["load-addr", "store-addr", "jalr"] + (["amo-addr"] if atomic else []),
                "load": ["load-addr", "store-addr", "jalr"] + (["amo-addr"] if atomic else []),
                "link": ["load-addr", "jalr"],
@@ -628,7 +661,8 @@ def run_kernels(args, config, prefix: str) -> int:
     if not args.aster_clock.exists():
         print(f"FAIL: {args.aster_clock} is missing (make core-kernels builds it)")
         return 1
-    names = [args.only] if args.only else list(KERNELS)
+    names = [args.only] if args.only else [name for name in KERNELS
+                                            if config.get("dot8") or name not in DOT8_KERNELS]
     unknown = [name for name in names if name not in KERNELS]
     if unknown:
         print(f"FAIL: unknown kernel {', '.join(unknown)} (known: {', '.join(KERNELS)})")
@@ -749,7 +783,7 @@ class Outcome:
 
 # --interrupts: the instruction classes whose every pair (interrupted after,
 # killed and re-executed after the handler) a run must produce.
-INTERRUPT_CLASSES = ("alu", "load", "store", "branch", "jump", "mul", "div", "atomic", "fence")
+INTERRUPT_CLASSES = ("alu", "load", "store", "branch", "jump", "mul", "div", "atomic", "fence", "dot8")
 MRET = 0x30200073
 
 
@@ -760,7 +794,7 @@ def insn_class(record) -> str:
     if opcode == 0x33 and record.insn >> 25 == 1:
         return "mul" if (record.insn >> 12) & 7 < 4 else "div"
     return {0x03: "load", 0x23: "store", 0x63: "branch", 0x6F: "jump", 0x67: "jump", 0x73: "system",
-            0x0F: "fence", 0x2F: "atomic"}.get(opcode, "alu")
+            0x0F: "fence", 0x2F: "atomic", 0x0B: "dot8"}.get(opcode, "alu")
 
 
 def splice(records: list) -> tuple[list, list, str]:
@@ -801,23 +835,28 @@ def splice_check(trace_text: str, log_text: str, tohost: int) -> tuple[bool, str
 
 def run_program(args, config, source: Path, prefix: str, arch: bool = False) -> Outcome:
     """Build, run and check one program (the four conditions in the module docstring)."""
-    shell_only = source.parent == INTERRUPTS
+    shell_only = source.parent in (INTERRUPTS, SELFCHECK)
     spliced = args.interrupts is not None
     defines = ("ASTER_INTERRUPTS",) if spliced else ()
     if arch:
         defines += tuple(arch_case(source, config) or ())
     elf, binary, symbols = build(source, config["march"], args.build_dir, prefix, arch=arch, defines=defines)
-    extra = ("+irq_device",) if shell_only else (f"+irq_random={args.interrupts}",) if spliced else ()
+    extra = (("+irq_device",) if source.parent == INTERRUPTS else () if shell_only
+             else (f"+irq_random={args.interrupts}",) if spliced else ())
     passed, status, trace_text, log_text = execute(args, config, elf, binary, symbols, arch=arch,
-                                                   shell_only=shell_only, shell_extra=extra)
+                                                   shell_only=shell_only, shell_extra=extra,
+                                                   max_cycles=SELFCHECK_MAX_CYCLES if source.parent == SELFCHECK
+                                                   else C_MAX_CYCLES if source.parent == C_TESTS else None)
     counted, count_message = retired_check(status, trace_text)
     if shell_only:
-        # A self-checking interrupt program: it must also take at least the
-        # interrupts it declares (shell_expect_interrupts).
-        wanted = symbols.get("shell_expect_interrupts", 1)
+        # A self-checking interrupt program must also take at least the
+        # interrupts it declares (shell_expect_interrupts); the selfcheck suite's
+        # take none.
+        wanted = symbols.get("shell_expect_interrupts", 1 if source.parent == INTERRUPTS else 0)
         taken = next((int(item.split("=")[1]) for item in status.split() if item.startswith("interrupts=")), 0)
         ok = taken >= wanted
-        message = f"self-checking, {taken} interrupts (at least {wanted} required)"
+        message = (f"self-checking, {taken} interrupts (at least {wanted} required)"
+                   if source.parent == INTERRUPTS else "self-checking (no Spike run)")
     elif spliced:
         if "mtvec_handler" in symbols:
             ok, message, pairs = False, "the program has its own trap handler, which --interrupts cannot use", []
@@ -905,6 +944,8 @@ def run_random(args, config, prefix: str) -> int:
         extensions += ",zicsr" if args.interrupts is None else ",irqcsr"
     if "zifencei" in config["march"]:
         extensions += ",zifencei"
+    if config.get("dot8"):
+        extensions += ",xasterdot8"
     failures, total_cycles, total_retired, coverage = [], 0, 0, {}
     for seed in range(args.random_seed, args.random_seed + args.random):
         source = out / f"rvgen_{seed}.S"
@@ -955,6 +996,8 @@ def main() -> int:
                         help=f"shell cycle limit (default {MAX_CYCLES}; {KERNEL_MAX_CYCLES} with --kernels)")
     parser.add_argument("--aster-clock", type=Path, default=ASTER_CLOCK,
                         help="the Spike aster_clock plugin (for --kernels)")
+    parser.add_argument("--aster-dot8", type=Path, default=ASTER_DOT8,
+                        help="the Spike Xasterdot8 extension (for the Aster core)")
     parser.add_argument("--cpi-check", action="store_true",
                         help="require each program's cycles to equal the seven-stage CPI model's (plus "
                              f"{CPI_CHECK_OFFSET}); only for the Aster core on a memory that answers on time")
@@ -980,6 +1023,9 @@ def main() -> int:
         args.max_cycles = KERNEL_MAX_CYCLES if args.kernels else MAX_CYCLES
     config = DUTS[args.dut]
     prefix = os.environ.get("RISCV_PREFIX", "riscv32-unknown-elf-")
+    if config.get("dot8") and not args.aster_dot8.exists():
+        print(f"FAIL: {args.aster_dot8} is missing (make core-aster-tests builds it)")
+        return 1
 
     if args.inject:
         return inject(args, config, prefix)
@@ -1011,7 +1057,7 @@ def main() -> int:
         tests = [arch_path(args.only)] if args.only else [p for paths in suites.values() for p in paths]
     else:
         names = config["interrupt_suites"] if args.interrupts is not None else config["suites"]
-        suites = {suite: sorted(suite_dir(suite).glob("*.S")) for suite in names}
+        suites = {suite: sorted(suite_dir(suite).glob("*.c" if suite == "c" else "*.S")) for suite in names}
         tests = [test_path(args.only)] if args.only else [p for paths in suites.values() for p in paths]
     empty = [suite for suite, paths in suites.items() if not paths]
     missing = [str(path) for path in tests if not path.is_file()]
@@ -1045,7 +1091,7 @@ def main() -> int:
     mode += f", random interrupts seed {args.interrupts}" if args.interrupts is not None else ""
     what = "riscv-arch-test programs" if args.arch else "tests"
     what += " pass in lockstep and by signature"
-    selfchecking = sum(1 for test in tests if test.parent == INTERRUPTS)
+    selfchecking = sum(1 for test in tests if test.parent in (INTERRUPTS, SELFCHECK))
     if selfchecking:
         what += f" ({selfchecking} self-checking programs in the shell alone)"
     covered = interrupt_coverage(args)

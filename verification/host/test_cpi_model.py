@@ -33,6 +33,7 @@ CSRRS_X2_X1 = 0x3000a173   # csrrs x2, mstatus, x1
 CSRRSI_X2 = 0x3000e173     # csrrsi x2, mstatus, 1 (the rs1 field is the immediate 1)
 ADD_X2_X0 = 0x00000133     # add  x2, x0, x0
 FENCE_I = 0x0000100f       # fence.i
+DOT8_X1 = 0x0020808b       # dot8 x1, x1, x2 (custom-0)
 FENCE = 0x0ff0000f         # fence iorw, iorw
 
 
@@ -77,6 +78,11 @@ class CpiModel(unittest.TestCase):
 
     def test_amo_results_wait_like_loads(self):
         self.assertEqual(cpi_model.cycles(straight(AMOADD_X1, ADD_X2_X1, rds=[1, 2]), SEVEN), 2 + 2)
+
+    def test_dot8_results_forward_from_m2(self):
+        # 18.5: one cycle at distance 1, none at distance 2
+        self.assertEqual(cpi_model.cycles(straight(DOT8_X1, ADD_X2_X1, rds=[1, 2]), SEVEN), 2 + 1)
+        self.assertEqual(cpi_model.cycles(straight(DOT8_X1, NOP, ADD_X2_X1, rds=[1, None, 2]), SEVEN), 3)
 
     def test_fence_i_drains_m1_and_m2_then_redirects_from_execute(self):
         # alone: an Execute redirect (4); behind any instruction it first waits

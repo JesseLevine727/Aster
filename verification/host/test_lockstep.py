@@ -196,6 +196,25 @@ class HazardCoverage(unittest.TestCase):
         self.assertNotIn(("link", 1, "amo-addr"), bins)
         self.assertEqual(len(run_core_tests.required_bins("m,zicsr")), 152)
 
+    def test_required_bins_with_dot8(self):
+        # 18.5: dot8 results feed every data consumer, every producer feeds dot8
+        bins = run_core_tests.required_bins("m,a,zicsr,zifencei,xasterdot8")
+        self.assertEqual(len(bins), 276)
+        self.assertIn(("dot8", 1, "dot8"), bins)
+        self.assertIn(("atomic", 4, "dot8"), bins)
+        self.assertIn(("dot8", 2, "store-data"), bins)
+        self.assertNotIn(("dot8", 1, "load-addr"), bins)
+
+    def test_dot8_is_a_producer_and_its_operands_consumers(self):
+        records = [
+            self.record(0x00100093, rd=1),   # addi x1, x0, 1
+            self.record(0x0020818b, rd=3),   # dot8 x3, x1, x2: x1 d=1
+            self.record(0x00318233, rd=4),   # add  x4, x3, x3: dot8 d=1 (two operands)
+        ]
+        self.assertEqual(run_core_tests.hazard_coverage(records),
+                         {("alu", 1, "dot8"): 1, ("dot8", 1, "alu"): 2})
+        self.assertEqual(run_core_tests.insn_class(records[1]), "dot8")
+
     def test_amo_operands_and_lr_address_are_consumers(self):
         records = [
             self.record(0x00100093, rd=1),   # addi x1, x0, 1
@@ -436,12 +455,23 @@ class ArchCase(unittest.TestCase):
         self.assertEqual(self.case(plain, "picorv32"), ["TEST_CASE_1=True"])
 
 
+class TestPaths(unittest.TestCase):
+    def test_suites_name_their_files(self):
+        # 18.5: C programs, and self-checking programs run in the shell alone
+        self.assertEqual(run_core_tests.test_path("c/dot8_jobs"), run_core_tests.C_TESTS / "dot8_jobs.c")
+        self.assertEqual(run_core_tests.test_path("selfcheck/dot8_arith"),
+                         run_core_tests.SELFCHECK / "dot8_arith.S")
+        self.assertTrue(run_core_tests.test_path("c/dot8_jobs").exists())
+        for name in run_core_tests.C_SOURCES.get("dot8_jobs", []):
+            self.assertTrue((run_core_tests.ROOT / name).exists(), name)
+
+
 class RandomGenerator(unittest.TestCase):
     """rvgen returns every register it reserves for a sequence to the pool."""
 
     def test_no_register_stays_reserved(self):
         import rvgen
-        for ext in ("m", "m,zicsr", "m,a,zicsr,zifencei", "m,a,irqcsr,zifencei"):
+        for ext in ("m", "m,zicsr", "m,a,zicsr,zifencei,xasterdot8", "m,a,irqcsr,zifencei,xasterdot8"):
             for seed in range(1, 6):
                 generator = rvgen.Generator(seed, ext)
                 generator.program(4000)

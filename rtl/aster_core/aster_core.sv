@@ -1,8 +1,14 @@
 // Aster core: the seven-stage, single-issue, in-order core of docs/cpu.md —
 // F1 F2 (aster_core_fetch), Decode, Execute, M1, M2, Write-back.
 //
-// Milestones 18.1-18.4: RV32IMA, Zicsr, Zifencei, machine-mode traps and
-// interrupts, and the counters (aster_core_pkg; docs/cpu.md §3).
+// Milestones 18.1-18.5: RV32IMA, Zicsr, Zifencei, Xasterdot8, machine-mode
+// traps and interrupts, and the counters (aster_core_pkg; docs/cpu.md §3).
+//
+// Xasterdot8 (18.5): dot8 rd, rs1, rs2 — the sum of the four products of the
+// operands' signed bytes — is computed in M1 from the operands Execute passed
+// on, and its value enters M2 with it, so it is forwarded from M2 and W. A
+// Decode instruction that reads it waits while the dot8 is in Execute (one
+// cycle at distance 1); one in Execute waits while it is in M1.
 //
 // Atomics (18.4): an lr.w, sc.w or AMO is one data-port operation (d_req_op, a
 // word, address rs1), executed by the memory as one transaction; its result
@@ -181,7 +187,8 @@ module aster_core
         logic        load;
         logic        store;
         logic        mul;
-        logic        late;          // a load or a multiply: its value is ready only in W
+        logic        late;          // its value is not ready in M1: a load or a multiply (ready only in W), or a dot8 (ready in M2)
+        logic        dot8;          // Xasterdot8's dot8: its value is computed in M1 and enters M2 with it
         logic        acc;           // its data request was accepted
         logic        got;           // its answer has arrived
         logic        sys;           // a CSR instruction or mret: no interrupt is taken after it in M1
@@ -226,7 +233,7 @@ module aster_core
     assign mie_value           = {20'b0, mie_meie, 3'b0, mie_mtie, 3'b0, mie_msie, 3'b0};
     assign mip_value           = {20'b0, mip_q[2], 3'b0, mip_q[1], 3'b0, mip_q[0], 3'b0};
     assign mcountinhibit_value = {29'b0, ir_inhibit, 1'b0, cy_inhibit};
-    localparam logic [31:0] MISA = 32'h4000_1101;       // RV32, I, M and A
+    localparam logic [31:0] MISA = 32'h4080_1101;       // RV32, I, M, A and X (Xasterdot8)
 
     // ------------------------------------------------------------------ fetch
     logic        d_redirect, e_flush, f_valid, f_error, d_take;
@@ -485,11 +492,12 @@ module aster_core
     assign e_flush   = e_advance && e_mispredict;
 
     // Load-use interlock: the newest of Execute and M1 writing the register is a
-    // load or a multiply.
+    // load or a multiply, or Execute's is a dot8 (in M1, a dot8's value reaches
+    // M2 by the time the reader is in Execute; if M1 waits, Execute waits).
     function automatic logic load_pending(input logic [4:0] r);
         if (r == 5'd0) return 1'b0;
-        if (e_live && e_dec.writes_rd && e_dec.rd == r) return e_dec.load || e_dec.mul;
-        return m1.valid && m1.writes_rd && m1.rd == r && m1.late;
+        if (e_live && e_dec.writes_rd && e_dec.rd == r) return e_dec.load || e_dec.mul || e_dec.dot8;
+        return m1.valid && m1.writes_rd && m1.rd == r && m1.late && !m1.dot8;
     endfunction
     assign d_hazard  = (d_dec.uses_rs1 && load_pending(d_dec.rs1)) || (d_dec.uses_rs2 && load_pending(d_dec.rs2));
     assign d_advance = d_live && e_free && !d_hazard;
@@ -514,6 +522,19 @@ module aster_core
     assign mul_product = 64'($signed(pp_ll)) + (64'($signed(pp_lh)) << 16) + (64'($signed(pp_hl)) << 16)
                        + (64'($signed(pp_hh)) << 32);
     assign mul_result  = m2.funct3[1:0] == 2'd0 ? mul_product[31:0] : mul_product[63:32];
+
+    // ------------------------------------------------------------ Xasterdot8
+    // M1: the four products of the operands' signed bytes (in DSP blocks: in
+    // LUTs, product and sum together exceeded the cycle), summed in the fabric
+    // (a sum chained through the DSPs' cascade was slower still) from -65,024
+    // to 65,536 and sign-extended; the value enters M2 with the dot8.
+    (* use_dsp = "yes" *) logic signed [15:0] dot8_p0, dot8_p1, dot8_p2, dot8_p3;
+    (* use_dsp = "no" *)  logic signed [17:0] dot8_sum;
+    assign dot8_p0  = $signed(m1.rs1v[7:0])   * $signed(m1.rs2v[7:0]);
+    assign dot8_p1  = $signed(m1.rs1v[15:8])  * $signed(m1.rs2v[15:8]);
+    assign dot8_p2  = $signed(m1.rs1v[23:16]) * $signed(m1.rs2v[23:16]);
+    assign dot8_p3  = $signed(m1.rs1v[31:24]) * $signed(m1.rs2v[31:24]);
+    assign dot8_sum = 18'(dot8_p0) + 18'(dot8_p1) + 18'(dot8_p2) + 18'(dot8_p3);
 
     // ------------------------------------------------------------ W values
     // A load's value is aligned and extended as it leaves M2, so W forwards and
@@ -572,7 +593,8 @@ module aster_core
         e_slot.load      = e_dec.load && !e_trap;
         e_slot.store     = e_dec.store && !e_trap;
         e_slot.mul       = e_dec.mul && !e_trap;
-        e_slot.late      = (e_dec.load || e_dec.mul) && !e_trap;
+        e_slot.late      = (e_dec.load || e_dec.mul || e_dec.dot8) && !e_trap;
+        e_slot.dot8      = e_dec.dot8 && !e_trap;
         e_slot.acc       = e_access;
         e_slot.sys       = e_dec.sys;
         e_slot.csr_rd    = e_dec.csr && !e_trap;
@@ -741,7 +763,8 @@ module aster_core
                     m2.trap      <= m1.trap || m1_bus_err;
                     m2.writes_rd <= m1.writes_rd && !m1_bus_err;
                     m2.load      <= m1.load && !m1_bus_err;
-                    m2.late      <= m1.late && !m1_bus_err;
+                    m2.late      <= m1.late && !m1.dot8 && !m1_bus_err;
+                    if (m1.dot8) m2.result <= 32'($signed(dot8_sum));
                     m2.store     <= m1.store && !m1_bus_err;
                     if (m1_trap) begin
                         m2.next_pc <= {mtvec, 2'b00};
@@ -951,7 +974,7 @@ module aster_core
 
     logic unused;
     assign unused = ^{d_raw, f_predecode[1:0], e_redirect_target[1:0], w.acc, w.got, w.funct3,
-                     w.mul, w.late, w.sys, rd_sel.zero, rd_sel.mhartid, wr_sel.zero, wr_sel.mhartid,
+                     w.mul, w.late, w.dot8, w.sys, rd_sel.zero, rd_sel.mhartid, wr_sel.zero, wr_sel.mhartid,
                      rd_sel.time_lo, rd_sel.time_hi, wr_sel.time_lo, wr_sel.time_hi};
 
 `ifndef SYNTHESIS
