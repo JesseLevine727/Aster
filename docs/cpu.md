@@ -25,8 +25,10 @@ verification method, and timing/area gate. The surrounding plan is [`phase17-plu
   sort/search, 5.8 strided, 6.4 Dhrystone, 6.7 CoreMark and 12.3 FFT on the
   minimal top (multiply-heavy code pays PicoRV32's serial multiplier); the
   minimal top's own Conv2D, 8.3, is a cross-check outside the gate (§7).
-- **10 ns** block timing out-of-context on the PYNQ-Z1 (`xc7z020clg400-1`) and in
-  SKY130 block-level STA at the declared corners, from the first milestone on.
+- **10 ns** (100 MHz) block timing out-of-context on the PYNQ-Z1
+  (`xc7z020clg400-1`), from the first milestone on (SKY130 block timing was
+  part of this goal until the owner dropped the ASIC implementation on
+  1 October 2026, §9).
 - Verified instruction by instruction against an independent reference model
   before any performance claim.
 
@@ -253,14 +255,11 @@ are registered. (PicoRV32 reports full-word read masks on sub-word loads; the
 Aster core must report exact masks.)
 
 On the FPGA the memory behind each port is block RAM with its output
-register enabled (a two-cycle read); on SKY130 it is the L1's standard-cell
-arrays, each split into two stages. No SKY130 SRAM macro is on a
-register-to-register path shorter than its slow-corner access (to be
-characterized in 18.6): the macros form the backing store behind the L1 miss path, with registered inputs
-and outputs and a fixed multi-cycle access (the owner-approved 18.6 SRAM
-timing plan in [`phase18.md`](phase18.md)). That replaces the earlier
-requirement that a macro read fit half a cycle
-([`phase17-memory.md`](phase17-memory.md)).
+register enabled (a two-cycle read). (The SKY130 implementation — the L1's
+standard-cell arrays in two stages, with the SRAM macros as a multi-cycle
+backing store behind the miss path, the owner-approved 18.6 SRAM timing plan
+in [`phase18.md`](phase18.md) — was dropped with SKY130 on 1 October 2026,
+§9.)
 
 ## 6. Verification
 
@@ -321,12 +320,11 @@ Each milestone passes all applicable layers before the next milestone starts.
 ## 7. Timing, area, and performance gates
 
 - **Timing:** from milestone 18.1 on, an out-of-context Vivado implementation at
-  10 ns on `xc7z020clg400-1`, and a SKY130 block-level synthesis plus STA at
-  10 ns at the declared corners, both as committed scripts. A milestone that
+  10 ns on `xc7z020clg400-1`, as a committed script (a SKY130 block-level
+  synthesis plus STA at 10 ns was also required until 1 October 2026, §9). A milestone that
   misses timing records the limiting path and the proposed fix before it
   advances.
-- **Area:** reported per milestone (LUT/FF/DSP on the FPGA; cell area on
-  SKY130).
+- **Area:** reported per milestone (LUT/FF/DSP on the FPGA).
 - **Performance:** the CPU set — the fixed-iteration CoreMark CRC run,
   Dhrystone (adapted), sort/search, FFT, strided, scalar Conv2D (the coherent
   SoC's scalar-engine build, `conv2d_scalar_coh`; owner decision, 30 September
@@ -375,7 +373,7 @@ Each milestone passes all applicable layers before the next milestone starts.
 | 18.4 | A extension, `fence`, `fence.i` | Atomic and litmus tests on the core |
 | 18.5 | Xasterdot8 | v1 DOT8 reference tests |
 | 18.6 | L1 instruction/data caches with two-stage pipelined hits; SRAM interface; runtime port | Cache reference model, stalls, firmware regression |
-| 18.7 | Evaluation | CPU set vs PicoRV32 (§7 gate: geometric mean ≥2×, every kernel ≥1.5×); 100 MHz feasibility report for FPGA and SKY130 |
+| 18.7 | Evaluation | CPU set vs PicoRV32 (§7 gate: geometric mean ≥2×, every kernel ≥1.5×); 100 MHz feasibility report for the FPGA |
 
 ## 9. Approval
 
@@ -495,3 +493,13 @@ Changes after approval, by the owner:
   PicoRV32 CPI §1 quotes, from the same SoC as the scalar reduction), not the
   minimal top's Conv2D, which stays in the shell runs as a cross-check
   outside the gate. Decided before any measurement of the core.
+- **1 October 2026 — SKY130 dropped (§1, §5, §7, §8):** the FPGA is the only
+  implementation target; SKY130 block timing, area and the 18.6 SRAM timing
+  plan are withdrawn, with the plan's frozen targets
+  ([`phase17-plus.md`](phase17-plus.md), where the evidence and trade-off are
+  recorded). The owner first lowered the SKY130 target to 80 MHz the same day
+  (the RV32IM core had missed 10 ns at the slow corner by up to 0.52 ns in four
+  of five floorplans; at 12.5 ns it closed in all five), then dropped SKY130.
+  The two-stage memory access, adopted for SKY130's arrays, stays: it is
+  built and verified, and the FPGA's block RAM is read with its output
+  register. Decided by the owner.

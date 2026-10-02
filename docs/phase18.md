@@ -1,4 +1,4 @@
-# Phase 18: Aster core — CPU, L1/SRAM interface, and 100 MHz feasibility
+# Phase 18: Aster core — CPU, L1/SRAM interface, and 100 MHz feasibility on the FPGA
 
 Status: **in progress — milestone 18.0 (tooling) exit gate met; the owner chose
 a two-stage memory access (a seven-stage core) and approved the revised cpu.md
@@ -19,9 +19,11 @@ through `42a1f1f`): RV32IM passes rv32ui/um, arch-test I and M and random progra
 lockstep, cycle for cycle with the CPI model, and the eight CPU kernels run
 on the RTL in lockstep, each window exactly the model's cycles — a measured
 3.68× geometric mean over PicoRV32 (lowest 2.59×); the FPGA meets 10 ns
-(108.0 MHz at `42a1f1f`); on SKY130 at `42a1f1f` the slow corner meets 10 ns
-at 36% (+0.038 ns) and misses by 0.02–0.52 ns at 34, 38, 40 and 44%, still
-being closed (see "Milestone 18.2").** The CPU specification this
+(108.0 MHz at `42a1f1f`). On 1 October 2026 the owner dropped the SKY130 ASIC
+implementation: the FPGA is the only implementation target (the last SKY130
+runs: `42a1f1f` at 10 ns missed the slow corner by up to 0.52 ns in four of
+five floorplans, and at 12.5 ns closed in all five; see "Milestone 18.2" and
+[`phase17-plus.md`](phase17-plus.md)).** The CPU specification this
 phase implements is [`cpu.md`](cpu.md) (approved 29 September 2026); the phase
 sits in the [v2 plan](phase17-plus.md#6-phase-17-sequence). Every milestone
 passes its verification layer and records its timing before the next starts.
@@ -36,8 +38,9 @@ native Xasterdot8), together with the L1/SRAM interface that feeds it, so that i
 - takes at least **2× fewer cycles** than PicoRV32 on the CPU-bound set in the
   same memory shell: the geometric mean of the seven per-kernel speedups is at
   least 2.0×, and no kernel is below 1.5× ([`cpu.md`](cpu.md) §7);
-- meets **10 ns** timing out-of-context on the PYNQ-Z1 and in SKY130 block-level
-  STA, or records the limiting path and its cost.
+- meets **10 ns** timing out-of-context on the PYNQ-Z1, or records the limiting
+  path and its cost (SKY130 block-level STA was part of this goal until the
+  owner dropped SKY130 on 1 October 2026).
 
 ## Verification architecture
 
@@ -164,7 +167,8 @@ Committed scripts produce, for any core top:
 - a Vivado out-of-context synthesis and implementation at 10 ns on
   `xc7z020clg400-1` (timing summary and utilization);
 - a SKY130 block synthesis and static timing analysis at 10 ns at the declared
-  corners (cell area and per-corner slack).
+  corners (cell area and per-corner slack) — used through 18.2; SKY130 was
+  dropped on 1 October 2026, and these scripts remain as history.
 
 The same scripts run on PicoRV32 first, to record its baseline
 (`make timing-fpga-picorv32`, `make timing-asic-picorv32`; the timed top is
@@ -202,7 +206,8 @@ memory as block RAM inside the timed block, +1.61 ns (119 MHz), limited by
 the address routing to 32 block RAMs. Evidence and the strategy comparison:
 [`results/phase18/picorv32-baseline-v2`](results/phase18/picorv32-baseline-v2/README.md).
 Maximum-transition violations remain at every corner (4,754 at `max_ss`);
-clean electrical signoff is a Phase 20 gate.
+clean electrical signoff was a later-phase gate (withdrawn with SKY130,
+1 October 2026).
 
 **L1 array probes: with LibreLane's default flow, a standard-cell array read
 did not close 10 ns at the slow corner.** The approved 18.6 plan puts
@@ -338,9 +343,10 @@ early), so the look-ahead shell remains the §7 baseline.
 `~/tools/ngspice-47`) and the PDK's transistor netlist of the 2 KiB macro:
 a simulation of the whole macro did not finish 2 ns of simulated time within
 an hour, with either a DC or a transient operating point, so full-macro
-simulation is not practical. The characterization for 18.6 will use a trimmed
-netlist (the accessed rows and columns, with the removed cells' loading kept
-as capacitance), as OpenRAM's own characterizer does.
+simulation is not practical. The characterization for 18.6 was to use a
+trimmed netlist (the accessed rows and columns, with the removed cells'
+loading kept as capacitance), as OpenRAM's own characterizer does (withdrawn
+with SKY130, 1 October 2026).
 
 ### Milestone 18.1: the seven-stage RV32I pipeline (30 September 2026)
 
@@ -914,8 +920,22 @@ halves and a carry-select multiply add — was worse at every floorplan
 is retained); synthesis had merged the new high-half copies with the stall
 logic's inverted copies, which hold the same value, so the step tested the
 carry-select add but not the split select fanout; at this size, changes of a few hundred picoseconds are within
-the variation from one run to the next. The slow corner is not closed in 18.2
-yet; the owner chose to keep closing it within 18.2.
+the variation from one run to the next.
+
+**SKY130 dropped (1 October 2026, owner decision).** The owner first lowered
+the SKY130 target to 80 MHz: at 12.5 ns `42a1f1f` closes register to register
+at `max_ss` in all five floorplans swept — +0.411, +0.560, +0.488, +0.394 and
++0.383 ns at 34/36/38/40/44% (82.5–83.8 MHz; 161–165 MHz typical; no failing
+register-to-register path, hold met everywhere; the same synthesized netlist
+as the 10 ns runs — the flow repairs only up to the period asked for, so these
+frequencies are not the core's limit, which reached 95–100 MHz at 10 ns), with
+the request address still 0.78–0.97 ns over its
+2.5 ns output budget, and PicoRV32 at +1.022 ns (87.1 MHz). Then the owner
+dropped the SKY130 implementation from the project: the FPGA is the only
+implementation target, and the frozen SKY130 targets are withdrawn, with the
+evidence and trade-off recorded in [`phase17-plus.md`](phase17-plus.md) and
+[`cpu.md`](cpu.md) §9. These are the last SKY130 runs; the scripts and
+retained evidence stay as history.
 
 ## Milestones and gates
 
@@ -928,7 +948,7 @@ yet; the owner chose to keep closing it within 18.2.
 | 18.4 | A extension, `fence`, `fence.i` | ua/arch-test A and Zifencei; atomic and self-modifying-code tests |
 | 18.5 | Xasterdot8 | v1 DOT8 reference tests on the core |
 | 18.6 | L1 caches with two-stage pipelined hits; SRAM interface; runtime port | cache reference model, back-pressure, firmware regression |
-| 18.7 | Evaluation and feasibility | Against PicoRV32 on the CPU set in the same shell: geometric mean of the per-kernel speedups ≥2.0× and every kernel ≥1.5×, each kernel's speedup published; 100 MHz feasibility report for FPGA and SKY130 |
+| 18.7 | Evaluation and feasibility | Against PicoRV32 on the CPU set in the same shell: geometric mean of the per-kernel speedups ≥2.0× and every kernel ≥1.5×, each kernel's speedup published; 100 MHz feasibility report for the FPGA (SKY130 dropped, 1 October 2026) |
 
 ## Checklist
 
@@ -1002,17 +1022,17 @@ yet; the owner chose to keep closing it within 18.2.
   address (in the first report the paths into the registered redirect alone
   missed by about 3–4 ns, cpu.md §9), and no direct redirect was built, so the
   registered redirect (4 cycles) stays
-- [ ] **Serial rebuffer chains, to watch:** setup repair occasionally builds a
+- [x] **Serial rebuffer chains — closed: SKY130 dropped (1 October 2026).** Setup repair occasionally built a
   long serial chain of buffers on one net (24 cells in `233aa60`'s 36% run of
   the corrected flow; up to 21 in baseline-flow runs and 36 in the old chosen
   flow); with `941bff4` the longest is 7 and none is on a failing path, but
   each milestone's sweep should check (`buffer_census.py`)
 - [x] **PicoRV32 swept in the corrected flow:** 34/36/38/40%, +0.498, +0.408,
   +0.420 and +0.427 ns at `max_ss` (104.3–105.2 MHz), a 0.09 ns spread
-- [ ] **Flow correlation, deferred:** calibrating the resizer's wire RC per
+- [x] **Flow correlation — closed: SKY130 dropped (1 October 2026).** Calibrating the resizer's wire RC per
   layer against the signoff extraction (the stock table was used instead);
   needed if 18.7's feasibility report requires a tighter correlation
-- [ ] SKY130 core-to-SRAM port budgets for the Aster core, from the correlated
+- [x] **Closed: SKY130 dropped (1 October 2026); the FPGA's block-RAM port timing stays in 18.6.** SKY130 core-to-SRAM port budgets for the Aster core, from the correlated
   L1 array measurements (the array's write path, which is as long as its
   read path, included)
 - [x] **Decided by the owner, 30 September 2026 — two-stage memory access.**
@@ -1120,7 +1140,8 @@ yet; the owner chose to keep closing it within 18.2.
   confirmed by the owner on 30 September 2026: unrounded ratios; both cores on
   the same one-cycle shell SRAM with separate instruction and data banks, the
   Aster core without its L1.
-- [x] **Decided by the owner, 29 September 2026 — SRAM timing plan for 18.6.**
+- [x] **Decided by the owner, 29 September 2026 — SRAM timing plan for 18.6**
+  (withdrawn with SKY130, 1 October 2026).
   The SKY130 macros' only liberty models are analytical and typical-corner
   ([`phase17-memory.md`](phase17-memory.md)), so no macro sits on the 10 ns
   single-cycle path:
@@ -1144,12 +1165,18 @@ yet; the owner chose to keep closing it within 18.2.
   into two pipeline stages. Item 1 was measured early, as planned; with
   LibreLane's default flow a single-cycle standard-cell array read did not
   close 10 ns at `max_ss`, and the flow's own estimate did not predict signoff
-  (see "Pre-18.1 measurements"), which led to that decision. Items 2–4 stand.
+  (see "Pre-18.1 measurements"), which led to that decision. Items 2–4 stood
+  until the whole plan was withdrawn with SKY130 (1 October 2026).
 - [x] 18.1 as in the table above — complete (owner, 1 October 2026)
-- [ ] **18.2 slow corner, open:** `42a1f1f` meets 10 ns register to register
-  at `max_ss` at 36% (+0.038 ns) and misses by 0.094, 0.520, 0.020 and 0.109
-  ns at 34, 38, 40 and 44%; the request address misses its 2 ns output budget
-  by 2.79–3.01 ns (18.6); the owner chose to keep closing it within 18.2
+- [x] **18.2 slow corner — closed: SKY130 dropped (1 October 2026).** At
+  10 ns `42a1f1f` met `max_ss` at 36% (+0.038 ns) and missed by 0.094, 0.520,
+  0.020 and 0.109 ns at 34, 38, 40 and 44%; at 12.5 ns (the 80 MHz target the
+  owner set first) it closed in all five floorplans
+- [x] **Decided by the owner, 1 October 2026 — SKY130 dropped.** The FPGA is
+  the only implementation target; the SKY130 clock, physical-signoff and
+  energy targets are withdrawn (evidence and trade-off in
+  [`phase17-plus.md`](phase17-plus.md)); the 18.6 SRAM timing plan, which is
+  SKY130's, is withdrawn, and 18.7's feasibility report covers the FPGA
 - [ ] **A long-stall memory mode, by 18.6:** the shell's back-pressure adds at
   most two cycles, so a finished division never waits in Execute (its result
   is asserted to hold); 18.6's cache misses will need a mode with long stalls,

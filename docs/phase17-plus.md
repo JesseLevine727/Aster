@@ -1,7 +1,7 @@
 # Aster v2 performance roadmap: Phase 17 and beyond
 
-Status: **Phase 17 complete (29 September 2026); Phase 18 — the Aster core — is
-next.** See [`phase17-todo.md`](phase17-todo.md).
+Status: **Phase 17 complete (29 September 2026); Phase 18 — the Aster core — in
+progress ([`phase18.md`](phase18.md)).** See [`phase17-todo.md`](phase17-todo.md).
 Revised 29 September 2026; [section 7](#7-plan-revision--29-september-2026)
 records what changed from the first draft and why. This plan defines the
 performance-oriented successor to the functionally verified v1 system. It does
@@ -10,8 +10,9 @@ live Phase 17 checklist is [`phase17-todo.md`](phase17-todo.md).
 
 Phase 17 requires no live FPGA board access: it uses RTL/host evidence and the
 retained captures. Phase 18 performs local implementation/timing feasibility
-checks. The first planned physical PYNQ/Linux board session is Phase 21; SKY130
-physical design is Phase 22.
+checks. The first planned physical PYNQ/Linux board session is Phase 21. (SKY130
+physical design, planned as Phase 22, was dropped on 1 October 2026: the FPGA
+is the project's only implementation target.)
 
 The objective is to answer Aster's research questions with comparable evidence
 and produce an SoC whose CPU, memory system, accelerator, timing, and physical
@@ -61,27 +62,32 @@ multi-cycle access; and the macro is characterized in SPICE at the slow corner,
 with derating only as a cross-check. See the 18.6 plan in
 [`phase18.md`](phase18.md). NPU operand buffers are decided in Phase 19.
 
+*Withdrawn (owner, 1 October 2026):* SKY130 was dropped, so the macro
+constraints above and the plan that answered them are history.
+
 ## 2. What v2 is trying to achieve
 
 The end system remains a small heterogeneous RISC-V SoC, not a general-purpose
 desktop processor. It should have a credible scalar baseline built in this
 project, useful multicore scaling, a well-fed INT8 accelerator, and reproducible
-FPGA/ASIC PPA. The primary design target is **100 MHz**. That is an engineering
-goal to test and close, not a claim that the current RTL already meets it.
+FPGA PPA. The primary design target is **100 MHz** on the FPGA (the SKY130 ASIC
+implementation was dropped by the owner on 1 October 2026; see the target
+change below the table). That is an engineering goal to test and close, not a
+claim that the current RTL already meets it.
 
 ### Top-level targets (frozen 29 September 2026)
 
 | Metric | v2 target | Acceptance evidence |
 | --- | --- | --- |
 | FPGA clock | **100 MHz** for the all-engine PYNQ-Z1 image | Routed timing has nonnegative setup and hold slack, zero failing endpoints, and the physical workload suite passes at the programmed clock. A functional run without timing closure does not count. |
-| SKY130 clock | **100 MHz design target** at the slow signoff corner | 10 ns SDC, setup and hold closed at every required corner, real SRAM models with credible slow-corner timing, clean post-route signoff. Phase 18 must demonstrate feasibility early. A 50 MHz result is an intermediate milestone, not a silent substitute for the 100 MHz goal. |
+| SKY130 clock | **Dropped 1 October 2026** (owner decision; was 100 MHz at the slow signoff corner) | — |
 | CPU | **Aster core**: our own in-order RV32IMA CPU with at least **2× fewer cycles** than the v1 PicoRV32 baseline on the predeclared CPU-bound kernel set at the same clock and memory configuration (aggregation rule: [`cpu.md`](cpu.md) §7) | Same firmware semantics, compiler settings, inputs, cache policy, and measurement window. Lockstep-verified against an independent reference model before any performance claim. |
 | NPU peak | 4×4 INT8 array: 3.2 GOPS at 100 MHz, counting one MAC as two operations | Report peak separately from sustained throughput. Publish MAC/s as well as GOPS and state the MAC counting convention in every report. |
 | NPU utilization | At least **50% of peak** on predeclared dense GEMM cases with M, N, K ≥ 64, and a declared N=1 mapping with its own measured utilization | Independently checked outputs, cumulative active cycles over every job, active-PE utilization, memory bytes/cycle, and end-to-end latency. |
 | Accelerator speedup | At least **5×** over the optimized scalar implementation for large dense GEMM; at least **2×** end-to-end on the selected batch-one MLP | All methods run on the same SoC configuration and input. Include setup, transfer, and completion in end-to-end results; publish kernel-only results separately. Small workloads may be slower and remain in the report. |
 | FPGA resource margin | ≤80% of each PYNQ-Z1 LUT, BRAM, and DSP resource | Post-route utilization report for the exact tested bitstream. Timing closure takes priority over fitting one more feature. |
-| ASIC physical signoff | Zero setup/hold violations, zero routing DRC, zero foundry DRC, zero LVS mismatch, zero antenna violations, zero max-slew/capacitance/fanout violations | Hash-bound post-route reports, real macro models, and a fresh read-only audit that fails on any unmet release gate. |
-| Energy | Measured or vector-based energy per workload, not one global power number divided among workloads | Workload-specific post-route activity including SRAM macros, or a clearly labeled board measurement. Separate FPGA PL from PS and ASIC from FPGA. State the corner of every power number. |
+| ASIC physical signoff | **Dropped 1 October 2026** (owner decision) | — |
+| Energy | Measured or vector-based energy per workload, not one global power number divided among workloads | Workload-specific post-route activity, or a clearly labeled board measurement. Separate FPGA PL from PS. State the corner of every power number. (SRAM-macro and ASIC energy evidence was dropped with SKY130 on 1 October 2026.) |
 
 These targets were frozen at the Phase 17 review on 29 September 2026, together
 with the memory point (a 96 KiB host-loaded unified SRAM;
@@ -94,7 +100,37 @@ set was declared on 29 September 2026, before any measurement: the geometric
 mean of the per-kernel speedups must be at least 2.0×, with no kernel below
 1.5× ([`cpu.md`](cpu.md) §7).
 
+**Target change, 1 October 2026 (owner decision): the SKY130 ASIC
+implementation is dropped; the FPGA is the project's only implementation
+target.** The SKY130 clock target (100 MHz at the slow signoff corner), the
+ASIC physical-signoff target and the ASIC energy evidence are withdrawn; the
+FPGA targets are unchanged. Evidence ([`phase18.md`](phase18.md), Milestones
+18.1 and 18.2): the Aster core has met 10 ns out of context on the FPGA since
+the 18.1 timing work (`941bff4`; `42a1f1f`: 108.0 MHz, 102.8 with block RAM in
+the §5 form — the first 18.1 report missed in that form, at 95.8 MHz), while
+on SKY130 most of the timing effort went to the process's slow corner and the
+open-source flow — a flow configuration that buffered with delay cells,
+serial buffer chains, results otherwise spreading by up to about 1 ns across
+floorplans and about 0.5 ns between runs, and SRAM that could not be read in one cycle — and the
+RV32IM core missed 10 ns at the slow corner by up to 0.52 ns in four of five
+floorplans. The owner first lowered the SKY130 target to 80 MHz the same day;
+at 12.5 ns the core closed register to register at the slow corner in all
+five floorplans swept (+0.38 to +0.56 ns; the flow repairs only up to the
+period asked for, so the 82.5–83.8 MHz this implies is not the core's limit —
+the same netlist reached 95–100 MHz at 10 ns), its request address still 0.78
+to 0.97 ns over its port budget; those runs are the last SKY130 data. The
+critical paths are largely the same on both implementations (Execute's forwarding
+and ALU, the memory address), so the FPGA's thinnest margins remain the
+design's. Trade-off: the project no longer produces ASIC timing, area,
+signoff or energy results, and no second technology checks the FPGA's
+timing; in exchange, timing work runs on the FPGA's ten-minute loop and the
+board can test the design at its clock. The SKY130 scripts and retained runs
+stay in the repository as history.
+
 ### 100 MHz feasibility
+
+*SKY130 was dropped on 1 October 2026 (see the target change above): 100 MHz is
+the FPGA target, and this section's ASIC parts are history.*
 
 100 MHz is **not inherently too fast for 130 nm**; chips at that node can run
 much faster. The process node alone does not set the SoC clock: logic depth, SRAM
@@ -315,22 +351,20 @@ representative paths with a log that proves annotation took place.
   no unrouted nets/DRC errors, resource limits met, then physical execution at
   100 MHz with independent result checking. The 50 MHz v1.3 image remains a
   comparison point.
-- **ASIC:** 10 ns target SDC; setup and hold close at every declared corner;
-  zero routing DRC, foundry DRC, antenna, LVS, and max-slew/capacitance/fanout
-  errors; correct SRAM macros and capacity; gate-level evidence on
-  representative CPU, multicore, DOT8, and NPU paths; vector-based power for the
-  selected workloads.
+- **ASIC:** withdrawn with SKY130 on 1 October 2026 (owner decision). It
+  required a 10 ns target SDC closed at every declared corner, zero physical
+  and electrical errors, correct SRAM macros, gate-level evidence and
+  vector-based power.
 - **Closeout:** an audit must reject negative slack, nonzero physical or
   electrical errors, missing required workloads, source drift, missing raw
-  records, incorrect counter attribution, or unbound ASIC source/configuration
-  (the ASIC directory is part of the hashed source state). `PASS` means every
+  records, or incorrect counter attribution (the unbound ASIC source/configuration check
+  went with SKY130). `PASS` means every
   contractual gate passed; documented failures are status **incomplete**, not
   “complete with residuals.” Audit checks must be able to fail: substring
   matches such as `"0" in report` are not checks.
 
 `make check` remains the fast developer regression. It is not a substitute for
-the fixed full-study matrices, routed implementation, physical board capture, or
-ASIC closeout.
+the fixed full-study matrices, routed implementation, or physical board capture.
 
 ## 6. Phase 17+ sequence
 
@@ -394,8 +428,9 @@ feasibility early.
   estimated 1.2–1.65 CPI by the trace-driven model; [`cpu.md`](cpu.md) §4);
   at least 2× fewer cycles than PicoRV32 at the same clock and memory
   configuration (geometric mean of the per-kernel speedups, no kernel below
-  1.5×; [`cpu.md`](cpu.md) §7); 10 ns block timing out-of-context on the PYNQ-Z1 and in SKY130
-  block-level STA at the declared corners.
+  1.5×; [`cpu.md`](cpu.md) §7); 10 ns block timing out-of-context on the PYNQ-Z1
+  (SKY130 block-level STA at the declared corners was also required until
+  1 October 2026, when SKY130 was dropped).
 
 **Milestones** (each passes its verification layer before the next starts):
 
@@ -408,11 +443,11 @@ feasibility early.
 | 18.4 | A extension, `fence`/`fence.i` | Atomic tests and litmus programs on the core |
 | 18.5 | Xasterdot8 | Exhaustive-style DOT8 reference tests from v1 |
 | 18.6 | L1 instruction/data caches with two-stage pipelined hits (revised 30 September 2026) and the SRAM interface; runtime port | Cache reference model, stalls, firmware regression |
-| 18.7 | Evaluation and feasibility | CPU set versus PicoRV32 in the same shell; 100 MHz feasibility report for FPGA and SKY130 including SRAM read timing |
+| 18.7 | Evaluation and feasibility | CPU set versus PicoRV32 in the same shell; 100 MHz feasibility report for the FPGA (SKY130 dropped, 1 October 2026) |
 
 **Exit:** a lockstep-verified core that meets the CPU cycle target, a memory
-bandwidth/latency contract, and an early 100 MHz feasibility report for FPGA and
-SKY130. If a target is infeasible, the report names the path and quantifies the
+bandwidth/latency contract, and an early 100 MHz feasibility report for the FPGA
+(SKY130 dropped, 1 October 2026). If a target is infeasible, the report names the path and quantifies the
 proposed pipeline/area trade-off before the target is revised.
 
 ### Phase 19 — High-utilization NPU and data movement
@@ -462,6 +497,9 @@ is not reported as 100 MHz success.
 
 ### Phase 22 — SKY130 implementation and PPA closure
 
+**Dropped 1 October 2026 (owner decision; the FPGA is the only implementation
+target).** As planned:
+
 **Purpose:** carry the selected performance architecture—not an unmeasured copy
 of the v1 feature set—through a reproducible SKY130 flow.
 
@@ -474,8 +512,9 @@ decision.
 
 ### Phase 23 — Fabrication (optional stretch)
 
-Tapeout remains optional. It begins only after Phase 22's source, constraints,
-GDS, DRC/LVS, timing, SRAM, and software artifacts are reproducible and audited.
+**Dropped with Phase 22 (1 October 2026).** As planned: tapeout was optional. It would have begun only after Phase 22's source,
+constraints, GDS, DRC/LVS, timing, SRAM, and software artifacts were
+reproducible and audited.
 
 ## 7. Plan revision — 29 September 2026
 

@@ -2,8 +2,9 @@
 
 **A performance-driven, heterogeneous RISC-V SoC research project.** Aster
 compares scalar CPU, multicore CPU, custom-instruction, DMA, and INT8 accelerator
-execution on real workloads, then validates a selected design on FPGA and in a
-SKY130 ASIC flow.
+execution on real workloads, then validates a selected design on FPGA. (A SKY130
+ASIC flow was part of the plan until 1 October 2026, when it was dropped; the
+FPGA is the only implementation target.)
 
 Aster is inspired by heterogeneous-compute systems, not an attempt to reproduce
 an Apple A-series processor. Its research contribution is the architecture and,
@@ -94,11 +95,14 @@ about the current design.
 
 | Target | Goal |
 | --- | --- |
-| Operating frequency | **100 MHz** post-route on PYNQ-Z1 and a 100 MHz SKY130 design target, with positive setup/hold slack at all required corners. Feasibility is an early gate; functional overclocking alone does not count. |
+| Operating frequency | **100 MHz** post-route on PYNQ-Z1, with positive setup/hold slack and no failing endpoints. Feasibility is an early gate; functional overclocking alone does not count. (A 100 MHz SKY130 design target was dropped on 1 October 2026.) |
 | CPU | **Aster's own in-order RV32IMA core** (seven-stage pipeline, designed and verified in Phase 18) with at least **2× fewer cycles** than v1 PicoRV32 on the fixed CPU-bound test set at the same clock and memory configuration. PicoRV32 remains the v1 reference point. |
 | INT8 NPU | 4×4 array: **3.2 GOPS theoretical peak at 100 MHz** when one MAC counts as two operations; at least 50% peak on predeclared dense GEMM shapes. Report MAC/s, utilization, and end-to-end time as well as GOPS. |
 | Multicore / offload | Measure scaling and crossovers end-to-end. Large GEMM and the selected MLP should benefit from the NPU; small jobs are allowed to lose and must remain in the results. |
-| Physical quality | Timing closure, zero routing/foundry DRC, zero LVS mismatch, zero antenna and electrical (slew/capacitance/fanout) violations, and workload-specific energy evidence. Memory capacity and die-area budget must be chosen together. |
+| Physical quality | FPGA timing closure, resource limits met, and workload-specific energy evidence. (The ASIC signoff targets — foundry DRC, LVS, antenna, electrical — were dropped with SKY130 on 1 October 2026.) |
+
+*SKY130 was dropped on 1 October 2026 ([`docs/phase17-plus.md`](docs/phase17-plus.md)):
+the two paragraphs below are history.*
 
 100 MHz is **not a limit imposed by the 130 nm node**; many 130 nm designs run
 faster. A 100 MHz FPGA pass would be a strong milestone, but it would not imply
@@ -127,7 +131,8 @@ corners establishes 100 MHz SKY130 closure.
 6. Does the heterogeneous ECG pipeline overlap work and meet a stated throughput
    or deadline target?
 7. How do conclusions change between PYNQ FPGA and SKY130, using the same
-   workload definitions and valid timing/power evidence?
+   workload definitions and valid timing/power evidence? (Dropped with SKY130,
+   1 October 2026.)
 
 ## Workloads retained for v2
 
@@ -151,12 +156,12 @@ configuration, cache policy, compiler settings, and clock.
 | Phase | Focus | Exit condition |
 | --- | --- | --- |
 | 17 | Correct the v1 measurements (v11 records, one same-top baseline), correct Phase 15/16 reporting and audits, choose the memory/area point, freeze the v2 contract and CPU specification | v11 records and the retained v1 baseline reproduce; audits enforce their gates; targets, memory point, and CPU specification are frozen. |
-| 18 | **Aster core:** design and verify our own seven-stage RV32IMA CPU together with its L1/SRAM interface; early 100 MHz feasibility | Lockstep-verified against an independent reference model; ≥2× fewer cycles than PicoRV32 on the CPU set; block timing meets 10 ns on FPGA and SKY130, or the limiting path and its cost are quantified. |
+| 18 | **Aster core:** design and verify our own seven-stage RV32IMA CPU together with its L1/SRAM interface; early 100 MHz feasibility | Lockstep-verified against an independent reference model; ≥2× fewer cycles than PicoRV32 on the CPU set; block timing meets 10 ns on the FPGA (SKY130 dropped, 1 October 2026), or the limiting path and its cost are quantified. |
 | 19 | NPU utilization and data movement | Local operand buffers, full-word transfers, pipelined address generation, cumulative counters; dense-GEMM utilization and end-to-end targets pass. |
 | 20 | Integrate CPU, multicore, caches, DMA, DOT8, NPU, and all workloads | Full workload matrix passes independent correctness and performance audits on the same declared configurations. |
 | 21 | PYNQ-Z1 implementation and physical workload study | All-engine overlay closes at 100 MHz and repeated physical captures match independent references. |
-| 22 | SKY130 implementation, STA, physical signoff, and workload PPA | Declared memory fits; all-corner timing and clean physical/electrical signoff pass; workload power/energy is activity-based. |
-| 23 | Tapeout (optional stretch) | Only considered after Phase 22 artifacts and signoff are reproducible. |
+| 22 | ~~SKY130 implementation, STA, physical signoff, and workload PPA~~ | Dropped 1 October 2026 (owner decision): the FPGA is the only implementation target. |
+| 23 | ~~Tapeout (optional stretch)~~ | Dropped with Phase 22 (1 October 2026). |
 
 The [detailed Phase 17+ plan](docs/phase17-plus.md) specifies the diagnosis,
 CPU specification, workload matrices, record contents, verification levels,
@@ -167,7 +172,8 @@ revised on 29 September 2026; its final section records what changed and why.
 [retained same-top v1 baseline](docs/results/phase17/baseline-56067a15815a/README.md)
 with a drift-rejecting audit, corrected Phase 15/16 reporting and audits, the
 96 KiB memory decision, and the approved [Aster core specification](docs/cpu.md).
-**Phase 18 — designing and verifying the Aster core — is next.**
+**Phase 18 — designing and verifying the Aster core — is in progress**
+([`docs/phase18.md`](docs/phase18.md)).
 
 ## Historical phase links
 

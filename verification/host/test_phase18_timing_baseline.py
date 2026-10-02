@@ -39,7 +39,8 @@ BASELINES = [
      for run in ("m_u38", "m2_u34", "m2_u36", "m2_u38", "m2_u40", "m2nb_u38", "m2nb_u40",
                  "m3_u34", "m3_u36", "m3_u38", "m3_u40", "m3ss_u38", "m4_u34", "m4_u36", "m4_u38", "m4_u40",
                  "m4_u42", "m4_u44", "m4_u46", "m5_u34", "m5_u36", "m5_u38", "m5_u40", "m5_u44",
-                 "m6_u34", "m6_u36", "m6_u38", "m6_u40", "m6_u44")]
+                 "m6_u34", "m6_u36", "m6_u38", "m6_u40", "m6_u44",
+                 "c80_u34", "c80_u36", "c80_u38", "c80_u40", "c80_u44", "picorv32_c80")]
 
 
 def retained_part(recomputed, retained):
