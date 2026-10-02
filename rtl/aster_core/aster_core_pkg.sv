@@ -21,7 +21,8 @@ package aster_core_pkg;
 
     // The CSR a Zicsr instruction names, one-hot (docs/cpu.md §3), decoded in
     // Decode so that Execute's read is an AND-OR of the registers. The
-    // user-level counters read the machine counters; `zero` is mvendorid,
+    // user-level counters read the machine counters, and time/timeh the core's
+    // free-running time counter; `zero` is mvendorid,
     // marchid, mimpid and mconfigptr (read-only), and the hardware performance
     // monitor's mhpmcounter3-31(h) and mhpmevent3-31, implemented as zero
     // (writes are legal and change nothing).
@@ -29,6 +30,7 @@ package aster_core_pkg;
         logic mstatus, misa, mie, mtvec, mstatush, mcountinhibit;
         logic mscratch, mepc, mcause, mtval, mip;
         logic mcycle, mcycleh, minstret, minstreth;
+        logic time_lo, time_hi;       // time, timeh: the free-running time counter (read-only)
         logic zero, mhartid;
     } csr_t;
 
@@ -51,6 +53,8 @@ package aster_core_pkg;
             12'h343: c.mtval = 1'b1;
             12'h344: c.mip = 1'b1;
             12'hB00, 12'hC00: c.mcycle = 1'b1;
+            12'hC01: c.time_lo = 1'b1;
+            12'hC81: c.time_hi = 1'b1;
             12'hB80, 12'hC80: c.mcycleh = 1'b1;
             12'hB02, 12'hC02: c.minstret = 1'b1;
             12'hB82, 12'hC82: c.minstreth = 1'b1;

@@ -17,7 +17,8 @@
 //   value (a range check, true in Spike as in the core) and carries into
 //   mcycleh.
 // - The hardware performance monitor's mhpmcounter3-31(h) and mhpmevent3-31
-//   read 0 and ignore writes.
+//   read 0 and ignore writes; time and timeh read (the time counter's
+//   behavior is checked in the shell alone: interrupts/time_counter).
 // - mret: mstatus.MIE from MPIE and MPIE set (no interrupt is pending), and
 //   `csrw mepc` right before `mret`; a `csrw mtvec` right before a trap that
 //   then goes to the new handler; `wfi` as a no-op.
@@ -178,6 +179,12 @@ trap0:
     csrr a6, mcycleh              // the carry out of mcycle
     li t0, 1
     bne a6, t0, fail
+    // time and timeh read (their values are not compared, docs/cpu.md §6;
+    // Spike's moves slowly): time never goes backwards.
+    csrr a0, time
+    csrr a1, timeh
+    csrr a2, time
+    bltu a2, a0, fail
     // The hardware performance monitor: zero, writes ignored.
     csrr a0, mhpmcounter3
     bnez a0, fail

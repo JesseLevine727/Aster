@@ -62,9 +62,12 @@ t11_insn:
 t12_insn:
     ebreak
     sw s2, 8(s0)                  // older than the next trap: must happen
+    // time is read-only: a write is illegal (a read is not: csr_ordering).
+t13_insn:
+    csrw time, a0
 
     li TESTNUM, 3
-    EXPECT_TRAPS(13)
+    EXPECT_TRAPS(14)
     EXPECT_TRAP(0, CAUSE_ILLEGAL_INSTRUCTION, t0_insn, 0)
     EXPECT_TRAP(1, CAUSE_ILLEGAL_INSTRUCTION, t1_insn, 0xffffffff)
     EXPECT_TRAP(2, CAUSE_ILLEGAL_INSTRUCTION, t2_insn, 0x0001)
@@ -78,6 +81,7 @@ t12_insn:
     EXPECT_TRAP(10, CAUSE_ILLEGAL_INSTRUCTION, t10_insn, 0x00004073)
     EXPECT_TRAP(11, CAUSE_MACHINE_ECALL, t11_insn, 0)
     EXPECT_TRAP_AT(12, CAUSE_BREAKPOINT, t12_insn, t12_insn, 0)
+    EXPECT_TRAP(13, CAUSE_ILLEGAL_INSTRUCTION, t13_insn, 0xc0151073)
     li TESTNUM, 4
     lw t1, 4(s0)
     bne t1, s2, fail

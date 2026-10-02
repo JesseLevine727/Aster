@@ -212,6 +212,7 @@ module aster_core
     logic [31:0] mscratch, mcause, mtval;
     logic [2:0]  mip_q;                    // {MEIP, MTIP, MSIP}, registered from the inputs
     logic [63:0] mcycle, minstret;
+    logic [63:0] time_count;               // time/timeh: one tick per clock from reset, never written or stopped
     logic [31:0] mstatus_value, mie_value, mip_value, mcountinhibit_value;
     assign mstatus_value       = {19'b0, 2'b11, 3'b0, mstatus_mpie, 3'b0, mstatus_mie, 3'b0};   // MPP reads M
     assign mie_value           = {20'b0, mie_meie, 3'b0, mie_mtie, 3'b0, mie_msie, 3'b0};
@@ -359,6 +360,8 @@ module aster_core
                      | ({32{e_dec.csr_sel.mcycleh}}       & mcycle[63:32])
                      | ({32{e_dec.csr_sel.minstret}}      & minstret[31:0])
                      | ({32{e_dec.csr_sel.minstreth}}     & minstret[63:32])
+                     | ({32{e_dec.csr_sel.time_lo}}       & time_count[31:0])
+                     | ({32{e_dec.csr_sel.time_hi}}       & time_count[63:32])
                      | ({32{e_dec.csr_sel.mhartid}}       & HART_ID);       // mstatush and zero read 0
     assign csr_src   = e_dec.uses_rs1 ? rs1f : e_dec.imm;           // rs1, or a csrr*i's uimm
     assign csr_new   = e_dec.funct3[1:0] == 2'd1 ? csr_src
@@ -754,7 +757,8 @@ module aster_core
     // first cycle there (see the header); by a trap or an interrupt at the
     // commit point (MPIE = MIE, MIE = 0; an exception's mepc is its own PC, an
     // interrupt's the next PC of the instruction completing in M1); and the
-    // counters. A write to a counter replaces that cycle's increment
+    // counters (time_count, read as time/timeh, ticks every cycle and is never
+    // written or stopped). A write to a counter replaces that cycle's increment
     // (minstret's is the writing instruction's own). An instruction retires
     // when it passes the commit point without trapping, a serializing one at
     // the end of its first M1 cycle (it cannot be killed after it, and the
@@ -779,6 +783,7 @@ module aster_core
             mtval        <= '0;
             mip_q        <= '0;
             mcycle       <= '0;
+            time_count   <= '0;
             minstret     <= '0;
             m1_first     <= 1'b0;
         end else begin
@@ -813,6 +818,7 @@ module aster_core
             if (m1_csr_we && m1.csr_sel.mcycle)         mcycle[31:0]    <= m1.wdata;
             else if (m1_csr_we && m1.csr_sel.mcycleh)   mcycle[63:32]   <= m1.wdata;
             else if (!cy_inhibit)                       mcycle          <= mcycle + 64'd1;
+            time_count <= time_count + 64'd1;
             if (m1_csr_we && m1.csr_sel.minstret)       minstret[31:0]  <= m1.wdata;
             else if (m1_csr_we && m1.csr_sel.minstreth) minstret[63:32] <= m1.wdata;
             else if (retire && !ir_inhibit)             minstret        <= minstret + 64'd1;
@@ -927,7 +933,8 @@ module aster_core
 
     logic unused;
     assign unused = ^{d_raw, f_predecode[1:0], e_redirect_target[1:0], w.acc, w.got, w.funct3,
-                     w.mul, w.late, w.sys, rd_sel.zero, rd_sel.mhartid, wr_sel.zero, wr_sel.mhartid};
+                     w.mul, w.late, w.sys, rd_sel.zero, rd_sel.mhartid, wr_sel.zero, wr_sel.mhartid,
+                     rd_sel.time_lo, rd_sel.time_hi, wr_sel.time_lo, wr_sel.time_hi};
 
 `ifndef SYNTHESIS
     always_ff @(posedge clk) begin

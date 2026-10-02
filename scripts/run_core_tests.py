@@ -41,7 +41,8 @@ with the same results, however the interrupts fell. The run reports which
 instruction classes were interrupted and which came next (the instruction
 killed and re-executed after the handler), and fails if any pair of
 INTERRUPT_CLASSES never occurred. The `interrupts` suite holds self-checking
-directed interrupt programs, run in the shell alone (+irq_device).
+directed interrupt programs (and the time counter's test), run in the shell
+alone (+irq_device).
 
 `--inject` instead proves the harness catches a deliberately corrupted run: it
 corrupts the raw DUT trace text (every field, dropped, duplicated and extra
@@ -76,7 +77,7 @@ TESTS = ROOT / "vendor/riscv-tests/isa"
 ARCH_ENV = ROOT / "verification/core/arch_env"
 DIRECTED = ROOT / "verification/core/directed"     # the "directed" suite
 TRAPS = ROOT / "verification/core/traps"           # directed exceptions, in lockstep (18.3)
-INTERRUPTS = ROOT / "verification/core/interrupts" # self-checking interrupt programs, shell only (18.3)
+INTERRUPTS = ROOT / "verification/core/interrupts" # self-checking programs in the shell alone (18.3)
 SPIKE_STEP = 5000                                  # Spike's INTERLEAVE: a trap ends its step early
 ARCH_TESTS = ROOT / "vendor/riscv-arch-test/riscv-test-suite"
 ENTRY = 0x80000000
@@ -1008,7 +1009,7 @@ def main() -> int:
     what += " pass in lockstep and by signature"
     selfchecking = sum(1 for test in tests if test.parent == INTERRUPTS)
     if selfchecking:
-        what += f" ({selfchecking} self-checking interrupt programs in the shell alone)"
+        what += f" ({selfchecking} self-checking programs in the shell alone)"
     covered = interrupt_coverage(args)
     print(f"{'PASS' if not failures and covered else 'FAIL'}: {args.dut} {ran - len(failures)}/{ran} {what} "
           f"with Spike ({len(skipped)} skipped{mode}); {total_retired} instructions in {total_cycles} cycles"
