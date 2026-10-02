@@ -1,8 +1,9 @@
 // Aster core decoder, ALU and branch compare (docs/cpu.md §2, §4). Milestones
-// 18.1 and 18.2 implement RV32IM; every other encoding — the A, Zicsr and
-// Zifencei instructions, `ecall`, `ebreak` and the rest of SYSTEM, custom-0 —
-// decodes as illegal until its milestone adds it. `fence` executes as a no-op:
-// the core's accesses take effect in order at one memory (docs/cpu.md §5).
+// 18.1-18.3 implement RV32IM, Zicsr, `ecall`, `ebreak`, `mret` and `wfi` (a
+// no-op), with the machine-mode CSRs of docs/cpu.md §3; every other encoding —
+// the A and Zifencei instructions, the rest of SYSTEM, custom-0 — decodes as
+// illegal until its milestone adds it. `fence` executes as a no-op: the core's
+// accesses take effect in order at one memory (docs/cpu.md §5).
 `timescale 1 ns / 1 ps
 package aster_core_pkg;
     // Execute's result, one-hot: decoded in Decode and registered, so Execute's
@@ -15,7 +16,50 @@ package aster_core_pkg;
         logic pc_imm;                 // the PC plus the immediate (auipc), from the branch-target adder
         logic link;                   // the PC plus 4 (jal, jalr)
         logic div;                    // the divider's result
+        logic csr;                    // the CSR's value as read
     } result_t;
+
+    // The CSR a Zicsr instruction names, one-hot (docs/cpu.md §3), decoded in
+    // Decode so that Execute's read is an AND-OR of the registers. The
+    // user-level counters read the machine counters; `zero` is mvendorid,
+    // marchid, mimpid and mconfigptr (read-only), and the hardware performance
+    // monitor's mhpmcounter3-31(h) and mhpmevent3-31, implemented as zero
+    // (writes are legal and change nothing).
+    typedef struct packed {
+        logic mstatus, misa, mie, mtvec, mstatush, mcountinhibit;
+        logic mscratch, mepc, mcause, mtval, mip;
+        logic mcycle, mcycleh, minstret, minstreth;
+        logic zero, mhartid;
+    } csr_t;
+
+    // The CSR at `address`, or none (an unimplemented CSR is an illegal instruction).
+    function automatic csr_t csr_decode(input logic [11:0] address);
+        csr_t c;
+        c = '0;
+        if ((address >= 12'hB03 && address <= 12'hB1F) || (address >= 12'hB83 && address <= 12'hB9F) ||
+            (address >= 12'h323 && address <= 12'h33F)) c.zero = 1'b1;
+        else unique case (address)
+            12'h300: c.mstatus = 1'b1;
+            12'h301: c.misa = 1'b1;
+            12'h304: c.mie = 1'b1;
+            12'h305: c.mtvec = 1'b1;
+            12'h310: c.mstatush = 1'b1;
+            12'h320: c.mcountinhibit = 1'b1;
+            12'h340: c.mscratch = 1'b1;
+            12'h341: c.mepc = 1'b1;
+            12'h342: c.mcause = 1'b1;
+            12'h343: c.mtval = 1'b1;
+            12'h344: c.mip = 1'b1;
+            12'hB00, 12'hC00: c.mcycle = 1'b1;
+            12'hB80, 12'hC80: c.mcycleh = 1'b1;
+            12'hB02, 12'hC02: c.minstret = 1'b1;
+            12'hB82, 12'hC82: c.minstreth = 1'b1;
+            12'hF11, 12'hF12, 12'hF13, 12'hF15: c.zero = 1'b1;
+            12'hF14: c.mhartid = 1'b1;
+            default: ;
+        endcase
+        return c;
+    endfunction
 
     typedef struct packed {
         logic        illegal;
@@ -35,6 +79,13 @@ package aster_core_pkg;
         logic        jalr;
         logic        mul;             // mul, mulh, mulhsu, mulhu (funct3 0-3)
         logic        div;             // div, divu, rem, remu (funct3 4-7)
+        logic        csr;             // a Zicsr instruction (it reads the CSR; imm holds a csrr*i's uimm)
+        logic        csr_write;       // and it writes the CSR (csrrw/csrrwi, or a set/clear with a nonzero source field)
+        csr_t        csr_sel;
+        logic        ecall;
+        logic        ebreak;
+        logic        mret;
+        logic        sys;             // csr or mret: Execute holds it until M1 is empty
         logic [2:0]  funct3;
     } decoded_t;
 
@@ -129,6 +180,29 @@ package aster_core_pkg;
                     end
                 end
                 5'b00011: if (funct3 == 3'd0) d.illegal = 1'b0;   // fence (fence.i comes in 18.4)
+                5'b11100: begin                                   // SYSTEM
+                    if (funct3 == 3'd0) begin
+                        // ecall, ebreak, mret, and wfi (a no-op: an interrupt is
+                        // taken between instructions whatever they are)
+                        d.ecall   = insn == 32'h0000_0073;
+                        d.ebreak  = insn == 32'h0010_0073;
+                        d.mret    = insn == 32'h3020_0073;
+                        d.illegal = !(d.ecall || d.ebreak || d.mret || insn == 32'h1050_0073);
+                        d.sys     = d.mret;
+                    end else if (funct3 != 3'd4) begin
+                        // csrrw csrrs csrrc (rs1), csrrwi csrrsi csrrci (uimm in the rs1 field)
+                        d.csr       = 1'b1;
+                        d.sys       = 1'b1;
+                        d.csr_sel   = csr_decode(insn[31:20]);
+                        d.csr_write = funct3[1:0] == 2'd1 || insn[19:15] != 5'd0;
+                        d.uses_rs1  = !funct3[2];
+                        d.writes_rd = 1'b1;
+                        d.imm       = {27'b0, insn[19:15]};
+                        d.res = '0; d.res.csr = 1'b1;
+                        // An unimplemented CSR, or a write to a read-only one, is illegal.
+                        d.illegal   = d.csr_sel == '0 || (d.csr_write && insn[31:30] == 2'b11);
+                    end
+                end
                 default: ;
             endcase
         end
@@ -136,6 +210,9 @@ package aster_core_pkg;
             d.uses_rs1 = 1'b0; d.uses_rs2 = 1'b0; d.writes_rd = 1'b0;
             d.load = 1'b0; d.store = 1'b0; d.branch = 1'b0; d.jal = 1'b0; d.jalr = 1'b0;
             d.mul = 1'b0; d.div = 1'b0;
+            d.csr = 1'b0; d.csr_write = 1'b0; d.csr_sel = '0; d.ecall = 1'b0; d.ebreak = 1'b0; d.mret = 1'b0;
+            d.sys = 1'b0;
+            d.res = '0; d.res.add = 1'b1;
         end
         if (d.rd == 5'd0) d.writes_rd = 1'b0;
         return d;
@@ -145,7 +222,8 @@ package aster_core_pkg;
     // operand B is rs2 or the immediate.
     function automatic logic [31:0] result(input result_t sel, input logic [31:0] a, input logic [31:0] b,
                                            input logic [31:0] imm, input logic [31:0] pc_imm,
-                                           input logic [31:0] link, input logic [31:0] quotient);
+                                           input logic [31:0] link, input logic [31:0] quotient,
+                                           input logic [31:0] csr);
         return ({32{sel.add}}    & (a + b))
              | ({32{sel.sub}}    & (a - b))
              | ({32{sel.sll}}    & (a << b[4:0]))
@@ -159,7 +237,8 @@ package aster_core_pkg;
              | ({32{sel.imm}}    & imm)
              | ({32{sel.pc_imm}} & pc_imm)
              | ({32{sel.link}}   & link)
-             | ({32{sel.div}}    & quotient);
+             | ({32{sel.div}}    & quotient)
+             | ({32{sel.csr}}    & csr);
     endfunction
 
     // Predecode, as an instruction enters Decode: {predicted taken from Decode,

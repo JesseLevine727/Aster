@@ -2178,18 +2178,22 @@ core-aster-fetch: $(ASTER_FETCH_TEST)
 	@$(ASTER_FETCH_TEST)
 
 # The Aster core in the two-port shell (verification/core/shell_aster_ports.sv),
-# milestones 18.1 and 18.2 (RV32IM). In lockstep with Spike, with the shell's
-# store and protocol checks: riscv-tests rv32ui and rv32um and the directed
-# tests on the two-cycle memory, the one-cycle memory, back-pressure (also
-# mixed with the one-cycle memory), and room for three and four requests in
-# flight; arch-test I and M; constrained-random programs with hazard coverage,
-# on time and back-pressured. On the memories that answer on time, every
-# program's cycle count must equal the seven-stage CPI model's (--cpi-check).
-# The trap-halt programs must stop at their trap_pc, match Spike before it, and
-# let no younger store reach memory — on the two-cycle memory, the one-cycle
-# memory, and three back-pressure seeds (seeds 2 and 5 make
-# bus_error_behind_load's error wait in M1; seed 4 lets muldiv_killed's
-# division run before the kill).
+# milestones 18.1-18.3 (RV32IM, Zicsr, traps, interrupts, counters). In
+# lockstep with Spike (configured as the core is: machine mode only, no PMP or
+# debug triggers), with the shell's store and protocol checks: riscv-tests
+# rv32ui, rv32um and rv32mi, the directed tests and the directed traps (an
+# exception from every stage it can occur in), plus the self-checking
+# interrupt programs in the shell alone, on the two-cycle memory, the
+# one-cycle memory, back-pressure (also mixed with the one-cycle memory), and
+# room for three and four requests in flight; arch-test I, M and privilege;
+# constrained-random programs with CSR instructions and exceptions and with
+# hazard coverage, on time and back-pressured; and random interrupts over
+# rv32ui/rv32um and random programs, each run's stream with the handlers cut
+# out equal to Spike's, covering every (interrupted, next) instruction class
+# pair. On the memories that answer on time, every program's cycle count must
+# equal the seven-stage CPI model's (--cpi-check). The comparator must catch
+# corrupted CSR writes and trap records (--inject on a trapping program), and
+# the shell a load performed twice (+duplicate_read).
 ASTER_CORE_RTL := rtl/aster_core/aster_core_pkg.sv rtl/aster_core/aster_core_fetch.sv rtl/aster_core/aster_core.sv
 ASTER_PORTS_SIM := $(ASTER_CORE_DIR)/core_ports_aster
 $(ASTER_PORTS_SIM): $(ASTER_CORE_RTL) verification/core/shell_aster_ports.sv verification/core/tb_core_ports.cpp verification/core/shell_common.h verification/core/shell_ports.h Makefile
@@ -2202,13 +2206,12 @@ $(ASTER_PORTS_SIM): $(ASTER_CORE_RTL) verification/core/shell_aster_ports.sv ver
 
 ASTER_TESTS = RISCV_PREFIX=$(RISCV_PREFIX) $(PYTHON) scripts/run_core_tests.py --dut aster \
 	--sim $(ASTER_PORTS_SIM) --spike $(SPIKE)
-ASTER_TRAP_HALT := $(basename $(notdir $(wildcard verification/core/trap_halt/*.S)))
 .PHONY: core-aster-sim core-aster-tests
 core-aster-sim: $(ASTER_PORTS_SIM)
 core-aster-tests: $(ASTER_PORTS_SIM)
 	@mkdir -p $(CORE_TESTS_DIR)
 	@set -o pipefail; for mode in plain latency1 stall latency1-stall inflight3 inflight4 arch arch-latency1 \
-			random random-latency1 random-stall; do \
+			random random-latency1 random-stall irq random-irq random-irq-stall random-irq-latency1; do \
 		extra=$$(case $$mode in plain) echo "--cpi-check";; latency1) echo "--cpi-check --shell-arg +latency=1";; \
 			stall) echo "--stall-seed 5";; latency1-stall) echo "--stall-seed 9 --shell-arg +latency=1";; \
 			inflight3) echo "--stall-seed 7 --shell-arg +max_inflight=3";; \
@@ -2217,16 +2220,20 @@ core-aster-tests: $(ASTER_PORTS_SIM)
 			random) echo "--random $(CORE_RANDOM_PROGRAMS) --random-seed 1 --require-coverage --cpi-check";; \
 			random-latency1) echo "--random $(CORE_RANDOM_PROGRAMS) --random-seed 201 --require-coverage --cpi-check \
 				--shell-arg +latency=1";; \
-			random-stall) echo "--random $(CORE_RANDOM_PROGRAMS) --random-seed 101 --stall-seed 11 --require-coverage";; esac); \
+			random-stall) echo "--random $(CORE_RANDOM_PROGRAMS) --random-seed 101 --stall-seed 11 --require-coverage";; \
+			irq) echo "--interrupts 7";; \
+			random-irq) echo "--random $(CORE_RANDOM_PROGRAMS) --random-seed 301 --interrupts 7 --require-coverage";; \
+			random-irq-stall) echo "--random $(CORE_RANDOM_PROGRAMS) --random-seed 401 --interrupts 7 \
+				--stall-seed 13 --require-coverage";; \
+			random-irq-latency1) echo "--random $(CORE_RANDOM_PROGRAMS) --random-seed 501 --interrupts 7 \
+				--shell-arg +latency=1 --require-coverage";; esac); \
 		$(ASTER_TESTS) $$extra --build-dir $(CORE_TESTS_DIR)/aster-$$mode | \
 			tee $(CORE_TESTS_DIR)/aster-$$mode.log | tail -1 || \
 			{ grep -v '^PASS' $(CORE_TESTS_DIR)/aster-$$mode.log; exit 1; }; \
 	done
-	@set -o pipefail; for test in $(ASTER_TRAP_HALT); do \
-		for memory in "" "--shell-arg +latency=1" "--stall-seed 2" "--stall-seed 4" "--stall-seed 5"; do \
-		$(ASTER_TESTS) --build-dir $(CORE_TESTS_DIR)/aster-trap-halt --only trap_halt/$$test --expect-status TRAP \
-			--shell-arg +bus_error_traps $$memory | tail -1 | cut -c1-150 || exit 1; \
-	done; done
+	@$(ASTER_TESTS) --build-dir $(CORE_TESTS_DIR)/aster-inject --inject --only traps/decode_traps | tail -1
+	@$(ASTER_TESTS) --build-dir $(CORE_TESTS_DIR)/aster-selftest --only rv32ui/lw \
+		--shell-arg +duplicate_read=3 --expect-status LOAD_MISMATCH
 
 # The port response model on its own: order, one answer per cycle, latency,
 # the in-flight limit, and full rate with two in flight.
@@ -2242,13 +2249,15 @@ core-ports-sim: $(CORE_PORTS_SIM)
 
 # The two-port shell on riscv-tests (two-cycle memory, one-cycle memory,
 # back-pressured, and back-pressured with room for three data requests so the
-# core's own two-in-flight limit is what holds) and arch-test; its store and
-# stray-write checks proven to catch a bus write that differs from RVFI, and
+# core's own two-in-flight limit is what holds) and arch-test; its store,
+# stray-write and load checks proven to catch a bus write that differs from
+# RVFI, a store performed twice and a load performed twice, and
 # each protocol check (tb_core_ports.cpp) proven on a PicoRV32 adapter that
 # breaks that rule (+selftest).
 PORTS_SELFTESTS := 1:rv32ui/sw:D_REQ_UNSTABLE:--stall-seed=1 2:rv32ui/add:I_REQ_UNSTABLE:--stall-seed=1 \
 	3:rv32ui/add:RVFI_COMBINATIONAL: 4:rv32ui/lw:D_REQ_MALFORMED: \
-	5:rv32ui/lw:D_INFLIGHT:--stall-seed=7,--shell-arg=+max_inflight=3 6:rv32ui/add:PC_WDATA_MISMATCH:
+	5:rv32ui/lw:D_INFLIGHT:--stall-seed=7,--shell-arg=+max_inflight=3,--shell-arg=+skip_load_check \
+	6:rv32ui/add:PC_WDATA_MISMATCH:
 core-ports-tests: $(CORE_PORTS_SIM) $(CORE_PORTS_MODEL_TEST)
 	@$(CORE_PORTS_MODEL_TEST)
 	@mkdir -p $(CORE_TESTS_DIR)
@@ -2263,6 +2272,8 @@ core-ports-tests: $(CORE_PORTS_SIM) $(CORE_PORTS_MODEL_TEST)
 		--shell-arg +corrupt_write=3 --expect-status STORE_MISMATCH
 	@$(CORE_PORTS_TESTS) --build-dir $(CORE_TESTS_DIR)/ports-selftest --only rv32ui/sw \
 		--shell-arg +duplicate_tohost_write --expect-status STRAY_WRITE
+	@$(CORE_PORTS_TESTS) --build-dir $(CORE_TESTS_DIR)/ports-selftest --only rv32ui/lw \
+		--shell-arg +duplicate_read=3 --expect-status LOAD_MISMATCH
 	@for case in $(PORTS_SELFTESTS); do \
 		IFS=: read -r number test status extra <<< "$$case"; \
 		$(CORE_PORTS_TESTS) --build-dir $(CORE_TESTS_DIR)/ports-selftest --only $$test $${extra//,/ } \

@@ -1,13 +1,37 @@
 // Aster core: the seven-stage, single-issue, in-order core of docs/cpu.md —
 // F1 F2 (aster_core_fetch), Decode, Execute, M1, M2, Write-back.
 //
-// Milestones 18.1 and 18.2: RV32IM (aster_core_pkg). Traps are not yet taken (18.3): an
-// instruction with a trap cause — a fetch fault it carries, an illegal
-// encoding, a misaligned access or jump target, or a data-port error — stops
-// the core at the commit point, the end of M1. It retires as a trap record
-// (rvfi_trap), the instructions after it are killed, fetching stops, and
-// `trapped` rises in the cycle its record appears on the RVFI port. The
-// interrupt inputs and the hart id are unused until 18.3.
+// Milestones 18.1-18.3: RV32IM, Zicsr, machine-mode traps and interrupts, and
+// the counters (aster_core_pkg; docs/cpu.md §3).
+//
+// Traps (docs/cpu.md §3-§4): an instruction with a trap cause — a fetch fault
+// it carries, an illegal encoding, `ecall` or `ebreak`, a misaligned access or
+// jump target (all known in Execute), or a data-port error (known in M1) —
+// traps at the commit point, the end of M1: mepc, mcause, mtval and mstatus
+// are written, every younger instruction is killed, and the fetch unit is
+// redirected to mtvec (direct mode) through its registered Execute-redirect
+// path, which a trap overrides. The trapping instruction retires as a trap
+// record (rvfi_trap) whose rvfi_pc_wdata is the handler's address.
+//
+// Interrupts: MEIP, MTIP and MSIP (registered from the inputs), enabled by mie
+// and mstatus.MIE, are taken at the commit point in a cycle in which M1 holds a
+// valid instruction: that instruction completes, the younger ones are killed,
+// and mepc receives its next PC. They are not taken while M1 holds a CSR
+// instruction or `mret` (which change the state that enables them); the
+// instruction after it can be interrupted. The handler's first instruction
+// retires with rvfi_intr.
+//
+// CSR instructions and `mret` are serializing: Execute holds one until M1 is
+// empty, so it reads every older instruction's CSR effects and minstret counts
+// exactly the older instructions (they have all passed the commit point). Its
+// CSR write (and `mret`'s mstatus update, computed in Execute) takes place at
+// the end of its first cycle in M1, and its own retirement is counted there
+// too: nothing can kill it in M1 (it has no trap and no data access, and no
+// interrupt is taken while it is there), so neither waits for M1 to advance, and no
+// late signal reaches the CSR write enables (m1_first is registered). A write
+// to minstret suppresses that instruction's own increment, and a write to
+// mcountinhibit applies after it, as in Spike. `mret` redirects from Execute to
+// mepc like a `jalr`.
 //
 // Pipeline (docs/cpu.md §4):
 // - Decode: decode, the register file read (a same-cycle write-back is
@@ -59,13 +83,17 @@
 //   result, from a register.
 //
 // Data port: Execute presents a request only when M1 can take an instruction
-// (M1 is empty or moving on) and M1 holds no trapping instruction, so at most
-// two requests are in flight (M1 and M2) and a waiting request stays stable
-// until it is accepted: in the cycle after a request waited, M1 is empty.
+// (M1 is empty or moving on) and M1 holds no trapping or interrupted
+// instruction, so at most two requests are in flight (M1 and M2) and a waiting
+// request stays stable until it is accepted: in the cycle after a request
+// waited, M1 is empty, so no trap or interrupt is taken there.
 //
 // Verification: `chk_i_redirect` is high in a cycle in which the fetch unit may
-// withdraw or replace an unaccepted fetch (a redirect's target presented, or
-// fetching stopped); the core never withdraws a data request in 18.1.
+// withdraw or replace an unaccepted fetch (a redirect's target presented); the
+// core never withdraws a data request. The RVFI CSR fields (riscv-formal names)
+// report every CSR an instruction reads or writes, with the value written as
+// it reads back; a trap record reports mepc, mcause, mtval and mstatus as the
+// trap left them, and `mret` its mstatus (and mstatush, the RV32 high half).
 `timescale 1 ns / 1 ps
 module aster_core
     import aster_core_pkg::*;
@@ -85,7 +113,7 @@ module aster_core
     input  logic        i_rsp_valid,
     input  logic [31:0] i_rsp_data,
     input  logic        i_rsp_error,
-    // data port (d_req_op: 0 load, 1 store in 18.1)
+    // data port (d_req_op: 0 load, 1 store until 18.4)
     output logic        d_req_valid,
     output logic [3:0]  d_req_op,
     output logic [31:0] d_req_addr,
@@ -95,8 +123,7 @@ module aster_core
     input  logic        d_rsp_valid,
     input  logic [31:0] d_rsp_rdata,
     input  logic        d_rsp_error,
-    // status and verification
-    output logic        trapped,
+    // verification
     output logic        chk_i_redirect,
     // RVFI (riscv-formal names, RISCV_FORMAL_ALIGNED_MEM layout, registered)
     output logic        rvfi_valid,
@@ -119,7 +146,24 @@ module aster_core
     output logic [3:0]  rvfi_mem_rmask,
     output logic [3:0]  rvfi_mem_wmask,
     output logic [31:0] rvfi_mem_rdata,
-    output logic [31:0] rvfi_mem_wdata
+    output logic [31:0] rvfi_mem_wdata,
+    // RVFI CSR fields: read and write masks and data per CSR (riscv-formal
+    // names; the counters are 64-bit, a write to an RV32 half masking that half)
+    output logic [31:0] rvfi_csr_mstatus_rmask, rvfi_csr_mstatus_wmask, rvfi_csr_mstatus_rdata, rvfi_csr_mstatus_wdata,
+    output logic [31:0] rvfi_csr_mstatush_rmask, rvfi_csr_mstatush_wmask, rvfi_csr_mstatush_rdata, rvfi_csr_mstatush_wdata,
+    output logic [31:0] rvfi_csr_misa_rmask, rvfi_csr_misa_wmask, rvfi_csr_misa_rdata, rvfi_csr_misa_wdata,
+    output logic [31:0] rvfi_csr_mie_rmask, rvfi_csr_mie_wmask, rvfi_csr_mie_rdata, rvfi_csr_mie_wdata,
+    output logic [31:0] rvfi_csr_mip_rmask, rvfi_csr_mip_wmask, rvfi_csr_mip_rdata, rvfi_csr_mip_wdata,
+    output logic [31:0] rvfi_csr_mtvec_rmask, rvfi_csr_mtvec_wmask, rvfi_csr_mtvec_rdata, rvfi_csr_mtvec_wdata,
+    output logic [31:0] rvfi_csr_mscratch_rmask, rvfi_csr_mscratch_wmask, rvfi_csr_mscratch_rdata, rvfi_csr_mscratch_wdata,
+    output logic [31:0] rvfi_csr_mepc_rmask, rvfi_csr_mepc_wmask, rvfi_csr_mepc_rdata, rvfi_csr_mepc_wdata,
+    output logic [31:0] rvfi_csr_mcause_rmask, rvfi_csr_mcause_wmask, rvfi_csr_mcause_rdata, rvfi_csr_mcause_wdata,
+    output logic [31:0] rvfi_csr_mtval_rmask, rvfi_csr_mtval_wmask, rvfi_csr_mtval_rdata, rvfi_csr_mtval_wdata,
+    output logic [31:0] rvfi_csr_mcountinhibit_rmask, rvfi_csr_mcountinhibit_wmask, rvfi_csr_mcountinhibit_rdata,
+                        rvfi_csr_mcountinhibit_wdata,
+    output logic [63:0] rvfi_csr_mcycle_rmask, rvfi_csr_mcycle_wmask, rvfi_csr_mcycle_rdata, rvfi_csr_mcycle_wdata,
+    output logic [63:0] rvfi_csr_minstret_rmask, rvfi_csr_minstret_wmask, rvfi_csr_minstret_rdata,
+                        rvfi_csr_minstret_wdata
 );
     // An instruction in M1, M2 or W.
     typedef struct packed {
@@ -132,6 +176,14 @@ module aster_core
         logic        late;          // a load or a multiply: its value is ready only in W
         logic        acc;           // its data request was accepted
         logic        got;           // its answer has arrived
+        logic        sys;           // a CSR instruction or mret: no interrupt is taken after it in M1
+        logic        csr_rd;        // a CSR instruction (RVFI: it read csr_sel)
+        logic        csr_we;        // it writes csr_sel (a CSR write, or mret's mstatus) with wdata
+        logic        mret;
+        logic        intr;          // the first instruction of a trap handler (RVFI)
+        logic [3:0]  cause;         // the exception code (of a trap known in Execute; from M2 on, the trap's)
+        logic        mpie;          // RVFI, a trap record: the MPIE its trap left (MIE before it)
+        csr_t        csr_sel;
         logic [2:0]  funct3;
         logic [4:0]  rd;
         logic [4:0]  rs1;
@@ -142,25 +194,48 @@ module aster_core
         logic [31:0] insn;
         logic [31:0] result;        // ALU or link result
         logic [31:0] addr;          // the access's byte address
-        logic [31:0] wdata;         // store data in its byte lanes
+        logic [31:0] wdata;         // store data in its byte lanes, or the CSR value to write
         logic [31:0] rs1v;
         logic [31:0] rs2v;
         logic [31:0] rdata;         // the aligned word read
+        logic [31:0] tval;          // RVFI, a trap record: its mtval
     } slot_t;
 
-    logic halted;                   // a trap has passed the commit point: no more fetching or issue
     logic squash;                   // an Execute redirect resolved at the last edge: Decode and Execute are wrong-path
+    logic intr_next;                // a trap or interrupt was taken: the next instruction to leave Execute starts its handler
+
+    // ------------------------------------------------------------------- CSRs
+    logic        mstatus_mie, mstatus_mpie;
+    logic        mie_meie, mie_mtie, mie_msie;
+    logic        cy_inhibit, ir_inhibit;   // mcountinhibit.CY and .IR
+    logic [31:2] mtvec, mepc;
+    logic [31:0] mscratch, mcause, mtval;
+    logic [2:0]  mip_q;                    // {MEIP, MTIP, MSIP}, registered from the inputs
+    logic [63:0] mcycle, minstret;
+    logic [31:0] mstatus_value, mie_value, mip_value, mcountinhibit_value;
+    assign mstatus_value       = {19'b0, 2'b11, 3'b0, mstatus_mpie, 3'b0, mstatus_mie, 3'b0};   // MPP reads M
+    assign mie_value           = {20'b0, mie_meie, 3'b0, mie_mtie, 3'b0, mie_msie, 3'b0};
+    assign mip_value           = {20'b0, mip_q[2], 3'b0, mip_q[1], 3'b0, mip_q[0], 3'b0};
+    assign mcountinhibit_value = {29'b0, ir_inhibit, 1'b0, cy_inhibit};
+    localparam logic [31:0] MISA = 32'h4000_1100;       // RV32, I and M (A joins in 18.4)
 
     // ------------------------------------------------------------------ fetch
     logic        d_redirect, e_flush, f_valid, f_error, d_take;
     logic [31:2] f_pc;
     logic [31:0] f_insn, e_next_pc, e_redirect_target;
     logic [31:2] d_target;          // the Decode redirect's target (predecoded)
+    // The fetch unit's registered redirect: Execute's, or a trap's or an
+    // interrupt's at the commit point (they never coincide: Execute does not
+    // advance while M1 traps or is interrupted, so m1_stop selects the target).
+    logic        kill, m1_stop, f_redirect;
+    logic [31:2] f_target;
+    assign f_redirect = e_flush || kill;
+    assign f_target   = m1_stop ? mtvec : e_redirect_target[31:2];
 
     aster_core_fetch #(.RESET_VECTOR(RESET_VECTOR)) fetch (
         .clk, .rst_n,
         .i_req_valid, .i_req_addr, .i_req_ready, .i_rsp_valid, .i_rsp_data, .i_rsp_error,
-        .d_redirect, .d_target, .e_flush, .e_target(e_redirect_target[31:2]), .halt(halted),
+        .d_redirect, .d_target, .e_flush(f_redirect), .e_target(f_target),
         .redirecting(chk_i_redirect),
         .f_valid, .f_pc, .f_insn, .f_error, .d_take
     );
@@ -199,7 +274,7 @@ module aster_core
     // enters Decode and registered (d_predict, d_target), so the redirect is
     // presented from registered state in the instruction's first Decode cycle.
     assign f_predecode = predecode(f_insn, {f_pc, 2'b00});
-    assign d_redirect  = d_live && d_predict && !d_redirected && !halted;
+    assign d_redirect  = d_live && d_predict && !d_redirected;
 
     // --------------------------------------------------------------- Execute
     logic        e_valid, e_err, e_pred;
@@ -239,11 +314,12 @@ module aster_core
     logic        e_ready, e_taken, e_misaligned, e_target_misaligned, e_trap, e_access, e_mispredict;
     logic [31:0] e_addr, e_link, e_result, e_btarget, e_jtarget, e_wdata;
     logic [1:0]  e_offset;
-    logic [3:0]  e_be;
+    logic [3:0]  e_be, e_cause;
     logic        e_operands;        // the operands' values are ready
     logic        div_done;          // the divider holds Execute's division result
     assign e_operands = (!e_dec.uses_rs1 || rs1_ready) && (!e_dec.uses_rs2 || rs2_ready);
-    assign e_ready    = e_operands && (!e_dec.div || div_done);
+    // A CSR instruction or mret waits until M1 is empty (serializing).
+    assign e_ready    = e_operands && (!e_dec.div || div_done) && (!e_dec.sys || !m1.valid);
 
     // Divider: div_count is 0 while idle; the operands as read are latched as it
     // starts (count 0 to 1), so no arithmetic follows the forwarding mux; count
@@ -265,17 +341,43 @@ module aster_core
     // The result is one-hot selected (e_dec.res, decoded in Decode): no decode
     // follows the forwarded operands, and operand A is rs1 alone (auipc takes
     // the branch-target adder's PC plus immediate; lui takes the immediate).
+    // CSR read and modify. Execute holds a CSR instruction until M1 is empty,
+    // so the registers hold every older instruction's effects. The new value
+    // (or mret's mstatus) travels to M1 in the slot's wdata.
+    logic [31:0] csr_rdata, csr_src, csr_new, mret_status;
+    assign csr_rdata = ({32{e_dec.csr_sel.mstatus}}       & mstatus_value)
+                     | ({32{e_dec.csr_sel.misa}}          & MISA)
+                     | ({32{e_dec.csr_sel.mie}}           & mie_value)
+                     | ({32{e_dec.csr_sel.mtvec}}         & {mtvec, 2'b00})
+                     | ({32{e_dec.csr_sel.mcountinhibit}} & mcountinhibit_value)
+                     | ({32{e_dec.csr_sel.mscratch}}      & mscratch)
+                     | ({32{e_dec.csr_sel.mepc}}          & {mepc, 2'b00})
+                     | ({32{e_dec.csr_sel.mcause}}        & mcause)
+                     | ({32{e_dec.csr_sel.mtval}}         & mtval)
+                     | ({32{e_dec.csr_sel.mip}}           & mip_value)
+                     | ({32{e_dec.csr_sel.mcycle}}        & mcycle[31:0])
+                     | ({32{e_dec.csr_sel.mcycleh}}       & mcycle[63:32])
+                     | ({32{e_dec.csr_sel.minstret}}      & minstret[31:0])
+                     | ({32{e_dec.csr_sel.minstreth}}     & minstret[63:32])
+                     | ({32{e_dec.csr_sel.mhartid}}       & HART_ID);       // mstatush and zero read 0
+    assign csr_src   = e_dec.uses_rs1 ? rs1f : e_dec.imm;           // rs1, or a csrr*i's uimm
+    assign csr_new   = e_dec.funct3[1:0] == 2'd1 ? csr_src
+                     : e_dec.funct3[1:0] == 2'd2 ? csr_rdata | csr_src : csr_rdata & ~csr_src;
+    assign mret_status = {19'b0, 2'b11, 3'b0, 1'b1, 3'b0, mstatus_mpie, 3'b0};   // MIE = MPIE, MPIE = 1
+
     assign e_link    = e_pc + 32'd4;
     assign e_result  = result(e_dec.res, rs1f, e_dec.b_imm ? e_dec.imm : rs2f, e_dec.imm, e_btarget, e_link,
-                              div_result);
+                              div_result, csr_rdata);
     assign e_taken   = e_dec.branch && branch_taken(e_dec.funct3, rs1f, rs2f);
     assign e_btarget = e_pc + e_dec.imm;
     assign e_jtarget = {e_addr[31:1], 1'b0};       // rs1 + imm, from the address adder (not the ALU's mux)
-    assign e_next_pc = e_dec.jalr ? e_jtarget : (e_dec.jal || e_taken) ? e_btarget : e_link;
-    // When Execute redirects, its target is known without the compare: a
-    // `jalr`'s computed target, else the fall-through if Decode predicted the
-    // branch taken, else the branch target. The compare only decides whether.
-    assign e_redirect_target = e_dec.jalr ? e_jtarget : e_pred ? e_link : e_btarget;
+    assign e_next_pc = e_dec.mret ? {mepc, 2'b00} : e_dec.jalr ? e_jtarget
+                     : (e_dec.jal || e_taken) ? e_btarget : e_link;
+    // When Execute redirects, its target is known without the compare: mepc for
+    // `mret`, a `jalr`'s computed target, else the fall-through if Decode
+    // predicted the branch taken, else the branch target. The compare only
+    // decides whether.
+    assign e_redirect_target = e_dec.mret ? {mepc, 2'b00} : e_dec.jalr ? e_jtarget : e_pred ? e_link : e_btarget;
     assign e_target_misaligned = (e_dec.jalr && e_jtarget[1]) || ((e_dec.jal || e_taken) && e_btarget[1]);
     // A load's or store's address (and a jalr's target) has its own adder, and
     // its alignment comes from the two low bits alone, so the stall logic does
@@ -285,7 +387,11 @@ module aster_core
     assign e_offset  = rs1f_lo + e_dec.imm[1:0];
     assign e_misaligned = (e_dec.load || e_dec.store) &&
                           ((e_dec.funct3[1:0] == 2'd1 && e_offset[0]) || (e_dec.funct3[1:0] == 2'd2 && e_offset != 2'd0));
-    assign e_trap    = e_err || e_dec.illegal || e_misaligned || e_target_misaligned;
+    assign e_trap    = e_err || e_dec.illegal || e_dec.ecall || e_dec.ebreak || e_misaligned || e_target_misaligned;
+    // The exception code (only one cause can apply: a fetch fault decodes as
+    // nothing, an illegal encoding as no operation).
+    assign e_cause   = e_err ? 4'd1 : e_dec.illegal ? 4'd2 : e_dec.ebreak ? 4'd3 : e_dec.ecall ? 4'd11
+                     : e_target_misaligned ? 4'd0 : e_dec.store ? 4'd6 : 4'd4;
     assign e_access  = (e_dec.load || e_dec.store) && !e_misaligned;
     assign e_be      = e_dec.funct3[1:0] == 2'd0 ? 4'b0001 << e_offset
                      : e_dec.funct3[1:0] == 2'd1 ? 4'b0011 << e_offset : 4'b1111;
@@ -293,19 +399,43 @@ module aster_core
                      : e_dec.funct3[1:0] == 2'd1 ? {2{rs2f[15:0]}} : rs2f;
     // A branch to its own fall-through (offset +4) never redirects: its direction
     // does not change the next PC. The trap logic is left out of this path: a
-    // branch or jalr that traps (a misaligned target) stops the core at the
-    // commit point, which discards its redirect.
-    assign e_mispredict = e_dec.jalr || (e_dec.branch && e_taken != e_pred && e_dec.imm != 32'd4);
+    // branch or jalr that traps (a misaligned target) traps at the commit
+    // point, whose redirect replaces its own.
+    assign e_mispredict = e_dec.jalr || e_dec.mret || (e_dec.branch && e_taken != e_pred && e_dec.imm != 32'd4);
 
     // ------------------------------------------------------------ M1, M2, W
     logic d_acc_last;               // a data request was accepted at the last edge (it is in M1)
     logic m1_err_held;
-    logic m1_bus_err, m1_trap, kill;
+    logic m1_bus_err, m1_trap, m1_irq;
     logic rsp_for_m2, rsp_for_m1;
     slot_t m1_view, m2_view;
 
     assign m1_bus_err = m1.acc && (d_acc_last ? d_rsp_error : m1_err_held);
     assign m1_trap    = m1.valid && (m1.trap || m1_bus_err);
+
+    // Interrupts: pending and enabled, taken after the instruction in M1 (from
+    // registered state only). MEI has priority over MSI over MTI.
+    logic       irq_pending;
+    logic [3:0] irq_code;
+    assign irq_pending = mstatus_mie && ((mip_q[2] && mie_meie) || (mip_q[1] && mie_mtie) || (mip_q[0] && mie_msie));
+    assign irq_code    = mip_q[2] && mie_meie ? 4'd11 : mip_q[0] && mie_msie ? 4'd3 : 4'd7;
+    assign m1_irq      = m1.valid && !m1.sys && irq_pending;
+    // M1 stops Execute: its instruction traps, or an interrupt is taken after it.
+    assign m1_stop     = m1_trap || m1_irq;
+
+    // The exception M1's instruction takes, and its mtval.
+    logic [3:0]  trap_cause;
+    logic [31:0] trap_tval;
+    assign trap_cause = m1.trap ? m1.cause : m1.store ? 4'd7 : 4'd5;     // else a data-port error
+    always_comb begin
+        unique case (trap_cause)
+            4'd0:                   trap_tval = m1.next_pc;    // the misaligned jump or branch target
+            4'd1, 4'd3:             trap_tval = m1.pc;         // fetch fault, ebreak
+            4'd2:                   trap_tval = m1.insn;       // the illegal instruction
+            4'd4, 4'd5, 4'd6, 4'd7: trap_tval = m1.addr;       // the access's address
+            default:                trap_tval = 32'b0;         // ecall
+        endcase
+    end
     assign rsp_for_m2 = m2.valid && m2.acc && !m2.got;
     assign rsp_for_m1 = !rsp_for_m2 && m1.valid && m1.acc && !m1.got;
 
@@ -328,15 +458,15 @@ module aster_core
     assign m2_free    = !m2.valid || m2_advance;
     assign m1_advance = m1.valid && m2_free;
     assign m1_free    = !m1.valid || m1_advance;
-    assign kill       = m1_trap && m1_advance;          // a trap commits at this edge
+    assign kill       = m1_stop && m1_advance;          // a trap or an interrupt is taken at this edge
 
-    assign d_req_valid = e_live && e_access && e_ready && m1_free && !m1_trap && !halted;
+    assign d_req_valid = e_live && e_access && e_ready && m1_free && !m1_stop;
     assign d_req_op    = e_dec.store ? 4'd1 : 4'd0;
     assign d_req_addr  = e_addr;
     assign d_req_wdata = e_wdata;
     assign d_req_be    = e_be;
 
-    assign e_advance = e_live && e_ready && m1_free && !m1_trap && (!e_access || d_req_ready);
+    assign e_advance = e_live && e_ready && m1_free && !m1_stop && (!e_access || d_req_ready);
     assign e_free    = !e_live || e_advance;
     assign e_flush   = e_advance && e_mispredict;
 
@@ -350,7 +480,7 @@ module aster_core
     assign d_hazard  = (d_dec.uses_rs1 && load_pending(d_dec.rs1)) || (d_dec.uses_rs2 && load_pending(d_dec.rs2));
     assign d_advance = d_live && e_free && !d_hazard;
     assign d_free    = !d_live || d_advance;
-    assign d_take    = d_free && !halted;
+    assign d_take    = d_free;
 
     // ------------------------------------------------------------ multiplier
     // M1: the operands, sign-extended for mulh (both), mulhsu (rs1) and mul (its
@@ -430,6 +560,14 @@ module aster_core
         e_slot.mul       = e_dec.mul && !e_trap;
         e_slot.late      = (e_dec.load || e_dec.mul) && !e_trap;
         e_slot.acc       = e_access;
+        e_slot.sys       = e_dec.sys;
+        e_slot.csr_rd    = e_dec.csr && !e_trap;
+        e_slot.csr_we    = (e_dec.csr_write || e_dec.mret) && !e_trap;
+        e_slot.mret      = e_dec.mret && !e_trap;
+        e_slot.intr      = intr_next;
+        e_slot.cause     = e_cause;
+        e_slot.csr_sel   = e_dec.csr_sel;
+        e_slot.csr_sel.mstatus = e_dec.csr_sel.mstatus || e_dec.mret;
         e_slot.funct3    = e_dec.funct3;
         e_slot.rd        = e_dec.rd;
         e_slot.rs1       = e_dec.uses_rs1 ? e_dec.rs1 : 5'd0;
@@ -442,13 +580,13 @@ module aster_core
         e_slot.insn      = e_insn;
         e_slot.result    = e_result;
         e_slot.addr      = e_addr;
-        e_slot.wdata     = e_wdata;
+        e_slot.wdata     = e_dec.csr ? csr_new : e_dec.mret ? mret_status : e_wdata;
     end
 
     always_ff @(posedge clk) begin
         if (!rst_n) begin
-            halted       <= 1'b0;
             squash       <= 1'b0;
+            intr_next    <= 1'b0;
             fsel1        <= 4'b0001;
             fsel2        <= 4'b0001;
             fsel1_n      <= 4'b1110;
@@ -467,8 +605,9 @@ module aster_core
             div_count    <= 6'd0;
             div_done     <= 1'b0;
         end else begin
-            halted     <= halted || kill;
             squash     <= e_flush;
+            if (kill) intr_next <= 1'b1;
+            else if (e_advance) intr_next <= 1'b0;
             d_acc_last <= d_req_valid && d_req_ready;
             fsel1      <= sel1_next;
             fsel2      <= sel2_next;
@@ -478,7 +617,7 @@ module aster_core
             wt2        <= wn_writes && wn_rd == dn_rs2;
 
             // Decode (a squashed instruction leaves: Decode is free)
-            if (halted || kill) begin
+            if (kill) begin
                 d_valid <= 1'b0;
             end else if (d_free) begin
                 d_valid      <= f_valid;
@@ -498,7 +637,9 @@ module aster_core
             end else if (e_free) begin
                 e_valid <= d_advance;
                 e_pc    <= d_pc;
-                e_insn  <= d_insn;
+                // A 16-bit encoding (illegal: there is no C) is the instruction's
+                // 16 bits, for its mtval and RVFI record (as Spike reports it).
+                e_insn  <= {d_insn[1:0] == 2'b11 ? d_insn[31:16] : 16'b0, d_insn[15:0]};
                 e_err   <= d_err;
                 e_dec   <= d_dec;
                 e_pred  <= d_predict;
@@ -577,7 +718,8 @@ module aster_core
                 pp_hh <= partial(mul_a[32:16], mul_b[32:16]);
             end
 
-            // M2 (the commit point has passed: a data-port error becomes the trap)
+            // M2 (the commit point has passed: a data-port error becomes the trap,
+            // and a trap record's next PC is its handler's address)
             if (m2_free) begin
                 m2 <= '0;
                 if (m1_advance) begin
@@ -587,6 +729,12 @@ module aster_core
                     m2.load      <= m1.load && !m1_bus_err;
                     m2.late      <= m1.late && !m1_bus_err;
                     m2.store     <= m1.store && !m1_bus_err;
+                    if (m1_trap) begin
+                        m2.next_pc <= {mtvec, 2'b00};
+                        m2.cause   <= trap_cause;        // RVFI: the trap's CSR values, as written
+                        m2.tval    <= trap_tval;
+                        m2.mpie    <= mstatus_mie;
+                    end
                 end
             end else begin
                 m2 <= m2_view;
@@ -602,6 +750,75 @@ module aster_core
         end
     end
 
+    // CSRs: written by the CSR instruction (or mret) in M1, at the end of its
+    // first cycle there (see the header); by a trap or an interrupt at the
+    // commit point (MPIE = MIE, MIE = 0; an exception's mepc is its own PC, an
+    // interrupt's the next PC of the instruction completing in M1); and the
+    // counters. A write to a counter replaces that cycle's increment
+    // (minstret's is the writing instruction's own). An instruction retires
+    // when it passes the commit point without trapping, a serializing one at
+    // the end of its first M1 cycle (it cannot be killed after it, and the
+    // mcountinhibit it may write applies to the instructions after it only).
+    logic m1_first;                 // M1's instruction entered at the last edge
+    logic m1_csr_we, retire;
+    assign m1_csr_we = m1.valid && m1.csr_we && m1_first;
+    assign retire    = m1.valid && (m1.sys ? m1_first : m1_advance && !m1_trap);
+    always_ff @(posedge clk) begin
+        if (!rst_n) begin
+            mstatus_mie  <= 1'b0;
+            mstatus_mpie <= 1'b0;
+            mie_meie     <= 1'b0;
+            mie_mtie     <= 1'b0;
+            mie_msie     <= 1'b0;
+            cy_inhibit   <= 1'b0;
+            ir_inhibit   <= 1'b0;
+            mtvec        <= '0;
+            mepc         <= '0;
+            mscratch     <= '0;
+            mcause       <= '0;
+            mtval        <= '0;
+            mip_q        <= '0;
+            mcycle       <= '0;
+            minstret     <= '0;
+            m1_first     <= 1'b0;
+        end else begin
+            mip_q    <= {meip, mtip, msip};
+            m1_first <= e_advance;
+            if (kill) begin
+                mstatus_mpie <= mstatus_mie;
+                mstatus_mie  <= 1'b0;
+                mepc         <= m1_trap ? m1.pc[31:2] : m1.next_pc[31:2];
+                mcause       <= m1_trap ? {28'b0, trap_cause} : {1'b1, 27'b0, irq_code};
+                mtval        <= m1_trap ? trap_tval : 32'b0;
+            end else if (m1_csr_we) begin
+                if (m1.csr_sel.mstatus) begin
+                    mstatus_mie  <= m1.wdata[3];
+                    mstatus_mpie <= m1.wdata[7];
+                end
+                if (m1.csr_sel.mie) begin
+                    mie_meie <= m1.wdata[11];
+                    mie_mtie <= m1.wdata[7];
+                    mie_msie <= m1.wdata[3];
+                end
+                if (m1.csr_sel.mcountinhibit) begin
+                    cy_inhibit <= m1.wdata[0];
+                    ir_inhibit <= m1.wdata[2];
+                end
+                if (m1.csr_sel.mtvec)    mtvec    <= m1.wdata[31:2];    // direct mode
+                if (m1.csr_sel.mscratch) mscratch <= m1.wdata;
+                if (m1.csr_sel.mepc)     mepc     <= m1.wdata[31:2];
+                if (m1.csr_sel.mcause)   mcause   <= m1.wdata;
+                if (m1.csr_sel.mtval)    mtval    <= m1.wdata;
+            end
+            if (m1_csr_we && m1.csr_sel.mcycle)         mcycle[31:0]    <= m1.wdata;
+            else if (m1_csr_we && m1.csr_sel.mcycleh)   mcycle[63:32]   <= m1.wdata;
+            else if (!cy_inhibit)                       mcycle          <= mcycle + 64'd1;
+            if (m1_csr_we && m1.csr_sel.minstret)       minstret[31:0]  <= m1.wdata;
+            else if (m1_csr_we && m1.csr_sel.minstreth) minstret[63:32] <= m1.wdata;
+            else if (retire && !ir_inhibit)             minstret        <= minstret + 64'd1;
+        end
+    end
+
     // Write-back and retirement.
     always_ff @(posedge clk) begin
         if (w_write) rf[w.rd] <= w_value;
@@ -611,14 +828,13 @@ module aster_core
         if (!rst_n) begin
             rvfi_valid <= 1'b0;
             rvfi_order <= '0;
-            trapped    <= 1'b0;
         end else begin
             rvfi_valid <= w.valid;
             if (rvfi_valid) rvfi_order <= rvfi_order + 64'd1;
-            trapped    <= trapped || (w.valid && w.trap);
         end
         rvfi_insn      <= w.insn;
         rvfi_trap      <= w.trap;
+        rvfi_intr      <= w.intr;
         rvfi_rs1_addr  <= w.rs1;
         rvfi_rs2_addr  <= w.rs2;
         rvfi_rs1_rdata <= w.rs1v;
@@ -634,13 +850,84 @@ module aster_core
         rvfi_mem_wdata <= w.store ? w.wdata & {{8{w.be[3]}}, {8{w.be[2]}}, {8{w.be[1]}}, {8{w.be[0]}}} : 32'b0;
     end
     assign rvfi_halt = 1'b0;
-    assign rvfi_intr = 1'b0;
     assign rvfi_mode = 2'd3;
     assign rvfi_ixl  = 2'd1;
 
+    // RVFI CSR fields, from W. A CSR instruction reads its CSR (the old value,
+    // w.result) and, if it writes, reports the value as it reads back; mret
+    // writes mstatus (w.wdata) and mstatush; a trap record writes mepc (its
+    // PC), mcause, mtval and mstatus, with the values the trap wrote, carried
+    // in its slot (the handler may write them again before the record leaves W
+    // when the memory answers late).
+    csr_t rd_sel, wr_sel;
+    logic w_trap;
+    always_comb begin
+        rd_sel = w.valid && w.csr_rd ? w.csr_sel : '0;
+        wr_sel = w.valid && w.csr_we ? w.csr_sel : '0;
+        w_trap = w.valid && w.trap;
+    end
+    function automatic logic [31:0] mask(input logic on);
+        return {32{on}};
+    endfunction
+    always_ff @(posedge clk) begin
+        rvfi_csr_mstatus_rmask       <= mask(rd_sel.mstatus);
+        rvfi_csr_mstatus_rdata       <= mask(rd_sel.mstatus) & w.result;
+        rvfi_csr_mstatus_wmask       <= mask(wr_sel.mstatus || w_trap);
+        rvfi_csr_mstatus_wdata       <= w_trap ? {19'b0, 2'b11, 3'b0, w.mpie, 7'b0}
+                                                : mask(wr_sel.mstatus) & (w.wdata & 32'h88 | 32'h1800);
+        rvfi_csr_mstatush_rmask      <= mask(rd_sel.mstatush);
+        rvfi_csr_mstatush_rdata      <= 32'b0;
+        rvfi_csr_mstatush_wmask      <= mask(wr_sel.mstatush || (w.valid && w.mret));
+        rvfi_csr_mstatush_wdata      <= 32'b0;
+        rvfi_csr_misa_rmask          <= mask(rd_sel.misa);
+        rvfi_csr_misa_rdata          <= mask(rd_sel.misa) & MISA;
+        rvfi_csr_misa_wmask          <= mask(wr_sel.misa);
+        rvfi_csr_misa_wdata          <= mask(wr_sel.misa) & MISA;          // writes are ignored
+        rvfi_csr_mie_rmask           <= mask(rd_sel.mie);
+        rvfi_csr_mie_rdata           <= mask(rd_sel.mie) & w.result;
+        rvfi_csr_mie_wmask           <= mask(wr_sel.mie);
+        rvfi_csr_mie_wdata           <= mask(wr_sel.mie) & w.wdata & 32'h888;
+        rvfi_csr_mip_rmask           <= mask(rd_sel.mip);
+        rvfi_csr_mip_rdata           <= mask(rd_sel.mip) & w.result;
+        rvfi_csr_mip_wmask           <= mask(wr_sel.mip);
+        rvfi_csr_mip_wdata           <= mask(wr_sel.mip) & w.result;    // no writable bits: reads back as read
+        rvfi_csr_mtvec_rmask         <= mask(rd_sel.mtvec);
+        rvfi_csr_mtvec_rdata         <= mask(rd_sel.mtvec) & w.result;
+        rvfi_csr_mtvec_wmask         <= mask(wr_sel.mtvec);
+        rvfi_csr_mtvec_wdata         <= mask(wr_sel.mtvec) & w.wdata & ~32'h3;
+        rvfi_csr_mscratch_rmask      <= mask(rd_sel.mscratch);
+        rvfi_csr_mscratch_rdata      <= mask(rd_sel.mscratch) & w.result;
+        rvfi_csr_mscratch_wmask      <= mask(wr_sel.mscratch);
+        rvfi_csr_mscratch_wdata      <= mask(wr_sel.mscratch) & w.wdata;
+        rvfi_csr_mepc_rmask          <= mask(rd_sel.mepc);
+        rvfi_csr_mepc_rdata          <= mask(rd_sel.mepc) & w.result;
+        rvfi_csr_mepc_wmask          <= mask(wr_sel.mepc || w_trap);
+        rvfi_csr_mepc_wdata          <= w_trap ? w.pc : mask(wr_sel.mepc) & w.wdata & ~32'h3;
+        rvfi_csr_mcause_rmask        <= mask(rd_sel.mcause);
+        rvfi_csr_mcause_rdata        <= mask(rd_sel.mcause) & w.result;
+        rvfi_csr_mcause_wmask        <= mask(wr_sel.mcause || w_trap);
+        rvfi_csr_mcause_wdata        <= w_trap ? {28'b0, w.cause} : mask(wr_sel.mcause) & w.wdata;
+        rvfi_csr_mtval_rmask         <= mask(rd_sel.mtval);
+        rvfi_csr_mtval_rdata         <= mask(rd_sel.mtval) & w.result;
+        rvfi_csr_mtval_wmask         <= mask(wr_sel.mtval || w_trap);
+        rvfi_csr_mtval_wdata         <= w_trap ? w.tval : mask(wr_sel.mtval) & w.wdata;
+        rvfi_csr_mcountinhibit_rmask <= mask(rd_sel.mcountinhibit);
+        rvfi_csr_mcountinhibit_rdata <= mask(rd_sel.mcountinhibit) & w.result;
+        rvfi_csr_mcountinhibit_wmask <= mask(wr_sel.mcountinhibit);
+        rvfi_csr_mcountinhibit_wdata <= mask(wr_sel.mcountinhibit) & w.wdata & 32'h5;
+        rvfi_csr_mcycle_rmask        <= {mask(rd_sel.mcycleh), mask(rd_sel.mcycle)};
+        rvfi_csr_mcycle_rdata        <= {mask(rd_sel.mcycleh) & w.result, mask(rd_sel.mcycle) & w.result};
+        rvfi_csr_mcycle_wmask        <= {mask(wr_sel.mcycleh), mask(wr_sel.mcycle)};
+        rvfi_csr_mcycle_wdata        <= {mask(wr_sel.mcycleh) & w.wdata, mask(wr_sel.mcycle) & w.wdata};
+        rvfi_csr_minstret_rmask      <= {mask(rd_sel.minstreth), mask(rd_sel.minstret)};
+        rvfi_csr_minstret_rdata      <= {mask(rd_sel.minstreth) & w.result, mask(rd_sel.minstret) & w.result};
+        rvfi_csr_minstret_wmask      <= {mask(wr_sel.minstreth), mask(wr_sel.minstret)};
+        rvfi_csr_minstret_wdata      <= {mask(wr_sel.minstreth) & w.wdata, mask(wr_sel.minstret) & w.wdata};
+    end
+
     logic unused;
-    assign unused = ^{meip, mtip, msip, HART_ID, d_raw, f_predecode[1:0], e_redirect_target[1:0], w.acc, w.got, w.funct3,
-                     w.mul, w.late};
+    assign unused = ^{d_raw, f_predecode[1:0], e_redirect_target[1:0], w.acc, w.got, w.funct3,
+                     w.mul, w.late, w.sys, rd_sel.zero, rd_sel.mhartid, wr_sel.zero, wr_sel.mhartid};
 
 `ifndef SYNTHESIS
     always_ff @(posedge clk) begin
@@ -665,6 +952,16 @@ module aster_core
         // A multiply never waits in M2 (it has no data access), which the
         // partial products' load enable relies on.
         if (rst_n && m2.valid && m2.mul) assert (m2_advance) else $error("a multiply waits in M2");
+        // A CSR write in M1 belongs to an instruction that can no longer be
+        // killed: it has no trap and no data access, it entered an empty M1
+        // (serializing), and no trap or interrupt is taken while it is there.
+        if (rst_n && m1_csr_we) assert (!m1.trap && !m1.acc && m1.sys && !kill && !m1_stop)
+            else $error("a CSR write in M1 that could be killed");
+        // A serializing instruction never traps (it retires at its first M1 edge).
+        if (rst_n && m1.valid && m1.sys) assert (!m1_trap) else $error("a serializing instruction traps");
+        if (rst_n && e_advance && e_dec.sys) assert (!m1.valid) else $error("a serializing instruction entered a busy M1");
+        // A trap or interrupt and an Execute redirect never coincide (f_target).
+        if (rst_n) assert (!(kill && e_flush)) else $error("a trap and an Execute redirect in one cycle");
     end
 `endif
 endmodule

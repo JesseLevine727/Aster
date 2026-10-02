@@ -16,13 +16,19 @@ class UpstreamReference(unittest.TestCase):
                   "or", "ori", "sb", "sh", "simple", "sll", "slli", "slt", "slti", "sltiu", "sltu",
                   "sra", "srai", "srl", "srli", "st_ld", "sub", "sw", "xor", "xori")
         rv32um = ("div", "divu", "mul", "mulh", "mulhsu", "mulhu", "rem", "remu")
+        # The machine-mode programs (18.3): rv32mi wrappers and the rv64mi/rv64si bodies they include.
+        rv64mi = ("breakpoint", "illegal", "instret_overflow", "lh-misaligned", "lw-misaligned", "ma_addr",
+                  "mcsr", "pmpaddr", "sh-misaligned", "sw-misaligned", "zicntr")
+        rv64si = ("csr", "ma_fetch", "sbreak", "scall")
         wanted = {"LICENSE", "isa/macros/scalar/test_macros.h"} | {
             f"isa/{arch}/{name}.S" for arch in ("rv32ua", "rv64ua") for name in names} | {
             f"isa/{arch}/{name}.S" for arch in ("rv32ui", "rv64ui") for name in rv32ui} | {
-            f"isa/rv32um/{name}.S" for name in rv32um}
+            f"isa/rv32um/{name}.S" for name in rv32um} | {
+            f"isa/rv32mi/{name}.S" for name in rv64mi + rv64si + ("shamt",)} | {
+            f"isa/rv64mi/{name}.S" for name in rv64mi} | {f"isa/rv64si/{name}.S" for name in rv64si}
         actual = {}
         for line in (root/"SHA256SUMS").read_text().splitlines():
-            match = re.fullmatch(r"([0-9a-f]{64})  ([A-Za-z0-9_./]+)", line)
+            match = re.fullmatch(r"([0-9a-f]{64})  ([A-Za-z0-9_./-]+)", line)
             self.assertIsNotNone(match)
             value, name = match.groups()
             self.assertNotIn(name, actual)
@@ -37,6 +43,9 @@ class UpstreamReference(unittest.TestCase):
             self.assertIn(f'#include "../rv64ua/{name}.S"', (root/f"isa/rv32ua/{name}.S").read_text())
         for name in rv32ui:
             self.assertIn(f'#include "../rv64ui/{name}.S"', (root/f"isa/rv32ui/{name}.S").read_text())
+        for arch, bodies in (("rv64mi", rv64mi), ("rv64si", rv64si)):
+            for name in bodies:
+                self.assertIn(f'#include "../{arch}/{name}.S"', (root/f"isa/rv32mi/{name}.S").read_text())
 
     def test_owned_environment_does_not_imply_privileged_core(self):
         env = (ROOT/"software/tests/riscv_reference/riscv_test.h").read_text()

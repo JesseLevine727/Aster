@@ -26,10 +26,26 @@
 //
 // Checks, besides the trace: each retired store must match, in word address,
 // byte mask and data, the oldest data-port write the memory accepted and not
-// yet matched (so a store whose bus write differs from its RVFI record fails),
-// and no accepted write may be left unmatched at the end (a pass, or a trap:
-// no store younger than a trapping instruction may reach memory). The run
-// ends when the store to tohost retires, or at a trap.
+// yet matched (so a store whose bus write differs from its RVFI record fails,
+// and so does a store performed twice or one younger than a trap), and no
+// accepted write may be left unmatched at the end (a pass, or a DUT that
+// stops on a trap). Loads likewise: each retired load must match, in word
+// address and byte mask, the oldest load the memory accepted (without an
+// error) and not yet matched, and none may be left over at the end — so a
+// load performed twice, such as an I/O load repeated after an interrupt
+// (docs/cpu.md §4 forbids it), fails (LOAD_MISMATCH, STRAY_READ). A CPU kernel's
+// run ends mid-program, so up to three younger loads (in M1, M2 and W) may be
+// accepted and not yet retired then. The run ends when the store to tohost retires, or when a
+// DUT that stops on a trap (PicoRV32; the Aster core takes its traps) raises
+// `trap`.
+//
+// Interrupts (Aster core): the shell drives meip, mtip and msip, low unless a
+// program uses the interrupt device (+irq_device): a word at 0x3000_0000 whose
+// store sets the three lines, in mip's layout (bit 11 MEIP, 7 MTIP, 3 MSIP),
+// `value >> 16` cycles after the cycle following its acceptance, and whose
+// load returns them. With +irq_random=<seed> (which implies the device) the
+// shell also raises MEIP or MSIP at random, about once per +irq_period cycles
+// (default 40) while neither is high; a handler clears them with a store of 0.
 //
 // Protocol checks (docs/cpu.md §4-§5; shell_ports.h):
 // - I_REQ_UNSTABLE: a fetch presented and not accepted must be presented
@@ -51,7 +67,10 @@
 //   changes the responses and readiness;
 // - PC_WDATA_MISMATCH: each retired record's rvfi_pc_wdata must be the next
 //   record's rvfi_pc_rdata (riscv-formal's pc_fwd; the trace itself carries
-//   only pc_rdata, so this is where the reported next PC is checked).
+//   only pc_rdata, so this is where the reported next PC is checked) — a trap
+//   record's is its handler's address — except into a record marked
+//   rvfi_intr after a record that is not a trap: an interrupt's handler entry,
+//   counted as `interrupts`.
 //
 // Plusargs: +bin=<file> +tohost=<hex> [+trace=<file>] [+max_cycles=<n>]
 //           [+stall_seed=<n>] [+mem_bytes=<hex>] [+latency=<1|2>] [+max_inflight=<n>]
@@ -63,6 +82,12 @@
 //           [+duplicate_tohost_write] (self-test: the write to tohost is
 //                                   accepted twice, as a core that issues a store
 //                                   twice would; the stray-write check must fail)
+//           [+duplicate_read=<n>] (self-test: the n-th accepted load is recorded
+//                                   twice, as a core that performs a load twice
+//                                   would; the load check must fail)
+//           [+skip_load_check]     (self-test only: isolates the in-flight check,
+//                                   which a core presenting accepted loads again
+//                                   would otherwise fail on the load check first)
 //
 //           [+selftest=<n>]      (self-test: drives the DUT's selftest input, which
 //                                   makes the PicoRV32 adapter break one protocol
@@ -76,20 +101,28 @@
 //           [+bus_error_traps]     (a data access outside memory is answered with
 //                                   d_rsp_error and the run continues: the DUT must
 //                                   trap on it; by default the run stops, BUS_ERROR)
+//           [+irq_device] [+irq_random=<seed>] [+irq_period=<n>]   (interrupts, above)
 //
 // Memory regions, console, and the measurement window: shell_common.h.
 // The DUT's RVFI outputs are sampled after the rising edge, so they must be
 // registered (as riscv-formal requires), not combinational.
+// Trace: one line per RVFI record, "order pc insn trap rd rd_wdata mem_addr
+// rmask wmask rdata wdata", then a token c<csr>=<value> (hex) for each CSR the
+// record writes (the DUT's rvfi_csr_wvalid/wdata, in the order of kCsrAddress)
+// and "intr" if the record is marked rvfi_intr.
+//
 // Output: "SHELL <status> cycles=<n> retired=<n> [window_cycles=<n>
-// window_retired=<n>] fetch_errors=<n>" (fetches answered with i_rsp_error),
-// where status is PASS,
+// window_retired=<n>] fetch_errors=<n> interrupts=<n>" (fetches answered with
+// i_rsp_error; interrupt handler entries), where status is PASS,
 // FAIL test=<n>, FAIL (partial tohost store), FAIL (kernel record), TRAP, TIMEOUT, BUS_ERROR,
 // STORE_MISMATCH, STRAY_WRITE, UNSUPPORTED_OP, I_REQ_UNSTABLE, D_REQ_UNSTABLE,
-// D_REQ_MALFORMED, D_INFLIGHT, RVFI_COMBINATIONAL or PC_WDATA_MISMATCH.
+// D_REQ_MALFORMED, D_INFLIGHT, RVFI_COMBINATIONAL, PC_WDATA_MISMATCH, LOAD_MISMATCH or
+// STRAY_READ.
 #include "Vcore_ports.h"
 #include "verilated.h"
 
 #include <algorithm>
+#include <array>
 #include <cstdint>
 #include <cstdio>
 #include <deque>
@@ -106,6 +139,27 @@ using shell::plusarg;
 
 namespace {
 constexpr int kLoad = 0, kStore = 1;
+constexpr std::uint32_t kIrqDevice = 0x30000000u;
+// The CSR of each rvfi_csr_wvalid/wdata entry (shell_aster_ports.sv).
+constexpr std::uint32_t kCsrAddress[15] = {0x300, 0x310, 0x304, 0x344, 0x305, 0x340, 0x341, 0x342,
+                                           0x343, 0x320, 0xb00, 0xb80, 0xb02, 0xb82, 0x301};
+
+// The interrupt lines (meip, mtip, msip in mip's bit positions) and the
+// program-visible device that sets them.
+struct IrqLines {
+    bool device = false, random = false;
+    std::mt19937 rng{0};
+    std::uint32_t period = 40;
+    std::uint32_t level = 0, next_level = 0;
+    long delay = -1;                         // cycles until next_level applies; -1 none pending
+    void store(std::uint32_t value) { next_level = value & 0x888u; delay = long(value >> 16); }
+    // At each edge, after this cycle's accesses.
+    void edge() {
+        if (delay == 0) level = next_level;
+        if (delay >= 0) --delay;
+        if (random && !(level & 0x808u) && rng() % period == 0) level |= rng() & 1u ? 0x800u : 0x008u;
+    }
+};
 
 struct Write {
     std::uint32_t word;
@@ -113,20 +167,29 @@ struct Write {
     std::uint32_t data;
 };
 
+struct Read {
+    std::uint32_t word;
+    std::uint32_t mask;
+};
+
 // The RVFI outputs the shell samples, for the registered-output check.
 struct Rvfi {
     std::uint64_t order;
-    std::uint32_t valid, insn, trap, pc, pc_next, rd, rd_wdata, addr, rmask, wmask, rdata, wdata;
+    std::uint32_t valid, insn, trap, pc, pc_next, rd, rd_wdata, addr, rmask, wmask, rdata, wdata, intr, csr_valid;
+    std::array<std::uint32_t, 15> csr;
     auto tied() const {
-        return std::tie(order, valid, insn, trap, pc, pc_next, rd, rd_wdata, addr, rmask, wmask, rdata, wdata);
+        return std::tie(order, valid, insn, trap, pc, pc_next, rd, rd_wdata, addr, rmask, wmask, rdata, wdata, intr,
+                        csr_valid, csr);
     }
     bool operator==(const Rvfi& other) const { return tied() == other.tied(); }
 };
 
 Rvfi sample(const Vcore_ports& d) {
-    return {d.rvfi_order, d.rvfi_valid, d.rvfi_insn, d.rvfi_trap, d.rvfi_pc_rdata, d.rvfi_pc_wdata, d.rvfi_rd_addr,
-            d.rvfi_rd_wdata, d.rvfi_mem_addr, d.rvfi_mem_rmask, d.rvfi_mem_wmask, d.rvfi_mem_rdata,
-            d.rvfi_mem_wdata};
+    Rvfi r{d.rvfi_order, d.rvfi_valid, d.rvfi_insn, d.rvfi_trap, d.rvfi_pc_rdata, d.rvfi_pc_wdata, d.rvfi_rd_addr,
+           d.rvfi_rd_wdata, d.rvfi_mem_addr, d.rvfi_mem_rmask, d.rvfi_mem_wmask, d.rvfi_mem_rdata,
+           d.rvfi_mem_wdata, d.rvfi_intr, d.rvfi_csr_wvalid, {}};
+    for (int i = 0; i < 15; ++i) r.csr[i] = d.rvfi_csr_wdata[i];
+    return r;
 }
 }  // namespace
 
@@ -155,6 +218,12 @@ int main(int argc, char** argv) {
         return 2;
     }
 
+    IrqLines irq;
+    irq.random = !plusarg("irq_random").empty();
+    irq.device = irq.random || shell::plusflag("irq_device");
+    if (irq.random) irq.rng.seed(std::stoul(plusarg("irq_random")));
+    if (!plusarg("irq_period").empty()) irq.period = std::max(1ul, std::stoul(plusarg("irq_period")));
+
     shell::Memory memory(mem_bytes, shell::plusflag("io_page"));
     if (const std::string error = shell::load_image(memory, bin); !error.empty()) { std::cerr << error << "\n"; return 2; }
     shell::Observer observer;
@@ -181,13 +250,19 @@ int main(int argc, char** argv) {
     d.clk = 0; d.resetn = 0;
     d.i_req_ready = 0; d.i_rsp_valid = 0; d.i_rsp_data = 0; d.i_rsp_error = 0;
     d.d_req_ready = 0; d.d_rsp_valid = 0; d.d_rsp_rdata = 0; d.d_rsp_error = 0;
+    d.meip = 0; d.mtip = 0; d.msip = 0;
     for (int i = 0; i < 8; ++i) { d.clk = 0; d.eval(); d.clk = 1; d.eval(); }
     d.clk = 0; d.eval();
     d.resetn = 1;
 
     const std::uint64_t corrupt_write =
         plusarg("corrupt_write").empty() ? 0 : std::stoull(plusarg("corrupt_write"));
-    std::uint64_t accepted_writes = 0, fetch_errors = 0;
+    const std::uint64_t duplicate_read =
+        plusarg("duplicate_read").empty() ? 0 : std::stoull(plusarg("duplicate_read"));
+    const bool load_check = !shell::plusflag("skip_load_check");
+    std::uint64_t accepted_reads = 0;
+    std::deque<Read> reads;                 // accepted loads not yet matched to a retired load
+    std::uint64_t accepted_writes = 0, fetch_errors = 0, interrupts = 0;
     shell::Port iport, dport;
     bool d_error_next = false;              // d_rsp_error for the request accepted at the last edge
     bool d_error_cycle = false;             // a data request was accepted at the last edge
@@ -208,6 +283,9 @@ int main(int argc, char** argv) {
         d.d_rsp_valid = dport.responding();
         d.d_rsp_rdata = dport.responding() ? dport.owed.front().data : std::uint32_t(garbage());
         d.d_rsp_error = d_error_cycle ? d_error_next : garbage() & 1u;
+        d.meip = (irq.level >> 11) & 1u;
+        d.mtip = (irq.level >> 7) & 1u;
+        d.msip = (irq.level >> 3) & 1u;
         d.i_req_ready = iport.remaining() < max_inflight && !(stall && rng() % 4 == 0);
         d.d_req_ready = dport.remaining() < max_inflight && !(stall && rng() % 4 == 0);
         d.eval();
@@ -244,10 +322,22 @@ int main(int argc, char** argv) {
                          error ? std::uint32_t(garbage()) : memory.read(i_addr), error);
         }
         if (d_accept) {
-            const bool error = !memory.contains(d_addr);
+            const bool device = irq.device && (d_addr & ~3u) == kIrqDevice;
+            const bool error = !device && !memory.contains(d_addr);
             std::uint32_t rdata = std::uint32_t(garbage());
             d_error_next = error;
             if (d_op != kLoad && d_op != kStore) { result = "UNSUPPORTED_OP"; stop = true; }
+            else if (device) {
+                // The interrupt device: its stores are checked against RVFI like any other.
+                if (d_op == kStore) {
+                    ++accepted_writes;
+                    irq.store(d_wdata);
+                    writes.push_back({d_addr & ~3u, d_be, d_wdata});
+                } else {
+                    rdata = irq.level;
+                    reads.push_back({d_addr & ~3u, d_be});
+                }
+            }
             else if (error) {
                 // Not performed; answered with d_rsp_error. By default the run
                 // stops here; with +bus_error_traps the DUT must trap on it.
@@ -260,13 +350,19 @@ int main(int argc, char** argv) {
                 if (duplicate_tohost_write && (d_addr & ~3u) == tohost) writes.push_back({d_addr & ~3u, d_be, written});
             } else {
                 rdata = memory.read(d_addr);
+                reads.push_back({d_addr & ~3u, d_be});
+                if (++accepted_reads == duplicate_read) reads.push_back({d_addr & ~3u, d_be});
             }
             dport.accept(latency, stall ? int(rng() % 3) : 0, rdata, error);
         }
+        irq.edge();
         if (d.rvfi_valid && !stop) {
             // Each record's pc_wdata must be the next record's pc_rdata
-            // (riscv-formal's pc_fwd); after a trap the core stops in 18.1.
-            if (have_previous && !previous_trap && d.rvfi_pc_rdata != previous_pc_wdata) {
+            // (riscv-formal's pc_fwd; a trap record's is its handler's
+            // address), except into an interrupt's handler.
+            const bool interrupt = have_previous && d.rvfi_intr && !previous_trap;
+            interrupts += interrupt;
+            if (have_previous && !interrupt && d.rvfi_pc_rdata != previous_pc_wdata) {
                 result = "PC_WDATA_MISMATCH";
                 stop = true;
             }
@@ -277,12 +373,25 @@ int main(int argc, char** argv) {
             if (retire_log)
                 std::fprintf(retire_log, "%llu %llu %08x\n", (unsigned long long)d.rvfi_order,
                              (unsigned long long)cycles, d.rvfi_pc_rdata);
-            if (trace)
-                std::fprintf(trace, "%llu %08x %08x %u %u %08x %08x %x %x %08x %08x\n",
+            if (trace) {
+                std::fprintf(trace, "%llu %08x %08x %u %u %08x %08x %x %x %08x %08x",
                              (unsigned long long)d.rvfi_order, d.rvfi_pc_rdata, d.rvfi_insn, d.rvfi_trap,
                              d.rvfi_rd_addr, d.rvfi_rd_wdata, d.rvfi_mem_addr, d.rvfi_mem_rmask,
                              d.rvfi_mem_wmask, d.rvfi_mem_rdata, d.rvfi_mem_wdata);
-            if (!d.rvfi_trap && d.rvfi_mem_wmask) {
+                for (int i = 0; i < 15; ++i)
+                    if (d.rvfi_csr_wvalid >> i & 1u) std::fprintf(trace, " c%03x=%08x", kCsrAddress[i], d.rvfi_csr_wdata[i]);
+                std::fputs(d.rvfi_intr ? " intr\n" : "\n", trace);
+            }
+            if (load_check && !d.rvfi_trap && d.rvfi_mem_rmask && !d.rvfi_mem_wmask && !stop) {
+                if (reads.empty() || reads.front().word != (d.rvfi_mem_addr & ~3u) ||
+                    reads.front().mask != d.rvfi_mem_rmask) {
+                    result = "LOAD_MISMATCH";
+                    stop = true;
+                } else {
+                    reads.pop_front();
+                }
+            }
+            if (!d.rvfi_trap && d.rvfi_mem_wmask && !stop) {
                 const std::uint32_t mask = d.rvfi_mem_wmask;
                 std::uint32_t bytes = 0;
                 for (int lane = 0; lane < 4; ++lane)
@@ -303,6 +412,8 @@ int main(int argc, char** argv) {
     }
     // A run that ends in a trap must not have let a younger store reach memory.
     if ((result == "PASS" || result == "TRAP") && !writes.empty()) result = "STRAY_WRITE";
+    if (load_check && (result == "PASS" || result == "TRAP") && reads.size() > (observer.end_at_record ? 3u : 0u))
+        result = "STRAY_READ";
     if (trace) std::fclose(trace);
     if (retire_log) std::fclose(retire_log);
     if (observer.console) std::fclose(observer.console);
@@ -310,6 +421,6 @@ int main(int argc, char** argv) {
         if (const std::string error = shell::dump_signature(memory); !error.empty()) { std::cerr << error << "\n"; return 2; }
     }
     std::cout << "SHELL " << result << " cycles=" << cycles << " retired=" << retired << observer.window()
-              << " fetch_errors=" << fetch_errors << "\n";
+              << " fetch_errors=" << fetch_errors << " interrupts=" << interrupts << "\n";
     return result == "PASS" ? 0 : 1;
 }

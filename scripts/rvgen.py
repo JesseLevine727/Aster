@@ -17,9 +17,24 @@ The stream is built to stress a pipeline, not to compute anything:
 - forward branches skip random blocks, bounded backward loops use a reserved
   counter register, and `jal`/`jalr` call and return from local leaf blocks;
 - M operations draw operands from the corner values (0, 1, -1, INT_MIN,
-  INT_MAX) as well as random ones.
+  INT_MAX) as well as random ones;
+- with Zicsr (`--ext m,zicsr`, the Aster core from 18.3): CSR instructions in
+  every form — read-modify-writes of mtval, mcause, mepc and mie, mstatus.MPIE
+  set and cleared, reads of minstret(h), misa and mhartid (never a value
+  Spike legitimately differs in: mcycle, mip), their results used as data —
+  and exceptions: ecall, ebreak, illegal words, misaligned loads and stores,
+  data-port errors (0x4000_0000, outside memory) and misaligned jump and
+  branch targets. The program's trap handler resumes after the trapping
+  instruction and changes no register. mstatus.MIE is never set (a trap
+  entry clears MPIE again), so no interrupt is enabled: the program runs in
+  lockstep with Spike, whose CLINT holds MTIP high;
+- under random interrupts (`--ext m,irqcsr`; scripts/run_core_tests.py
+  --interrupts): only the CSR instructions an interrupt handler leaves alone
+  and Spike agrees on — mie written with MEIE and MSIE in any combination
+  (never MTIE), mcountinhibit, and reads of those, misa and mhartid — and no
+  exceptions (the environment owns the trap vector).
 
-    rvgen.py --seed 7 --length 2000 --ext m -o prog.S
+    rvgen.py --seed 7 --length 2000 --ext m,zicsr -o prog.S
 """
 
 from __future__ import annotations
@@ -41,6 +56,23 @@ LOADS = [("lb", 1), ("lh", 2), ("lw", 4), ("lbu", 1), ("lhu", 2)]
 STORES = [("sb", 1), ("sh", 2), ("sw", 4)]
 MUL = ["mul", "mulh", "mulhsu", "mulhu"]
 DIV = ["div", "divu", "rem", "remu"]
+CSR_WRITABLE = ["mtval", "mcause", "mepc", "mie"]          # mie: harmless while mstatus.MIE stays clear
+CSR_READABLE = ["minstret", "minstreth", "misa", "mhartid", "mstatus", "mtval", "mcause", "mepc", "mie"]
+IRQ_CSR_READABLE = ["mie", "mcountinhibit", "misa", "mhartid"]
+ILLEGAL = [0x00000000, 0xFFFFFFFF, 0x00000001, 0x02051513, 0x7C002073]   # (fence.i: 18.4)
+TRAP_HANDLER = [
+    "    .align 2",
+    "    .global mtvec_handler",
+    "mtvec_handler:",                    # resume after the trapping instruction, changing no register
+    "    csrrw sp, mscratch, sp",
+    "    sw t0, 0(sp)",
+    "    csrr t0, mepc",
+    "    addi t0, t0, 4",
+    "    csrw mepc, t0",
+    "    lw t0, 0(sp)",
+    "    csrrw sp, mscratch, sp",
+    "    mret",
+]
 
 
 class Generator:
@@ -150,6 +182,92 @@ class Generator:
         s1, s2 = self.src(), self.src()
         self.emit(f"{op} x{self.dst()}, x{s1}, x{s2}")
 
+    def irq_csr(self) -> None:
+        """Under random interrupts: mie (MEIE and MSIE only), mcountinhibit, reads."""
+        kind = self.rng.random()
+        if kind < 0.4:
+            reg = self.dst(allow_x0=False)
+            self.emit(f"li x{reg}, 0x{self.rng.choice([0x000, 0x008, 0x800, 0x808, 0x808]):x}")
+            self.emit(f"csrrw x{self.dst()}, mie, x{reg}")
+        elif kind < 0.6:
+            op = self.rng.choice(["csrrwi", "csrrsi", "csrrci"])
+            self.emit(f"{op} x{self.dst()}, mcountinhibit, {self.rng.randint(0, 31)}")
+        else:
+            reg = self.dst(allow_x0=False)
+            self.pinned.add(reg)
+            self.emit(f"csrr x{reg}, {self.rng.choice(IRQ_CSR_READABLE)}")
+            self.fillers()
+            self.use_as_data(reg)
+            self.pinned.discard(reg)
+        # Leave the interrupts enabled most of the time.
+        if self.rng.random() < 0.7:
+            reg = self.dst(allow_x0=False)
+            self.emit(f"li x{reg}, 0x808")
+            self.emit(f"csrw mie, x{reg}")
+
+    def csr(self) -> None:
+        kind = self.rng.random()
+        if kind < 0.45:                        # a read-modify-write, register or immediate source
+            csr = self.rng.choice(CSR_WRITABLE)
+            if self.rng.random() < 0.6:
+                s1 = self.src()
+                self.emit(f"{self.rng.choice(['csrrw', 'csrrs', 'csrrc'])} x{self.dst()}, {csr}, x{s1}")
+            else:
+                op = self.rng.choice(["csrrwi", "csrrsi", "csrrci"])
+                self.emit(f"{op} x{self.dst()}, {csr}, {self.rng.randint(0, 31)}")
+        elif kind < 0.55:                      # mstatus.MPIE (bit 7) set or cleared; MIE never
+            reg = self.dst(allow_x0=False)
+            self.emit(f"li x{reg}, 0x80")
+            self.emit(f"{self.rng.choice(['csrrs', 'csrrc'])} x{self.dst()}, mstatus, x{reg}")
+        else:                                  # a read, its value used as data
+            reg = self.dst(allow_x0=False)
+            self.pinned.add(reg)
+            self.emit(f"csrr x{reg}, {self.rng.choice(CSR_READABLE)}")
+            self.fillers()
+            self.use_as_data(reg)
+            self.pinned.discard(reg)
+
+    def trap(self) -> None:
+        """An instruction that traps; the handler resumes after it."""
+        kind = self.rng.random()
+        if kind < 0.15:
+            self.emit(self.rng.choice(["ecall", "ebreak"]))
+        elif kind < 0.3:
+            self.emit(f".word 0x{self.rng.choice(ILLEGAL):08x}")
+        elif kind < 0.55:                      # misaligned: no access, no register written
+            if self.rng.random() < 0.5:
+                op, size = self.rng.choice([(op, size) for op, size in LOADS if size > 1])
+                offset = self.rng.randrange(0, DATA_BYTES - 4, size) + self.rng.randrange(1, size)
+                self.emit(f"{op} x{self.dst()}, {offset - 2048}(x{BASE})")
+            else:
+                op, size = self.rng.choice([(op, size) for op, size in STORES if size > 1])
+                offset = self.rng.randrange(0, DATA_BYTES - 4, size) + self.rng.randrange(1, size)
+                self.emit(f"{op} x{self.src()}, {offset - 2048}(x{BASE})")
+        elif kind < 0.75:                      # a data-port error
+            base = self.dst(allow_x0=False)
+            self.pinned.add(base)
+            self.emit(f"lui x{base}, 0x40000")
+            self.fillers()
+            if self.rng.random() < 0.5:
+                op, size = self.rng.choice(LOADS)
+                self.emit(f"{op} x{self.dst()}, {self.rng.randrange(0, 64, size)}(x{base})")
+            else:
+                op, size = self.rng.choice(STORES)
+                self.emit(f"{op} x{self.src()}, {self.rng.randrange(0, 64, size)}(x{base})")
+            self.pinned.discard(base)
+        else:                                  # a misaligned jump or taken branch target
+            after = self.fresh()
+            style = self.rng.random()
+            if style < 0.35:
+                self.emit(f"jal x{self.dst()}, {after}+2")
+            elif style < 0.7:
+                self.emit(f"beq x0, x0, {after}+2")
+            else:
+                target = self.dst(allow_x0=False)
+                self.emit(f"la x{target}, {after}")
+                self.emit(f"jalr x{self.dst()}, 2(x{target})")
+            self.lines.append(f"{after}:")
+
     def forward_branch(self, depth: int) -> None:
         target = self.fresh()
         if self.rng.random() < 0.1:            # a link value as a load address (reads code words)
@@ -178,8 +296,9 @@ class Generator:
         self.lines.append(f"{target}:")
 
     def use_as_data(self, reg: int) -> None:
-        """Consume `reg` as an ALU, branch, store-data, or multiply/divide operand."""
-        kinds = ["alu", "branch", "store"] + (["muldiv"] if "m" in self.ext else [])
+        """Consume `reg` as an ALU, branch, store-data, multiply/divide or CSR-source operand."""
+        kinds = (["alu", "branch", "store"] + (["muldiv"] if "m" in self.ext else [])
+                 + (["csr"] if "zicsr" in self.ext else []) + (["csr-irq"] if "irqcsr" in self.ext else []))
         kind = self.rng.choice(kinds)
         if kind == "alu":
             self.emit(f"{self.rng.choice(ALU_R)} x{self.dst()}, x{reg}, x{self.src()}")
@@ -190,6 +309,11 @@ class Generator:
         elif kind == "store":
             op, size = self.rng.choice(STORES)
             self.emit(f"{op} x{reg}, {self.rng.randrange(-2048, 2048, size)}(x{BASE})")
+        elif kind == "csr":
+            op = self.rng.choice(["csrrw", "csrrs", "csrrc"])
+            self.emit(f"{op} x{self.dst()}, {self.rng.choice(CSR_WRITABLE)}, x{reg}")
+        elif kind == "csr-irq":                # mcountinhibit takes any value's CY and IR bits
+            self.emit(f"{self.rng.choice(['csrrs', 'csrrc'])} x{self.dst()}, mcountinhibit, x{reg}")
         else:
             self.emit(f"{self.rng.choice(MUL + DIV)} x{self.dst()}, x{reg}, x{self.src()}")
 
@@ -233,6 +357,17 @@ class Generator:
 
     def block(self, length: int, depth: int = 0, in_loop: bool = False) -> None:
         for _ in range(length):
+            if "zicsr" in self.ext:
+                special = self.rng.random()
+                if special < 0.06:
+                    self.csr()
+                    continue
+                if special < 0.09:
+                    self.trap()
+                    continue
+            elif "irqcsr" in self.ext and self.rng.random() < 0.05:
+                self.irq_csr()
+                continue
             choice = self.rng.random()
             if choice < 0.45:
                 self.alu()
@@ -265,6 +400,7 @@ class Generator:
             *self.lines,
             "    RVTEST_PASS",
             *self.leaves,
+            *(TRAP_HANDLER if "zicsr" in self.ext else []),
             "RVTEST_CODE_END",
             "    .data",
             "RVTEST_DATA_BEGIN",
@@ -280,7 +416,7 @@ def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument("--seed", type=int, required=True)
     parser.add_argument("--length", type=int, default=2000, help="top-level instructions (blocks add more)")
-    parser.add_argument("--ext", default="m", help="extensions beyond I to use: '' or 'm'")
+    parser.add_argument("--ext", default="m", help="extensions beyond I to use, comma-separated: m, zicsr")
     parser.add_argument("-o", "--output", type=Path, required=True)
     args = parser.parse_args()
     args.output.write_text(Generator(args.seed, args.ext).program(args.length))

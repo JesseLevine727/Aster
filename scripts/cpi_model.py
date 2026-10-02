@@ -15,15 +15,19 @@ the pipeline's rules:
   Execute for ALU and link results, three cycles after for loads, AMOs, `lr`,
   `sc` and multiplies (forwarded from W), two after for Xasterdot8 (from M2);
 - the iterative divider holds Execute for DIVIDE_CYCLES;
+- a CSR instruction or `mret` (serializing) waits in Execute while M1 holds
+  an instruction: one more cycle when it enters Execute right behind one;
 - `jal`, and backward branches with a word-aligned target (predicted taken),
   redirect from Decode in their
   first cycle there, whether or not they then wait for operands; a branch
-  whose direction differs from the static prediction, and `jalr`, redirect
-  from Execute as they leave it. The redirect's target reaches Decode
-  `decode_redirect + 1` cycles after the Decode cycle, or `execute_redirect`
-  cycles after the Execute cycle.
+  whose direction differs from the static prediction, `jalr` and `mret`
+  redirect from Execute as they leave it; a trap (a trap record in the
+  stream: Spike's exception) redirects to its handler from the commit point,
+  a cycle later. The redirect's target reaches Decode `decode_redirect + 1`
+  cycles after the Decode cycle, or `execute_redirect` (a trap's
+  `trap_redirect`) cycles after the last Execute cycle.
 
-For the seven-stage pipeline these are the rules the RTL implements (18.1, 18.2)
+For the seven-stage pipeline these are the rules the RTL implements (18.1-18.3)
 (rtl/aster_core), and on a memory that answers on time the RTL's cycle count
 equals the model's plus a fixed start and drain (checked for every program by
 scripts/run_core_tests.py --cpi-check).
@@ -59,12 +63,14 @@ class Pipeline:
     dot8_ready: int
     decode_redirect: int   # penalty in cycles
     execute_redirect: int
+    trap_redirect: int
 
 
 SEVEN_STAGE = Pipeline("seven-stage (approved 30 Sep)", load_ready=3, mul_ready=3, dot8_ready=2,
-                       decode_redirect=2, execute_redirect=4)
+                       decode_redirect=2, execute_redirect=4, trap_redirect=5)
 FIVE_STAGE = Pipeline("five-stage (29 Sep)", load_ready=2, mul_ready=3, dot8_ready=2,
-                      decode_redirect=1, execute_redirect=2)
+                      decode_redirect=1, execute_redirect=2, trap_redirect=3)
+MRET = 0x30200073
 
 # Operands each opcode reads: rs1, rs2 (SYSTEM: see _reads).
 _READS = {0x33: (True, True), 0x13: (True, False), 0x03: (True, False), 0x23: (True, True),
@@ -111,12 +117,16 @@ def cycles(records: list[lockstep.Retired], pipeline: Pipeline) -> int:
     earliest = 0                      # earliest cycle the next instruction may enter Execute
     available = 0                     # cycle from which the fetch unit can give the next one to Decode
     decode_free = 0                   # cycle from which Decode is free (the previous one entered Execute)
+    m1_busy = -1                      # the cycle the previous instruction spends in M1
     first = None
     for index, record in enumerate(records):
-        insn = record.insn
+        insn = record.insn if record.insn is not None else 0     # a fetch fault's trap record has none
         opcode = insn & 0x7F
         rs1, rs2 = (insn >> 15) & 31, (insn >> 20) & 31
-        reads = _reads(insn)
+        # An illegal instruction (a trap record with mcause 2) decodes as no
+        # operation in the RTL: it reads no register, so it waits for none.
+        illegal = record.trap and dict(record.csrs).get(lockstep.MCAUSE) == 2
+        reads = (False, False) if illegal else _reads(insn)
         operand_ready = max([ready[r] for r, used in ((rs1, reads[0]), (rs2, reads[1])) if used and r] or [0])
         decode = max(available, decode_free)
         execute = max(decode + 1, earliest, operand_ready)
@@ -125,6 +135,10 @@ def cycles(records: list[lockstep.Retired], pipeline: Pipeline) -> int:
         muldiv = opcode == 0x33 and insn >> 25 == 1
         divide = muldiv and (insn >> 12) & 7 >= 4
         occupancy = DIVIDE_CYCLES if divide else 1
+        serializing = not record.trap and opcode == 0x73 and ((insn >> 12) & 7 not in (0, 4) or insn == MRET)
+        if serializing and execute == m1_busy:
+            occupancy += 1                                    # waits for M1 to empty
+        m1_busy = execute + occupancy
         if record.rd:
             if opcode in (0x03, 0x2F):
                 latency = pipeline.load_ready
@@ -141,12 +155,13 @@ def cycles(records: list[lockstep.Retired], pipeline: Pipeline) -> int:
         from_decode = decode + 1 + pipeline.decode_redirect
         from_execute = execute + occupancy - 1 + pipeline.execute_redirect
         # Decode predicts a backward branch taken only when its target is
-        # word-aligned (a halfword target traps if taken). A jal is always
-        # modelled as a Decode redirect: one with a halfword target traps (the
-        # RTL does not predict it), and trapping programs are not cycle-checked.
-        if opcode == 0x6F:                                    # jal
+        # word-aligned (a halfword target traps if taken); a jal with a
+        # halfword target is not predicted either, and traps.
+        if record.trap:
+            available = execute + occupancy - 1 + pipeline.trap_redirect
+        elif opcode == 0x6F:                                  # jal
             available = from_decode
-        elif opcode == 0x67:                                  # jalr
+        elif opcode == 0x67 or insn == MRET:                  # jalr, mret
             available = from_execute
         elif opcode == 0x63:
             offset = branch_offset(insn)

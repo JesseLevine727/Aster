@@ -68,7 +68,8 @@ class Lockstep(unittest.TestCase):
             "pc": "0 80000004 00500513 0 10 00000005 00000000 0 0 00000000 00000000",
             "insn": "0 80000000 00500593 0 10 00000005 00000000 0 0 00000000 00000000",
             "rd": "0 80000000 00500513 0 11 00000005 00000000 0 0 00000000 00000000",
-            "trap": "0 80000000 00500513 1 10 00000005 00000000 0 0 00000000 00000000",
+            "trap": "0 80000000 00500513 1 0 00000000 00000000 0 0 00000000 00000000 "
+                    "c341=80000000 c342=00000002 c343=00500513",
         }
         for field, line in cases.items():
             with self.subTest(field=field):
@@ -138,6 +139,16 @@ class Lockstep(unittest.TestCase):
     def test_malformed_trace_is_rejected(self):
         with self.assertRaises(ValueError):
             lockstep.parse_trace(["0 80000000 00500513"])
+        with self.assertRaisesRegex(ValueError, "malformed trace token"):
+            lockstep.parse_trace(["0 80000000 00500513 0 10 00000005 00000000 0 0 00000000 00000000 c3x0=1"])
+
+    def test_a_trap_record_writes_nothing_and_reports_the_trap_csrs(self):
+        with self.assertRaisesRegex(ValueError, "trap record"):    # a register write
+            lockstep.parse_trace(["0 80000000 00500513 1 10 00000005 00000000 0 0 00000000 00000000 "
+                                  "c341=80000000 c342=00000002 c343=00000000"])
+        with self.assertRaisesRegex(ValueError, "trap record"):    # no mtval
+            lockstep.parse_trace(["0 80000000 00500513 1 0 00000000 00000000 0 0 00000000 00000000 "
+                                  "c341=80000000 c342=00000002"])
 
 
 class HazardCoverage(unittest.TestCase):
@@ -233,45 +244,145 @@ class KernelEndRule(unittest.TestCase):
             lockstep.parse_spike(SPIKE[:4], ENTRY, TOHOST, end=lockstep.KernelEnd())
 
 
-class TrapCheck(unittest.TestCase):
-    """run_core_tests.trap_check: trap record at trap_pc, lockstep before it, and
-    Spike must not execute trap_pc."""
+class TrapsAndCsrs(unittest.TestCase):
+    """18.3: Spike's -l exception lines as trap records, CSR writes compared,
+    and the allowlists of docs/cpu.md §6."""
 
     SPIKE = """core   0: 3 0x00001000 (0x00000297) x5  0x00001000
-core   0: 3 0x80000000 (0x00500513) x10 0x00000005
-core   0: 3 0x80000004 (0x00a00593) x11 0x0000000a
+core   0: 0x80000000 (0x30529073) csrw    mtvec, t0
+core   0: 3 0x80000000 (0x30529073) c773_mtvec 0x80000100
+core   0: 0x80000004 (0x00000073) ecall
+core   0: exception trap_machine_ecall, epc 0x80000004
+core   0: >>>>  handler
+core   0: 0x80000100 (0x34202573) csrr    a0, mcause
+core   0: 3 0x80000100 (0x34202573) x10 0x0000000b
+core   0: 0x80000104 (0xb0002673) csrr    a2, mcycle
+core   0: 3 0x80000104 (0xb0002673) x12 0x00001234
+core   0: 0x80000108 (0x00102383) lw      t2, 1(zero)
+core   0: exception trap_load_address_misaligned, epc 0x80000108
+core   0:           tval 0x00000001
+core   0: exception trap_instruction_access_fault, epc 0x40000000
+core   0:           tval 0x40000000
+core   0: 0x8000010c (0x34431073) csrw    mip, t1
+core   0: 3 0x8000010c (0x34431073) c836_mip 0x00000080
+core   0: 0x80000110 (0x30200073) mret
+core   0: 3 0x80000110 (0x30200073) c768_mstatus 0x00001880 c784_mstatush 0x00000000 c1957_tcontrol 0x00000000
+core   0: 3 0x80000114 (0x04afa023) mem 0x80001040 0x00000001
 """.splitlines()
-    TRACE = """0 80000000 00500513 0 10 00000005 00000000 0 0 00000000 00000000
-1 80000004 00a00593 0 11 0000000a 00000000 0 0 00000000 00000000
-2 80000008 00000000 1 0 00000000 00000000 0 0 00000000 00000000
+    TRACE = """0 80000000 30529073 0 0 00000000 00000000 0 0 00000000 00000000 c305=80000100
+1 80000004 00000073 1 0 00000000 00000000 0 0 00000000 00000000 c300=00001800 c341=80000004 c342=0000000b c343=00000000
+2 80000100 34202573 0 10 0000000b 00000000 0 0 00000000 00000000 intr
+3 80000104 b0002673 0 12 00009999 00000000 0 0 00000000 00000000
+4 80000108 00102383 1 0 00000000 00000000 0 0 00000000 00000000 c300=00001800 c341=80000108 c342=00000004 c343=00000001
+5 40000000 5a5a5a5a 1 0 00000000 00000000 0 0 00000000 00000000 c300=00001800 c341=40000000 c342=00000001 c343=40000000 intr
+6 8000010c 34431073 0 0 00000000 00000000 0 0 00000000 00000000 c344=00000000 intr
+7 80000110 30200073 0 0 00000000 00000000 0 0 00000000 00000000 c300=00001880 c310=00000000
+8 80000114 04afa023 0 0 00000000 80001040 0 f 00000000 00000001
 """.splitlines()
-    SYMBOLS = {"trap_pc": 0x80000008, "tohost": 0x80001000}
 
-    def check(self, trace=TRACE, spike=SPIKE, symbols=None):
-        return run_core_tests.trap_check("\n".join(trace), "\n".join(spike), symbols or self.SYMBOLS, False)
+    def check(self, trace=TRACE, spike=SPIKE):
+        return lockstep.compare(lockstep.parse_trace(trace), lockstep.parse_spike(spike, ENTRY, TOHOST))
 
-    def test_a_trap_at_trap_pc_after_matching_records_passes(self):
-        ok, message = self.check()
+    def test_spike_exceptions_become_trap_records(self):
+        records = lockstep.parse_spike(self.SPIKE, ENTRY, TOHOST)
+        self.assertEqual(len(records), 9)
+        ecall, misaligned, fault = records[1], records[4], records[5]
+        self.assertEqual((ecall.trap, ecall.insn, dict(ecall.csrs)),
+                         (True, 0x73, {lockstep.MEPC: 0x80000004, lockstep.MCAUSE: 11, lockstep.MTVAL: 0}))
+        self.assertEqual(dict(misaligned.csrs)[lockstep.MTVAL], 1)
+        self.assertIsNone(fault.insn)                  # a fetch fault fetched no instruction
+        self.assertEqual(dict(records[7].csrs), {0x300: 0x1880, 0x310: 0})     # tcontrol left out
+
+    def test_spike_interrupts_become_trap_records(self):
+        log = ["core   0: 3 0x80000000 (0x00500513) x10 0x00000005",
+               "core   0: exception interrupt #11, epc 0x80000004",
+               "core   0: 3 0x80000100 (0x04afa023) mem 0x80001040 0x00000001"]
+        records = lockstep.parse_spike(log, ENTRY, TOHOST)
+        self.assertEqual((records[1].trap, records[1].insn, dict(records[1].csrs)[lockstep.MCAUSE]),
+                         (True, None, (1 << 31) | 11))
+
+    def test_matching_run_passes_with_the_allowlisted_values(self):
+        ok, message = self.check()               # mcycle read and mip write values differ, by name
         self.assertTrue(ok, message)
 
-    def test_a_trap_elsewhere_fails(self):
-        ok, message = self.check(symbols={"trap_pc": 0x8000000c, "tohost": 0x80001000})
-        self.assertFalse(ok)
-        self.assertIn("expected trap_pc", message)
+    def test_trap_and_csr_differences_fail(self):
+        cases = {
+            "cause": (1, "c342=0000000b", "c342=00000003"),
+            "tval": (4, "c343=00000001", "c343=00000002"),
+            "epc": (4, "c341=80000108", "c341=8000010c"),
+            "csr value": (0, "c305=80000100", "c305=80000104"),
+            "csr missing": (7, " c310=00000000", ""),
+            "read value": (2, "0000000b 00000000", "0000000a 00000000"),
+        }
+        for name, (index, old, new) in cases.items():
+            with self.subTest(case=name):
+                trace = list(self.TRACE)
+                trace[index] = trace[index].replace(old, new, 1)
+                self.assertFalse(self.check(trace=trace)[0])
 
-    def test_a_differing_earlier_record_fails(self):
+    def test_intr_marks_exactly_the_records_after_a_trap(self):
         trace = list(self.TRACE)
-        trace[1] = "1 80000004 00a00593 0 11 0000000b 00000000 0 0 00000000 00000000"
-        self.assertFalse(self.check(trace=trace)[0])
+        trace[3] += " intr"                       # not after a trap
+        self.assertIn("rvfi_intr", self.check(trace=trace)[1])
+        trace = list(self.TRACE)
+        trace[2] = trace[2].removesuffix(" intr")    # after the ecall's trap record
+        self.assertIn("rvfi_intr", self.check(trace=trace)[1])
 
-    def test_spike_executing_trap_pc_fails(self):
-        spike = self.SPIKE + ["core   0: 3 0x80000008 (0x00100613) x12 0x00000001"]
-        ok, message = self.check(spike=spike)
-        self.assertFalse(ok)
-        self.assertIn("without trapping", message)
+    def test_a_dropped_or_extra_trap_fails(self):
+        self.assertFalse(self.check(trace=run_core_tests._renumber(self.TRACE[:1] + self.TRACE[2:]))[0])
+        self.assertFalse(self.check(trace=run_core_tests._renumber(self.TRACE[:2] + self.TRACE[1:]))[0])
 
-    def test_a_trace_without_a_trap_record_fails(self):
-        self.assertFalse(self.check(trace=self.TRACE[:2])[0])
+    def test_an_allowlisted_csr_is_left_out_only_by_name(self):
+        record = lockstep.Retired(0x80000000, 0x344025f3, (11, 0x80), None, None, csrs=((0x344, 0x80),))
+        self.assertEqual(lockstep.normalized(record).rd, (11, None))
+        self.assertEqual(lockstep.normalized(record).csrs, ((0x344, None),))
+        mstatus = lockstep.Retired(0x80000000, 0x300025f3, (11, 0x1800), None, None)    # csrr a1, mstatus
+        self.assertEqual(lockstep.normalized(mstatus).rd, (11, 0x1800))
+
+
+class InterruptSplice(unittest.TestCase):
+    """run_core_tests.splice: each interrupt handler cut out of the DUT's stream."""
+
+    @staticmethod
+    def record(pc, insn, trap=False, intr=False):
+        return lockstep.Retired(pc, insn, None, None, None, trap, intr=intr)
+
+    def test_handlers_are_cut_and_pairs_classified(self):
+        stream = [self.record(0x80000000, 0x00000013),                  # addi (interrupted after)
+                  self.record(0x80000100, 0x00000013, intr=True),       # handler
+                  self.record(0x80000104, 0x30200073),                  # mret
+                  self.record(0x80000004, 0x00002283),                  # lw (killed, re-executed)
+                  self.record(0x80000008, 0x00000073, trap=True),       # an exception: kept
+                  self.record(0x80000200, 0x00000013, intr=True),       # its handler: kept
+                  self.record(0x80000204, 0x30200073)]
+        main, pairs, error = run_core_tests.splice(stream)
+        self.assertEqual(error, "")
+        self.assertEqual([r.pc for r in main], [0x80000000, 0x80000004, 0x80000008, 0x80000200, 0x80000204])
+        self.assertEqual(pairs, [("alu", "load")])
+
+    def test_a_handler_that_never_returns_fails(self):
+        stream = [self.record(0x80000000, 0x00000013), self.record(0x80000100, 0x00000013, intr=True)]
+        self.assertIn("never returns", run_core_tests.splice(stream)[2])
+
+
+class ArchCase(unittest.TestCase):
+    """run_core_tests.arch_case: the RVTEST_CASE that applies to the DUT, as riscof selects it."""
+
+    def case(self, text, dut):
+        import tempfile
+        with tempfile.TemporaryDirectory() as temp:
+            path = Path(temp) / "t.S"
+            path.write_text(text)
+            return run_core_tests.arch_case(path, run_core_tests.DUTS[dut])
+
+    def test_the_case_for_the_dut_is_chosen(self):
+        text = ('RVTEST_CASE(0,"//check ISA:=regex(.*32.*);check ISA:=regex(.*I.*C.*); def X=True;def TEST_CASE_1=True;",t)\n'
+                'RVTEST_CASE(1,"//check ISA:=regex(.*32.*);check ISA:=regex(.*I.*Zicsr.*); '
+                'check hw_data_misaligned_support:=False; def rvtest_mtrap_routine=True;def TEST_CASE_1=True;",t)\n')
+        self.assertEqual(self.case(text, "aster"), ["rvtest_mtrap_routine=True", "TEST_CASE_1=True"])
+        self.assertIsNone(self.case(text, "picorv32"))       # no Zicsr, no C
+        plain = 'RVTEST_CASE(0,"//check ISA:=regex(.*32.*);check ISA:=regex(.*I.*M.*);def TEST_CASE_1=True;",mul)'
+        self.assertEqual(self.case(plain, "picorv32"), ["TEST_CASE_1=True"])
 
 
 if __name__ == "__main__":

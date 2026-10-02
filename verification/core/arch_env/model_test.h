@@ -1,9 +1,11 @@
 // riscv-arch-test (3.x test format) model macros for the Phase 18 CPU shell.
 // A test ends by storing 1 to tohost, as in the riscv-tests environment; the
 // shell and Spike then dump the words from begin_signature to end_signature,
-// which must be identical. No console and no interrupt hooks: the I, M, A and
-// Zifencei suites need none, and the privilege tests (which need a writable
-// mtvec) run from milestone 18.3.
+// which must be identical. No console and no interrupt hooks: the I, M, A,
+// Zifencei and privilege suites need none (the privilege tests install their
+// own trap handler, arch_test.h's, when their RVTEST_CASE defines
+// rvtest_mtrap_routine; scripts/run_core_tests.py passes the macros of the
+// case that applies to the DUT).
 #ifndef ASTER_CORE_SHELL_MODEL_TEST_H
 #define ASTER_CORE_SHELL_MODEL_TEST_H
 

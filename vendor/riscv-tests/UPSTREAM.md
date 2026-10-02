@@ -35,3 +35,15 @@ They run on the Phase 18 CPU shell through its own test environment
 (`verification/core/env/`), in lockstep with Spike. `SHA256SUMS` lists every
 vendored file. On 2026-09-29 all 114 listed files were compared byte for byte
 with a fresh clone of upstream at `2ebecad`: none differs.
+
+On 2026-10-02 (milestone 18.3) the machine-mode programs were added from the
+same pinned revision, unchanged: the 16 `isa/rv32mi/*.S` programs (`shamt`
+self-contained, the others wrappers) with the 11 `isa/rv64mi/*.S` and 4
+`isa/rv64si/*.S` bodies they include — 31 files, compared byte for byte with a
+local clone of upstream checked out at `2ebecad` with no changes (none
+differs); `SHA256SUMS` now lists 145 files. They run through the Phase 18
+environment's machine-mode set-up (`verification/core/env/riscv_test.h`, in
+place of upstream's `env` submodule, which is not vendored), with the CSR and
+cause names of the vendored riscv-arch-test's `encoding.h`. `breakpoint` (no
+debug triggers) and `pmpaddr` (no PMP) do not apply to the Aster core
+(docs/cpu.md §3) and are skipped with those reasons.

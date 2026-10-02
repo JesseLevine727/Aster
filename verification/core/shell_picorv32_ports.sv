@@ -20,10 +20,16 @@
 // answer returns (more than two in flight when answers are late; it never
 // waits, so the stability check cannot fire first), 6 rvfi_pc_wdata reports a
 // wrong next PC (bit 2 flipped).
+//
+// The shell's interrupt lines are not connected (this PicoRV32 is built
+// without IRQ), and it reports no handler entry and no CSR writes.
 module shell_picorv32_ports (
     input  logic        clk,
     input  logic        resetn,
     input  logic [3:0]  selftest,
+    input  logic        meip,
+    input  logic        mtip,
+    input  logic        msip,
     output logic        trap,
     output logic        chk_i_redirect,
     // instruction port
@@ -56,8 +62,14 @@ module shell_picorv32_ports (
     output logic [3:0]  rvfi_mem_rmask,
     output logic [3:0]  rvfi_mem_wmask,
     output logic [31:0] rvfi_mem_rdata,
-    output logic [31:0] rvfi_mem_wdata
+    output logic [31:0] rvfi_mem_wdata,
+    output logic        rvfi_intr,
+    output logic [14:0] rvfi_csr_wvalid,
+    output logic [14:0][31:0] rvfi_csr_wdata
 );
+    assign rvfi_intr       = 1'b0;
+    assign rvfi_csr_wvalid = '0;
+    assign rvfi_csr_wdata  = '0;
     logic        mem_valid, mem_instr, mem_ready;
     logic [31:0] mem_addr, mem_wdata, mem_rdata;
     logic [3:0]  mem_wstrb;
@@ -88,7 +100,7 @@ module shell_picorv32_ports (
     end
 
     logic unused;
-    assign unused = i_rsp_error ^ d_rsp_error;   // PicoRV32 has no bus-error input
+    assign unused = i_rsp_error ^ d_rsp_error ^ meip ^ mtip ^ msip;   // PicoRV32 has no bus-error input, and no IRQ here
 
     /* verilator lint_off PINMISSING */
     picorv32 #(

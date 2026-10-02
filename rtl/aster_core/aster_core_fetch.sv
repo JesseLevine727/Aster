@@ -23,26 +23,31 @@
 //   rule. At the edge ending that cycle the buffer is flushed, the answer
 //   arriving in that cycle is dropped, and every fetch accepted before that
 //   edge is marked discarded; the target, if accepted at that edge, is live.
-// - Execute redirect (`e_flush` with `e_target`, a mispredicted branch or a
-//   `jalr`, at the edge where it leaves Execute): the redirect is registered,
-//   and in the next cycle — whose instructions in Decode and Execute the core
-//   squashes — the target is presented, nothing is offered, and at the edge
-//   ending it the buffer is flushed, the answer arriving in it is dropped, and
-//   every fetch accepted before that edge is marked discarded (the target, if
-//   accepted at that edge, is live). Registering the flush keeps the branch
-//   compare off the buffer's and Decode's enables; no wrong-path instruction
-//   issues anything, as the core masks the squashed ones. It takes priority
-//   over a Decode redirect in the same cycle (whose target fetch it discards).
-// - Halt (`halt`, registered by the core after a trap in 18.1): no further
-//   fetches; the buffer is empty and no instruction is offered.
+// - Execute redirect (`e_flush` with `e_target`: a mispredicted branch, a
+//   `jalr` or an `mret` at the edge where it leaves Execute, or a trap or
+//   interrupt at the commit point): the redirect is registered, and in the
+//   next cycle — whose instructions in Decode and Execute the core squashes
+//   or has killed — the target is presented, nothing is offered, and at the
+//   edge ending it the buffer is flushed, the answer arriving in it is
+//   dropped, and every fetch accepted before that edge is marked discarded
+//   (the target, if accepted at that edge, is live). Registering the flush
+//   keeps the branch compare off the buffer's and Decode's enables; no
+//   wrong-path instruction issues anything, as the core masks the squashed
+//   ones. It takes priority over a Decode redirect in the same cycle (whose
+//   target fetch it discards). A trap can redirect again in the cycle an
+//   Execute redirect's target is presented (the branch traps, or an interrupt
+//   is taken after it, at the end of its M1 cycle): its target is presented
+//   in the cycle after, and the first target becomes a discarded fetch.
 // Discarded fetches return into no entry. The instruction memory limits the
 // fetches in flight with i_req_ready (docs/cpu.md §5); this unit itself never
-// has more than nine: at most three live by the room rule, and at most six
-// discarded (three from a Decode redirect whose target stream then adds up to
-// three, all discarded by an older branch's Execute redirect before any
-// answer returns — no further redirect can come before those are answered).
-// `redirecting` is high in a cycle
-// whose request is a redirect's target or in which fetching has stopped: the
+// has more than twelve: at most three live by the room rule, and at most nine
+// discarded. With no answer returning, only the instructions already in
+// Decode, Execute and M1 can redirect: a Decode redirect discards three and
+// its target stream adds three; an older branch's Execute redirect discards
+// those six, and its target stream adds three while the branch waits in M1;
+// the branch's trap (or an interrupt after it) then discards those nine. The
+// trap empties the pipeline, so nothing redirects again before an answer.
+// `redirecting` is high in a cycle whose request is a redirect's target: the
 // only cycles in which a presented, unaccepted fetch may be withdrawn or
 // replaced (the shell's chk_i_redirect).
 //
@@ -70,7 +75,6 @@ module aster_core_fetch #(
     input  logic [31:2] d_target,
     input  logic        e_flush,
     input  logic [31:2] e_target,
-    input  logic        halt,
     output logic        redirecting,
     // to Decode
     output logic        f_valid,
@@ -84,7 +88,7 @@ module aster_core_fetch #(
     logic [31:2] fpc;                 // the next sequential fetch
     logic        e_pending;           // an Execute redirect's target is presented this cycle
     logic [31:2] e_pc;
-    logic [3:0]  inflight;            // accepted fetches not yet answered (at most 9)
+    logic [3:0]  inflight;            // accepted fetches not yet answered (at most 12)
     logic [3:0]  discard;             // how many of the oldest of them are discarded
     logic        acc_last;            // a fetch was accepted at the last edge
     logic [31:2] rsp_pc;              // address of the next live answer
@@ -102,13 +106,10 @@ module aster_core_fetch #(
     logic       d_redirect_now;       // a Decode redirect presents its target this cycle
     assign live_inflight = inflight - discard;
     assign room = ({2'b0, count} + live_inflight + 4'd1) <= 4'(DEPTH);
-    assign d_redirect_now = d_redirect && !e_pending && !halt;
+    assign d_redirect_now = d_redirect && !e_pending;
 
     always_comb begin
-        if (halt) begin
-            i_req_valid = 1'b0;
-            i_req_addr  = fpc;
-        end else if (e_pending) begin
+        if (e_pending) begin
             i_req_valid = 1'b1;
             i_req_addr  = e_pc;
         end else if (d_redirect_now) begin
@@ -119,7 +120,7 @@ module aster_core_fetch #(
             i_req_addr  = fpc;
         end
     end
-    assign redirecting = halt || e_pending || d_redirect_now;
+    assign redirecting = e_pending || d_redirect_now;
 
     // --- answers ---------------------------------------------------------
     logic acc, rsp_live, early, flush;
@@ -128,7 +129,7 @@ module aster_core_fetch #(
     // An answer in the cycle right after its acceptance (the fetch is in F1):
     // with answers in order, it is the only fetch in flight.
     assign early    = i_rsp_valid && acc_last && inflight == 4'd1;
-    assign flush    = e_pending || d_redirect_now || halt;
+    assign flush    = e_pending || d_redirect_now;
 
     // --- offer to Decode -------------------------------------------------
     logic from_buffer, bypass;
@@ -174,9 +175,7 @@ module aster_core_fetch #(
             acc_last <= acc;
 
             // Discards, the next live answer's address, and the next fetch.
-            if (halt) begin
-                discard <= inflight_next;
-            end else if (e_pending || d_redirect_now) begin
+            if (e_pending || d_redirect_now) begin
                 discard <= inflight - {3'b0, i_rsp_valid};
             end else if (i_rsp_valid && discard != 4'd0) begin
                 discard <= discard - 4'd1;
@@ -184,14 +183,14 @@ module aster_core_fetch #(
 
             // An Execute redirect only registers its target at the edge it
             // resolves (e_flush reaches no other enable); the next fetch and the
-            // next answer's address are replaced a cycle later.
+            // next answer's address are replaced a cycle later. A trap's
+            // redirect may arrive while one is presented: it is presented next.
+            e_pending <= e_flush;
+            e_pc      <= e_target;
             if (e_pending) begin
-                e_pending <= 1'b0;
                 fpc       <= acc ? e_pc + 30'd1 : e_pc;
                 rsp_pc    <= e_pc;
             end else begin
-                e_pending <= e_flush;
-                e_pc      <= e_target;
                 if (d_redirect_now) begin
                     fpc    <= acc ? d_target + 30'd1 : d_target;
                     rsp_pc <= d_target;
@@ -201,7 +200,7 @@ module aster_core_fetch #(
                 end
             end
 
-            // Buffer: flushed on a redirect or halt, else take the head and/or
+            // Buffer: flushed on a redirect, else take the head and/or
             // append the live answer at the tail (a full buffer's tail is its
             // head, freed by a take in the same cycle).
             if (flush) begin
@@ -225,9 +224,7 @@ module aster_core_fetch #(
         // A written answer never lands on an occupied entry.
         if (rst_n && write && !flush) assert (count != 2'(DEPTH) || pop) else $error("write over an occupied entry");
         if (rst_n && i_rsp_valid) assert (inflight != 4'd0) else $error("answer with no fetch in flight");
-        if (rst_n && acc && !i_rsp_valid) assert (inflight < 4'd9) else $error("more than nine fetches in flight");
-        // The core squashes Execute while an Execute redirect is presented.
-        if (rst_n) assert (!(e_flush && e_pending)) else $error("Execute redirect while one is presented");
+        if (rst_n && acc && !i_rsp_valid) assert (inflight < 4'd12) else $error("more than twelve fetches in flight");
     end
 `endif
 endmodule
