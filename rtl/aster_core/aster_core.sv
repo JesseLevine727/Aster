@@ -45,10 +45,11 @@
 //
 // M extension (18.2):
 // - Multiply: pipelined over Execute, M1 and M2. Execute's operands travel
-//   with the instruction (rs1v, rs2v); M1 forms four 17x17 signed partial
-//   products of the 33-bit sign- or zero-extended operands, registered at its
-//   end; M2 adds them into the 64-bit product, whose low or high word is
-//   registered into W. Its result is ready from W, as a load's is.
+//   with the instruction (rs1v, rs2v); M1 forms the radix-4 Booth partial
+//   products of the 33-bit sign- or zero-extended operands and compresses them
+//   to a carry-save pair, registered at its end; M2 adds the pair into the
+//   64-bit product, whose low or high word is registered into W. Its result is
+//   ready from W, as a load's is.
 // - Divide and remainder: an iterative radix-2 restoring divider in Execute,
 //   which holds Execute for DIVIDE_CYCLES (36): the operands are latched in the
 //   first cycle their values are ready, turned into magnitudes in the next, 32
@@ -350,20 +351,74 @@ module aster_core
 
     // ------------------------------------------------------------ multiplier
     // M1: the operands, sign-extended for mulh (both), mulhsu (rs1) and mul (its
-    // low word does not depend on it), zero-extended otherwise, split into
-    // 17-bit signed halves (the low halves zero-extended), give four partial
-    // products, registered for M2. M2: their sum is the 64-bit product.
-    function automatic logic signed [33:0] partial(input logic [16:0] a, input logic [16:0] b);
-        return $signed(a) * $signed(b);
-    endfunction
+    // low word does not depend on it), zero-extended otherwise, as 33-bit two's
+    // complement values; radix-4 Booth partial products (17 rows, each
+    // sign-extended to 64 bits, and a row of the negations' +1s) compressed by
+    // 3:2 carry-save adders (18 -> 12 -> 8 -> 6 -> 4) to four vectors,
+    // registered for M2 — no carry propagates in M1. M2 compresses them
+    // (4 -> 3 -> 2) and adds the pair: the 64-bit product.
     logic [32:0] mul_a, mul_b;
-    logic signed [33:0] pp_ll, pp_lh, pp_hl, pp_hh;     // registered at the end of M1, for M2
+    logic [3:0][63:0] mul_rows;                          // registered at the end of M1, for M2
+    logic [2:0][63:0] mul_m2;
     logic [63:0] mul_product;
     logic [31:0] mul_result;
     assign mul_a = {m1.funct3[1:0] != 2'd3 && m1.rs1v[31], m1.rs1v};
     assign mul_b = {m1.funct3[1] == 1'b0 && m1.rs2v[31], m1.rs2v};
-    assign mul_product = 64'($signed(pp_ll)) + (64'($signed(pp_lh)) << 16) + (64'($signed(pp_hl)) << 16)
-                       + (64'($signed(pp_hh)) << 32);
+    logic [17:0][63:0] mul_l0;
+    logic [11:0][63:0] mul_l1;
+    logic [7:0][63:0]  mul_l2;
+    logic [5:0][63:0]  mul_l3;
+    logic [3:0][63:0]  mul_l4;
+    always_comb begin
+        logic [33:0] bx;
+        logic [63:0] ax, multiple;
+        logic [2:0]  group;
+        bx = {mul_b[32], mul_b};
+        ax = 64'($signed(mul_a));
+        mul_l0[17] = '0;
+        for (int i = 0; i < 17; i++) begin
+            group = {bx[2*i+1], bx[2*i], i == 0 ? 1'b0 : bx[2*i-1]};
+            unique case (group)
+                3'b001, 3'b010: multiple = ax;
+                3'b011:         multiple = ax << 1;
+                3'b100:         multiple = ~(ax << 1);
+                3'b101, 3'b110: multiple = ~ax;
+                default:        multiple = '0;
+            endcase
+            mul_l0[i] = multiple << (2 * i);
+            mul_l0[17][2 * i] = group[2] && group != 3'b111;
+        end
+        for (int g = 0; g < 6; g++) begin
+            mul_l1[2*g]   = mul_l0[3*g] ^ mul_l0[3*g+1] ^ mul_l0[3*g+2];
+            mul_l1[2*g+1] = ((mul_l0[3*g] & mul_l0[3*g+1]) | (mul_l0[3*g] & mul_l0[3*g+2])
+                           | (mul_l0[3*g+1] & mul_l0[3*g+2])) << 1;
+        end
+        for (int g = 0; g < 4; g++) begin
+            mul_l2[2*g]   = mul_l1[3*g] ^ mul_l1[3*g+1] ^ mul_l1[3*g+2];
+            mul_l2[2*g+1] = ((mul_l1[3*g] & mul_l1[3*g+1]) | (mul_l1[3*g] & mul_l1[3*g+2])
+                           | (mul_l1[3*g+1] & mul_l1[3*g+2])) << 1;
+        end
+        for (int g = 0; g < 2; g++) begin
+            mul_l3[2*g]   = mul_l2[3*g] ^ mul_l2[3*g+1] ^ mul_l2[3*g+2];
+            mul_l3[2*g+1] = ((mul_l2[3*g] & mul_l2[3*g+1]) | (mul_l2[3*g] & mul_l2[3*g+2])
+                           | (mul_l2[3*g+1] & mul_l2[3*g+2])) << 1;
+        end
+        mul_l3[4] = mul_l2[6];
+        mul_l3[5] = mul_l2[7];
+        for (int g = 0; g < 2; g++) begin
+            mul_l4[2*g]   = mul_l3[3*g] ^ mul_l3[3*g+1] ^ mul_l3[3*g+2];
+            mul_l4[2*g+1] = ((mul_l3[3*g] & mul_l3[3*g+1]) | (mul_l3[3*g] & mul_l3[3*g+2])
+                           | (mul_l3[3*g+1] & mul_l3[3*g+2])) << 1;
+        end
+    end
+    // M2: the last two carry-save levels and the carry-propagating add.
+    always_comb begin
+        mul_m2[0] = mul_rows[0] ^ mul_rows[1] ^ mul_rows[2];
+        mul_m2[1] = ((mul_rows[0] & mul_rows[1]) | (mul_rows[0] & mul_rows[2]) | (mul_rows[1] & mul_rows[2])) << 1;
+        mul_m2[2] = mul_rows[3];
+        mul_product = (mul_m2[0] ^ mul_m2[1] ^ mul_m2[2])
+                    + (((mul_m2[0] & mul_m2[1]) | (mul_m2[0] & mul_m2[2]) | (mul_m2[1] & mul_m2[2])) << 1);
+    end
     assign mul_result  = m2.funct3[1:0] == 2'd0 ? mul_product[31:0] : mul_product[63:32];
 
     // ------------------------------------------------------------ W values
@@ -547,16 +602,11 @@ module aster_core
             end
             m1_err_held <= m1_bus_err;
 
-            // The multiplier's partial products, for the multiply in M1, as it moves
+            // The multiplier's carry-save vectors, for the multiply in M1, as it moves
             // into M2. They load whenever M1 holds a multiply, not on M1's advance
             // (which waits on the data port's answer): a multiply never waits in
             // M2, so the products of the one there are never overwritten.
-            if (m1.mul) begin
-                pp_ll <= partial({1'b0, mul_a[15:0]}, {1'b0, mul_b[15:0]});
-                pp_lh <= partial({1'b0, mul_a[15:0]}, mul_b[32:16]);
-                pp_hl <= partial(mul_a[32:16], {1'b0, mul_b[15:0]});
-                pp_hh <= partial(mul_a[32:16], mul_b[32:16]);
-            end
+            if (m1.mul) mul_rows <= mul_l4;
 
             // M2 (the commit point has passed: a data-port error becomes the trap)
             if (m2_free) begin
