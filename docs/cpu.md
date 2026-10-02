@@ -59,17 +59,24 @@ Machine mode only. Implemented CSRs:
 
 | CSR | Behavior |
 | --- | --- |
-| `misa`, `mvendorid`, `marchid`, `mimpid`, `mhartid` | read-only identity; `mhartid` from a parameter |
-| `mstatus` | `MIE`, `MPIE`; `MPP` reads as machine mode |
-| `mtvec` | direct mode (vectored mode optional later) |
-| `mepc`, `mcause`, `mtval`, `mscratch` | standard |
+| `misa`, `mvendorid`, `marchid`, `mimpid`, `mhartid`, `mconfigptr` | read-only identity; `mhartid` from a parameter; `misa` names the extensions implemented (I and M from 18.3, A from 18.4) and ignores writes (`mconfigptr`: 18.3, pending the owner) |
+| `mstatus`, `mstatush` | `MIE`, `MPIE`; `MPP` reads as machine mode; `mstatush` reads 0 (18.3, pending the owner) |
+| `mtvec` | direct mode (vectored mode optional later); bits 1:0 read 0 |
+| `mepc`, `mcause`, `mtval`, `mscratch` | standard (`mepc` bits 1:0 read 0: no C) |
 | `mie`, `mip` | `MEIE`/`MEIP`, `MTIE`/`MTIP`, `MSIE`/`MSIP` |
-| `mcycle(h)`, `minstret(h)`, `cycle(h)`, `instret(h)` | 64-bit counters; user-level aliases read-only |
+| `mcycle(h)`, `minstret(h)`, `cycle(h)`, `instret(h)`, `mcountinhibit` | 64-bit counters; user-level aliases read-only; `mcountinhibit`'s `CY` and `IR` stop `mcycle` and `minstret` (`mcountinhibit`: 18.3, pending the owner) |
+| `mhpmcounter3`–`31(h)`, `mhpmevent3`–`31` | the hardware performance monitor, implemented as zero (writes change nothing; 18.3, pending the owner) |
+
+Every other CSR is an illegal instruction. `time` and `timeh`, which Zicntr
+includes, are not implemented in 18.3 — software reads the SoC timer, which
+is memory-mapped (below) — pending the owner's decision (§9, 18.3). `wfi`
+executes as a no-op.
 
 Traps are precise: an exception is recognized at the stage that detects it and
 taken when the instruction reaches the commit point, after which all younger
 instructions are flushed. `mret` restores `MIE` from `MPIE` and resumes at
-`mepc`. Interrupts are taken between instructions at the commit point.
+`mepc`. Interrupts are taken between instructions at the commit point (§4),
+in priority order `MEI`, `MSI`, `MTI`.
 
 Interrupt wiring on the Aster SoC: the existing interrupt controller at
 `0x2000_4000` drives `MEIP` for its hart (sources: timer, DMA, NPU, software);
@@ -108,7 +115,9 @@ memory behind each port is itself split into two register-to-register stages.
   forwards a same-cycle write to its read ports, hazard detection, and the
   target computation for `jal` and for backward branches, which are predicted
   taken.
-- **E.** ALU, branch compare and target, `jalr` target, CSR read/modify,
+- **E.** ALU, branch compare and target, `jalr` target, CSR read/modify (a
+  CSR instruction or `mret` waits here until M1 is empty, so it reads every
+  older instruction's CSR effects; §9, 18.3),
   load/store address generation, the data request (below), the first
   multiplier and Xasterdot8 stage, and the iterative divider. A misprediction
   or `jalr` resolves at the edge where it leaves E: at that edge the compare
@@ -118,10 +127,10 @@ memory behind each port is itself split into two register-to-register stages.
   registered, to the next cycle. The redirect fires once, even if the
   instruction waits in E for several cycles.
 - **M1.** The data access's first memory stage; the second multiplier/DOT8
-  stage; exception and interrupt commit — **the commit point is the end of
-  M1**. Every trap source (illegal instruction, misalignment, `ecall`,
-  `ebreak`, a fetch error carried with the instruction, a data-port error)
-  is known by then.
+  stage; a CSR instruction's write; exception and interrupt commit — **the
+  commit point is the end of M1**. Every trap source (illegal instruction,
+  misalignment, `ecall`, `ebreak`, a fetch error carried with the
+  instruction, a data-port error) is known by then.
 - **M2.** The data access's second memory stage (load data, AMO old value, or
   `sc` result registered at its end — a load's value aligned and sign- or
   zero-extended; owner decision, 30 September 2026, §9) and the third
@@ -141,7 +150,9 @@ Hazards and penalties:
 | Xasterdot8 → dependent | pipelined over E and M1; forwarded from M2 and W | up to 1 cycle |
 | `div`/`rem` | iterative (radix-2) in E, stalls the pipeline | 36 cycles (18.2) |
 | `jal`; conditional branch predicted taken (backward) | redirect from Decode, target presented the same cycle | 2 cycles |
-| Conditional branch mispredicted; `jalr` | resolved in Execute; the redirect is registered | 4 cycles |
+| Conditional branch mispredicted; `jalr`; `mret` | resolved in Execute; the redirect is registered | 4 cycles |
+| CSR instruction or `mret` | serializing: waits in Execute until M1 is empty | 1 cycle behind an instruction in M1 |
+| Trap or interrupt | taken at the commit point; its redirect is registered (the Execute redirect's path) | 5 cycles after the last Execute cycle |
 | Data-port back-pressure or an answer later than two cycles | the stage waiting on the port stalls the pipeline behind it | as the memory returns |
 | Instruction-port back-pressure or a late answer | bubbles enter Decode | as the memory returns |
 
@@ -149,14 +160,19 @@ The Execute redirect is registered so that the branch compare does not drive
 the instruction memory's address in the same cycle (18.1 left the direct path
 untried and the owner kept the registered redirect, §9). Redirect priority, highest
 first: a trap or interrupt at the commit point, the registered Execute
-redirect, a Decode redirect. An interrupt is taken only in a cycle in which M1
-holds a valid instruction, before the instruction after it; `mepc` receives
-that M1 instruction's next PC (its `pc_wdata`, the redirect target if it
+redirect, a Decode redirect; a trap replaces an Execute redirect whose target
+is being presented (the branch that redirected traps, or is interrupted, at
+the end of its M1 cycle). An interrupt is taken only in a cycle in which M1
+holds a valid instruction, before the instruction after it, and not while M1
+holds a CSR instruction or `mret` (they change what enables interrupts; the
+instruction after it can be interrupted); `mepc` receives that M1
+instruction's next PC (its `pc_wdata`, the redirect target if it
 redirected). The trace-driven model of these rules over the CPU kernels'
 measurement windows (`scripts/cpi_model.py`, 30 September 2026; an estimate
-that assumes no memory stalls, not a simulation; refined in 18.1 and 18.2 to
-the RTL's timing, which it matches cycle for cycle on RV32IM programs and on
-the CPU kernels' measurement windows when the memory answers on time)
+that assumes no memory stalls, not a simulation; refined in 18.1–18.3 to
+the RTL's timing, which it matches cycle for cycle on RV32IM programs with
+Zicsr and exceptions and on the CPU kernels' measurement windows when the
+memory answers on time)
 gives 1.20–1.65 CPI — 1.57
 CoreMark, 1.59 Dhrystone, 1.65 sort/search, 1.20 FFT, 1.51 strided, 1.40
 scalar Conv2D on the coherent SoC (the gate's), 1.39 reduction, and 1.57 for
@@ -250,7 +266,10 @@ of the aligned 32-bit word containing the access, and `mem_addr` is that
 word's address (the lockstep comparator also accepts the byte address of the
 access's lowest byte, but riscv-formal checks the word address); from
 milestone 18.3 also the `rvfi_csr_*` read/write masks and data for `mstatus`,
-`mie`, `mip`, `mtvec`, `mscratch`, `mepc`, `mcause`, and `mtval`. RVFI outputs
+`mie`, `mip`, `mtvec`, `mscratch`, `mepc`, `mcause`, and `mtval` (and for
+`mstatush`, `misa`, `mcountinhibit`, and the 64-bit `mcycle` and `minstret`,
+so that every CSR an instruction writes is reported; an interrupt's entry
+writes appear on no record). RVFI outputs
 are registered. (PicoRV32 reports full-word read masks on sub-word loads; the
 Aster core must report exact masks.)
 
@@ -277,20 +296,36 @@ Each milestone passes all applicable layers before the next milestone starts.
      instruction; Spike's `-l` exception lines (`exception …, epc …`, `tval …`)
      become trap records, and trap injection joins the self-test.
    - **CSRs and Spike configuration (18.3):** CSR writes are compared through the
-     RVFI CSR fields; Spike runs with `--priv=m`, `--pmpregions=0`, and
-     `--isa=rv32ima_zicsr_zifencei_zicntr`. Values that legitimately differ are
-     allowlisted by name, never by position: `mcycle`/`cycle`/`time` reads,
-     `marchid`, and Spike's debug-trigger `tcontrol` update on `mret`; the
-     environment zeroes `minstret`, since Spike's boot ROM retires five
+     RVFI CSR fields; Spike runs with `--priv=m`, `--pmpregions=0`,
+     `--triggers=0` (the core has no debug triggers) and `--wfi-as-nop`, and an
+     ISA string that grows with the milestones to
+     `--isa=rv32ima_zicsr_zifencei_zicntr` (18.3: `rv32im_zicsr_zicntr`).
+     Values that legitimately differ are allowlisted by name, never by
+     position: `mcycle`/`cycle`/`time` reads (while `time` is not implemented,
+     §3, a read of it traps on the core and not in Spike; no lockstep program
+     reads it), `marchid`, `mip` (Spike's CLINT
+     holds `MTIP` high from reset — `mip` reads `0x80` — and the shell has no
+     timer; the value read and the value written back), Spike's
+     debug-trigger `tcontrol` update on `mret` (absent with `--triggers=0`),
+     and Spike's logged writes to the hardwired-zero `mhpmevent` registers;
+     the environment zeroes `minstret`, since Spike's boot ROM retires five
      instructions first. Lockstep programs do not let an allowlisted value
-     reach later results; counter behavior is checked by self-checking tests.
+     reach later results, except through a check whose outcome is the same in
+     both (an `mcycle` read compared with a generous range); counter behavior
+     is checked by self-checking tests. Spike lets software clear an
+     extension's `misa` bit; the core ignores `misa` writes. The only lockstep
+     program that writes `misa` (riscv-tests `ma_fetch`) sets and clears `C`,
+     which neither has, so both read back the same value.
    - **Atomics (18.4):** both memory records of an AMO are parsed (done in
      18.0); a failed `sc` has no memory record.
    - **Xasterdot8 (18.5):** Spike does not know custom-0; an Aster extension
      library (`--extlib`) implements DOT8 in Spike, so DOT8 programs run in
      lockstep rather than being excluded.
-   - **I/O and interrupts:** the core shell has no devices; interrupts are
-     checked by self-checking directed tests (layer 3), and device-dependent
+   - **I/O and interrupts:** the core shell has no devices but, from 18.3, an
+     interrupt device that raises the core's interrupt lines; interrupts are
+     checked by self-checking directed tests (layer 3), by random interrupts
+     over lockstep programs whose stream, with each interrupt handler cut out,
+     must equal Spike's uninterrupted one (from 18.3), and device-dependent
      values in the SoC by the firmware oracles (layer 5).
    - **Port protocol (from 18.1):** the two-port shell checks the core's side
      of §4–§5 every cycle — a waiting fetch stays stable except in a cycle
@@ -299,7 +334,9 @@ Each milestone passes all applicable layers before the next milestone starts.
      stays stable, data byte enables are well formed, at most two data
      requests are in flight, and the RVFI outputs are registered — and each
      check is proven on a deliberately broken DUT ([`phase18.md`](phase18.md)).
-2. **Conformance.** The vendored `riscv-tests` (rv32ui, rv32um, rv32ua) and
+     The shell also matches every write the memory accepts to one retired
+     store, and (from 18.3) every load it accepts to one retired load.
+2. **Conformance.** The vendored `riscv-tests` (rv32ui, rv32um, rv32ua, rv32mi) and
    `riscv-arch-test` 3.10.0 (I, M, A, Zifencei, and the privilege tests for
    Zicsr and traps), compared by signature with Spike as well as in lockstep.
 3. **Directed microarchitecture tests.** Forwarding from every stage, load-use,
@@ -447,13 +484,63 @@ reviews; none changes the approved scope:
   direct redirect was built; the owner kept the registered redirect.
 - §5: the instruction memory may allow any number of fetches in flight; the
   fetch unit itself never has more than nine (three live by the room rule,
-  the rest discarded ones), and its counters hold that.
+  the rest discarded ones), and its counters hold that. (Twelve from 18.3,
+  below.)
 - §5 (not adopted): a rule that a memory's ready never depends on its valid,
   so that a misaligned access could wait for ready without presenting, was
   tried in the 18.1 timing work (`9ffb3ab`); it showed no gain beyond
   run-to-run variation, and the owner rejected it (30 September 2026). It was
   reverted: a misaligned access does not wait for ready, and §5's ports
   carry no such restriction.
+
+Clarifications during milestone 18.3 (2 October 2026), from building and
+verifying traps, interrupts and the CSRs, listed for the owner's review of
+18.3. Three await the owner's decision: `time` and `timeh` left
+unimplemented (a departure from Zicntr), the CSRs added beyond §3's approved
+table, and the conformance that stands in for the gate's "arch-test Zicsr";
+the rest keep within the approved scope:
+
+- §3: the CSR set completed with the standard machine CSRs that Spike and the
+  conformance tests use — `mcountinhibit` (`CY`, `IR`), `mstatush` (reads 0),
+  `mconfigptr` (reads 0), and the privileged specification's hardware
+  performance monitor (`mhpmcounter3`–`31(h)`, `mhpmevent3`–`31`) as zero —
+  and its bounds made explicit: `time`/`timeh` are not implemented (an
+  illegal instruction; the SoC timer is memory-mapped; Zicntr includes them,
+  so this departs from Zicntr, for the owner to accept), `mtvec` is direct
+  only, `misa` grows with the milestones, `wfi` is a no-op.
+- §4: CSR instructions and `mret` are serializing — Execute holds one until
+  M1 is empty, one cycle behind an instruction in M1 — so a CSR read sees
+  every older write and `minstret` counts exactly the older instructions. The
+  write takes place, and the instruction retires (is counted), at the end of
+  its first cycle in M1, where nothing can kill it: so the CSR instruction's
+  write enables see no late signal (trap and interrupt entry, and other
+  instructions' commit, are timed with the commit point's late signals, as
+  before), a write to `minstret` suppresses that instruction's own increment
+  (as the riscv-tests `instret_overflow` program expects), and a write to
+  `mcountinhibit` applies to the instructions after it — as Spike does,
+  whatever the memory's timing.
+- §4: no interrupt is taken while M1 holds a CSR instruction or `mret`
+  (they change what enables interrupts); the next instruction can be
+  interrupted. A trap's redirect goes through the registered Execute
+  redirect's path and replaces an Execute redirect being presented, so a
+  trap costs 5 cycles from its last Execute cycle to the handler's first
+  Decode cycle.
+- §5: the fetch unit's own maximum of fetches in flight is twelve, not nine:
+  a branch that redirects from Execute and then traps (or is interrupted)
+  while it waits in M1 discards its target stream too (three live, nine
+  discarded).
+- §5: an illegal 16-bit encoding (there is no C) is reported, in `mtval` and
+  `rvfi_insn`, as its 16 bits, as Spike reports it.
+- §8 (gate): riscv-arch-test 3.10.0 has no Zicsr suite; its privilege suite
+  (`ecall`, `ebreak` and the misalignment traps, through its own trap
+  handler) and riscv-tests rv32mi (CSR instructions in every form, `mcsr`,
+  `zicntr`, `instret_overflow`, `illegal`, `scall`, `sbreak`, the misaligned
+  accesses and fetch) stand in for "arch-test Zicsr", with the directed
+  `csr_ordering` program and random programs with CSR instructions.
+- §6: Spike runs without debug triggers and with `wfi` a no-op; `mip` and
+  Spike's logged writes to the hardwired-zero `mhpmevent` registers join the
+  allowlist (above); the shell also checks that every load the memory accepts
+  retires exactly once (an I/O load repeated after an interrupt would not).
 
 Changes after approval, by the owner:
 

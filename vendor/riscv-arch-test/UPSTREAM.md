@@ -26,4 +26,6 @@ the ACT4 Python framework, Ruby/UDB and Sail 0.13.1. It adds a second,
 independent reference model, and is worth adopting once the Aster core's
 configuration (Zicsr, traps, counters) is final at milestone 18.3. Until then
 3.10.0's pre-generated programs compared against Spike cover I, M, A and
-Zifencei with the harness Phase 18 already has.
+Zifencei with the harness Phase 18 already has. (At 18.3, on 2 October 2026,
+waiting until the ISA is final at 18.5 was proposed to the owner; meanwhile
+3.10.0's privilege suite runs as well — docs/phase18.md.)

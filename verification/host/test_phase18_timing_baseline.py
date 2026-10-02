@@ -42,6 +42,8 @@ BASELINES = [
                  "m4_u42", "m4_u44", "m4_u46", "m5_u34", "m5_u36", "m5_u38", "m5_u40", "m5_u44",
                  "m6_u34", "m6_u36", "m6_u38", "m6_u40", "m6_u44",
                  "c80_u34", "c80_u36", "c80_u38", "c80_u40", "c80_u44", "picorv32_c80")]
+# FPGA-only evidence (SKY130 was dropped on 1 October 2026): (folder, FPGA folders).
+FPGA_ONLY = [("aster-18.3", ["fpga/aster", "fpga/aster_bram", "fpga/aster_bram_reqreg"])]
 
 
 def retained_part(recomputed, retained):
@@ -55,7 +57,7 @@ def retained_part(recomputed, retained):
 class Phase18TimingBaselines(unittest.TestCase):
     def test_checksums_cover_every_file(self):
         folders = [path.parent.name for path in RESULTS.glob("*/SHA256SUMS")]
-        self.assertTrue({name for name, *_ in BASELINES} <= set(folders))
+        self.assertTrue({name for name, *_ in BASELINES + FPGA_ONLY} <= set(folders))
         for name in folders:
             folder = RESULTS / name
             listed = dict(reversed(line.split(maxsplit=1)) for line in
@@ -127,7 +129,7 @@ class Phase18TimingBaselines(unittest.TestCase):
             self.assertEqual(set(resolved["EXTRA_EXCLUDED_CELLS"]), excluded[0], name)
 
     def test_fpga_summaries_agree_with_their_reports(self):
-        for name, _, _, fpga_dirs in BASELINES:
+        for name, fpga_dirs in [(name, dirs) for name, _, _, dirs in BASELINES] + FPGA_ONLY:
             for sub in fpga_dirs:
                 folder = RESULTS / name / sub
                 with self.subTest(folder=f"{name}/{sub}"):

@@ -24,7 +24,14 @@ registered). On 1 October 2026 the owner dropped the SKY130 ASIC
 implementation: the FPGA is the only implementation target (the last SKY130
 runs: `42a1f1f` at 10 ns missed the slow corner by up to 0.52 ns in four of
 five floorplans, and at 12.5 ns closed in all five; see "Milestone 18.2" and
-[`phase17-plus.md`](phase17-plus.md)).** The CPU specification this
+[`phase17-plus.md`](phase17-plus.md)). Milestone 18.3 (Zicsr, traps,
+interrupts, counters; evidence complete, awaiting the owner's sign-off,
+2 October 2026): rv32ui/um/mi, arch-test I, M and privilege, directed traps
+from every stage and random programs with exceptions pass in lockstep, cycle
+for cycle with the CPI model; interrupts are checked by self-checking tests
+and by about 23,000 random interrupts whose streams, with the handlers cut
+out, equal Spike's; the kernels are unchanged; the FPGA meets 10 ns (105.4
+MHz; 100.6 and 104.8 MHz with block RAM; see "Milestone 18.3").** The CPU specification this
 phase implements is [`cpu.md`](cpu.md) (approved 29 September 2026); the phase
 sits in the [v2 plan](phase17-plus.md#6-phase-17-sequence). Every milestone
 passes its verification layer and records its timing before the next starts.
@@ -99,9 +106,12 @@ its trace's, Spike exits 0, lockstep passes, and the program's data region
 Spike's at the end. Traces, logs and signatures are deleted before each run,
 and a runner that finds no programs for a configured suite fails. The first
 mismatch fails the run with both records and their context. Interrupt behavior is
-asynchronous and is checked by self-checking directed tests instead of
-lockstep. The extensions the comparison needs for traps and CSRs (18.3),
-atomics (18.4), and Xasterdot8 (18.5) are specified in [`cpu.md`](cpu.md) §6.
+asynchronous: it is checked by self-checking directed tests run in the shell
+alone, and (from 18.3) by random interrupts over lockstep programs whose
+stream, with each interrupt handler cut out, must equal Spike's uninterrupted
+run. The extensions the comparison needs for traps and CSRs (18.3, in place:
+"Milestone 18.3"), atomics (18.4), and Xasterdot8 (18.5) are specified in
+[`cpu.md`](cpu.md) §6.
 
 The harness is trusted only after it **rejects deliberately corrupted runs**:
 `make core-lockstep-selftest` edits the raw trace text of a real run (PC,
@@ -109,17 +119,24 @@ instruction, trap, destination register and value, memory address, store byte
 lane and mask shape, store data; dropped, duplicated, missing, extra, and
 truncated records; a missing `tohost` store) and the raw Spike log (register
 value, store data, memory address, PC), re-parses both, and requires every
-corruption to be caught — 19 of 19.
+corruption to be caught — 19 of 19. From 18.3 the same run on a trapping,
+CSR-writing program (`traps/decode_traps`, in `make core-aster-tests`) adds a
+CSR write's value, a missing and an extra CSR write, a trap's mcause, mepc and
+mtval, a dropped and an extra trap record, and Spike's CSR value, trap cause,
+epc and tval — 31 of 31.
 
 ### Programs
 
 - `riscv-tests` (vendored): rv32ui, rv32um, rv32ua, plus the machine-mode tests
-  that apply.
+  that apply (rv32mi, from 18.3).
 - `riscv-arch-test` 3.10.0 (vendored): I, M, A, Zifencei, and the privilege
   tests; each program runs in lockstep and its signature region must equal
   Spike's word for word. (Release 4.1.0, ACT4, builds self-checking programs
-  from the Sail model; it is reconsidered at 18.3, when the core's
-  configuration is final — see `vendor/riscv-arch-test/UPSTREAM.md`.)
+  from the Sail model; it was to be reconsidered at 18.3, when the core's
+  configuration is final — see `vendor/riscv-arch-test/UPSTREAM.md`. At 18.3
+  it is not adopted: the ISA is not final until 18.5 (A in 18.4, Xasterdot8 in
+  18.5), and ACT4 needs a framework, Ruby/UDB and Sail not installed here, so
+  waiting is proposed to the owner; the checklist keeps it open.)
 - A seeded constrained-random program generator (`scripts/rvgen.py`, built in
   18.0 so that 18.1 starts with it): random register and data-region state;
   every RV32I computational, load, store, branch and jump instruction and every
@@ -783,6 +800,11 @@ Verification (`make core-aster-tests`, `make core-aster-kernels`):
 - `trap_halt/muldiv_killed`: a division and a multiply behind a load that the
   memory answers with an error; on the back-pressure seed added for it (4) the
   division is running when the trap kills it (checked: killed at count 1);
+  (in 18.3 the case moved into `traps/m1_traps`, which takes the trap; with
+  its layout the division runs before the kill with stall seed 2, seed 9 on
+  the one-cycle memory and seed 7 with room for three or four requests, and
+  seeds 2 and 5 hold the error in M1 — measured with cover counters in an
+  instrumented copy of the RTL);
 - assertions: a squashed division never starts, the divider runs only for
   Execute's division, a division leaves Execute only when done, a multiply
   never waits in M2, and a finished division's result holds while it waits
@@ -953,6 +975,195 @@ request registered (2,105 LUTs and 4 DSPs, against `42a1f1f`'s 108.0, 102.8
 and 106.1 MHz with 3,248 LUTs). The owner declared 18.2 complete on 1 October
 2026.
 
+### Milestone 18.3: Zicsr, traps, interrupts and counters (2 October 2026)
+
+The Aster core takes its traps (`705b5f9`): RV32IM with Zicsr, `ecall`,
+`ebreak`, `mret` and `wfi` (a no-op), the machine-mode CSRs of
+[`cpu.md`](cpu.md) §3, machine-mode traps and interrupts, and the counters.
+The choices made in building it are listed in §9 ("Clarifications during
+milestone 18.3") for the owner's review:
+
+- **Traps** commit at the end of M1, as §4 says: mepc, mcause, mtval and
+  mstatus (`MPIE` = `MIE`, `MIE` = 0) are written, the younger instructions are
+  killed, and the fetch unit is sent to `mtvec` through the registered
+  Execute redirect's path, which a trap overrides — a branch that redirects
+  from Execute and then traps at the end of its M1 cycle replaces its own
+  target (the fetch unit's maximum in flight becomes twelve). mtval is the
+  access's address, the jump or branch target, the instruction (an illegal
+  16-bit encoding's 16 bits, as Spike reports them), the PC (`ebreak`, a
+  fetch fault) or 0. The trapping instruction retires as a trap record whose
+  `rvfi_pc_wdata` is the handler's address; the handler's first instruction
+  carries `rvfi_intr`. A trap costs 5 cycles from its last Execute cycle to
+  the handler's first Decode cycle.
+- **Interrupts** (`MEIP`, `MTIP`, `MSIP`, registered from the inputs, enabled
+  by `mie` and `mstatus.MIE`; priority `MEI`, `MSI`, `MTI`) are taken at the
+  commit point in a cycle in which M1 holds a valid instruction: it completes,
+  mepc receives its next PC, and the younger instructions are killed — so no
+  accepted access is ever repeated. None is taken while M1 holds a CSR
+  instruction or `mret`; the instruction after it can be interrupted.
+- **CSRs.** A CSR instruction or `mret` is serializing: Execute holds it until
+  M1 is empty (one cycle behind an instruction in M1), so it reads every older
+  instruction's effects and `minstret` counts exactly the older instructions.
+  Its write (and `mret`'s mstatus update, computed in Execute) takes place,
+  and it retires, at the end of its first cycle in M1, where nothing can kill
+  it — so its write enables see no late signal, a write to `minstret`
+  suppresses the writer's own increment and one to `mcountinhibit` applies to
+  the instructions after it, as in Spike, whatever the memory's timing; the
+  RTL asserts that a CSR write in M1 never meets a trap or an interrupt and
+  that a serializing instruction never traps. `mret` redirects from Execute
+  to `mepc` like a `jalr`. Beyond §3's table the core has `mcountinhibit`,
+  `mstatush` and `mconfigptr`, and the hardware performance monitor
+  (`mhpmcounter3`–`31(h)`, `mhpmevent3`–`31`) as zero; `time`/`timeh` are an
+  illegal instruction (§9 lists these for the owner).
+- **RVFI** reports every CSR an instruction writes, and the reads of those
+  CSRs (riscv-formal's `rvfi_csr_*` fields for the eight CSRs §5 names, and
+  for `mstatush`, `misa`, `mcountinhibit` and the 64-bit counters; the
+  identity CSRs and the hardware performance monitor have none), with the
+  value written as it reads back; a trap record reports mepc, mcause, mtval and mstatus as the trap
+  wrote them (carried with the record), and `mret` its mstatus and mstatush.
+
+Verification (`make core-aster-tests`, `make core-aster-fetch`, both in
+`make check`):
+
+- **The lockstep extensions of §6.** Spike runs as the core is configured —
+  `--priv=m --pmpregions=0 --triggers=0 --wfi-as-nop`,
+  `--isa=rv32im_zicsr_zicntr` — and with `-l`, whose `exception …, epc …` and
+  `tval` lines become trap records compared with the core's (PC, instruction,
+  mcause, mepc, mtval); every CSR write is compared through the RVFI CSR
+  fields. Allowlisted by name: the values read from `mcycle(h)`, `cycle(h)`,
+  `time(h)`, `marchid` and `mip`, and the value written to `mip` (Spike's
+  CLINT holds `MTIP` high from reset). The environment zeroes `minstret`.
+  Spike counts its instruction budget in steps of 5,000 that a trap ends
+  early, so the runner allows a step per trap. The shell's `rvfi_pc_wdata`
+  check now covers trap records (the next record must start at the handler)
+  and exempts only an interrupt's handler entry; the comparator requires
+  `rvfi_intr` on exactly the records after a trap record; and the shell now
+  matches every load the memory accepts to one retired load, so a load
+  performed twice — an I/O load repeated after an interrupt, which §4
+  forbids and a stream comparison cannot see — fails (proven by
+  `+duplicate_read`, in `make core-aster-tests` and `make core-ports-tests`).
+  The comparator rejects every
+  injected corruption of a trapping, CSR-writing run — 31 of 31 on
+  `traps/decode_traps`, the 19 of 18.0 plus a CSR value, a missing and an
+  extra CSR write, a trap's mcause, mepc and mtval, a dropped and an extra
+  trap record, and Spike's CSR value, cause, epc and tval.
+- **Conformance, in lockstep and by signature, cycle for cycle with the CPI
+  model** (which now models the serialization, the trap redirect, and an
+  illegal instruction that reads no register): riscv-tests rv32ui (41, with
+  `ma_data`: the environment's trap handler emulates a misaligned access, on
+  the core and in Spike alike), rv32um (8) and rv32mi (14 of 16, vendored
+  from the pinned revision; `breakpoint` needs debug triggers and `pmpaddr` a
+  PMP, which §3 leaves out); riscv-arch-test I, M and privilege (62/62; the
+  runner selects each program's `RVTEST_CASE` for this core as riscof would:
+  no C, Zicsr, no misaligned-access hardware). An arch-test run found that an
+  illegal 16-bit encoding's mtval was the whole word (fixed).
+- **Directed traps in every stage** (`verification/core/traps`, lockstep, each
+  also checking its own trap log): Decode (`decode_traps`: illegal encodings
+  of every kind — an all-zero and an all-ones word, a 16-bit encoding, a
+  reserved shift, an unimplemented CSR, writes to read-only CSRs, `sret`,
+  `sfence.vma` — and `ecall`/`ebreak`, next to a load-use stall, a multiply,
+  a Decode redirect and stores on both sides); Execute (`execute_traps`:
+  misaligned loads and stores with forwarded and loaded addresses, misaligned
+  `jalr`, `jal` and branch targets in both prediction directions); M1
+  (`m1_traps`: data-port errors on loads and stores, one held in M1 behind a
+  slow load, with a younger store, CSR write, division and multiply killed and
+  never taking effect); Fetch (`fetch_traps`: right-path fetches outside
+  memory after a `jalr`, a `jal`, a taken branch and running off the end of
+  memory); and CSR ordering (`csr_ordering`: read-modify-write chains, sources
+  forwarded from ALU, load, multiply and division, CSR results forwarded at
+  distances 1–4 to every consumer, `minstret` across writes, traps and
+  `mcountinhibit`, `mret` and `mtvec` changes right before use). They replace
+  the 18.1/18.2 trap-halt programs, whose cases they all keep.
+- **Interrupts in every pipeline state.** Self-checking programs in the shell
+  alone, with an interrupt device (`+irq_device`) whose store sets the lines
+  after a chosen delay: each line, priority, `wfi`, enabling by `csrs mie`,
+  `csrsi mstatus` and `mret` (taken after the next instruction, mepc exact),
+  an exception and an interrupt at the same instruction (`irq_lines`,
+  `irq_enable`), and `irq_sweep` — one interrupt at each of 128 arrival
+  times over a block of CSR writes, loads, stores, a multiply, a division,
+  branches, `jal` and `jalr`, every result checked. Random interrupts over
+  lockstep programs (`--interrupts`): MEIP and MSIP raised at random while
+  rv32ui, rv32um and random programs run (the random ones with the CSR
+  instructions an interrupt leaves alone); each run's stream with every
+  handler cut out must equal Spike's uninterrupted run — every instruction
+  executed exactly once and in order, whatever the interrupts hit — and every
+  pair of (interrupted, next) instruction classes among ALU, load, store,
+  branch, jump, multiply and divide must occur: 23,291 interrupts in `make
+  core-aster-tests` (1,192 over rv32ui/rv32um, which reach 18 of the 49
+  pairs; 6,345, 9,507 and 6,247 over random programs on the two-cycle
+  memory, back-pressured and the one-cycle memory, each reaching all 49).
+- **Constrained-random programs** (`rvgen`) now also emit CSR instructions in
+  every form and exceptions (`ecall`, `ebreak`, illegal words, misaligned
+  accesses, data-port errors, misaligned jump and branch targets), with
+  hazard coverage extended to CSR results and CSR sources (152/152 bins); 240
+  programs matched the CPI model cycle for cycle on both memories (one, seed
+  204, first exposed the model's operand wait for an illegal instruction).
+- **Fetch unit, on its own:** trap redirects in any cycle, including while an
+  Execute redirect's target is presented; the deepest state is now twelve
+  fetches in flight, nine discarded.
+- **The CPU kernels** run unchanged and cycle-exact (`make
+  core-aster-kernels`): every window's CPI is 18.2's.
+- **Planted bugs** (assertions off), in trap entry, mcause and mtval
+  selection, the trap and interrupt redirects, interrupt gating, priority and
+  enabling, the CSR decode, serialization and write, `mret`, the counters,
+  `mip`'s layout, the trap records' RVFI values and the fetch unit's
+  trap-while-presented path: 48, 44 caught. The four not caught are equivalent or unobservable:
+  Execute advancing in the cycle an interrupt is taken (the kill overrides all
+  it loads); gating a CSR write by the instruction's trap (no CSR-writing
+  instruction traps); the CSR write repeated in every M1 cycle (with the
+  writer counted at its first M1 edge, writing the same value again changes
+  no architectural state; `mcycle`'s exact count is the implementation's);
+  and a trap record's RVFI mstatus (Spike's log says nothing of it; the
+  mstatus a trap leaves is checked through the handlers' reads). The first
+  round missed two real ones — mtval left non-zero
+  by an interrupt, and an interrupt taken while a CSR write was in M1 (the
+  trap entry would have won over the write) — and the tests were extended:
+  the interrupt handler now records mtval, the sweep's block writes CSRs, and
+  the random interrupt runs include CSR writes.
+- **Review.** The milestone's watchdog review found one RTL bug, which the
+  tests above had missed: CSR writes then took place in every cycle the
+  instruction was in M1 and its own retirement was counted when it left, so a
+  `mcountinhibit` write right behind a load that M1 waited on changed whether
+  the writer counted itself (and `mcycle` stood still while it waited) — a
+  `minstret` difference with Spike under back-pressure. Fixed by the write and
+  the count at the end of the first M1 cycle; `csr_ordering` now writes
+  `mcountinhibit`, `minstret`, `minstreth` and `mcycle` behind loads and
+  stores (a second review confirmed with a cover point that such writes wait
+  in M1, and matched Spike on a wider program of its own over eight stall
+  seeds) and checks `mcycle` counting and carrying. It also found the
+  comparator's exception pattern unable to read Spike's interrupt lines
+  (unused so far: Spike takes no interrupt in these runs; fixed), the missing
+  load accounting (added), the `mip` layout unchecked (now read with each
+  line alone, which catches a swapped layout), and the trap records' RVFI
+  values read from the live registers, which would be wrong once a handler
+  writes them before the record leaves W. They are now carried with the
+  record; no test can tell the difference yet, since the shell's memory
+  always answers before a handler's first CSR write — the long-stall mode of
+  18.6 will (checklist).
+- The PicoRV32 suites pass unchanged; the shells' self-tests pass, with the
+  new `+duplicate_read` (a load performed twice) on both DUTs.
+
+**Timing** (FPGA, out of context, 10 ns; `705b5f9`): the core alone
+meets it at 105.4 MHz (+0.514 ns; 2,695 LUTs, 1,287 flip-flops, 4 DSPs,
+against 18.2's 110.6 MHz and 2,105 LUTs), with the block RAM in the §5 form
+at 100.6 MHz (+0.055 ns — thin, as in 18.2, where it was +0.207) and with
+the request registered at 104.8 MHz (+0.462 ns). The core alone and the §5
+form keep 18.2's worst paths (a forwarded operand through the adders into
+M1; the store's forwarded base through the address adder and the block RAM's
+range decode into its write enable). The request-registered form's worst
+path is new: from the instruction in Decode through the CSR address's
+legality decode (12 bits, new in 18.3) into `illegal` — an illegal
+instruction reads no register — and on through the load-use hazard and
+Decode's advance into the fetch buffer's count (9 LUT levels); its next is
+into M1's CSR write flag (+0.667 ns). Should timing tighten, Decode could
+compute operand use without the legality decode (the CPI model's operand
+rule would follow). (A run of the same design before the review's fixes, which did not
+touch these paths, gave +0.673, +0.448 and +0.460 ns: Vivado's placement
+varies by a few hundred picoseconds from one netlist to the next.) The paths
+§4 names keep their margin: `d_rsp_valid` to the next request +2.866 ns, the
+`d_rsp_error` kill +2.451 ns (§5 form). Evidence:
+[`results/phase18/aster-18.3`](results/phase18/aster-18.3/README.md).
+
 ## Milestones and gates
 
 | Milestone | Content | Exit gate |
@@ -960,7 +1171,7 @@ and 106.1 MHz with 3,248 LUTs). The owner declared 18.2 complete on 1 October
 | **18.0** | Spike; CPU shell with PicoRV32 and RVFI trace; lockstep comparator; `riscv-tests` in the shell; `riscv-arch-test` harness; timing scripts; PicoRV32 baseline timing | PicoRV32 passes lockstep on `riscv-tests`; the comparator catches an injected mismatch in every compared field; timing scripts report PicoRV32 on both targets — **met** (checklist below) |
 | 18.1 | RV32I pipeline | `riscv-tests` rv32ui and arch-test I in lockstep; random programs in lockstep; first timing report — **met** (owner, 1 October 2026; "Milestone 18.1" below) |
 | 18.2 | M extension | um/arch-test M, multiply/divide corner cases, lockstep, timing — **met** (owner, 1 October 2026; "Milestone 18.2" below) |
-| 18.3 | Zicsr, traps, interrupts, counters | arch-test Zicsr; directed traps in every stage; interrupt tests in every pipeline state |
+| 18.3 | Zicsr, traps, interrupts, counters | arch-test Zicsr; directed traps in every stage; interrupt tests in every pipeline state — evidence complete, awaiting the owner (2 October 2026; "Milestone 18.3"; riscv-arch-test 3.10.0 has no Zicsr suite: its privilege suite and riscv-tests rv32mi stand in, which the owner is asked to accept) |
 | 18.4 | A extension, `fence`, `fence.i` | ua/arch-test A and Zifencei; atomic and self-modifying-code tests |
 | 18.5 | Xasterdot8 | v1 DOT8 reference tests on the core |
 | 18.6 | L1 caches with two-stage pipelined hits; SRAM interface; runtime port | cache reference model, back-pressure, firmware regression |
@@ -1101,15 +1312,19 @@ and 106.1 MHz with 3,248 LUTs). The owner declared 18.2 complete on 1 October
   trap stops the core; from 18.3 a trap record's `pc_wdata` must be the
   handler's address (see the 18.3 item). (The PicoRV32 look-ahead shell, the
   §7 baseline, does not carry the check.)
-- [ ] **By the milestone named:** CSR write point and `minstret` read
-  semantics, and the `pc_wdata` check extended to trap records (a trap
-  record's `pc_wdata` is the handler's address, matched by the next record)
-  (18.3); `fence.i` draining in-flight data accesses and flushing
-  F1, F2, the buffer, D and E, and AMO operands (address and data) as hazard
-  consumers (18.4); a cover point that `bus_error_behind_load` really holds
-  its error in M1 (it depends on the stall seed); the two rv32ui programs
-  18.1 skipped, `ma_data` (misaligned accesses trap: 18.3) and `fence_i`
-  (18.4)
+- [x] **By 18.3:** CSR write point and `minstret` read semantics (a
+  serializing instruction writes and retires at the end of its first M1
+  cycle), the `pc_wdata` check extended to trap records (a trap record's
+  `pc_wdata` is the handler's address, matched by the next record), and
+  `ma_data` (the environment's handler emulates the misaligned access) —
+  "Milestone 18.3"
+- [ ] **By the milestone named:** `fence.i` draining in-flight data accesses
+  and flushing F1, F2, the buffer, D and E, and AMO operands (address and
+  data) as hazard consumers (18.4); a cover point that a data-port error
+  really waits in M1 and that a division really runs before a trap kills it
+  (both depend on the stall seed; `traps/m1_traps` reaches them in today's
+  modes, measured with an instrumented copy of the RTL, but nothing enforces
+  it); `fence_i` (18.4)
 - [x] **Aster-core shell, 18.1 step 1 — protocol checks (30 September 2026):**
   the two-port shell now enforces the core's side of §4–§5 in every run: a
   fetch presented and not accepted must be presented unchanged in the next
@@ -1138,8 +1353,10 @@ and 106.1 MHz with 3,248 LUTs). The owner declared 18.2 complete on 1 October
   on a store and while the access waits in M1, and a right-path fetch outside
   memory, each stopping the core at its `trap_pc` (`+bus_error_traps`, the
   trap-halt programs above)
-- [ ] **Aster-core shell, later:** the same errors taken as traps to a
-  handler (18.3); from 18.6, the signature read through the cache hierarchy
+- [x] **Aster-core shell, 18.3:** the same errors taken as traps to a
+  handler (`traps/m1_traps`, `traps/fetch_traps`)
+- [ ] **Aster-core shell, later:** from 18.6, the signature read through the
+  cache hierarchy
 - [x] **Decode-redirect timing (settled in 18.1):** a `jal` or a backward
   branch redirects on its first cycle in Decode, whether or not it then waits
   for operands (`lw; bne` back to a loop head costs the load-use wait only).
@@ -1196,9 +1413,20 @@ and 106.1 MHz with 3,248 LUTs). The owner declared 18.2 complete on 1 October
 - [ ] **A long-stall memory mode, by 18.6:** the shell's back-pressure adds at
   most two cycles, so a finished division never waits in Execute (its result
   is asserted to hold); 18.6's cache misses will need a mode with long stalls,
-  which will exercise it
+  which will exercise it — and a trap record still in W when its handler
+  writes mepc or mcause (18.3 carries the trap's values with the record for
+  that case; nothing reaches it yet)
 - [x] 18.2 as in the table above — complete (owner, 1 October 2026)
-- [ ] 18.3 … 18.7 as in the table above
+- [ ] 18.3 as in the table above — evidence complete; awaiting the owner's
+  sign-off and decisions: `time`/`timeh` left unimplemented (Zicntr has them;
+  cpu.md §3 does not list them), the CSRs added beyond §3's table, and
+  riscv-arch-test's privilege suite and rv32mi standing in for "arch-test
+  Zicsr" (cpu.md §9, "Clarifications during milestone 18.3"), and the ACT4
+  question below
+- [ ] riscv-arch-test 4.x (ACT4), which the plan was to reconsider at 18.3:
+  proposed to wait until the ISA is final (18.5) — for the owner to decide
+  with 18.3
+- [ ] 18.4 … 18.7 as in the table above
 
 ## Non-goals
 
