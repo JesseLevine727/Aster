@@ -22,6 +22,7 @@ chosen flow as corrected (`../aster-18.1-delay-cells`); FPGA: Vivado 2025.1,
 | `fpga/m_aster`, `m_aster_bram`, `m_aster_bram_reqreg` | Vivado | `4f42794` | the three tops of `../aster-18.1` |
 | `fpga/m4_aster`, `m4_aster_bram`, `m4_aster_bram_reqreg` | Vivado | `bdfa836` | the same |
 | `fpga/m5_aster`, `m5_aster_bram`, `m5_aster_bram_reqreg` | Vivado | `42a1f1f` | the same |
+| `fpga/m7_aster`, `m7_aster_bram`, `m7_aster_bram_reqreg` | Vivado | `77f7372` (the multiplier on DSP blocks again) | the same |
 
 Each run's `resolved.json` records its full configuration. Runs of one RTL
 share one synthesized netlist where their synthesis settings agree: the four

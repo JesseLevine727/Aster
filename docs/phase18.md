@@ -15,11 +15,12 @@ floorplans swept, +0.373 to +0.495 ns (103.9–105.2 MHz; 195–198 MHz
 typical), with PicoRV32 at 104.3–105.2 MHz in the same flow and floorplans;
 the request address still misses its 2 ns output budget at the slow corner,
 by 1.6–1.7 ns (see "Milestone 18.1"). Milestone 18.2 (the M extension,
-through `42a1f1f`): RV32IM passes rv32ui/um, arch-test I and M and random programs in
+complete; owner, 1 October 2026; `77f7372`): RV32IM passes rv32ui/um, arch-test I and M and random programs in
 lockstep, cycle for cycle with the CPI model, and the eight CPU kernels run
 on the RTL in lockstep, each window exactly the model's cycles — a measured
 3.68× geometric mean over PicoRV32 (lowest 2.59×); the FPGA meets 10 ns
-(108.0 MHz at `42a1f1f`). On 1 October 2026 the owner dropped the SKY130 ASIC
+(110.6 MHz; 102.1 MHz with block RAM in the §5 form, 110.6 with the request
+registered). On 1 October 2026 the owner dropped the SKY130 ASIC
 implementation: the FPGA is the only implementation target (the last SKY130
 runs: `42a1f1f` at 10 ns missed the slow corner by up to 0.52 ns in four of
 five floorplans, and at 12.5 ns closed in all five; see "Milestone 18.2" and
@@ -736,17 +737,18 @@ lost 3 MHz). The configured utilization stays 38%. Evidence:
 
 ### Milestone 18.2: the M extension (1 October 2026)
 
-The Aster core implements RV32IM (`4f42794`, revised for timing in `d74408d`
-and `bdfa836`):
+The Aster core implements RV32IM (`4f42794`, revised for timing in `d74408d`,
+`bdfa836` and `42a1f1f`; the multiplier back on the FPGA's DSP blocks in
+`77f7372`):
 
 - **Multiply** (`mul`, `mulh`, `mulhsu`, `mulhu`), pipelined over Execute, M1
-  and M2 as §4 says. The operands travel with the instruction; M1 forms the
-  radix-4 Booth partial products of the 33-bit sign- or zero-extended operands
-  (17 rows, each sign-extended to 64 bits, and a row of the negations' +1s)
-  and compresses them with 3:2 carry-save adders to four vectors, registered
-  at its end, so no carry propagates in M1; M2 compresses the four to two and
-  adds them into the 64-bit product, whose low or high word is registered into
-  W (`bdfa836`; the first version formed four 17×17 products in M1). The result is
+  and M2 as §4 says. The operands travel with the instruction; M1 forms four
+  17×17 signed partial products of the 33-bit sign- or zero-extended operands
+  (the low halves zero-extended), which the FPGA maps to 4 DSP blocks,
+  registered at its end; M2 adds them into the 64-bit product, whose low or
+  high word is registered into W. (For SKY130, `bdfa836` wrote the multiplier
+  out as radix-4 Booth partial products compressed by carry-save adders, M1 to
+  M2; with SKY130 dropped, `77f7372` returned to the DSP form.) The result is
   ready from W, as a load's is, so the load-use interlock and Execute's
   readiness treat "load or multiply" as one late result: 2 and 1 cycles at
   distances 1 and 2 (§4). The partial products load whenever M1 holds a
@@ -786,9 +788,10 @@ Verification (`make core-aster-tests`, `make core-aster-kernels`):
   never waits in M2, and a finished division's result holds while it waits
   (the shell's memory never stalls long enough for that today; 18.6's cache
   misses will);
-- planted bugs with the assertions off, over the versions: 25 of 33 caught
-  (the carry-save multiplier's six all by rv32um; `4f42794`'s message counts
-  15 of 21 for the first two rounds, which were 14); the eight survivors are
+- planted bugs with the assertions off, over the versions: 36 of 44 caught
+  (25 of 33 through `bdfa836`, the carry-save multiplier's six all by rv32um —
+  `4f42794`'s message counts 15 of 21 for the first two rounds, which were 14 —
+  and `42a1f1f`'s six and `77f7372`'s five, all caught); the eight survivors are
   equivalent or unreachable (a squashed start, which Execute's reset clears at
   the same edge; the divider not resetting on a kill, cleared a cycle later
   when Execute empties; the multiply's M1 and M2 readiness terms, two
@@ -937,13 +940,26 @@ evidence and trade-off recorded in [`phase17-plus.md`](phase17-plus.md) and
 [`cpu.md`](cpu.md) §9. These are the last SKY130 runs; the scripts and
 retained evidence stay as history.
 
+**The multiplier on the DSP blocks again (`77f7372`; 18.2 complete).** With
+SKY130 dropped, the carry-save multiplier written for it cost the FPGA about
+1,150 LUTs and used no DSP block; the owner chose to switch back. `77f7372`
+forms four 17×17 signed partial products in M1 (mapped to 4 DSP blocks),
+registered when M1 holds a multiply, and adds them in M2 — the multiplier of
+`4f42794`, unchanged. It is behavior-neutral (`make check`,
+every Aster suite, the kernels cycle-exact; five planted bugs in the
+multiplier, all caught by rv32um). On the FPGA it runs at 110.6 MHz out of
+context, 102.1 MHz with the block RAM in the §5 form and 110.6 MHz with the
+request registered (2,105 LUTs and 4 DSPs, against `42a1f1f`'s 108.0, 102.8
+and 106.1 MHz with 3,248 LUTs). The owner declared 18.2 complete on 1 October
+2026.
+
 ## Milestones and gates
 
 | Milestone | Content | Exit gate |
 | --- | --- | --- |
 | **18.0** | Spike; CPU shell with PicoRV32 and RVFI trace; lockstep comparator; `riscv-tests` in the shell; `riscv-arch-test` harness; timing scripts; PicoRV32 baseline timing | PicoRV32 passes lockstep on `riscv-tests`; the comparator catches an injected mismatch in every compared field; timing scripts report PicoRV32 on both targets — **met** (checklist below) |
 | 18.1 | RV32I pipeline | `riscv-tests` rv32ui and arch-test I in lockstep; random programs in lockstep; first timing report — **met** (owner, 1 October 2026; "Milestone 18.1" below) |
-| 18.2 | M extension | um/arch-test M, multiply/divide corner cases, lockstep, timing |
+| 18.2 | M extension | um/arch-test M, multiply/divide corner cases, lockstep, timing — **met** (owner, 1 October 2026; "Milestone 18.2" below) |
 | 18.3 | Zicsr, traps, interrupts, counters | arch-test Zicsr; directed traps in every stage; interrupt tests in every pipeline state |
 | 18.4 | A extension, `fence`, `fence.i` | ua/arch-test A and Zifencei; atomic and self-modifying-code tests |
 | 18.5 | Xasterdot8 | v1 DOT8 reference tests on the core |
@@ -1181,7 +1197,8 @@ retained evidence stay as history.
   most two cycles, so a finished division never waits in Execute (its result
   is asserted to hold); 18.6's cache misses will need a mode with long stalls,
   which will exercise it
-- [ ] 18.2 … 18.7 as in the table above
+- [x] 18.2 as in the table above — complete (owner, 1 October 2026)
+- [ ] 18.3 … 18.7 as in the table above
 
 ## Non-goals
 
