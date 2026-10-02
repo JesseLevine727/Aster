@@ -40,7 +40,15 @@ tests and random programs with atomics and fences pass in lockstep, cycle for
 cycle with the CPI model, with the shell answering each `sc` as Spike did;
 about 60,000 random interrupts, now over the directed tests too; the kernels
 are unchanged; the FPGA meets 10 ns (108.3 MHz; 104.7 and 108.0 MHz with
-block RAM; see "Milestone 18.4").** The CPU specification this
+block RAM; see "Milestone 18.4"). Milestone 18.5 (Xasterdot8; evidence
+complete, awaiting the owner's sign-off, 2 October 2026; `b087ab2`): v1's
+DOT8 reference tests on the core — the unit test's exhaustive arithmetic,
+the probe's register-field matrix and illegal encodings, the runtime's
+dot/FIR/GEMM jobs — with a Spike extension putting the DOT8 programs in
+lockstep (the exhaustive arithmetic runs self-checking in the shell alone,
+and ran once in lockstep); the kernels are unchanged and v1's DOT8 Conv2D runs, matching its
+baseline; the FPGA meets 10 ns (103.3 MHz; 101.6 and 102.4 MHz with block
+RAM; see "Milestone 18.5").** The CPU specification this
 phase implements is [`cpu.md`](cpu.md) (approved 29 September 2026); the phase
 sits in the [v2 plan](phase17-plus.md#6-phase-17-sequence). Every milestone
 passes its verification layer and records its timing before the next starts.
@@ -1344,6 +1352,133 @@ interrupts keep it; an exception and every `sc` end it), the v1 fabric's
 rule (any store to the word ends it) to be kept or documented by the
 18.6/Phase 20 memory side.
 
+### Milestone 18.5: Xasterdot8 (2 October 2026)
+
+The Aster core runs Xasterdot8 (`b087ab2`): `dot8 rd, rs1, rs2` — custom-0,
+funct3 0, funct7 0, v1's encoding — writes the sum of the four products of the
+operands' signed bytes, sign-extended. The choices made in building it are
+listed in [`cpu.md`](cpu.md) §9 ("Clarifications during milestone 18.5") for
+the owner's review:
+
+- **In the pipeline.** The products and their sum are computed in M1 from the
+  operands Execute passes on, and the value enters M2 with the instruction,
+  so it is forwarded from M2 and W: a reader waits one cycle in Decode at
+  distance 1, as cpu.md §4's hazard table says (and, should M1 wait on the
+  memory, a reader in Execute waits for it). The four 8×8 products are DSP
+  blocks and the sum is in the fabric (below). Every other custom-0 encoding,
+  and custom-1, -2 and -3, are illegal; `misa`'s X bit is set.
+- **In Spike** (`verification/core/spike/aster_dot8.cc`, built by `make
+  core-aster-tests`): the instruction, from integer arithmetic, enabled by
+  `_xasterdot8` in Spike's ISA string (which sets `misa.X`). Spike treats
+  any custom extension as a RoCC coprocessor, making `mie` bit 12 (its
+  interrupt) and `mstatus.XS` (its state, and SD with it) writable; the core
+  has neither, so the extension keeps those bits clear (`traps/csr_ordering`
+  checks them; against the extension without that, it fails). Every
+  Aster-core run now loads it.
+
+Verification (`make core-aster-tests`, `make core-aster-kernels`, both in
+`make check`) — v1's DOT8 reference tests, as they apply to a core:
+
+- **v1's unit test** (`verification/unit/tb_aster_pcpi_dot8.cpp`):
+  `selfcheck/dot8_arith`, in a new suite of self-checking programs run in
+  the shell alone (its 2.6 million instructions are too many to log on every
+  run), checks dot8 against a reference computed with `mul` (itself checked
+  in lockstep): every pair of signed bytes in every lane with the other lanes
+  0 (4 × 65,536), every pair of 12 corner words, and 6,000 pseudo-random
+  pairs, in every memory mode. Run once in lockstep as well (a 270 MB Spike
+  log), all 2,645,248 of its instructions matched Spike, cycle for cycle
+  with the CPI model.
+- **v1's DOT8 runtime jobs** (`software/tests/dot8_runtime.c`), in lockstep:
+  `c/dot8_jobs`, the first of a new suite of C programs in the shell (a
+  start-up, `main`, and the v1 sources it needs), runs the dot, FIR and GEMM
+  kernels of `software/benchmarks/dot8_kernels.c`, scalar and Xasterdot8,
+  over every alignment of their two inputs (4 × 4) and sizes from empty
+  through the scalar tails and the packed loop — 416 jobs, each with its own
+  data as in v1 (zero, −128, −128 against 127, alternating, or
+  pseudo-random, the last on half the alignments at every size, so every
+  alignment of each input meets random data), each result against an
+  independent scalar reference, with guard words around the outputs and the
+  inputs checked unchanged — then v1's sixteen `lr.w`, dot8, `sc.w`
+  sequences and a dot8 into x0 (1,114,993 instructions, cycle for cycle
+  with the CPI model). v1 runs 736 jobs, on two harts beside DMA; the
+  sizes here are trimmed (dot to 64, FIR and GEMM to 13) to keep the Spike
+  log near 100 MB; the multi-hart and DMA parts belong to the SoC
+  (Phase 20).
+- **v1's probe matrix** (`verification/unit/tb_aster_dot8_probe.cpp`), in
+  lockstep: every (rd, rs1, rs2) combination — 32,768 dot8s, four programs
+  (`directed/dot8_fields_0`–`3`; the matrix exceeds the shell's 96 KiB),
+  each rd's results feeding the next at distance 1 — and every illegal
+  custom encoding (`traps/dot8_traps`: the 1,023 custom-0 words with
+  (funct7, funct3) ≠ (0, 0), PicoRV32's `retirq`/`maskirq`/`waitirq` among
+  them, and 30 custom-1/-2/-3 words; each trap record matches Spike's and the
+  handler checks mcause and mtval).
+- **The pipeline's own cases** (`directed/dot8`, lockstep and
+  self-checking): operands from an ALU result, a load, a multiply, a
+  division, an AMO, `lr` and a link value at distance 1; the result to an
+  ALU, a branch, a store's data, a multiply and the next dot8 at distances
+  1–4; chains with rd = rs1 and rd = rs2; x0 as rd and operands; `lr.w`,
+  dot8, `sc.w` (the reservation survives); dot8 behind a load the memory may
+  answer late; the corners (−128 × −128 in every lane, 65,536, needs 18 bits).
+- **A v1 DOT8 workload:** the coherent Conv2D engine built for Xasterdot8
+  (`conv2d_dot8`, Phase 17 capture `conv2d_dot8`) runs in the shell outside
+  the gate, in lockstep (1.18 million instructions), its window and checksum
+  equal to the baseline record's and its cycles to the CPI model's (CPI
+  1.193). It is no faster than the scalar engine on this core (1,365,828
+  window cycles against 1,356,221, with 18% more instructions), nor was it
+  on v1's SoC (10.34 against 9.73 million cycles, the baseline's sync1
+  records) — the engine's DOT8 path
+  packs bytes at a cost close to the multiplies it saves (cpu.md §9).
+- **Constrained-random programs** now emit dot8 (random and corner bytes),
+  with its result a hazard producer and its operands a consumer (276/276
+  bins in each of the three modes), and a corner word as its first operand
+  at times; fences are now 3% of the stream (were 2%), which the dot8 and
+  fence interrupt pairs needed; under random interrupts dot8 is a tenth
+  instruction class: 62,629 interrupts in `make core-aster-tests`
+  (8,623 over rv32ui, rv32um, rv32ua and the directed tests, the dot8
+  programs among them; 14,822, 24,282 and 14,902 over random programs, each reaching all 100
+  (interrupted, next) pairs), every stream with its handlers cut out equal to
+  Spike's.
+- **Conformance** is unchanged — 97 tests in six memory modes (the eight
+  new ones above among them; five self-checking in the shell alone),
+  arch-test 72/72 on both memories — with `misa` now X; the CPU kernels run
+  unchanged and cycle-exact; the PicoRV32 suites pass, skipping the dot8
+  directed tests (the shell's PicoRV32 has no Xasterdot8).
+- **Planted bugs** (assertions off): thirteen new ones — the dot8 interlock
+  removed in Decode, added in M1, missing from M1's `late` or kept in M2's;
+  the value not written to M2, not sign-extended or cut to 17 bits; a lane
+  unsigned, swapped or dropped; funct3 or funct7 ignored; `misa` without X —
+  all caught (one first written as a sign-extension bug turned out
+  equivalent: a size cast of a signed value sign-extends, so it was replaced
+  by a zero-extension). With 18.4's, 76 planted, 72 caught (18.3's four).
+- **Review.** The milestone's watchdog review found no RTL bug: it traced
+  every forwarding and stall path for a dot8 (M1 waiting, kills, interrupts,
+  x0, back-to-back writers), and two planted bugs of its own — the dot8 not
+  late in M1, its value dropped on a kill — were caught (under back-pressure
+  and under interrupts). It found Spike's `mstatus.XS` writable (fixed with
+  `mie`'s bit 12, above); v1's C-level DOT8 jobs not ported (now
+  `c/dot8_jobs`); the exhaustive program's stated reason for running in the
+  shell alone weaker than stated (it has now run once in lockstep); and
+  random programs rarely giving dot8 a corner word (the corner word is now
+  its first operand). A second review, before the push, found `c/dot8_jobs`
+  giving every alignment of a size the same data (often all zero or all
+  −128, so alignment did not matter), where v1 gives each job its own (now
+  so, as above), and two overstated sentences in this record (corrected).
+
+**Timing** (FPGA, out of context, 10 ns; `b087ab2`): with the four products
+in LUTs, dot8's M1 path (product, sum, M2's result) missed 10 ns in every
+form (93.1, 91.7 and 90.0 MHz); with them in DSP blocks Vivado summed them
+through the DSPs' cascade, still slower (99.1, 98.4 and 99.1 MHz); with the
+products in DSP blocks and the sum in the fabric it meets 10 ns: the core
+alone at 103.3 MHz (+0.318 ns; 2,830 LUTs, 1,361 flip-flops, 8 DSPs, against
+18.4's 108.3 MHz, 2,808 LUTs and 4 DSPs), with the block RAM in the §5 form
+at 101.6 MHz (+0.154 ns) and with the request registered at 102.4 MHz
+(+0.233 ns). The dot8 path (a DSP product through the sum into M2's result)
+is now the worst in the core alone and with the request registered; in the
+§5 form the worst is still 18.2's forwarded operand into the block RAM's
+write enable. The paths §4 names: `d_rsp_valid` to the next request
++3.231 ns, the `d_rsp_error` kill +2.599 ns (§5 form). Evidence:
+[`results/phase18/aster-18.5`](results/phase18/aster-18.5/README.md).
+
 ## Milestones and gates
 
 | Milestone | Content | Exit gate |
@@ -1353,7 +1488,7 @@ rule (any store to the word ends it) to be kept or documented by the
 | 18.2 | M extension | um/arch-test M, multiply/divide corner cases, lockstep, timing — **met** (owner, 1 October 2026; "Milestone 18.2" below) |
 | 18.3 | Zicsr, traps, interrupts, counters | arch-test Zicsr; directed traps in every stage; interrupt tests in every pipeline state — **met** (owner, 2 October 2026; "Milestone 18.3"; riscv-arch-test 3.10.0 has no Zicsr suite: its privilege suite and riscv-tests rv32mi stand in, as the owner accepted) |
 | 18.4 | A extension, `fence`, `fence.i` | ua/arch-test A and Zifencei; atomic and self-modifying-code tests — **met** (owner, 2 October 2026; "Milestone 18.4"; the litmus tests of cpu.md §8 are single-hart until two cores share memory, as the owner accepted) |
-| 18.5 | Xasterdot8 | v1 DOT8 reference tests on the core |
+| 18.5 | Xasterdot8 | v1 DOT8 reference tests on the core — evidence complete, awaiting the owner (2 October 2026; "Milestone 18.5") |
 | 18.6 | L1 caches with two-stage pipelined hits; SRAM interface; runtime port | cache reference model, back-pressure, firmware regression |
 | 18.7 | Evaluation and feasibility | Against PicoRV32 on the CPU set in the same shell: geometric mean of the per-kernel speedups ≥2.0× and every kernel ≥1.5×, each kernel's speedup published; 100 MHz feasibility report for the FPGA (SKY130 dropped, 1 October 2026) |
 
@@ -1604,11 +1739,14 @@ rule (any store to the word ends it) to be kept or documented by the
   the added CSRs, `time`/`timeh` as the core's own time counter, and the
   privilege suite and rv32mi standing in for "arch-test Zicsr" (cpu.md §9)
 - [ ] riscv-arch-test 4.x (ACT4): reconsider when the ISA is final, at 18.5
-  (owner, 2 October 2026)
+  (owner, 2 October 2026) — the ISA is final with 18.5; the decision is put to
+  the owner at 18.5's sign-off (Ruby and opam are installed here, Sail is not)
 - [x] 18.4 as in the table above — complete (owner, 2 October 2026), with
   cpu.md §9's 18.4 clarifications (single-hart litmus tests; the
   reservation rules the memory side must keep)
-- [ ] 18.5 … 18.7 as in the table above
+- [ ] 18.5 as in the table above — evidence complete; awaiting the owner's
+  sign-off and decisions on cpu.md §9's 18.5 clarifications
+- [ ] 18.6 … 18.7 as in the table above
 
 ## Non-goals
 

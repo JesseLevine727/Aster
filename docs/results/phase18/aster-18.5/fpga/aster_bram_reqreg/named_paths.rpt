@@ -1,0 +1,334 @@
+NAMED label=d_rsp_valid_to_request slack_ns=6.410 from=block/d_v2_reg/C to=block/request_registered.d_en_reg/D levels=4
+Copyright 1986-2022 Xilinx, Inc. All Rights Reserved. Copyright 2022-2025 Advanced Micro Devices, Inc. All Rights Reserved.
+----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+| Tool Version : Vivado v.2025.1 (lin64) Build 6140274 Wed May 21 22:58:25 MDT 2025
+| Date         : Fri Oct  2 13:52:59 2026
+| Host         : gondor running 64-bit Ubuntu 24.04.5 LTS
+| Command      : report_timing -of_objects [get_timing_paths -setup -from [get_cells -hier -quiet -filter {NAME =~ *d_v2_reg* && IS_SEQUENTIAL}] -to [get_cells -hier -quiet -filter {(NAME =~ *d_v1_reg* || NAME =~ *d_en_reg* || NAME =~ *ram_reg*) && IS_SEQUENTIAL}] -max_paths 1 -nworst 1] -return_string
+| Design       : timing_aster_bram_reqreg
+| Device       : 7z020-clg400
+| Speed File   : -1  PRODUCTION 1.12 2019-11-22
+| Design State : Routed
+----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+Timing Report
+
+Slack (MET) :             6.410ns  (required time - arrival time)
+  Source:                 block/d_v2_reg/C
+                            (rising edge-triggered cell FDRE clocked by clk  {rise@0.000ns fall@5.000ns period=10.000ns})
+  Destination:            block/request_registered.d_en_reg/D
+                            (rising edge-triggered cell FDRE clocked by clk  {rise@0.000ns fall@5.000ns period=10.000ns})
+  Path Group:             clk
+  Path Type:              Setup (Max at Slow Process Corner)
+  Requirement:            10.000ns  (clk rise@10.000ns - clk rise@0.000ns)
+  Data Path Delay:        3.537ns  (logic 0.952ns (26.914%)  route 2.585ns (73.086%))
+  Logic Levels:           4  (LUT3=1 LUT6=3)
+  Clock Path Skew:        -0.049ns (DCD - SCD + CPR)
+    Destination Clock Delay (DCD):    0.924ns = ( 10.924 - 10.000 ) 
+    Source Clock Delay      (SCD):    0.973ns
+    Clock Pessimism Removal (CPR):    0.000ns
+  Clock Uncertainty:      0.035ns  ((TSJ^2 + TIJ^2)^1/2 + DJ) / 2 + PE
+    Total System Jitter     (TSJ):    0.071ns
+    Total Input Jitter      (TIJ):    0.000ns
+    Discrete Jitter          (DJ):    0.000ns
+    Phase Error              (PE):    0.000ns
+
+    Location             Delay type                Incr(ns)  Path(ns)    Netlist Resource(s)
+  -------------------------------------------------------------------    -------------------
+                         (clock clk rise edge)        0.000     0.000 r  
+                                                      0.000     0.000 r  clk (IN)
+                         net (fo=1838, unset)         0.973     0.973    block/clk
+    SLICE_X52Y3          FDRE                                         r  block/d_v2_reg/C
+  -------------------------------------------------------------------    -------------------
+    SLICE_X52Y3          FDRE (Prop_fdre_C_Q)         0.456     1.429 f  block/d_v2_reg/Q
+                         net (fo=20, routed)          0.643     2.072    block/core/fetch/d_v2
+    SLICE_X51Y4                                                       f  block/core/fetch/e_pending_i_3/I3
+    SLICE_X51Y4          LUT6 (Prop_lut6_I3_O)        0.124     2.196 f  block/core/fetch/e_pending_i_3/O
+                         net (fo=107, routed)         0.476     2.672    block/core/fetch/m2_reg[got]
+    SLICE_X53Y2                                                       f  block/core/fetch/m1_first_i_3/I0
+    SLICE_X53Y2          LUT6 (Prop_lut6_I0_O)        0.124     2.796 r  block/core/fetch/m1_first_i_3/O
+                         net (fo=1, routed)           0.433     3.229    block/core/fetch/m1_first_i_3_n_0
+    SLICE_X53Y2                                                       r  block/core/fetch/m1_first_i_1/I1
+    SLICE_X53Y2          LUT6 (Prop_lut6_I1_O)        0.124     3.353 r  block/core/fetch/m1_first_i_1/O
+                         net (fo=24, routed)          1.034     4.386    block/core/e_advance
+    SLICE_X53Y6                                                       r  block/core/request_registered.d_en_i_1/I1
+    SLICE_X53Y6          LUT3 (Prop_lut3_I1_O)        0.124     4.510 r  block/core/request_registered.d_en_i_1/O
+                         net (fo=1, routed)           0.000     4.510    block/request_registered.d_en0
+    SLICE_X53Y6          FDRE                                         r  block/request_registered.d_en_reg/D
+  -------------------------------------------------------------------    -------------------
+
+                         (clock clk rise edge)       10.000    10.000 r  
+                                                      0.000    10.000 r  clk (IN)
+                         net (fo=1838, unset)         0.924    10.924    block/clk
+    SLICE_X53Y6          FDRE                                         r  block/request_registered.d_en_reg/C
+                         clock pessimism              0.000    10.924    
+                         clock uncertainty           -0.035    10.889    
+    SLICE_X53Y6          FDRE (Setup_fdre_C_D)        0.031    10.920    block/request_registered.d_en_reg
+  -------------------------------------------------------------------
+                         required time                         10.920    
+                         arrival time                          -4.510    
+  -------------------------------------------------------------------
+                         slack                                  6.410    
+
+
+
+
+
+NAMED label=d_rsp_error_kill slack_ns=4.616 from=block/d_err1_reg/C to=block/request_registered.d_en_reg/D levels=6
+Copyright 1986-2022 Xilinx, Inc. All Rights Reserved. Copyright 2022-2025 Advanced Micro Devices, Inc. All Rights Reserved.
+------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+| Tool Version : Vivado v.2025.1 (lin64) Build 6140274 Wed May 21 22:58:25 MDT 2025
+| Date         : Fri Oct  2 13:52:59 2026
+| Host         : gondor running 64-bit Ubuntu 24.04.5 LTS
+| Command      : report_timing -of_objects [get_timing_paths -setup -from [get_cells -hier -quiet -filter {NAME =~ *d_err1_reg* && IS_SEQUENTIAL}] -to [get_cells -hier -quiet -filter {(NAME =~ *d_v1_reg* || NAME =~ *d_en_reg* || NAME =~ *ram_reg*) && IS_SEQUENTIAL}] -max_paths 1 -nworst 1] -return_string
+| Design       : timing_aster_bram_reqreg
+| Device       : 7z020-clg400
+| Speed File   : -1  PRODUCTION 1.12 2019-11-22
+| Design State : Routed
+------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+Timing Report
+
+Slack (MET) :             4.616ns  (required time - arrival time)
+  Source:                 block/d_err1_reg/C
+                            (rising edge-triggered cell FDRE clocked by clk  {rise@0.000ns fall@5.000ns period=10.000ns})
+  Destination:            block/request_registered.d_en_reg/D
+                            (rising edge-triggered cell FDRE clocked by clk  {rise@0.000ns fall@5.000ns period=10.000ns})
+  Path Group:             clk
+  Path Type:              Setup (Max at Slow Process Corner)
+  Requirement:            10.000ns  (clk rise@10.000ns - clk rise@0.000ns)
+  Data Path Delay:        5.331ns  (logic 1.338ns (25.096%)  route 3.993ns (74.904%))
+  Logic Levels:           6  (LUT3=1 LUT5=1 LUT6=4)
+  Clock Path Skew:        -0.049ns (DCD - SCD + CPR)
+    Destination Clock Delay (DCD):    0.924ns = ( 10.924 - 10.000 ) 
+    Source Clock Delay      (SCD):    0.973ns
+    Clock Pessimism Removal (CPR):    0.000ns
+  Clock Uncertainty:      0.035ns  ((TSJ^2 + TIJ^2)^1/2 + DJ) / 2 + PE
+    Total System Jitter     (TSJ):    0.071ns
+    Total Input Jitter      (TIJ):    0.000ns
+    Discrete Jitter          (DJ):    0.000ns
+    Phase Error              (PE):    0.000ns
+
+    Location             Delay type                Incr(ns)  Path(ns)    Netlist Resource(s)
+  -------------------------------------------------------------------    -------------------
+                         (clock clk rise edge)        0.000     0.000 r  
+                                                      0.000     0.000 r  clk (IN)
+                         net (fo=1838, unset)         0.973     0.973    block/clk
+    SLICE_X52Y4          FDRE                                         r  block/d_err1_reg/C
+  -------------------------------------------------------------------    -------------------
+    SLICE_X52Y4          FDRE (Prop_fdre_C_Q)         0.419     1.392 f  block/d_err1_reg/Q
+                         net (fo=6, routed)           0.642     2.034    block/core/fetch/d_err1
+    SLICE_X45Y5                                                       f  block/core/fetch/e_pc[31]_i_4/I4
+    SLICE_X45Y5          LUT5 (Prop_lut5_I4_O)        0.299     2.333 r  block/core/fetch/e_pc[31]_i_4/O
+                         net (fo=2, routed)           0.763     3.095    block/core/fetch/m1_reg[trap]
+    SLICE_X38Y5                                                       r  block/core/fetch/e_pc[31]_i_2/I0
+    SLICE_X38Y5          LUT6 (Prop_lut6_I0_O)        0.124     3.219 r  block/core/fetch/e_pc[31]_i_2/O
+                         net (fo=31, routed)          0.647     3.866    block/core/fetch/e_pc[31]_i_2_n_0
+    SLICE_X51Y4                                                       r  block/core/fetch/e_pending_i_3/I5
+    SLICE_X51Y4          LUT6 (Prop_lut6_I5_O)        0.124     3.990 f  block/core/fetch/e_pending_i_3/O
+                         net (fo=107, routed)         0.476     4.466    block/core/fetch/m2_reg[got]
+    SLICE_X53Y2                                                       f  block/core/fetch/m1_first_i_3/I0
+    SLICE_X53Y2          LUT6 (Prop_lut6_I0_O)        0.124     4.590 r  block/core/fetch/m1_first_i_3/O
+                         net (fo=1, routed)           0.433     5.023    block/core/fetch/m1_first_i_3_n_0
+    SLICE_X53Y2                                                       r  block/core/fetch/m1_first_i_1/I1
+    SLICE_X53Y2          LUT6 (Prop_lut6_I1_O)        0.124     5.147 r  block/core/fetch/m1_first_i_1/O
+                         net (fo=24, routed)          1.034     6.180    block/core/e_advance
+    SLICE_X53Y6                                                       r  block/core/request_registered.d_en_i_1/I1
+    SLICE_X53Y6          LUT3 (Prop_lut3_I1_O)        0.124     6.304 r  block/core/request_registered.d_en_i_1/O
+                         net (fo=1, routed)           0.000     6.304    block/request_registered.d_en0
+    SLICE_X53Y6          FDRE                                         r  block/request_registered.d_en_reg/D
+  -------------------------------------------------------------------    -------------------
+
+                         (clock clk rise edge)       10.000    10.000 r  
+                                                      0.000    10.000 r  clk (IN)
+                         net (fo=1838, unset)         0.924    10.924    block/clk
+    SLICE_X53Y6          FDRE                                         r  block/request_registered.d_en_reg/C
+                         clock pessimism              0.000    10.924    
+                         clock uncertainty           -0.035    10.889    
+    SLICE_X53Y6          FDRE (Setup_fdre_C_D)        0.031    10.920    block/request_registered.d_en_reg
+  -------------------------------------------------------------------
+                         required time                         10.920    
+                         arrival time                          -6.304    
+  -------------------------------------------------------------------
+                         slack                                  4.616    
+
+
+
+
+
+NAMED label=d_rsp_valid_worst slack_ns=1.954 from=block/d_v2_reg/C to=block/core/w_reg[result][26]/D levels=7
+Copyright 1986-2022 Xilinx, Inc. All Rights Reserved. Copyright 2022-2025 Advanced Micro Devices, Inc. All Rights Reserved.
+----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+| Tool Version : Vivado v.2025.1 (lin64) Build 6140274 Wed May 21 22:58:25 MDT 2025
+| Date         : Fri Oct  2 13:52:59 2026
+| Host         : gondor running 64-bit Ubuntu 24.04.5 LTS
+| Command      : report_timing -of_objects [get_timing_paths -setup -from [get_cells -hier -quiet -filter {NAME =~ *d_v2_reg* && IS_SEQUENTIAL}] -max_paths 1 -nworst 1] -return_string
+| Design       : timing_aster_bram_reqreg
+| Device       : 7z020-clg400
+| Speed File   : -1  PRODUCTION 1.12 2019-11-22
+| Design State : Routed
+----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+Timing Report
+
+Slack (MET) :             1.954ns  (required time - arrival time)
+  Source:                 block/d_v2_reg/C
+                            (rising edge-triggered cell FDRE clocked by clk  {rise@0.000ns fall@5.000ns period=10.000ns})
+  Destination:            block/core/w_reg[result][26]/D
+                            (rising edge-triggered cell FDRE clocked by clk  {rise@0.000ns fall@5.000ns period=10.000ns})
+  Path Group:             clk
+  Path Type:              Setup (Max at Slow Process Corner)
+  Requirement:            10.000ns  (clk rise@10.000ns - clk rise@0.000ns)
+  Data Path Delay:        7.994ns  (logic 1.971ns (24.657%)  route 6.023ns (75.343%))
+  Logic Levels:           7  (LUT4=2 LUT5=5)
+  Clock Path Skew:        -0.049ns (DCD - SCD + CPR)
+    Destination Clock Delay (DCD):    0.924ns = ( 10.924 - 10.000 ) 
+    Source Clock Delay      (SCD):    0.973ns
+    Clock Pessimism Removal (CPR):    0.000ns
+  Clock Uncertainty:      0.035ns  ((TSJ^2 + TIJ^2)^1/2 + DJ) / 2 + PE
+    Total System Jitter     (TSJ):    0.071ns
+    Total Input Jitter      (TIJ):    0.000ns
+    Discrete Jitter          (DJ):    0.000ns
+    Phase Error              (PE):    0.000ns
+
+    Location             Delay type                Incr(ns)  Path(ns)    Netlist Resource(s)
+  -------------------------------------------------------------------    -------------------
+                         (clock clk rise edge)        0.000     0.000 r  
+                                                      0.000     0.000 r  clk (IN)
+                         net (fo=1838, unset)         0.973     0.973    block/clk
+    SLICE_X52Y3          FDRE                                         r  block/d_v2_reg/C
+  -------------------------------------------------------------------    -------------------
+    SLICE_X52Y3          FDRE (Prop_fdre_C_Q)         0.456     1.429 r  block/d_v2_reg/Q
+                         net (fo=20, routed)          0.754     2.183    block/core/d_v2
+    SLICE_X61Y2                                                       r  block/core/w[result][31]_i_9/I0
+    SLICE_X61Y2          LUT4 (Prop_lut4_I0_O)        0.118     2.301 r  block/core/w[result][31]_i_9/O
+                         net (fo=32, routed)          1.277     3.579    block/core/w[result][31]_i_9_n_0
+    SLICE_X55Y22                                                      r  block/core/w[result][31]_i_5/I3
+    SLICE_X55Y22         LUT5 (Prop_lut5_I3_O)        0.326     3.905 r  block/core/w[result][31]_i_5/O
+                         net (fo=4, routed)           1.068     4.972    block/core/w[result][31]_i_5_n_0
+    SLICE_X45Y6                                                       r  block/core/w[result][15]_i_6/I3
+    SLICE_X45Y6          LUT5 (Prop_lut5_I3_O)        0.124     5.096 f  block/core/w[result][15]_i_6/O
+                         net (fo=2, routed)           0.489     5.586    block/core/w[result][15]_i_6_n_0
+    SLICE_X52Y6                                                       f  block/core/w[result][7]_i_2/I4
+    SLICE_X52Y6          LUT5 (Prop_lut5_I4_O)        0.124     5.710 f  block/core/w[result][7]_i_2/O
+                         net (fo=3, routed)           0.634     6.344    block/core/w[result][7]_i_2_n_0
+    SLICE_X52Y6                                                       f  block/core/w[result][22]_i_4/I2
+    SLICE_X52Y6          LUT5 (Prop_lut5_I2_O)        0.150     6.494 r  block/core/w[result][22]_i_4/O
+                         net (fo=11, routed)          0.867     7.361    block/core/w[result][22]_i_4_n_0
+    SLICE_X54Y9                                                       r  block/core/w[result][31]_i_6/I2
+    SLICE_X54Y9          LUT4 (Prop_lut4_I2_O)        0.325     7.686 r  block/core/w[result][31]_i_6/O
+                         net (fo=9, routed)           0.933     8.619    block/core/w[result][31]_i_6_n_0
+    SLICE_X45Y10                                                      r  block/core/w[result][26]_i_1/I4
+    SLICE_X45Y10         LUT5 (Prop_lut5_I4_O)        0.348     8.967 r  block/core/w[result][26]_i_1/O
+                         net (fo=1, routed)           0.000     8.967    block/core/w[result][26]_i_1_n_0
+    SLICE_X45Y10         FDRE                                         r  block/core/w_reg[result][26]/D
+  -------------------------------------------------------------------    -------------------
+
+                         (clock clk rise edge)       10.000    10.000 r  
+                                                      0.000    10.000 r  clk (IN)
+                         net (fo=1838, unset)         0.924    10.924    block/core/clk
+    SLICE_X45Y10         FDRE                                         r  block/core/w_reg[result][26]/C
+                         clock pessimism              0.000    10.924    
+                         clock uncertainty           -0.035    10.889    
+    SLICE_X45Y10         FDRE (Setup_fdre_C_D)        0.032    10.921    block/core/w_reg[result][26]
+  -------------------------------------------------------------------
+                         required time                         10.921    
+                         arrival time                          -8.967    
+  -------------------------------------------------------------------
+                         slack                                  1.954    
+
+
+
+
+
+NAMED label=d_rsp_error_worst slack_ns=1.069 from=block/d_err1_reg/C to=block/core/d_target_reg[29]/CE levels=9
+Copyright 1986-2022 Xilinx, Inc. All Rights Reserved. Copyright 2022-2025 Advanced Micro Devices, Inc. All Rights Reserved.
+------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+| Tool Version : Vivado v.2025.1 (lin64) Build 6140274 Wed May 21 22:58:25 MDT 2025
+| Date         : Fri Oct  2 13:52:59 2026
+| Host         : gondor running 64-bit Ubuntu 24.04.5 LTS
+| Command      : report_timing -of_objects [get_timing_paths -setup -from [get_cells -hier -quiet -filter {NAME =~ *d_err1_reg* && IS_SEQUENTIAL}] -max_paths 1 -nworst 1] -return_string
+| Design       : timing_aster_bram_reqreg
+| Device       : 7z020-clg400
+| Speed File   : -1  PRODUCTION 1.12 2019-11-22
+| Design State : Routed
+------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+Timing Report
+
+Slack (MET) :             1.069ns  (required time - arrival time)
+  Source:                 block/d_err1_reg/C
+                            (rising edge-triggered cell FDRE clocked by clk  {rise@0.000ns fall@5.000ns period=10.000ns})
+  Destination:            block/core/d_target_reg[29]/CE
+                            (rising edge-triggered cell FDRE clocked by clk  {rise@0.000ns fall@5.000ns period=10.000ns})
+  Path Group:             clk
+  Path Type:              Setup (Max at Slow Process Corner)
+  Requirement:            10.000ns  (clk rise@10.000ns - clk rise@0.000ns)
+  Data Path Delay:        8.434ns  (logic 1.735ns (20.572%)  route 6.699ns (79.428%))
+  Logic Levels:           9  (LUT3=2 LUT5=1 LUT6=6)
+  Clock Path Skew:        -0.049ns (DCD - SCD + CPR)
+    Destination Clock Delay (DCD):    0.924ns = ( 10.924 - 10.000 ) 
+    Source Clock Delay      (SCD):    0.973ns
+    Clock Pessimism Removal (CPR):    0.000ns
+  Clock Uncertainty:      0.035ns  ((TSJ^2 + TIJ^2)^1/2 + DJ) / 2 + PE
+    Total System Jitter     (TSJ):    0.071ns
+    Total Input Jitter      (TIJ):    0.000ns
+    Discrete Jitter          (DJ):    0.000ns
+    Phase Error              (PE):    0.000ns
+
+    Location             Delay type                Incr(ns)  Path(ns)    Netlist Resource(s)
+  -------------------------------------------------------------------    -------------------
+                         (clock clk rise edge)        0.000     0.000 r  
+                                                      0.000     0.000 r  clk (IN)
+                         net (fo=1838, unset)         0.973     0.973    block/clk
+    SLICE_X52Y4          FDRE                                         r  block/d_err1_reg/C
+  -------------------------------------------------------------------    -------------------
+    SLICE_X52Y4          FDRE (Prop_fdre_C_Q)         0.419     1.392 f  block/d_err1_reg/Q
+                         net (fo=6, routed)           0.642     2.034    block/core/fetch/d_err1
+    SLICE_X45Y5                                                       f  block/core/fetch/e_pc[31]_i_4/I4
+    SLICE_X45Y5          LUT5 (Prop_lut5_I4_O)        0.299     2.333 r  block/core/fetch/e_pc[31]_i_4/O
+                         net (fo=2, routed)           0.763     3.095    block/core/fetch/m1_reg[trap]
+    SLICE_X38Y5                                                       r  block/core/fetch/e_pc[31]_i_2/I0
+    SLICE_X38Y5          LUT6 (Prop_lut6_I0_O)        0.124     3.219 r  block/core/fetch/e_pc[31]_i_2/O
+                         net (fo=31, routed)          0.647     3.866    block/core/fetch/e_pc[31]_i_2_n_0
+    SLICE_X51Y4                                                       r  block/core/fetch/e_pending_i_3/I5
+    SLICE_X51Y4          LUT6 (Prop_lut6_I5_O)        0.124     3.990 f  block/core/fetch/e_pending_i_3/O
+                         net (fo=107, routed)         0.476     4.466    block/core/fetch/m2_reg[got]
+    SLICE_X53Y2                                                       f  block/core/fetch/m1_first_i_3/I0
+    SLICE_X53Y2          LUT6 (Prop_lut6_I0_O)        0.124     4.590 r  block/core/fetch/m1_first_i_3/O
+                         net (fo=1, routed)           0.433     5.023    block/core/fetch/m1_first_i_3_n_0
+    SLICE_X53Y2                                                       r  block/core/fetch/m1_first_i_1/I1
+    SLICE_X53Y2          LUT6 (Prop_lut6_I1_O)        0.124     5.147 r  block/core/fetch/m1_first_i_1/O
+                         net (fo=24, routed)          0.762     5.909    block/core/fetch/div_done_reg
+    SLICE_X49Y3                                                       r  block/core/fetch/e_dec[rd][4]_i_3/I2
+    SLICE_X49Y3          LUT3 (Prop_lut3_I2_O)        0.124     6.033 f  block/core/fetch/e_dec[rd][4]_i_3/O
+                         net (fo=77, routed)          0.789     6.822    block/core/fetch/e_valid_reg
+    SLICE_X43Y3                                                       f  block/core/fetch/head[1]_i_5/I2
+    SLICE_X43Y3          LUT6 (Prop_lut6_I2_O)        0.124     6.946 f  block/core/fetch/head[1]_i_5/O
+                         net (fo=11, routed)          0.459     7.405    block/core/fetch/squash_reg
+    SLICE_X43Y5                                                       f  block/core/fetch/head[1]_i_3/I1
+    SLICE_X43Y5          LUT6 (Prop_lut6_I1_O)        0.124     7.529 f  block/core/fetch/head[1]_i_3/O
+                         net (fo=6, routed)           0.682     8.211    block/core/squash_reg_1
+    SLICE_X43Y6                                                       f  block/core/d_insn[31]_i_1/I2
+    SLICE_X43Y6          LUT3 (Prop_lut3_I2_O)        0.149     8.360 r  block/core/d_insn[31]_i_1/O
+                         net (fo=93, routed)          1.047     9.407    block/core/d_pc
+    SLICE_X41Y18         FDRE                                         r  block/core/d_target_reg[29]/CE
+  -------------------------------------------------------------------    -------------------
+
+                         (clock clk rise edge)       10.000    10.000 r  
+                                                      0.000    10.000 r  clk (IN)
+                         net (fo=1838, unset)         0.924    10.924    block/core/clk
+    SLICE_X41Y18         FDRE                                         r  block/core/d_target_reg[29]/C
+                         clock pessimism              0.000    10.924    
+                         clock uncertainty           -0.035    10.889    
+    SLICE_X41Y18         FDRE (Setup_fdre_C_CE)      -0.413    10.476    block/core/d_target_reg[29]
+  -------------------------------------------------------------------
+                         required time                         10.476    
+                         arrival time                          -9.407    
+  -------------------------------------------------------------------
+                         slack                                  1.069    
+
+
+
+
+
