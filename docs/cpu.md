@@ -59,18 +59,16 @@ Machine mode only. Implemented CSRs:
 
 | CSR | Behavior |
 | --- | --- |
-| `misa`, `mvendorid`, `marchid`, `mimpid`, `mhartid`, `mconfigptr` | read-only identity; `mhartid` from a parameter; `misa` names the extensions implemented (I and M from 18.3, A from 18.4) and ignores writes (`mconfigptr`: 18.3, pending the owner) |
-| `mstatus`, `mstatush` | `MIE`, `MPIE`; `MPP` reads as machine mode; `mstatush` reads 0 (18.3, pending the owner) |
+| `misa`, `mvendorid`, `marchid`, `mimpid`, `mhartid`, `mconfigptr` | read-only identity; `mhartid` from a parameter; `misa` names the extensions implemented (I and M from 18.3, A from 18.4) and ignores writes (`mconfigptr`: 18.3) |
+| `mstatus`, `mstatush` | `MIE`, `MPIE`; `MPP` reads as machine mode; `mstatush` reads 0 (18.3) |
 | `mtvec` | direct mode (vectored mode optional later); bits 1:0 read 0 |
 | `mepc`, `mcause`, `mtval`, `mscratch` | standard (`mepc` bits 1:0 read 0: no C) |
 | `mie`, `mip` | `MEIE`/`MEIP`, `MTIE`/`MTIP`, `MSIE`/`MSIP` |
-| `mcycle(h)`, `minstret(h)`, `cycle(h)`, `instret(h)`, `mcountinhibit` | 64-bit counters; user-level aliases read-only; `mcountinhibit`'s `CY` and `IR` stop `mcycle` and `minstret` (`mcountinhibit`: 18.3, pending the owner) |
-| `mhpmcounter3`–`31(h)`, `mhpmevent3`–`31` | the hardware performance monitor, implemented as zero (writes change nothing; 18.3, pending the owner) |
+| `mcycle(h)`, `minstret(h)`, `cycle(h)`, `instret(h)`, `mcountinhibit` | 64-bit counters; user-level aliases read-only; `mcountinhibit`'s `CY` and `IR` stop `mcycle` and `minstret` (`mcountinhibit`: 18.3) |
+| `mhpmcounter3`–`31(h)`, `mhpmevent3`–`31` | the hardware performance monitor, implemented as zero (writes change nothing; 18.3) |
+| `time`, `timeh` | read-only: the core's own 64-bit time counter, one tick per clock from reset, never written or stopped (`mcountinhibit` does not touch it; 18.3, owner decision) |
 
-Every other CSR is an illegal instruction. `time` and `timeh`, which Zicntr
-includes, are not implemented in 18.3 — software reads the SoC timer, which
-is memory-mapped (below) — pending the owner's decision (§9, 18.3). `wfi`
-executes as a no-op.
+Every other CSR is an illegal instruction. `wfi` executes as a no-op.
 
 Traps are precise: an exception is recognized at the stage that detects it and
 taken when the instruction reaches the commit point, after which all younger
@@ -301,9 +299,8 @@ Each milestone passes all applicable layers before the next milestone starts.
      ISA string that grows with the milestones to
      `--isa=rv32ima_zicsr_zifencei_zicntr` (18.3: `rv32im_zicsr_zicntr`).
      Values that legitimately differ are allowlisted by name, never by
-     position: `mcycle`/`cycle`/`time` reads (while `time` is not implemented,
-     §3, a read of it traps on the core and not in Spike; no lockstep program
-     reads it), `marchid`, `mip` (Spike's CLINT
+     position: `mcycle`/`cycle`/`time` reads (the core's time counter ticks
+     once per clock, Spike's at its own rate), `marchid`, `mip` (Spike's CLINT
      holds `MTIP` high from reset — `mip` reads `0x80` — and the shell has no
      timer; the value read and the value written back), Spike's
      debug-trigger `tcontrol` update on `mret` (absent with `--triggers=0`),
@@ -494,20 +491,21 @@ reviews; none changes the approved scope:
   carry no such restriction.
 
 Clarifications during milestone 18.3 (2 October 2026), from building and
-verifying traps, interrupts and the CSRs, listed for the owner's review of
-18.3. Three await the owner's decision: `time` and `timeh` left
-unimplemented (a departure from Zicntr), the CSRs added beyond §3's approved
-table, and the conformance that stands in for the gate's "arch-test Zicsr";
-the rest keep within the approved scope:
+verifying traps, interrupts and the CSRs. The owner accepted them with 18.3
+(2 October 2026), including the three that needed a decision — the CSRs
+added beyond §3's approved table, the conformance that stands in for the
+gate's "arch-test Zicsr", and `time`/`timeh` (below):
 
 - §3: the CSR set completed with the standard machine CSRs that Spike and the
   conformance tests use — `mcountinhibit` (`CY`, `IR`), `mstatush` (reads 0),
   `mconfigptr` (reads 0), and the privileged specification's hardware
   performance monitor (`mhpmcounter3`–`31(h)`, `mhpmevent3`–`31`) as zero —
-  and its bounds made explicit: `time`/`timeh` are not implemented (an
-  illegal instruction; the SoC timer is memory-mapped; Zicntr includes them,
-  so this departs from Zicntr, for the owner to accept), `mtvec` is direct
-  only, `misa` grows with the milestones, `wfi` is a no-op.
+  and its bounds made explicit: `mtvec` is direct only, `misa` grows with the
+  milestones, `wfi` is a no-op. `time`/`timeh`, which Zicntr includes and
+  §3's table left out, read the core's own free-running 64-bit counter (one
+  tick per clock, never written or stopped): the owner chose it over leaving
+  them out (the SoC timer is memory-mapped) and over aliasing `mcycle`, which
+  software can write or stop.
 - §4: CSR instructions and `mret` are serializing — Execute holds one until
   M1 is empty, one cycle behind an instruction in M1 — so a CSR read sees
   every older write and `minstret` counts exactly the older instructions. The
@@ -590,3 +588,9 @@ Changes after approval, by the owner:
   The two-stage memory access, adopted for SKY130's arrays, stays: it is
   built and verified, and the FPGA's block RAM is read with its output
   register. Decided by the owner.
+- **2 October 2026 — 18.3 signed off (§3, §8):** the owner accepted milestone
+  18.3 with its clarifications above — the added CSRs, `time`/`timeh` as the
+  core's own free-running counter (the owner's choice of three), and
+  riscv-arch-test's privilege suite with riscv-tests rv32mi standing in for
+  the gate's "arch-test Zicsr" (3.10.0 has no Zicsr suite) — and chose to
+  reconsider riscv-arch-test 4.x (ACT4) when the ISA is final, at 18.5.

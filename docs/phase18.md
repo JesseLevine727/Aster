@@ -25,13 +25,15 @@ implementation: the FPGA is the only implementation target (the last SKY130
 runs: `42a1f1f` at 10 ns missed the slow corner by up to 0.52 ns in four of
 five floorplans, and at 12.5 ns closed in all five; see "Milestone 18.2" and
 [`phase17-plus.md`](phase17-plus.md)). Milestone 18.3 (Zicsr, traps,
-interrupts, counters; evidence complete, awaiting the owner's sign-off,
-2 October 2026): rv32ui/um/mi, arch-test I, M and privilege, directed traps
+interrupts, counters; complete, owner, 2 October 2026; `9cbd3c1`):
+rv32ui/um/mi, arch-test I, M and privilege, directed traps
 from every stage and random programs with exceptions pass in lockstep, cycle
 for cycle with the CPI model; interrupts are checked by self-checking tests
 and by about 23,000 random interrupts whose streams, with the handlers cut
-out, equal Spike's; the kernels are unchanged; the FPGA meets 10 ns (105.4
-MHz; 100.6 and 104.8 MHz with block RAM; see "Milestone 18.3").** The CPU specification this
+out, equal Spike's; the kernels are unchanged; `time`/`timeh` read the
+core's own time counter (the owner's choice at sign-off); the FPGA meets
+10 ns (107.7 MHz; 101.8 and 104.6 MHz with block RAM; see "Milestone
+18.3").** The CPU specification this
 phase implements is [`cpu.md`](cpu.md) (approved 29 September 2026); the phase
 sits in the [v2 plan](phase17-plus.md#6-phase-17-sequence). Every milestone
 passes its verification layer and records its timing before the next starts.
@@ -135,8 +137,8 @@ epc and tval — 31 of 31.
   from the Sail model; it was to be reconsidered at 18.3, when the core's
   configuration is final — see `vendor/riscv-arch-test/UPSTREAM.md`. At 18.3
   it is not adopted: the ISA is not final until 18.5 (A in 18.4, Xasterdot8 in
-  18.5), and ACT4 needs a framework, Ruby/UDB and Sail not installed here, so
-  waiting is proposed to the owner; the checklist keeps it open.)
+  18.5), and ACT4 needs a framework, Ruby/UDB and Sail not installed here; the
+  owner chose to reconsider it at 18.5.)
 - A seeded constrained-random program generator (`scripts/rvgen.py`, built in
   18.0 so that 18.1 starts with it): random register and data-region state;
   every RV32I computational, load, store, branch and jump instruction and every
@@ -981,7 +983,7 @@ The Aster core takes its traps (`705b5f9`): RV32IM with Zicsr, `ecall`,
 `ebreak`, `mret` and `wfi` (a no-op), the machine-mode CSRs of
 [`cpu.md`](cpu.md) §3, machine-mode traps and interrupts, and the counters.
 The choices made in building it are listed in §9 ("Clarifications during
-milestone 18.3") for the owner's review:
+milestone 18.3"), which the owner accepted at sign-off (below):
 
 - **Traps** commit at the end of M1, as §4 says: mepc, mcause, mtval and
   mstatus (`MPIE` = `MIE`, `MIE` = 0) are written, the younger instructions are
@@ -1013,8 +1015,8 @@ milestone 18.3") for the owner's review:
   that a serializing instruction never traps. `mret` redirects from Execute
   to `mepc` like a `jalr`. Beyond §3's table the core has `mcountinhibit`,
   `mstatush` and `mconfigptr`, and the hardware performance monitor
-  (`mhpmcounter3`–`31(h)`, `mhpmevent3`–`31`) as zero; `time`/`timeh` are an
-  illegal instruction (§9 lists these for the owner).
+  (`mhpmcounter3`–`31(h)`, `mhpmevent3`–`31`) as zero; `time`/`timeh` were
+  left out here, and added at sign-off as the core's own time counter (below).
 - **RVFI** reports every CSR an instruction writes, and the reads of those
   CSRs (riscv-formal's `rvfi_csr_*` fields for the eight CSRs §5 names, and
   for `mstatush`, `misa`, `mcountinhibit` and the 64-bit counters; the
@@ -1164,6 +1166,28 @@ varies by a few hundred picoseconds from one netlist to the next.) The paths
 `d_rsp_error` kill +2.451 ns (§5 form). Evidence:
 [`results/phase18/aster-18.3`](results/phase18/aster-18.3/README.md).
 
+**Signed off; the time counter (`9cbd3c1`).** The owner signed off 18.3
+on 2 October 2026, accepting the added CSRs and the conformance standing in
+for "arch-test Zicsr" (cpu.md §9), and choosing to reconsider ACT4 at 18.5.
+For `time`/`timeh`, of three options — leave them out (the SoC timer is
+memory-mapped), alias `mcycle` (which software can write or stop), or give
+them their own counter — the owner chose the last: `time`/`timeh` read a
+64-bit counter that ticks once per clock from reset and is never written or
+stopped (`mcountinhibit` does not touch it); writing them is illegal. A
+self-checking program in the shell alone (`interrupts/time_counter`) checks
+that it advances by at least the cycles a loop takes, runs on while
+`mcountinhibit` stops the other counters, ignores `mcycle` writes and has
+`timeh` 0; in lockstep `csr_ordering` reads them (their values are
+allowlisted: Spike's time moves at its own rate) and `decode_traps` writes
+`time` (illegal in both). Three planted bugs — a stuck counter, `timeh`
+reading the low half, the counter obeying `mcountinhibit` — are caught
+(51 planted bugs in all, 47 caught). `make check` passes (284 PASS
+lines). On the FPGA it meets 10 ns: the core alone at 107.7 MHz (+0.716 ns;
+2,736 LUTs, 1,353 flip-flops), the §5 form at 101.8 MHz (+0.177 ns) and the
+request-registered form at 104.6 MHz (+0.439 ns; its worst path is a forwarded
+operand's, from `fsel2`, as in 18.2 — not Decode's CSR decode, as at `705b5f9`) (evidence:
+[`results/phase18/aster-18.3-time`](results/phase18/aster-18.3-time/README.md)).
+
 ## Milestones and gates
 
 | Milestone | Content | Exit gate |
@@ -1171,7 +1195,7 @@ varies by a few hundred picoseconds from one netlist to the next.) The paths
 | **18.0** | Spike; CPU shell with PicoRV32 and RVFI trace; lockstep comparator; `riscv-tests` in the shell; `riscv-arch-test` harness; timing scripts; PicoRV32 baseline timing | PicoRV32 passes lockstep on `riscv-tests`; the comparator catches an injected mismatch in every compared field; timing scripts report PicoRV32 on both targets — **met** (checklist below) |
 | 18.1 | RV32I pipeline | `riscv-tests` rv32ui and arch-test I in lockstep; random programs in lockstep; first timing report — **met** (owner, 1 October 2026; "Milestone 18.1" below) |
 | 18.2 | M extension | um/arch-test M, multiply/divide corner cases, lockstep, timing — **met** (owner, 1 October 2026; "Milestone 18.2" below) |
-| 18.3 | Zicsr, traps, interrupts, counters | arch-test Zicsr; directed traps in every stage; interrupt tests in every pipeline state — evidence complete, awaiting the owner (2 October 2026; "Milestone 18.3"; riscv-arch-test 3.10.0 has no Zicsr suite: its privilege suite and riscv-tests rv32mi stand in, which the owner is asked to accept) |
+| 18.3 | Zicsr, traps, interrupts, counters | arch-test Zicsr; directed traps in every stage; interrupt tests in every pipeline state — **met** (owner, 2 October 2026; "Milestone 18.3"; riscv-arch-test 3.10.0 has no Zicsr suite: its privilege suite and riscv-tests rv32mi stand in, as the owner accepted) |
 | 18.4 | A extension, `fence`, `fence.i` | ua/arch-test A and Zifencei; atomic and self-modifying-code tests |
 | 18.5 | Xasterdot8 | v1 DOT8 reference tests on the core |
 | 18.6 | L1 caches with two-stage pipelined hits; SRAM interface; runtime port | cache reference model, back-pressure, firmware regression |
@@ -1417,15 +1441,11 @@ varies by a few hundred picoseconds from one netlist to the next.) The paths
   writes mepc or mcause (18.3 carries the trap's values with the record for
   that case; nothing reaches it yet)
 - [x] 18.2 as in the table above — complete (owner, 1 October 2026)
-- [ ] 18.3 as in the table above — evidence complete; awaiting the owner's
-  sign-off and decisions: `time`/`timeh` left unimplemented (Zicntr has them;
-  cpu.md §3 does not list them), the CSRs added beyond §3's table, and
-  riscv-arch-test's privilege suite and rv32mi standing in for "arch-test
-  Zicsr" (cpu.md §9, "Clarifications during milestone 18.3"), and the ACT4
-  question below
-- [ ] riscv-arch-test 4.x (ACT4), which the plan was to reconsider at 18.3:
-  proposed to wait until the ISA is final (18.5) — for the owner to decide
-  with 18.3
+- [x] 18.3 as in the table above — complete (owner, 2 October 2026), with
+  the added CSRs, `time`/`timeh` as the core's own time counter, and the
+  privilege suite and rv32mi standing in for "arch-test Zicsr" (cpu.md §9)
+- [ ] riscv-arch-test 4.x (ACT4): reconsider when the ISA is final, at 18.5
+  (owner, 2 October 2026)
 - [ ] 18.4 … 18.7 as in the table above
 
 ## Non-goals

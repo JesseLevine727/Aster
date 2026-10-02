@@ -43,7 +43,8 @@ BASELINES = [
                  "m6_u34", "m6_u36", "m6_u38", "m6_u40", "m6_u44",
                  "c80_u34", "c80_u36", "c80_u38", "c80_u40", "c80_u44", "picorv32_c80")]
 # FPGA-only evidence (SKY130 was dropped on 1 October 2026): (folder, FPGA folders).
-FPGA_ONLY = [("aster-18.3", ["fpga/aster", "fpga/aster_bram", "fpga/aster_bram_reqreg"])]
+FPGA_ONLY = [(name, ["fpga/aster", "fpga/aster_bram", "fpga/aster_bram_reqreg"])
+             for name in ("aster-18.3", "aster-18.3-time")]
 
 
 def retained_part(recomputed, retained):
