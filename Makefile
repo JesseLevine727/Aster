@@ -2336,6 +2336,17 @@ core-aster-kernels: $(ASTER_PORTS_SIM) $(ASTER_CLOCK_PLUGIN) $(ASTER_DOT8_PLUGIN
 		| tee $(CORE_TESTS_DIR)/aster-kernels.log | tail -14 \
 		|| { grep -v '^PASS' $(CORE_TESTS_DIR)/aster-kernels.log; exit 1; }
 
+# Planted bugs in the Aster core's RTL (scripts/mutation_campaign.py): each of
+# its mutants must be caught by the runs above (the first that fails is
+# reported; MISSED if none). Not in make check: it builds and runs every mutant.
+# Its anchors are checked against the RTL by a host test, in make check.
+.PHONY: core-aster-mutants
+core-aster-mutants: $(ASTER_DOT8_PLUGIN) core-aster-act4
+	@set -o pipefail; $(PYTHON) scripts/mutation_campaign.py $(CORE_TESTS_DIR)/aster-mutants \
+		| tee $(CORE_TESTS_DIR)/aster-mutants.log
+	@echo "$$(grep -c ': CAUGHT by ' $(CORE_TESTS_DIR)/aster-mutants.log) of" \
+		"$$(grep -cE '^[a-z0-9-]+: (CAUGHT|MISSED|BUILD FAILED)' $(CORE_TESTS_DIR)/aster-mutants.log) planted bugs caught"
+
 # riscv-arch-test 4.x (ACT4; docs/phase18.md, "ACT4"): self-checking programs
 # for the Aster core's configuration (verification/core/act4/aster-rv32ima: its
 # UDB description, the Sail model's configuration, the shell's macros and
