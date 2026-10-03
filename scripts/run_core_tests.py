@@ -133,6 +133,24 @@ KERNELS = {
 }
 DOT8_KERNELS = ("conv2d_dot8",)
 assert set(GATE_KERNELS) <= set(KERNELS), "every gate kernel is a listed kernel"
+# The firmware regression (18.6): v1 firmware built with the ported runtime
+# (software/runtime/start_aster.S, start_multicore_aster.S, aster_trap.S) for
+# the shell's layouts (verification/core/firmware), v1's flags with the Aster
+# core's ISA (ASTER_CORE selects aster.h's CSR interrupt enable). Each entry:
+# the sources, whether it uses the multicore runtime, whether it runs in
+# lockstep with Spike (otherwise in the shell alone with v1's devices,
+# +v1_devices, which Spike does not have), and the console line that passes.
+# Not run: v1's DMA, NPU and two-hart firmware (devices and a hart the shell
+# does not have), memory_map.c (v1's address map), and atomic_runtime.c,
+# whose directed check needs v1's reservation rule (a store to the word ends
+# it), which Spike and the shell's memory do not follow (docs/cpu.md §9, 18.4).
+FIRMWARE_ENV = ROOT / "verification/core/firmware"
+FIRMWARE = {
+    "runtime": (["software/tests/runtime.c"], False, True, "RUNTIME PASS"),
+    "timer_interval": (["software/tests/timer_interval.c"], True, False, "TIMER PASS"),
+    "timer_interrupt": (["software/tests/timer_interrupt.c"], True, False, "TIMER IRQ PASS"),
+}
+FIRMWARE_MAX_CYCLES = 20_000_000   # timer_interval spins 200,000 times on a volatile counter
 DHRYSTONE_VENDOR = (["vendor/dhrystone/dhry_1.c", "vendor/dhrystone/dhry_2.c"], "DHRY_VENDOR_CFLAGS")
 # A test that runs away (for example a failure that never reports) ends here;
 # the longest rv32ui/rv32um test takes a few thousand cycles.
@@ -181,6 +199,12 @@ DUTS = {
         "arch_params": {"hw_data_misaligned_support": "False"},
     },
 }
+# The Aster core with its L1 instruction and data caches (18.6; the shell built
+# with shell_aster_ports' L1 parameter): every program as for the core alone,
+# with the shell's L1 model checking each lookup and memory-side access
+# (+cache_model). Its cycle counts include the caches' misses, which the CPI
+# model does not model, so there is no --cpi-check.
+DUTS["aster_l1"] = {**DUTS["aster"], "shell_args": DUTS["aster"]["shell_args"] + ["+cache_model"]}
 
 
 def run(command, **kwargs):
@@ -268,7 +292,7 @@ def has_signature(symbols: dict) -> bool:
 
 def execute(args, config: dict, elf: Path, binary: Path, symbols: dict, arch: bool = False,
             kernel: bool = False, shell_only: bool = False, shell_extra: tuple = (),
-            max_cycles: int | None = None) -> tuple[bool, str, str, str]:
+            max_cycles: int | None = None, io_page: bool = False) -> tuple[bool, str, str, str]:
     """Run the shell and Spike; returns (both exited 0, shell status line, trace text, Spike log text).
 
     Both also dump the begin_signature..end_signature words next to the ELF
@@ -279,13 +303,15 @@ def execute(args, config: dict, elf: Path, binary: Path, symbols: dict, arch: bo
     for stale in (trace, log, elf.with_suffix(".sig.dut"), elf.with_suffix(".sig.spike")):
         stale.unlink(missing_ok=True)
     memory = symbols["shell_memory_end"] - ENTRY if "shell_memory_end" in symbols else MEMORY_BYTES[arch]
+    if "+cache_model" in config["shell_args"]:
+        memory = -(-memory // 16) * 16       # whole cache lines (Spike's memory is whole pages anyway)
     command = [str(args.sim), f"+bin={binary}", f"+tohost={symbols['tohost']:x}", f"+trace={trace}",
                f"+max_cycles={max_cycles}", f"+mem_bytes={memory:x}"]
     regions = f"-m0x{ENTRY:08x}:0x{memory:x}"
-    if kernel:
+    if kernel or io_page:
         console = elf.with_suffix(".console")
         console.unlink(missing_ok=True)
-        command += ["+io_page", f"+console={console}", "+kernel_end"]
+        command += ["+io_page", f"+console={console}"] + (["+kernel_end"] if kernel else [])
         below, above = CLOCK_PAGE[0] - IO_PAGE[0], IO_PAGE[0] + IO_PAGE[1] - CLOCK_PAGE[0] - CLOCK_PAGE[1]
         regions += (f",0x{IO_PAGE[0]:08x}:0x{below:x},0x{CLOCK_PAGE[0] + CLOCK_PAGE[1]:08x}:0x{above:x}"
                     f" --extlib={args.aster_clock} --device=aster_clock,0x{CLOCK_PAGE[0]:08x}")
@@ -729,7 +755,7 @@ def run_kernels(args, config, prefix: str) -> int:
         rows.append((name, int(fields["window_cycles"]), int(fields["window_retired"]),
                      cpi_model.cycles(window, cpi_model.SEVEN_STAGE), cpi_model.cycles(window, cpi_model.FIVE_STAGE),
                      len(window)))
-    if rows and args.dut == "aster":
+    if rows and args.dut in ("aster", "aster_l1"):
         # The Aster core against its own model: the measured CPI (and, with
         # --cpi-check, exact agreement); the speedups are against PicoRV32's runs.
         print(f"  {'kernel':18s} {'instructions':>12s} {'aster CPI':>13s} {'7-stage model':>13s}")
@@ -934,6 +960,11 @@ def interrupt_coverage(args) -> bool:
 
 
 ACT4_MAX_CYCLES = 4_000_000
+# The shell timer's cycles per tick for ACT4 (its RVMODEL_MAX_CYCLES_PER_TIMER_TICK):
+# its timer tests assume a core that runs a few instructions in fewer ticks
+# than they allow, which cache misses and back-pressure can defeat at one tick
+# per cycle (verification/core/act4/aster-rv32ima/rvmodel_macros.h).
+ACT4_TIMER_DIVIDER = 8
 
 
 def run_act4(args, config, prefix: str) -> int:
@@ -977,7 +1008,8 @@ def run_act4(args, config, prefix: str) -> int:
         console = elf.with_suffix(".console")
         console.unlink(missing_ok=True)
         passed, status, trace_text, _ = execute(args, config, elf, binary, symbols, shell_only=True,
-                                                shell_extra=("+irq_device", "+timer", "+io_page",
+                                                shell_extra=("+irq_device", "+timer",
+                                                             f"+timer_divider={ACT4_TIMER_DIVIDER}", "+io_page",
                                                              f"+console={console}"),
                                                 max_cycles=ACT4_MAX_CYCLES)
         counted, count_message = retired_check(status, trace_text)
@@ -998,6 +1030,72 @@ def run_act4(args, config, prefix: str) -> int:
     return 1 if failures else 0
 
 
+def build_firmware(name: str, config: dict, out_dir: Path, prefix: str) -> tuple[Path, Path, dict]:
+    sources, multicore, _, _ = FIRMWARE[name]
+    out = out_dir / "firmware" / name
+    out.mkdir(parents=True, exist_ok=True)
+    flags = [flag for flag in make_variable("HELLO_CFLAGS") if not flag.startswith("-march=")]
+    runtime = ROOT / "software/runtime"
+    elf, binary = out / f"{name}.elf", out / f"{name}.bin"
+    result = run([f"{prefix}gcc", *flags, f"-march={config['march']}", "-DASTER_CORE",
+                  f"-T{FIRMWARE_ENV / ('link_multicore.ld' if multicore else 'link.ld')}",
+                  "-o", str(elf), str(runtime / ("start_multicore_aster.S" if multicore else "start_aster.S")),
+                  str(runtime / "aster_trap.S"), str(FIRMWARE_ENV / "exit.c"), *(str(ROOT / source) for source in sources)])
+    if result.returncode:
+        raise RuntimeError(f"build failed for firmware {name}:\n{result.stderr}")
+    run([f"{prefix}objcopy", "-O", "binary", str(elf), str(binary)], check=True)
+    symbols = {line.split()[2]: int(line.split()[0], 16)
+               for line in run([f"{prefix}nm", str(elf)], check=True).stdout.splitlines() if len(line.split()) == 3}
+    return elf, binary, symbols
+
+
+def run_firmware(args, config, prefix: str) -> int:
+    """The firmware regression (18.6): FIRMWARE above. A program passes when it
+    ends by storing 1 to tohost (main returned 0), prints its pass line, and —
+    in lockstep — matches Spike."""
+    if not config.get("interrupt_suites"):
+        print(f"FAIL: the firmware regression needs the Aster core ({args.dut} is not)")
+        return 1
+    if not args.aster_clock.exists():
+        print(f"FAIL: {args.aster_clock} is missing (make core-kernels builds it)")
+        return 1
+    names = [args.only] if args.only else list(FIRMWARE)
+    unknown = [name for name in names if name not in FIRMWARE]
+    if unknown:
+        print(f"FAIL: unknown firmware {', '.join(unknown)} (known: {', '.join(FIRMWARE)})")
+        return 1
+    failures, total_cycles, total_retired = [], 0, 0
+    for name in names:
+        _, _, lockstepped, expected = FIRMWARE[name]
+        elf, binary, symbols = build_firmware(name, config, args.build_dir, prefix)
+        passed, status, trace_text, log_text = execute(
+            args, config, elf, binary, symbols, shell_only=not lockstepped, io_page=True,
+            shell_extra=() if lockstepped else ("+v1_devices",), max_cycles=FIRMWARE_MAX_CYCLES)
+        counted, count_message = retired_check(status, trace_text)
+        if lockstepped:
+            ok, message = lockstep_check(trace_text, log_text, symbols["tohost"], config["word_loads"])
+            message = message.splitlines()[0]
+        else:
+            ok, message = True, "in the shell alone with v1's devices (no Spike run)"
+        console = elf.with_suffix(".console")
+        text = console.read_text(errors="replace") if console.exists() else ""
+        printed = any(line.startswith(expected) for line in text.splitlines())
+        fields = {key: int(value) for key, value in
+                  (item.split("=", 1) for item in status.split()[2:] if "=" in item) if value.isdigit()}
+        total_cycles += fields.get("cycles", 0)
+        total_retired += fields.get("retired", 0)
+        good = passed and counted and ok and printed
+        print(f"{'PASS' if good else 'FAIL'}: firmware/{name} {status.removeprefix('SHELL ')}; lockstep: {message}; "
+              + (f"printed {expected!r}" if printed else f"did not print {expected!r}")
+              + ("" if counted else f"; {count_message}"))
+        if not good:
+            failures.append(name)
+            print("".join(f"    {line}\n" for line in text.splitlines()[-8:]), end="")
+    print(f"{'PASS' if not failures else 'FAIL'}: {args.dut} {len(names) - len(failures)}/{len(names)} v1 firmware "
+          f"programs pass with the ported runtime; {total_retired} instructions in {total_cycles} cycles")
+    return 1 if failures else 0
+
+
 def run_random(args, config, prefix: str) -> int:
     out = args.build_dir / "random"
     out.mkdir(parents=True, exist_ok=True)
@@ -1012,7 +1110,7 @@ def run_random(args, config, prefix: str) -> int:
         extensions += ",zifencei"
     if config.get("dot8"):
         extensions += ",xasterdot8"
-    failures, total_cycles, total_retired, coverage = [], 0, 0, {}
+    failures, total_cycles, total_retired, coverage, div_waits = [], 0, 0, {}, 0
     for seed in range(args.random_seed, args.random_seed + args.random):
         source = out / f"rvgen_{seed}.S"
         source.write_text(rvgen.Generator(seed, extensions).program(args.random_length))
@@ -1024,6 +1122,8 @@ def run_random(args, config, prefix: str) -> int:
             continue
         total_cycles += run.cycles
         total_retired += run.retired
+        div_waits += next((int(item.split("=")[1]) for item in run.summary.split(";")[0].split()
+                           if item.startswith("div_waits=")), 0)
         for key, count in hazard_coverage(lockstep.parse_spike(run.log_text.splitlines(), ENTRY,
                                                                run.tohost)).items():
             coverage[key] = coverage.get(key, 0) + count
@@ -1034,6 +1134,11 @@ def run_random(args, config, prefix: str) -> int:
           (f"; missing {', '.join(f'{p}/{d}/{c}' for p, d, c in missing[:12])}" if missing else ""))
     coverage_failed = bool(missing) and args.require_coverage
     coverage_failed = not interrupt_coverage(args) or coverage_failed
+    if args.require_div_waits:
+        # The long-stall mode's purpose (18.6): a finished division waiting in
+        # Execute (the shell's div_waits), its result asserted to hold.
+        print(f"division coverage: {div_waits} cycles in which a finished division waited in Execute")
+        coverage_failed = coverage_failed or div_waits == 0
     mode = f", stall seed {args.stall_seed}" if args.stall_seed is not None else ""
     print(f"{'PASS' if not failures and not coverage_failed else 'FAIL'}: {args.dut} "
           f"{args.random - len(failures)}/{args.random} "
@@ -1052,6 +1157,8 @@ def main() -> int:
     parser.add_argument("--only", help="run one test, e.g. rv32ui/add (or I/add-01 with --arch)")
     parser.add_argument("--arch", action="store_true", help="run riscv-arch-test with signature comparison")
     parser.add_argument("--kernels", action="store_true", help="run the CPU kernels of docs/cpu.md §7")
+    parser.add_argument("--firmware", action="store_true",
+                        help="run v1 firmware with the ported runtime (18.6; --only names one)")
     parser.add_argument("--random", type=int, metavar="N", help="run N constrained-random programs")
     parser.add_argument("--act4", type=Path, metavar="DIR",
                         help="run the ACT4 ELFs under DIR (riscv-arch-test 4.x; --only filters by path)")
@@ -1062,6 +1169,8 @@ def main() -> int:
     parser.add_argument("--random-length", type=int, default=1500)
     parser.add_argument("--require-coverage", action="store_true",
                         help="fail a random run that misses a required hazard bin")
+    parser.add_argument("--require-div-waits", action="store_true",
+                        help="fail a random run in which no finished division waits in Execute")
     parser.add_argument("--stall-seed", type=int, help="random memory back-pressure with this seed")
     parser.add_argument("--max-cycles", type=int, default=None,
                         help=f"shell cycle limit (default {MAX_CYCLES}; {KERNEL_MAX_CYCLES} with --kernels)")
@@ -1113,6 +1222,8 @@ def main() -> int:
 
     if args.kernels:
         return run_kernels(args, config, prefix)
+    if args.firmware:
+        return run_firmware(args, config, prefix)
     if args.act4 is not None:
         return run_act4(args, config, prefix)
 

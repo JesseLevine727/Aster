@@ -139,9 +139,16 @@ static inline uint32_t aster_timer_status(void) {
 }
 
 static inline void aster_irq_unmask(void) {
+#ifdef ASTER_CORE
+    // The Aster core (18.6 runtime port): the interrupt controller drives the
+    // machine external interrupt; enable it (mie.MEIE) and interrupts
+    // (mstatus.MIE). Traps enter aster_trap.S's handler.
+    __asm__ volatile ("csrs mie, %0\n\tcsrsi mstatus, 8" :: "r"(1u << 11) : "memory");
+#else
     // PicoRV32 maskirq x0: irq_mask = rs1 | MASKED_IRQ, so x0 unmasks all but
     // the permanently masked upstream ebreak/buserror bits.
     __asm__ volatile (".word 0x0600000b" ::: "memory");
+#endif
 }
 
 static inline void aster_irq_clear(uint32_t mask) {

@@ -5,12 +5,13 @@ static volatile uint32_t initialized = 0x12345678u;
 static volatile uint8_t odd_data[3] = {0x81u, 0x42u, 0xffu};
 static volatile uint32_t bss_words[7];
 static volatile uint8_t bss_bytes[5];
+extern char __stack_bottom[], __stack_top[];   // the layout's reserved stack
 
 __attribute__((noinline)) static uint32_t stack_sum(uint32_t depth) {
     volatile uint32_t local[4] = {depth, depth + 1, depth + 2, depth + 3};
     uintptr_t sp;
     __asm__ volatile ("mv %0, sp" : "=r"(sp));
-    if ((sp & 15u) != 0 || sp < 0x1000f000u || sp >= 0x10010000u)
+    if ((sp & 15u) != 0 || sp < (uintptr_t)__stack_bottom || sp >= (uintptr_t)__stack_top)
         return 0xffffffffu;
     uint32_t nested = depth ? stack_sum(depth - 1) : 0;
     return nested + local[0] + local[1] + local[2] + local[3];

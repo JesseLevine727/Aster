@@ -15,9 +15,9 @@ the pipeline's rules:
   Execute for ALU and link results, three cycles after for loads, AMOs, `lr`,
   `sc` and multiplies (forwarded from W), two after for Xasterdot8 (from M2);
 - the iterative divider holds Execute for DIVIDE_CYCLES;
-- a CSR instruction or `mret` (serializing) waits in Execute while M1 holds
-  an instruction: one more cycle when it enters Execute right behind one;
-  `fence.i` waits while M1 or M2 holds one, and then redirects like `jalr`;
+- a CSR instruction or `mret` (serializing) waits in Execute while M1 or M2
+  holds an instruction (18.6; until then, M1 only), and so does `fence.i`,
+  which then redirects like `jalr`;
 - `jal`, and backward branches with a word-aligned target (predicted taken),
   redirect from Decode in their
   first cycle there, whether or not they then wait for operands; a branch
@@ -137,10 +137,8 @@ def cycles(records: list[lockstep.Retired], pipeline: Pipeline) -> int:
         divide = muldiv and (insn >> 12) & 7 >= 4
         occupancy = DIVIDE_CYCLES if divide else 1
         serializing = not record.trap and opcode == 0x73 and ((insn >> 12) & 7 not in (0, 4) or insn == MRET)
-        if serializing and execute == m1_busy:
-            occupancy += 1                                    # waits for M1 to empty
         fencei = not record.trap and opcode == 0x0F and (insn >> 12) & 7 == 1
-        if fencei:
+        if serializing or fencei:
             occupancy = max(occupancy, m1_busy + 3 - execute)  # waits for M1 and M2 to empty
         m1_busy = execute + occupancy
         if record.rd:

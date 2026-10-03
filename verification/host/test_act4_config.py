@@ -51,6 +51,12 @@ class Act4Config(unittest.TestCase):
         self.assertEqual(macro("RVMODEL_MTIMECMP_ADDRESS"), shell_constant("kMtimecmp"))
         self.assertEqual(macro("RVMODEL_MTIME_ADDRESS"), shell_constant("kMtime"))
 
+    def test_the_timer_rate_is_the_shells(self):
+        import sys
+        sys.path.insert(0, str(ROOT / "scripts"))
+        import run_core_tests
+        self.assertEqual(macro("RVMODEL_MAX_CYCLES_PER_TIMER_TICK"), run_core_tests.ACT4_TIMER_DIVIDER)
+
     def test_interrupt_macros_use_the_shell_device(self):
         macros = (CONFIG / "rvmodel_macros.h").read_text()
         device = shell_constant("kIrqDevice")

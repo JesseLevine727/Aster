@@ -118,8 +118,9 @@ memory behind each port is itself split into two register-to-register stages.
   target computation for `jal` and for backward branches, which are predicted
   taken.
 - **E.** ALU, branch compare and target, `jalr` target, CSR read/modify (a
-  CSR instruction or `mret` waits here until M1 is empty, so it reads every
-  older instruction's CSR effects; §9, 18.3),
+  CSR instruction or `mret` waits here until M1 and M2 are empty, so it reads
+  every older instruction's CSR effects and every older data access has been
+  answered; §9, 18.3 and 18.6),
   load/store address generation, the data request (below), the first
   multiplier and Xasterdot8 stage, and the iterative divider. A misprediction
   or `jalr` resolves at the edge where it leaves E: at that edge the compare
@@ -153,7 +154,7 @@ Hazards and penalties:
 | `div`/`rem` | iterative (radix-2) in E, stalls the pipeline | 36 cycles (18.2) |
 | `jal`; conditional branch predicted taken (backward) | redirect from Decode, target presented the same cycle | 2 cycles |
 | Conditional branch mispredicted; `jalr`; `mret` | resolved in Execute; the redirect is registered | 4 cycles |
-| CSR instruction or `mret` | serializing: waits in Execute until M1 is empty | 1 cycle behind an instruction in M1 |
+| CSR instruction or `mret` | serializing: waits in Execute until M1 and M2 are empty (§9, 18.6) | up to 2 cycles behind instructions in M1 and M2 |
 | `fence.i` | waits in Execute until M1 and M2 are empty, then redirects to the next instruction | up to 2 cycles, then 4 |
 | Trap or interrupt | taken at the commit point; its redirect is registered (the Execute redirect's path) | 5 cycles after the last Execute cycle |
 | Data-port back-pressure or an answer later than two cycles | the stage waiting on the port stalls the pipeline behind it | as the memory returns |
@@ -540,7 +541,8 @@ gate's "arch-test Zicsr", and `time`/`timeh` (below):
   them out (the SoC timer is memory-mapped) and over aliasing `mcycle`, which
   software can write or stop.
 - §4: CSR instructions and `mret` are serializing — Execute holds one until
-  M1 is empty, one cycle behind an instruction in M1 — so a CSR read sees
+  M1 is empty, one cycle behind an instruction in M1 (from 18.6, until M1 and
+  M2 are: below) — so a CSR read sees
   every older write and `minstret` counts exactly the older instructions. The
   write takes place, and the instruction retires (is counted), at the end of
   its first cycle in M1, where nothing can kill it: so the CSR instruction's
@@ -650,6 +652,79 @@ verifying Xasterdot8. The owner accepted them with 18.5 (2 October 2026):
   a cost close to the multiplies it saves — a matter for the software
   (Phase 19/20), not the core.
 
+Clarifications during milestone 18.6 (3 October 2026), from building and
+verifying the L1 caches and the runtime port. They await the owner's
+acceptance with 18.6:
+
+- §4: CSR instructions and `mret` wait in Execute until M1 **and M2** are
+  empty (18.3: M1). With the data cache a store reaches the memory side only
+  after its lookup, after it has left M1, so a `time` read right behind a
+  store to `mtime` read the old value — ACT4's `Sm_mcsr_cntr`
+  (`cp_mtime_write`) failed on the cached core. With M2 empty every older
+  access has been answered, and the cache answers a store only once the
+  memory side has. The cost is the wait for an older access in M2 to be
+  answered: one cycle more on the two-cycle memory, longer behind a miss, a
+  store through the data cache or back-pressure;
+  the CPI model follows it (still exact on every suite), and no kernel's
+  window has a CSR instruction. W is then empty at a CSR write, so a trap
+  record can no longer be in W when its handler writes `mepc` or `mcause`
+  (asserted; 18.3 carried the trap's values with the record for that case).
+- §5: a new output, `fencei_inval`, high for one cycle (registered) after
+  `fence.i` leaves Execute: the instruction cache invalidates every line at
+  the edge ending that cycle, and a refill in progress then installs nothing.
+  `fence.i`'s redirected fetch is accepted no earlier than that edge.
+- §4–§5, the caches' form: each sits between a core port and a memory-side
+  port of §5's protocol, in two stages. In stage 1 the tag (LUT RAM, read
+  with the registered address) is compared while the data array (block RAM,
+  read at acceptance, two cycles) reads; stage 2 answers a hit two cycles
+  after acceptance, §5's normal answer. Blocking: a miss refills its line
+  (four reads, at most two in flight) and then answers. A request that waits
+  keeps its word and reads the array again (a replay, three cycles) only if
+  an older request wrote the array after its read. Readiness depends on the
+  caches' registers only, never on the request. The cacheable memory is one
+  region (a base and a size; in the shell, its memory at `0x8000_0000`).
+  The data cache answers a request outside that memory and its I/O windows
+  with `d_rsp_error`, in the cycle after acceptance, decoded from the
+  registered address, without a memory-side access. I/O loads and stores pass
+  through. Stores are written through, also into the array on a hit, allocating
+  nothing on a miss, and are answered once the memory side has answered.
+  `lr`, `sc` and the AMOs pass through: the memory side performs them and
+  holds the reservation (18.4), and `sc` and the AMOs invalidate their line.
+  The instruction cache answers a fetch outside the cacheable memory with
+  `i_rsp_error` itself, without a memory-side access.
+- §6: the shell's cache reference model (`+cache_model`) checks every
+  lookup's hit or miss against the lines it keeps and every memory-side
+  access the caches make. The shell's protocol checks then see the caches'
+  memory side, so the shell runs them on the core's side too, and the load
+  check follows the core's loads into the data cache. A long-stall mode
+  (`+long_stall`: one access in sixteen is 16–63 cycles late) and random unit
+  tests of each cache against a flat memory complete the gate's back-pressure.
+- §6: for ACT4 the shell's timer counts once per 8 cycles
+  (`RVMODEL_MAX_CYCLES_PER_TIMER_TICK` 8, ACT4's provision for a timer slower
+  than the core; Spike's own configuration uses 100). `InterruptsSm` expects
+  no timer interrupt in the ~15 instructions between arming `mtimecmp` 100
+  ticks ahead and disarming it, which cache misses under back-pressure made
+  longer than 100 cycles. This is the shell's timer only; v1's SoC timer
+  counts every cycle.
+- §8 (gate), "runtime port" and "firmware regression": the port —
+  `software/runtime/start_aster.S`, `start_multicore_aster.S` (the hart from
+  `mhartid`) and `aster_trap.S` (one `mtvec` handler saving v1's
+  caller-saved registers; an interrupt to v1's `aster_irq_dispatch`, an
+  exception to `aster_exception`; `mret`) — and `aster.h`'s interrupt enable
+  under `ASTER_CORE`. v1 firmware built with it runs on the core with and
+  without its caches: `runtime.c` in lockstep with Spike; `timer_interval.c`
+  and `timer_interrupt.c` in the shell alone, with v1's timer, hart-control
+  page, interrupt controller and performance block modelled (`+v1_devices`);
+  and the CPU kernels (v1's benchmark sources) on the cached core in lockstep.
+  Not run: v1's DMA, NPU and two-hart firmware (devices and a second hart the
+  shell lacks), `memory_map.c` (v1's address map), and `atomic_runtime.c`,
+  whose directed check expects v1's reservation rule (the hart's own store
+  ends it), which the shell's memory side, following Spike, does not keep —
+  the rule stays the Phase 20 memory side's (18.4).
+- §8 (gate), "SRAM interface": with SKY130 dropped it is the caches'
+  memory-side port; on the FPGA a two-cycle block RAM behind it (the timing
+  top), and in Phase 20 the fabric.
+
 Changes after approval, by the owner:
 
 - **29 September 2026 — SRAM timing plan (§5):** SKY130 macros are off the
@@ -712,5 +787,15 @@ Changes after approval, by the owner:
   18.3's own counter cannot meet. The owner chose to make `time`/`timeh` read
   the platform's `mtime` through a new 64-bit input (§5), registered in the
   core; the CPU shell's machine timer drives it and `mtip`, and the SoC's timer
-  will drive it (Phase 20, §3). This replaces 18.3's choice of the core's own counter, made among
-  three options that did not include the platform's timer.
+  will drive it (Phase 20, §3). This replaces 18.3's choice of the core's own
+  counter, made among three options that did not include the platform's timer.
+- **3 October 2026 — the 18.6 L1 (§4, §5, §8):** the owner set what the plan
+  left open (its SKY130 array plan having been withdrawn): an instruction and a
+  data cache of **4 KiB each, direct-mapped, with 16-byte lines** (v1's line);
+  the data cache **write-through with no write-allocate**, as v1's L1, so memory
+  stays current for the other hart, DMA and the NPU without a coherence
+  protocol (Phase 20); both blocking (one miss, §1's non-goal stands). The
+  "runtime port" of §8's 18.6 row is the port of v1's runtime — `start.S`,
+  `start_multicore.S` and the interrupt handlers, to `mtvec`/`mret` (§3) — to
+  the Aster core, and its firmware regression runs v1 firmware on the core
+  with its caches.

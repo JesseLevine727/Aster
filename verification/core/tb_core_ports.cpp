@@ -20,6 +20,25 @@
 // samples them at the wrong time fails. Instruction fetches are served from
 // the main region only: a fetch from anywhere else, the io page included,
 // answers with i_rsp_error and does not read memory.
+// With +long_stall as well, about one access in sixteen is answered 16-63
+// cycles late (the long waits of cache misses behind a slow memory, 18.6).
+//
+// The L1 model (+cache_model; the Aster core with its caches, 18.6): the lines
+// each cache holds, kept from its misses and the policy (docs/cpu.md §9, 18.6:
+// direct-mapped 16-byte lines, 256 per cache; the data cache write-through
+// with no write-allocate, sc and the AMOs invalidating their line; fence.i
+// invalidating the instruction cache), checked against every lookup's hit and
+// every memory-side access the caches make: a miss refills exactly its line's
+// four words, a store, atomic or I/O access goes to the memory side exactly
+// once and unchanged, a hit or an error not at all — else CACHE_MISMATCH. The
+// shell's memory is the cacheable main memory (a whole number of lines); its
+// devices are the I/O windows. fetch_errors then also counts the fetches the
+// instruction cache answers with an error itself (outside the memory). The
+// protocol checks below then see the caches' memory side, and run again on the
+// core's side (shell_aster_ports.sv's chk_core_* outputs); the load check
+// follows the core's loads into the data cache (its lookups) instead of the
+// refills.
+//
 // Stall mode (+stall_seed) adds random ready-low cycles and 0-2 extra response
 // cycles per access, per port, keeping responses in order. Response data is
 // garbage outside a response.
@@ -67,7 +86,9 @@
 // load returns them. With +irq_random=<seed> (which implies the device) the
 // shell also raises MEIP or MSIP at random, about once per +irq_period cycles
 // (default 20) while neither is high; a handler clears them with a store of 0.
-// The shell's machine timer, as a SoC's: mtime counts once per cycle from 0 and
+// The shell's machine timer, as a SoC's: mtime counts once per cycle from 0
+// (once per +timer_divider cycles, for ACT4's timer tests, which assume a timer
+// slower than the core) and
 // drives the core's mtime input, which its time and timeh read (docs/cpu.md
 // §3). With +timer its registers are also mapped, in the CLINT layout Sail uses
 // (for ACT4) — mtimecmp at 0x0200_4000, mtime at 0x0200_BFF8, 64 bits each as
@@ -100,7 +121,10 @@
 //   counted as `interrupts`.
 //
 // Plusargs: +bin=<file> +tohost=<hex> [+trace=<file>] [+max_cycles=<n>]
-//           [+stall_seed=<n>] [+mem_bytes=<hex>] [+latency=<1|2>] [+max_inflight=<n>]
+//           [+stall_seed=<n> [+long_stall]] [+mem_bytes=<hex>] [+latency=<1|2>] [+max_inflight=<n>]
+//           [+cache_model]                              (the Aster core with its L1, above)
+//           [+cache_model_ignore_fencei] (self-test: the model keeps its lines through
+//                                   fence.i; the cache model must fail)
 //           [+signature=<file> +sig_begin=<hex> +sig_end=<hex>]
 //           [+corrupt_write=<n>]  (self-test: the n-th accepted write reaches
 //                                   memory with bit 0 of each byte flipped, as a
@@ -109,7 +133,8 @@
 //           [+duplicate_tohost_write] (self-test: the write to tohost is
 //                                   accepted twice, as a core that issues a store
 //                                   twice would; the stray-write check must fail)
-//           [+duplicate_read=<n>] (self-test: the n-th accepted load is recorded
+//           [+duplicate_read=<n>] (self-test: the n-th accepted load — with the
+//                                   caches, the n-th looked up — is recorded
 //                                   twice, as a core that performs a load twice
 //                                   would; the load check must fail)
 //           [+skip_load_check]     (self-test only: isolates the in-flight check,
@@ -123,12 +148,12 @@
 //                                   output follows an input combinationally, 4
 //                                   malformed byte enables, 5 more than two data
 //                                   requests in flight, 6 a wrong rvfi_pc_wdata)
-//           [+io_page] [+console=<file>] [+kernel_end]
+//           [+io_page] [+console=<file>] [+kernel_end] [+v1_devices]   (v1's devices, above)
 //           [+retire_log=<file>]  (debugging: "order cycle pc" per retirement)
 //           [+bus_error_traps]     (a data access outside memory is answered with
 //                                   d_rsp_error and the run continues: the DUT must
 //                                   trap on it; by default the run stops, BUS_ERROR)
-//           [+irq_device] [+irq_random=<seed>] [+irq_period=<n>] [+timer]   (interrupts, above)
+//           [+irq_device] [+irq_random=<seed>] [+irq_period=<n>] [+timer] [+timer_divider=<n>]   (above)
 //           [+sc_outcomes=<file>]  (atomics, above)
 //
 // Memory regions, console, and the measurement window: shell_common.h.
@@ -145,7 +170,7 @@
 // FAIL test=<n>, FAIL (partial tohost store), FAIL (kernel record), TRAP, TIMEOUT, BUS_ERROR,
 // STORE_MISMATCH, STRAY_WRITE, UNSUPPORTED_OP, I_REQ_UNSTABLE, D_REQ_UNSTABLE,
 // D_REQ_MALFORMED, D_INFLIGHT, RVFI_COMBINATIONAL, PC_WDATA_MISMATCH, LOAD_MISMATCH,
-// STRAY_READ or SC_MISMATCH.
+// STRAY_READ, SC_MISMATCH or CACHE_MISMATCH.
 #include "Vcore_ports.h"
 #include "verilated.h"
 
@@ -210,6 +235,8 @@ constexpr std::uint32_t kMtimecmp = 0x02004000u, kMtime = 0x0200BFF8u;
 struct Timer {
     bool enabled = false;
     std::uint64_t mtime = 0, mtimecmp = ~std::uint64_t(0);
+    std::uint32_t divider = 1, phase = 0;
+    void tick() { if (++phase >= divider) { phase = 0; ++mtime; } }
     bool decodes(std::uint32_t address) const {   // its registers are mapped with +timer
         const std::uint32_t word = address & ~3u;
         return enabled && (word == kMtimecmp || word == kMtimecmp + 4 || word == kMtime || word == kMtime + 4);
@@ -229,6 +256,218 @@ struct Timer {
             }
     }
     bool mtip() const { return enabled && mtime >= mtimecmp; }
+};
+
+// v1's SoC devices (+v1_devices, with +io_page; 18.6's firmware regression),
+// for v1 firmware built with the ported runtime, modelled on
+// rtl/peripherals/aster_timer.sv, rtl/peripherals/aster_interrupt_controller.sv
+// and the hart-control page (docs/phase5.md):
+// - the timer at 0x2000_1000: TIME counts every cycle from reset; COMPARE;
+//   CONTROL (lane 0: bit 0 enables, bit 1 clears the pending flag); STATUS
+//   {enabled, pending}; ABI 1; CLOCK_HZ 31,250,000. Pending is set at the edge
+//   where an enabled TIME reaches COMPARE; a clear at that edge wins.
+// - hart control at 0x2000_2000, one hart: ID 0, HART_COUNT 1, STATUS bit 0
+//   (hart 0 running), the two mailboxes; SECONDARY_RUN reads 0.
+// - the interrupt controller at 0x2000_4000: PENDING latches the rising edges
+//   of its sources (bit 0 the timer's pending flag); a store to RAISE sets bit 3
+//   and one to PENDING clears the bits written (after the edges are latched);
+//   ENABLE0/1; ACTIVE0/1 = PENDING & ENABLE0/1; ABI 1; SOURCES 4. Hart 0's line
+//   (PENDING & ENABLE0) drives meip.
+// - the coherent SoC's performance block (rtl/peripherals/aster_coherent_perf.sv)
+//   at 0x2000_3000: counter 0 (0x00/0x04) counts cycles while running, the
+//   others read 0; a store of 1 to 0x80 clears the counters and starts them,
+//   2 freezes them, 4 resumes them; 0x80 reads running, 0x84 the ABI 4, 0x88
+//   the clock.
+// Register writes take effect at the edge, as in the RTL; like the interrupt
+// device's, its accesses are checked against RVFI.
+struct V1Devices {
+    bool enabled = false;
+    std::uint64_t time = 0, compare = 0;
+    bool timer_on = false, timer_pending = false, source_q = false, perf_running = false;
+    std::uint64_t perf_cycles = 0;
+    std::uint32_t perf_command = 0;
+    std::uint32_t pending = 0, enable0 = 0, enable1 = 0, mailbox[2] = {0, 0};
+    // This cycle's register writes, applied at the edge.
+    std::uint64_t next_compare = 0;
+    bool command = false, command_on = false, command_clear = false, raise = false;
+    std::uint32_t clear = 0;
+    static constexpr std::uint32_t kClockHz = 31250000u;
+    bool decodes(std::uint32_t address) const {
+        const std::uint32_t word = address & ~3u;
+        return enabled && ((word >= 0x20001000u && word < 0x20001020u) || (word >= 0x20002000u && word < 0x20002018u)
+                           || (word >= 0x20004000u && word < 0x20004020u) || (word >= 0x20003000u && word < 0x20003070u)
+                           || word == 0x20003080u || word == 0x20003084u || word == 0x20003088u);
+    }
+    std::uint32_t load(std::uint32_t address) const {
+        switch (address & ~3u) {
+            case 0x20001000u: return std::uint32_t(time);
+            case 0x20001004u: return std::uint32_t(time >> 32);
+            case 0x20001008u: return std::uint32_t(compare);
+            case 0x2000100cu: return std::uint32_t(compare >> 32);
+            case 0x20001014u: return (timer_on ? 2u : 0u) | (timer_pending ? 1u : 0u);
+            case 0x20001018u: return 1u;
+            case 0x2000101cu: return kClockHz;
+            case 0x20002008u: return 1u;                       // HART_COUNT; ID (0x00) reads 0
+            case 0x2000200cu: return 1u;                       // STATUS: hart 0 running
+            case 0x20002010u: return mailbox[0];
+            case 0x20002014u: return mailbox[1];
+            case 0x20003000u: return std::uint32_t(perf_cycles);
+            case 0x20003004u: return std::uint32_t(perf_cycles >> 32);
+            case 0x20003080u: return perf_running ? 1u : 0u;
+            case 0x20003084u: return 4u;
+            case 0x20003088u: return kClockHz;
+            case 0x20004000u: return enable0;
+            case 0x20004004u: return enable1;
+            case 0x20004008u: return pending;
+            case 0x2000400cu: return pending & enable0;
+            case 0x20004010u: return pending & enable1;
+            case 0x20004018u: return 1u;
+            case 0x2000401cu: return 4u;
+            default: return 0u;
+        }
+    }
+    void store(std::uint32_t address, std::uint32_t data, std::uint32_t be) {
+        const std::uint32_t word = address & ~3u;
+        auto merge = [&](std::uint32_t old) {
+            for (int lane = 0; lane < 4; ++lane)
+                if (be & (1u << lane)) old = (old & ~(0xffu << (8 * lane))) | (data & (0xffu << (8 * lane)));
+            return old;
+        };
+        switch (word) {
+            case 0x20001008u: next_compare = (next_compare & ~0xffffffffull) | merge(std::uint32_t(next_compare)); break;
+            case 0x2000100cu: next_compare = (next_compare & 0xffffffffull)
+                                             | (std::uint64_t(merge(std::uint32_t(next_compare >> 32))) << 32); break;
+            case 0x20001010u: if (be & 1u) { command = true; command_on = data & 1u; command_clear = data & 2u; } break;
+            case 0x20002010u: mailbox[0] = merge(mailbox[0]); break;
+            case 0x20002014u: mailbox[1] = merge(mailbox[1]); break;
+            case 0x20004000u: if (be & 1u) enable0 = data & 15u; break;
+            case 0x20004004u: if (be & 1u) enable1 = data & 15u; break;
+            case 0x20004008u: if (be & 1u) clear |= data & 15u; break;
+            case 0x20004014u: if (be & 1u) raise = true; break;
+            case 0x20003080u: if (be & 1u) perf_command = data & 0xffu; break;
+            default: break;                                    // read-only or unused: ignored
+        }
+    }
+    // At each edge, after this cycle's accesses.
+    void edge() {
+        if (!enabled) return;
+        std::uint32_t next = pending | (timer_pending && !source_q ? 1u : 0u);
+        if (raise) next |= 8u;
+        next &= ~clear;
+        source_q = timer_pending;
+        pending = next;
+        if (timer_on && time + 1 == compare) timer_pending = true;
+        if (command) { timer_on = command_on; if (command_clear) timer_pending = false; }
+        compare = next_compare;
+        ++time;
+        if (perf_command == 1u) { perf_cycles = 0; perf_running = true; }
+        else if (perf_command == 2u) perf_running = false;
+        else if (perf_command == 4u) perf_running = true;
+        else if (perf_running) ++perf_cycles;
+        command = raise = false;
+        clear = perf_command = 0;
+    }
+    bool irq0() const { return (pending & enable0) != 0; }
+};
+
+// The L1 model (+cache_model, above).
+struct L1Model {
+    struct Access {
+        std::uint32_t op, addr, be, data;
+    };
+    bool enabled = false;
+    bool ignore_fencei = false;                  // self-test: the model misses fence.i's invalidation
+    std::uint32_t base = 0x80000000u, bytes = 0;
+    std::array<std::int64_t, 256> itag, dtag;   // the line's tag, or -1
+    std::deque<std::uint32_t> i_expect;          // refill fetches expected, by address
+    std::deque<Access> d_expect;                 // memory-side data accesses expected
+    std::uint64_t i_hits = 0, i_misses = 0, d_hits = 0, d_misses = 0;
+    std::uint64_t i_errors = 0;                  // fetches the instruction cache answers with an error
+    // The instruction cache's refill in progress: installed when its fourth word
+    // arrives, unless fence.i invalidated the cache after the cycle of its miss
+    // (a refill that starts after an invalidation reads the memory as fence.i
+    // left it, and is installed).
+    struct Refill {
+        bool active = false, poisoned = false;
+        std::uint32_t line = 0, answered = 0;
+        std::uint64_t cycle = 0;
+    } refill;
+    std::string error;
+    L1Model() { itag.fill(-1); dtag.fill(-1); }
+    bool cacheable(std::uint32_t a) const { return a - base < bytes; }
+    bool performs(std::uint32_t a) const { return cacheable(a) || io(a); }   // not an error
+    static bool io(std::uint32_t a) {
+        const std::uint32_t word = a & ~3u;
+        return (a & ~0xFFFFu) == 0x20000000u || word == 0x30000000u || (a & ~7u) == 0x02004000u
+            || (a & ~7u) == 0x0200BFF8u;
+    }
+    void fail(const std::string& what) { if (error.empty()) error = what; }
+    void ilookup(std::uint32_t a, bool hit, std::uint64_t cycle) {
+        if (!cacheable(a)) { ++i_errors; return; }   // answered with an error, nothing fetched
+        const std::uint32_t index = (a >> 4) & 255u, tag = a >> 12;
+        const bool resident = itag[index] == std::int64_t(tag);
+        if (hit != resident) fail("instruction lookup " + hex(a) + (hit ? " hit, the line is absent" : " missed, the line is resident"));
+        if (resident) { ++i_hits; return; }
+        ++i_misses;
+        for (std::uint32_t w = 0; w < 4; ++w) i_expect.push_back((a & ~15u) + 4 * w);
+        refill = {true, false, a & ~15u, 0, cycle};  // the next lookup comes after the refill
+    }
+    void ianswer() {                                 // a refill word arrives
+        if (!refill.active || ++refill.answered < 4) return;
+        if (!refill.poisoned) itag[(refill.line >> 4) & 255u] = refill.line >> 12;
+        refill.active = false;
+    }
+    void dlookup(std::uint32_t op, std::uint32_t a, std::uint32_t be, std::uint32_t data, bool hit) {
+        const std::uint32_t index = (a >> 4) & 255u, tag = a >> 12;
+        if (!cacheable(a)) {
+            if (hit) fail("data lookup " + hex(a) + " hit outside the cacheable memory");
+            if (io(a)) d_expect.push_back({op, a, be, data});
+            return;                                  // an error reaches nothing
+        }
+        const bool resident = dtag[index] == std::int64_t(tag);
+        if (hit != resident) fail("data lookup " + hex(a) + (hit ? " hit, the line is absent" : " missed, the line is resident"));
+        if (op == 0) {                               // a load: a hit, or a refill of its line
+            if (resident) { ++d_hits; return; }
+            ++d_misses;
+            for (std::uint32_t w = 0; w < 4; ++w) d_expect.push_back({0, (a & ~15u) + 4 * w, 0xFu, 0});
+            dtag[index] = tag;
+            return;
+        }
+        d_expect.push_back({op, a, be, data});      // a store (no allocate) or an atomic
+        if (op != 1 && op != 2) dtag[index] = -1;    // sc and the AMOs invalidate their line
+    }
+    void ifetch(std::uint32_t a) {
+        if (i_expect.empty() || i_expect.front() != a) {
+            fail("unexpected refill fetch " + hex(a) + (i_expect.empty() ? "" : ", expected " + hex(i_expect.front())));
+            return;
+        }
+        i_expect.pop_front();
+    }
+    void daccess(std::uint32_t op, std::uint32_t a, std::uint32_t be, std::uint32_t data) {
+        if (d_expect.empty()) { fail("unexpected memory-side access at " + hex(a)); return; }
+        const Access want = d_expect.front();
+        d_expect.pop_front();
+        const std::uint32_t lanes = lane_mask(be);
+        const bool writes = op != 0 && op != 2;      // store data, or an sc's or AMO's operand
+        if (op != want.op || a != want.addr || be != want.be || (writes && (data & lanes) != (want.data & lanes)))
+            fail("memory-side access op " + std::to_string(op) + " at " + hex(a) + ", expected op "
+                 + std::to_string(want.op) + " at " + hex(want.addr));
+    }
+    void fencei(std::uint64_t cycle) {
+        if (ignore_fencei) return;
+        itag.fill(-1);
+        if (refill.active && cycle != refill.cycle) refill.poisoned = true;
+    }
+    static std::string hex(std::uint32_t v) {
+        char text[16];
+        std::snprintf(text, sizeof text, "0x%08x", v);
+        return text;
+    }
+    static std::uint32_t lane_mask(std::uint32_t be) {
+        std::uint32_t m = 0;
+        for (int lane = 0; lane < 4; ++lane) if (be & (1u << lane)) m |= 0xffu << (8 * lane);
+        return m;
+    }
 };
 
 struct Write {
@@ -289,11 +528,18 @@ int main(int argc, char** argv) {
     const std::uint32_t tohost = std::stoul(tohost_text, nullptr, 16);
     const std::uint64_t max_cycles = plusarg("max_cycles").empty() ? 50000000ull : std::stoull(plusarg("max_cycles"));
     const bool stall = !plusarg("stall_seed").empty();
+    const bool long_stall = shell::plusflag("long_stall");
+    if (long_stall && !stall) { std::cerr << "+long_stall needs +stall_seed\n"; return 2; }
     std::mt19937 rng(stall ? std::stoul(plusarg("stall_seed")) : 0u);
     std::mt19937 garbage(0x5eed1234u);
     const std::uint32_t mem_bytes =
         plusarg("mem_bytes").empty() ? shell::kDefaultBytes : std::stoul(plusarg("mem_bytes"), nullptr, 16);
     if (mem_bytes == 0 || mem_bytes % 4) { std::cerr << "+mem_bytes must be a nonzero multiple of 4\n"; return 2; }
+    L1Model l1;
+    l1.enabled = shell::plusflag("cache_model");
+    l1.ignore_fencei = shell::plusflag("cache_model_ignore_fencei");
+    l1.bytes = mem_bytes;
+    if (l1.enabled && mem_bytes % 16) { std::cerr << "+cache_model needs whole 16-byte lines of memory\n"; return 2; }
     const bool duplicate_tohost_write = Verilated::commandArgsPlusMatch("duplicate_tohost_write")[0] != '\0';
     const bool bus_error_traps = shell::plusflag("bus_error_traps");
     const int latency = plusarg("latency").empty() ? 2 : std::stoi(plusarg("latency"));
@@ -308,6 +554,9 @@ int main(int argc, char** argv) {
     irq.device = irq.random || shell::plusflag("irq_device");
     Timer timer;
     timer.enabled = shell::plusflag("timer");
+    V1Devices v1;
+    v1.enabled = shell::plusflag("v1_devices");
+    if (!plusarg("timer_divider").empty()) timer.divider = std::max(1ul, std::stoul(plusarg("timer_divider")));
     if (irq.random) irq.rng.seed(std::stoul(plusarg("irq_random")));
     if (!plusarg("irq_period").empty()) irq.period = std::max(1ul, std::stoul(plusarg("irq_period")));
 
@@ -346,9 +595,15 @@ int main(int argc, char** argv) {
         plusarg("corrupt_write").empty() ? 0 : std::stoull(plusarg("corrupt_write"));
     const std::uint64_t duplicate_read =
         plusarg("duplicate_read").empty() ? 0 : std::stoull(plusarg("duplicate_read"));
+    // A cache's refills are not the program's loads; the L1 model checks them.
     const bool load_check = !shell::plusflag("skip_load_check");
     std::uint64_t accepted_reads = 0;
     std::deque<Read> reads;                 // accepted loads not yet matched to a retired load
+    // A load the memory side performs, for the load check — without the caches
+    // (with them the check follows the data cache's lookups, below).
+    auto memory_read = [&](std::uint32_t address, std::uint32_t be) {
+        if (!l1.enabled) reads.push_back({address & ~3u, be});
+    };
     std::deque<Unanswered> unanswered;      // data writes the fetch port does not see yet
     std::uint64_t data_accepted = 0, data_answered = 0;
     // A write performed at acceptance, kept from the fetch port until answered
@@ -376,7 +631,7 @@ int main(int argc, char** argv) {
         for (int c; (c = std::fgetc(file)) != EOF;) if (c == 'S' || c == 'F') sc_outcomes += char(c);
         std::fclose(file);
     }
-    std::uint64_t accepted_writes = 0, fetch_errors = 0, interrupts = 0;
+    std::uint64_t accepted_writes = 0, fetch_errors = 0, interrupts = 0, div_waits = 0;
     shell::Port iport, dport;
     bool d_error_next = false;              // d_rsp_error for the request accepted at the last edge
     bool d_error_cycle = false;             // a data request was accepted at the last edge
@@ -385,6 +640,9 @@ int main(int argc, char** argv) {
     std::string result = "TIMEOUT";
     bool stop = false;
     shell::StableCheck i_stable, d_stable;
+    shell::StableCheck core_i_stable, core_d_stable;   // the core's side, behind the caches
+    std::size_t core_d_inflight = 0;
+    std::uint64_t core_d_waits = 0;                    // cycles the core's data request waited
     bool have_previous = false, previous_trap = false;
     std::uint32_t previous_pc_wdata = 0;
     Rvfi registered{};
@@ -397,9 +655,10 @@ int main(int argc, char** argv) {
         d.d_rsp_valid = dport.responding();
         d.d_rsp_rdata = dport.responding() ? dport.owed.front().data : std::uint32_t(garbage());
         d.d_rsp_error = d_error_cycle ? d_error_next : garbage() & 1u;
-        d.meip = (irq.level >> 11) & 1u;
+        d.meip = ((irq.level >> 11) & 1u) | v1.irq0();
         d.mtip = ((irq.level >> 7) & 1u) | timer.mtip();
         d.mtime = timer.mtime;
+        d.cacheable_bytes = mem_bytes;
         d.msip = (irq.level >> 3) & 1u;
         d.i_req_ready = iport.remaining() < max_inflight && !(stall && rng() % 4 == 0);
         d.d_req_ready = dport.remaining() < max_inflight && !(stall && rng() % 4 == 0);
@@ -420,6 +679,48 @@ int main(int argc, char** argv) {
         if (!d_violation.empty()) { result = "D_REQ_UNSTABLE"; std::cerr << "data request " << d_violation << "\n"; break; }
         if (d.d_req_valid && !shell::well_formed(d_addr, d_be)) { result = "D_REQ_MALFORMED"; break; }
         if (d_accept && dport.remaining() >= 2) { result = "D_INFLIGHT"; break; }
+        if (l1.enabled) {
+            // The same checks on the core's side of the caches (shell_aster_ports.sv).
+            const std::uint32_t c_addr = d.chk_core_d_req_addr, c_be = d.chk_core_d_req_be;
+            const std::string ci = core_i_stable.cycle(
+                {bool(d.chk_core_i_req_valid), std::uint32_t(d.chk_core_i_req_addr) << 2, 0, 0, 0},
+                d.chk_core_i_req_ready, d.chk_core_i_redirect);
+            const std::string cd = core_d_stable.cycle(
+                {bool(d.chk_core_d_req_valid), c_addr, int(d.chk_core_d_req_op), std::uint32_t(d.chk_core_d_req_wdata), c_be},
+                d.chk_core_d_req_ready, false);
+            if (!ci.empty()) { result = "I_REQ_UNSTABLE"; std::cerr << "the core's instruction request " << ci << "\n"; break; }
+            if (!cd.empty()) { result = "D_REQ_UNSTABLE"; std::cerr << "the core's data request " << cd << "\n"; break; }
+            if (d.chk_core_d_req_valid && !shell::well_formed(c_addr, c_be)) { result = "D_REQ_MALFORMED"; break; }
+            const bool c_accept = d.chk_core_d_req_valid && d.chk_core_d_req_ready;
+            if (d.chk_core_d_rsp_valid && core_d_inflight == 0) { result = "D_RSP_UNEXPECTED"; break; }
+            if (c_accept && core_d_inflight - (d.chk_core_d_rsp_valid ? 1 : 0) >= 2) { result = "D_INFLIGHT"; break; }
+            core_d_inflight += (c_accept ? 1 : 0);
+            core_d_inflight -= (d.chk_core_d_rsp_valid ? 1 : 0);
+            core_d_waits += d.chk_core_d_req_valid && !d.chk_core_d_req_ready;
+        }
+        if (l1.enabled) {
+            // This cycle's lookups (each against the lines before this edge), then
+            // the memory-side accesses and refill words, then fence.i's
+            // invalidation at the edge.
+            if (d.chk_ic_lookup) l1.ilookup(std::uint32_t(d.chk_ic_addr) << 2, d.chk_ic_hit, cycles);
+            if (d.chk_dc_lookup)
+                l1.dlookup(d.chk_dc_op, d.chk_dc_addr, d.chk_dc_be, d.chk_dc_wdata, d.chk_dc_hit);
+            if (i_accept) l1.ifetch(i_addr);
+            if (d_accept) l1.daccess(d_op, d_addr, d_be, d_wdata);
+            if (iport.responding()) l1.ianswer();
+            if (d.chk_fencei) l1.fencei(cycles);
+            // With the caches the load check follows the core's loads into the
+            // data cache (its lookups, in order) instead of the memory side's
+            // refills: each retired load must match the oldest looked up and
+            // not yet matched (an lr included, an error excepted).
+            if (d.chk_dc_lookup && (d.chk_dc_op == kLoad || d.chk_dc_op == kLr) && l1.performs(d.chk_dc_addr)) {
+                const Read read{std::uint32_t(d.chk_dc_addr) & ~3u, std::uint32_t(d.chk_dc_be)};
+                reads.push_back(read);
+                if (++accepted_reads == duplicate_read) reads.push_back(read);   // the self-test's
+            }
+            div_waits += d.chk_div_wait;
+            if (!l1.error.empty()) { result = "CACHE_MISMATCH"; std::cerr << "L1: " << l1.error << "\n"; break; }
+        }
 
         d.clk = 1; d.eval();
         ++cycles;
@@ -434,14 +735,14 @@ int main(int argc, char** argv) {
         if (i_accept) {
             const bool error = !memory.executable(i_addr);
             fetch_errors += error;
-            iport.accept(latency, stall ? int(rng() % 3) : 0,
+            iport.accept(latency, stall ? int(rng() % 3) + (long_stall && rng() % 16 == 0 ? 16 + int(rng() % 48) : 0) : 0,
                          error ? std::uint32_t(garbage()) : fetch_word(i_addr), error);
         }
         // The fetch above, accepted at the answer's edge, still read the old word.
         while (!unanswered.empty() && unanswered.front().sequence < data_answered) unanswered.pop_front();
         if (d_accept) {
             const bool device = irq.device && (d_addr & ~3u) == kIrqDevice;
-            const bool timed = timer.decodes(d_addr);
+            const bool timed = timer.decodes(d_addr) || v1.decodes(d_addr);
             const bool error = !device && !timed && !memory.contains(d_addr);
             std::uint32_t rdata = std::uint32_t(garbage());
             d_error_next = error;
@@ -450,14 +751,16 @@ int main(int argc, char** argv) {
                 stop = true;
             }
             else if (timed) {
-                // The machine timer: like the interrupt device, checked against RVFI.
+                // The machine timer or v1's devices: like the interrupt device,
+                // checked against RVFI.
                 if (d_op == kStore) {
                     ++accepted_writes;
-                    timer.store(d_addr, d_wdata, d_be);
+                    if (v1.decodes(d_addr)) v1.store(d_addr, d_wdata, d_be);
+                    else timer.store(d_addr, d_wdata, d_be);
                     writes.push_back({d_addr & ~3u, d_be, d_wdata});
                 } else {
-                    rdata = timer.load(d_addr);
-                    reads.push_back({d_addr & ~3u, d_be});
+                    rdata = v1.decodes(d_addr) ? v1.load(d_addr) : timer.load(d_addr);
+                    memory_read(d_addr, d_be);
                 }
             }
             else if (device) {
@@ -468,7 +771,7 @@ int main(int argc, char** argv) {
                     writes.push_back({d_addr & ~3u, d_be, d_wdata});
                 } else {
                     rdata = irq.level;
-                    reads.push_back({d_addr & ~3u, d_be});
+                    memory_read(d_addr, d_be);
                 }
             }
             else if (error) {
@@ -479,7 +782,7 @@ int main(int argc, char** argv) {
             }
             else if (d_op == kLr) {
                 rdata = memory.read(d_addr);
-                reads.push_back({d_addr & ~3u, d_be});
+                memory_read(d_addr, d_be);
                 reserved = true;
                 reserved_word = d_addr & ~3u;
             }
@@ -515,14 +818,16 @@ int main(int argc, char** argv) {
                 if (duplicate_tohost_write && (d_addr & ~3u) == tohost) writes.push_back({d_addr & ~3u, d_be, written});
             } else {
                 rdata = memory.read(d_addr);
-                reads.push_back({d_addr & ~3u, d_be});
-                if (++accepted_reads == duplicate_read) reads.push_back({d_addr & ~3u, d_be});
+                memory_read(d_addr, d_be);
+                if (!l1.enabled && ++accepted_reads == duplicate_read) memory_read(d_addr, d_be);
             }
-            dport.accept(latency, stall ? int(rng() % 3) : 0, rdata, error);
+            dport.accept(latency, stall ? int(rng() % 3) + (long_stall && rng() % 16 == 0 ? 16 + int(rng() % 48) : 0) : 0,
+                         rdata, error);
             ++data_accepted;
         }
         irq.edge();
-        ++timer.mtime;
+        timer.tick();
+        v1.edge();
         if (d.rvfi_valid && !stop && d.rvfi_trap) reserved = false;   // an exception ends the reservation
         if (d.rvfi_valid && !stop) {
             // Each record's pc_wdata must be the next record's pc_rdata
@@ -590,6 +895,12 @@ int main(int argc, char** argv) {
         if (const std::string error = shell::dump_signature(memory); !error.empty()) { std::cerr << error << "\n"; return 2; }
     }
     std::cout << "SHELL " << result << " cycles=" << cycles << " retired=" << retired << observer.window()
-              << " fetch_errors=" << fetch_errors << " interrupts=" << interrupts << "\n";
+              << " fetch_errors=" << fetch_errors + l1.i_errors << " interrupts=" << interrupts;
+    if (div_waits) std::cout << " div_waits=" << div_waits;   // cycles a finished division waited in Execute
+    if (core_d_waits) std::cout << " core_d_waits=" << core_d_waits;   // the core's data request waited (caches)
+    if (l1.enabled)
+        std::cout << " icache_hits=" << l1.i_hits << " icache_misses=" << l1.i_misses
+                  << " dcache_hits=" << l1.d_hits << " dcache_misses=" << l1.d_misses;
+    std::cout << "\n";
     return result == "PASS" ? 0 : 1;
 }

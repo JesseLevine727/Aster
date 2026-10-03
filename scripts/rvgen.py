@@ -30,7 +30,8 @@ The stream is built to stress a pipeline, not to compute anything:
   with operands from every producer and its result used as data;
 - with Zifencei (`--ext ...,zifencei`, the Aster core from 18.4): fence.i
   (no code is rewritten: the directed smc test does that) and fence in its
-  forms;
+  forms, a fence followed at times (with A, 18.6) by an AMO, an idiom whose
+  (fence, atomic) interrupt pair was otherwise rare;
 - with Zicsr (`--ext m,zicsr`, the Aster core from 18.3): CSR instructions in
   every form — read-modify-writes of mtval, mcause, mepc and mie, mstatus.MPIE
   set and cleared, reads of minstret(h), misa and mhartid (never a value
@@ -470,7 +471,11 @@ class Generator:
                 self.dot8()
                 continue
             if "zifencei" in self.ext.split(",") and self.rng.random() < 0.03:
-                self.emit("fence.i" if self.rng.random() < 0.6 else self.rng.choice(FENCES))
+                fence = "fence.i" if self.rng.random() < 0.6 else self.rng.choice(FENCES)
+                self.emit(fence)
+                if fence != "fence.i" and "a" in self.ext.split(",") and self.rng.random() < 0.3:
+                    # an AMO right behind the fence (ordering before an atomic update)
+                    self.emit(f"{self.rng.choice(AMOS)} x{self.dst()}, x{self.src()}, (x{BASE})")
                 continue
             choice = self.rng.random()
             if choice < 0.45:

@@ -1,13 +1,18 @@
 """Planted bugs in the Aster core's RTL (docs/phase18.md: "Planted bugs" in
-milestones 18.3-18.5 and the ACT4 adoption).
+milestones 18.3-18.6 and the ACT4 adoption).
 
 Each mutant replaces one exact piece of rtl/aster_core/aster_core{,_pkg,_fetch}.sv
-(its anchor, which must occur exactly once — verification/host/
-test_mutation_campaign.py checks that against the current RTL) and is built into
-the two-port shell with assertions off. It must then be caught: the
-verification runs fail-fast from the cheapest stage (the suites with the CPI
-check, back-pressure, random programs, random interrupts, arch-test, and ACT4)
-and the first failing stage is reported; MISSED means none failed. A few are
+or, from 18.6, of the L1 caches aster_l1{i,d}.sv (its anchor, which must occur
+exactly once — verification/host/test_mutation_campaign.py checks that against
+the current RTL) and is built into the two-port shell with assertions off: the
+core's mutants without the caches, the caches' mutants (and the core's that only
+the caches can expose, CACHED) with them and the cache reference model
+(the aster_l1 DUT). It must then be caught: the verification runs fail-fast from
+the cheapest stage (the suites with the CPI check — without it on the cached
+core, whose misses the CPI model does not know — back-pressure, long stalls on
+the cached core, random programs, random interrupts, arch-test, and ACT4; then,
+for a cache's mutant, that cache's random unit test, make core-aster-l1-unit's
+seeds) and the first failing stage is reported; MISSED means none failed. A few are
 recorded as equivalent or unobservable (docs/phase18.md, 18.3).
 
     python3 scripts/mutation_campaign.py OUTDIR [NAME ...]   # all mutants, or those named
@@ -32,6 +37,9 @@ ROOT = Path(__file__).resolve().parents[1]
 RTL = ROOT / "rtl/aster_core"
 SPIKE = os.environ.get("SPIKE", os.path.expanduser("~/tools/spike/bin/spike"))
 C, P, F = "", "_pkg", "_fetch"     # aster_core.sv, aster_core_pkg.sv, aster_core_fetch.sv
+I, D = "l1i", "l1d"                # aster_l1i.sv, aster_l1d.sv (18.6)
+FILES = {C: "aster_core.sv", P: "aster_core_pkg.sv", F: "aster_core_fetch.sv", I: "aster_l1i.sv", D: "aster_l1d.sv"}
+L1_RAM = RTL / "aster_l1_ram.sv"
 MUTANTS = {
  # trap entry
  "mepc-exception-next-pc": (C, "mepc         <= m1_trap ? m1.pc[31:2] : m1.next_pc[31:2];", "mepc         <= m1.next_pc[31:2];"),
@@ -66,7 +74,8 @@ MUTANTS = {
  "exception-loses-to-irq": (C, "mcause       <= m1_trap ? {28'b0, trap_cause} : {1'b1, 27'b0, irq_code};", "mcause       <= m1_irq ? {1'b1, 27'b0, irq_code} : {28'b0, trap_cause};"),
  "no-intr-mark": (C, "            if (kill) intr_next <= 1'b1;", "            if (kill) intr_next <= 1'b0;"),
  # CSRs
- "no-serialization": (C, " && (!e_dec.sys || !m1.valid)\n", "\n"),
+ "no-serialization": (C, " && (!e_dec.sys || (!m1.valid && !m2.valid))\n", "\n"),
+ "serialization-m1-only": (C, "(!e_dec.sys || (!m1.valid && !m2.valid))", "(!e_dec.sys || !m1.valid)"),
  "csr-write-on-trap": (C, "e_slot.csr_we    = (e_dec.csr_write || e_dec.mret) && !e_trap;", "e_slot.csr_we    = (e_dec.csr_write || e_dec.mret);"),
  "read-only-csr-writable": (P, "d.illegal   = d.csr_sel == '0 || (d.csr_write && insn[31:30] == 2'b11);", "d.illegal   = d.csr_sel == '0;"),
  "csr-read-always-writes": (P, "d.csr_write = funct3[1:0] == 2'd1 || insn[19:15] != 5'd0;", "d.csr_write = 1'b1;"),
@@ -117,17 +126,63 @@ MUTANTS = {
  "minstret-ignores-inhibit": (C, "else if (retire && !ir_inhibit)             minstret        <= minstret + 64'd1;", "else if (retire)                            minstret        <= minstret + 64'd1;"),
  "minstret-write-not-suppressing": (C, "            if (m1_csr_we && m1.csr_sel.minstret)       minstret[31:0]  <= m1.wdata;\n            else if (m1_csr_we && m1.csr_sel.minstreth) minstret[63:32] <= m1.wdata;\n            else if (retire && !ir_inhibit)             minstret        <= minstret + 64'd1;",
                                     "            if (retire && !ir_inhibit)                  minstret        <= minstret + 64'd1;\n            if (m1_csr_we && m1.csr_sel.minstret)       minstret[31:0]  <= m1.wdata;\n            else if (m1_csr_we && m1.csr_sel.minstreth) minstret[63:32] <= m1.wdata;"),
+ # 18.6: the core's side of the caches
+ "fencei-no-invalidate": (C, "fencei_inval <= e_advance && e_dec.fencei;", "fencei_inval <= 1'b0;"),
+ # 18.6: the instruction cache
+ "l1i-hit-ignores-valid": (I, "assign lookup_hit   = valid[s1_addr[11:4]] && tag_ram", "assign lookup_hit   = tag_ram"),
+ "l1i-tag-drops-bit12": (I, "tag_ram[s1_addr[11:4]] == s1_addr[31:12];", "tag_ram[s1_addr[11:4]][19:1] == s1_addr[31:13];"),
+ "l1i-fencei-ignored": (I, "            if (invalidate) valid <= '0;", "            if (1'b0) valid <= '0;"),
+ "l1i-refill-not-poisoned": (I, "received == 3'd3 && !poisoned) valid", "received == 3'd3) valid"),
+ "l1i-waiting-fetch-not-stale": (I, "                if (refill_write) s1_stale <= 1'b1;\n", ""),
+ "l1i-miss-answers-word0": (I, "if (received[1:0] == s2_addr[3:2]) s2_word <= m_rsp_data;", "if (received[1:0] == 2'd0) s2_word <= m_rsp_data;"),
+ "l1i-kept-word-ignored": (I, "assign i_rsp_data   = s2_have || state == ANSWER ? s2_word : rd_data;", "assign i_rsp_data   = state == ANSWER ? s2_word : rd_data;"),
+ "l1i-refill-writes-issued-slot": (I, ".wr_addr({s2_addr[11:4], received[1:0]}),", ".wr_addr({s2_addr[11:4], issued[1:0]}),"),
+ # 18.6: the data cache
+ "l1d-store-hit-not-written": (D, "s2_op == OP_STORE && s2_cacheable && s2_hit;", "s2_op == OP_STORE && s2_cacheable && s2_hit && 1'b0;"),
+ "l1d-store-miss-written": (D, "s2_op == OP_STORE && s2_cacheable && s2_hit;", "s2_op == OP_STORE && s2_cacheable;"),
+ "l1d-store-all-bytes": (D, ".wr_be(refill_write ? 4'hf : store_write ? s2_be : 4'h0),", ".wr_be(refill_write ? 4'hf : store_write ? 4'hf : 4'h0),"),
+ "l1d-amo-keeps-line": (D, "                valid[s2_addr[11:4]] <= 1'b0;\n", "                ;\n"),
+ "l1d-lr-invalidates": (D, "&& s2_op != OP_STORE && s2_op != OP_LR && s2_op != OP_LOAD)", "&& s2_op != OP_STORE && s2_op != OP_LOAD)"),
+ "l1d-io-load-refills": (D, "if (s2_cacheable && s2_load && !s2_hit) begin", "if (s2_load && !s2_hit) begin"),
+ "l1d-error-a-cycle-late": (D, "assign d_rsp_error  = s1_valid && s1_age == 2'd0 && !s1_cacheable && !s1_io;", "assign d_rsp_error  = s1_valid && s1_age == 2'd1 && !s1_cacheable && !s1_io;"),
+ "l1d-now-ignores-stale": (D, "s2_now       <= s1_age == 2'd0 && !s1_stale && !array_write;", "s2_now       <= s1_age == 2'd0 && !array_write;"),
+ "l1d-waiting-load-not-stale": (D, "                if (array_write) s1_stale <= 1'b1;\n", ""),
+ "l1d-accepted-during-write-not-stale": (D, "                s1_stale <= array_write;", "                s1_stale <= 1'b0;"),
+ "l1d-miss-answers-word0": (D, "if (received[1:0] == s2_addr[3:2]) s2_word <= m_rsp_rdata;", "if (received[1:0] == 2'd0) s2_word <= m_rsp_rdata;"),
+ "l1d-refill-writes-issued-slot": (D, ".wr_addr(refill_write ? {s2_addr[11:4], received[1:0]} : s2_addr[11:2]),", ".wr_addr(refill_write ? {s2_addr[11:4], issued[1:0]} : s2_addr[11:2]),"),
+ "l1d-kept-word-ignored": (D, "assign d_rsp_rdata  = s2_have || state == ANSWER ? s2_word : rd_data;", "assign d_rsp_rdata  = state == ANSWER ? s2_word : rd_data;"),
+ "l1d-store-answers-before-memory": (D, "                    if (m_req_valid && m_req_ready) sent <= 1'b1;\n                    if (m_rsp_valid) begin", "                    if (m_req_valid && m_req_ready) sent <= 1'b1;\n                    if (m_req_valid && m_req_ready) begin"),
 }
+# The core's mutants that only the caches' timing exposes: run on the cached core.
+CACHED = {"serialization-m1-only", "fencei-no-invalidate"}
+
+
+def cached(name: str) -> bool:
+    return MUTANTS[name][0] in (I, D) or name in CACHED
 
 
 def sources() -> dict[str, str]:
-    return {k: (RTL / f"aster_core{k}.sv").read_text() for k in (C, P, F)}
+    return {k: (RTL / name).read_text() for k, name in FILES.items()}
 
 
-def stages() -> list[tuple[str, list[str]]]:
+def stages(l1: bool) -> list[tuple[str, list[str]]]:
     act4 = ("act4", ["--act4", str(ROOT / "build/act4/aster-rv32ima/elfs")])
     if os.environ.get("ONLY_ACT4") == "1":
         return [act4]
+    if l1:
+        return [("suites", []),
+                ("suites stall", ["--stall-seed", "5"]),
+                ("suites long stall", ["--stall-seed", "3", "--shell-arg", "+long_stall"]),
+                ("random", ["--random", "10"]),
+                ("random long stall", ["--random", "10", "--random-seed", "701", "--stall-seed", "17",
+                                       "--shell-arg", "+long_stall"]),
+                ("irq splice", ["--interrupts", "7"]),
+                ("random irq stall", ["--random", "5", "--random-seed", "401", "--interrupts", "7", "--stall-seed", "13"]),
+                ("arch", ["--arch"]),
+                ("suites latency1 stall", ["--stall-seed", "9", "--shell-arg", "+latency=1"]),
+                ("suites inflight4", ["--stall-seed", "7", "--shell-arg", "+max_inflight=4"]),
+                act4,
+                ("act4 stall", ["--act4", str(ROOT / "build/act4/aster-rv32ima/elfs"), "--stall-seed", "5"])]
     return [("suites cpi", ["--cpi-check"]),
             ("suites stall", ["--stall-seed", "5"]),
             ("random cpi", ["--random", "10", "--cpi-check"]),
@@ -141,9 +196,26 @@ def stages() -> list[tuple[str, list[str]]]:
             act4]
 
 
-def verdict(sim: Path, work: Path) -> str:
-    base = [sys.executable, str(ROOT / "scripts/run_core_tests.py"), "--dut", "aster", "--sim", str(sim), "--spike", SPIKE]
-    for label, extra in stages():
+UNIT_SEEDS, UNIT_CYCLES = 200, 1_000_000     # make core-aster-l1-unit's
+
+
+def unit_build(which: str, work: Path) -> list[str]:
+    """The Verilator command for a cache's unit test (verification/core/l1) on the mutant's RTL."""
+    tests = ROOT / "verification/core/l1"
+    if which == D:
+        files = [RTL / FILES[P], L1_RAM, work / FILES[D], tests / "l1d_unit.sv", tests / "tb_l1d.cpp"]
+        top, prefix = "l1d_unit", "Vl1d_unit"
+    else:
+        files = [L1_RAM, work / FILES[I], tests / "tb_l1i.cpp"]
+        top, prefix = "aster_l1i", "Vaster_l1i"
+    return ["verilator", "--cc", "--exe", "--build", "-Wno-fatal", "--top-module", top, "--prefix", prefix,
+            "--Mdir", str(work / "unit_obj"), "-o", str(work / "unit"), *map(str, files)]
+
+
+def verdict(sim: Path, work: Path, l1: bool, unit: Path | None = None) -> str:
+    base = [sys.executable, str(ROOT / "scripts/run_core_tests.py"), "--dut", "aster_l1" if l1 else "aster",
+            "--sim", str(sim), "--spike", SPIKE]
+    for label, extra in stages(l1):
         shutil.rmtree(work / "t", ignore_errors=True)
         try:
             run = subprocess.run(base + extra + ["--build-dir", str(work / "t")], capture_output=True, text=True,
@@ -155,6 +227,11 @@ def verdict(sim: Path, work: Path) -> str:
             first = next((line for line in run.stdout.splitlines() if line.startswith("FAIL")),
                          (run.stdout + run.stderr).strip()[-150:])
             return f"CAUGHT by {label}: {' '.join(first.split())[:170]}"
+    if unit is not None:
+        for seed in range(1, UNIT_SEEDS + 1):
+            run = subprocess.run([str(unit), str(seed), str(UNIT_CYCLES)], capture_output=True, text=True, timeout=600)
+            if run.returncode or not run.stdout.startswith("PASS"):
+                return f"CAUGHT by l1 unit: {' '.join((run.stdout + run.stderr).split())[:170]}"
     return "MISSED"
 
 
@@ -166,19 +243,28 @@ def one(out: Path, original: dict[str, str], name: str) -> str:
     files = dict(original)
     files[which] = files[which].replace(old, new)
     for k, text in files.items():
-        (work / f"aster_core{k}.sv").write_text(text)
+        (work / FILES[k]).write_text(text)
+    l1 = cached(name)
+    rtl = [work / FILES[k] for k in (P, F, C)] + ([L1_RAM, work / FILES[I], work / FILES[D]] if l1 else [])
     build = subprocess.run(["verilator", "--cc", "--exe", "--build", "-Wno-fatal", "--top-module", "shell_aster_ports",
+                            *(["-GL1=1"] if l1 else []),
                             "--prefix", "Vcore_ports", "--Mdir", str(work / "obj"), "-o", str(work / "sim"),
-                            str(work / "aster_core_pkg.sv"), str(work / "aster_core_fetch.sv"), str(work / "aster_core.sv"),
-                            str(ROOT / "verification/core/shell_aster_ports.sv"),
+                            *map(str, rtl), str(ROOT / "verification/core/shell_aster_ports.sv"),
                             str(ROOT / "verification/core/tb_core_ports.cpp")],
                            capture_output=True, text=True)
     if build.returncode:
         shutil.rmtree(work, ignore_errors=True)
         return f"{name}: BUILD FAILED {' '.join(build.stderr[-200:].split())}"
     shutil.rmtree(work / "obj", ignore_errors=True)        # the simulator is all that is needed
+    unit = None
+    if which in (I, D):
+        build = subprocess.run(unit_build(which, work), capture_output=True, text=True)
+        if build.returncode:
+            shutil.rmtree(work, ignore_errors=True)
+            return f"{name}: BUILD FAILED (unit test) {' '.join(build.stderr[-200:].split())}"
+        unit = work / "unit"
     try:
-        return f"{name}: {verdict(work / 'sim', work)}"
+        return f"{name}: {verdict(work / 'sim', work, l1, unit)}"
     finally:
         shutil.rmtree(work, ignore_errors=True)            # keep the disk free: the verdict is the record
 

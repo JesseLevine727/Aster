@@ -31,8 +31,32 @@ module shell_picorv32_ports (
     input  logic        mtip,
     input  logic        msip,
     input  logic [63:0] mtime,
+    input  logic [31:0] cacheable_bytes,
     output logic        trap,
     output logic        chk_i_redirect,
+    // L1 lookups (the Aster core's caches; none here)
+    output logic        chk_ic_lookup,
+    output logic [31:2] chk_ic_addr,
+    output logic        chk_ic_hit,
+    output logic        chk_dc_lookup,
+    output logic [3:0]  chk_dc_op,
+    output logic [31:0] chk_dc_addr,
+    output logic [3:0]  chk_dc_be,
+    output logic [31:0] chk_dc_wdata,
+    output logic        chk_dc_hit,
+    output logic        chk_fencei,
+    output logic        chk_div_wait,
+    output logic        chk_core_i_req_valid,
+    output logic [31:2] chk_core_i_req_addr,
+    output logic        chk_core_i_req_ready,
+    output logic        chk_core_i_redirect,
+    output logic        chk_core_d_req_valid,
+    output logic [3:0]  chk_core_d_req_op,
+    output logic [31:0] chk_core_d_req_addr,
+    output logic [31:0] chk_core_d_req_wdata,
+    output logic [3:0]  chk_core_d_req_be,
+    output logic        chk_core_d_req_ready,
+    output logic        chk_core_d_rsp_valid,
     // instruction port
     output logic        i_req_valid,
     output logic [31:2] i_req_addr,
@@ -101,7 +125,12 @@ module shell_picorv32_ports (
     end
 
     logic unused;
-    assign unused = i_rsp_error ^ d_rsp_error ^ meip ^ mtip ^ msip ^ (^mtime);   // PicoRV32 has no bus-error input, and no IRQ or timer here
+    assign unused = i_rsp_error ^ d_rsp_error ^ meip ^ mtip ^ msip ^ (^mtime) ^ (^cacheable_bytes);   // PicoRV32 has no bus-error input, and no IRQ, timer or caches here
+    assign {chk_ic_lookup, chk_ic_addr, chk_ic_hit, chk_dc_lookup, chk_dc_op, chk_dc_addr, chk_dc_be, chk_dc_wdata, chk_dc_hit, chk_fencei, chk_div_wait} = '0;
+    // No caches here: the shell checks its ports, which are the core's.
+    assign {chk_core_i_req_valid, chk_core_i_req_addr, chk_core_i_req_ready, chk_core_i_redirect,
+            chk_core_d_req_valid, chk_core_d_req_op, chk_core_d_req_addr, chk_core_d_req_wdata, chk_core_d_req_be,
+            chk_core_d_req_ready, chk_core_d_rsp_valid} = '0;
 
     /* verilator lint_off PINMISSING */
     picorv32 #(

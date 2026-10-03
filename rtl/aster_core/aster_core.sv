@@ -35,9 +35,13 @@
 // instruction after it can be interrupted. The handler's first instruction
 // retires with rvfi_intr.
 //
-// CSR instructions and `mret` are serializing: Execute holds one until M1 is
-// empty, so it reads every older instruction's CSR effects and minstret counts
-// exactly the older instructions (they have all passed the commit point). Its
+// CSR instructions and `mret` are serializing: Execute holds one until M1 and
+// M2 are empty, so it reads every older instruction's CSR effects, minstret
+// counts exactly the older instructions (they have all passed the commit
+// point), and every older data access has been answered — so it sees older
+// stores' effects on devices whose state CSRs shadow (a store to mtime before
+// a read of time, one to an interrupt source before mie or mstatus is
+// written), whatever the memory side's delay (18.6; until then, M1 only). Its
 // CSR write (and `mret`'s mstatus update, computed in Execute) takes place at
 // the end of its first cycle in M1, and its own retirement is counted there
 // too: nothing can kill it in M1 (it has no trap and no data access, and no
@@ -138,6 +142,10 @@ module aster_core
     input  logic        d_rsp_valid,
     input  logic [31:0] d_rsp_rdata,
     input  logic        d_rsp_error,
+    // instruction cache (18.6): high for one cycle after a fence.i leaves
+    // Execute, from a register, so the cache invalidates every line before the
+    // fence.i's redirect target is looked up
+    output logic        fencei_inval,
     // verification
     output logic        chk_i_redirect,
     // RVFI (riscv-formal names, RISCV_FORMAL_ALIGNED_MEM layout, registered)
@@ -335,8 +343,10 @@ module aster_core
     logic        e_operands;        // the operands' values are ready
     logic        div_done;          // the divider holds Execute's division result
     assign e_operands = (!e_dec.uses_rs1 || rs1_ready) && (!e_dec.uses_rs2 || rs2_ready);
-    // A CSR instruction or mret waits until M1 is empty (serializing).
-    assign e_ready    = e_operands && (!e_dec.div || div_done) && (!e_dec.sys || !m1.valid)
+    // A CSR instruction or mret waits until M1 and M2 are empty (serializing):
+    // every older data access has been answered, so it sees every older store's
+    // effect, on the devices whose state CSRs shadow (time, mip) too (18.6).
+    assign e_ready    = e_operands && (!e_dec.div || div_done) && (!e_dec.sys || (!m1.valid && !m2.valid))
                       && (!e_dec.fencei || (!m1.valid && !m2.valid));
 
     // Divider: div_count is 0 while idle; the operands as read are latched as it
@@ -359,8 +369,8 @@ module aster_core
     // The result is one-hot selected (e_dec.res, decoded in Decode): no decode
     // follows the forwarded operands, and operand A is rs1 alone (auipc takes
     // the branch-target adder's PC plus immediate; lui takes the immediate).
-    // CSR read and modify. Execute holds a CSR instruction until M1 is empty,
-    // so the registers hold every older instruction's effects. The new value
+    // CSR read and modify. Execute holds a CSR instruction until M1 and M2 are
+    // empty, so the registers hold every older instruction's effects. The new value
     // (or mret's mstatus) travels to M1 in the slot's wdata.
     logic [31:0] csr_rdata, csr_src, csr_new, mret_status;
     assign csr_rdata = ({32{e_dec.csr_sel.mstatus}}       & mstatus_value)
@@ -818,6 +828,7 @@ module aster_core
             mcause       <= '0;
             mtval        <= '0;
             mip_q        <= '0;
+            fencei_inval <= 1'b0;
             mcycle       <= '0;
             mtime_q      <= '0;
             minstret     <= '0;
@@ -825,6 +836,7 @@ module aster_core
         end else begin
             mip_q    <= {meip, mtip, msip};
             mtime_q  <= mtime;
+            fencei_inval <= e_advance && e_dec.fencei;
             m1_first <= e_advance;
             if (kill) begin
                 mstatus_mpie <= mstatus_mie;
@@ -1002,6 +1014,10 @@ module aster_core
         // A multiply never waits in M2 (it has no data access), which the
         // partial products' load enable relies on.
         if (rst_n && m2.valid && m2.mul) assert (m2_advance) else $error("a multiply waits in M2");
+        // A serializing instruction enters M1 only with M2 empty (18.6), and W
+        // holds a record for one cycle: W is empty at its CSR write, so no trap
+        // record is still in W when its handler writes mepc or mcause.
+        if (rst_n && m1_csr_we) assert (!w.valid) else $error("a CSR write with a record in W");
         // A CSR write in M1 belongs to an instruction that can no longer be
         // killed: it has no trap and no data access, it entered an empty M1
         // (serializing), and no trap or interrupt is taken while it is there.
@@ -1010,6 +1026,8 @@ module aster_core
         // A serializing instruction never traps (it retires at its first M1 edge).
         if (rst_n && m1.valid && m1.sys) assert (!m1_trap) else $error("a serializing instruction traps");
         if (rst_n && e_advance && e_dec.sys) assert (!m1.valid) else $error("a serializing instruction entered a busy M1");
+        // ...and, entering with M2 empty too (18.6), leaves M1 in its first cycle.
+        if (rst_n && m1.valid && m1.sys) assert (m1_advance) else $error("a serializing instruction waits in M1");
         // A trap or interrupt and an Execute redirect never coincide (f_target).
         if (rst_n) assert (!(kill && e_flush)) else $error("a trap and an Execute redirect in one cycle");
     end

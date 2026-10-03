@@ -27,3 +27,19 @@ See the [full contract](../../docs/phase5.md).
 four memory timing modes. `make host-tests` also rejects private/stack/shared
 overflows and checks separate stack symbols and initialized odd-byte images.
 Trap handling and general-purpose atomics remain future work.
+
+## The Aster core (milestone 18.6)
+
+`start_aster.S` and `start_multicore_aster.S` are the two runtimes ported to the
+Aster core (docs/cpu.md): the same start-up and contract, with every trap
+taken at `mtvec` by `aster_trap.S` instead of PicoRV32's fixed IRQ vector and
+`retirq`. The handler saves the caller-saved registers as v1's did, sends an
+interrupt to `aster_irq_dispatch` (the interrupt controller drives the
+machine external interrupt) and an exception to `aster_exception(mcause,
+mepc, mtval)`, and returns with `mret`. The multicore runtime reads the hart
+from `mhartid`. A returning `main` passes its status to `aster_exit` (weak:
+it returns, and the hart halts as before; a harness may provide one). Build
+with `-DASTER_CORE` and the core's ISA (`-march=rv32ima_zicsr_zifencei`):
+`aster_irq_unmask()` then sets `mie.MEIE` and `mstatus.MIE`. The firmware
+regression (`scripts/run_core_tests.py --firmware`, `make core-aster-firmware`
+and `core-aster-l1-tests`) runs v1 firmware with them in the CPU shell.

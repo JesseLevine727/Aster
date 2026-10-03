@@ -10,7 +10,10 @@
 //   so a line is set or cleared by a read-modify-write.
 // - Timer: the shell's machine timer (+timer), in the CLINT layout Sail uses,
 //   drives the core's MTIP pin and its mtime input (which time/timeh read), as
-//   a SoC's timer would; mtime counts once per cycle.
+//   a SoC's timer would; for ACT4 mtime counts once per 8 cycles
+//   (+timer_divider, scripts/run_core_tests.py), slower than the core as a
+//   platform timer is: the timer tests allow fewer ticks than misses and
+//   back-pressure could otherwise take.
 // - Access faults: 0x4000_0000 is outside the shell's memory (and outside
 //   Sail's regions), so loads, stores and fetches there fault.
 #ifndef _RVMODEL_MACROS_H
@@ -66,7 +69,7 @@
 ##### Machine timer #####
 #define RVMODEL_MTIME_ADDRESS    0x0200BFF8
 #define RVMODEL_MTIMECMP_ADDRESS 0x02004000
-#define RVMODEL_MAX_CYCLES_PER_TIMER_TICK 1
+#define RVMODEL_MAX_CYCLES_PER_TIMER_TICK 8
 #define RVMODEL_TIMER_INT_SOON_DELAY 100
 
 ##### Machine interrupts #####

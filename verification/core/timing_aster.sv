@@ -35,7 +35,7 @@ module timing_aster (
         .i_req_valid, .i_req_addr, .i_req_ready, .i_rsp_valid, .i_rsp_data, .i_rsp_error,
         .d_req_valid, .d_req_op, .d_req_addr, .d_req_wdata, .d_req_be,
         .d_req_ready, .d_rsp_valid, .d_rsp_rdata, .d_rsp_error,
-        .chk_i_redirect(),
+        .fencei_inval(), .chk_i_redirect(),
         .rvfi_valid(), .rvfi_order(), .rvfi_insn(), .rvfi_trap(), .rvfi_halt(), .rvfi_intr(), .rvfi_mode(),
         .rvfi_ixl(), .rvfi_rs1_addr(), .rvfi_rs2_addr(), .rvfi_rs1_rdata(), .rvfi_rs2_rdata(), .rvfi_rd_addr(),
         .rvfi_rd_wdata(), .rvfi_pc_rdata(), .rvfi_pc_wdata(), .rvfi_mem_addr(), .rvfi_mem_rmask(),

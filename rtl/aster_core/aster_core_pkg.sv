@@ -100,7 +100,7 @@ package aster_core_pkg;
         logic        ecall;
         logic        ebreak;
         logic        mret;
-        logic        sys;             // csr or mret: Execute holds it until M1 is empty
+        logic        sys;             // csr or mret: Execute holds it until M1 and M2 are empty
         logic        atomic;          // lr.w, sc.w or an AMO (also load; sc and AMOs also store)
         logic [3:0]  amo_op;          // its d_req_op
         logic        fencei;          // fence.i: Execute holds it until M1 and M2 are empty

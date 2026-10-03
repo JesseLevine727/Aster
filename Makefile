@@ -2084,7 +2084,7 @@ parallel-workloads:
 
 test: smoke phase1 hello bench cache uart fpga-sim linux-sim counters retirement npu-pe npu-array npu-engine npu-regs npu-driver npu-runtime npu-stop npu-bench-validate arbiter shared-fabric multicore-runtime parallel
 
-check: tools smoke phase1 hello bench cache uart fpga-sim linux-sim linux-dual-sim linux-coherent-sim counters retirement pcpi-probe dot8-unit npu-pe npu-array npu-engine npu-regs device-arbiter dma-counters l2-unit npu-driver npu-runtime npu-stop npu-bench-validate xe-bench-validate phase11-infer-validate workloads atomic-fabric atomic-runtime atomic-faults coherent-cache warm-stop coherent-counters coherent-soc timer-unit timer-firmware irq-unit timer-interrupt sram-unit sram-lint freeze-interfaces coherent-bench riscv-reference riscv-reference-negative coherent-litmus arbiter shared-fabric multicore-runtime multicore-adversarial parallel phase17-baseline-audit core-riscv-tests core-riscv-tests-stall core-arch-tests core-random-lockstep core-lockstep-selftest core-ports-tests core-kernels core-aster-fetch core-aster-tests core-aster-kernels core-aster-act4
+check: tools smoke phase1 hello bench cache uart fpga-sim linux-sim linux-dual-sim linux-coherent-sim counters retirement pcpi-probe dot8-unit npu-pe npu-array npu-engine npu-regs device-arbiter dma-counters l2-unit npu-driver npu-runtime npu-stop npu-bench-validate xe-bench-validate phase11-infer-validate workloads atomic-fabric atomic-runtime atomic-faults coherent-cache warm-stop coherent-counters coherent-soc timer-unit timer-firmware irq-unit timer-interrupt sram-unit sram-lint freeze-interfaces coherent-bench riscv-reference riscv-reference-negative coherent-litmus arbiter shared-fabric multicore-runtime multicore-adversarial parallel phase17-baseline-audit core-riscv-tests core-riscv-tests-stall core-arch-tests core-random-lockstep core-lockstep-selftest core-ports-tests core-kernels core-aster-fetch core-aster-tests core-aster-kernels core-aster-act4 core-aster-l1-unit core-aster-l1-tests core-aster-firmware
 
 # Phase 18 CPU shell: one CPU with a synchronous SRAM at 0x8000_0000 and an
 # RVFI trace for lockstep against Spike (docs/phase18.md).
@@ -2212,13 +2212,52 @@ $(ASTER_PORTS_SIM): $(ASTER_CORE_RTL) verification/core/shell_aster_ports.sv ver
 		$(ROOT)/verification/core/tb_core_ports.cpp
 	@touch $@  # Verilator does not relink when only the Makefile changed
 
+# The same shell with the Aster core's L1 instruction and data caches between
+# the core and the shell's ports (18.6; shell_aster_ports' L1 parameter).
+ASTER_L1_RTL := rtl/aster_core/aster_l1_ram.sv rtl/aster_core/aster_l1i.sv rtl/aster_core/aster_l1d.sv
+ASTER_L1_SIM := $(ASTER_CORE_DIR)/core_ports_aster_l1
+$(ASTER_L1_SIM): $(ASTER_CORE_RTL) $(ASTER_L1_RTL) verification/core/shell_aster_ports.sv verification/core/tb_core_ports.cpp verification/core/shell_common.h verification/core/shell_ports.h Makefile
+	mkdir -p $(ASTER_CORE_DIR)
+	$(VERILATOR) --cc --exe --build --assert --Wall --top-module shell_aster_ports -GL1=1 --prefix Vcore_ports \
+		--Mdir $(ASTER_CORE_DIR)/ports_l1_obj -o $(abspath $@) \
+		$(addprefix $(ROOT)/,$(ASTER_CORE_RTL) $(ASTER_L1_RTL)) $(ROOT)/verification/core/shell_aster_ports.sv \
+		$(ROOT)/verification/core/tb_core_ports.cpp
+	@touch $@  # Verilator does not relink when only the Makefile changed
+
 # Xasterdot8 in Spike (verification/core/spike/aster_dot8.cc; docs/cpu.md §6,
 # 18.5): every Aster-core run loads it (its rule is with the clock plugin's).
 ASTER_DOT8_PLUGIN := $(BUILD_DIR)/spike/libaster_dot8.so
 ASTER_TESTS = RISCV_PREFIX=$(RISCV_PREFIX) $(PYTHON) scripts/run_core_tests.py --dut aster \
 	--sim $(ASTER_PORTS_SIM) --spike $(SPIKE) --aster-dot8 $(ASTER_DOT8_PLUGIN)
 .PHONY: core-aster-sim core-aster-tests
-core-aster-sim: $(ASTER_PORTS_SIM)
+# The L1 caches alone (18.6): random unit tests against a flat memory
+# (verification/core/l1: every answer checked, the memory side's accesses, the
+# error timing, invalidation by fence.i), with assertions, L1_UNIT_SEEDS seeds
+# each — seeds 2 and 3 mod 4 with the long memory stalls.
+L1_UNIT_DIR := $(ASTER_CORE_DIR)/l1_unit
+L1_UNIT_SEEDS ?= 200
+L1D_UNIT_SIM := $(L1_UNIT_DIR)/l1d_unit
+L1I_UNIT_SIM := $(L1_UNIT_DIR)/l1i_unit
+$(L1D_UNIT_SIM): rtl/aster_core/aster_core_pkg.sv $(ASTER_L1_RTL) verification/core/l1/l1d_unit.sv verification/core/l1/tb_l1d.cpp Makefile
+	mkdir -p $(L1_UNIT_DIR)
+	$(VERILATOR) --cc --exe --build --assert --Wall --top-module l1d_unit --prefix Vl1d_unit \
+		--Mdir $(L1_UNIT_DIR)/d_obj -o $(abspath $@) $(ROOT)/rtl/aster_core/aster_core_pkg.sv \
+		$(addprefix $(ROOT)/,$(ASTER_L1_RTL)) $(ROOT)/verification/core/l1/l1d_unit.sv $(ROOT)/verification/core/l1/tb_l1d.cpp
+	@touch $@
+$(L1I_UNIT_SIM): $(ASTER_L1_RTL) verification/core/l1/tb_l1i.cpp Makefile
+	mkdir -p $(L1_UNIT_DIR)
+	$(VERILATOR) --cc --exe --build --assert --Wall --top-module aster_l1i --prefix Vaster_l1i \
+		--Mdir $(L1_UNIT_DIR)/i_obj -o $(abspath $@) $(ROOT)/rtl/aster_core/aster_l1_ram.sv \
+		$(ROOT)/rtl/aster_core/aster_l1i.sv $(ROOT)/verification/core/l1/tb_l1i.cpp
+	@touch $@
+.PHONY: core-aster-l1-unit
+core-aster-l1-unit: $(L1D_UNIT_SIM) $(L1I_UNIT_SIM)
+	@for seed in $$(seq 1 $(L1_UNIT_SEEDS)); do \
+		$(L1D_UNIT_SIM) $$seed 1000000 > /dev/null || { $(L1D_UNIT_SIM) $$seed 1000000; exit 1; }; \
+		$(L1I_UNIT_SIM) $$seed 1000000 > /dev/null || { $(L1I_UNIT_SIM) $$seed 1000000; exit 1; }; \
+	done; echo "PASS: the L1 data and instruction caches pass $(L1_UNIT_SEEDS) random unit-test seeds each"
+
+core-aster-sim: $(ASTER_PORTS_SIM) $(ASTER_L1_SIM)
 core-aster-tests: $(ASTER_PORTS_SIM) $(ASTER_DOT8_PLUGIN)
 	@mkdir -p $(CORE_TESTS_DIR)
 	@set -o pipefail; for mode in plain latency1 stall latency1-stall inflight3 inflight4 arch arch-latency1 \
@@ -2248,6 +2287,92 @@ core-aster-tests: $(ASTER_PORTS_SIM) $(ASTER_DOT8_PLUGIN)
 	@mkdir -p $(CORE_TESTS_DIR)/aster-selftest && printf 'SSSSSSSSSSSSSSSS\n' > $(CORE_TESTS_DIR)/aster-selftest/all_succeed.sc
 	@$(ASTER_TESTS) --build-dir $(CORE_TESTS_DIR)/aster-selftest --only directed/atomics \
 		--shell-arg +sc_outcomes=$(CORE_TESTS_DIR)/aster-selftest/all_succeed.sc --expect-status SC_MISMATCH
+
+# The Aster core with its L1 caches (18.6; docs/phase18.md 18.6), with the cache
+# reference model (+cache_model: every lookup's hit or miss and every
+# memory-side access the caches make) on every run: the suites in the memory
+# modes of core-aster-tests and with long stalls (one access in sixteen 16-63
+# cycles late), arch-test, random programs with coverage, random interrupts,
+# ACT4 in seven modes, the firmware regression and the CPU kernels (L1 CPI, on
+# the one-cycle memory and with long stalls), and the self-tests proving the
+# cache model, the load check and the core-side protocol checks fail when they
+# should (shell_aster_ports.sv's +selftest faults). No
+# CPI check: the CPI model does not know the caches' misses. With long stalls
+# and an interrupt about every 20 cycles most cycles go to the handlers (a
+# handler outlasts the gap to the next interrupt), so that mode runs ten times
+# the random programs' usual 200,000 cycles.
+ASTER_L1_TESTS = RISCV_PREFIX=$(RISCV_PREFIX) $(PYTHON) scripts/run_core_tests.py --dut aster_l1 \
+	--sim $(ASTER_L1_SIM) --spike $(SPIKE) --aster-dot8 $(ASTER_DOT8_PLUGIN)
+.PHONY: core-aster-l1-tests core-aster-firmware
+core-aster-l1-tests: $(ASTER_L1_SIM) $(ASTER_DOT8_PLUGIN) $(ASTER_CLOCK_PLUGIN) core-aster-act4
+	@mkdir -p $(CORE_TESTS_DIR)
+	@set -o pipefail; for mode in plain latency1 stall latency1-stall inflight3 inflight4 long-stall arch arch-latency1 \
+			random random-latency1 random-stall random-long-stall \
+			irq random-irq random-irq-latency1 random-irq-stall random-irq-long-stall \
+			act4 act4-latency1 act4-stall act4-latency1-stall act4-inflight3 act4-inflight4 act4-long-stall \
+			firmware firmware-latency1 firmware-stall firmware-latency1-stall firmware-inflight3 firmware-inflight4 \
+			firmware-long-stall kernels kernels-long-stall; do \
+		act4="--act4 $(ACT4_WORK)/aster-rv32ima/elfs"; fw="--firmware --aster-clock $(ASTER_CLOCK_PLUGIN)"; \
+		extra=$$(case $$mode in plain) echo "";; latency1) echo "--shell-arg +latency=1";; \
+			stall) echo "--stall-seed 5";; latency1-stall) echo "--stall-seed 9 --shell-arg +latency=1";; \
+			inflight3) echo "--stall-seed 7 --shell-arg +max_inflight=3";; \
+			inflight4) echo "--stall-seed 7 --shell-arg +max_inflight=4";; \
+			long-stall) echo "--stall-seed 3 --shell-arg +long_stall";; \
+			arch) echo "--arch";; arch-latency1) echo "--arch --shell-arg +latency=1";; \
+			random) echo "--random $(CORE_RANDOM_PROGRAMS) --random-seed 1 --require-coverage";; \
+			random-latency1) echo "--random $(CORE_RANDOM_PROGRAMS) --random-seed 201 --require-coverage \
+				--shell-arg +latency=1";; \
+			random-stall) echo "--random $(CORE_RANDOM_PROGRAMS) --random-seed 101 --stall-seed 11 --require-coverage";; \
+			random-long-stall) echo "--random $(CORE_RANDOM_PROGRAMS) --random-seed 701 --stall-seed 17 \
+				--shell-arg +long_stall --require-coverage --require-div-waits";; \
+			irq) echo "--interrupts 7";; \
+			random-irq) echo "--random $(CORE_RANDOM_PROGRAMS) --random-seed 301 --interrupts 7 --require-coverage";; \
+			random-irq-latency1) echo "--random $(CORE_RANDOM_PROGRAMS) --random-seed 501 --interrupts 7 \
+				--shell-arg +latency=1 --require-coverage";; \
+			random-irq-stall) echo "--random $(CORE_RANDOM_PROGRAMS) --random-seed 401 --interrupts 7 \
+				--stall-seed 13 --require-coverage";; \
+			random-irq-long-stall) echo "--random $(CORE_RANDOM_PROGRAMS) --random-seed 601 --interrupts 7 \
+				--stall-seed 19 --shell-arg +long_stall --require-coverage --max-cycles 2000000";; \
+			act4) echo "$$act4";; act4-latency1) echo "$$act4 --shell-arg +latency=1";; \
+			act4-stall) echo "$$act4 --stall-seed 5";; act4-latency1-stall) echo "$$act4 --stall-seed 9 --shell-arg +latency=1";; \
+			act4-inflight3) echo "$$act4 --stall-seed 7 --shell-arg +max_inflight=3";; \
+			act4-inflight4) echo "$$act4 --stall-seed 7 --shell-arg +max_inflight=4";; \
+			act4-long-stall) echo "$$act4 --stall-seed 3 --shell-arg +long_stall";; \
+			firmware) echo "$$fw";; firmware-latency1) echo "$$fw --shell-arg +latency=1";; \
+			firmware-stall) echo "$$fw --stall-seed 5";; firmware-latency1-stall) echo "$$fw --stall-seed 9 --shell-arg +latency=1";; \
+			firmware-inflight3) echo "$$fw --stall-seed 7 --shell-arg +max_inflight=3";; \
+			firmware-inflight4) echo "$$fw --stall-seed 7 --shell-arg +max_inflight=4";; \
+			firmware-long-stall) echo "$$fw --stall-seed 3 --shell-arg +long_stall";; \
+			kernels) echo "--kernels --aster-clock $(ASTER_CLOCK_PLUGIN) --shell-arg +latency=1";; \
+			kernels-long-stall) echo "--kernels --aster-clock $(ASTER_CLOCK_PLUGIN) --stall-seed 3 --shell-arg +long_stall";; \
+			esac); \
+		$(ASTER_L1_TESTS) $$extra --build-dir $(CORE_TESTS_DIR)/aster-l1-$$mode | \
+			tee $(CORE_TESTS_DIR)/aster-l1-$$mode.log | tail -1 || \
+			{ grep -v '^PASS' $(CORE_TESTS_DIR)/aster-l1-$$mode.log; exit 1; }; \
+	done
+	@$(ASTER_L1_TESTS) --build-dir $(CORE_TESTS_DIR)/aster-l1-selftest --only rv32ui/lw \
+		--shell-arg +duplicate_read=3 --expect-status LOAD_MISMATCH
+	@$(ASTER_L1_TESTS) --build-dir $(CORE_TESTS_DIR)/aster-l1-selftest --only rv32ui/fence_i \
+		--shell-arg +cache_model_ignore_fencei --expect-status CACHE_MISMATCH
+	@for case in 1:rv32ui/sw:D_REQ_UNSTABLE: 2:rv32ui/add:I_REQ_UNSTABLE:--stall-seed=1 4:rv32ui/lw:D_REQ_MALFORMED:; do \
+		IFS=: read -r number test status extra <<< "$$case"; \
+		$(ASTER_L1_TESTS) --build-dir $(CORE_TESTS_DIR)/aster-l1-selftest --only $$test $${extra//,/ } \
+			--shell-arg +selftest=$$number --expect-status $$status || exit 1; \
+	done
+
+# The firmware regression on the Aster core without its caches too (18.6): v1
+# firmware with the ported runtime in the memory modes of core-aster-tests.
+core-aster-firmware: $(ASTER_PORTS_SIM) $(ASTER_DOT8_PLUGIN) $(ASTER_CLOCK_PLUGIN)
+	@mkdir -p $(CORE_TESTS_DIR)
+	@set -o pipefail; for mode in plain latency1 stall latency1-stall inflight3 inflight4; do \
+		extra=$$(case $$mode in plain) echo "";; latency1) echo "--shell-arg +latency=1";; \
+			stall) echo "--stall-seed 5";; latency1-stall) echo "--stall-seed 9 --shell-arg +latency=1";; \
+			inflight3) echo "--stall-seed 7 --shell-arg +max_inflight=3";; \
+			inflight4) echo "--stall-seed 7 --shell-arg +max_inflight=4";; esac); \
+		$(ASTER_TESTS) --firmware --aster-clock $(ASTER_CLOCK_PLUGIN) $$extra --build-dir $(CORE_TESTS_DIR)/aster-firmware-$$mode | \
+			tee $(CORE_TESTS_DIR)/aster-firmware-$$mode.log | tail -1 || \
+			{ grep -v '^PASS' $(CORE_TESTS_DIR)/aster-firmware-$$mode.log; exit 1; }; \
+	done
 
 # The port response model on its own: order, one answer per cycle, latency,
 # the in-flight limit, and full rate with two in flight.
@@ -2336,9 +2461,12 @@ core-aster-kernels: $(ASTER_PORTS_SIM) $(ASTER_CLOCK_PLUGIN) $(ASTER_DOT8_PLUGIN
 		| tee $(CORE_TESTS_DIR)/aster-kernels.log | tail -14 \
 		|| { grep -v '^PASS' $(CORE_TESTS_DIR)/aster-kernels.log; exit 1; }
 
-# Planted bugs in the Aster core's RTL (scripts/mutation_campaign.py): each of
-# its mutants must be caught by the runs above (the first that fails is
-# reported; MISSED if none). Not in make check: it builds and runs every mutant.
+# Planted bugs in the Aster core's RTL and, from 18.6, its L1 caches
+# (scripts/mutation_campaign.py): each of its mutants must be caught by the runs
+# above — the caches' (and the core's that only the caches expose) on the
+# cached core with its reference model, then the cache's unit test — the first
+# that fails is reported; MISSED if none. Not in make check: it builds and runs
+# every mutant.
 # Its anchors are checked against the RTL by a host test, in make check.
 .PHONY: core-aster-mutants
 core-aster-mutants: $(ASTER_DOT8_PLUGIN) core-aster-act4
@@ -2420,6 +2548,20 @@ timing-fpga-aster:
 			> run.out || exit 1; \
 		grep -E '^(SUMMARY|NAMED)' run.out || exit 1; cd $(ROOT); \
 	done
+
+# The Aster core with its L1 caches (milestone 18.6): core, caches and a
+# two-cycle 128 KiB dual-port block RAM behind them (verification/core/
+# timing_aster_l1.sv), with the paths across the core-cache boundaries named.
+.PHONY: timing-fpga-aster-l1
+timing-fpga-aster-l1:
+	@command -v $(VIVADO) >/dev/null || { echo "ERROR: Vivado not found (set VIVADO=/path/to/vivado)" >&2; exit 1; }
+	@mkdir -p $(TIMING_DIR)/fpga/aster_l1 && cd $(TIMING_DIR)/fpga/aster_l1 && \
+		OOC_NAMED_PATHS="core_to_dcache=*core/*>*dcache/*;dcache_to_core=*dcache/*>*core/*;core_to_icache=*core/*>*icache/*;icache_to_core=*icache/*>*core/*;dcache_memory_side=*dcache/*>*ram_reg*|*d_v1_reg*;memory_to_dcache=*d_v2_reg*>*dcache/*" \
+		$(VIVADO) -mode batch -nojournal -log vivado.log -source $(ROOT)/scripts/timing/vivado_ooc.tcl \
+		-tclargs $(abspath $(TIMING_DIR))/fpga/aster_l1 timing_aster_l1 $(TIMING_PERIOD_NS) \
+		$(addprefix $(ROOT)/,$(ASTER_CORE_RTL) $(ASTER_L1_RTL)) $(ROOT)/verification/core/timing_aster_l1.sv \
+		> run.out || { tail -20 run.out; exit 1; }; \
+		grep -E '^(SUMMARY|NAMED)' run.out
 
 timing-asic-aster:
 	$(PYTHON) scripts/run_asic.py --design core_aster --to OpenROAD.STAPostPNR --run-tag p18-aster -- --overwrite
