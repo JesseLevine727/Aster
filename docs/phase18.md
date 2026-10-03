@@ -48,7 +48,10 @@ dot/FIR/GEMM jobs — with a Spike extension putting the DOT8 programs in
 lockstep (the exhaustive arithmetic runs self-checking in the shell alone,
 and ran once in lockstep); the kernels are unchanged and v1's DOT8 Conv2D runs, matching its
 baseline; the FPGA meets 10 ns (103.3 MHz; 101.6 and 102.4 MHz with block
-RAM; see "Milestone 18.5").** The CPU specification this
+RAM; see "Milestone 18.5"). ACT4 (riscv-arch-test 4.1.0, checked against the
+Sail model) adopted after 18.5: 102/102 programs in six memory modes, once
+`time`/`timeh` read the platform's `mtime` (owner decision; FPGA 105.1 MHz,
+105.3 and 105.0 MHz with block RAM; see "ACT4 adopted").** The CPU specification this
 phase implements is [`cpu.md`](cpu.md) (approved 29 September 2026); the phase
 sits in the [v2 plan](phase17-plus.md#6-phase-17-sequence). Every milestone
 passes its verification layer and records its timing before the next starts.
@@ -151,9 +154,14 @@ epc and tval — 31 of 31.
   Spike's word for word. (Release 4.1.0, ACT4, builds self-checking programs
   from the Sail model; it was to be reconsidered at 18.3, when the core's
   configuration is final — see `vendor/riscv-arch-test/UPSTREAM.md`. At 18.3
-  it is not adopted: the ISA is not final until 18.5 (A in 18.4, Xasterdot8 in
-  18.5), and ACT4 needs a framework, Ruby/UDB and Sail not installed here; the
-  owner chose to reconsider it at 18.5.)
+  it was not adopted: the ISA was not final until 18.5 (A in 18.4, Xasterdot8
+  in 18.5), and ACT4 needs a framework, Ruby/UDB and Sail not installed here;
+  the owner chose to reconsider it at 18.5.)
+- `riscv-arch-test` 4.1.0 (ACT4), adopted after 18.5 (2 October 2026; not
+  vendored, docs/toolchain.md): 102 self-checking programs built for the
+  core's configuration (`verification/core/act4`), their expected results
+  from the Sail model, run in the shell (`make core-aster-act4`; "ACT4
+  adopted").
 - A seeded constrained-random program generator (`scripts/rvgen.py`, built in
   18.0 so that 18.1 starts with it): random register and data-region state;
   every RV32I computational, load, store, branch and jump instruction and every
@@ -1486,6 +1494,77 @@ returns from interrupts with `mret` once the SoC moves to the Aster core,
 Phase 20), and the DOT8 Conv2D's lack of speed-up left to the software
 (Phase 19/20). ACT4 is decided separately (checklist).
 
+### ACT4 adopted; `time` reads the platform's `mtime` (2 October 2026)
+
+At 18.5's sign-off the owner adopted riscv-arch-test 4.1.0 (ACT4), time-boxed:
+its programs check themselves against expected results computed by the Sail
+model, a reference independent of Spike, which every other test here is
+compared with. `make core-aster-act4` (in `make check`) builds and runs them.
+
+- **Tools** (docs/toolchain.md, "ACT4"), outside the repository like Spike's
+  source: the 4.1.0 checkout (commit `6e8a451`), the Sail model 0.13.1's
+  release binary, the framework's Python packages in their own environment,
+  and the UDB gems through Bundler. The build leaves the checkout unchanged
+  and caches under `build/act4`.
+- **The core's configuration** (`verification/core/act4/aster-rv32ima`):
+  its UDB description (RV32IMA, Zicsr, Zifencei, Zicntr, Sm 1.12, machine
+  mode only; misaligned accesses trap; mtval as the core writes it; mtvec
+  direct only; the hardware performance monitor read-only zero; `udb validate`
+  passes); Sail's configuration to match (the cv32e40x example's, adapted; the
+  shell's memory at 0x8000_0000, nothing mapped at 0x4000_0000 so accesses
+  there fault, as in the shell); the macros (halting through tohost, failure
+  diagnostics on the shell's console, interrupts through the shell's device);
+  and the layout. A host test keeps them consistent with each other and with
+  the shell (`verification/host/test_act4_config.py`).
+- **A machine timer in the shell.** ACT4's environment assumes a
+  memory-mapped timer: without one, Sail (whose CLINT holds MTIP high from
+  reset) took timer interrupts the core never would. The shell now has one,
+  as a SoC would: `mtime` counts once per cycle, and with `+timer` its
+  registers are mapped in the CLINT layout Sail uses and MTIP is high while
+  `mtime >= mtimecmp`.
+- **Results:** 102 programs (I 39, M 8, Zmmul 4, Zaamo 9, Zalrsc 2, Zicsr 6,
+  Zicntr 2, Zifencei 1, Sm 24, exceptions 6, interrupts 1) — 102/102 in all
+  six memory modes. Two of the first run's failures were the configuration's:
+  Sail treated `mhpmevent3`–`31` as unimplemented until its Zihpm switch was
+  on (the core implements them as read-only zero, which the privileged
+  specification allows and Spike agrees with); and a halting macro that kept
+  storing to tohost left a store accepted after the shell stopped, under
+  back-pressure (it now stores once).
+- **The finding:** `Sm_mcsr_cntr-00` writes 42 to `mtime` and requires `time`
+  to read about 42 — the privileged specification's rule that `time` is a
+  read-only shadow of the platform's `mtime`. 18.3's choice, the core's own
+  counter, cannot follow a write. The owner chose to make `time`/`timeh` read
+  the platform's `mtime` through a new 64-bit input, registered in the core
+  (cpu.md §3, §5, "Changes after approval"); the shell's timer drives it, and
+  the SoC's timer will (Phase 20). The register replaces the old counter's,
+  so the flip-flop count is unchanged.
+
+Verification of the change: `make core-aster-tests` (`interrupts/time_counter`
+still holds — `time` advances with the cycles, runs on while `mcountinhibit`
+stops the other counters, ignores `mcycle` writes; `traps/csr_ordering` reads
+it in lockstep), and the planted bugs: 77 (18.3's three `time` bugs moved to
+the new register, and one added, `time` reading `mcycle`), 73 caught (18.3's
+four). Run against ACT4 alone, 45 of the 77 are caught — none that the other
+tests miss: ACT4 cannot see the thirteen DOT8 and `misa` bugs (Sail has no
+Xasterdot8, and no program checks `misa` exactly), interrupt timing (it has one
+interrupt program), the pipeline-internal and RVFI-only bugs, or those that
+only cycle counts show. Its value is the second, independent reference: the
+standard ISA as Sail reads it agrees with the core in all 102 programs, and
+the one place they disagreed was a real departure from the specification.
+`make check` passes (292 PASS lines).
+
+**Timing** (FPGA, out of context, 10 ns; `c24b32b`): the core alone at
+105.1 MHz (+0.489 ns; 2,848 LUTs, 1,361 flip-flops, 8 DSPs), the §5 form at
+105.3 MHz (+0.502 ns), the request-registered form at 105.0 MHz (+0.474 ns),
+against 18.5's 103.3, 101.6 and 102.4 MHz — the `mtime` input adds no path
+(it is registered at the port), and Vivado's placement varies by a few hundred
+picoseconds from one netlist to the next. The worst paths are of 18.5's kinds:
+a forwarded operand into M1's CSR-write flag (core alone), dot8's product
+through its sum into M2 (§5 form), W's result through forwarding into M1's
+next PC (request registered). The paths §4 names: `d_rsp_valid` to the next
+request +3.856 ns, the `d_rsp_error` kill +3.197 ns (§5 form). Evidence:
+[`results/phase18/aster-act4`](results/phase18/aster-act4/README.md).
+
 ## Milestones and gates
 
 | Milestone | Content | Exit gate |
@@ -1745,10 +1824,11 @@ Phase 20), and the DOT8 Conv2D's lack of speed-up left to the software
 - [x] 18.3 as in the table above — complete (owner, 2 October 2026), with
   the added CSRs, `time`/`timeh` as the core's own time counter, and the
   privilege suite and rv32mi standing in for "arch-test Zicsr" (cpu.md §9)
-- [ ] riscv-arch-test 4.x (ACT4): reconsider when the ISA is final, at 18.5
-  (owner, 2 October 2026) — the ISA is final with 18.5; at 18.5's sign-off
-  the owner asked for the case for and against before deciding (Ruby and
-  opam are installed here, Sail is not)
+- [x] riscv-arch-test 4.x (ACT4): reconsidered when the ISA was final, after
+  18.5, and adopted (owner, 2 October 2026): `make core-aster-act4`, 102/102 in
+  six memory modes, with `time`/`timeh` reading the platform's `mtime` (the
+  owner's choice when ACT4 showed 18.3's own counter departing from the
+  specification) — "ACT4 adopted"
 - [x] 18.4 as in the table above — complete (owner, 2 October 2026), with
   cpu.md §9's 18.4 clarifications (single-hart litmus tests; the
   reservation rules the memory side must keep)
