@@ -945,6 +945,16 @@ def run_act4(args, config, prefix: str) -> int:
     elfs = sorted(path for path in Path(args.act4).rglob("*.elf") if not path.name.endswith(".sig.elf"))
     if args.only:
         elfs = [path for path in elfs if args.only in str(path)]
+    elif args.act4_programs:
+        # The set must be exactly the committed list: a configuration or
+        # framework change that drops or adds programs fails here.
+        wanted = {line.strip() for line in args.act4_programs.read_text().splitlines()
+                  if line.strip() and not line.strip().startswith("#")}
+        built = {str(path.relative_to(args.act4).with_suffix("")) for path in elfs}
+        if built != wanted:
+            print(f"FAIL: the ACT4 programs differ from {args.act4_programs}: "
+                  f"missing {sorted(wanted - built)}, unexpected {sorted(built - wanted)}")
+            return 1
     if not elfs:
         print(f"FAIL: no ACT4 ELFs under {args.act4}")
         return 1
@@ -1045,6 +1055,9 @@ def main() -> int:
     parser.add_argument("--random", type=int, metavar="N", help="run N constrained-random programs")
     parser.add_argument("--act4", type=Path, metavar="DIR",
                         help="run the ACT4 ELFs under DIR (riscv-arch-test 4.x; --only filters by path)")
+    parser.add_argument("--act4-programs", type=Path, metavar="FILE",
+                        default=ROOT / "verification/core/act4/aster-rv32ima/programs.txt",
+                        help="the ACT4 programs --act4 requires (exactly; not with --only)")
     parser.add_argument("--random-seed", type=int, default=1, help="seed of the first random program")
     parser.add_argument("--random-length", type=int, default=1500)
     parser.add_argument("--require-coverage", action="store_true",

@@ -266,8 +266,8 @@ ends it is the memory side's choice (the v1 fabric ends it on any store to the
 word; the CPU shell follows Spike).
 
 **Other signals:** `clk`, `rst_n`, `meip`, `mtip`, `msip`, `mtime[63:0]` (the
-platform timer's `mtime`, which `time`/`timeh` read; the SoC timer that drives
-it also drives `mtip`), a hart-id parameter, a
+platform timer's `mtime`, which `time`/`timeh` read; a CLINT-style timer, like
+the CPU shell's, also drives `mtip` from it — §3 for the SoC), a hart-id parameter, a
 reset-vector parameter, and an RVFI retirement port with the riscv-formal
 fields: `valid`, `order`, `insn`, `trap`, `halt`, `intr`, `mode`, `ixl`,
 `rs1_addr`/`rs2_addr` and their read data, `rd_addr`/`rd_wdata`,
@@ -711,6 +711,6 @@ Changes after approval, by the owner:
   memory-mapped `mtime` — the test writes `mtime` and reads `time` — which
   18.3's own counter cannot meet. The owner chose to make `time`/`timeh` read
   the platform's `mtime` through a new 64-bit input (§5), registered in the
-  core; the SoC's timer drives it and `mtip`, as the CPU shell's machine timer
-  does. This replaces 18.3's choice of the core's own counter, made among
+  core; the CPU shell's machine timer drives it and `mtip`, and the SoC's timer
+  will drive it (Phase 20, §3). This replaces 18.3's choice of the core's own counter, made among
   three options that did not include the platform's timer.

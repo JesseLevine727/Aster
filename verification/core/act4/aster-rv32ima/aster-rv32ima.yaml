@@ -78,7 +78,7 @@ params:
   PMA_GRANULARITY: 2
   NUM_PMP_ENTRIES: 0
 
-  # Zicntr: time reads the core's own free-running counter (cpu.md §3, 18.3)
+  # Zicntr: time reads the platform's mtime, an input (cpu.md §3, §5)
   TIME_CSR_IMPLEMENTED: true
 
   # The hardware performance monitor reads 0 (cpu.md §3): no counter

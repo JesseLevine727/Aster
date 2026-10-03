@@ -49,7 +49,8 @@ lockstep (the exhaustive arithmetic runs self-checking in the shell alone,
 and ran once in lockstep); the kernels are unchanged and v1's DOT8 Conv2D runs, matching its
 baseline; the FPGA meets 10 ns (103.3 MHz; 101.6 and 102.4 MHz with block
 RAM; see "Milestone 18.5"). ACT4 (riscv-arch-test 4.1.0, checked against the
-Sail model) adopted after 18.5: 102/102 programs in six memory modes, once
+Sail model) adopted after 18.5: 102/102 programs (97 testing this machine-mode
+core) in six memory modes, once
 `time`/`timeh` read the platform's `mtime` (owner decision; FPGA 105.1 MHz,
 105.3 and 105.0 MHz with block RAM; see "ACT4 adopted").** The CPU specification this
 phase implements is [`cpu.md`](cpu.md) (approved 29 September 2026); the phase
@@ -159,9 +160,10 @@ epc and tval — 31 of 31.
   the owner chose to reconsider it at 18.5.)
 - `riscv-arch-test` 4.1.0 (ACT4), adopted after 18.5 (2 October 2026; not
   vendored, docs/toolchain.md): 102 self-checking programs built for the
-  core's configuration (`verification/core/act4`), their expected results
-  from the Sail model, run in the shell (`make core-aster-act4`; "ACT4
-  adopted").
+  core's configuration (`verification/core/act4`; five of them test
+  supervisor features and run only their harness here), their expected
+  results from the Sail model, run in the shell (`make core-aster-act4`;
+  "ACT4 adopted").
 - A seeded constrained-random program generator (`scripts/rvgen.py`, built in
   18.0 so that 18.1 starts with it): random register and data-region state;
   every RV32I computational, load, store, branch and jump instruction and every
@@ -1524,7 +1526,11 @@ compared with. `make core-aster-act4` (in `make check`) builds and runs them.
   `mtime >= mtimecmp`.
 - **Results:** 102 programs (I 39, M 8, Zmmul 4, Zaamo 9, Zalrsc 2, Zicsr 6,
   Zicntr 2, Zifencei 1, Sm 24, exceptions 6, interrupts 1) — 102/102 in all
-  six memory modes. Two of the first run's failures were the configuration's:
+  six memory modes. Five of them (`Sm_shadow-00`, `Sm_scsr_from_m-00`,
+  `ExceptionsSm_medeleg_m/s/u-00`) test supervisor features and run only their
+  harness on this machine-mode core, so 97 test it. The set is committed
+  (`programs.txt`) and the run requires exactly it, so a configuration or
+  framework change that adds or drops a program fails. Two of the first run's failures were the configuration's:
   Sail treated `mhpmevent3`–`31` as unimplemented until its Zihpm switch was
   on (the core implements them as read-only zero, which the privileged
   specification allows and Spike agrees with); and a halting macro that kept
@@ -1551,7 +1557,13 @@ interrupt program), the pipeline-internal and RVFI-only bugs, or those that
 only cycle counts show. Its value is the second, independent reference: the
 standard ISA as Sail reads it agrees with the core in all 102 programs, and
 the one place they disagreed was a real departure from the specification.
-`make check` passes (292 PASS lines).
+`make check` passes (292 PASS lines). The pre-push watchdog review found no
+error in what ran; it found that the gate could not notice programs going
+missing (it now requires the committed set), the five programs that only run
+their harness here (named above), two comments still describing the old
+counter and a sentence in cpu.md on what drives `mtip` (corrected), and that
+the framework would build its own environment inside the checkout if `mise`
+or `uv` were installed (the Makefile now keeps it on ours).
 
 **Timing** (FPGA, out of context, 10 ns; `c24b32b`): the core alone at
 105.1 MHz (+0.489 ns; 2,848 LUTs, 1,361 flip-flops, 8 DSPs), the §5 form at

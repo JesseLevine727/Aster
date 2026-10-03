@@ -2343,7 +2343,10 @@ core-aster-kernels: $(ASTER_PORTS_SIM) $(ASTER_CLOCK_PLUGIN) $(ASTER_DOT8_PLUGIN
 # independent reference — built by the ACT4 framework (riscv-arch-test 4.1.0,
 # outside the repository like Spike's source; its build cache is under
 # build/act4) and run in the shell alone, with its interrupt device and machine
-# timer, in the six memory modes of core-aster-tests. The tools: docs/toolchain.md.
+# timer, in the six memory modes of core-aster-tests; the set of programs must
+# be exactly the committed programs.txt. MISE= UV= keep the framework on the
+# virtual environment (with mise or uv on PATH it would make one inside the
+# checkout). The tools: docs/toolchain.md.
 ACT4_ROOT ?= $(HOME)/tools/src/riscv-arch-test-4.1.0
 ACT4_VENV ?= $(HOME)/tools/act4-venv
 ACT4_BIN ?= $(HOME)/tools/act4-bin
@@ -2356,7 +2359,7 @@ core-aster-act4: $(ASTER_PORTS_SIM)
 		|| { echo "ERROR: the ACT4 tools are missing (docs/toolchain.md, ACT4)" >&2; exit 1; }
 	@mkdir -p $(ACT4_WORK) $(CORE_TESTS_DIR)
 	@cd $(ACT4_ROOT) && VIRTUAL_ENV=$(ACT4_VENV) PATH=$(ACT4_BIN):$(ACT4_VENV)/bin:$(SAIL_RISCV)/bin:$$PATH \
-		$(MAKE) --no-print-directory CONFIG_FILES=$(ACT4_CONFIG)/test_config.yaml WORKDIR=$(ACT4_WORK) \
+		$(MAKE) --no-print-directory MISE= UV= CONFIG_FILES=$(ACT4_CONFIG)/test_config.yaml WORKDIR=$(ACT4_WORK) \
 		> $(ACT4_WORK)/build.log 2>&1 || { tail -30 $(ACT4_WORK)/build.log; exit 1; }
 	@set -o pipefail; for mode in plain latency1 stall latency1-stall inflight3 inflight4; do \
 		extra=$$(case $$mode in plain) echo "";; latency1) echo "--shell-arg +latency=1";; \

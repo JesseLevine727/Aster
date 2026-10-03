@@ -9,8 +9,8 @@
 //   bit 3) and whose store sets them (after a delay in bits 31:16, here 0),
 //   so a line is set or cleared by a read-modify-write.
 // - Timer: the shell's machine timer (+timer), in the CLINT layout Sail uses,
-//   drives the core's MTIP pin, as a SoC's timer would (the core's time CSR
-//   is its own counter); mtime counts once per cycle.
+//   drives the core's MTIP pin and its mtime input (which time/timeh read), as
+//   a SoC's timer would; mtime counts once per cycle.
 // - Access faults: 0x4000_0000 is outside the shell's memory (and outside
 //   Sail's regions), so loads, stores and fetches there fault.
 #ifndef _RVMODEL_MACROS_H
