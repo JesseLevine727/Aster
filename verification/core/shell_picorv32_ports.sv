@@ -30,6 +30,7 @@ module shell_picorv32_ports (
     input  logic        meip,
     input  logic        mtip,
     input  logic        msip,
+    input  logic [63:0] mtime,
     output logic        trap,
     output logic        chk_i_redirect,
     // instruction port
@@ -100,7 +101,7 @@ module shell_picorv32_ports (
     end
 
     logic unused;
-    assign unused = i_rsp_error ^ d_rsp_error ^ meip ^ mtip ^ msip;   // PicoRV32 has no bus-error input, and no IRQ here
+    assign unused = i_rsp_error ^ d_rsp_error ^ meip ^ mtip ^ msip ^ (^mtime);   // PicoRV32 has no bus-error input, and no IRQ or timer here
 
     /* verilator lint_off PINMISSING */
     picorv32 #(

@@ -7,7 +7,8 @@ module timing_aster_bram_reqreg (
     input  logic        meip,
     input  logic        mtip,
     input  logic        msip,
+    input  logic [63:0] mtime,
     output logic [31:0] observe
 );
-    timing_aster_bram #(.REQUEST_REGISTER(1'b1)) block (.clk, .rst_n, .meip, .mtip, .msip, .observe);
+    timing_aster_bram #(.REQUEST_REGISTER(1'b1)) block (.clk, .rst_n, .meip, .mtip, .msip, .mtime, .observe);
 endmodule

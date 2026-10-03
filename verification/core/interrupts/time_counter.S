@@ -1,9 +1,11 @@
-// Self-checking test (18.3) of the time counter that `time` and `timeh` read,
-// run in the shell alone (Spike's time moves at its own rate, so lockstep
-// cannot check it; docs/cpu.md §6): it advances by at least the cycles a
-// loop takes and not wildly more, keeps advancing while mcountinhibit stops
-// mcycle and minstret, is not moved by a write to mcycle, and timeh is 0 this
-// early. It takes no interrupt.
+// Self-checking test (18.3; since the ACT4 adoption, `time` and `timeh` read the
+// platform's mtime, which the shell's timer counts once per cycle) of the
+// counter `time` and `timeh` read, run in the shell alone (Spike's time moves
+// at its own rate, so lockstep cannot check it; docs/cpu.md §6): it advances by
+// at least the cycles a loop takes and not wildly more, keeps advancing while
+// mcountinhibit stops mcycle and minstret, is not moved by a write to mcycle,
+// and timeh is 0 this early. It takes no interrupt. (ACT4's Sm_mcsr_cntr checks
+// that time follows a write to mtime.)
 #include "irq_test.h"
 
     .set shell_expect_interrupts, 0

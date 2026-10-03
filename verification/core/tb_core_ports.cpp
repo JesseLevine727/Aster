@@ -67,6 +67,12 @@
 // load returns them. With +irq_random=<seed> (which implies the device) the
 // shell also raises MEIP or MSIP at random, about once per +irq_period cycles
 // (default 20) while neither is high; a handler clears them with a store of 0.
+// The shell's machine timer, as a SoC's: mtime counts once per cycle from 0 and
+// drives the core's mtime input, which its time and timeh read (docs/cpu.md
+// §3). With +timer its registers are also mapped, in the CLINT layout Sail uses
+// (for ACT4) — mtimecmp at 0x0200_4000, mtime at 0x0200_BFF8, 64 bits each as
+// two words, mtimecmp starting at all ones — and MTIP is high while mtime >=
+// mtimecmp, or while the interrupt device holds it.
 //
 // Protocol checks (docs/cpu.md §4-§5; shell_ports.h):
 // - I_REQ_UNSTABLE: a fetch presented and not accepted must be presented
@@ -122,7 +128,7 @@
 //           [+bus_error_traps]     (a data access outside memory is answered with
 //                                   d_rsp_error and the run continues: the DUT must
 //                                   trap on it; by default the run stops, BUS_ERROR)
-//           [+irq_device] [+irq_random=<seed>] [+irq_period=<n>]   (interrupts, above)
+//           [+irq_device] [+irq_random=<seed>] [+irq_period=<n>] [+timer]   (interrupts, above)
 //           [+sc_outcomes=<file>]  (atomics, above)
 //
 // Memory regions, console, and the measurement window: shell_common.h.
@@ -197,6 +203,32 @@ struct IrqLines {
         if (delay >= 0) --delay;
         if (random && !(level & 0x808u) && rng() % period == 0) level |= rng() & 1u ? 0x800u : 0x008u;
     }
+};
+
+constexpr std::uint32_t kMtimecmp = 0x02004000u, kMtime = 0x0200BFF8u;
+
+struct Timer {
+    bool enabled = false;
+    std::uint64_t mtime = 0, mtimecmp = ~std::uint64_t(0);
+    bool decodes(std::uint32_t address) const {   // its registers are mapped with +timer
+        const std::uint32_t word = address & ~3u;
+        return enabled && (word == kMtimecmp || word == kMtimecmp + 4 || word == kMtime || word == kMtime + 4);
+    }
+    std::uint64_t& reg(std::uint32_t word) { return word - (word & 4u) == kMtime ? mtime : mtimecmp; }
+    std::uint32_t load(std::uint32_t address) {
+        const std::uint32_t word = address & ~3u;
+        return std::uint32_t(reg(word) >> (word & 4u ? 32 : 0));
+    }
+    void store(std::uint32_t address, std::uint32_t data, std::uint32_t be) {
+        const std::uint32_t word = address & ~3u;
+        std::uint64_t& r = reg(word);
+        for (int lane = 0; lane < 4; ++lane)
+            if (be & (1u << lane)) {
+                const int shift = (word & 4u ? 32 : 0) + 8 * lane;
+                r = (r & ~(std::uint64_t(0xff) << shift)) | (std::uint64_t((data >> (8 * lane)) & 0xffu) << shift);
+            }
+    }
+    bool mtip() const { return enabled && mtime >= mtimecmp; }
 };
 
 struct Write {
@@ -274,6 +306,8 @@ int main(int argc, char** argv) {
     IrqLines irq;
     irq.random = !plusarg("irq_random").empty();
     irq.device = irq.random || shell::plusflag("irq_device");
+    Timer timer;
+    timer.enabled = shell::plusflag("timer");
     if (irq.random) irq.rng.seed(std::stoul(plusarg("irq_random")));
     if (!plusarg("irq_period").empty()) irq.period = std::max(1ul, std::stoul(plusarg("irq_period")));
 
@@ -364,7 +398,8 @@ int main(int argc, char** argv) {
         d.d_rsp_rdata = dport.responding() ? dport.owed.front().data : std::uint32_t(garbage());
         d.d_rsp_error = d_error_cycle ? d_error_next : garbage() & 1u;
         d.meip = (irq.level >> 11) & 1u;
-        d.mtip = (irq.level >> 7) & 1u;
+        d.mtip = ((irq.level >> 7) & 1u) | timer.mtip();
+        d.mtime = timer.mtime;
         d.msip = (irq.level >> 3) & 1u;
         d.i_req_ready = iport.remaining() < max_inflight && !(stall && rng() % 4 == 0);
         d.d_req_ready = dport.remaining() < max_inflight && !(stall && rng() % 4 == 0);
@@ -406,10 +441,25 @@ int main(int argc, char** argv) {
         while (!unanswered.empty() && unanswered.front().sequence < data_answered) unanswered.pop_front();
         if (d_accept) {
             const bool device = irq.device && (d_addr & ~3u) == kIrqDevice;
-            const bool error = !device && !memory.contains(d_addr);
+            const bool timed = timer.decodes(d_addr);
+            const bool error = !device && !timed && !memory.contains(d_addr);
             std::uint32_t rdata = std::uint32_t(garbage());
             d_error_next = error;
-            if (d_op < kLoad || d_op > kAmoLast || (device && d_op > kStore)) { result = "UNSUPPORTED_OP"; stop = true; }
+            if (d_op < kLoad || d_op > kAmoLast || ((device || timed) && d_op > kStore)) {
+                result = "UNSUPPORTED_OP";
+                stop = true;
+            }
+            else if (timed) {
+                // The machine timer: like the interrupt device, checked against RVFI.
+                if (d_op == kStore) {
+                    ++accepted_writes;
+                    timer.store(d_addr, d_wdata, d_be);
+                    writes.push_back({d_addr & ~3u, d_be, d_wdata});
+                } else {
+                    rdata = timer.load(d_addr);
+                    reads.push_back({d_addr & ~3u, d_be});
+                }
+            }
             else if (device) {
                 // The interrupt device: its stores are checked against RVFI like any other.
                 if (d_op == kStore) {
@@ -472,6 +522,7 @@ int main(int argc, char** argv) {
             ++data_accepted;
         }
         irq.edge();
+        ++timer.mtime;
         if (d.rvfi_valid && !stop && d.rvfi_trap) reserved = false;   // an exception ends the reservation
         if (d.rvfi_valid && !stop) {
             // Each record's pc_wdata must be the next record's pc_rdata

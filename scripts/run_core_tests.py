@@ -61,6 +61,7 @@ import math
 import os
 import re
 import shlex
+import shutil
 from dataclasses import dataclass
 import subprocess
 import sys
@@ -932,6 +933,61 @@ def interrupt_coverage(args) -> bool:
     return not (missing and args.require_coverage)
 
 
+ACT4_MAX_CYCLES = 4_000_000
+
+
+def run_act4(args, config, prefix: str) -> int:
+    """riscv-arch-test 4.x (ACT4): every self-checking ELF the framework built
+    for the Aster core (verification/core/act4), each run in the shell alone with
+    the interrupt device and the machine timer its macros use; an ELF passes by
+    storing 1 to tohost. Its expected results come from the Sail model, so no
+    Spike run."""
+    elfs = sorted(path for path in Path(args.act4).rglob("*.elf") if not path.name.endswith(".sig.elf"))
+    if args.only:
+        elfs = [path for path in elfs if args.only in str(path)]
+    if not elfs:
+        print(f"FAIL: no ACT4 ELFs under {args.act4}")
+        return 1
+    out = args.build_dir / "act4"
+    out.mkdir(parents=True, exist_ok=True)
+    failures, total_cycles, total_retired = [], 0, 0
+    for source in elfs:
+        name = str(source.relative_to(args.act4).with_suffix(""))
+        elf = out / (name.replace("/", "__") + ".elf")
+        shutil.copyfile(source, elf)
+        binary = elf.with_suffix(".bin")
+        run([f"{prefix}objcopy", "-O", "binary", str(elf), str(binary)], check=True)
+        symbols = {line.split()[2]: int(line.split()[0], 16)
+                   for line in run([f"{prefix}nm", str(elf)], check=True).stdout.splitlines()
+                   if len(line.split()) == 3}
+        if symbols.get("rvtest_entry_point") != ENTRY:
+            print(f"FAIL: {name}: the entry point is not at 0x{ENTRY:08x}")
+            failures.append(name)
+            continue
+        console = elf.with_suffix(".console")
+        console.unlink(missing_ok=True)
+        passed, status, trace_text, _ = execute(args, config, elf, binary, symbols, shell_only=True,
+                                                shell_extra=("+irq_device", "+timer", "+io_page",
+                                                             f"+console={console}"),
+                                                max_cycles=ACT4_MAX_CYCLES)
+        counted, count_message = retired_check(status, trace_text)
+        passed = passed and counted
+        fields = {key: int(value) for key, value in
+                  (item.split("=", 1) for item in status.split()[2:] if "=" in item) if value.isdigit()}
+        total_cycles += fields.get("cycles", 0)
+        total_retired += fields.get("retired", 0)
+        print(f"{'PASS' if passed else 'FAIL'}: act4/{name} {status.removeprefix('SHELL ')}"
+              + ("" if counted else f"; {count_message}"))
+        if not passed:
+            failures.append(name)
+            if console.exists():                 # the test's own diagnostics
+                print("".join(f"    {line}\n" for line in console.read_text(errors="replace").splitlines()[-12:]),
+                      end="")
+    print(f"{'PASS' if not failures else 'FAIL'}: {args.dut} {len(elfs) - len(failures)}/{len(elfs)} ACT4 programs "
+          f"pass (self-checking, expected values from Sail); {total_retired} instructions in {total_cycles} cycles")
+    return 1 if failures else 0
+
+
 def run_random(args, config, prefix: str) -> int:
     out = args.build_dir / "random"
     out.mkdir(parents=True, exist_ok=True)
@@ -987,6 +1043,8 @@ def main() -> int:
     parser.add_argument("--arch", action="store_true", help="run riscv-arch-test with signature comparison")
     parser.add_argument("--kernels", action="store_true", help="run the CPU kernels of docs/cpu.md §7")
     parser.add_argument("--random", type=int, metavar="N", help="run N constrained-random programs")
+    parser.add_argument("--act4", type=Path, metavar="DIR",
+                        help="run the ACT4 ELFs under DIR (riscv-arch-test 4.x; --only filters by path)")
     parser.add_argument("--random-seed", type=int, default=1, help="seed of the first random program")
     parser.add_argument("--random-length", type=int, default=1500)
     parser.add_argument("--require-coverage", action="store_true",
@@ -1042,6 +1100,8 @@ def main() -> int:
 
     if args.kernels:
         return run_kernels(args, config, prefix)
+    if args.act4 is not None:
+        return run_act4(args, config, prefix)
 
     if args.random is not None:
         if args.random < 1:

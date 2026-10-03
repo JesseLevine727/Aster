@@ -1,0 +1,88 @@
+# UDB architecture configuration of the Aster core (docs/cpu.md §2-§5) for the
+# ACT4 framework (riscv-arch-test 4.1.0). Xasterdot8 is outside the standard
+# ISA and not described here (its tests are v1's: docs/phase18.md, 18.5).
+---
+$schema: config_schema.json#
+kind: architecture configuration
+type: fully configured
+name: aster_rv32ima
+description: Aster core (Phase 18), RV32IMA with Zicsr, Zifencei and Zicntr, machine mode only
+implemented_extensions:
+  - { name: I, version: "= 2.1" }
+  - { name: M, version: "= 2.0" }
+  - { name: Zmmul, version: "= 1.0.0" }
+  - { name: A, version: "= 2.1" }
+  - { name: Zalrsc, version: "= 1.0" }
+  - { name: Zaamo, version: "= 1.0" }
+  - { name: Zicsr, version: "= 2.0" }
+  - { name: Zifencei, version: "= 2.0" }
+  - { name: Zicntr, version: "= 2.0" }
+  - { name: Sm, version: "= 1.12.0" }
+
+params:
+  MXLEN: 32
+  PHYS_ADDR_WIDTH: 32
+
+  # misa: read-only (cpu.md §3)
+  MUTABLE_MISA_M: false
+  MUTABLE_MISA_A: false
+  MISA_CSR_IMPLEMENTED: true
+
+  # A: misaligned lr raises load-misaligned, sc and AMOs store/AMO-misaligned
+  # (cpu.md §9, 18.4); the reservation is the word (the shell's memory side)
+  MISALIGNED_AMO: false
+  LRSC_MISALIGNED_BEHAVIOR: "always raise misaligned exception"
+  LRSC_FAIL_ON_VA_SYNONYM: false
+  LRSC_FAIL_ON_NON_EXACT_LRSC: true
+  LRSC_RESERVATION_STRATEGY: "reserve exactly enough to cover the access"
+
+  M_MODE_ENDIANNESS: little
+
+  TRAP_ON_ECALL_FROM_M: true
+  TRAP_ON_EBREAK: true
+  TRAP_ON_UNIMPLEMENTED_INSTRUCTION: true
+  TRAP_ON_RESERVED_INSTRUCTION: true
+  TRAP_ON_UNIMPLEMENTED_CSR: true
+  TRAP_ON_ILLEGAL_WLRL: false
+
+  # mtval (cpu.md §3, 18.3): the address, the target, the PC or the instruction
+  REPORT_VA_IN_MTVAL_ON_BREAKPOINT: true
+  REPORT_VA_IN_MTVAL_ON_LOAD_MISALIGNED: true
+  REPORT_VA_IN_MTVAL_ON_STORE_AMO_MISALIGNED: true
+  REPORT_VA_IN_MTVAL_ON_INSTRUCTION_MISALIGNED: true
+  REPORT_VA_IN_MTVAL_ON_LOAD_ACCESS_FAULT: true
+  REPORT_VA_IN_MTVAL_ON_STORE_AMO_ACCESS_FAULT: true
+  REPORT_VA_IN_MTVAL_ON_INSTRUCTION_ACCESS_FAULT: true
+  REPORT_ENCODING_IN_MTVAL_ON_ILLEGAL_INSTRUCTION: true
+  MTVAL_WIDTH: 32
+
+  # Misaligned loads and stores trap (cpu.md §2)
+  MISALIGNED_LDST: false
+  MISALIGNED_LDST_EXCEPTION_PRIORITY: high
+
+  # Identity: mvendorid, marchid, mimpid and mconfigptr read 0 (cpu.md §3;
+  # a marchid or mimpid of 0 is "not implemented")
+  VENDOR_ID_BANK: 0x0
+  VENDOR_ID_OFFSET: 0x0
+  CONFIG_PTR_ADDRESS: 0
+  MARCHID_IMPLEMENTED: false
+  MIMPID_IMPLEMENTED: false
+
+  # mtvec: direct mode only, 4-byte aligned (cpu.md §3)
+  MTVEC_MODES: [0]
+  MTVEC_ACCESS: rw
+  MTVEC_ILLEGAL_WRITE_BEHAVIOR: retain
+  MTVEC_BASE_ALIGNMENT_DIRECT: 4
+
+  PRECISE_SYNCHRONOUS_EXCEPTIONS: true
+  PMA_GRANULARITY: 2
+  NUM_PMP_ENTRIES: 0
+
+  # Zicntr: time reads the core's own free-running counter (cpu.md §3, 18.3)
+  TIME_CSR_IMPLEMENTED: true
+
+  # The hardware performance monitor reads 0 (cpu.md §3): no counter
+  HPM_COUNTER_EN: [false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false]
+  MCOUNTINHIBIT_IMPLEMENTED: true
+  COUNTINHIBIT_EN: [true, false, true, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false]
+  MCOUNTENABLE_EN: [false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false]

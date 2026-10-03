@@ -64,6 +64,32 @@ The conformance programs are vendored with checksums: `riscv-tests` at
 (`vendor/riscv-arch-test`). The arch-test programs are built with `-mno-relax`
 (see `scripts/run_core_tests.py`).
 
+**ACT4** (riscv-arch-test 4.x, adopted 2 October 2026; `make core-aster-act4`,
+in `make check`) builds self-checking programs for the Aster core's
+configuration (`verification/core/act4/aster-rv32ima`) with expected results
+from the **Sail** model. Like Spike's source it lives outside the repository,
+under `~/tools` (override with the variables named):
+
+- `ACT4_ROOT`: `riscv-arch-test` tag `4.1.0`, commit
+  `6e8a45123f14cebfb3df151a0e7b849b4389b33b`, cloned into
+  `~/tools/src/riscv-arch-test-4.1.0` (`git clone --depth 1 --branch 4.1.0`);
+  the build leaves the checkout unmodified.
+- `SAIL_RISCV`: the Sail RISC-V model **0.13.1**, the release binary
+  `sail-riscv-Linux-x86_64.tar.gz` (SHA-256 `ee052f64…2f9e9469`) unpacked into
+  `~/tools/sail-riscv-0.13.1`.
+- `ACT4_VENV`: a Python 3.12 virtual environment at `~/tools/act4-venv` with
+  the checkout's packages (`pip install -e ./framework -e ./generators/testgen
+  -e ./generators/coverage`: act 0.3.0, testgen 0.5.0, covergroupgen 0.2.0).
+- `ACT4_BIN`: the UDB tools, Ruby 3.3 gems installed by Bundler from the
+  framework's own `Gemfile.lock` (udb 0.1.16, udb-gen 0.1.15, udb_helpers
+  0.1.3, idlc 0.1.7), with Bundler binstubs for `udb` and `udb-gen` in
+  `~/tools/act4-bin` (`BUNDLE_GEMFILE=<checkout>/framework/src/act/data/Gemfile
+  BUNDLE_BIN=~/tools/act4-bin bundle binstubs udb udb-gen`; the gems install
+  no `udb` executable of their own).
+
+The framework's builds go to `build/act4` (about 130 MB; it rebuilds only what
+changed). The compiler is the toolchain above (`riscv32-unknown-elf-gcc`).
+
 Timing baselines (`make timing-fpga-picorv32`, `make timing-asic-picorv32`)
 use Vivado 2025.1 and the LibreLane/SKY130 setup below; `scripts/timing/retain.py`
 copies a result into a checksummed folder under `docs/results/phase18/`.

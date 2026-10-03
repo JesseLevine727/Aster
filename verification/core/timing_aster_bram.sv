@@ -26,6 +26,7 @@ module timing_aster_bram #(
     input  logic        meip,
     input  logic        mtip,
     input  logic        msip,
+    input  logic [63:0] mtime,
     output logic [31:0] observe            // keeps the data path observable
 );
     localparam int unsigned WORDS = 128 * 1024 / 4;
@@ -40,7 +41,7 @@ module timing_aster_bram #(
 
     /* verilator lint_off PINCONNECTEMPTY */
     aster_core #(.RESET_VECTOR(32'h8000_0000), .HART_ID(32'd0)) core (
-        .clk, .rst_n, .meip, .mtip, .msip,
+        .clk, .rst_n, .meip, .mtip, .msip, .mtime,
         .i_req_valid, .i_req_addr, .i_req_ready(1'b1), .i_rsp_valid, .i_rsp_data, .i_rsp_error,
         .d_req_valid, .d_req_op, .d_req_addr, .d_req_wdata, .d_req_be,
         .d_req_ready(1'b1), .d_rsp_valid, .d_rsp_rdata, .d_rsp_error,

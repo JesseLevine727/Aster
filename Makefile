@@ -2084,7 +2084,7 @@ parallel-workloads:
 
 test: smoke phase1 hello bench cache uart fpga-sim linux-sim counters retirement npu-pe npu-array npu-engine npu-regs npu-driver npu-runtime npu-stop npu-bench-validate arbiter shared-fabric multicore-runtime parallel
 
-check: tools smoke phase1 hello bench cache uart fpga-sim linux-sim linux-dual-sim linux-coherent-sim counters retirement pcpi-probe dot8-unit npu-pe npu-array npu-engine npu-regs device-arbiter dma-counters l2-unit npu-driver npu-runtime npu-stop npu-bench-validate xe-bench-validate phase11-infer-validate workloads atomic-fabric atomic-runtime atomic-faults coherent-cache warm-stop coherent-counters coherent-soc timer-unit timer-firmware irq-unit timer-interrupt sram-unit sram-lint freeze-interfaces coherent-bench riscv-reference riscv-reference-negative coherent-litmus arbiter shared-fabric multicore-runtime multicore-adversarial parallel phase17-baseline-audit core-riscv-tests core-riscv-tests-stall core-arch-tests core-random-lockstep core-lockstep-selftest core-ports-tests core-kernels core-aster-fetch core-aster-tests core-aster-kernels
+check: tools smoke phase1 hello bench cache uart fpga-sim linux-sim linux-dual-sim linux-coherent-sim counters retirement pcpi-probe dot8-unit npu-pe npu-array npu-engine npu-regs device-arbiter dma-counters l2-unit npu-driver npu-runtime npu-stop npu-bench-validate xe-bench-validate phase11-infer-validate workloads atomic-fabric atomic-runtime atomic-faults coherent-cache warm-stop coherent-counters coherent-soc timer-unit timer-firmware irq-unit timer-interrupt sram-unit sram-lint freeze-interfaces coherent-bench riscv-reference riscv-reference-negative coherent-litmus arbiter shared-fabric multicore-runtime multicore-adversarial parallel phase17-baseline-audit core-riscv-tests core-riscv-tests-stall core-arch-tests core-random-lockstep core-lockstep-selftest core-ports-tests core-kernels core-aster-fetch core-aster-tests core-aster-kernels core-aster-act4
 
 # Phase 18 CPU shell: one CPU with a synchronous SRAM at 0x8000_0000 and an
 # RVFI trace for lockstep against Spike (docs/phase18.md).
@@ -2335,6 +2335,38 @@ core-aster-kernels: $(ASTER_PORTS_SIM) $(ASTER_CLOCK_PLUGIN) $(ASTER_DOT8_PLUGIN
 		--shell-arg +latency=1 --build-dir $(CORE_TESTS_DIR)/aster-kernels \
 		| tee $(CORE_TESTS_DIR)/aster-kernels.log | tail -14 \
 		|| { grep -v '^PASS' $(CORE_TESTS_DIR)/aster-kernels.log; exit 1; }
+
+# riscv-arch-test 4.x (ACT4; docs/phase18.md, "ACT4"): self-checking programs
+# for the Aster core's configuration (verification/core/act4/aster-rv32ima: its
+# UDB description, the Sail model's configuration, the shell's macros and
+# layout), their expected results computed by the Sail model 0.13.1 — an
+# independent reference — built by the ACT4 framework (riscv-arch-test 4.1.0,
+# outside the repository like Spike's source; its build cache is under
+# build/act4) and run in the shell alone, with its interrupt device and machine
+# timer, in the six memory modes of core-aster-tests. The tools: docs/toolchain.md.
+ACT4_ROOT ?= $(HOME)/tools/src/riscv-arch-test-4.1.0
+ACT4_VENV ?= $(HOME)/tools/act4-venv
+ACT4_BIN ?= $(HOME)/tools/act4-bin
+SAIL_RISCV ?= $(HOME)/tools/sail-riscv-0.13.1
+ACT4_CONFIG := $(ROOT)/verification/core/act4/aster-rv32ima
+ACT4_WORK := $(BUILD_DIR)/act4
+.PHONY: core-aster-act4
+core-aster-act4: $(ASTER_PORTS_SIM)
+	@test -x $(SAIL_RISCV)/bin/sail_riscv_sim && test -x $(ACT4_VENV)/bin/act && test -d $(ACT4_ROOT)/tests \
+		|| { echo "ERROR: the ACT4 tools are missing (docs/toolchain.md, ACT4)" >&2; exit 1; }
+	@mkdir -p $(ACT4_WORK) $(CORE_TESTS_DIR)
+	@cd $(ACT4_ROOT) && VIRTUAL_ENV=$(ACT4_VENV) PATH=$(ACT4_BIN):$(ACT4_VENV)/bin:$(SAIL_RISCV)/bin:$$PATH \
+		$(MAKE) --no-print-directory CONFIG_FILES=$(ACT4_CONFIG)/test_config.yaml WORKDIR=$(ACT4_WORK) \
+		> $(ACT4_WORK)/build.log 2>&1 || { tail -30 $(ACT4_WORK)/build.log; exit 1; }
+	@set -o pipefail; for mode in plain latency1 stall latency1-stall inflight3 inflight4; do \
+		extra=$$(case $$mode in plain) echo "";; latency1) echo "--shell-arg +latency=1";; \
+			stall) echo "--stall-seed 5";; latency1-stall) echo "--stall-seed 9 --shell-arg +latency=1";; \
+			inflight3) echo "--stall-seed 7 --shell-arg +max_inflight=3";; \
+			inflight4) echo "--stall-seed 7 --shell-arg +max_inflight=4";; esac); \
+		$(ASTER_TESTS) --act4 $(ACT4_WORK)/aster-rv32ima/elfs $$extra --build-dir $(CORE_TESTS_DIR)/aster-act4-$$mode \
+			| tee $(CORE_TESTS_DIR)/aster-act4-$$mode.log | tail -1 \
+			|| { grep -v '^PASS' $(CORE_TESTS_DIR)/aster-act4-$$mode.log; exit 1; }; \
+	done
 
 # Timing and area of one core block at 10 ns (docs/phase18.md): Vivado out of
 # context on the PYNQ-Z1 part, and SKY130 through post-route STA (its period is

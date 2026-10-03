@@ -20,11 +20,12 @@ programs are assembled with `-mno-relax`: their `LA` macro aligns with RVC
 enabled, and linker relaxation would otherwise leave a 2-byte `c.nop` that a
 core without the C extension cannot execute. No test is patched.
 
-Why 3.10.0 and not 4.x: release 4.1.0 (ACT4, September 2026) generates
+3.10.0 and 4.x: release 4.1.0 (ACT4, September 2026) generates
 self-checking ELFs from a UDB configuration with the Sail model, which needs
 the ACT4 Python framework, Ruby/UDB and Sail 0.13.1. It adds a second,
-independent reference model, and is worth adopting once the Aster core's
-configuration is final — at milestone 18.5, the owner decided at 18.3's
-sign-off (2 October 2026). Until then 3.10.0's pre-generated programs
-compared against Spike cover I, M, A, Zifencei and the privilege tests with
-the harness Phase 18 already has (docs/phase18.md).
+independent reference model; the owner adopted it on 2 October 2026, once the
+Aster core's configuration was final (after milestone 18.5). It is not
+vendored (the checkout is 690 MB): it is built from the pinned tag outside the
+repository, as docs/toolchain.md records, for the configuration in
+verification/core/act4. 3.10.0's pre-generated programs stay, compared
+against Spike in lockstep (docs/phase18.md).

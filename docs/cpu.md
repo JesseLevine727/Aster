@@ -66,7 +66,7 @@ Machine mode only. Implemented CSRs:
 | `mie`, `mip` | `MEIE`/`MEIP`, `MTIE`/`MTIP`, `MSIE`/`MSIP` |
 | `mcycle(h)`, `minstret(h)`, `cycle(h)`, `instret(h)`, `mcountinhibit` | 64-bit counters; user-level aliases read-only; `mcountinhibit`'s `CY` and `IR` stop `mcycle` and `minstret` (`mcountinhibit`: 18.3) |
 | `mhpmcounter3`–`31(h)`, `mhpmevent3`–`31` | the hardware performance monitor, implemented as zero (writes change nothing; 18.3) |
-| `time`, `timeh` | read-only: the core's own 64-bit time counter, one tick per clock from reset, never written or stopped (`mcountinhibit` does not touch it; 18.3, owner decision) |
+| `time`, `timeh` | read-only: the platform's 64-bit `mtime`, from the `mtime` input (§5), registered — a shadow of the SoC timer, as the privileged specification has it (owner decision, 2 October 2026, replacing 18.3's own counter; `mcountinhibit` does not touch it) |
 
 Every other CSR is an illegal instruction. `wfi` executes as a no-op.
 
@@ -80,7 +80,11 @@ Interrupt wiring on the Aster SoC: the existing interrupt controller at
 `0x2000_4000` drives `MEIP` for its hart (sources: timer, DMA, NPU, software);
 the handler reads the controller's `PENDING` register. `MTIP` and `MSIP` inputs
 exist on the core but are tied off in the first SoC integration, because the
-Aster timer is a custom MMIO block routed through the controller. This replaces
+Aster timer is a custom MMIO block routed through the controller. The core's
+`mtime` input (§5; owner decision, 2 October 2026), which `time`/`timeh` read,
+must still come from the SoC's timer count: Phase 20 either exposes the Aster
+timer's counter as `mtime` or adds a CLINT-style `mtime`/`mtimecmp` that also
+drives `MTIP`. This replaces
 PicoRV32's custom IRQ instructions and fixed vector, so `start.S`,
 `start_multicore.S`, and the handlers are ported to standard `mtvec`/`mret`.
 
@@ -261,7 +265,9 @@ every `sc` ends it; whether the hart's own store to the word, or a trap, also
 ends it is the memory side's choice (the v1 fabric ends it on any store to the
 word; the CPU shell follows Spike).
 
-**Other signals:** `clk`, `rst_n`, `meip`, `mtip`, `msip`, a hart-id parameter, a
+**Other signals:** `clk`, `rst_n`, `meip`, `mtip`, `msip`, `mtime[63:0]` (the
+platform timer's `mtime`, which `time`/`timeh` read; the SoC timer that drives
+it also drives `mtip`), a hart-id parameter, a
 reset-vector parameter, and an RVFI retirement port with the riscv-formal
 fields: `valid`, `order`, `insn`, `trap`, `halt`, `intr`, `mode`, `ixl`,
 `rs1_addr`/`rs2_addr` and their read data, `rd_addr`/`rd_wdata`,
@@ -307,10 +313,11 @@ Each milestone passes all applicable layers before the next milestone starts.
      ISA string that grows with the milestones to
      `--isa=rv32ima_zicsr_zifencei_zicntr` (18.3: `rv32im_zicsr_zicntr`).
      Values that legitimately differ are allowlisted by name, never by
-     position: `mcycle`/`cycle`/`time` reads (the core's time counter ticks
-     once per clock, Spike's at its own rate), `marchid`, `mip` (Spike's CLINT
-     holds `MTIP` high from reset — `mip` reads `0x80` — and the shell has no
-     timer; the value read and the value written back), Spike's
+     position: `mcycle`/`cycle`/`time` reads (`time` is the shell timer's
+     `mtime`, counting once per clock, Spike's at its own rate), `marchid`,
+     `mip` (Spike's CLINT holds `MTIP` high from reset — `mip` reads `0x80` —
+     and the shell's is low unless a program uses its timer or interrupt
+     device; the value read and the value written back), Spike's
      debug-trigger `tcontrol` update on `mret` (absent with `--triggers=0`),
      and Spike's logged writes to the hardwired-zero `mhpmevent` registers;
      the environment zeroes `minstret`, since Spike's boot ROM retires five
@@ -358,7 +365,10 @@ Each milestone passes all applicable layers before the next milestone starts.
      store, and (from 18.3) every load it accepts to one retired load.
 2. **Conformance.** The vendored `riscv-tests` (rv32ui, rv32um, rv32ua, rv32mi) and
    `riscv-arch-test` 3.10.0 (I, M, A, Zifencei, and the privilege tests for
-   Zicsr and traps), compared by signature with Spike as well as in lockstep.
+   Zicsr and traps), compared by signature with Spike as well as in lockstep;
+   and, from 2 October 2026, riscv-arch-test 4.1.0 (ACT4): self-checking
+   programs for the core's configuration whose expected results come from the
+   Sail model, an independent reference, run in the shell.
 3. **Directed microarchitecture tests.** Forwarding from every stage, load-use,
    multiply-use, branch/jump flush in both prediction directions, `fence.i`
    self-modifying code, CSR read-modify-write ordering, every exception class
@@ -694,3 +704,13 @@ Changes after approval, by the owner:
   riscv-arch-test's privilege suite with riscv-tests rv32mi standing in for
   the gate's "arch-test Zicsr" (3.10.0 has no Zicsr suite) — and chose to
   reconsider riscv-arch-test 4.x (ACT4) when the ISA is final, at 18.5.
+- **2 October 2026 — ACT4 adopted; `time` shadows `mtime` (§3, §5, §6):** after
+  18.5 the owner adopted riscv-arch-test 4.1.0 (ACT4), whose programs check
+  the core against the Sail model. Its machine-mode counter test checks the
+  privileged specification's rule that `time` is a read-only shadow of the
+  memory-mapped `mtime` — the test writes `mtime` and reads `time` — which
+  18.3's own counter cannot meet. The owner chose to make `time`/`timeh` read
+  the platform's `mtime` through a new 64-bit input (§5), registered in the
+  core; the SoC's timer drives it and `mtip`, as the CPU shell's machine timer
+  does. This replaces 18.3's choice of the core's own counter, made among
+  three options that did not include the platform's timer.

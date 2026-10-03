@@ -1,0 +1,10 @@
+# ACT4 (riscv-arch-test 4.1.0) framework configuration for the Aster core
+# (docs/phase18.md, "ACT4"). Tools on PATH: the riscv32 toolchain and Sail
+# 0.13.1's sail_riscv_sim (make core-aster-act4 sets PATH).
+name: aster-rv32ima
+compiler_exe: riscv32-unknown-elf-gcc
+objdump_exe: riscv32-unknown-elf-objdump
+ref_model_exe: sail_riscv_sim
+udb_config: aster-rv32ima.yaml
+linker_script: link.ld
+dut_include_dir: .
