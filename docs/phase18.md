@@ -1577,6 +1577,238 @@ next PC (request registered). The paths §4 names: `d_rsp_valid` to the next
 request +3.856 ns, the `d_rsp_error` kill +3.197 ns (§5 form). Evidence:
 [`results/phase18/aster-act4`](results/phase18/aster-act4/README.md).
 
+### Milestone 18.6: L1 caches and the runtime port (3 October 2026)
+
+The Aster core has its L1 caches and v1's runtime (`rtl/aster_core/aster_l1i.sv`,
+`aster_l1d.sv`, `aster_l1_ram.sv`; `software/runtime/start_aster.S`,
+`start_multicore_aster.S`, `aster_trap.S`), as the owner set them on
+3 October 2026 (cpu.md §9, "Changes after approval"): an instruction and a
+data cache of 4 KiB each, direct-mapped, with 16-byte lines, the data cache
+write-through with no write-allocate, both blocking. The choices made in
+building them are listed in [`cpu.md`](cpu.md) §9 ("Clarifications during
+milestone 18.6"), for the owner's acceptance:
+
+- **The caches** sit between the core's ports and memory-side ports of the
+  same protocol (cpu.md §5), in two stages: the tag compare (tags in LUT RAM)
+  beside the data array's two-cycle block-RAM read, then the answer — a hit
+  two cycles after acceptance, as §5's normal answer, at one per cycle. A
+  waiting request keeps its word and rereads the array only if an older
+  request wrote it after its read. The data cache decodes its own errors
+  (outside the cacheable memory and its I/O windows) in the cycle after
+  acceptance from the registered address; stores are written through (into
+  the array too on a hit) and answered once the memory side has; `lr`, `sc`
+  and the AMOs pass through to the memory side, which holds the reservation,
+  and `sc` and the AMOs invalidate their line. The instruction cache answers
+  a fetch outside the cacheable memory with an error itself. Their array
+  reads and stage-1 registers are enabled by their own readiness (from their
+  registers), not by the core's late request valid — 18.1's timing lesson.
+- **The core** gains `fencei_inval` (`fence.i` invalidates the instruction
+  cache; a refill in progress then installs nothing), and its CSR
+  instructions and `mret` now wait for M1 and M2 to be empty (18.3: M1): a
+  `time` read right behind a store to `mtime` read the old value when the
+  data cache sent the store on after it had left M1 (ACT4's `Sm_mcsr_cntr`).
+  No kernel's window changes (none has a CSR instruction); the CPI model
+  follows the rule and stays exact.
+
+Verification (`make core-aster-l1-unit`, `core-aster-l1-tests`,
+`core-aster-firmware`, all in `make check`) — the gate's three parts:
+
+- **The cache reference model.** With `+cache_model` the shell keeps the
+  lines each cache holds, from its misses and the policy, and checks every
+  lookup's hit or miss and every memory-side access the caches make: a miss
+  refills exactly its line, a store, atomic or I/O access goes to memory
+  exactly once and unchanged, a hit or an error not at all (else
+  `CACHE_MISMATCH`). Every run of the cached core has it on, and the data is
+  checked as before, in lockstep with Spike and by signature. The shell's
+  protocol checks then see the caches' memory side, so the shell runs them
+  on the core's side too (requests stable while they wait, well formed, at
+  most two data requests in flight), and the load check follows the core's
+  loads into the data cache (each must retire exactly once). Self-tests
+  show each fails when it should: the model kept through `fence.i`
+  (`CACHE_MISMATCH`), a load recorded twice (`LOAD_MISMATCH`, both cores),
+  and three rules broken between the core and the caches, as the PicoRV32
+  adapter breaks them on its ports (`D_REQ_UNSTABLE`, `I_REQ_UNSTABLE`,
+  `D_REQ_MALFORMED`). The data cache withholds readiness while it holds two
+  requests, which the core never presents a third behind, or for the one cycle
+  a replaying load rereads the array, when the core rarely presents one (a
+  fetch bubble behind the load): in the gate's runs the core's data request
+  waited for one cycle in ten runs of seven programs (the shell counts it,
+  `core_d_waits`; suites under back-pressure and long stalls, a random
+  program, an ACT4 program), holding steady each time. So the first self-test withholds the
+  cache's readiness itself.
+  Beside it, each cache has a random unit test against a flat memory
+  (`verification/core/l1`, from the milestone's watchdog review): every
+  answer's data, the error timing, every memory-side access, and for the
+  instruction cache memory rewritten and invalidated at random — 200 seeds
+  of a million cycles each.
+- **Back-pressure.** The cached core runs every suite (97 tests), arch-test,
+  random programs with coverage, random interrupts, ACT4 (102/102), the
+  firmware and the kernels in the memory modes of 18.1–18.5 (arch-test on
+  two, the kernels on the one-cycle memory) and in a new long-stall mode
+  (`+long_stall`: one access in sixteen is answered 16–63 cycles late, as
+  behind a slow memory); the unit tests' memory answers up to 67 cycles late.
+  Under long stalls with an interrupt about every 20 cycles a handler often
+  outlasts the gap to the next, so most cycles go to handlers: those random
+  programs need up to about 213,000 cycles, and that mode runs with ten
+  times the usual 200,000. The long-stall mode reaches what 18.1 and 18.3
+  said it would need to: a finished division waits in Execute behind a load
+  (8 of 20 random programs, 184 cycles, its result asserted to hold; the run
+  now requires it); the other case, a trap record still in W when its handler writes
+  `mepc` or `mcause`, can no longer occur once CSR instructions wait for M2
+  (W is empty at a CSR write; asserted).
+- **The firmware regression.** v1's runtime is ported to the core — `mtvec`
+  (direct) with one handler that saves v1's caller-saved registers and sends
+  an interrupt to v1's `aster_irq_dispatch` and an exception to
+  `aster_exception`, `mret`, the hart from `mhartid`; `aster.h` enables
+  interrupts with CSRs under `ASTER_CORE`. v1 firmware built with it runs on
+  the core with and without its caches, in every memory mode (and with
+  long stalls on the cached core): `runtime.c`
+  (data copy, `.bss`, stack — now checked against the layout's stack symbols,
+  which v1's `make runtime` still passes) in lockstep; `timer_interval.c` and
+  `timer_interrupt.c` (a software and a timer interrupt through the ported
+  handler and v1's interrupt controller) in the shell alone, with v1's timer,
+  hart-control page, interrupt controller and performance block modelled
+  from their RTL (`+v1_devices`); and the CPU kernels, v1's benchmark
+  sources, in lockstep on the cached core (9/9, matching their Phase 17
+  records). Not run, and why: cpu.md §9.
+- **Random programs** now follow 30% of plain fences with an AMO, an idiom
+  whose (fence, atomic) interrupt pair was otherwise rare: with CSR
+  instructions waiting for M2 the interrupts landed elsewhere, and one mode
+  of the uncached core's gate reached 99 of its 100 required pairs. Every
+  random-interrupt mode on both cores now reaches all 100 (the pair 21 to
+  74 times per run of 20 programs).
+
+Results (window CPI; "1-cycle" is the one-cycle shell memory of the 18.7
+gate, "long stalls" the long-stall mode with stall seed 3 on the two-cycle
+memory — `core-aster-l1-tests`'s `kernels` and `kernels-long-stall` modes, and
+for the core without its L1 `run_core_tests.py --dut aster --kernels
+--stall-seed 3 --shell-arg +long_stall --max-cycles 60000000`):
+
+| Kernel | No L1, 1-cycle | L1, 1-cycle | No L1, long stalls | L1, long stalls |
+| --- | ---: | ---: | ---: | ---: |
+| CoreMark (1 iteration) | 1.567 | 1.704 | 5.806 | 2.007 |
+| Dhrystone | 1.591 | 1.940 | 6.207 | 2.797 |
+| sort/search | 1.654 | 1.810 | 5.916 | 2.556 |
+| FFT | 1.199 | 1.452 | 4.888 | 1.911 |
+| strided | 1.508 | 1.699 | 5.690 | 2.168 |
+| scalar Conv2D, coherent SoC | 1.397 | 1.683 | 5.590 | 2.215 |
+| scalar reduction | 1.385 | 1.483 | 5.419 | 1.920 |
+| Conv2D, minimal top (not in the gate) | 1.574 | 1.588 | 5.808 | 1.647 |
+| DOT8 Conv2D (not in the gate) | 1.193 | 1.436 | 5.215 | 1.924 |
+
+Behind a slow memory the caches cut CPI by 2.2–3.5×; on the gate's
+one-cycle SRAM they can only cost cycles (1–22%): misses (Dhrystone's and
+the coherent Conv2D engines' data misses are 6,100–6,600 each over the
+whole run) and stores, which
+write through and are answered only once the memory side has — at least
+five cycles after acceptance, against two (the review's finding, below).
+The 18.7 gate measures the core without its L1 (cpu.md §7), so this does not
+touch it.
+
+- **Planted bugs** (assertions off), 24 new ones on the cached core:
+  - in the instruction cache: the valid bit ignored, a tag bit dropped,
+    `fence.i` ignored, a refill not poisoned, a waiting fetch not marked
+    stale, a miss answered with the line's first word, the kept word ignored,
+    refill words written to the wrong slot;
+  - in the data cache: a store hit not written into the array, a store miss
+    written, all bytes written, an AMO keeping its line, `lr` invalidating
+    its line, an I/O load refilled, the error a cycle late, a stale word
+    answered (three ways, the reviewer's among them), a miss answered with
+    the line's first word, refill words written to the wrong slot, the kept
+    word ignored, a store answered before the memory side;
+  - in the core: `fence.i` not invalidating, and CSR instructions waiting
+    for M1 only.
+
+  All 24 are caught: 23 by the core-level runs (seven first by the cache
+  reference model, `CACHE_MISMATCH`; the CSR one only by ACT4), and the
+  reviewer's only by the unit tests. The core's 77 rerun on the final RTL:
+  72 caught. The five not caught are 18.3's four and `sys-retire-at-commit`,
+  which 18.6's serialization makes equivalent: a CSR instruction now enters
+  M1 with M2 empty and leaves it in its first cycle (asserted), so counting
+  its retirement then or as it leaves is the same. In all, 101 planted,
+  96 caught. `make check` passes (338 PASS lines).
+
+- **Review.** The milestone's watchdog review found no RTL bug in the
+  caches. It wrote the random unit tests (now in the repository, above) and
+  with them found a rare case the core-level runs may never reach: a load
+  accepted at the edge of a refill's last write, which only the stale flag
+  keeps from answering the array's old word (now a planted bug, caught by the
+  unit tests alone). It also found:
+  - the shell's protocol and load checks watching the caches' memory side
+    in cached runs (now run on the core's side too, the load check on the
+    data cache's lookups);
+  - the array reads and stage-1 registers enabled by the core's late request
+    valid (now by the caches' own readiness);
+  - the CSR change unrecorded (now cpu.md §9);
+  - the long-stall mode's coverage unproven (now counted, above);
+  - the gate's targets missing from `make check` (added).
+
+  It raised two questions for the owner, below. The pre-push review found
+  no RTL bug either. It found:
+  - the long-stall mode with random interrupts failing on its cycle limit
+    (raised, above);
+  - the unit tests passing a cache that never answers (they now require
+    progress);
+  - nothing in the repository showing the new checks fail (the self-tests,
+    above);
+  - two overstated sentences in this record (the firmware and random modes
+    were then fewer than it said; they are now run in every mode);
+  - the firmware's Spike plugin missing from its target (added);
+  - the long-stall kernel numbers not reproducible (a mode, and the command
+    above);
+  - the division-wait coverage not required (now required).
+
+  A third review, of those fixes, found the reason given for the core's data
+  request never waiting wrong (corrected, and now counted) and a killed
+  division counted as a wait (no longer).
+
+**For the owner's decision with 18.6:**
+
+1. **Coherence with the other masters (Phase 20).** Write-through keeps memory
+   current for the other hart, DMA and the NPU, but nothing removes this
+   core's lines when they write memory: v1 firmware that reads a DMA or NPU
+   result, or another hart's data, from cacheable memory would read stale
+   lines once the SoC has them (the shell has no other master, so no test
+   here can show it). v1 kept shared globals uncached, and its DMA and NPU
+   drivers already end with `fence iorw,iorw`. Options: (a) a `fence` whose
+   predecessor set includes device input (`i`) invalidates the whole data
+   cache in one cycle — v1's drivers then work unchanged, and `fence rw,rw`
+   (the mailboxes) costs nothing; (b) shared and DMA buffers outside the
+   cacheable region, as v1's shared globals; (c) the Phase 20 fabric
+   invalidates the lines other masters write (full coherence, more hardware);
+   (d) decide in Phase 20. Recommended: (a) with (b), now or in Phase 20.
+2. **Store cost.** A write-through store is answered once the memory side
+   has: at least five cycles after acceptance against a hit's two, and back
+   to back about one per five cycles — most of the L1's 1–22% on the
+   one-cycle memory above. Options: (a) leave it (the 18.7 gate measures the
+   core without its L1); (b) answer a store to cacheable memory when the
+   memory side accepts it (it never errs there; I/O stores still wait, so
+   devices keep the ordering the CSR rule relies on) and send a store or a
+   miss in its first cycle at the head instead of a cycle later — stores as
+   fast as hits, with a count of the memory side's answers to drop.
+   Recommended: (b), in 18.6 or with the Phase 20 memory side.
+
+**Timing** (FPGA, out of context, 10 ns; `2a3b3cf`): the core with its
+caches and a two-cycle block RAM behind them meets 10 ns at 101.1 MHz
+(+0.104 ns; 4,189 LUTs, 2,417 flip-flops, 34 block-RAM tiles — the caches'
+two arrays and the 128 KiB memory — and 8 DSPs). Its worst path is inside the
+core and touches no cache signal: Decode's instruction through its own decode
+(illegal, then operand use, then the hazard check) into the enable of
+Decode's registers. The
+paths across the core-cache boundaries all have margin: the data cache's
+error decode into the core's kill +0.973 ns, the core into the data cache
++2.175 ns, the instruction cache into the core +3.027 ns, and the data
+cache's memory side +2.661 ns and up (the instruction cache's refill paths
+are not named; they are within the top's +0.104 ns). The core alone runs at 105.0 MHz (+0.472 ns;
+2,821 LUTs, 1,361 flip-flops), the §5 form at 101.1 MHz (+0.106 ns) and the
+request-registered form at 103.8 MHz (+0.363 ns), against ACT4's 105.1,
+105.3 and 105.0 MHz. These are one run per top; Vivado's placement varies by
+a few hundred picoseconds from one netlist to the next (the §5 form gave
+101.6 MHz at 18.5), and the worst paths are of the earlier kinds. The paths
+§4 names: `d_rsp_valid` to the next request +2.416 ns, the `d_rsp_error` kill
++2.139 ns (§5 form). Evidence:
+[`results/phase18/aster-18.6`](results/phase18/aster-18.6/README.md).
+
 ## Milestones and gates
 
 | Milestone | Content | Exit gate |
@@ -1771,8 +2003,11 @@ request +3.856 ns, the `d_rsp_error` kill +3.197 ns (§5 form). Evidence:
   trap-halt programs above)
 - [x] **Aster-core shell, 18.3:** the same errors taken as traps to a
   handler (`traps/m1_traps`, `traps/fetch_traps`)
-- [ ] **Aster-core shell, later:** from 18.6, the signature read through the
-  cache hierarchy
+- [x] **Aster-core shell, later:** from 18.6, the signature read through the
+  cache hierarchy — needs nothing with the write-through data cache (18.6):
+  memory holds every store, each checked by the cache reference model to
+  reach it exactly once, so the signature the shell reads from its memory is
+  the hierarchy's
 - [x] **Decode-redirect timing (settled in 18.1):** a `jal` or a backward
   branch redirects on its first cycle in Decode, whether or not it then waits
   for operands (`lw; bne` back to a loop head costs the load-use wait only).
@@ -1826,12 +2061,16 @@ request +3.856 ns, the `d_rsp_error` kill +3.197 ns (§5 form). Evidence:
   energy targets are withdrawn (evidence and trade-off in
   [`phase17-plus.md`](phase17-plus.md)); the 18.6 SRAM timing plan, which is
   SKY130's, is withdrawn, and 18.7's feasibility report covers the FPGA
-- [ ] **A long-stall memory mode, by 18.6:** the shell's back-pressure adds at
+- [x] **A long-stall memory mode, by 18.6:** the shell's back-pressure adds at
   most two cycles, so a finished division never waits in Execute (its result
   is asserted to hold); 18.6's cache misses will need a mode with long stalls,
   which will exercise it — and a trap record still in W when its handler
   writes mepc or mcause (18.3 carries the trap's values with the record for
-  that case; nothing reaches it yet)
+  that case; nothing reaches it yet). Done in 18.6 (`+long_stall`, in
+  `core-aster-l1-tests`): a finished division waits in Execute in 8 of 20
+  random programs on the cached core (184 cycles, the shell's `div_waits`),
+  its result held; the trap record in W can no longer occur, since CSR
+  instructions now wait for M2 (asserted)
 - [x] 18.2 as in the table above — complete (owner, 1 October 2026)
 - [x] 18.3 as in the table above — complete (owner, 2 October 2026), with
   the added CSRs, `time`/`timeh` as the core's own time counter, and the
