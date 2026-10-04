@@ -1,0 +1,1 @@
+top=timing_aster_l1 part=xc7z020clg400-1 period_ns=10.0 wns_ns=0.220 whs_ns=0.040 implied_period_ns=9.780 implied_fmax_mhz=102.2 luts=4940 ffs=2487 brams=34 dsps=8
