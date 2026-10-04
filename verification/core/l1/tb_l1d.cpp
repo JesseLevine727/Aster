@@ -8,16 +8,27 @@
 // requests held, and every memory-side access other than a refill read
 // against the expected one, exactly once and in order; every request is
 // accepted within 2,000 cycles of being presented and answered within 2,000 of
-// acceptance (and the run answers at least one per 50 cycles on average).
+// acceptance (and the run answers at least one per 50 cycles on average), and
+// the memory side never has more than two requests in flight. Another master
+// writes a remote region at random (one write in about 30 cycles), its line
+// snooped in that cycle or — with seeds 4-7 mod 8 — late, within the
+// contract (cpu.md §9, 18.6): queued until a random 0-15 cycles pass or the
+// cache presents a memory-side request, whose acceptance then waits for the
+// queue to empty. The core side loads and stores there too; a load must return
+// the newest value whose snoop came (or own store was accepted) in or before
+// the cycle of its lookup, or a newer one, and no older than the core's own
+// last store to the word before the load.
 //     l1d_unit <seed> [cycles]
 #include "Vl1d_unit.h"
 #include "verilated.h"
+#include <algorithm>
 #include <cstdint>
 #include <cstdio>
 #include <deque>
 #include <map>
 #include <random>
 #include <string>
+#include <vector>
 
 static uint32_t initial(uint32_t w) { return w * 2654435761u ^ 0x5a5a1234u; }
 struct Mem {
@@ -63,7 +74,35 @@ int main(int argc, char** argv) {
     d.cacheable_bytes = bytes;
     d.clk = 0; d.rst_n = 0; d.eval(); d.clk = 1; d.eval(); d.clk = 0; d.eval(); d.clk = 1; d.eval(); d.clk = 0; d.rst_n = 1; d.eval();
     Mem mem, ref;
-    struct Exp { uint32_t op, addr, data; bool err; bool check; uint64_t at; };
+    struct Exp {
+        uint32_t op, addr, data; bool err; bool check; uint64_t at;
+        bool remote = false; uint64_t lookup = 0; uint32_t own = 0;   // own: the core's stores to the word before it
+    };
+    // The remote region (page 3: its lines share indices with the core's
+    // pages): per word, the values memory held, in order — another master's
+    // writes and the core's own stores as memory performed them: (cycle,
+    // value, the own store's number or 0).
+    struct Held { uint64_t cycle; uint32_t value, own; uint64_t seen; };   // seen: when the cache must see it
+    std::map<uint32_t, std::vector<Held>> hist;
+    std::map<uint32_t, uint32_t> own_issued, own_done;
+    auto remote_region = [](uint32_t a) { return (a & ~0xFFFu) == 0x80003000u; };
+    // A load looked up at `lookup`, after the core's `own`-th store to the word:
+    // the value memory held at its lookup or later, and not before that store.
+    auto allowed = [&](uint32_t a, uint64_t lookup, uint32_t own, uint32_t v) {
+        const auto& h = hist[a];
+        long start = -1;                          // -1: the initial value is still allowed
+        for (size_t i = 0; i < h.size(); ++i) {
+            if (h[i].seen <= lookup) start = std::max(start, long(i));
+            if (own && h[i].own == own) start = std::max(start, long(i));
+        }
+        if (start < 0 && v == initial(a)) return true;
+        for (size_t i = size_t(std::max(start, 0L)); i < h.size(); ++i) if (h[i].value == v) return true;
+        return false;
+    };
+    size_t looked = 0;                            // answered-or-not requests already looked up
+    struct Owed { uint32_t word; size_t index; long wait; };
+    std::deque<Owed> snoops;                      // snoops owed to the cache, in order
+    const bool lazy = (seed / 4) % 2 == 1;
     std::deque<Exp> expect;            // core-side responses expected, in order
     struct MRsp { uint64_t at; uint32_t data; };
     std::deque<MRsp> mq;               // memory-side responses in flight
@@ -78,7 +117,13 @@ int main(int argc, char** argv) {
     auto gen = [&]() {
         uint32_t r = rng() % 100;
         uint32_t a;
-        if (r < 80) a = 0x80000000u + (rng() % 3) * 4096 + (rng() % 6) * 16 + (rng() % 4) * 4;
+        if (r < 70) a = 0x80000000u + (rng() % 3) * 4096 + (rng() % 6) * 16 + (rng() % 4) * 4;
+        else if (r < 80) {                  // a word of the remote region: a load or a store
+            pop = rng() % 5 < 2 ? 1 : 0; paddr = 0x80003000u + (rng() % 6) * 16 + (rng() % 4) * 4; pdata = rng(); pbe = 0xf;
+            if (pop == 1 && rng() % 2) { uint32_t b = rng() % 4; pbe = 1u << b; paddr += b; }
+            pv = true;
+            return;
+        }
         else if (r < 92) a = 0x20000000u + (rng() % 4) * 4;
         else if (r < 95) a = 0x30000000u;
         else a = 0x40000000u + (rng() % 4) * 4;
@@ -105,6 +150,24 @@ int main(int argc, char** argv) {
         d.m_req_ready = mready;
         bool mrsp = !mq.empty() && mq.front().at <= cyc;
         d.m_rsp_valid = mrsp; d.m_rsp_rdata = mrsp ? mq.front().data : rng(); d.m_rsp_error = 0;
+        // Another master's write this cycle: performed now, its snoop owed.
+        if (rng() % 30 == 0) {
+            const uint32_t a = 0x80003000u + (rng() % 6) * 16 + (rng() % 4) * 4, v = rng();
+            mem.wr(a, v, 0xf);
+            hist[a].push_back({cyc, v, 0, ~uint64_t(0)});
+            snoops.push_back({a, hist[a].size() - 1, lazy ? long(rng() % 16) : 0});
+        }
+        // A snoop now: the oldest owed, when its wait is over or the cache
+        // presents a memory-side request (its m_req_valid comes from registers).
+        d.snoop_valid = 0;
+        if (!snoops.empty() && (snoops.front().wait <= 0 || d.m_req_valid)) {
+            d.snoop_valid = 1;
+            d.snoop_line = snoops.front().word >> 4;
+            hist[snoops.front().word][snoops.front().index].seen = cyc;
+            snoops.pop_front();
+        }
+        for (auto& owed : snoops) --owed.wait;
+        d.m_req_ready = mready && snoops.empty(); // no acceptance before the owed snoops
         d.eval();
         // checks this cycle
         if (acc_last) {
@@ -113,18 +176,36 @@ int main(int argc, char** argv) {
         if (d.d_rsp_valid) {
             if (expect.empty()) { printf("FAIL seed %u cyc %llu: unexpected response\n", seed, (unsigned long long)cyc); return 1; }
             Exp e = expect.front(); expect.pop_front(); ++answered;
+            --looked;
+            if (e.remote && e.op == 0 && !allowed(e.addr & ~3u, e.lookup, e.own, d.d_rsp_rdata)) {
+                printf("FAIL seed %u cyc %llu: remote load %08x rdata %08x older than its lookup (cycle %llu)\n", seed,
+                       (unsigned long long)cyc, e.addr, d.d_rsp_rdata, (unsigned long long)e.lookup);
+                return 1;
+            }
             if (e.check && d.d_rsp_rdata != e.data) {
                 printf("FAIL seed %u cyc %llu: op %u addr %08x rdata %08x expected %08x\n", seed, (unsigned long long)cyc, e.op, e.addr, d.d_rsp_rdata, e.data);
                 return 1;
             }
         }
+        if (d.chk_lookup) {                       // the oldest request not yet looked up
+            if (looked >= expect.size()) { printf("FAIL seed %u: a lookup with no request\n", seed); return 1; }
+            expect[looked++].lookup = cyc;
+        }
         bool accept = d.d_req_valid && d.d_req_ready;
         bool macc = d.m_req_valid && d.m_req_ready;
+        if (macc && mq.size() - (mrsp ? 1 : 0) >= 2) {
+            printf("FAIL seed %u cyc %llu: a third memory-side request in flight\n", seed, (unsigned long long)cyc);
+            return 1;
+        }
         if (accept) {
             if (expect.size() >= 2) { printf("FAIL: third in flight\n"); return 1; }
             bool err = !cacheable(paddr, bytes) && !io(paddr);
             Exp e{pop, paddr, 0, err, false, cyc};
-            if (!err) {
+            if (!err && remote_region(paddr)) {
+                e.remote = true;                 // checked against the region's history
+                if (pop == 1) { ++own_issued[paddr & ~3u]; mexp.push_back({pop, paddr, pdata, pbe}); }
+                e.own = own_issued[paddr & ~3u];
+            } else if (!err) {
                 e.data = ref.perform(pop, paddr, pdata, pbe);
                 e.check = pop != 1;
                 if (!cacheable(paddr, bytes) || pop != 0) mexp.push_back({pop, paddr, pdata, pbe});
@@ -148,6 +229,7 @@ int main(int argc, char** argv) {
                 }
             } else if ((a & 3) || d.m_req_be != 0xf) { printf("FAIL: odd refill\n"); return 1; }
             uint32_t data = mem.perform(op, a, d.m_req_wdata, d.m_req_be);
+            if (op == 1 && remote_region(a)) hist[a & ~3u].push_back({cyc, mem.rd(a), ++own_done[a & ~3u], cyc});
             uint64_t lat = 1 + rng() % 2;
             if (stallmode >= 1) lat += rng() % 3;
             if (stallmode >= 2 && rng() % 16 == 0) lat += 16 + rng() % 48;

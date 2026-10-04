@@ -15,8 +15,12 @@
 // answered with its word. A fetch outside the cacheable main memory is
 // answered with i_rsp_error and never reaches the memory side (§4).
 // fencei_inval invalidates every line; a refill in progress then installs
-// nothing. At most two fetches are held, answered in acceptance order;
-// i_req_ready depends on the cache's registers only.
+// nothing, and no refill read is sent while data_pending says the data cache
+// still has posted stores the memory side has not answered — so a fetch after
+// fence.i sees every older store (the data cache answers a store to cacheable
+// memory when the memory side accepts it). At most two fetches are held,
+// answered in acceptance order; i_req_ready depends on the cache's registers
+// only.
 `timescale 1 ns / 1 ps
 module aster_l1i #(
     parameter logic [31:0] MEM_BASE = 32'h8000_0000
@@ -25,6 +29,7 @@ module aster_l1i #(
     input  logic        rst_n,
     input  logic [31:0] cacheable_bytes,   // the cacheable main memory's size (static)
     input  logic        invalidate,
+    input  logic        data_pending,      // the data cache's posted stores are not all answered
     // core side
     input  logic        i_req_valid,
     input  logic [31:2] i_req_addr,
@@ -65,6 +70,8 @@ module aster_l1i #(
     state_t      state;
     logic [2:0]  issued, received;    // refill words requested and answered
     logic        poisoned;            // invalidated during the refill: install nothing
+    logic        fenced;              // invalidated, and the data cache's posted stores not yet answered
+    logic        m_waiting;           // a refill read was presented and not accepted (it stays presented)
     logic [1:0]  replay_wait;
 
     logic        s2_ready, s2_answer, s2_free, s1_move, replay_issue, lookup_hit, refill_write;
@@ -84,7 +91,10 @@ module aster_l1i #(
     assign i_rsp_error  = !s2_cacheable;
     assign i_rsp_data   = s2_have || state == ANSWER ? s2_word : rd_data;
 
-    assign m_req_valid  = state == REFILL && issued != 3'd4 && issued - received < 3'd2;
+    // A read waiting since before an invalidation stays presented (§5): it is
+    // the refill in progress's, which installs nothing; no new one goes out
+    // while fenced.
+    assign m_req_valid  = state == REFILL && issued != 3'd4 && issued - received < 3'd2 && (!fenced || m_waiting);
     assign m_req_addr   = {s2_addr[31:4], issued[1:0]};
 
     assign chk_lookup      = s1_move;
@@ -128,8 +138,14 @@ module aster_l1i #(
             issued       <= '0;
             received     <= '0;
             poisoned     <= 1'b0;
+            fenced       <= 1'b0;
+            m_waiting    <= 1'b0;
             replay_wait  <= '0;
         end else begin
+            m_waiting <= m_req_valid && !m_req_ready;
+            // After fence.i, refills wait for the data cache's posted stores.
+            if (invalidate) fenced <= data_pending;
+            else if (!data_pending) fenced <= 1'b0;
             // Stage 1: loaded whenever it can accept (enabled by i_req_ready).
             if (i_req_ready) begin
                 s1_valid <= i_req_valid;

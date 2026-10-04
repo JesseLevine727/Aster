@@ -80,6 +80,7 @@ DIRECTED = ROOT / "verification/core/directed"     # the "directed" suite
 TRAPS = ROOT / "verification/core/traps"           # directed exceptions, in lockstep (18.3)
 INTERRUPTS = ROOT / "verification/core/interrupts" # self-checking programs in the shell alone (18.3)
 SELFCHECK = ROOT / "verification/core/selfcheck"   # self-checking programs too long for a Spike log (18.5)
+COHERENCE = ROOT / "verification/core/coherence"   # self-checking, with another master writing memory (18.6)
 C_TESTS = ROOT / "verification/core/c"             # C programs in lockstep (18.5): start.S, then main
 # Each C test's other sources, and the flags (the v1 software's, for the shell).
 C_SOURCES = {"dot8_jobs": ["software/benchmarks/dot8_kernels.c"]}
@@ -187,7 +188,8 @@ DUTS = {
         "dot8": True,
         "spike_args": ["--priv=m", "--pmpregions=0", "--triggers=0", "--wfi-as-nop"], "spike_traps": True,
         "shell_args": ["+bus_error_traps"],
-        "suites": ("rv32ui", "rv32um", "rv32ua", "rv32mi", "directed", "traps", "interrupts", "selfcheck", "c"),
+        "suites": ("rv32ui", "rv32um", "rv32ua", "rv32mi", "directed", "traps", "interrupts", "selfcheck",
+                   "coherence", "c"),
         "interrupt_suites": ("rv32ui", "rv32um", "rv32ua", "directed"),
         "word_loads": False,
         "prefetches": True,
@@ -258,7 +260,7 @@ def build(test: Path, march: str, out_dir: Path, prefix: str, arch: bool = False
     else:
         # Directed tests end the shell memory at their shell_memory_end symbol.
         # encoding.h (the CSR and cause names) comes with the vendored arch-test.
-        layout = DIRECTED if test.parent in (DIRECTED, TRAPS, INTERRUPTS, SELFCHECK) else ENV
+        layout = DIRECTED if test.parent in (DIRECTED, TRAPS, INTERRUPTS, SELFCHECK, COHERENCE) else ENV
         env = [f"-I{ENV}", f"-I{TESTS / 'macros/scalar'}", f"-I{ARCH_TESTS / 'env'}", f"-T{layout / 'link.ld'}"]
     if test.suffix != ".c":
         env += [f"-D{define}" for define in defines]
@@ -278,7 +280,7 @@ def build(test: Path, march: str, out_dir: Path, prefix: str, arch: bool = False
 def suite_dir(suite: str) -> Path:
     """A test suite's directory: the riscv-tests suites, or the shell's own directed ones."""
     return {"directed": DIRECTED, "traps": TRAPS, "interrupts": INTERRUPTS,
-            "selfcheck": SELFCHECK, "c": C_TESTS}.get(suite, TESTS / suite)
+            "selfcheck": SELFCHECK, "coherence": COHERENCE, "c": C_TESTS}.get(suite, TESTS / suite)
 
 
 def test_path(name: str) -> Path:
@@ -862,14 +864,19 @@ def splice_check(trace_text: str, log_text: str, tohost: int) -> tuple[bool, str
 
 def run_program(args, config, source: Path, prefix: str, arch: bool = False) -> Outcome:
     """Build, run and check one program (the four conditions in the module docstring)."""
-    shell_only = source.parent in (INTERRUPTS, SELFCHECK)
+    shell_only = source.parent in (INTERRUPTS, SELFCHECK, COHERENCE)
     spliced = args.interrupts is not None
     defines = ("ASTER_INTERRUPTS",) if spliced else ()
     if arch:
         defines += tuple(arch_case(source, config) or ())
     elf, binary, symbols = build(source, config["march"], args.build_dir, prefix, arch=arch, defines=defines)
-    extra = (("+irq_device",) if source.parent == INTERRUPTS else () if shell_only
-             else (f"+irq_random={args.interrupts}",) if spliced else ())
+    extra = (("+irq_device",) if source.parent == INTERRUPTS
+             # the program's own remote master (remote_mp or remote_sb), seeded per mode,
+             # its snoops as late as allowed under back-pressure, at once otherwise
+             else (f"+{source.stem}={(args.stall_seed or 0) + 1}", f"+remote_area={symbols['remote_area']:x}",
+                   *(("+lazy_snoops",) if args.stall_seed is not None else ()))
+             if source.parent == COHERENCE
+             else () if shell_only else (f"+irq_random={args.interrupts}",) if spliced else ())
     passed, status, trace_text, log_text = execute(args, config, elf, binary, symbols, arch=arch,
                                                    shell_only=shell_only, shell_extra=extra,
                                                    max_cycles=SELFCHECK_MAX_CYCLES if source.parent == SELFCHECK
@@ -1275,7 +1282,7 @@ def main() -> int:
     mode += f", random interrupts seed {args.interrupts}" if args.interrupts is not None else ""
     what = "riscv-arch-test programs" if args.arch else "tests"
     what += " pass in lockstep and by signature"
-    selfchecking = sum(1 for test in tests if test.parent in (INTERRUPTS, SELFCHECK))
+    selfchecking = sum(1 for test in tests if test.parent in (INTERRUPTS, SELFCHECK, COHERENCE))
     if selfchecking:
         what += f" ({selfchecking} self-checking programs in the shell alone)"
     covered = interrupt_coverage(args)

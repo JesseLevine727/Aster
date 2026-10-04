@@ -8,7 +8,9 @@
 // answer comes in order, with an error exactly outside the cacheable memory;
 // every fetch is accepted within 2,000 cycles of being presented and answered
 // within 2,000 of acceptance (and the run answers at least one per 50 cycles
-// on average).
+// on average). data_pending (the data cache's posted stores) is driven at
+// random: from the cycle after an invalidation no new refill read may go out
+// until it is low (a read already waiting stays presented).
 //     l1i_unit <seed> [cycles]
 #include "Vaster_l1i.h"
 #include "verilated.h"
@@ -27,7 +29,7 @@ int main(int argc, char** argv) {
     std::mt19937 rng(seed);
     Vaster_l1i d;
     const uint32_t bytes = 0x10000;
-    d.cacheable_bytes = bytes; d.invalidate = 0;
+    d.cacheable_bytes = bytes; d.invalidate = 0; d.data_pending = 0;
     d.clk = 0; d.rst_n = 0; d.eval(); d.clk = 1; d.eval(); d.clk = 0; d.eval(); d.clk = 1; d.eval(); d.clk = 0; d.rst_n = 1; d.eval();
     // memory: per word history of (cycle performed, value)
     std::map<uint32_t, std::vector<std::pair<uint64_t, uint32_t>>> hist;
@@ -55,6 +57,7 @@ int main(int argc, char** argv) {
     bool pulse_pending = false; uint64_t pulse_at = 0;
     uint64_t answered = 0, checked = 0;
     uint64_t waiting_since = 0;
+    bool fenced = false, m_waiting = false;   // the tb's view of the cache's hold
     for (uint64_t cyc = 0; cyc < ncycles; ++cyc) {
         // a "store" performs, then a fence.i pulse some cycles later
         if (!pulse_pending && rng() % 200 == 0) {
@@ -65,6 +68,7 @@ int main(int argc, char** argv) {
         bool pulse = pulse_pending && cyc >= pulse_at;
         if (pulse) pulse_pending = false;
         d.invalidate = pulse;
+        if (rng() % 10 == 0) d.data_pending = rng() % 3 == 0;   // spans of posted stores
         if (!pv && rng() % 100 < 80) {
             uint32_t r = rng() % 100;
             paddr = r < 95 ? 0x80000000u + (rng() % 2) * 4096 + (rng() % 4) * 16 + (rng() % 4) * 4 : 0x20000000u + (rng() % 4) * 4;
@@ -104,6 +108,14 @@ int main(int argc, char** argv) {
             printf("FAIL seed %u cyc %llu: a request not accepted for 2000 cycles\n", seed, (unsigned long long)cyc);
             return 1;
         }
+        if (d.m_req_valid && fenced && !m_waiting) {
+            printf("FAIL seed %u cyc %llu: a refill read after fence.i before the posted stores\n", seed, (unsigned long long)cyc);
+            return 1;
+        }
+        m_waiting = d.m_req_valid && !d.m_req_ready;
+        // Held from the cycle after an invalidation while data_pending is high
+        // (a refill in progress at the invalidation installs nothing).
+        fenced = pulse ? bool(d.data_pending) : fenced && d.data_pending;
         if (d.m_req_valid && d.m_req_ready) {
             uint32_t a = uint32_t(d.m_req_addr) << 2;
             uint64_t lat = 1 + rng() % 2;

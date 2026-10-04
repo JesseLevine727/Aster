@@ -93,7 +93,10 @@
 // §3). With +timer its registers are also mapped, in the CLINT layout Sail uses
 // (for ACT4) — mtimecmp at 0x0200_4000, mtime at 0x0200_BFF8, 64 bits each as
 // two words, mtimecmp starting at all ones — and MTIP is high while mtime >=
-// mtimecmp, or while the interrupt device holds it.
+// mtimecmp, or while the interrupt device holds it. A write to the timer takes
+// effect in the cycle it is answered (18.6), the latest a device may — or
+// before a later access to the timer — so a core that reads `time` or enables
+// interrupts before the write is answered sees the old state.
 //
 // Protocol checks (docs/cpu.md §4-§5; shell_ports.h):
 // - I_REQ_UNSTABLE: a fetch presented and not accepted must be presented
@@ -149,6 +152,7 @@
 //                                   malformed byte enables, 5 more than two data
 //                                   requests in flight, 6 a wrong rvfi_pc_wdata)
 //           [+io_page] [+console=<file>] [+kernel_end] [+v1_devices]   (v1's devices, above)
+//           [+remote_mp=<seed> | +remote_sb=<seed>] [+remote_area=<hex>] [+lazy_snoops]   (another master, above)
 //           [+retire_log=<file>]  (debugging: "order cycle pc" per retirement)
 //           [+bus_error_traps]     (a data access outside memory is answered with
 //                                   d_rsp_error and the run continues: the DUT must
@@ -370,10 +374,65 @@ struct V1Devices {
     bool irq0() const { return (pending & enable0) != 0; }
 };
 
+// Another master (+remote_mp=<seed>, with +remote_area=<hex>; 18.6's coherence
+// test, verification/core/coherence): it writes a message into the program's
+// 16-word remote_area again and again — data words 1-15 set to the message's
+// number n, one a cycle, then the flag word 0 set to n — after a random gap of
+// 20-219 cycles before each, up to message 1,000. With the caches each write's
+// line is presented on the data cache's snoop input in the cycle of the write
+// (docs/cpu.md §9, 18.6), and the cache model applies it there. The memory
+// performs the write in that cycle: a read accepted then or later sees it.
+struct RemoteMaster {
+    bool enabled = false;
+    std::uint32_t area = 0, n = 1, word = 1;     // the next write: word `word` of message n
+    long gap = 0;
+    std::mt19937 rng{1};
+    bool step(std::uint32_t& addr, std::uint32_t& value) {   // this cycle's write, if any
+        if (!enabled || n > 1000) return false;
+        if (gap > 0) { --gap; return false; }
+        addr = area + 4 * word;
+        value = n;
+        if (word == 0) { ++n; word = 1; gap = 20 + long(rng() % 200); }
+        else if (++word == 16) word = 0;
+        return true;
+    }
+};
+
+// Another master in a store-buffering litmus test (+remote_sb=<seed>, with
+// +remote_area=<hex>; verification/core/coherence/remote_sb.S). The area's
+// words: 0 GO and 4 X (written by the program), 8 Y, 12 DONE and 13 R2
+// (written here), each group in its own line. Round k: when GO reads k, wait
+// 0-23 cycles, write Y = k, read X in the next cycle (the write before the
+// read, as a fence orders them), write R2 = the X read, then DONE = k. The
+// program writes X = k, fences, reads Y, and fails if both reads missed the
+// other's write (Y and X both below k), which RVWMO forbids. Each write's line
+// is snooped in its cycle, as RemoteMaster's.
+struct RemoteSb {
+    bool enabled = false;
+    std::uint32_t area = 0, k = 1, x = 0;
+    int phase = 0;                               // 0 wait for GO, 1 delay, 2 Y, 3 read X, 4 R2, 5 DONE
+    long delay = 0;
+    std::mt19937 rng{1};
+    // snoops_owed: its writes' snoops not yet presented; it reads X only once
+    // they have been (it treats its write of Y as performed then).
+    bool step(shell::Memory& memory, bool snoops_owed, std::uint32_t& addr, std::uint32_t& value) {
+        if (!enabled) return false;
+        switch (phase) {
+            case 0: if (memory.read(area) == k) { phase = 1; delay = long(rng() % 24); } return false;
+            case 1: if (delay-- > 0) return false; phase = 2; [[fallthrough]];
+            case 2: phase = 3; addr = area + 32; value = k; return true;
+            case 3: if (snoops_owed) return false; phase = 4; x = memory.read(area + 16); return false;
+            case 4: phase = 5; addr = area + 52; value = x; return true;
+            default: phase = 0; addr = area + 48; value = k++; return true;
+        }
+    }
+};
+
 // The L1 model (+cache_model, above).
 struct L1Model {
     struct Access {
         std::uint32_t op, addr, be, data;
+        bool refill = false;
     };
     bool enabled = false;
     bool ignore_fencei = false;                  // self-test: the model misses fence.i's invalidation
@@ -392,6 +451,15 @@ struct L1Model {
         std::uint32_t line = 0, answered = 0;
         std::uint64_t cycle = 0;
     } refill;
+    // The data cache's refill in progress likewise: the line it replaces is gone
+    // at its miss; its own is installed with its fourth word unless another
+    // master's write to it was snooped after its miss (that word's cycle
+    // included; a snoop in the miss's own cycle comes before its lookup here,
+    // as in the cache, where the lookup already misses and the refill's reads
+    // follow the write). d_answers: the memory side's data requests accepted and
+    // not yet answered, true for a refill read.
+    Refill drefill;
+    std::deque<bool> d_answers;
     std::string error;
     L1Model() { itag.fill(-1); dtag.fill(-1); }
     bool cacheable(std::uint32_t a) const { return a - base < bytes; }
@@ -417,7 +485,8 @@ struct L1Model {
         if (!refill.poisoned) itag[(refill.line >> 4) & 255u] = refill.line >> 12;
         refill.active = false;
     }
-    void dlookup(std::uint32_t op, std::uint32_t a, std::uint32_t be, std::uint32_t data, bool hit) {
+    void dlookup(std::uint32_t op, std::uint32_t a, std::uint32_t be, std::uint32_t data, bool hit,
+                 std::uint64_t cycle) {
         const std::uint32_t index = (a >> 4) & 255u, tag = a >> 12;
         if (!cacheable(a)) {
             if (hit) fail("data lookup " + hex(a) + " hit outside the cacheable memory");
@@ -429,8 +498,9 @@ struct L1Model {
         if (op == 0) {                               // a load: a hit, or a refill of its line
             if (resident) { ++d_hits; return; }
             ++d_misses;
-            for (std::uint32_t w = 0; w < 4; ++w) d_expect.push_back({0, (a & ~15u) + 4 * w, 0xFu, 0});
-            dtag[index] = tag;
+            for (std::uint32_t w = 0; w < 4; ++w) d_expect.push_back({0, (a & ~15u) + 4 * w, 0xFu, 0, true});
+            dtag[index] = -1;                        // replaced; installed with the last word
+            drefill = {true, false, a & ~15u, 0, cycle};
             return;
         }
         d_expect.push_back({op, a, be, data});      // a store (no allocate) or an atomic
@@ -452,6 +522,20 @@ struct L1Model {
         if (op != want.op || a != want.addr || be != want.be || (writes && (data & lanes) != (want.data & lanes)))
             fail("memory-side access op " + std::to_string(op) + " at " + hex(a) + ", expected op "
                  + std::to_string(want.op) + " at " + hex(want.addr));
+        d_answers.push_back(want.refill);
+    }
+    void danswer() {                                 // the memory side answers a data request
+        if (d_answers.empty()) { fail("a memory-side answer with nothing in flight"); return; }
+        const bool refill_word = d_answers.front();
+        d_answers.pop_front();
+        if (!refill_word || !drefill.active || ++drefill.answered < 4) return;
+        if (!drefill.poisoned) dtag[(drefill.line >> 4) & 255u] = drefill.line >> 12;
+        drefill.active = false;
+    }
+    void dsnoop(std::uint32_t line) {                // another master wrote this line
+        const std::uint32_t index = (line >> 4) & 255u;
+        if (dtag[index] == std::int64_t(line >> 12)) dtag[index] = -1;
+        if (drefill.active && drefill.line == line) drefill.poisoned = true;
     }
     void fencei(std::uint64_t cycle) {
         if (ignore_fencei) return;
@@ -556,6 +640,24 @@ int main(int argc, char** argv) {
     timer.enabled = shell::plusflag("timer");
     V1Devices v1;
     v1.enabled = shell::plusflag("v1_devices");
+    RemoteMaster remote;
+    RemoteSb remote_sb;
+    struct Snoop { std::uint32_t line; long wait; };
+    std::deque<Snoop> snoop_queue;                       // snoops owed to the data cache
+    const bool lazy_snoops = shell::plusflag("lazy_snoops");
+    std::mt19937 snoop_rng(7);
+    if (!plusarg("remote_sb").empty()) {
+        if (plusarg("remote_area").empty()) { std::cerr << "+remote_sb needs +remote_area\n"; return 2; }
+        remote_sb.enabled = true;
+        remote_sb.rng.seed(std::stoul(plusarg("remote_sb")));
+        remote_sb.area = std::uint32_t(std::stoul(plusarg("remote_area"), nullptr, 16));
+    }
+    if (!plusarg("remote_mp").empty()) {
+        if (plusarg("remote_area").empty()) { std::cerr << "+remote_mp needs +remote_area\n"; return 2; }
+        remote.enabled = true;
+        remote.rng.seed(std::stoul(plusarg("remote_mp")));
+        remote.area = std::uint32_t(std::stoul(plusarg("remote_area"), nullptr, 16));
+    }
     if (!plusarg("timer_divider").empty()) timer.divider = std::max(1ul, std::stoul(plusarg("timer_divider")));
     if (irq.random) irq.rng.seed(std::stoul(plusarg("irq_random")));
     if (!plusarg("irq_period").empty()) irq.period = std::max(1ul, std::stoul(plusarg("irq_period")));
@@ -606,6 +708,17 @@ int main(int argc, char** argv) {
     };
     std::deque<Unanswered> unanswered;      // data writes the fetch port does not see yet
     std::uint64_t data_accepted = 0, data_answered = 0;
+    // The machine timer's writes take effect when they are answered (a device
+    // has performed a write when it answers it: the latest it may), or before a
+    // later access to the timer (a port's accesses take effect in order).
+    struct TimerWrite { std::uint64_t sequence; std::uint32_t addr, data, be; };
+    std::deque<TimerWrite> timer_writes;
+    auto timer_catch_up = [&](std::uint64_t answered) {
+        while (!timer_writes.empty() && timer_writes.front().sequence < answered) {
+            timer.store(timer_writes.front().addr, timer_writes.front().data, timer_writes.front().be);
+            timer_writes.pop_front();
+        }
+    };
     // A write performed at acceptance, kept from the fetch port until answered
     // (only writes to memory the core can fetch from: an io-page read has effects).
     auto write_data = [&](std::uint32_t address, std::uint32_t data, std::uint32_t mask) {
@@ -655,13 +768,34 @@ int main(int argc, char** argv) {
         d.d_rsp_valid = dport.responding();
         d.d_rsp_rdata = dport.responding() ? dport.owed.front().data : std::uint32_t(garbage());
         d.d_rsp_error = d_error_cycle ? d_error_next : garbage() & 1u;
+        // Another master's write this cycle (+remote_mp), snooped with the caches.
+        std::uint32_t remote_addr = 0, remote_value = 0;
+        const bool remote_write = remote.step(remote_addr, remote_value)
+                                  || remote_sb.step(memory, !snoop_queue.empty(), remote_addr, remote_value);
+        if (remote_write) memory.write(remote_addr, remote_value, 0xFu);
+        // Its snoop: now, or (+lazy_snoops) late, within the contract —
+        // queued until a random 0-15 cycles pass or the data cache presents a
+        // memory-side request (whose acceptance then waits for the queue to
+        // empty, one snoop a cycle).
+        if (remote_write && l1.enabled) snoop_queue.push_back({remote_addr & ~15u, lazy_snoops ? long(snoop_rng() % 16) : 0});
+        bool snoop_now = false;
+        std::uint32_t snoop_line = 0;
+        if (!snoop_queue.empty() && (snoop_queue.front().wait <= 0 || d.d_req_valid)) {
+            snoop_now = true;
+            snoop_line = snoop_queue.front().line;
+            snoop_queue.pop_front();
+        }
+        for (auto& queued : snoop_queue) --queued.wait;
+        d.snoop_valid = snoop_now;
+        d.snoop_line = snoop_line >> 4;
         d.meip = ((irq.level >> 11) & 1u) | v1.irq0();
+        timer_catch_up(data_answered + (dport.responding() ? 1 : 0));   // writes answered this cycle
         d.mtip = ((irq.level >> 7) & 1u) | timer.mtip();
         d.mtime = timer.mtime;
         d.cacheable_bytes = mem_bytes;
         d.msip = (irq.level >> 3) & 1u;
         d.i_req_ready = iport.remaining() < max_inflight && !(stall && rng() % 4 == 0);
-        d.d_req_ready = dport.remaining() < max_inflight && !(stall && rng() % 4 == 0);
+        d.d_req_ready = dport.remaining() < max_inflight && !(stall && rng() % 4 == 0) && snoop_queue.empty();
         d.eval();
         const bool i_accept = d.i_req_valid && d.i_req_ready;
         const bool d_accept = d.d_req_valid && d.d_req_ready;
@@ -699,15 +833,18 @@ int main(int argc, char** argv) {
             core_d_waits += d.chk_core_d_req_valid && !d.chk_core_d_req_ready;
         }
         if (l1.enabled) {
-            // This cycle's lookups (each against the lines before this edge), then
-            // the memory-side accesses and refill words, then fence.i's
-            // invalidation at the edge.
+            // This cycle's snoop (a lookup in its cycle already misses its line),
+            // then the lookups (each against the lines before this edge), then
+            // the memory-side accesses and answers, then fence.i's invalidation
+            // at the edge.
+            if (snoop_now) l1.dsnoop(snoop_line);
             if (d.chk_ic_lookup) l1.ilookup(std::uint32_t(d.chk_ic_addr) << 2, d.chk_ic_hit, cycles);
             if (d.chk_dc_lookup)
-                l1.dlookup(d.chk_dc_op, d.chk_dc_addr, d.chk_dc_be, d.chk_dc_wdata, d.chk_dc_hit);
+                l1.dlookup(d.chk_dc_op, d.chk_dc_addr, d.chk_dc_be, d.chk_dc_wdata, d.chk_dc_hit, cycles);
             if (i_accept) l1.ifetch(i_addr);
             if (d_accept) l1.daccess(d_op, d_addr, d_be, d_wdata);
             if (iport.responding()) l1.ianswer();
+            if (dport.responding()) l1.danswer();
             if (d.chk_fencei) l1.fencei(cycles);
             // With the caches the load check follows the core's loads into the
             // data cache (its lookups, in order) instead of the memory side's
@@ -756,9 +893,10 @@ int main(int argc, char** argv) {
                 if (d_op == kStore) {
                     ++accepted_writes;
                     if (v1.decodes(d_addr)) v1.store(d_addr, d_wdata, d_be);
-                    else timer.store(d_addr, d_wdata, d_be);
+                    else timer_writes.push_back({data_accepted, d_addr, d_wdata, d_be});
                     writes.push_back({d_addr & ~3u, d_be, d_wdata});
                 } else {
+                    if (!v1.decodes(d_addr)) timer_catch_up(~std::uint64_t(0));   // older writes first
                     rdata = v1.decodes(d_addr) ? v1.load(d_addr) : timer.load(d_addr);
                     memory_read(d_addr, d_be);
                 }

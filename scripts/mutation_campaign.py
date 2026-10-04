@@ -138,23 +138,33 @@ MUTANTS = {
  "l1i-kept-word-ignored": (I, "assign i_rsp_data   = s2_have || state == ANSWER ? s2_word : rd_data;", "assign i_rsp_data   = state == ANSWER ? s2_word : rd_data;"),
  "l1i-refill-writes-issued-slot": (I, ".wr_addr({s2_addr[11:4], received[1:0]}),", ".wr_addr({s2_addr[11:4], issued[1:0]}),"),
  # 18.6: the data cache
- "l1d-store-hit-not-written": (D, "s2_op == OP_STORE && s2_cacheable && s2_hit;", "s2_op == OP_STORE && s2_cacheable && s2_hit && 1'b0;"),
- "l1d-store-miss-written": (D, "s2_op == OP_STORE && s2_cacheable && s2_hit;", "s2_op == OP_STORE && s2_cacheable;"),
+ "l1d-store-hit-not-written": (D, "&& s2_cacheable && s2_hit;", "&& s2_cacheable && s2_hit && 1'b0;"),
+ "l1d-store-miss-written": (D, "&& s2_cacheable && s2_hit;", "&& s2_cacheable;"),
  "l1d-store-all-bytes": (D, ".wr_be(refill_write ? 4'hf : store_write ? s2_be : 4'h0),", ".wr_be(refill_write ? 4'hf : store_write ? 4'hf : 4'h0),"),
- "l1d-amo-keeps-line": (D, "                valid[s2_addr[11:4]] <= 1'b0;\n", "                ;\n"),
- "l1d-lr-invalidates": (D, "&& s2_op != OP_STORE && s2_op != OP_LR && s2_op != OP_LOAD)", "&& s2_op != OP_STORE && s2_op != OP_LOAD)"),
- "l1d-io-load-refills": (D, "if (s2_cacheable && s2_load && !s2_hit) begin", "if (s2_load && !s2_hit) begin"),
- "l1d-error-a-cycle-late": (D, "assign d_rsp_error  = s1_valid && s1_age == 2'd0 && !s1_cacheable && !s1_io;", "assign d_rsp_error  = s1_valid && s1_age == 2'd1 && !s1_cacheable && !s1_io;"),
- "l1d-now-ignores-stale": (D, "s2_now       <= s1_age == 2'd0 && !s1_stale && !array_write;", "s2_now       <= s1_age == 2'd0 && !array_write;"),
+ "l1d-amo-keeps-line": (D, "if (amo_inval) valid_next[s2_addr[11:4]] = 1'b0;", "if (1'b0) valid_next[s2_addr[11:4]] = 1'b0;"),
+ "l1d-lr-invalidates": (D, "s2_op != OP_STORE && s2_op != OP_LR && s2_op != OP_LOAD;", "s2_op != OP_STORE && s2_op != OP_LOAD;"),
+ "l1d-io-load-refills": (D, "end else if (s1_cacheable && s1_load) begin", "end else if (s1_load) begin"),
+ "l1d-error-a-cycle-late": (D, "assign d_rsp_error  = s1_valid && s1_age == 2'd0 && s1_error;", "assign d_rsp_error  = s1_valid && s1_age == 2'd1 && s1_error;"),
+ "l1d-now-ignores-stale": (D, "assign s1_now       = s1_age == 2'd0 && !s1_stale && !array_write;", "assign s1_now       = s1_age == 2'd0 && !array_write;"),
  "l1d-waiting-load-not-stale": (D, "                if (array_write) s1_stale <= 1'b1;\n", ""),
  "l1d-accepted-during-write-not-stale": (D, "                s1_stale <= array_write;", "                s1_stale <= 1'b0;"),
  "l1d-miss-answers-word0": (D, "if (received[1:0] == s2_addr[3:2]) s2_word <= m_rsp_rdata;", "if (received[1:0] == 2'd0) s2_word <= m_rsp_rdata;"),
  "l1d-refill-writes-issued-slot": (D, ".wr_addr(refill_write ? {s2_addr[11:4], received[1:0]} : s2_addr[11:2]),", ".wr_addr(refill_write ? {s2_addr[11:4], issued[1:0]} : s2_addr[11:2]),"),
  "l1d-kept-word-ignored": (D, "assign d_rsp_rdata  = s2_have || state == ANSWER ? s2_word : rd_data;", "assign d_rsp_rdata  = state == ANSWER ? s2_word : rd_data;"),
- "l1d-store-answers-before-memory": (D, "                    if (m_req_valid && m_req_ready) sent <= 1'b1;\n                    if (m_rsp_valid) begin", "                    if (m_req_valid && m_req_ready) sent <= 1'b1;\n                    if (m_req_valid && m_req_ready) begin"),
+ "l1d-everything-posted": (D, "s2_post      <= s1_cacheable && s1_op == OP_STORE;", "s2_post      <= 1'b1;"),
+ "l1d-io-store-posted": (D, "s2_post      <= s1_cacheable && s1_op == OP_STORE;", "s2_post      <= s1_op == OP_STORE;"),
+ "l1d-posted-answers-not-dropped": (D, "posted   <= posted + (m_accept && state == ACCESS && s2_post ? 2'd1 : 2'd0) - (m_drop ? 2'd1 : 2'd0);", "posted   <= '0;"),
+ "l1d-inflight-unlimited": (D, "assign m_req_valid  = inflight != 2'd2 && (", "assign m_req_valid  = ("),
+ "l1d-snoop-not-invalidating": (D, "assign snoop_hit = snoop_valid &&", "assign snoop_hit = 1'b0 && snoop_valid &&"),
+ "l1d-snoop-no-bypass": (D, "                          && !snoop_s1;", "                          ;"),
+ "l1d-refill-not-poisoned-by-snoop": (D, "if (snoop_s2) poisoned <= 1'b1;", ""),
+ "l1d-refill-keeps-replaced-line": (D, "if (refill_start) valid_next[s1_addr[11:4]] = 1'b0;", ""),
+ "l1d-snooped-last-word-installed": (D, "&& !poisoned && !snoop_s2;", "&& !poisoned;"),
+ "l1i-no-hold-after-fencei": (I, "&& (!fenced || m_waiting);", ";"),
+ "l1i-hold-withdraws-waiting": (I, "(!fenced || m_waiting)", "!fenced"),
 }
 # The core's mutants that only the caches' timing exposes: run on the cached core.
-CACHED = {"serialization-m1-only", "fencei-no-invalidate"}
+CACHED = {"fencei-no-invalidate"}
 
 
 def cached(name: str) -> bool:

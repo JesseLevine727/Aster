@@ -17,7 +17,11 @@ module l1d_unit (
     output logic [3:0]  m_req_be,
     input  logic        m_req_ready, m_rsp_valid,
     input  logic [31:0] m_rsp_rdata,
-    input  logic        m_rsp_error
+    input  logic        m_rsp_error,
+    input  logic        snoop_valid,
+    input  logic [31:4] snoop_line,
+    output logic        posted_pending,
+    output logic        chk_lookup           // a request's lookup, in acceptance order
 );
     localparam logic [2*32-1:0] IO_BASE = {32'h3000_0000, 32'h2000_0000};
     localparam logic [2*32-1:0] IO_MASK = {32'h0000_0003, 32'h0000_FFFF};
@@ -26,6 +30,6 @@ module l1d_unit (
         .clk, .rst_n, .cacheable_bytes, .d_req_valid, .d_req_op, .d_req_addr, .d_req_wdata, .d_req_be,
         .d_req_ready, .d_rsp_valid, .d_rsp_rdata, .d_rsp_error,
         .m_req_valid, .m_req_op, .m_req_addr, .m_req_wdata, .m_req_be, .m_req_ready,
-        .m_rsp_valid, .m_rsp_rdata, .m_rsp_error,
-        .chk_lookup(), .chk_lookup_op(), .chk_lookup_addr(), .chk_lookup_be(), .chk_lookup_wdata(), .chk_lookup_hit());
+        .m_rsp_valid, .m_rsp_rdata, .m_rsp_error, .snoop_valid, .snoop_line, .posted_pending,
+        .chk_lookup, .chk_lookup_op(), .chk_lookup_addr(), .chk_lookup_be(), .chk_lookup_wdata(), .chk_lookup_hit());
 endmodule

@@ -14,7 +14,10 @@
 // store's or a load's. The data cache's one I/O window, the register page
 // 0x2000_0000, is answered by the same block RAM (the address bits above its
 // index are ignored), as a device would be. The interrupt lines are inputs, so
-// their logic is timed.
+// their logic is timed; so are the data cache's snoops (another master's
+// writes) and the memory's readiness on each side (back-pressure), registered
+// here as a fabric would present them: the memory performs a request only when
+// ready.
 `timescale 1 ns / 1 ps
 module timing_aster_l1 (
     input  logic        clk,
@@ -23,6 +26,9 @@ module timing_aster_l1 (
     input  logic        mtip,
     input  logic        msip,
     input  logic [63:0] mtime,
+    input  logic        snoop_valid_in,
+    input  logic [31:4] snoop_line_in,
+    input  logic [1:0]  mem_ready_in,      // the memory's readiness: [0] instruction side, [1] data
     output logic [31:0] observe            // keeps the data path observable
 );
     localparam int unsigned WORDS = 128 * 1024 / 4;
@@ -35,7 +41,15 @@ module timing_aster_l1 (
     logic        c_d_req_valid, c_d_req_ready, c_d_rsp_valid, c_d_rsp_error;
     logic [3:0]  c_d_req_op, c_d_req_be;
     logic [31:0] c_d_req_addr, c_d_req_wdata, c_d_rsp_rdata;
-    logic        fencei_inval;
+    logic        fencei_inval, posted_pending, snoop_valid;
+    logic [31:4] snoop_line;
+    logic        i_ready, d_ready;
+    always_ff @(posedge clk) begin
+        snoop_valid <= rst_n && snoop_valid_in;
+        snoop_line  <= snoop_line_in;
+        i_ready     <= mem_ready_in[0];
+        d_ready     <= mem_ready_in[1];
+    end
     // The caches' memory sides, to the block RAM (the address bits above its
     // index are not decoded).
     logic        m_i_req_valid, m_i_rsp_valid;
@@ -78,10 +92,10 @@ module timing_aster_l1 (
     );
 
     aster_l1i icache (
-        .clk, .rst_n, .cacheable_bytes(32'(WORDS * 4)), .invalidate(fencei_inval),
+        .clk, .rst_n, .cacheable_bytes(32'(WORDS * 4)), .invalidate(fencei_inval), .data_pending(posted_pending),
         .i_req_valid(c_i_req_valid), .i_req_addr(c_i_req_addr), .i_req_ready(c_i_req_ready),
         .i_rsp_valid(c_i_rsp_valid), .i_rsp_data(c_i_rsp_data), .i_rsp_error(c_i_rsp_error),
-        .m_req_valid(m_i_req_valid), .m_req_addr(m_i_req_addr), .m_req_ready(1'b1),
+        .m_req_valid(m_i_req_valid), .m_req_addr(m_i_req_addr), .m_req_ready(i_ready),
         .m_rsp_valid(m_i_rsp_valid), .m_rsp_data(m_i_rsp_data), .m_rsp_error(1'b0),
         .chk_lookup(), .chk_lookup_addr(), .chk_lookup_hit()
     );
@@ -91,8 +105,9 @@ module timing_aster_l1 (
         .d_req_wdata(c_d_req_wdata), .d_req_be(c_d_req_be), .d_req_ready(c_d_req_ready),
         .d_rsp_valid(c_d_rsp_valid), .d_rsp_rdata(c_d_rsp_rdata), .d_rsp_error(c_d_rsp_error),
         .m_req_valid(m_d_req_valid), .m_req_op(m_d_req_op), .m_req_addr(m_d_req_addr),
-        .m_req_wdata(m_d_req_wdata), .m_req_be(m_d_req_be), .m_req_ready(1'b1),
+        .m_req_wdata(m_d_req_wdata), .m_req_be(m_d_req_be), .m_req_ready(d_ready),
         .m_rsp_valid(m_d_rsp_valid), .m_rsp_rdata(m_d_rsp_rdata), .m_rsp_error(1'b0),
+        .snoop_valid, .snoop_line, .posted_pending,
         .chk_lookup(), .chk_lookup_op(), .chk_lookup_addr(), .chk_lookup_be(), .chk_lookup_wdata(),
         .chk_lookup_hit()
     );
@@ -107,19 +122,19 @@ module timing_aster_l1 (
     assign i_index = m_i_req_addr[AW+1:2];
     assign d_index = m_d_req_addr[AW+1:2];
     always_ff @(posedge clk) begin
-        i_v1 <= rst_n && m_i_req_valid;
+        i_v1 <= rst_n && m_i_req_valid && i_ready;
         i_v2 <= rst_n && i_v1;
-        d_v1 <= rst_n && m_d_req_valid;
+        d_v1 <= rst_n && m_d_req_valid && d_ready;
         d_v2 <= rst_n && d_v1;
     end
     // Port A: the instruction cache's refills.
     always_ff @(posedge clk) begin
-        if (m_i_req_valid) i_q <= ram[i_index];
+        if (m_i_req_valid && i_ready) i_q <= ram[i_index];
         i_q2 <= i_q;
     end
     // Port B: the data cache's accesses (byte-enabled writes; reads otherwise).
     always_ff @(posedge clk) begin
-        if (m_d_req_valid) begin
+        if (m_d_req_valid && d_ready) begin
             if (m_d_req_op == 4'd1) begin
                 for (int b = 0; b < 4; b++) if (m_d_req_be[b]) ram[d_index][8*b +: 8] <= m_d_req_wdata[8*b +: 8];
             end

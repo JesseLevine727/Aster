@@ -40,6 +40,8 @@ module shell_aster_ports #(
     input  logic        msip,
     input  logic [63:0] mtime,
     input  logic [31:0] cacheable_bytes,
+    input  logic        snoop_valid,       // another master wrote this line (with the caches)
+    input  logic [31:4] snoop_line,
     output logic        trap,
     output logic        chk_i_redirect,
     // L1 lookups (18.6)
@@ -134,8 +136,9 @@ module shell_aster_ports #(
         // The shell's devices (its I/O windows): BASE and MASK per window.
         localparam logic [4*32-1:0] IO_BASE = {32'h0200_BFF8, 32'h0200_4000, 32'h3000_0000, 32'h2000_0000};
         localparam logic [4*32-1:0] IO_MASK = {32'h0000_0007, 32'h0000_0007, 32'h0000_0003, 32'h0000_FFFF};
+        logic posted_pending;
         aster_l1i icache (
-            .clk, .rst_n(resetn), .cacheable_bytes, .invalidate(fencei_inval),
+            .clk, .rst_n(resetn), .cacheable_bytes, .invalidate(fencei_inval), .data_pending(posted_pending),
             .i_req_valid(k_i_req_valid), .i_req_addr(c_i_req_addr), .i_req_ready(c_i_req_ready),
             .i_rsp_valid(c_i_rsp_valid), .i_rsp_data(c_i_rsp_data), .i_rsp_error(c_i_rsp_error),
             .m_req_valid(i_req_valid), .m_req_addr(i_req_addr), .m_req_ready(i_req_ready),
@@ -154,6 +157,7 @@ module shell_aster_ports #(
             .m_req_valid(d_req_valid), .m_req_op(d_req_op), .m_req_addr(d_req_addr), .m_req_wdata(d_req_wdata),
             .m_req_be(d_req_be), .m_req_ready(d_req_ready),
             .m_rsp_valid(d_rsp_valid), .m_rsp_rdata(d_rsp_rdata), .m_rsp_error(d_rsp_error),
+            .snoop_valid, .snoop_line, .posted_pending,
             .chk_lookup(chk_dc_lookup), .chk_lookup_op(chk_dc_op), .chk_lookup_addr(chk_dc_addr),
             .chk_lookup_be(chk_dc_be), .chk_lookup_wdata(chk_dc_wdata), .chk_lookup_hit(chk_dc_hit)
         );
@@ -194,6 +198,8 @@ module shell_aster_ports #(
         assign {chk_ic_lookup, chk_ic_addr, chk_ic_hit} = '0;
         assign {chk_dc_lookup, chk_dc_op, chk_dc_addr, chk_dc_be, chk_dc_wdata, chk_dc_hit} = '0;
         assign chk_fencei = 1'b0;
+        logic unused_snoop;                // no caches to snoop
+        assign unused_snoop = snoop_valid ^ (^snoop_line);
     end endgenerate
 
     /* verilator lint_off PINCONNECTEMPTY */

@@ -46,6 +46,8 @@ module shell_picorv32_ports (
     output logic        chk_dc_hit,
     output logic        chk_fencei,
     output logic        chk_div_wait,
+    input  logic        snoop_valid,       // unused: no caches here
+    input  logic [31:4] snoop_line,
     output logic        chk_core_i_req_valid,
     output logic [31:2] chk_core_i_req_addr,
     output logic        chk_core_i_req_ready,
@@ -125,7 +127,7 @@ module shell_picorv32_ports (
     end
 
     logic unused;
-    assign unused = i_rsp_error ^ d_rsp_error ^ meip ^ mtip ^ msip ^ (^mtime) ^ (^cacheable_bytes);   // PicoRV32 has no bus-error input, and no IRQ, timer or caches here
+    assign unused = i_rsp_error ^ d_rsp_error ^ meip ^ mtip ^ msip ^ (^mtime) ^ (^cacheable_bytes) ^ snoop_valid ^ (^snoop_line);   // PicoRV32 has no bus-error input, and no IRQ, timer or caches here
     assign {chk_ic_lookup, chk_ic_addr, chk_ic_hit, chk_dc_lookup, chk_dc_op, chk_dc_addr, chk_dc_be, chk_dc_wdata, chk_dc_hit, chk_fencei, chk_div_wait} = '0;
     // No caches here: the shell checks its ports, which are the core's.
     assign {chk_core_i_req_valid, chk_core_i_req_addr, chk_core_i_req_ready, chk_core_i_redirect,

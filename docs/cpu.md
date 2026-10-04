@@ -661,8 +661,13 @@ acceptance with 18.6:
   after its lookup, after it has left M1, so a `time` read right behind a
   store to `mtime` read the old value — ACT4's `Sm_mcsr_cntr`
   (`cp_mtime_write`) failed on the cached core. With M2 empty every older
-  access has been answered, and the cache answers a store only once the
-  memory side has. The cost is the wait for an older access in M2 to be
+  access has been answered, and the cache answers a store to a device (an
+  I/O window) only once the memory side has (a store to cacheable memory,
+  which no CSR shadows, is answered once accepted: "Changes after approval",
+  4 October). The core without its caches needs the rule as well: a device
+  may take a write as late as its answer, and once the shell's timer did
+  (18.6), 18.3's M1-only rule read a stale `time` there too; it had passed
+  only because the shell's timer took writes at acceptance. The cost is the wait for an older access in M2 to be
   answered: one cycle more on the two-cycle memory, longer behind a miss, a
   store through the data cache or back-pressure;
   the CPI model follows it (still exact on every suite), and no kernel's
@@ -686,8 +691,13 @@ acceptance with 18.6:
   The data cache answers a request outside that memory and its I/O windows
   with `d_rsp_error`, in the cycle after acceptance, decoded from the
   registered address, without a memory-side access. I/O loads and stores pass
-  through. Stores are written through, also into the array on a hit, allocating
-  nothing on a miss, and are answered once the memory side has answered.
+  through. Stores are written through, also into the array on a hit,
+  allocating nothing on a miss. A store to cacheable memory goes to the memory
+  side in its first cycle at the head and is answered in the cycle after the
+  memory side accepts it (posted, below); its answer from the memory side is dropped;
+  a store in an I/O window is answered once the memory side has answered, so
+  the CSR rule above keeps holding for devices. A miss likewise sends its
+  first read in its first cycle at the head.
   `lr`, `sc` and the AMOs pass through: the memory side performs them and
   holds the reservation (18.4), and `sc` and the AMOs invalidate their line.
   The instruction cache answers a fetch outside the cacheable memory with
@@ -699,6 +709,17 @@ acceptance with 18.6:
   check follows the core's loads into the data cache. A long-stall mode
   (`+long_stall`: one access in sixteen is 16–63 cycles late) and random unit
   tests of each cache against a flat memory complete the gate's back-pressure.
+  For coherence the shell has another master (`+remote_mp`, `+remote_sb`)
+  that writes memory and presents each snoop in the cycle of its write, or
+  with `+lazy_snoops` (in the back-pressure modes) later, within the
+  contract — held until the cache presents a memory-side request, whose
+  acceptance waits for every owed snoop, or up to 15 cycles; the caches'
+  unit test does both (seeds 4–7 mod 8 late). Two self-checking programs run
+  against it, message
+  passing and store buffering with fences (`verification/core/coherence`).
+  The shell's machine timer takes a write in the cycle it answers it, the
+  latest a device may, so a core that reads `time` or enables interrupts
+  before the write is answered is caught.
 - §6: for ACT4 the shell's timer counts once per 8 cycles
   (`RVMODEL_MAX_CYCLES_PER_TIMER_TICK` 8, ACT4's provision for a timer slower
   than the core; Spike's own configuration uses 100). `InterruptsSm` expects
@@ -789,6 +810,45 @@ Changes after approval, by the owner:
   core; the CPU shell's machine timer drives it and `mtip`, and the SoC's timer
   will drive it (Phase 20, §3). This replaces 18.3's choice of the core's own
   counter, made among three options that did not include the platform's timer.
+- **4 October 2026 — coherence and posted stores (§4, §5):** shown that
+  write-through alone leaves this core's data cache holding stale lines when
+  another hart, the DMA or the NPU writes memory, the owner chose real
+  coherence over invalidating on `fence` or keeping shared buffers uncached;
+  and shown that a write-through store answered only after the memory side
+  costs at least five cycles, the owner chose to answer a store to cacheable
+  memory when the memory side accepts it. The data cache:
+  - gains a snoop input on which the memory side presents the line of each
+    write another master makes to cacheable memory (`snoop_valid`,
+    `snoop_line`). It must present the snoops in the order of the writes, and
+    each no later than the first cycle any other master can observe the write
+    (or its writer treat it as performed) and no later than the cycle it
+    accepts any request of this cache that it orders after the write; a read
+    it accepts after a snoop's cycle returns that write or newer. (Merely
+    preceding the answers that show the write is not enough for RVWMO: a load
+    that hits has no answer, so store buffering with fences could read a
+    stale line);
+  - invalidates the snooped line at the edge ending that cycle; a lookup in
+    that cycle already misses it;
+  - installs nothing from a refill of the snooped line in progress (from the
+    cycle after its lookup through its last word); a refill invalidates the
+    line it replaces as it starts;
+  - answers a store to cacheable memory in the cycle after the memory side
+    accepts it (from a register, so the memory side's readiness never reaches
+    the core's pipeline: answering in the cycle of acceptance would put it
+    there, and §5 lets that readiness depend on the request), keeping at most
+    two memory-side requests in flight, posted stores included, and drops
+    their later answers. A store takes three cycles from acceptance to answer
+    instead of at least five. Stores in I/O windows still wait for the memory
+    side's answer.
+
+  The instruction cache stays coherent through `fence.i`, as the ISA
+  requires: after `fence.i` it sends no new refill read until the data cache
+  has no posted store unanswered (`posted_pending`), so the fetch sees every
+  older store. The Phase 20 fabric must present the snoops, and must keep
+  §5's rule that a port's accesses take effect in acceptance order, whatever
+  their targets — with posted stores, 18.4's "`fence` needs nothing" rests on
+  that rule: a store's acceptance by the memory side is its place in the
+  global memory order.
 - **3 October 2026 — the 18.6 L1 (§4, §5, §8):** the owner set what the plan
   left open (its SKY130 array plan having been withdrawn): an instruction and a
   data cache of **4 KiB each, direct-mapped, with 16-byte lines** (v1's line);
