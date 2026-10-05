@@ -49,6 +49,13 @@
 // (minimal strides) on the memory as configured and prints its cycles and
 // utilization (useful MACs / (16 x JOB_CYCLES)) — the same-shell measurement.
 //
+// +conv=H,W,C,KH,KW,N (ABI 2) runs a convolution of an H x W image with C
+// channels (channels last) by an KH x KW kernel into N output channels, stride
+// 1, no padding, both ways — direct (A in two levels over the image, npu.md
+// §4.5) and im2col (the shell writes the M x K matrix first, as the CPU
+// would, then a plain job) — checks the two results equal, and prints each
+// job's cycles and utilization and the bytes im2col writes.
+//
 // +selftest=N plants a fault the shell must report: 1 a C byte corrupted
 // before the comparison (MEMORY_MISMATCH); 3 BYTES_WRITTEN misread by one
 // (COUNTER_MISMATCH); 2, 4 and 5 are the DUT wrapper's (shell_npu_v1.sv).
@@ -98,7 +105,7 @@ enum : std::uint32_t {
     V2_MODE = 0x034, V2_ERROR_CODE = 0x038, V2_JOB_CYCLES = 0x080, V2_JOB_ACTIVE = 0x088, V2_JOB_MACS = 0x090,
     V2_JOB_READ = 0x098, V2_JOB_WRITTEN = 0x0A0, V2_JOB_TILES = 0x0A8, V2_TOTAL_JOBS = 0x100,
     V2_TOTAL_CYCLES = 0x108, V2_TOTAL_ACTIVE = 0x110, V2_TOTAL_MACS = 0x118, V2_TOTAL_READ = 0x120,
-    V2_TOTAL_WRITTEN = 0x128,
+    V2_TOTAL_WRITTEN = 0x128, V2_A_M0 = 0x03C, V2_A_STRIDE_M1 = 0x040, V2_A_K0 = 0x044, V2_A_STRIDE_K1 = 0x048,
 };
 enum : std::uint32_t { START = 1, ABORT = 2, ACK = 4, CLEAR_TOTALS = 8 };
 
@@ -129,6 +136,9 @@ public:
     std::uint64_t cycles = 0;
     std::set<std::string> covered;
     JobCounters last;
+    // The memory as the CPU would see it (for +conv's im2col and result compare).
+    std::uint8_t peek(std::uint32_t addr) const { return memory.at(addr); }
+    void poke(std::uint32_t addr, std::uint8_t value) { memory.at(addr) = value; }
 
     void fail(const std::string& status, const std::string& detail) {
         if (failure.empty()) {
@@ -225,7 +235,13 @@ public:
             {A_BASE, j.a_base}, {B_BASE, j.b_base}, {C_BASE, j.c_base}, {A_STRIDE, j.a_stride},
             {B_STRIDE, j.b_stride}, {C_STRIDE, j.c_stride}, {REG_M, j.m}, {REG_N, j.n}, {REG_K, j.k}};
         for (const auto& [offset, value] : fields) reg(true, offset, value);
-        if (p.abi == 2) reg(true, V2_MODE, j.mode);
+        if (p.abi == 2) {
+            reg(true, V2_MODE, j.mode);
+            reg(true, V2_A_M0, j.a_m0);
+            reg(true, V2_A_STRIDE_M1, j.a_stride_m1);
+            reg(true, V2_A_K0, j.a_k0);
+            reg(true, V2_A_STRIDE_K1, j.a_stride_k1);
+        }
     }
 
     bool terminal(std::uint32_t status) const { return status & (p.done_bit | p.error_bit | p.aborted_bit); }
@@ -246,11 +262,15 @@ public:
         if (p.abi != 2) return;
         sweep("out of reset");
         for (std::uint32_t offset = 0x004; offset < 0x1000; offset += 4)
-            if (offset < A_BASE || offset > V2_MODE) reg(true, offset, 0xFFFFFFFFu);
+            if ((offset < A_BASE || offset > V2_MODE) && (offset < V2_A_M0 || offset > V2_A_STRIDE_K1))
+                reg(true, offset, 0xFFFFFFFFu);
         sweep("after writes to read-only and unmapped offsets");
-        reg(true, V2_MODE, 2);
-        if (reg(false, V2_MODE) != 2) fail("STATUS_MISMATCH", "MODE does not read back");
-        reg(true, V2_MODE, 0);
+        for (const std::uint32_t offset : {V2_MODE, V2_A_M0, V2_A_STRIDE_M1, V2_A_K0, V2_A_STRIDE_K1}) {
+            const std::uint32_t value = offset == V2_MODE ? 2u : 0x9E3779B9u ^ offset;
+            reg(true, offset, value);
+            if (reg(false, offset) != value) fail("STATUS_MISMATCH", "register " + hex(offset) + " does not read back");
+            reg(true, offset, 0);
+        }
         covered.insert("register_map");
     }
 
@@ -314,7 +334,7 @@ public:
         bool busy_during_writes = false;
         if (kind == Kind::BusyWrites) {
             // Descriptor writes and START while busy must be ignored.
-            write_descriptor({0x1234u, 0x5678u, 0x9abcu, 1, 1, 4, 3, 3, 3, 1});
+            write_descriptor({0x1234u, 0x5678u, 0x9abcu, 1, 1, 4, 3, 3, 3, 1, 7, 9, 11, 13});
             control(START);
             busy_during_writes = d.chk_busy;
         }
@@ -414,7 +434,10 @@ public:
             check_totals();
         }
         if (kind == Kind::BusyWrites) {
-            if (reg(false, A_BASE) != j.a_base || reg(false, REG_K) != j.k || (p.abi == 2 && reg(false, V2_MODE) != j.mode))
+            if (reg(false, A_BASE) != j.a_base || reg(false, REG_K) != j.k
+                || (p.abi == 2 && (reg(false, V2_MODE) != j.mode || reg(false, V2_A_M0) != j.a_m0
+                                   || reg(false, V2_A_STRIDE_M1) != j.a_stride_m1 || reg(false, V2_A_K0) != j.a_k0
+                                   || reg(false, V2_A_STRIDE_K1) != j.a_stride_k1)))
                 fail("STATUS_MISMATCH", "a descriptor write while busy took effect");
             else if (busy_during_writes) covered.insert("busy_writes");
         }
@@ -660,6 +683,11 @@ private:
                 covered.insert("ksplit_k%4=" + dec(j.k % 4));
             }
             if (!npu::v2_ksplit(j) && j.n == 1 && j.m && j.k) covered.insert("tiles_n1");
+            if (j.m && j.k && j.a_m0 && j.a_m0 < j.m) covered.insert("a_two_level_m");
+            if (j.m && j.k && j.a_k0 && j.a_k0 < j.k) covered.insert("a_two_level_k");
+            if (j.m && j.k && j.a_m0 && j.a_k0 && j.a_k0 < j.k && j.a_m0 < j.m) covered.insert("a_conv");
+            if (j.m && j.k && j.a_k0 && j.a_k0 < j.k && j.k % j.a_k0) covered.insert("a_k0_partial");
+            if (j.m > 4 && j.k && j.a_m0 && j.a_m0 < j.m && j.a_m0 % 4) covered.insert("a_m0_wraps_strip");
             if (j.m > 1 && j.k && j.a_stride < j.k) covered.insert("a_rows_overlap");
             if (j.k > 1 && j.n && j.b_stride < j.n) covered.insert("b_rows_overlap");
             if (j.m && j.k && j.n && (j.n + 3) / 4 > 4096 / j.k) covered.insert("multiple_panels");
@@ -729,6 +757,53 @@ int main(int argc, char** argv) {
         return shell.failure.empty() ? 0 : 1;
     }
 
+    if (!plusarg("conv").empty()) {
+        unsigned h = 0, w = 0, c = 0, kh = 0, kw = 0, n = 0;
+        if (profile.abi != 2 || std::sscanf(plusarg("conv").c_str(), "%u,%u,%u,%u,%u,%u", &h, &w, &c, &kh, &kw, &n) != 6
+            || kh > h || kw > w) {
+            std::cerr << "+conv=H,W,C,KH,KW,N (ABI 2)\n";
+            return 2;
+        }
+        const std::uint32_t oh = h - kh + 1, ow = w - kw + 1, m = oh * ow, k = kh * kw * c;
+        auto align = [](std::uint32_t a) { return (a + 3) & ~3u; };
+        const std::uint32_t image = profile.mem_base, weights = align(image + h * w * c);
+        const std::uint32_t out = align(weights + k * n), matrix = align(out + 4 * m * n);
+        if (matrix + m * k > profile.mem_base + profile.mem_bytes) { std::cerr << "the convolution does not fit\n"; return 2; }
+        npu::Job direct;
+        direct.a_base = image; direct.a_stride = c; direct.a_m0 = ow; direct.a_stride_m1 = w * c;
+        direct.a_k0 = kw * c; direct.a_stride_k1 = w * c;
+        direct.b_base = weights; direct.b_stride = n; direct.c_base = out; direct.c_stride = 4 * n;
+        direct.m = m; direct.n = n; direct.k = k;
+        std::mt19937 rng(seed);
+        if (npu::expected_error(profile, direct)) { std::cerr << "the convolution's descriptor is an error\n"; return 2; }
+        shell.run_job(direct, Kind::Normal, rng);
+        const JobCounters d_counters = shell.last;
+        std::vector<std::uint8_t> result(4 * m * n);
+        for (std::uint32_t i = 0; i < result.size(); ++i) result[i] = shell.peek(out + i);
+        // im2col: row (oy, ox), column (ky, kx, channel) — the CPU's work, not timed.
+        for (std::uint32_t oy = 0; oy < oh; ++oy)
+            for (std::uint32_t ox = 0; ox < ow; ++ox)
+                for (std::uint32_t ky = 0; ky < kh; ++ky)
+                    for (std::uint32_t kx = 0; kx < kw; ++kx)
+                        for (std::uint32_t ch = 0; ch < c; ++ch)
+                            shell.poke(matrix + (oy * ow + ox) * k + (ky * kw + kx) * c + ch,
+                                       shell.peek(image + ((oy + ky) * w + ox + kx) * c + ch));
+        for (std::uint32_t i = 0; i < result.size(); ++i) shell.poke(out + i, std::uint8_t(~result[i]));
+        npu::Job lowered = direct;
+        lowered.a_base = matrix; lowered.a_stride = k; lowered.a_m0 = lowered.a_stride_m1 = lowered.a_k0 = lowered.a_stride_k1 = 0;
+        shell.run_job(lowered, Kind::Normal, rng);
+        for (std::uint32_t i = 0; i < result.size() && shell.failure.empty(); ++i)
+            if (shell.peek(out + i) != result[i]) shell.fail("MEMORY_MISMATCH", "the two lowerings' results differ");
+        const double macs = double(m) * n * k;
+        auto util = [&](std::uint64_t cyc) { return cyc ? 100.0 * macs / (16.0 * double(cyc)) : 0.0; };
+        std::printf("NPU %s profile=%s conv=%ux%ux%u kernel=%ux%u n=%u m=%u k=%u direct_cycles=%llu direct_utilization=%.4f%% "
+                    "im2col_cycles=%llu im2col_utilization=%.4f%% im2col_bytes=%u\n",
+                    shell.failure.empty() ? "PASS" : shell.failure.c_str(), profile.name.c_str(), h, w, c, kh, kw, n, m, k,
+                    (unsigned long long)d_counters.cycles, util(d_counters.cycles), (unsigned long long)shell.last.cycles,
+                    util(shell.last.cycles), m * k);
+        return shell.failure.empty() ? 0 : 1;
+    }
+
     if (plusflag("edges")) {
         // The directed edge list (ABI 2): the limits, every panel shape, zero
         // strides, empty regions outside the window, and extents past 2^32.
@@ -762,6 +837,25 @@ int main(int argc, char** argv) {
             {base + 3, base + 0x2001, base + 0x3000, 5, 1, 4, 11, 1, 23, 0},           // A rows overlapping
             {base, base + 0x2000, base + 0x3000, 37, 1, 4, 4096, 1, 0, 0},             // K = 0, M at the limit
             {base + 1, base + 0x2003, base + 0x3000, 37, 1, 4, 9, 1, 37, 1},           // N = 1 as tiles (MODE 1)
+            // A in two levels (19.3): a_base, ..., mode, A_M0, A_STRIDE_M1, A_K0, A_STRIDE_K1
+            {base, base + 0x400, base + 0x1000, 1, 1, 4, 784, 1, 25, 0, 28, 32, 5, 32},           // Conv2D, direct (K-split)
+            {base + 1, base + 0x400, base + 0x1000, 3, 16, 64, 196, 16, 27, 0, 14, 48, 9, 48},    // CIFAR conv1, channels last
+            {base + 2, base + 0x400, base + 0x2000, 16, 32, 128, 25, 32, 144, 0, 5, 112, 48, 112},  // CIFAR conv2, channels last
+            {base + 3, base + 0x100, base + 0x400, 5, 3, 12, 9, 3, 11, 0, 1, 40, 1, 7},           // A_M0 = A_K0 = 1
+            {base, base + 0x100, base + 0x400, 2, 3, 12, 6, 3, 10, 1, 100, 9, 64, 3},             // levels larger than M, K
+            {base + 1, base + 0x200, base + 0x800, 6, 7, 28, 13, 7, 23, 0, 3, 50, 4, 9},          // A_K0 not dividing K
+            {base, base + 0x100, base + 0x200, 4, 4, 16, 9, 4, 8, 0, 2, 0xFFFFFFF0u, 0, 0},     // A's two-level extent past 2^32
+            // A's two-level extent is (5 div 2) x 50 + 1 x 3 + (9 div 4) x 20 + 3 + 1 = 147 bytes: ending
+            // exactly at the window's top (valid), then one byte past it (error 4).
+            {base + 0x18000 - 147, base + 0x100, base + 0x400, 3, 4, 16, 6, 4, 10, 0, 2, 50, 4, 20},
+            {base + 0x18000 - 146, base + 0x100, base + 0x400, 3, 4, 16, 6, 4, 10, 0, 2, 50, 4, 20},
+            // A_K0 = 4 not dividing K = 23: a row's last segment, 3 bytes, starts a byte into a word.
+            {base + 1, base + 0x800, base + 0xC00, 64, 5, 20, 5, 5, 23, 0, 0, 0, 4, 8},
+            // A convolution over two B panels: 5x5x64 channels last, 4x4 kernel (K = 1024), 20 outputs.
+            {base, base + 0x800, base + 0x5800, 64, 20, 80, 4, 20, 1024, 0, 2, 320, 256, 320},
+            {base + 2, base + 0x100, base + 0x200, 4, 3, 12, 3, 3, 10, 0, 0, 0, 0x10005, 7},       // A_K0 above K
+            {base + 1, base + 0x100, base + 0x200, 5, 3, 12, 5, 3, 9, 1, 0x80000003u, 9, 0, 0},     // A_M0 above M
+            {base, base + 0x1800, base + 0x2000, 3, 1, 4, 4096, 1, 1, 0, 1, 1, 0, 0},               // M at its limit, A_M0 = 1
         };
         std::mt19937 rng(seed);
         int ran = 0;

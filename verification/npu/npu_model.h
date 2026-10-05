@@ -41,7 +41,18 @@ struct Job {
     std::uint32_t a_stride = 0, b_stride = 0, c_stride = 0;
     std::uint32_t m = 0, n = 0, k = 0;
     std::uint32_t mode = 0;              // ABI 2: 0 automatic, 1 tiles, 2 K-split (N = 1)
+    // ABI 2 (19.3): A's second level, npu.md §4.5 — 0 turns a level off.
+    std::uint32_t a_m0 = 0, a_stride_m1 = 0, a_k0 = 0, a_stride_k1 = 0;
 };
+
+// A(i,k)'s offset from A_BASE (npu.md §2, §4.5), in 64-bit arithmetic.
+inline std::uint64_t a_row_offset(const Job& j, std::uint64_t i) {
+    return j.a_m0 ? (i / j.a_m0) * std::uint64_t(j.a_stride_m1) + (i % j.a_m0) * std::uint64_t(j.a_stride)
+                  : i * std::uint64_t(j.a_stride);
+}
+inline std::uint64_t a_k_offset(const Job& j, std::uint64_t k) {
+    return j.a_k0 ? (k / j.a_k0) * std::uint64_t(j.a_stride_k1) + k % j.a_k0 : k;
+}
 
 struct Profile {
     std::string name;
@@ -68,9 +79,18 @@ inline Profile v2_profile() {
 // when it has no elements.
 struct Region { std::uint64_t lo = 0, hi = 0; bool empty() const { return hi <= lo; } };
 
+// A's region: from A_BASE to one past the bound of its highest byte — the
+// rows' largest offset bounded by its two terms' largest values, the same for
+// k (npu.md §9, 19.3); exact in the plain form.
 inline Region region_a(const Job& j) {
     if (!j.m || !j.k) return {};
-    return {j.a_base, std::uint64_t(j.a_base) + std::uint64_t(j.m - 1) * j.a_stride + j.k};
+    const std::uint64_t m1 = j.m - 1, k1 = j.k - 1;
+    const std::uint64_t rows = j.a_m0 ? (m1 / j.a_m0) * std::uint64_t(j.a_stride_m1)
+                                        + std::min<std::uint64_t>(m1, j.a_m0 - 1) * j.a_stride
+                                      : m1 * std::uint64_t(j.a_stride);
+    const std::uint64_t ks = j.a_k0 ? (k1 / j.a_k0) * std::uint64_t(j.a_stride_k1) + std::min<std::uint64_t>(k1, j.a_k0 - 1)
+                                    : k1;
+    return {j.a_base, std::uint64_t(j.a_base) + rows + ks + 1};
 }
 inline Region region_b(const Job& j) {
     if (!j.k || !j.n) return {};
@@ -107,6 +127,20 @@ inline std::uint32_t expected_error(const Profile& p, const Job& j) {
     return 0;
 }
 
+// ABI 2: the words row i of A takes — one segment of K bytes, or with
+// A_K0 a segment of up to A_K0 bytes per kernel row (npu.md §4.5) — each as
+// the aligned words that cover it.
+inline std::uint64_t v2_a_row_words(const Job& j, std::uint64_t i) {
+    const std::uint64_t row = j.a_base + a_row_offset(j, i);
+    if (!j.a_k0 || j.a_k0 >= j.k) return ((row % 4) + j.k + 3) / 4;
+    std::uint64_t total = 0;
+    for (std::uint64_t k0 = 0; k0 < j.k; k0 += j.a_k0) {
+        const std::uint64_t addr = row + (k0 / j.a_k0) * j.a_stride_k1, len = std::min<std::uint64_t>(j.a_k0, j.k - k0);
+        total += ((addr % 4) + len + 3) / 4;
+    }
+    return total;
+}
+
 // ABI 2: does the job run the K-split mapping (npu.md §3 MODE, §4.3)?
 inline bool v2_ksplit(const Job& j) { return j.mode == 2 || (j.mode == 0 && j.n == 1); }
 
@@ -121,7 +155,7 @@ inline std::uint64_t v2_words_read(const Job& j) {
     auto words = [](std::uint64_t addr, std::uint64_t len) { return ((addr % 4) + len + 3) / 4; };
     if (v2_ksplit(j)) {
         std::uint64_t total = j.b_stride == 1 ? words(j.b_base, j.k) : j.k;
-        for (std::uint64_t i = 0; i < j.m; ++i) total += words(j.a_base + i * j.a_stride, j.k);
+        for (std::uint64_t i = 0; i < j.m; ++i) total += v2_a_row_words(j, i);
         return total;
     }
     const std::uint64_t groups = (j.n + 3) / 4, fit = 4096 / j.k;
@@ -131,7 +165,7 @@ inline std::uint64_t v2_words_read(const Job& j) {
         const std::uint64_t gp = std::min(panel, groups - g0);
         const std::uint64_t cols = std::min<std::uint64_t>(4 * gp, j.n - 4 * g0);
         for (std::uint64_t k = 0; k < j.k; ++k) total += words(j.b_base + k * j.b_stride + 4 * g0, cols);
-        for (std::uint64_t i = 0; i < j.m; ++i) total += words(j.a_base + i * j.a_stride, j.k);
+        for (std::uint64_t i = 0; i < j.m; ++i) total += v2_a_row_words(j, i);
     }
     return total;
 }
@@ -156,7 +190,7 @@ inline void apply(const Job& j, Memory& memory) {
         for (std::uint32_t col = 0; col < j.n; ++col) {
             std::uint32_t sum = 0;
             for (std::uint32_t k = 0; k < j.k; ++k) {
-                const auto a = std::int8_t(memory.at(j.a_base + i * j.a_stride + k));
+                const auto a = std::int8_t(memory.at(std::uint32_t(j.a_base + a_row_offset(j, i) + a_k_offset(j, k))));
                 const auto b = std::int8_t(memory.at(j.b_base + k * j.b_stride + col));
                 sum += std::uint32_t(std::int32_t(a) * std::int32_t(b));
             }
@@ -243,7 +277,7 @@ inline std::uint64_t v2_job_cycles(const Profile& p, const Job& j, int latency) 
             c += 1;                                                   // STRIP
             if (j.k) {
                 std::uint64_t total = 0;
-                for (std::uint64_t r = 0; r < rv; ++r) total += words(j.a_base + (i0 + r) * j.a_stride, j.k);
+                for (std::uint64_t r = 0; r < rv; ++r) total += v2_a_row_words(j, i0 + r);
                 c = load(c, total);
             }
             std::uint64_t next = c, last_step = 0;
@@ -298,7 +332,8 @@ inline std::vector<std::string> bins(const Profile& p) {
                                  "extent_past_2^32", "ksplit_auto", "ksplit_mode2", "ksplit_b_stride1",
                                  "ksplit_b_gathered", "ksplit_k%4=0", "ksplit_k%4=1", "ksplit_k%4=2", "ksplit_k%4=3",
                                  "tiles_n1", "abort_check", "abort_load", "abort_tiles", "abort_between",
-                                 "reset_load", "reset_tiles", "abort_error_descriptor"})
+                                 "reset_load", "reset_tiles", "abort_error_descriptor", "a_two_level_m",
+                                 "a_two_level_k", "a_conv", "a_k0_partial", "a_m0_wraps_strip"})
             names.push_back(name);
     }
     return names;
@@ -339,6 +374,23 @@ public:
             if (p.abi == 2 && rng() % 6 == 0) j.n = 1;              // N = 1: K-split (or tiles under MODE 1)
             if (p.abi == 2 && j.n == 1 && rng() % 2) j.b_stride = 1;
             if (p.abi == 2) j.mode = j.n == 1 && rng() % 3 == 0 ? 2 : rng() % 2;
+            if (p.abi == 2 && rng() % 6 == 0) {        // A in two levels (19.3)
+                if (rng() % 2) { j.a_m0 = 1 + rng() % std::max(1u, j.m); j.a_stride_m1 = rng() % 3 ? j.a_stride * j.a_m0 + rng() % 9 : rng() % 64; }
+                if (rng() % 2) { j.a_k0 = 1 + rng() % std::max(1u, j.k); j.a_stride_k1 = rng() % 3 ? j.a_k0 + rng() % 9 : rng() % 40; }
+            }
+            if (p.abi == 2 && rng() % 10 == 0) {       // a direct convolution: HxW input with C channels (HWC or CHW)
+                const std::uint32_t c = 1 + rng() % 4, kh = 1 + rng() % 3, kw = 1 + rng() % 3;
+                const std::uint32_t oh = 1 + rng() % 6, ow = 1 + rng() % 6, w = ow + kw - 1 + rng() % 2;
+                j.m = oh * ow; j.k = kh * kw * c; j.n = 1 + rng() % 6;
+                if (rng() % 2) {                       // HWC: a kernel row is kw x C contiguous bytes
+                    j.a_stride = c; j.a_m0 = ow; j.a_stride_m1 = w * c; j.a_k0 = kw * c; j.a_stride_k1 = w * c;
+                } else {                               // one channel (C = 1 makes HWC and CHW alike)
+                    j.k = kh * kw; j.a_stride = 1; j.a_m0 = ow; j.a_stride_m1 = w; j.a_k0 = kw; j.a_stride_k1 = w;
+                }
+                j.b_stride = j.n + (rng() % 3 ? 0 : rng() % 5);
+                j.c_stride = 4 * j.n;
+                j.mode = j.n == 1 && rng() % 3 == 0 ? 2 : 0;
+            }
             if (p.abi == 2 && rng() % 16 == 0) {       // more than one B panel: K x N beyond 16 KiB, kept small
                 j.k = 600 + rng() % 400;
                 j.n = 5 + rng() % 20;
@@ -346,6 +398,7 @@ public:
                 j.a_stride = j.k + rng() % 4;
                 j.b_stride = j.n + rng() % 4;
                 j.c_stride = 4 * j.n;
+                j.a_m0 = j.a_stride_m1 = j.a_k0 = j.a_stride_k1 = 0;
             }
             if (!place(j)) continue;
             return j;
@@ -420,9 +473,9 @@ private:
     // four pins one region to the window's base or to its top (its last byte
     // the window's last).
     bool place(Job& j) {
-        const std::uint64_t sa = region_a({0, 0, 0, j.a_stride, j.b_stride, j.c_stride, j.m, j.n, j.k}).hi;
-        const std::uint64_t sb = region_b({0, 0, 0, j.a_stride, j.b_stride, j.c_stride, j.m, j.n, j.k}).hi;
-        const std::uint64_t sc = region_c({0, 0, 0, j.a_stride, j.b_stride, j.c_stride, j.m, j.n, j.k}).hi;
+        Job sizes = j;                       // the regions' sizes: the job at base 0 (two levels included)
+        sizes.a_base = sizes.b_base = sizes.c_base = 0;
+        const std::uint64_t sa = region_a(sizes).hi, sb = region_b(sizes).hi, sc = region_c(sizes).hi;
         if (sa + sb + sc + 16 > p.mem_bytes) return false;
         const unsigned pin = rng() % 4 == 0 ? 1 + rng() % 6 : 0;   // 1-3 base, 4-6 top (A, B, C)
         for (int attempt = 0; attempt < 64; ++attempt) {

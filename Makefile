@@ -2084,7 +2084,7 @@ parallel-workloads:
 
 test: smoke phase1 hello bench cache uart fpga-sim linux-sim counters retirement npu-pe npu-array npu-engine npu-regs npu-driver npu-runtime npu-stop npu-bench-validate arbiter shared-fabric multicore-runtime parallel
 
-check: tools smoke phase1 hello bench cache uart fpga-sim linux-sim linux-dual-sim linux-coherent-sim counters retirement pcpi-probe dot8-unit npu-pe npu-array npu-engine npu-regs device-arbiter dma-counters l2-unit npu-driver npu-runtime npu-stop npu-bench-validate xe-bench-validate phase11-infer-validate workloads atomic-fabric atomic-runtime atomic-faults coherent-cache warm-stop coherent-counters coherent-soc timer-unit timer-firmware irq-unit timer-interrupt sram-unit sram-lint freeze-interfaces coherent-bench riscv-reference riscv-reference-negative coherent-litmus arbiter shared-fabric multicore-runtime multicore-adversarial parallel phase17-baseline-audit core-riscv-tests core-riscv-tests-stall core-arch-tests core-random-lockstep core-lockstep-selftest core-ports-tests core-kernels core-aster-fetch core-aster-tests core-aster-kernels core-aster-act4 core-aster-l1-unit core-aster-l1-tests core-aster-firmware core-performance-gate aster-board-sim npu-v1-tests npu-tests
+check: tools smoke phase1 hello bench cache uart fpga-sim linux-sim linux-dual-sim linux-coherent-sim counters retirement pcpi-probe dot8-unit npu-pe npu-array npu-engine npu-regs device-arbiter dma-counters l2-unit npu-driver npu-runtime npu-stop npu-bench-validate xe-bench-validate phase11-infer-validate workloads atomic-fabric atomic-runtime atomic-faults coherent-cache warm-stop coherent-counters coherent-soc timer-unit timer-firmware irq-unit timer-interrupt sram-unit sram-lint freeze-interfaces coherent-bench riscv-reference riscv-reference-negative coherent-litmus arbiter shared-fabric multicore-runtime multicore-adversarial parallel phase17-baseline-audit core-riscv-tests core-riscv-tests-stall core-arch-tests core-random-lockstep core-lockstep-selftest core-ports-tests core-kernels core-aster-fetch core-aster-tests core-aster-kernels core-aster-act4 core-aster-l1-unit core-aster-l1-tests core-aster-firmware core-performance-gate aster-board-sim npu-v1-tests npu-tests npu-im2col-cost
 
 # Phase 18 CPU shell: one CPU with a synchronous SRAM at 0x8000_0000 and an
 # RVFI trace for lockstep against Spike (docs/phase18.md).
@@ -2568,7 +2568,9 @@ npu-v1-tests: $(NPU_V1_SIM)
 # (+cycle_check) — the shell's own self-tests through ABI 2's checks, and the
 # dense GEMM gate cases (docs/npu.md §7), each at least 50% utilization
 # (useful MACs / (16 x JOB_CYCLES)) on the two-cycle memory, with the N = 1
-# cases (K-split, 19.2: MNIST's two layers and Conv2D) measured beside them.
+# cases (K-split, 19.2: MNIST's two layers and Conv2D) measured beside them, and
+# Conv2D and CIFAR's two convolutions lowered both ways (19.3: direct, with A in
+# two levels, and im2col), each checked against the other.
 NPU_V2_RTL := rtl/accelerator/aster_npu2_ram.sv rtl/accelerator/aster_npu2_engine.sv rtl/accelerator/aster_npu2.sv
 NPU_V2_SIM := $(NPU_DIR)/npu_shell_v2
 $(NPU_V2_SIM): $(NPU_V2_RTL) verification/npu/shell_npu_v2.sv $(NPU_SHELL_SRC) Makefile
@@ -2589,7 +2591,7 @@ npu-tests: $(NPU_V2_SIM)
 				|| { tail -4 $(NPU_DIR)/v2-$$mode-$$seed.log; exit 1; }; \
 		done; \
 		$(NPU_V2_SIM) +edges $$extra > $(NPU_DIR)/v2-$$mode-edges.log 2>&1 || { tail -4 $(NPU_DIR)/v2-$$mode-edges.log; exit 1; }; \
-		echo "PASS: v2 NPU in the NPU shell, $$mode: $(NPU_SEEDS) seeds x 1,000 jobs and the 23 edge jobs as the reference, every coverage bin$$(case $$mode in plain|latency1) echo ', every job as the cycle model';; esac)"; \
+		echo "PASS: v2 NPU in the NPU shell, $$mode: $(NPU_SEEDS) seeds x 1,000 jobs and the 37 edge jobs as the reference, every coverage bin$$(case $$mode in plain|latency1) echo ', every job as the cycle model';; esac)"; \
 	done
 	@for test in 1:MEMORY_MISMATCH 3:COUNTER_MISMATCH; do \
 		n=$${test%%:*}; want=$${test#*:}; \
@@ -2602,6 +2604,17 @@ npu-tests: $(NPU_V2_SIM)
 		if (u < 50) { print "FAIL: " $$0 " (below 50%)"; bad = 1 } else print "PASS: v2 NPU gate case, two-cycle memory: " $$0 } \
 		/case=(32x1x784|784x1x25|10x1x32) / { print "PASS: v2 NPU N=1 case (K-split, measured), two-cycle memory: " $$0 } END { exit bad }' \
 		$(NPU_DIR)/v2-cases.log
+	@rm -f $(NPU_DIR)/v2-conv.log; for conv in 32,32,1,5,5,1 16,16,3,3,3,16 7,7,16,3,3,32; do \
+		$(NPU_V2_SIM) +conv=$$conv +cycle_check >> $(NPU_DIR)/v2-conv.log 2>&1 || { cat $(NPU_DIR)/v2-conv.log; exit 1; }; \
+	done; sed 's/^NPU PASS /PASS: v2 NPU convolution, direct and im2col, the same result, two-cycle memory: /' $(NPU_DIR)/v2-conv.log
+
+# What im2col costs the CPU (19.3): the Aster core with its caches lowers
+# Conv2D and CIFAR's two convolutions to im2col matrices with the workloads'
+# own loops, timed in the CPU shell (scripts/npu_im2col_cost.py).
+.PHONY: npu-im2col-cost
+npu-im2col-cost: $(ASTER_L1_SIM)
+	@set -o pipefail; RISCV_PREFIX=$(RISCV_PREFIX) $(PYTHON) scripts/npu_im2col_cost.py --sim $(ASTER_L1_SIM) \
+		--build-dir $(NPU_DIR)/im2col_cost | tee $(NPU_DIR)/im2col-cost.log
 
 # The v2 NPU's timing at 10 ns (milestone 19.1): Vivado out of context on the
 # PYNQ-Z1 part — the NPU alone (its own area; register-to-register paths only,

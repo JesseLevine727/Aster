@@ -1,7 +1,7 @@
 # Phase 19: high-utilization NPU and data movement
 
-Status: **in progress — milestone 19.2 (the K-split mapping for N = 1) complete,
-awaiting the owner's sign-off.**
+Status: **in progress — milestone 19.3 (direct convolution) complete, awaiting
+the owner's sign-off.** 19.2 signed off by the owner on 5 October 2026.
 19.0 (the NPU shell) and 19.1 (the tile mapping) signed off by the owner on
 5 October 2026. The NPU
 specification [`npu.md`](npu.md) was approved by the owner on 5 October 2026.
@@ -463,6 +463,119 @@ ABORTED is allowed only after an ABORT that reached a busy NPU.
 **Carried to 19.5:** the second A strip, which K-split's loading needs
 most.
 
+## Milestone 19.3: direct convolution (5 October 2026)
+
+**A in two levels** (npu.md §4.5):
+
+    A(i,k) = A_BASE + (i div A_M0) × A_STRIDE_M1 + (i mod A_M0) × A_STRIDE
+                    + (k div A_K0) × A_STRIDE_K1 + (k mod A_K0)
+
+Each level is off when its count is 0. A convolution's row i is an output
+pixel and its k a kernel position, so the NPU reads the input image itself,
+with no im2col matrix. The RTL has:
+- the four registers;
+- in CHECK, A's extent from two 12-step dividers and three registered
+  products, so CHECK keeps its 16 cycles;
+- in the loader:
+  - a row stepper, which adds A_STRIDE, or at the end of a block of A_M0
+    rows jumps by A_STRIDE_M1;
+  - a segment stepper, a kernel row of A_K0 bytes at a time, each placed at
+    its byte of the row's bank by 19.2's exact-placement writes.
+
+npu.md §9 records the 19.3 clarifications. The main one: a window that is
+two runs deep is one channel or channels last, so CIFAR is measured channels
+last, a choice for the owner.
+
+**Verification** (`make npu-tests`, `make npu-im2col-cost`, both in
+`make check`):
+- The reference, the traffic model and the cycle model address A in two
+  levels.
+- The generator makes two-level jobs and convolution-shaped ones (one
+  channel, or channels last, up to 4 channels, 3×3 kernels).
+- New bins: each level, both levels at once, A_K0 not dividing K, and blocks
+  of A_M0 rows crossing a strip.
+- 10 edge jobs join the list (33 in all):
+  - Conv2D and CIFAR's two convolutions, direct;
+  - levels of 1, and levels larger than M or K;
+  - A_K0 not dividing K, including a last segment that starts a byte into a
+    word;
+  - a two-level extent past 2^32;
+  - A ending exactly at the window's top, and one byte past it.
+- `+conv` runs a convolution both ways: direct, and im2col, with the shell
+  writing the matrix as the CPU would. It requires the two results equal.
+- `scripts/npu_im2col_cost.py` times the workloads' own im2col loops on the
+  Aster core with its caches.
+
+The NPU passes, in each of the six memory modes:
+- 4 seeds × 1,000 random jobs with every coverage bin: 71 on the memories
+  that answer on time, 70 in the stall modes;
+- the 33 edge jobs;
+- every completed job exactly as the cycle model on the memories that
+  answer on time.
+
+**Planted bugs.** 9 bugs were planted in the new paths (not retained):
+- the row stepper's wrap and its jump;
+- a segment's length and buffer byte;
+- the extent's k bound and m quotient;
+- the panel's first strip;
+- the bytes left in a row;
+- the strip's first row.
+
+All 9 are caught. Three were at first caught only by some random runs, until
+three edge jobs were added that catch them by construction: a last segment's
+over-read crossing a word, and A ending at the window's top and one byte past
+it.
+
+**Exit gate met:**
+- **The two-level addressing passes the reference** in every memory mode
+  (above).
+- **The im2col and direct lowerings, measured and published.** On the
+  two-cycle memory, each result the same both ways. CIFAR is channels last
+  for direct and channel planes for im2col, its workload's layout.
+
+  | Convolution | Direct: NPU | im2col: CPU builds the matrix | im2col: NPU | im2col, in all | Direct is |
+  | --- | ---: | ---: | ---: | ---: | ---: |
+  | Conv2D, 32×32, 5×5, 1 output | **11,986** (10.2%) | 121,649 (19,600 bytes) | 9,634 (12.7%) | 131,283 | **11.0× faster** |
+  | CIFAR conv1, 16×16×3, 3×3, 16 outputs | **8,461** (62.5%) | 36,566 (5,292 bytes) | 8,167 (64.8%) | 44,733 | **5.3× faster** |
+  | CIFAR conv2, 7×7×16, 3×3, 32 outputs | **10,309** (69.8%) | 24,037 (3,600 bytes) | 10,309 (69.8%) | 34,346 | **3.3× faster** |
+
+  These are cycles, with the NPU's utilization in brackets. The CPU's im2col
+  is the Aster core with its caches, running the workloads' own loops, at
+  6.2–6.9 cycles a byte written.
+
+  On the NPU alone, direct can cost more. Conv2D's kernel rows are 5-byte
+  segments, 2 words each at any alignment, so a row takes 10 words against an
+  im2col row's 7 (25 contiguous bytes): 24% more NPU cycles. CIFAR conv1's 9-byte segments cost
+  3.6% more, and conv2's 48-byte segments nothing. Building the matrix costs
+  the CPU 2.3 to 12.6 times the NPU job it feeds, so direct wins on every
+  convolution measured. Phase 20 runs the workloads end to end.
+- **10 ns out of context** ([`results/phase19/npu-19.3`](results/phase19/npu-19.3/README.md)):
+
+  | Top | Setup slack | LUTs | Block RAM tiles | DSPs |
+  | --- | ---: | ---: | ---: | ---: |
+  | The NPU alone | +0.591 ns (106.3 MHz) | 5,438 | 8 | 11 |
+  | With a two-cycle 96 KiB block RAM | +0.710 ns (107.6 MHz) | 5,639 (the top) | 40 (the top) | 11 |
+
+  The first 19.3 run missed by 1.55 ns: CHECK formed min(M − 1, A_M0 − 1)
+  in the cycle that multiplied it. Four further runs moved the work off the
+  paths that set the slack, one at a time, until the final run. The steps:
+  - register the bounds in CHECK's first cycle;
+  - latch M − 1 and K − 1 at START, and use them in every extent product;
+  - keep the row stepper's wrap test in a register beside the row index;
+  - drop a chained adder from the loader's next address.
+
+  The evidence README lists every run. The worst paths are now setup logic:
+  - the NPU alone: a tile's MAC count at its start;
+  - with its memory: a panel's setup.
+
+  Against 19.2, two-level addressing added 559 LUTs to the NPU alone (4,879
+  to 5,438) and 859 to the top with its memory (4,780 to 5,639). Vivado's
+  counts move by a few hundred between runs. It added four DSPs: the
+  extent's three products in place of 19.2's one.
+
+**Carried to 19.4:** the Phase 19 SoC, the DOT8 baselines and the speedup
+gates. CIFAR's and Conv2D's end-to-end runs are Phase 20's workload matrix.
+
 ## Milestones and gates
 
 | Milestone | Content | Exit gate |
@@ -481,7 +594,8 @@ most.
 - [x] 19.0 as in the table above — complete (owner, 5 October 2026)
 - [x] 19.1 as in the table above — complete (owner, 5 October 2026), with
   npu.md §9's 19.1 clarifications
-- [ ] 19.2 as in the table above
+- [x] 19.2 as in the table above — complete (owner, 5 October 2026), with
+  npu.md §9's 19.2 clarifications
 - [ ] 19.3 as in the table above
 - [ ] 19.4 as in the table above
 - [ ] 19.5 as in the table above

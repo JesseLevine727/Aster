@@ -43,6 +43,7 @@ module aster_npu2 #(
 );
     logic [31:0] a_base, b_base, c_base, a_stride, b_stride, c_stride, m, n, k;
     logic [1:0]  mode;
+    logic [31:0] a_m0, a_stride_m1, a_k0, a_stride_k1;   // A's second level (19.3; 0: off)
     logic        done, error, aborted;
     logic [2:0]  error_code;
     logic [63:0] job_cycles, job_active, job_macs, job_read, job_written;
@@ -70,7 +71,8 @@ module aster_npu2 #(
         .clk, .resetn, .start,
         .d_a_base(a_base), .d_b_base(b_base), .d_c_base(c_base),
         .d_a_stride(a_stride), .d_b_stride(b_stride), .d_c_stride(c_stride),
-        .d_m(m), .d_n(n), .d_k(k), .d_mode(mode), .abort,
+        .d_m(m), .d_n(n), .d_k(k), .d_mode(mode),
+        .d_a_m0(a_m0), .d_a_stride_m1(a_stride_m1), .d_a_k0(a_k0), .d_a_stride_k1(a_stride_k1), .abort,
         .busy, .finish, .finish_code, .finish_aborted,
         .ev_read, .ev_write, .ev_step, .ev_tile, .ev_tile_macs,
         .m_req_valid, .m_req_ready, .m_req_addr, .m_req_we, .m_req_wdata,
@@ -96,6 +98,10 @@ module aster_npu2 #(
             12'h030: rdata = k;
             12'h034: rdata = {30'b0, mode};
             12'h038: rdata = {29'b0, error_code};
+            12'h03C: rdata = a_m0;
+            12'h040: rdata = a_stride_m1;
+            12'h044: rdata = a_k0;
+            12'h048: rdata = a_stride_k1;
             12'h080: rdata = job_cycles[31:0];
             12'h084: rdata = hi_tag == 12'h084 ? hi_latch : job_cycles[63:32];
             12'h088: rdata = job_active[31:0];
@@ -146,6 +152,7 @@ module aster_npu2 #(
         if (!resetn) begin
             {a_base, b_base, c_base, a_stride, b_stride, c_stride, m, n, k} <= '0;
             mode <= '0;
+            {a_m0, a_stride_m1, a_k0, a_stride_k1} <= '0;
             {done, error, aborted} <= '0;
             error_code <= '0;
             {job_cycles, job_active, job_macs, job_read, job_written} <= '0;
@@ -178,6 +185,10 @@ module aster_npu2 #(
                     12'h02C: n <= r_req_wdata;
                     12'h030: k <= r_req_wdata;
                     12'h034: mode <= r_req_wdata[1:0];
+                    12'h03C: a_m0 <= r_req_wdata;
+                    12'h040: a_stride_m1 <= r_req_wdata;
+                    12'h044: a_k0 <= r_req_wdata;
+                    12'h048: a_stride_k1 <= r_req_wdata;
                     default: ;
                 endcase
             end

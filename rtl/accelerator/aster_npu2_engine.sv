@@ -20,6 +20,12 @@
 //       tiles compute (a tile starts only when its bank is free);
 //     DRAIN: until the pipeline is empty and every result is handed to the
 //       memory port.
+// A may be addressed in two levels (19.3, npu.md §4.5): A(i,k) = A_BASE +
+//   (i div A_M0) x A_STRIDE_M1 + (i mod A_M0) x A_STRIDE + (k div A_K0) x
+//   A_STRIDE_K1 + (k mod A_K0), a level off when its count is 0 — a direct
+//   convolution reads its input image with no im2col. The loader steps A's
+//   rows (an output pixel each) and, within a row, its segments (a kernel row
+//   each), placing each at its byte of the row's bank.
 // The K-split mapping (N = 1 under MODE 0, or MODE 2; 19.2): B, the vector,
 //   is loaded once (packed: word t holds B(4t .. 4t+3)); each strip of four
 //   rows of A is loaded as for tiles, then computed as one tile of ceil(K/4)
@@ -51,6 +57,7 @@ module aster_npu2_engine #(
     input  logic [31:0] d_a_stride, d_b_stride, d_c_stride,
     input  logic [31:0] d_m, d_n, d_k,
     input  logic [1:0]  d_mode,
+    input  logic [31:0] d_a_m0, d_a_stride_m1, d_a_k0, d_a_stride_k1,
     input  logic        abort,
     output logic        busy,
     output logic        finish,            // the job ends at this edge
@@ -83,12 +90,28 @@ module aster_npu2_engine #(
     // ------------------------------------------------------------ descriptor
     logic [31:0] a_base, b_base, c_base, a_stride, b_stride, c_stride, m, n, k;
     logic [1:0]  mode;
+    logic [31:0] a_m0, a_sm1, a_k0, a_sk1;       // A's second level (0: off)
     logic [12:0] d_n_now;
     assign d_n_now = n[12:0];
 
     // ------------------------------------------------------------ checks
     logic [4:0]  chk_cnt;
-    logic [43:0] prod_a, prod_b, prod_c;
+    logic [43:0] prod_b, prod_c, pa_m1, pa_m0, pa_k1;
+    // A's extent: (M-1) div A_M0 and (K-1) div A_K0 from two 12-step dividers.
+    logic [11:0] m1, k1, dm_q, dk_q, m_r, k_r, m_r_q, k_r_q;
+    logic        m0_on, k0_on;                   // registered: A_M0 != 0, A_K0 != 0
+    logic [11:0] m_q_sel, k_q_sel;
+    assign m_q_sel = m0_on ? dm_q : 12'd0;
+    assign k_q_sel = k0_on ? dk_q : 12'd0;
+    logic [32:0] dm_rem, dk_rem, dm_shift, dk_shift;
+    logic [3:0]  dmk_i;
+    // M-1 and K-1, latched at START (the dividers' inputs, from registers).
+    assign dm_shift = {dm_rem[31:0], m1[dmk_i]};
+    assign dk_shift = {dk_rem[31:0], k1[dmk_i]};
+    // min(M-1, A_M0-1) and min(K-1, A_K0-1): registered in CHECK's first cycle,
+    // so the extent's products start from registers.
+    assign m_r = a_m0 != 0 && {20'b0, m1} >= a_m0 ? 12'(a_m0 - 32'd1) : m1;
+    assign k_r = a_k0 != 0 && {20'b0, k1} >= a_k0 ? 12'(a_k0 - 32'd1) : k1;
     logic [45:0] end_a, end_b, end_c;
     logic        code1, code2, code3, code4, code5;
     logic        empty_a, empty_b, empty_c;
@@ -111,7 +134,7 @@ module aster_npu2_engine #(
     logic [12:0] cols_left, panel_cols;          // columns left from the panel's first; this panel's
     logic [12:0] rows_left;                      // rows left from the strip's first
     logic [2:0]  rv;                             // rows in this strip
-    logic [31:0] b_panel, c_panel, a_strip, c_strip;
+    logic [31:0] b_panel, c_panel, c_strip;
     logic [10:0] gp_now;
     logic [12:0] pcols_now;
     assign gp_now    = gp_full < g_left ? gp_full : g_left;
@@ -163,14 +186,41 @@ module aster_npu2_engine #(
     logic [15:0] ld_db, next_db;                 // signed: buffer byte - alignment, this segment's and the next's
     logic [3:0]  ld_lanes;
     logic [1:0]  last_lane;
-    assign next_words = 11'((14'(ld_next[1:0]) + 14'(ld_lseg) + 14'd3) >> 2);
+    assign next_words = 11'((14'(seg_addr_n[1:0]) + 14'(seg_len_n) + 14'd3) >> 2);
     assign ld_db      = ld_dbyte - 16'(ld_addr[1:0]);
-    assign next_db    = ld_dbyte + ld_dstep - 16'(ld_next[1:0]);
+    assign next_db    = seg_db_n - 16'(seg_addr_n[1:0]);
     assign last_lane  = 2'(ld_addr[1:0] + ld_lseg[1:0] - 2'd1);
     assign ld_lanes   = (ld_word == 11'd0 ? 4'hF << ld_addr[1:0] : 4'hF)
                       & (ld_word + 11'd1 == ld_words ? 4'hF >> (2'd3 - last_lane) : 4'hF);
     assign tag_new = '{read: src_ld, is_b: ld_is_b, bank: ld_bank, wbase: ld_wbase, shift: ld_db[1:0],
                        lanes: ld_lanes};
+
+    // A's rows: the row being loaded (its address, i mod A_M0, and the address
+    // of its block of A_M0 rows) and the next; A's segments within a row.
+    logic [31:0] rw_addr, rw_qbase, rw_next_addr, rw_next_qbase;
+    logic [12:0] rw_r, rw_next_r;
+    logic        rw_wrap, first_strip, a_inner;
+    logic        rw_wrap_q, wrap_after_next;     // the wrap test, registered with each row step
+    logic [12:0] ld_krem, a_first_len, a_inner_len;
+    logic [31:0] seg_addr_n;
+    logic [12:0] seg_len_n;
+    logic [15:0] seg_db_n;
+    logic [31:0] strip_addr;
+    assign strip_addr    = first_strip ? a_base : rw_next_addr;
+    // Whether the current row is its block's last (rw_r + 1 == A_M0), kept in a
+    // register beside rw_r: the compare stays out of the next row's address.
+    assign rw_wrap         = rw_wrap_q;
+    assign wrap_after_next = a_m0 != 0 && (rw_wrap_q ? a_m0 == 32'd1 : {19'b0, rw_r} + 32'd2 == a_m0);
+    assign rw_next_addr  = rw_wrap ? rw_qbase + a_sm1 : rw_addr + a_stride;
+    assign rw_next_qbase = rw_wrap ? rw_qbase + a_sm1 : rw_qbase;
+    assign rw_next_r     = rw_wrap ? 13'd0 : rw_r + 13'd1;
+    assign a_first_len   = a_k0 != 0 && a_k0 < {19'b0, k[12:0]} ? a_k0[12:0] : k[12:0];
+    assign a_inner       = ld_krem > ld_lseg;                      // another segment of this row follows
+    assign a_inner_len   = ld_krem - ld_lseg > a_k0[12:0] ? a_k0[12:0] : ld_krem - ld_lseg;
+    // The next segment: B's next row, A's row's next segment, or A's next row.
+    assign seg_addr_n = ld_is_b ? ld_next : a_inner ? ld_addr + a_sk1 : rw_next_addr;
+    assign seg_len_n  = ld_is_b ? ld_lseg : a_inner ? a_inner_len : a_first_len;
+    assign seg_db_n   = ld_is_b ? ld_dbyte + ld_dstep : a_inner ? ld_dbyte + 16'(a_k0) : 16'd0;
 
     // The answer stage: a read's data and tag, written to its buffer next cycle.
     logic        ans_valid;
@@ -271,11 +321,15 @@ module aster_npu2_engine #(
             state <= S_IDLE;
             {a_base, b_base, c_base, a_stride, b_stride, c_stride, m, n, k} <= '0;
             mode <= '0;
-            chk_cnt <= '0; prod_a <= '0; prod_b <= '0; prod_c <= '0; end_a <= '0; end_b <= '0; end_c <= '0;
+            chk_cnt <= '0; prod_b <= '0; prod_c <= '0; end_a <= '0; end_b <= '0; end_c <= '0;
             {code1, code2, code3, code4, code5} <= '0;
             div_rem <= '0; div_q <= '0; div_i <= '0;
             gp_full <= '0; g_left <= '0; gp <= '0; cols_left <= '0; panel_cols <= '0; rows_left <= '0;
-            rv <= '0; b_panel <= '0; c_panel <= '0; a_strip <= '0; c_strip <= '0;
+            rv <= '0; b_panel <= '0; c_panel <= '0; c_strip <= '0;
+            {a_m0, a_sm1, a_k0, a_sk1} <= '0; pa_m1 <= '0; pa_m0 <= '0; pa_k1 <= '0;
+            dm_rem <= '0; dk_rem <= '0; dm_q <= '0; dk_q <= '0; dmk_i <= '0;
+            m_r_q <= '0; k_r_q <= '0; m0_on <= 1'b0; k0_on <= 1'b0; m1 <= '0; k1 <= '0;
+            rw_addr <= '0; rw_qbase <= '0; rw_r <= '0; first_strip <= 1'b0; ld_krem <= '0; rw_wrap_q <= 1'b0;
             held <= 1'b0; held_ld <= 1'b0; acc_q <= 1'b0; bus_err <= 1'b0; abort_pending <= 1'b0;
             count <= '0; tag_head <= '0; tag_tail <= '0;
             ld_have <= 1'b0; ld_is_b <= 1'b0; ld_segs <= '0; ld_lseg <= '0; ld_addr <= '0; ld_next <= '0;
@@ -315,18 +369,30 @@ module aster_npu2_engine #(
                     ld_word  <= ld_word + 11'd1;
                     ld_req   <= ld_req + 30'd1;
                     ld_wbase <= ld_wbase + 16'd1;
-                end else if (ld_segs == 13'd1) begin
+                end else if (ld_segs == 13'd1 && (ld_is_b || !a_inner)) begin
                     ld_have <= 1'b0;
                 end else begin
-                    ld_segs  <= ld_segs - 13'd1;
-                    ld_addr  <= ld_next;
-                    ld_next  <= ld_next + ld_stride;
+                    // B: the next row (ld_segs counts B's rows). A: the row's next
+                    // segment, or the next row (ld_segs counts A's rows).
+                    if (ld_is_b || !a_inner) ld_segs <= ld_segs - 13'd1;
+                    ld_addr  <= seg_addr_n;
+                    ld_next  <= ld_is_b ? ld_next + ld_stride : ld_next;   // (B's rows; A's segments use the steppers)
+                    ld_lseg  <= seg_len_n;
                     ld_word  <= '0;
                     ld_words <= next_words;
-                    ld_req   <= ld_next[31:2];
-                    ld_dbyte <= ld_dbyte + ld_dstep;
+                    ld_req   <= seg_addr_n[31:2];
+                    ld_dbyte <= seg_db_n;
                     ld_wbase <= 16'($signed(next_db) >>> 2);
-                    if (!ld_is_b) ld_bank <= ld_bank + 2'd1;
+                    if (!ld_is_b) begin
+                        ld_krem <= a_inner ? ld_krem - ld_lseg : k[12:0];
+                        if (!a_inner) begin
+                            ld_bank  <= ld_bank + 2'd1;
+                            rw_addr  <= rw_next_addr;
+                            rw_qbase <= rw_next_qbase;
+                            rw_r     <= rw_next_r;
+                            rw_wrap_q <= wrap_after_next;
+                        end
+                    end
                 end
             end
 
@@ -411,7 +477,10 @@ module aster_npu2_engine #(
                     a_base <= d_a_base; b_base <= d_b_base; c_base <= d_c_base;
                     a_stride <= d_a_stride; b_stride <= d_b_stride; c_stride <= d_c_stride;
                     m <= d_m; n <= d_n; k <= d_k; mode <= d_mode;
+                    a_m0 <= d_a_m0; a_sm1 <= d_a_stride_m1; a_k0 <= d_a_k0; a_sk1 <= d_a_stride_k1;
+                    m1 <= 12'(d_m - 32'd1); k1 <= 12'(d_k - 32'd1);
                     chk_cnt <= '0; div_rem <= '0; div_q <= '0; div_i <= 4'd12;
+                    dm_rem <= '0; dk_rem <= '0; dm_q <= '0; dk_q <= '0; dmk_i <= 4'd11;
                     bus_err <= 1'b0; abort_pending <= 1'b0;
                     state <= S_CHECK;
                 end
@@ -419,20 +488,28 @@ module aster_npu2_engine #(
                     chk_cnt <= chk_cnt + 5'd1;
                     case (chk_cnt)
                         5'd0: begin
-                            prod_a <= 44'(12'(m - 32'd1)) * 44'(a_stride);
-                            prod_b <= 44'(12'(k - 32'd1)) * 44'(b_stride);
-                            prod_c <= 44'(12'(m - 32'd1)) * 44'(c_stride);
+                            prod_b <= 44'(k1) * 44'(b_stride);      // (K-1, M-1 latched at START)
+                            m_r_q <= m_r; k_r_q <= k_r; m0_on <= a_m0 != 0; k0_on <= a_k0 != 0;
+                            prod_c <= 44'(m1) * 44'(c_stride);
                             code1 <= m > 32'd4096 || n > 32'd4096 || k > 32'd4096 || mode == 2'd3
                                      || (mode == 2'd2 && n != 32'd1);
                             code2 <= c_base[1:0] != 2'd0 || c_stride[1:0] != 2'd0;
                             code3 <= {2'b0, c_stride} < {n, 2'b00};
                         end
                         5'd1: begin
-                            end_a <= {14'b0, a_base} + {2'b0, prod_a} + {14'b0, k};
                             end_b <= {14'b0, b_base} + {2'b0, prod_b} + {14'b0, n};
                             end_c <= {14'b0, c_base} + {2'b0, prod_c} + {12'b0, n, 2'b00};
                         end
-                        5'd2: begin
+                        5'd12: begin                         // A's extent, once the dividers are done
+                            pa_m1 <= 44'(m_q_sel) * 44'(a_sm1);
+                            pa_m0 <= 44'(m_r_q) * 44'(a_stride);
+                            pa_k1 <= 44'(k_q_sel) * 44'(a_sk1);
+                        end
+                        5'd13: begin
+                            end_a <= {14'b0, a_base} + {2'b0, pa_m1} + {2'b0, pa_m0} + {2'b0, pa_k1}
+                                     + {34'b0, k_r_q} + 46'd1;
+                        end
+                        5'd14: begin
                             code4 <= (!empty_a && ({14'b0, a_base} < WIN_LO || end_a > WIN_HI))
                                   || (!empty_b && ({14'b0, b_base} < WIN_LO || end_b > WIN_HI))
                                   || (!empty_c && ({14'b0, c_base} < WIN_LO || end_c > WIN_HI));
@@ -441,6 +518,21 @@ module aster_npu2_engine #(
                         end
                         default: ;
                     endcase
+                    if (chk_cnt <= 5'd11) begin            // (M-1) div A_M0, (K-1) div A_K0, a bit a cycle
+                        if (dm_shift >= {1'b0, a_m0} && a_m0 != 0) begin
+                            dm_rem <= dm_shift - {1'b0, a_m0};
+                            dm_q[dmk_i] <= 1'b1;
+                        end else begin
+                            dm_rem <= dm_shift;
+                        end
+                        if (dk_shift >= {1'b0, a_k0} && a_k0 != 0) begin
+                            dk_rem <= dk_shift - {1'b0, a_k0};
+                            dk_q[dmk_i] <= 1'b1;
+                        end else begin
+                            dk_rem <= dk_shift;
+                        end
+                        dmk_i <= dmk_i - 4'd1;
+                    end
                     if (chk_cnt <= 5'd12) begin            // floor(4096 / K), a bit a cycle
                         if (k != 0 && div_shift >= 14'(k[12:0])) begin
                             div_rem <= div_shift - 14'(k[12:0]);
@@ -467,7 +559,7 @@ module aster_npu2_engine #(
                     gp         <= gp_now;
                     panel_cols <= pcols_now;
                     rows_left  <= m[12:0];
-                    a_strip    <= a_base;
+                    first_strip <= 1'b1;
                     c_strip    <= c_panel;
                     if (k == 0) begin
                         state <= S_STRIP;
@@ -504,12 +596,19 @@ module aster_npu2_engine #(
                     if (k == 0) begin
                         state <= S_TILES;
                     end else begin
-                        ld_is_b <= 1'b0; ld_segs <= rows_left > 13'd4 ? 13'd4 : rows_left; ld_lseg <= k[12:0];
-                        ld_bank <= '0; ld_dbyte <= '0; ld_dstep <= '0;
-                        ld_addr <= a_strip; ld_next <= a_strip + a_stride; ld_stride <= a_stride;
-                        ld_word <= '0; ld_words <= 11'((14'(a_strip[1:0]) + 14'(k[12:0]) + 14'd3) >> 2);
-                        ld_wbase <= 16'($signed(-16'(a_strip[1:0])) >>> 2);
-                        ld_req <= a_strip[31:2]; ld_have <= 1'b1;
+                        // The strip's first row: A's first (the panel's first strip) or the
+                        // row after the previous strip's last.
+                        ld_is_b <= 1'b0; ld_segs <= rows_left > 13'd4 ? 13'd4 : rows_left; ld_lseg <= a_first_len;
+                        ld_krem <= k[12:0]; ld_bank <= '0; ld_dbyte <= '0; ld_dstep <= '0; ld_stride <= '0;
+                        ld_addr <= strip_addr; ld_next <= strip_addr; ld_word <= '0;
+                        ld_words <= 11'((14'(strip_addr[1:0]) + 14'(a_first_len) + 14'd3) >> 2);
+                        ld_wbase <= 16'($signed(-16'(strip_addr[1:0])) >>> 2);
+                        ld_req <= strip_addr[31:2]; ld_have <= 1'b1;
+                        rw_addr  <= strip_addr;
+                        rw_qbase <= first_strip ? a_base : rw_next_qbase;
+                        rw_r     <= first_strip ? 13'd0 : rw_next_r;
+                        rw_wrap_q <= first_strip ? a_m0 == 32'd1 : wrap_after_next;
+                        first_strip <= 1'b0;
                         state <= S_LOAD;
                     end
                 end
@@ -517,7 +616,6 @@ module aster_npu2_engine #(
                 S_DRAIN: if (!s1_v && !s2_v && !s3_v && bank_busy == 2'b00 && !wr_q_valid) begin
                     if (rows_left > 13'd4) begin
                         rows_left <= rows_left - 13'd4;
-                        a_strip   <= a_strip + {a_stride[29:0], 2'b00};
                         c_strip   <= c_strip + {c_stride[29:0], 2'b00};
                         state <= S_STRIP;
                     end else if (g_left > gp) begin
@@ -546,7 +644,7 @@ module aster_npu2_engine #(
 
     logic unused;
     assign unused = div_rem[13] ^ (^wr_q_addr[1:0]) ^ (^ld_addr[31:2]) ^ ans_tag.read ^ (^ans_twice[63:32])
-                  ^ (^ans_tag.wbase[15:12]) ^ (^ld_db[15:2]);
+                  ^ (^ans_tag.wbase[15:12]) ^ (^ld_db[15:2]) ^ dm_rem[32] ^ dk_rem[32];
 
 `ifndef SYNTHESIS
     always_ff @(posedge clk) begin

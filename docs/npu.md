@@ -71,8 +71,8 @@ a whole word, by a completed job; a job that is aborted or ends with error 6
 leaves each C word either unchanged or holding its final value.
 
 Milestone 19.3 adds a second level of A addressing for direct convolution
-(§4.5); its fields are reserved in the register map now and read 0, which
-selects the plain form above.
+(§4.5): its four registers are 0 out of reset, which selects the plain form
+above.
 
 ## 3. Programming interface (ABI 2)
 
@@ -91,7 +91,7 @@ SoC in 19.4).
 | 0x028–0x030 | M, N, K | RW | dimensions |
 | 0x034 | MODE | RW | [1:0] mapping: 0 automatic (K-split when N = 1, else tiles), 1 tiles, 2 K-split (N must be 1) |
 | 0x038 | ERROR_CODE | R | §3.2 |
-| 0x03C–0x048 | A_M0, A_STRIDE_M1, A_K0, A_STRIDE_K1 | RW | reserved for 19.3 (§4.5); read 0 until then |
+| 0x03C–0x048 | A_M0, A_STRIDE_M1, A_K0, A_STRIDE_K1 | RW | A's second level (§4.5, 19.3); 0 turns a level off |
 | 0x080 | JOB_CYCLES | R | 64-bit (low word first): START accepted to DONE |
 | 0x088 | JOB_ACTIVE | R | 64-bit: cycles in which the array stepped |
 | 0x090 | JOB_MACS | R | 64-bit: useful MACs of the tiles (strips) completed — M × N × K for a completed job |
@@ -148,7 +148,8 @@ Checked after START and before any memory access; an erroneous job writes
 nothing, sets ERROR and ERROR_CODE (the lowest code that applies). The
 checks use arithmetic wide enough that nothing wraps (64 bits). A region is
 the interval from its lowest to one past its highest byte — for A,
-[A_BASE, A_BASE + (M−1) × A_STRIDE + K) — and a region with no bytes (M or
+[A_BASE, A_BASE + (M−1) × A_STRIDE + K) in the plain form (with A in two
+levels, §9's 19.3 bound) — and a region with no bytes (M or
 K = 0 for A, K or N = 0 for B, M or N = 0 for C) is neither checked against
 the window nor for overlap. Overlap is of these intervals (so interleaved
 regions count as overlapping):
@@ -454,8 +455,8 @@ with the milestone (5 October 2026):
 
 ### Clarifications in 19.2 (the K-split mapping)
 
-Found necessary while building and verifying 19.2; awaiting the owner's
-acceptance with the milestone:
+Found necessary while building and verifying 19.2; accepted by the owner
+with the milestone (5 October 2026):
 
 - §4.3: each row's four partial sums are added when the writer takes that
   row's result (the "adder tree" is in the writer's path), so the array and
@@ -469,3 +470,31 @@ acceptance with the milestone:
   K = 0); on its last step, the products of the lanes beyond K are zero. It
   counts as one tile in JOB_TILES, and its steps in JOB_ACTIVE (none when
   K = 0).
+
+### Clarifications in 19.3 (direct convolution)
+
+Found necessary while building and verifying 19.3; awaiting the owner's
+acceptance with the milestone:
+
+- §4.5: each level is off on its own: A_M0 = 0 makes a row's offset
+  i × A_STRIDE, A_K0 = 0 makes a k's offset k (both 0: §2's form). The four
+  registers (0x03C–0x048) are written, like the descriptor, only while not
+  BUSY.
+- §3.2: with A in two levels, A's region (for error 4's window and error 5's
+  overlap) runs from A_BASE to one past the bound ((M−1) div A_M0) ×
+  A_STRIDE_M1 + min(M−1, A_M0−1) × A_STRIDE + ((K−1) div A_K0) ×
+  A_STRIDE_K1 + min(K−1, A_K0−1). Each term is its largest; that is exact for
+  §2's form and for a convolution, whose last output pixel and last kernel
+  byte reach every largest term at once, and safe otherwise. CHECK computes
+  it with two 12-step dividers beside the panel's, so it keeps its 16 cycles.
+- §4.5: the loader reads A's row i as one segment of K bytes, or with A_K0 as
+  segments of A_K0 bytes (the last of K mod A_K0), each at its byte of the
+  row in its bank, so a kernel row is one segment.
+- §4.5, the workloads: two levels address a convolution whose kernel window
+  is two runs deep: one channel (Conv2D), or channels last (HWC), where a
+  kernel row is kw × C contiguous bytes. CIFAR keeps its activations as
+  channel planes (CHW), whose window is three deep (channel, row, column).
+  19.3 measures CIFAR's direct convolutions channels last; Phase 20's CIFAR
+  stores its images and weights reordered at build time and writes its
+  pooled activations channels last, at no run-time cost. A third level was
+  the alternative.
