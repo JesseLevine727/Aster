@@ -52,7 +52,18 @@ RAM; see "Milestone 18.5"). ACT4 (riscv-arch-test 4.1.0, checked against the
 Sail model) adopted after 18.5: 102/102 programs (97 testing this machine-mode
 core) in six memory modes, once
 `time`/`timeh` read the platform's `mtime` (owner decision; FPGA 105.1 MHz,
-105.3 and 105.0 MHz with block RAM; see "ACT4 adopted").** The CPU specification this
+105.3 and 105.0 MHz with block RAM; see "ACT4 adopted"). Milestone 18.6 (the
+L1 caches and the runtime port; complete, owner, 5 October 2026; `8d9de14`):
+4 KiB instruction and data caches, the data cache write-through, coherent with
+other masters by snooped invalidations and answering stores to cacheable
+memory once the memory side accepts them; a cache reference model on every
+cached run, back-pressure with long stalls, and v1's runtime and firmware on
+the core; the FPGA meets 10 ns with the caches (102.2 MHz; see "Milestone
+18.6"). Milestone 18.7 (evaluation and feasibility; awaiting the owner's
+sign-off): the performance gate passes at a 3.681× geometric mean, lowest
+2.586× (sort/search); the core with its caches closes 10 ns in context on
+the PYNQ-Z1 and runs there at a measured 99.999 MHz, 100 programs ending
+exactly as in the CPU shell, cycle for cycle (see "Milestone 18.7").** The CPU specification this
 phase implements is [`cpu.md`](cpu.md) (approved 29 September 2026); the phase
 sits in the [v2 plan](phase17-plus.md#6-phase-17-sequence). Every milestone
 passes its verification layer and records its timing before the next starts.
@@ -1864,6 +1875,109 @@ tick per 8 cycles; the firmware regression's set, `atomic_runtime.c` left
 for the Phase 20 memory side's reservation rule; the snoop contract the
 Phase 20 fabric must keep; and stores to cacheable memory answered in the
 cycle after the memory side accepts them.
+
+### Milestone 18.7: evaluation and 100 MHz feasibility (5 October 2026)
+
+**The performance gate passes** (cpu.md §7; `make core-performance-gate`, in
+`make check`, `scripts/performance_gate.py`). Both cores run the CPU set in
+the same shell on the one-cycle memory — PicoRV32 through its look-ahead
+port, the Aster core on its two ports without its L1 — with the same
+compiler flags, inputs and measurement windows (each window's instruction
+count equal in both runs and to the retained Phase 17 baseline's, with its
+checksum). Speedup = PicoRV32's window cycles ÷ the Aster core's:
+
+| Kernel | Instructions | PicoRV32 cycles | Aster core cycles | Speedup |
+| --- | ---: | ---: | ---: | ---: |
+| CoreMark (1 iteration) | 284,865 | 1,495,136 | 446,348 | 3.350× |
+| Dhrystone | 492,302 | 2,085,683 | 783,326 | 2.663× |
+| sort/search | 420,942 | 1,800,445 | 696,118 | 2.586× |
+| FFT | 248,399 | 2,768,064 | 297,863 | 9.293× |
+| strided | 1,559 | 6,472 | 2,351 | 2.753× |
+| scalar Conv2D, coherent SoC | 971,011 | 7,144,621 | 1,356,221 | 5.268× |
+| scalar reduction | 53,305 | 217,275 | 73,811 | 2.944× |
+| Conv2D, minimal top (not in the gate) | 704,346 | 5,529,285 | 1,108,394 | 4.989× |
+
+Over the seven gate kernels: geometric mean **3.681×** (at least 2.0×),
+lowest **sort/search at 2.586×** (at least 1.5×), on the unrounded ratios.
+These are the window cycles 18.2 measured, cycle for cycle (the CPI
+model's — it follows the RTL exactly, `--cpi-check`, on the suites without
+back-pressure or interrupts; the pre-18.1 projection was 3.683×): 18.3–18.6
+added nothing to any kernel's window (no CSR instruction is in one; the
+caches are not in the gate's configuration).
+
+**100 MHz on the FPGA is feasible: the core with its L1 caches runs at
+100 MHz on the PYNQ-Z1, in context, every program ending exactly as
+simulated, cycle for cycle.** The evidence, in three steps:
+
+- *Out of context* (18.6, `results/phase18/aster-18.6-coherent`): the core
+  alone at 105.0 MHz (+0.472 ns), with its caches and a two-cycle block RAM —
+  the memory's readiness and the snoops live — at 102.2 MHz (+0.220 ns).
+- *In context* (`make fpga-aster-core`, `fpga/pynq_z1/build_aster_core.tcl`):
+  a board design — the core, its caches, 128 KiB of block-RAM main memory,
+  the CPU kernels' register page and an AXI4-Lite port, in the Zynq block
+  design with FCLK0 at 100 MHz — closes 10 ns over the whole device: **+0.140
+  ns** setup, +0.022 ns hold, no failing endpoint, no DRC error (5,971 LUTs,
+  4,167 flip-flops, 39 block-RAM tiles, 8 DSPs). The worst path is inside the
+  core, M1's result through forwarding into Execute's operand select. v1's
+  all-engine Linux overlay, for comparison, closes 50 MHz
+  (`fpga/pynq_z1/README.md`).
+- *On the board* (`make aster-board`, `scripts/aster_board.py`): the ARM side
+  loads each program through AXI, runs it and reads the counters. FCLK0 at
+  1000 MHz / 10 from the IO PLL, **measured at 99.999 MHz** against the
+  board's wall clock. **100 programs** — the nine CPU kernels and 91
+  self-checking programs (riscv-tests rv32ui, rv32um, rv32ua and rv32mi; the
+  directed, trap, selfcheck and C programs, `selfcheck/dot8_arith`'s 2.6
+  million instructions among them) — **all end as in the CPU shell, cycle for
+  cycle**: each kernel's console byte for byte (its record and checksums)
+  and its window, the others storing 1 to tohost at the shell's cycle with
+  the shell's instruction count. The board's memory answers as the shell's
+  default memory does, so this is a direct check that the shell's cycle
+  counts for the cached core on that memory are the silicon's (the gate's
+  configuration — no caches, the one-cycle memory — and PicoRV32 were not
+  run on the board). The same comparison runs on the board design's
+  simulation in `make check` (`make aster-board-sim`, 100/100). Two programs
+  depend on the shell's memory ending where the program does and are not
+  run on the board's fixed 128 KiB (`directed/wrongpath_fetch_fault`,
+  `traps/fetch_traps`). CoreMark's iteration takes 466,606 cycles there,
+  4.67 ms.
+
+The margin is thin, and it is the core's. In every top the worst path is
+inside the core and of a kind 18.1–18.6 recorded — a forwarded operand or
+M1's result into Execute's selects or M1's CSR-write flag, Decode's own
+decode into its enables — with +0.1–0.5 ns at 10 ns (+0.140 ns here), and
+the cache boundary's (the data cache's answer into Execute's selects) at
++0.75 ns out of context (18.6). The board design's own logic has more
+(`fpga/named_paths.rpt`): +0.87 ns into the main memory (from the data
+cache's state), +1.97 ns into the page, +3.0 ns and up for the counters and
+the AXI read path. For the Phase 20/21 SoC — the
+coherent fabric, DDR, DMA and the NPU beside the core — this means: the
+fabric must meet the core at registers (the caches' memory side and the
+snoops, as the timing top and the board design present them); placement
+pressure will grow, so one run per build is not a margin and the SoC's
+builds should be swept over placement; and the core paths above are where
+to look first if a build misses, before any design change.
+
+Evidence: [`results/phase18/aster-18.7-board`](results/phase18/aster-18.7-board/README.md)
+(the in-context reports, the board's report and log).
+
+- **Review.** The milestone's watchdog review found two bugs, both fixed
+  before the board run:
+  - the gate's make target, whose pipe into `tee` would have hidden a
+    failing gate;
+  - in the board design, an AXI read and a concurrent write sharing a RAM
+    port, which could have returned stale data to the ARM side (reads and
+    writes are now served one at a time).
+
+  It also found:
+  - the counters starting a cycle after the core, so the comparison then
+    needed an offset (they now start at the same edge, and the comparison
+    is exact);
+  - the clock set without checking its source (the IO PLL and the source
+    selection are now checked and recorded, and the clock is measured);
+  - the run not checking the board script's status, the bitstream or the
+    clock (it now requires all three);
+  - a kernel's record taken without comparing the console (now compared
+    byte for byte).
 
 ## Milestones and gates
 

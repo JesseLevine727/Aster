@@ -1,0 +1,539 @@
+NAMED label=main_ram slack_ns=0.866 from=aster_core_board_i/aster/inst/implementation/dcache/state_reg[1]/C to=aster_core_board_i/aster/inst/implementation/main_ram_reg_3_0_4/DIADI[0] levels=8
+Copyright 1986-2022 Xilinx, Inc. All Rights Reserved. Copyright 2022-2025 Advanced Micro Devices, Inc. All Rights Reserved.
+-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+| Tool Version : Vivado v.2025.1 (lin64) Build 6140274 Wed May 21 22:58:25 MDT 2025
+| Date         : Mon Oct  5 10:05:01 2026
+| Host         : gondor running 64-bit Ubuntu 24.04.5 LTS
+| Command      : report_timing -of_objects [get_timing_paths -setup -to [get_cells -hier -quiet -filter {NAME =~ *implementation/main_ram* && IS_SEQUENTIAL}] -max_paths 1 -nworst 1] -return_string
+| Design       : aster_core_board_wrapper
+| Device       : 7z020-clg400
+| Speed File   : -1  PRODUCTION 1.12 2019-11-22
+| Design State : Physopt postRoute
+-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+Timing Report
+
+Slack (MET) :             0.866ns  (required time - arrival time)
+  Source:                 aster_core_board_i/aster/inst/implementation/dcache/state_reg[1]/C
+                            (rising edge-triggered cell FDRE clocked by clk_fpga_0  {rise@0.000ns fall@5.000ns period=10.000ns})
+  Destination:            aster_core_board_i/aster/inst/implementation/main_ram_reg_3_0_4/DIADI[0]
+                            (rising edge-triggered cell RAMB36E1 clocked by clk_fpga_0  {rise@0.000ns fall@5.000ns period=10.000ns})
+  Path Group:             clk_fpga_0
+  Path Type:              Setup (Max at Slow Process Corner)
+  Requirement:            10.000ns  (clk_fpga_0 rise@10.000ns - clk_fpga_0 rise@0.000ns)
+  Data Path Delay:        8.851ns  (logic 2.913ns (32.910%)  route 5.938ns (67.090%))
+  Logic Levels:           8  (CARRY4=2 LUT2=1 LUT4=1 LUT5=2 LUT6=2)
+  Clock Path Skew:        0.113ns (DCD - SCD + CPR)
+    Destination Clock Delay (DCD):    2.922ns = ( 12.922 - 10.000 ) 
+    Source Clock Delay      (SCD):    2.938ns
+    Clock Pessimism Removal (CPR):    0.129ns
+  Clock Uncertainty:      0.154ns  ((TSJ^2 + TIJ^2)^1/2 + DJ) / 2 + PE
+    Total System Jitter     (TSJ):    0.071ns
+    Total Input Jitter      (TIJ):    0.300ns
+    Discrete Jitter          (DJ):    0.000ns
+    Phase Error              (PE):    0.000ns
+
+    Location             Delay type                Incr(ns)  Path(ns)    Netlist Resource(s)
+  -------------------------------------------------------------------    -------------------
+                         (clock clk_fpga_0 rise edge)
+                                                      0.000     0.000 r  
+    PS7_X0Y0             PS7                          0.000     0.000 r  aster_core_board_i/ps7/inst/PS7_i/FCLKCLK[0]
+                         net (fo=1, routed)           1.193     1.193    aster_core_board_i/ps7/inst/FCLK_CLK_unbuffered[0]
+    BUFGCTRL_X0Y16                                                    r  aster_core_board_i/ps7/inst/buffer_fclk_clk_0.FCLK_CLK_0_BUFG/I
+    BUFGCTRL_X0Y16       BUFG (Prop_bufg_I_O)         0.101     1.294 r  aster_core_board_i/ps7/inst/buffer_fclk_clk_0.FCLK_CLK_0_BUFG/O
+                         net (fo=4716, routed)        1.644     2.938    aster_core_board_i/aster/inst/implementation/dcache/aclk
+    SLICE_X47Y84         FDRE                                         r  aster_core_board_i/aster/inst/implementation/dcache/state_reg[1]/C
+  -------------------------------------------------------------------    -------------------
+    SLICE_X47Y84         FDRE (Prop_fdre_C_Q)         0.456     3.394 r  aster_core_board_i/aster/inst/implementation/dcache/state_reg[1]/Q
+                         net (fo=32, routed)          1.203     4.597    aster_core_board_i/aster/inst/implementation/dcache/state_reg_n_0_[1]
+    SLICE_X46Y86                                                      r  aster_core_board_i/aster/inst/implementation/dcache/reserved_idx[0]_i_1/I2
+    SLICE_X46Y86         LUT5 (Prop_lut5_I2_O)        0.146     4.743 r  aster_core_board_i/aster/inst/implementation/dcache/reserved_idx[0]_i_1/O
+                         net (fo=4, routed)           0.774     5.517    aster_core_board_i/aster/inst/implementation/dcache/s2_addr_reg[16]_0[0]
+    SLICE_X48Y88                                                      r  aster_core_board_i/aster/inst/implementation/dcache/dfix1[0]_i_12/I3
+    SLICE_X48Y88         LUT6 (Prop_lut6_I3_O)        0.328     5.845 r  aster_core_board_i/aster/inst/implementation/dcache/dfix1[0]_i_12/O
+                         net (fo=1, routed)           0.000     5.845    aster_core_board_i/aster/inst/implementation/dcache/dfix1[0]_i_12_n_0
+    SLICE_X48Y88                                                      r  aster_core_board_i/aster/inst/implementation/dcache/dfix1_reg[0]_i_4/S[0]
+    SLICE_X48Y88         CARRY4 (Prop_carry4_S[0]_CO[3])
+                                                      0.532     6.377 r  aster_core_board_i/aster/inst/implementation/dcache/dfix1_reg[0]_i_4/CO[3]
+                         net (fo=1, routed)           0.000     6.377    aster_core_board_i/aster/inst/implementation/dcache/dfix1_reg[0]_i_4_n_0
+    SLICE_X48Y89                                                      r  aster_core_board_i/aster/inst/implementation/dcache/dfix1_reg[0]_i_2/CI
+    SLICE_X48Y89         CARRY4 (Prop_carry4_CI_CO[0])
+                                                      0.271     6.648 r  aster_core_board_i/aster/inst/implementation/dcache/dfix1_reg[0]_i_2/CO[0]
+                         net (fo=2, routed)           0.859     7.507    aster_core_board_i/aster/inst/implementation/dcache/sc_ok0
+    SLICE_X48Y86                                                      r  aster_core_board_i/aster/inst/implementation/dcache/main_ram_reg_0_0_0_i_46/I1
+    SLICE_X48Y86         LUT2 (Prop_lut2_I1_O)        0.368     7.875 f  aster_core_board_i/aster/inst/implementation/dcache/main_ram_reg_0_0_0_i_46/O
+                         net (fo=1, routed)           0.283     8.158    aster_core_board_i/aster/inst/implementation/dcache/main_ram_reg_0_0_0_i_46_n_0
+    SLICE_X48Y86                                                      f  aster_core_board_i/aster/inst/implementation/dcache/main_ram_reg_0_0_0_i_40/I2
+    SLICE_X48Y86         LUT6 (Prop_lut6_I2_O)        0.332     8.490 r  aster_core_board_i/aster/inst/implementation/dcache/main_ram_reg_0_0_0_i_40/O
+                         net (fo=13, routed)          1.056     9.545    aster_core_board_i/aster/inst/implementation/dcache/main_ram_reg_0_0_0_i_40_n_0
+    SLICE_X44Y94                                                      r  aster_core_board_i/aster/inst/implementation/dcache/main_ram_reg_3_0_0_i_3/I0
+    SLICE_X44Y94         LUT5 (Prop_lut5_I0_O)        0.153     9.698 r  aster_core_board_i/aster/inst/implementation/dcache/main_ram_reg_3_0_0_i_3/O
+                         net (fo=8, routed)           0.487    10.185    aster_core_board_i/aster/inst/implementation/dcache/main_ram_reg_3_0_0_i_3_n_0
+    SLICE_X44Y95                                                      r  aster_core_board_i/aster/inst/implementation/dcache/main_ram_reg_3_0_4_i_1/I0
+    SLICE_X44Y95         LUT4 (Prop_lut4_I0_O)        0.327    10.512 r  aster_core_board_i/aster/inst/implementation/dcache/main_ram_reg_3_0_4_i_1/O
+                         net (fo=1, routed)           1.277    11.789    aster_core_board_i/aster/inst/implementation/dcache_n_143
+    RAMB36_X3Y23         RAMB36E1                                     r  aster_core_board_i/aster/inst/implementation/main_ram_reg_3_0_4/DIADI[0]
+  -------------------------------------------------------------------    -------------------
+
+                         (clock clk_fpga_0 rise edge)
+                                                     10.000    10.000 r  
+    PS7_X0Y0             PS7                          0.000    10.000 r  aster_core_board_i/ps7/inst/PS7_i/FCLKCLK[0]
+                         net (fo=1, routed)           1.088    11.088    aster_core_board_i/ps7/inst/FCLK_CLK_unbuffered[0]
+    BUFGCTRL_X0Y16                                                    r  aster_core_board_i/ps7/inst/buffer_fclk_clk_0.FCLK_CLK_0_BUFG/I
+    BUFGCTRL_X0Y16       BUFG (Prop_bufg_I_O)         0.091    11.179 r  aster_core_board_i/ps7/inst/buffer_fclk_clk_0.FCLK_CLK_0_BUFG/O
+                         net (fo=4716, routed)        1.743    12.922    aster_core_board_i/aster/inst/implementation/aclk
+    RAMB36_X3Y23         RAMB36E1                                     r  aster_core_board_i/aster/inst/implementation/main_ram_reg_3_0_4/CLKARDCLK
+                         clock pessimism              0.129    13.051    
+                         clock uncertainty           -0.154    12.896    
+    RAMB36_X3Y23         RAMB36E1 (Setup_ramb36e1_CLKARDCLK_DIADI[0])
+                                                     -0.241    12.655    aster_core_board_i/aster/inst/implementation/main_ram_reg_3_0_4
+  -------------------------------------------------------------------
+                         required time                         12.655    
+                         arrival time                         -11.789    
+  -------------------------------------------------------------------
+                         slack                                  0.866    
+
+
+
+
+
+NAMED label=page_ram slack_ns=1.965 from=aster_core_board_i/aster/inst/implementation/dcache/state_reg[1]/C to=aster_core_board_i/aster/inst/implementation/page_ram_reg_0/ENBWREN levels=5
+Copyright 1986-2022 Xilinx, Inc. All Rights Reserved. Copyright 2022-2025 Advanced Micro Devices, Inc. All Rights Reserved.
+-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+| Tool Version : Vivado v.2025.1 (lin64) Build 6140274 Wed May 21 22:58:25 MDT 2025
+| Date         : Mon Oct  5 10:05:01 2026
+| Host         : gondor running 64-bit Ubuntu 24.04.5 LTS
+| Command      : report_timing -of_objects [get_timing_paths -setup -to [get_cells -hier -quiet -filter {NAME =~ *implementation/page_ram* && IS_SEQUENTIAL}] -max_paths 1 -nworst 1] -return_string
+| Design       : aster_core_board_wrapper
+| Device       : 7z020-clg400
+| Speed File   : -1  PRODUCTION 1.12 2019-11-22
+| Design State : Physopt postRoute
+-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+Timing Report
+
+Slack (MET) :             1.965ns  (required time - arrival time)
+  Source:                 aster_core_board_i/aster/inst/implementation/dcache/state_reg[1]/C
+                            (rising edge-triggered cell FDRE clocked by clk_fpga_0  {rise@0.000ns fall@5.000ns period=10.000ns})
+  Destination:            aster_core_board_i/aster/inst/implementation/page_ram_reg_0/ENBWREN
+                            (rising edge-triggered cell RAMB36E1 clocked by clk_fpga_0  {rise@0.000ns fall@5.000ns period=10.000ns})
+  Path Group:             clk_fpga_0
+  Path Type:              Setup (Max at Slow Process Corner)
+  Requirement:            10.000ns  (clk_fpga_0 rise@10.000ns - clk_fpga_0 rise@0.000ns)
+  Data Path Delay:        7.121ns  (logic 1.333ns (18.719%)  route 5.788ns (81.281%))
+  Logic Levels:           5  (LUT2=1 LUT3=1 LUT4=1 LUT5=1 LUT6=1)
+  Clock Path Skew:        -0.112ns (DCD - SCD + CPR)
+    Destination Clock Delay (DCD):    2.711ns = ( 12.711 - 10.000 ) 
+    Source Clock Delay      (SCD):    2.938ns
+    Clock Pessimism Removal (CPR):    0.115ns
+  Clock Uncertainty:      0.154ns  ((TSJ^2 + TIJ^2)^1/2 + DJ) / 2 + PE
+    Total System Jitter     (TSJ):    0.071ns
+    Total Input Jitter      (TIJ):    0.300ns
+    Discrete Jitter          (DJ):    0.000ns
+    Phase Error              (PE):    0.000ns
+
+    Location             Delay type                Incr(ns)  Path(ns)    Netlist Resource(s)
+  -------------------------------------------------------------------    -------------------
+                         (clock clk_fpga_0 rise edge)
+                                                      0.000     0.000 r  
+    PS7_X0Y0             PS7                          0.000     0.000 r  aster_core_board_i/ps7/inst/PS7_i/FCLKCLK[0]
+                         net (fo=1, routed)           1.193     1.193    aster_core_board_i/ps7/inst/FCLK_CLK_unbuffered[0]
+    BUFGCTRL_X0Y16                                                    r  aster_core_board_i/ps7/inst/buffer_fclk_clk_0.FCLK_CLK_0_BUFG/I
+    BUFGCTRL_X0Y16       BUFG (Prop_bufg_I_O)         0.101     1.294 r  aster_core_board_i/ps7/inst/buffer_fclk_clk_0.FCLK_CLK_0_BUFG/O
+                         net (fo=4716, routed)        1.644     2.938    aster_core_board_i/aster/inst/implementation/dcache/aclk
+    SLICE_X47Y84         FDRE                                         r  aster_core_board_i/aster/inst/implementation/dcache/state_reg[1]/C
+  -------------------------------------------------------------------    -------------------
+    SLICE_X47Y84         FDRE (Prop_fdre_C_Q)         0.456     3.394 f  aster_core_board_i/aster/inst/implementation/dcache/state_reg[1]/Q
+                         net (fo=32, routed)          1.058     4.452    aster_core_board_i/aster/inst/implementation/dcache/data/mem_reg_35
+    SLICE_X47Y85                                                      f  aster_core_board_i/aster/inst/implementation/dcache/data/dv1_i_3/I1
+    SLICE_X47Y85         LUT6 (Prop_lut6_I1_O)        0.124     4.576 r  aster_core_board_i/aster/inst/implementation/dcache/data/dv1_i_3/O
+                         net (fo=1, routed)           0.433     5.010    aster_core_board_i/aster/inst/implementation/dcache/data/dv1_i_3_n_0
+    SLICE_X47Y85                                                      r  aster_core_board_i/aster/inst/implementation/dcache/data/dv1_i_2/I0
+    SLICE_X47Y85         LUT5 (Prop_lut5_I0_O)        0.124     5.134 f  aster_core_board_i/aster/inst/implementation/dcache/data/dv1_i_2/O
+                         net (fo=2, routed)           0.580     5.714    aster_core_board_i/aster/inst/implementation/dcache/data_n_33
+    SLICE_X48Y85                                                      f  aster_core_board_i/aster/inst/implementation/dcache/dv1_i_1/I1
+    SLICE_X48Y85         LUT4 (Prop_lut4_I1_O)        0.149     5.863 r  aster_core_board_i/aster/inst/implementation/dcache/dv1_i_1/O
+                         net (fo=5, routed)           0.635     6.498    aster_core_board_i/aster/inst/implementation/dcache/p_72_in
+    SLICE_X46Y85                                                      r  aster_core_board_i/aster/inst/implementation/dcache/page_ram_reg_0_i_25/I1
+    SLICE_X46Y85         LUT2 (Prop_lut2_I1_O)        0.332     6.830 f  aster_core_board_i/aster/inst/implementation/dcache/page_ram_reg_0_i_25/O
+                         net (fo=49, routed)          1.293     8.123    aster_core_board_i/aster/inst/implementation/dcache/page_ram_reg_0_i_25_n_0
+    SLICE_X32Y84                                                      f  aster_core_board_i/aster/inst/implementation/dcache/page_ram_reg_0_i_1/I2
+    SLICE_X32Y84         LUT3 (Prop_lut3_I2_O)        0.148     8.271 r  aster_core_board_i/aster/inst/implementation/dcache/page_ram_reg_0_i_1/O
+                         net (fo=4, routed)           1.789    10.059    aster_core_board_i/aster/inst/implementation/dcache_n_151
+    RAMB36_X2Y9          RAMB36E1                                     r  aster_core_board_i/aster/inst/implementation/page_ram_reg_0/ENBWREN
+  -------------------------------------------------------------------    -------------------
+
+                         (clock clk_fpga_0 rise edge)
+                                                     10.000    10.000 r  
+    PS7_X0Y0             PS7                          0.000    10.000 r  aster_core_board_i/ps7/inst/PS7_i/FCLKCLK[0]
+                         net (fo=1, routed)           1.088    11.088    aster_core_board_i/ps7/inst/FCLK_CLK_unbuffered[0]
+    BUFGCTRL_X0Y16                                                    r  aster_core_board_i/ps7/inst/buffer_fclk_clk_0.FCLK_CLK_0_BUFG/I
+    BUFGCTRL_X0Y16       BUFG (Prop_bufg_I_O)         0.091    11.179 r  aster_core_board_i/ps7/inst/buffer_fclk_clk_0.FCLK_CLK_0_BUFG/O
+                         net (fo=4716, routed)        1.532    12.711    aster_core_board_i/aster/inst/implementation/aclk
+    RAMB36_X2Y9          RAMB36E1                                     r  aster_core_board_i/aster/inst/implementation/page_ram_reg_0/CLKBWRCLK
+                         clock pessimism              0.115    12.826    
+                         clock uncertainty           -0.154    12.672    
+    RAMB36_X2Y9          RAMB36E1 (Setup_ramb36e1_CLKBWRCLK_ENBWREN)
+                                                     -0.647    12.025    aster_core_board_i/aster/inst/implementation/page_ram_reg_0
+  -------------------------------------------------------------------
+                         required time                         12.025    
+                         arrival time                         -10.059    
+  -------------------------------------------------------------------
+                         slack                                  1.965    
+
+
+
+
+
+NAMED label=console_ram slack_ns=5.043 from=aster_core_board_i/aster/inst/implementation/core/rvfi_mem_addr_reg[27]/C to=aster_core_board_i/aster/inst/implementation/console_ram_reg/ENARDEN levels=3
+Copyright 1986-2022 Xilinx, Inc. All Rights Reserved. Copyright 2022-2025 Advanced Micro Devices, Inc. All Rights Reserved.
+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+| Tool Version : Vivado v.2025.1 (lin64) Build 6140274 Wed May 21 22:58:25 MDT 2025
+| Date         : Mon Oct  5 10:05:01 2026
+| Host         : gondor running 64-bit Ubuntu 24.04.5 LTS
+| Command      : report_timing -of_objects [get_timing_paths -setup -to [get_cells -hier -quiet -filter {NAME =~ *implementation/console_ram* && IS_SEQUENTIAL}] -max_paths 1 -nworst 1] -return_string
+| Design       : aster_core_board_wrapper
+| Device       : 7z020-clg400
+| Speed File   : -1  PRODUCTION 1.12 2019-11-22
+| Design State : Physopt postRoute
+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+Timing Report
+
+Slack (MET) :             5.043ns  (required time - arrival time)
+  Source:                 aster_core_board_i/aster/inst/implementation/core/rvfi_mem_addr_reg[27]/C
+                            (rising edge-triggered cell FDRE clocked by clk_fpga_0  {rise@0.000ns fall@5.000ns period=10.000ns})
+  Destination:            aster_core_board_i/aster/inst/implementation/console_ram_reg/ENARDEN
+                            (rising edge-triggered cell RAMB36E1 clocked by clk_fpga_0  {rise@0.000ns fall@5.000ns period=10.000ns})
+  Path Group:             clk_fpga_0
+  Path Type:              Setup (Max at Slow Process Corner)
+  Requirement:            10.000ns  (clk_fpga_0 rise@10.000ns - clk_fpga_0 rise@0.000ns)
+  Data Path Delay:        4.345ns  (logic 1.027ns (23.635%)  route 3.318ns (76.365%))
+  Logic Levels:           3  (LUT4=1 LUT5=2)
+  Clock Path Skew:        -0.015ns (DCD - SCD + CPR)
+    Destination Clock Delay (DCD):    2.688ns = ( 12.688 - 10.000 ) 
+    Source Clock Delay      (SCD):    2.932ns
+    Clock Pessimism Removal (CPR):    0.229ns
+  Clock Uncertainty:      0.154ns  ((TSJ^2 + TIJ^2)^1/2 + DJ) / 2 + PE
+    Total System Jitter     (TSJ):    0.071ns
+    Total Input Jitter      (TIJ):    0.300ns
+    Discrete Jitter          (DJ):    0.000ns
+    Phase Error              (PE):    0.000ns
+
+    Location             Delay type                Incr(ns)  Path(ns)    Netlist Resource(s)
+  -------------------------------------------------------------------    -------------------
+                         (clock clk_fpga_0 rise edge)
+                                                      0.000     0.000 r  
+    PS7_X0Y0             PS7                          0.000     0.000 r  aster_core_board_i/ps7/inst/PS7_i/FCLKCLK[0]
+                         net (fo=1, routed)           1.193     1.193    aster_core_board_i/ps7/inst/FCLK_CLK_unbuffered[0]
+    BUFGCTRL_X0Y16                                                    r  aster_core_board_i/ps7/inst/buffer_fclk_clk_0.FCLK_CLK_0_BUFG/I
+    BUFGCTRL_X0Y16       BUFG (Prop_bufg_I_O)         0.101     1.294 r  aster_core_board_i/ps7/inst/buffer_fclk_clk_0.FCLK_CLK_0_BUFG/O
+                         net (fo=4716, routed)        1.638     2.932    aster_core_board_i/aster/inst/implementation/core/aclk
+    SLICE_X38Y78         FDRE                                         r  aster_core_board_i/aster/inst/implementation/core/rvfi_mem_addr_reg[27]/C
+  -------------------------------------------------------------------    -------------------
+    SLICE_X38Y78         FDRE (Prop_fdre_C_Q)         0.478     3.410 f  aster_core_board_i/aster/inst/implementation/core/rvfi_mem_addr_reg[27]/Q
+                         net (fo=2, routed)           0.873     4.283    aster_core_board_i/aster/inst/implementation/core/rvfi_mem_addr[27]
+    SLICE_X37Y77                                                      f  aster_core_board_i/aster/inst/implementation/core/console_ram_reg_i_13/I0
+    SLICE_X37Y77         LUT4 (Prop_lut4_I0_O)        0.301     4.584 f  aster_core_board_i/aster/inst/implementation/core/console_ram_reg_i_13/O
+                         net (fo=2, routed)           0.829     5.413    aster_core_board_i/aster/inst/implementation/core/console_ram_reg_i_13_n_0
+    SLICE_X38Y76                                                      f  aster_core_board_i/aster/inst/implementation/core/console_ram_reg_i_8/I0
+    SLICE_X38Y76         LUT5 (Prop_lut5_I0_O)        0.124     5.537 f  aster_core_board_i/aster/inst/implementation/core/console_ram_reg_i_8/O
+                         net (fo=1, routed)           0.287     5.824    aster_core_board_i/aster/inst/implementation/core/console_ram_reg_i_8_n_0
+    SLICE_X37Y76                                                      f  aster_core_board_i/aster/inst/implementation/core/console_ram_reg_i_1/I1
+    SLICE_X37Y76         LUT5 (Prop_lut5_I1_O)        0.124     5.948 r  aster_core_board_i/aster/inst/implementation/core/console_ram_reg_i_1/O
+                         net (fo=33, routed)          1.330     7.277    aster_core_board_i/aster/inst/implementation/console_store
+    RAMB36_X2Y15         RAMB36E1                                     r  aster_core_board_i/aster/inst/implementation/console_ram_reg/ENARDEN
+  -------------------------------------------------------------------    -------------------
+
+                         (clock clk_fpga_0 rise edge)
+                                                     10.000    10.000 r  
+    PS7_X0Y0             PS7                          0.000    10.000 r  aster_core_board_i/ps7/inst/PS7_i/FCLKCLK[0]
+                         net (fo=1, routed)           1.088    11.088    aster_core_board_i/ps7/inst/FCLK_CLK_unbuffered[0]
+    BUFGCTRL_X0Y16                                                    r  aster_core_board_i/ps7/inst/buffer_fclk_clk_0.FCLK_CLK_0_BUFG/I
+    BUFGCTRL_X0Y16       BUFG (Prop_bufg_I_O)         0.091    11.179 r  aster_core_board_i/ps7/inst/buffer_fclk_clk_0.FCLK_CLK_0_BUFG/O
+                         net (fo=4716, routed)        1.509    12.688    aster_core_board_i/aster/inst/implementation/aclk
+    RAMB36_X2Y15         RAMB36E1                                     r  aster_core_board_i/aster/inst/implementation/console_ram_reg/CLKARDCLK
+                         clock pessimism              0.229    12.917    
+                         clock uncertainty           -0.154    12.763    
+    RAMB36_X2Y15         RAMB36E1 (Setup_ramb36e1_CLKARDCLK_ENARDEN)
+                                                     -0.443    12.320    aster_core_board_i/aster/inst/implementation/console_ram_reg
+  -------------------------------------------------------------------
+                         required time                         12.320    
+                         arrival time                          -7.277    
+  -------------------------------------------------------------------
+                         slack                                  5.043    
+
+
+
+
+
+NAMED label=axi_rdata slack_ns=3.483 from=aster_core_board_i/aster/inst/implementation/run_reg/C to=aster_core_board_i/aster/inst/implementation/s_axi_rdata_reg[0]/D levels=5
+Copyright 1986-2022 Xilinx, Inc. All Rights Reserved. Copyright 2022-2025 Advanced Micro Devices, Inc. All Rights Reserved.
+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+| Tool Version : Vivado v.2025.1 (lin64) Build 6140274 Wed May 21 22:58:25 MDT 2025
+| Date         : Mon Oct  5 10:05:01 2026
+| Host         : gondor running 64-bit Ubuntu 24.04.5 LTS
+| Command      : report_timing -of_objects [get_timing_paths -setup -to [get_cells -hier -quiet -filter {NAME =~ *implementation/s_axi_rdata* && IS_SEQUENTIAL}] -max_paths 1 -nworst 1] -return_string
+| Design       : aster_core_board_wrapper
+| Device       : 7z020-clg400
+| Speed File   : -1  PRODUCTION 1.12 2019-11-22
+| Design State : Physopt postRoute
+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+Timing Report
+
+Slack (MET) :             3.483ns  (required time - arrival time)
+  Source:                 aster_core_board_i/aster/inst/implementation/run_reg/C
+                            (rising edge-triggered cell FDRE clocked by clk_fpga_0  {rise@0.000ns fall@5.000ns period=10.000ns})
+  Destination:            aster_core_board_i/aster/inst/implementation/s_axi_rdata_reg[0]/D
+                            (rising edge-triggered cell FDRE clocked by clk_fpga_0  {rise@0.000ns fall@5.000ns period=10.000ns})
+  Path Group:             clk_fpga_0
+  Path Type:              Setup (Max at Slow Process Corner)
+  Requirement:            10.000ns  (clk_fpga_0 rise@10.000ns - clk_fpga_0 rise@0.000ns)
+  Data Path Delay:        6.377ns  (logic 1.401ns (21.970%)  route 4.976ns (78.030%))
+  Logic Levels:           5  (LUT5=2 LUT6=2 MUXF7=1)
+  Clock Path Skew:        -0.017ns (DCD - SCD + CPR)
+    Destination Clock Delay (DCD):    2.698ns = ( 12.698 - 10.000 ) 
+    Source Clock Delay      (SCD):    2.944ns
+    Clock Pessimism Removal (CPR):    0.229ns
+  Clock Uncertainty:      0.154ns  ((TSJ^2 + TIJ^2)^1/2 + DJ) / 2 + PE
+    Total System Jitter     (TSJ):    0.071ns
+    Total Input Jitter      (TIJ):    0.300ns
+    Discrete Jitter          (DJ):    0.000ns
+    Phase Error              (PE):    0.000ns
+
+    Location             Delay type                Incr(ns)  Path(ns)    Netlist Resource(s)
+  -------------------------------------------------------------------    -------------------
+                         (clock clk_fpga_0 rise edge)
+                                                      0.000     0.000 r  
+    PS7_X0Y0             PS7                          0.000     0.000 r  aster_core_board_i/ps7/inst/PS7_i/FCLKCLK[0]
+                         net (fo=1, routed)           1.193     1.193    aster_core_board_i/ps7/inst/FCLK_CLK_unbuffered[0]
+    BUFGCTRL_X0Y16                                                    r  aster_core_board_i/ps7/inst/buffer_fclk_clk_0.FCLK_CLK_0_BUFG/I
+    BUFGCTRL_X0Y16       BUFG (Prop_bufg_I_O)         0.101     1.294 r  aster_core_board_i/ps7/inst/buffer_fclk_clk_0.FCLK_CLK_0_BUFG/O
+                         net (fo=4716, routed)        1.650     2.944    aster_core_board_i/aster/inst/implementation/aclk
+    SLICE_X38Y89         FDRE                                         r  aster_core_board_i/aster/inst/implementation/run_reg/C
+  -------------------------------------------------------------------    -------------------
+    SLICE_X38Y89         FDRE (Prop_fdre_C_Q)         0.518     3.462 r  aster_core_board_i/aster/inst/implementation/run_reg/Q
+                         net (fo=92, routed)          2.682     6.144    aster_core_board_i/aster/inst/implementation/run
+    SLICE_X31Y75                                                      r  aster_core_board_i/aster/inst/implementation/s_axi_rdata[0]_i_10/I4
+    SLICE_X31Y75         LUT5 (Prop_lut5_I4_O)        0.124     6.268 r  aster_core_board_i/aster/inst/implementation/s_axi_rdata[0]_i_10/O
+                         net (fo=1, routed)           0.000     6.268    aster_core_board_i/aster/inst/implementation/s_axi_rdata[0]_i_10_n_0
+    SLICE_X31Y75                                                      r  aster_core_board_i/aster/inst/implementation/s_axi_rdata_reg[0]_i_5/I0
+    SLICE_X31Y75         MUXF7 (Prop_muxf7_I0_O)      0.212     6.480 r  aster_core_board_i/aster/inst/implementation/s_axi_rdata_reg[0]_i_5/O
+                         net (fo=1, routed)           0.947     7.427    aster_core_board_i/aster/inst/implementation/s_axi_rdata_reg[0]_i_5_n_0
+    SLICE_X28Y77                                                      r  aster_core_board_i/aster/inst/implementation/s_axi_rdata[0]_i_3/I3
+    SLICE_X28Y77         LUT6 (Prop_lut6_I3_O)        0.299     7.726 f  aster_core_board_i/aster/inst/implementation/s_axi_rdata[0]_i_3/O
+                         net (fo=1, routed)           0.443     8.169    aster_core_board_i/aster/inst/implementation/s_axi_rdata[0]_i_3_n_0
+    SLICE_X31Y75                                                      f  aster_core_board_i/aster/inst/implementation/s_axi_rdata[0]_i_2/I0
+    SLICE_X31Y75         LUT5 (Prop_lut5_I0_O)        0.124     8.293 r  aster_core_board_i/aster/inst/implementation/s_axi_rdata[0]_i_2/O
+                         net (fo=1, routed)           0.904     9.197    aster_core_board_i/aster/inst/implementation/s_axi_rdata[0]_i_2_n_0
+    SLICE_X31Y84                                                      r  aster_core_board_i/aster/inst/implementation/s_axi_rdata[0]_i_1/I0
+    SLICE_X31Y84         LUT6 (Prop_lut6_I0_O)        0.124     9.321 r  aster_core_board_i/aster/inst/implementation/s_axi_rdata[0]_i_1/O
+                         net (fo=1, routed)           0.000     9.321    aster_core_board_i/aster/inst/implementation/s_axi_rdata[0]_i_1_n_0
+    SLICE_X31Y84         FDRE                                         r  aster_core_board_i/aster/inst/implementation/s_axi_rdata_reg[0]/D
+  -------------------------------------------------------------------    -------------------
+
+                         (clock clk_fpga_0 rise edge)
+                                                     10.000    10.000 r  
+    PS7_X0Y0             PS7                          0.000    10.000 r  aster_core_board_i/ps7/inst/PS7_i/FCLKCLK[0]
+                         net (fo=1, routed)           1.088    11.088    aster_core_board_i/ps7/inst/FCLK_CLK_unbuffered[0]
+    BUFGCTRL_X0Y16                                                    r  aster_core_board_i/ps7/inst/buffer_fclk_clk_0.FCLK_CLK_0_BUFG/I
+    BUFGCTRL_X0Y16       BUFG (Prop_bufg_I_O)         0.091    11.179 r  aster_core_board_i/ps7/inst/buffer_fclk_clk_0.FCLK_CLK_0_BUFG/O
+                         net (fo=4716, routed)        1.519    12.698    aster_core_board_i/aster/inst/implementation/aclk
+    SLICE_X31Y84         FDRE                                         r  aster_core_board_i/aster/inst/implementation/s_axi_rdata_reg[0]/C
+                         clock pessimism              0.229    12.927    
+                         clock uncertainty           -0.154    12.773    
+    SLICE_X31Y84         FDRE (Setup_fdre_C_D)        0.031    12.804    aster_core_board_i/aster/inst/implementation/s_axi_rdata_reg[0]
+  -------------------------------------------------------------------
+                         required time                         12.804    
+                         arrival time                          -9.321    
+  -------------------------------------------------------------------
+                         slack                                  3.483    
+
+
+
+
+
+NAMED label=window_counters slack_ns=3.012 from=aster_core_board_i/aster/inst/implementation/ar_busy_reg/C to=aster_core_board_i/aster/inst/implementation/window_retired_reg[4]/R levels=4
+Copyright 1986-2022 Xilinx, Inc. All Rights Reserved. Copyright 2022-2025 Advanced Micro Devices, Inc. All Rights Reserved.
+----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+| Tool Version : Vivado v.2025.1 (lin64) Build 6140274 Wed May 21 22:58:25 MDT 2025
+| Date         : Mon Oct  5 10:05:01 2026
+| Host         : gondor running 64-bit Ubuntu 24.04.5 LTS
+| Command      : report_timing -of_objects [get_timing_paths -setup -to [get_cells -hier -quiet -filter {NAME =~ *implementation/window_* && IS_SEQUENTIAL}] -max_paths 1 -nworst 1] -return_string
+| Design       : aster_core_board_wrapper
+| Device       : 7z020-clg400
+| Speed File   : -1  PRODUCTION 1.12 2019-11-22
+| Design State : Physopt postRoute
+----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+Timing Report
+
+Slack (MET) :             3.012ns  (required time - arrival time)
+  Source:                 aster_core_board_i/aster/inst/implementation/ar_busy_reg/C
+                            (rising edge-triggered cell FDRE clocked by clk_fpga_0  {rise@0.000ns fall@5.000ns period=10.000ns})
+  Destination:            aster_core_board_i/aster/inst/implementation/window_retired_reg[4]/R
+                            (rising edge-triggered cell FDRE clocked by clk_fpga_0  {rise@0.000ns fall@5.000ns period=10.000ns})
+  Path Group:             clk_fpga_0
+  Path Type:              Setup (Max at Slow Process Corner)
+  Requirement:            10.000ns  (clk_fpga_0 rise@10.000ns - clk_fpga_0 rise@0.000ns)
+  Data Path Delay:        6.064ns  (logic 0.978ns (16.127%)  route 5.086ns (83.873%))
+  Logic Levels:           4  (LUT4=3 LUT6=1)
+  Clock Path Skew:        -0.117ns (DCD - SCD + CPR)
+    Destination Clock Delay (DCD):    2.644ns = ( 12.644 - 10.000 ) 
+    Source Clock Delay      (SCD):    2.990ns
+    Clock Pessimism Removal (CPR):    0.229ns
+  Clock Uncertainty:      0.154ns  ((TSJ^2 + TIJ^2)^1/2 + DJ) / 2 + PE
+    Total System Jitter     (TSJ):    0.071ns
+    Total Input Jitter      (TIJ):    0.300ns
+    Discrete Jitter          (DJ):    0.000ns
+    Phase Error              (PE):    0.000ns
+
+    Location             Delay type                Incr(ns)  Path(ns)    Netlist Resource(s)
+  -------------------------------------------------------------------    -------------------
+                         (clock clk_fpga_0 rise edge)
+                                                      0.000     0.000 r  
+    PS7_X0Y0             PS7                          0.000     0.000 r  aster_core_board_i/ps7/inst/PS7_i/FCLKCLK[0]
+                         net (fo=1, routed)           1.193     1.193    aster_core_board_i/ps7/inst/FCLK_CLK_unbuffered[0]
+    BUFGCTRL_X0Y16                                                    r  aster_core_board_i/ps7/inst/buffer_fclk_clk_0.FCLK_CLK_0_BUFG/I
+    BUFGCTRL_X0Y16       BUFG (Prop_bufg_I_O)         0.101     1.294 r  aster_core_board_i/ps7/inst/buffer_fclk_clk_0.FCLK_CLK_0_BUFG/O
+                         net (fo=4716, routed)        1.696     2.990    aster_core_board_i/aster/inst/implementation/aclk
+    SLICE_X29Y88         FDRE                                         r  aster_core_board_i/aster/inst/implementation/ar_busy_reg/C
+  -------------------------------------------------------------------    -------------------
+    SLICE_X29Y88         FDRE (Prop_fdre_C_Q)         0.456     3.446 f  aster_core_board_i/aster/inst/implementation/ar_busy_reg/Q
+                         net (fo=15, routed)          1.069     4.515    aster_core_board_i/aster/inst/implementation/ar_busy
+    SLICE_X37Y94                                                      f  aster_core_board_i/aster/inst/implementation/page_ram_reg_0_i_29/I3
+    SLICE_X37Y94         LUT4 (Prop_lut4_I3_O)        0.124     4.639 f  aster_core_board_i/aster/inst/implementation/page_ram_reg_0_i_29/O
+                         net (fo=4, routed)           0.680     5.319    aster_core_board_i/aster/inst/implementation/page_ram_reg_0_i_29_n_0
+    SLICE_X36Y94                                                      f  aster_core_board_i/aster/inst/implementation/tohost_addr[31]_i_2/I5
+    SLICE_X36Y94         LUT6 (Prop_lut6_I5_O)        0.124     5.443 r  aster_core_board_i/aster/inst/implementation/tohost_addr[31]_i_2/O
+                         net (fo=2, routed)           0.971     6.414    aster_core_board_i/aster/inst/implementation/tohost_addr[31]_i_2_n_0
+    SLICE_X36Y91                                                      r  aster_core_board_i/aster/inst/implementation/window_open_cycles[63]_i_3/I0
+    SLICE_X36Y91         LUT4 (Prop_lut4_I0_O)        0.124     6.538 r  aster_core_board_i/aster/inst/implementation/window_open_cycles[63]_i_3/O
+                         net (fo=2, routed)           0.824     7.363    aster_core_board_i/aster/inst/implementation/run0
+    SLICE_X38Y88                                                      r  aster_core_board_i/aster/inst/implementation/window_open_cycles[63]_i_1/I2
+    SLICE_X38Y88         LUT4 (Prop_lut4_I2_O)        0.150     7.513 r  aster_core_board_i/aster/inst/implementation/window_open_cycles[63]_i_1/O
+                         net (fo=583, routed)         1.542     9.054    aster_core_board_i/aster/inst/implementation/window_open_cycles[63]_i_1_n_0
+    SLICE_X33Y72         FDRE                                         r  aster_core_board_i/aster/inst/implementation/window_retired_reg[4]/R
+  -------------------------------------------------------------------    -------------------
+
+                         (clock clk_fpga_0 rise edge)
+                                                     10.000    10.000 r  
+    PS7_X0Y0             PS7                          0.000    10.000 r  aster_core_board_i/ps7/inst/PS7_i/FCLKCLK[0]
+                         net (fo=1, routed)           1.088    11.088    aster_core_board_i/ps7/inst/FCLK_CLK_unbuffered[0]
+    BUFGCTRL_X0Y16                                                    r  aster_core_board_i/ps7/inst/buffer_fclk_clk_0.FCLK_CLK_0_BUFG/I
+    BUFGCTRL_X0Y16       BUFG (Prop_bufg_I_O)         0.091    11.179 r  aster_core_board_i/ps7/inst/buffer_fclk_clk_0.FCLK_CLK_0_BUFG/O
+                         net (fo=4716, routed)        1.465    12.644    aster_core_board_i/aster/inst/implementation/aclk
+    SLICE_X33Y72         FDRE                                         r  aster_core_board_i/aster/inst/implementation/window_retired_reg[4]/C
+                         clock pessimism              0.229    12.873    
+                         clock uncertainty           -0.154    12.719    
+    SLICE_X33Y72         FDRE (Setup_fdre_C_R)       -0.653    12.066    aster_core_board_i/aster/inst/implementation/window_retired_reg[4]
+  -------------------------------------------------------------------
+                         required time                         12.066    
+                         arrival time                          -9.054    
+  -------------------------------------------------------------------
+                         slack                                  3.012    
+
+
+
+
+
+NAMED label=core_worst slack_ns=0.140 from=aster_core_board_i/aster/inst/implementation/core/m1_reg[result][1]/C to=aster_core_board_i/aster/inst/implementation/core/fsel1_reg[1]/D levels=9
+Copyright 1986-2022 Xilinx, Inc. All Rights Reserved. Copyright 2022-2025 Advanced Micro Devices, Inc. All Rights Reserved.
+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+| Tool Version : Vivado v.2025.1 (lin64) Build 6140274 Wed May 21 22:58:25 MDT 2025
+| Date         : Mon Oct  5 10:05:01 2026
+| Host         : gondor running 64-bit Ubuntu 24.04.5 LTS
+| Command      : report_timing -of_objects [get_timing_paths -setup -to [get_cells -hier -quiet -filter {NAME =~ *implementation/core/* && IS_SEQUENTIAL}] -max_paths 1 -nworst 1] -return_string
+| Design       : aster_core_board_wrapper
+| Device       : 7z020-clg400
+| Speed File   : -1  PRODUCTION 1.12 2019-11-22
+| Design State : Physopt postRoute
+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+Timing Report
+
+Slack (MET) :             0.140ns  (required time - arrival time)
+  Source:                 aster_core_board_i/aster/inst/implementation/core/m1_reg[result][1]/C
+                            (rising edge-triggered cell FDRE clocked by clk_fpga_0  {rise@0.000ns fall@5.000ns period=10.000ns})
+  Destination:            aster_core_board_i/aster/inst/implementation/core/fsel1_reg[1]/D
+                            (rising edge-triggered cell FDRE clocked by clk_fpga_0  {rise@0.000ns fall@5.000ns period=10.000ns})
+  Path Group:             clk_fpga_0
+  Path Type:              Setup (Max at Slow Process Corner)
+  Requirement:            10.000ns  (clk_fpga_0 rise@10.000ns - clk_fpga_0 rise@0.000ns)
+  Data Path Delay:        9.516ns  (logic 1.810ns (19.021%)  route 7.706ns (80.979%))
+  Logic Levels:           9  (LUT2=1 LUT4=3 LUT5=1 LUT6=4)
+  Clock Path Skew:        -0.219ns (DCD - SCD + CPR)
+    Destination Clock Delay (DCD):    2.656ns = ( 12.656 - 10.000 ) 
+    Source Clock Delay      (SCD):    3.004ns
+    Clock Pessimism Removal (CPR):    0.129ns
+  Clock Uncertainty:      0.154ns  ((TSJ^2 + TIJ^2)^1/2 + DJ) / 2 + PE
+    Total System Jitter     (TSJ):    0.071ns
+    Total Input Jitter      (TIJ):    0.300ns
+    Discrete Jitter          (DJ):    0.000ns
+    Phase Error              (PE):    0.000ns
+
+    Location             Delay type                Incr(ns)  Path(ns)    Netlist Resource(s)
+  -------------------------------------------------------------------    -------------------
+                         (clock clk_fpga_0 rise edge)
+                                                      0.000     0.000 r  
+    PS7_X0Y0             PS7                          0.000     0.000 r  aster_core_board_i/ps7/inst/PS7_i/FCLKCLK[0]
+                         net (fo=1, routed)           1.193     1.193    aster_core_board_i/ps7/inst/FCLK_CLK_unbuffered[0]
+    BUFGCTRL_X0Y16                                                    r  aster_core_board_i/ps7/inst/buffer_fclk_clk_0.FCLK_CLK_0_BUFG/I
+    BUFGCTRL_X0Y16       BUFG (Prop_bufg_I_O)         0.101     1.294 r  aster_core_board_i/ps7/inst/buffer_fclk_clk_0.FCLK_CLK_0_BUFG/O
+                         net (fo=4716, routed)        1.710     3.004    aster_core_board_i/aster/inst/implementation/core/aclk
+    SLICE_X56Y59         FDRE                                         r  aster_core_board_i/aster/inst/implementation/core/m1_reg[result][1]/C
+  -------------------------------------------------------------------    -------------------
+    SLICE_X56Y59         FDRE (Prop_fdre_C_Q)         0.456     3.460 f  aster_core_board_i/aster/inst/implementation/core/m1_reg[result][1]/Q
+                         net (fo=5, routed)           1.237     4.697    aster_core_board_i/aster/inst/implementation/core/fetch/m1_reg[rs2v][31][1]
+    SLICE_X48Y61                                                      f  aster_core_board_i/aster/inst/implementation/core/fetch/m1[acc]_i_6/I0
+    SLICE_X48Y61         LUT4 (Prop_lut4_I0_O)        0.124     4.821 r  aster_core_board_i/aster/inst/implementation/core/fetch/m1[acc]_i_6/O
+                         net (fo=1, routed)           0.712     5.533    aster_core_board_i/aster/inst/implementation/core/fetch/m1[acc]_i_6_n_0
+    SLICE_X47Y64                                                      r  aster_core_board_i/aster/inst/implementation/core/fetch/m1[acc]_i_2/I3
+    SLICE_X47Y64         LUT6 (Prop_lut6_I3_O)        0.124     5.657 f  aster_core_board_i/aster/inst/implementation/core/fetch/m1[acc]_i_2/O
+                         net (fo=5, routed)           0.586     6.243    aster_core_board_i/aster/inst/implementation/core/fetch/e_dec_reg[imm][0]_0
+    SLICE_X47Y66                                                      f  aster_core_board_i/aster/inst/implementation/core/fetch/m1[acc]_i_1/I0
+    SLICE_X47Y66         LUT6 (Prop_lut6_I0_O)        0.124     6.367 r  aster_core_board_i/aster/inst/implementation/core/fetch/m1[acc]_i_1/O
+                         net (fo=6, routed)           0.719     7.086    aster_core_board_i/aster/inst/implementation/dcache/e_slot[acc]
+    SLICE_X49Y75                                                      r  aster_core_board_i/aster/inst/implementation/dcache/e_dec[fencei]_i_10/I1
+    SLICE_X49Y75         LUT2 (Prop_lut2_I1_O)        0.124     7.210 f  aster_core_board_i/aster/inst/implementation/dcache/e_dec[fencei]_i_10/O
+                         net (fo=1, routed)           0.431     7.641    aster_core_board_i/aster/inst/implementation/core/fetch/e_rs2v_reg[12]
+    SLICE_X49Y74                                                      f  aster_core_board_i/aster/inst/implementation/core/fetch/e_dec[fencei]_i_5/I5
+    SLICE_X49Y74         LUT6 (Prop_lut6_I5_O)        0.124     7.765 r  aster_core_board_i/aster/inst/implementation/core/fetch/e_dec[fencei]_i_5/O
+                         net (fo=82, routed)          1.716     9.482    aster_core_board_i/aster/inst/implementation/core/fetch_n_174
+    SLICE_X58Y60                                                      r  aster_core_board_i/aster/inst/implementation/core/e_dec[rs1][4]_i_2/I1
+    SLICE_X58Y60         LUT4 (Prop_lut4_I1_O)        0.146     9.628 r  aster_core_board_i/aster/inst/implementation/core/e_dec[rs1][4]_i_2/O
+                         net (fo=7, routed)           0.720    10.348    aster_core_board_i/aster/inst/implementation/core/e_dec[rs1][4]_i_2_n_0
+    SLICE_X59Y60                                                      r  aster_core_board_i/aster/inst/implementation/core/fsel1[3]_i_7/I0
+    SLICE_X59Y60         LUT5 (Prop_lut5_I0_O)        0.340    10.688 r  aster_core_board_i/aster/inst/implementation/core/fsel1[3]_i_7/O
+                         net (fo=1, routed)           0.292    10.980    aster_core_board_i/aster/inst/implementation/core/fsel1[3]_i_7_n_0
+    SLICE_X56Y60                                                      r  aster_core_board_i/aster/inst/implementation/core/fsel1[3]_i_3/I5
+    SLICE_X56Y60         LUT6 (Prop_lut6_I5_O)        0.124    11.104 r  aster_core_board_i/aster/inst/implementation/core/fsel1[3]_i_3/O
+                         net (fo=8, routed)           1.292    12.396    aster_core_board_i/aster/inst/implementation/core/fsel1[3]_i_3_n_0
+    SLICE_X49Y55                                                      r  aster_core_board_i/aster/inst/implementation/core/fsel1[1]_i_1/I1
+    SLICE_X49Y55         LUT4 (Prop_lut4_I1_O)        0.124    12.520 r  aster_core_board_i/aster/inst/implementation/core/fsel1[1]_i_1/O
+                         net (fo=1, routed)           0.000    12.520    aster_core_board_i/aster/inst/implementation/core/select_return[1]
+    SLICE_X49Y55         FDRE                                         r  aster_core_board_i/aster/inst/implementation/core/fsel1_reg[1]/D
+  -------------------------------------------------------------------    -------------------
+
+                         (clock clk_fpga_0 rise edge)
+                                                     10.000    10.000 r  
+    PS7_X0Y0             PS7                          0.000    10.000 r  aster_core_board_i/ps7/inst/PS7_i/FCLKCLK[0]
+                         net (fo=1, routed)           1.088    11.088    aster_core_board_i/ps7/inst/FCLK_CLK_unbuffered[0]
+    BUFGCTRL_X0Y16                                                    r  aster_core_board_i/ps7/inst/buffer_fclk_clk_0.FCLK_CLK_0_BUFG/I
+    BUFGCTRL_X0Y16       BUFG (Prop_bufg_I_O)         0.091    11.179 r  aster_core_board_i/ps7/inst/buffer_fclk_clk_0.FCLK_CLK_0_BUFG/O
+                         net (fo=4716, routed)        1.477    12.656    aster_core_board_i/aster/inst/implementation/core/aclk
+    SLICE_X49Y55         FDRE                                         r  aster_core_board_i/aster/inst/implementation/core/fsel1_reg[1]/C
+                         clock pessimism              0.129    12.785    
+                         clock uncertainty           -0.154    12.631    
+    SLICE_X49Y55         FDRE (Setup_fdre_C_D)        0.029    12.660    aster_core_board_i/aster/inst/implementation/core/fsel1_reg[1]
+  -------------------------------------------------------------------
+                         required time                         12.660    
+                         arrival time                         -12.520    
+  -------------------------------------------------------------------
+                         slack                                  0.140    
+
+
+
+
+

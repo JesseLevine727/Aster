@@ -1,0 +1,1 @@
+SUMMARY top=aster_core_board_wrapper fclk_mhz=100 wns_ns=0.140 whs_ns=0.022 from=aster_core_board_i/aster/inst/implementation/core/m1_reg[result][1]/C to=aster_core_board_i/aster/inst/implementation/core/fsel1_reg[1]/D

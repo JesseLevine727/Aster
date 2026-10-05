@@ -18,6 +18,7 @@ board itself (--board). On the same program the board design must:
 
     aster_board.py --sim BOARD_SIM [--only NAME]
     aster_board.py --board BITSTREAM --host xilinx@10.0.0.82 --output DIR [--only NAME]
+    aster_board.py --report DIR/report.json [--only NAME]   # a board run's report, compared again
 
 --board copies the bitstream, the images and scripts/aster_board_remote.py to
 the board, runs it there as root (the sudo password from the environment
@@ -141,13 +142,14 @@ def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument("--sim", type=Path, help="the board design's Verilator simulation")
     parser.add_argument("--board", type=Path, help="the bitstream, to run on the board")
+    parser.add_argument("--report", type=Path, help="a board run's report.json, to compare again")
     parser.add_argument("--host", default="xilinx@10.0.0.82")
     parser.add_argument("--output", type=Path, help="the board run's evidence directory")
     parser.add_argument("--build-dir", type=Path, default=ROOT / "build/aster_board")
     parser.add_argument("--only")
     args = parser.parse_args()
-    if bool(args.sim) == bool(args.board):
-        parser.error("give one of --sim or --board")
+    if sum(map(bool, (args.sim, args.board, args.report))) != 1:
+        parser.error("give one of --sim, --board or --report")
     prefix = os.environ.get("RISCV_PREFIX", "riscv32-unknown-elf-")
     rows = programs(args.only)
     if not rows:
@@ -162,6 +164,10 @@ def main() -> int:
         results = {name: board_sim_run(args.sim, kind, elf, binary, symbols)
                    for kind, name, elf, binary, symbols, _ in built}
         where = "the board design in simulation"
+    elif args.report:
+        report = json.loads(args.report.read_text())
+        results = {entry["name"]: entry for entry in report["programs"]}
+        where = f"the board (its report {args.report.name})"
     else:
         results = run_on_board(args, built)
         where = "the board"
