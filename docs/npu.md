@@ -425,8 +425,8 @@ decisions, as cpu.md §9 records Phase 18's.
 
 ### Clarifications in 19.1 (the tile mapping)
 
-Found necessary while building and verifying 19.1; awaiting the owner's
-acceptance with the milestone:
+Found necessary while building and verifying 19.1; accepted by the owner
+with the milestone (5 October 2026):
 
 - §4.2: there are **two** output banks, used in turn, so a tile's results are
   written while the next tile computes; a tile starts only when its bank
@@ -451,3 +451,21 @@ acceptance with the milestone:
 - §3: a job ends only once the array's pipeline is empty too (after an abort
   or an error, the steps in flight finish first), so a job's counters hold
   from the cycle its end shows.
+
+### Clarifications in 19.2 (the K-split mapping)
+
+Found necessary while building and verifying 19.2; awaiting the owner's
+acceptance with the milestone:
+
+- §4.3: each row's four partial sums are added when the writer takes that
+  row's result (the "adder tree" is in the writer's path), so the array and
+  its output banks are the tile mapping's.
+- §4.3: B is packed once per job, word t holding B(4t .. 4t+3): read as the
+  words covering its K bytes when B_STRIDE is 1, otherwise a word per byte
+  (K reads). The loader now places each byte at an exact buffer position
+  with exact byte enables, which this gathering needs; the tile mapping's
+  loads are unchanged in words and cycles.
+- §4.3: a K-split strip takes ceil(K/4) steps (one, writing zeros, when
+  K = 0); on its last step, the products of the lanes beyond K are zero. It
+  counts as one tile in JOB_TILES, and its steps in JOB_ACTIVE (none when
+  K = 0).

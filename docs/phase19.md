@@ -1,7 +1,8 @@
 # Phase 19: high-utilization NPU and data movement
 
-Status: **in progress — milestone 19.1 (the tile mapping) complete, awaiting
-the owner's sign-off.** 19.0 (the NPU shell) signed off by the owner on
+Status: **in progress — milestone 19.2 (the K-split mapping for N = 1) complete,
+awaiting the owner's sign-off.**
+19.0 (the NPU shell) and 19.1 (the tile mapping) signed off by the owner on
 5 October 2026. The NPU
 specification [`npu.md`](npu.md) was approved by the owner on 5 October 2026.
 The owner's four decisions of 5 October 2026 (platform,
@@ -257,9 +258,15 @@ Two cases needed more than a run on the default memory:
 
   | Case | Two-cycle (gate) | One-cycle | Stalls (seed 5) | Long stalls (seed 3) |
   | --- | ---: | ---: | ---: | ---: |
-  | 64×64×64 | **86.8%** | 86.9% | 78.6% | 53.1% |
-  | 96×96×96 | **91.3%** | 91.4% | 85.1% | 69.7% |
-  | 128×64×128 | **90.4%** | 90.4% | 83.7% | 69.5% |
+  | 64×64×64 | **86.8%** | 86.9% | 78.2% | 55.0% |
+  | 96×96×96 | **91.3%** | 91.4% | 85.2% | 70.2% |
+  | 128×64×128 | **90.4%** | 90.4% | 83.7% | 70.3% |
+
+  The stall columns are one stall pattern each: the pattern a seed gives
+  depends on everything the shell runs before the job, so they move by a
+  point or two as the shell grows. (Corrected in 19.2: the first figures,
+  78.6/85.1/83.7% and 53.1/69.7/69.5%, came from a shell before the
+  register-page sweep.)
 
   v1 reaches 3.33% on 64×64×64 in the same shell (19.0); its 32 KiB window
   cannot hold the other two. The N = 1 cases, still run as tiles, are
@@ -316,6 +323,146 @@ Also from 19.1's own work:
 - OUTSTANDING above 4 would need a deeper tag ring; it is already checked at
   elaboration to be 1–4.
 
+## Milestone 19.2: the K-split mapping, abort and reset, the counters (5 October 2026)
+
+**The K-split mapping** (npu.md §4.3) runs every job with N = 1 under
+MODE 0, and every MODE 2 job:
+- **B, the vector,** is loaded once, packed four bytes a word.
+- **Each strip of four rows of A** is loaded as for tiles, then computed in
+  ceil(K/4) steps. At step t, PE (r, c) takes A(i_r, 4t+c) × B(4t+c), so all
+  16 PEs work instead of one column of four.
+- **The writer** adds each row's four partial sums as it writes C(i_r, 0).
+
+To do it the RTL needed:
+- an A operand per PE (each column takes its own lane of the row's word);
+- the products past K zeroed on a strip's last step;
+- the row sums in the writer.
+
+The loader was generalized. Each byte now goes to an exact buffer position
+with exact byte enables, so B can be gathered a byte per read when its rows
+are not contiguous. The tile mapping's loads are unchanged in words and
+cycles: the gate cases' cycle counts are 19.1's to the cycle. npu.md §9
+records the 19.2 clarifications. The error codes and `irq` of 19.2's
+content row were built and tested in 19.1.
+
+**Verification** (`make npu-tests`):
+- The reference, the traffic model and the cycle model now know the mapping
+  each job runs. K-split jobs are checked for their own counters: strips as
+  tiles, ceil(K/4) steps each, one word written a row.
+- The generator makes N = 1 jobs often, with B packed or gathered and each
+  MODE.
+- The coverage bins add:
+  - K-split under MODE 0 and MODE 2, with B packed and gathered, at each K
+    mod 4;
+  - N = 1 run as tiles (MODE 1);
+  - ABORT landing in CHECK, in a load, in the tiles and between phases;
+  - a reset landing in a load and in the tiles.
+
+  The wrapper exposes the engine's state for these.
+- Each abort or reset is aimed at a phase of the job, using the engine's
+  state, and fires in it. Drawing a random cycle over an estimate of the
+  job's length (19.1) missed the rarer phases in 11 of 240 runs. Over seeds
+  1–40 in all six modes (240 runs), every run now hits every bin.
+- 8 directed N = 1 edge jobs join the list (23 in all), 7 of them K-split:
+  - K at its limit, with B gathered and with B packed under MODE 2;
+  - K of 1, 2 and 3, one with B_STRIDE 0;
+  - overlapping A rows;
+  - K = 0 with M at its limit;
+  - and one N = 1 job as tiles (MODE 1).
+
+The NPU passes, in each of the six memory modes, 4 seeds × 1,000 random jobs
+with every coverage bin (66 on the memories that answer on time, 65 in the
+stall modes) and the 23 edge jobs, every completed job exactly as the cycle
+model on the memories that answer on time.
+
+**Planted bugs.** 10 bugs were planted in the new paths (not retained):
+- in K-split: the last step's mask, the A lane per PE, the row sum, the
+  strip's step count, MODE 0's choice of K-split;
+- in the loader: the gathered B's byte step, the first and the last word's
+  lane masks, B packed when its stride is not 1;
+- the signed word index.
+
+Nine are caught in every run. The tenth, an unsigned shift of the word
+index, is equivalent: the index then differs only in bits 14–15, and the
+buffers use at most the low 12 bits.
+
+**Exit gate met:**
+- **The 19.1 gates on the new paths:**
+  - random and edge descriptors pass in every memory mode;
+  - the cycle model is exact, K-split included;
+  - the dense GEMM cases are unchanged: 86.8%, 91.3%, 90.4%;
+  - 10 ns out of context (below).
+- **Abort and reset tests,** required by coverage in every memory mode:
+  ABORT landing in CHECK, in a load, in the tiles, and between phases
+  (panel, strip, drain or finish); ABORT of a descriptor that is an error;
+  a reset landing in a load and in the tiles. Each one is checked:
+  - outside C unchanged; each C element old or final;
+  - the counters holding after the end; STATUS, `irq`, ERROR_CODE;
+  - after a reset, every register of the page as out of reset.
+- **The counters audited against the per-job sums:** after every job,
+  TOTAL_JOBS and each total equal the sums of the jobs' counters the shell
+  read since the last reset or CLEAR_TOTALS. A job's counters must hold after
+  its end, and no counter may count while the NPU is not busy. For a whole
+  job each counter equals the reference: MACs, tiles or strips, array steps,
+  words read (npu.md §4's mapping), words written. JOB_CYCLES must equal both
+  the busy cycles the shell saw and the cycles from START to the end.
+- **N = 1 utilization, published** (useful MACs ÷ (16 × JOB_CYCLES)):
+
+  | Case | 19.1 (tiles) | K-split, two-cycle | One-cycle | Stalls (seed 5) | Long stalls (seed 3) | v1 |
+  | --- | ---: | ---: | ---: | ---: | ---: | ---: |
+  | MNIST's first layer, 32×1×784 | 11.6% | **19.2%** (8,171 cycles) | 19.2% | 11.3% | 5.4% | 1.19% |
+  | Conv2D, 784×1×25 | 9.3% | **12.7%** (9,634 cycles) | 13.0% | 8.1% | 4.3% | 1.06% |
+  | MNIST's second layer, 10×1×32 | 7.4% | **11.4%** (175 cycles) | 11.8% | 7.6% | 4.9% | 0.97% |
+
+  These are bound by memory, as npu.md §4.3 says. MNIST's first layer reads
+  all 25,088 weights once at four bytes a cycle, so the array can be at most
+  25% busy. The first layer reaches 19.2%, against the 19.5% estimated:
+  loading each strip is not yet overlapped with computing it (npu.md §4.6's
+  second A strip, evaluated in 19.5). Conv2D's K of 25 leaves each strip only
+  7 steps against its load and drain. The memory stalls cost these mappings
+  directly: they are reported, not gated.
+- **10 ns out of context** ([`results/phase19/npu-19.2`](results/phase19/npu-19.2/README.md)):
+
+  | Top | Setup slack | LUTs | Block RAM tiles | DSPs |
+  | --- | ---: | ---: | ---: | ---: |
+  | The NPU alone | +0.581 ns (106.2 MHz) | 4,879 | 8 | 7 |
+  | With a two-cycle 96 KiB block RAM | +0.486 ns (105.1 MHz) | 4,780 (the top) | 40 (the top) | 7 |
+
+  The K-split mapping and the generalized loader added about 300–400 LUTs
+  (4,564 to 4,879 alone, 4,385 to 4,780 with the memory). Vivado's counts
+  move by a few hundred between runs of nearly the same RTL, so the deltas
+  are approximate. The worst paths:
+  - the NPU alone: a panel's setup, its width and its first row's word count
+    in one cycle, once per panel;
+  - with the memory: the writer's K-split row sum, +1.24 ns as the
+    named bank-to-write path.
+
+  If the SoC's in-context build in 19.4 needs margin, the panel setup can
+  take a second cycle and the row sum a register.
+
+**Review.** The milestone's watchdog review found no RTL bug; its 240 extra
+runs found no functional or cycle-model failure. It found:
+- the fragile coverage gate (fixed above);
+- overclaims about the abort and reset phases and the page after a reset
+  (now precise, and the whole page is checked after every reset);
+- a redundant multiplexer on the B buffer's read address (removed: with one
+  group, the tile mapping's entry is K-split's step);
+- the area with the memory attached, unstated (now given);
+- 19.1's stall columns, which had moved (corrected above).
+
+Aiming aborts at CHECK first exercised aborting an erroneous descriptor. The
+shell's partial check then read C elements outside the window: a shell bug,
+fixed. Such a job writes nothing, and the shell now requires exactly that. The
+pre-push review added one more expectation, so an ABORT that the NPU
+ignores only sometimes cannot pass. An ABORT the NPU took while busy must
+end the job ABORTED, unless the job ended in that same cycle (npu.md §3).
+ABORTED is allowed only after an ABORT that reached a busy NPU.
+
+**Carried to 19.3:** direct convolution, with two-level A addressing.
+
+**Carried to 19.5:** the second A strip, which K-split's loading needs
+most.
+
 ## Milestones and gates
 
 | Milestone | Content | Exit gate |
@@ -332,7 +479,8 @@ Also from 19.1's own work:
 - [x] The owner's decisions of 5 October 2026 (above)
 - [x] npu.md approved by the owner (5 October 2026)
 - [x] 19.0 as in the table above — complete (owner, 5 October 2026)
-- [ ] 19.1 as in the table above
+- [x] 19.1 as in the table above — complete (owner, 5 October 2026), with
+  npu.md §9's 19.1 clarifications
 - [ ] 19.2 as in the table above
 - [ ] 19.3 as in the table above
 - [ ] 19.4 as in the table above

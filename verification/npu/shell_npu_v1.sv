@@ -55,6 +55,7 @@ module shell_npu_v1 (
     output logic        chk_busy,
     output logic        chk_done,
     output logic        chk_counting,
+    output logic [3:0]  chk_state,
     output logic [1:0]  chk_abi
 );
     logic        v1_valid, v1_write, v1_ready;
@@ -81,6 +82,7 @@ module shell_npu_v1 (
     // answered in the next cycle with the value read in the request's cycle.
     assign r_req_ready = reg_ready;
     assign r_rsp_error = 1'b0;
+    assign chk_state = 4'd0;                          // (ABI 2's engine state; v1 has none)
     assign chk_counting = 1'b0;                       // v1's counting is not exposed
     assign chk_abi     = 2'd1;
     always_ff @(posedge clk) begin

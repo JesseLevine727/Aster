@@ -6,7 +6,8 @@
 //   regions' extents from registered 12x32-bit products, never in a request
 //   path — and the B panel's width floor(4096/K) groups of four columns from a
 //   13-step divider.
-// For each panel of columns (all of N when the B buffer holds K x N):
+// The tile mapping (N >= 2, or MODE 1) — for each panel of columns (all of N
+// when the B buffer holds K x N):
 //   PANEL, then LOAD (B): every row k of the panel's columns into the B buffer
 //     (entry k*Gp + g holds B(k, j0+4g .. j0+4g+3));
 //   for each strip of four rows of A:
@@ -19,12 +20,19 @@
 //       tiles compute (a tile starts only when its bank is free);
 //     DRAIN: until the pipeline is empty and every result is handed to the
 //       memory port.
+// The K-split mapping (N = 1 under MODE 0, or MODE 2; 19.2): B, the vector,
+//   is loaded once (packed: word t holds B(4t .. 4t+3)); each strip of four
+//   rows of A is loaded as for tiles, then computed as one tile of ceil(K/4)
+//   steps in which PE (r, c) takes A(i_r, 4t+c) x B(4t+c) — every PE busy —
+//   and the writer writes each row's sum of its four partials to C(i_r, 0).
 // FINISH: until every request is answered, then the job ends.
 //
-// The loader reads the aligned words covering each operand row and writes
-// each word's bytes, rotated by the row's alignment, into the two buffer words
-// they belong to, in one cycle (aster_npu2_ram's two write ports): any byte
-// alignment and stride, no realignment pass. Every request address comes from
+// The loader reads the aligned words covering each operand segment (a row, or
+// for the K-split B with a stride other than 1 a single byte) and writes each
+// word's bytes inside the segment, rotated to their buffer byte positions,
+// into the two buffer words they belong to, in one cycle (aster_npu2_ram's two
+// write ports, with exact byte enables): any byte alignment and stride, no
+// realignment pass. Every request address comes from
 // a register advanced by additions. The memory port has the Aster core's
 // data-port rules (docs/cpu.md §5; npu.md §5.1): a request presented and not
 // accepted is held; at most OUTSTANDING requests in flight; answers in order;
@@ -126,13 +134,17 @@ module aster_npu2_engine #(
     assign ev_read     = accept && src_ld;
     assign ev_write    = accept && !src_ld;
 
-    // Tags of the requests in flight, oldest first: a read's destination.
+    // Tags of the requests in flight, oldest first: a read's destination. A
+    // word's lanes inside its segment go to buffer bytes at (segment's buffer
+    // byte - its alignment) + 4 x word + lane: rotated left by `shift`, the
+    // lanes that stay below 4 to word `wbase`, the others to wbase + 1.
     typedef struct packed {
         logic        read;
         logic        is_b;
-        logic [11:0] dest;     // B: the row's first entry; A: the bank
-        logic [10:0] word;     // the word's index in its row
-        logic [1:0]  offset;   // the row's byte alignment
+        logic [1:0]  bank;     // A: the bank
+        logic [15:0] wbase;    // signed: the buffer word of the lanes that do not wrap
+        logic [1:0]  shift;
+        logic [3:0]  lanes;    // the word's lanes inside the segment
     } tag_t;
     tag_t        tags [0:3];
     logic [1:0]  tag_head, tag_tail;
@@ -142,26 +154,36 @@ module aster_npu2_engine #(
     logic        ld_is_b;
     logic [12:0] ld_segs, ld_lseg;
     logic [31:0] ld_addr, ld_next, ld_stride;
-    logic [10:0] ld_word, ld_words, ld_gs;
-    logic [11:0] ld_dest, ld_step;
+    logic [10:0] ld_word, ld_words;
+    logic [1:0]  ld_bank;
+    logic [15:0] ld_dbyte, ld_dstep;             // the segment's first buffer byte; per segment
+    logic [15:0] ld_wbase;                       // signed: (ld_dbyte - alignment + 4 x word) >> 2
     logic [2:0]  ld_pending;                     // reads accepted and not yet written to a buffer
     logic [10:0] next_words;
+    logic [15:0] ld_db, next_db;                 // signed: buffer byte - alignment, this segment's and the next's
+    logic [3:0]  ld_lanes;
+    logic [1:0]  last_lane;
     assign next_words = 11'((14'(ld_next[1:0]) + 14'(ld_lseg) + 14'd3) >> 2);
-    assign tag_new = '{read: src_ld, is_b: ld_is_b, dest: ld_dest, word: ld_word, offset: ld_addr[1:0]};
+    assign ld_db      = ld_dbyte - 16'(ld_addr[1:0]);
+    assign next_db    = ld_dbyte + ld_dstep - 16'(ld_next[1:0]);
+    assign last_lane  = 2'(ld_addr[1:0] + ld_lseg[1:0] - 2'd1);
+    assign ld_lanes   = (ld_word == 11'd0 ? 4'hF << ld_addr[1:0] : 4'hF)
+                      & (ld_word + 11'd1 == ld_words ? 4'hF >> (2'd3 - last_lane) : 4'hF);
+    assign tag_new = '{read: src_ld, is_b: ld_is_b, bank: ld_bank, wbase: ld_wbase, shift: ld_db[1:0],
+                       lanes: ld_lanes};
 
     // The answer stage: a read's data and tag, written to its buffer next cycle.
     logic        ans_valid;
     tag_t        ans_tag;
     logic [31:0] ans_data, ans_rot;
-    logic [3:0]  ans_we_lo, ans_we_hi;           // group word-1 (lanes from the earlier group), group word
-    logic        ans_lo_ok, ans_hi_ok;
+    logic [3:0]  ans_we0, ans_we1;               // lanes to word wbase, to wbase + 1
     logic [63:0] ans_twice;
-    assign ans_twice = {ans_data, ans_data} >> (8 * ans_tag.offset);
-    assign ans_rot   = ans_twice[31:0];
-    assign ans_hi_ok = ans_tag.word < ld_gs;
-    assign ans_lo_ok = ans_tag.offset != 2'd0 && ans_tag.word != 11'd0 && ans_tag.word <= ld_gs;
-    assign ans_we_hi = ans_hi_ok ? 4'hF >> ans_tag.offset : 4'h0;
-    assign ans_we_lo = ans_lo_ok ? ~(4'hF >> ans_tag.offset) : 4'h0;
+    logic [7:0]  ans_lanes_up;
+    assign ans_twice    = {ans_data, ans_data} >> (6'd32 - {1'b0, ans_tag.shift, 3'b000});
+    assign ans_rot      = ans_twice[31:0];              // rotated left by `shift` bytes
+    assign ans_lanes_up = {4'b0, ans_tag.lanes} << ans_tag.shift;
+    assign ans_we0      = ans_lanes_up[3:0];
+    assign ans_we1      = ans_lanes_up[7:4];
 
     // ------------------------------------------------------------ tiles
     logic [10:0] t_idx;                          // tile in the strip
@@ -177,17 +199,23 @@ module aster_npu2_engine #(
     logic [2:0]  bank_rv [0:1], bank_cv [0:1];
     logic [16:0] bank_macs [0:1];
     logic [31:0] bank_data [0:1][0:15];
+    logic        ksplit;                         // the job runs the K-split mapping
+    logic [12:0] ksteps;                         // steps of a tile: K, or ceil(K/4) in K-split
+    logic [9:0]  a_word;                         // the A banks' word a step reads
+    logic [1:0]  k_tail;                         // K-split: the last step's lanes inside K (0: all four)
     assign cv_now     = tcols_left > 13'd4 ? 3'd4 : tcols_left[2:0];
     assign tile_start = kstep == 13'd0;
-    assign last_step  = k == 0 || {19'b0, kstep} == k - 32'd1;
+    assign last_step  = k == 0 || kstep + 13'd1 == ksteps;
+    assign a_word     = ksplit ? kstep[9:0] : kstep[11:2];
     assign issue      = state == S_TILES && !stop && (!tile_start || !bank_busy[tile_bank]);
 
     // Pipeline: s1 buffer data, s2 operands, s3 products.
     logic        s1_v, s1_first, s1_last, s1_zero, s1_bank;
     logic [1:0]  s1_lane;
+    logic [3:0]  s1_kmask;                       // K-split: the step's lanes inside K
     logic        s2_v, s2_first, s2_last, s2_zero, s2_bank;
     logic        s3_v, s3_first, s3_last, s3_zero, s3_bank;
-    logic signed [7:0]  a2 [0:3], b2 [0:3];
+    logic signed [7:0]  a2 [0:3][0:3], b2 [0:3];   // A per PE (K-split takes a lane per column)
     logic signed [15:0] p3 [0:3][0:3];
     logic [31:0] acc [0:3][0:3];
     logic [31:0] a_rdata [0:3], b_rdata;
@@ -197,13 +225,13 @@ module aster_npu2_engine #(
     generate
         for (r = 0; r < 4; r++) begin : a_bank
             logic        wr_here;
-            assign wr_here = ans_valid && !ans_tag.is_b && ans_tag.dest[1:0] == 2'(r);
+            assign wr_here = ans_valid && !ans_tag.is_b && ans_tag.bank == 2'(r);
             aster_npu2_ram #(.WORDS(1024)) ram (
                 .clk,
-                .a_en(wr_here ? |ans_we_lo : issue), .a_we(wr_here ? ans_we_lo : 4'h0),
-                .a_addr(wr_here ? 10'(ans_tag.word - 11'd1) : kstep[11:2]),
+                .a_en(wr_here ? |ans_we1 : issue), .a_we(wr_here ? ans_we1 : 4'h0),
+                .a_addr(wr_here ? 10'(ans_tag.wbase + 16'd1) : a_word),
                 .a_wdata(ans_rot), .a_rdata(a_rdata[r]),
-                .b_we(wr_here ? ans_we_hi : 4'h0), .b_addr(10'(ans_tag.word)), .b_wdata(ans_rot)
+                .b_we(wr_here ? ans_we0 : 4'h0), .b_addr(10'(ans_tag.wbase)), .b_wdata(ans_rot)
             );
         end
     endgenerate
@@ -211,10 +239,10 @@ module aster_npu2_engine #(
     assign b_wr = ans_valid && ans_tag.is_b;
     aster_npu2_ram #(.WORDS(4096)) b_ram (
         .clk,
-        .a_en(b_wr ? |ans_we_lo : issue), .a_we(b_wr ? ans_we_lo : 4'h0),
-        .a_addr(b_wr ? ans_tag.dest + 12'(ans_tag.word) - 12'd1 : bentry),
+        .a_en(b_wr ? |ans_we1 : issue), .a_we(b_wr ? ans_we1 : 4'h0),
+        .a_addr(b_wr ? 12'(ans_tag.wbase + 16'd1) : bentry),   // (K-split: one tile, Gp = 1, so bentry = kstep)
         .a_wdata(ans_rot), .a_rdata(b_rdata),
-        .b_we(b_wr ? ans_we_hi : 4'h0), .b_addr(ans_tag.dest + 12'(ans_tag.word)), .b_wdata(ans_rot)
+        .b_we(b_wr ? ans_we0 : 4'h0), .b_addr(12'(ans_tag.wbase)), .b_wdata(ans_rot)
     );
 
     // ------------------------------------------------------------ writer
@@ -251,7 +279,8 @@ module aster_npu2_engine #(
             held <= 1'b0; held_ld <= 1'b0; acc_q <= 1'b0; bus_err <= 1'b0; abort_pending <= 1'b0;
             count <= '0; tag_head <= '0; tag_tail <= '0;
             ld_have <= 1'b0; ld_is_b <= 1'b0; ld_segs <= '0; ld_lseg <= '0; ld_addr <= '0; ld_next <= '0;
-            ld_stride <= '0; ld_word <= '0; ld_words <= '0; ld_gs <= '0; ld_dest <= '0; ld_step <= '0;
+            ld_stride <= '0; ld_word <= '0; ld_words <= '0; ld_bank <= '0; ld_dbyte <= '0; ld_dstep <= '0;
+            ld_wbase <= '0; ksplit <= 1'b0; ksteps <= '0; k_tail <= '0;
             ld_req <= '0; ld_pending <= '0;
             ans_valid <= 1'b0; ans_tag <= '0; ans_data <= '0;
             t_idx <= '0; kstep <= '0; bentry <= '0; tile_bank <= 1'b0; c_tile <= '0; tcols_left <= '0;
@@ -283,8 +312,9 @@ module aster_npu2_engine #(
             // The loader's next request.
             if (ev_read) begin
                 if (ld_word + 11'd1 < ld_words) begin
-                    ld_word <= ld_word + 11'd1;
-                    ld_req  <= ld_req + 30'd1;
+                    ld_word  <= ld_word + 11'd1;
+                    ld_req   <= ld_req + 30'd1;
+                    ld_wbase <= ld_wbase + 16'd1;
                 end else if (ld_segs == 13'd1) begin
                     ld_have <= 1'b0;
                 end else begin
@@ -294,21 +324,25 @@ module aster_npu2_engine #(
                     ld_word  <= '0;
                     ld_words <= next_words;
                     ld_req   <= ld_next[31:2];
-                    ld_dest  <= ld_is_b ? ld_dest + ld_step : ld_dest + 12'd1;
+                    ld_dbyte <= ld_dbyte + ld_dstep;
+                    ld_wbase <= 16'($signed(next_db) >>> 2);
+                    if (!ld_is_b) ld_bank <= ld_bank + 2'd1;
                 end
             end
 
             // ---------------------------------------------- the pipeline
             s1_v <= issue; s1_first <= tile_start; s1_last <= last_step; s1_zero <= k == 0;
             s1_bank <= tile_bank; s1_lane <= kstep[1:0];
+            s1_kmask <= !ksplit || !last_step || k_tail == 2'd0 ? 4'hF : 4'hF >> (3'd4 - {1'b0, k_tail});
             s2_v <= s1_v; s2_first <= s1_first; s2_last <= s1_last; s2_zero <= s1_zero; s2_bank <= s1_bank;
             for (int i = 0; i < 4; i++) begin
-                a2[i] <= $signed(a_rdata[i][8*s1_lane +: 8]);
-                b2[i] <= $signed(b_rdata[8*i +: 8]);
+                for (int j = 0; j < 4; j++)
+                    a2[i][j] <= $signed(a_rdata[i][{ksplit ? 2'(j) : s1_lane, 3'b000} +: 8]);
+                b2[i] <= s1_kmask[i] ? $signed(b_rdata[8*i +: 8]) : 8'sd0;
             end
             s3_v <= s2_v; s3_first <= s2_first; s3_last <= s2_last; s3_zero <= s2_zero; s3_bank <= s2_bank;
             for (int i = 0; i < 4; i++)
-                for (int j = 0; j < 4; j++) p3[i][j] <= a2[i] * b2[j];
+                for (int j = 0; j < 4; j++) p3[i][j] <= a2[i][j] * b2[j];
             if (s3_v) begin
                 for (int i = 0; i < 4; i++)
                     for (int j = 0; j < 4; j++) begin
@@ -323,7 +357,9 @@ module aster_npu2_engine #(
             // ---------------------------------------------- the writer
             if (wr_load) begin
                 wr_q_valid <= 1'b1;
-                wr_q_data  <= bank_data[wr_sel][{wr_r[1:0], wr_c[1:0]}];
+                wr_q_data  <= ksplit ? bank_data[wr_sel][{wr_r[1:0], 2'd0}] + bank_data[wr_sel][{wr_r[1:0], 2'd1}]
+                                       + bank_data[wr_sel][{wr_r[1:0], 2'd2}] + bank_data[wr_sel][{wr_r[1:0], 2'd3}]
+                                     : bank_data[wr_sel][{wr_r[1:0], wr_c[1:0]}];
                 wr_q_addr  <= wr_base + {27'b0, wr_c, 2'b00};
                 wr_fresh   <= 1'b0;
                 if (wr_c + 3'd1 < bank_cv[wr_sel]) begin
@@ -416,6 +452,9 @@ module aster_npu2_engine #(
                     end
                     if (chk_cnt == 5'(CHECK_LEN - 1)) begin
                         check_code_q <= check_code;
+                        ksplit <= mode == 2'd2 || (mode == 2'd0 && n == 32'd1);
+                        ksteps <= mode == 2'd2 || (mode == 2'd0 && n == 32'd1) ? (k[12:0] + 13'd3) >> 2 : k[12:0];
+                        k_tail <= k[1:0];
                         g_left    <= 11'(gtot13);
                         gp_full   <= k == 0 || gtot13 <= div_q ? 11'(gtot13) : 11'(div_q);
                         cols_left <= n[12:0];
@@ -433,10 +472,22 @@ module aster_npu2_engine #(
                     if (k == 0) begin
                         state <= S_STRIP;
                     end else begin
-                        ld_is_b <= 1'b1; ld_segs <= k[12:0]; ld_lseg <= pcols_now; ld_gs <= gp_now;
-                        ld_addr <= b_panel; ld_next <= b_panel + b_stride; ld_stride <= b_stride;
-                        ld_word <= '0; ld_words <= 11'((14'(b_panel[1:0]) + 14'(pcols_now) + 14'd3) >> 2);
-                        ld_req <= b_panel[31:2]; ld_dest <= '0; ld_step <= 12'(gp_now); ld_have <= 1'b1;
+                        // Tiles: each row k of the panel's columns at buffer byte 4 x k x Gp.
+                        // K-split: the vector packed from byte 0 — one segment of K bytes
+                        // when B's stride is 1, else K one-byte segments, a byte apart.
+                        ld_is_b <= 1'b1; ld_bank <= '0; ld_dbyte <= '0; ld_have <= 1'b1;
+                        ld_word <= '0; ld_addr <= b_panel; ld_next <= b_panel + b_stride; ld_stride <= b_stride;
+                        ld_req <= b_panel[31:2];
+                        ld_wbase <= 16'($signed(-16'(b_panel[1:0])) >>> 2);
+                        if (ksplit && b_stride == 32'd1) begin
+                            ld_segs <= 13'd1; ld_lseg <= k[12:0]; ld_dstep <= '0;
+                            ld_words <= 11'((14'(b_panel[1:0]) + 14'(k[12:0]) + 14'd3) >> 2);
+                        end else if (ksplit) begin
+                            ld_segs <= k[12:0]; ld_lseg <= 13'd1; ld_dstep <= 16'd1; ld_words <= 11'd1;
+                        end else begin
+                            ld_segs <= k[12:0]; ld_lseg <= pcols_now; ld_dstep <= {3'b0, gp_now, 2'b00};
+                            ld_words <= 11'((14'(b_panel[1:0]) + 14'(pcols_now) + 14'd3) >> 2);
+                        end
                         state <= S_LOAD;
                     end
                 end
@@ -454,10 +505,11 @@ module aster_npu2_engine #(
                         state <= S_TILES;
                     end else begin
                         ld_is_b <= 1'b0; ld_segs <= rows_left > 13'd4 ? 13'd4 : rows_left; ld_lseg <= k[12:0];
-                        ld_gs <= 11'((k[12:0] + 13'd3) >> 2);
+                        ld_bank <= '0; ld_dbyte <= '0; ld_dstep <= '0;
                         ld_addr <= a_strip; ld_next <= a_strip + a_stride; ld_stride <= a_stride;
                         ld_word <= '0; ld_words <= 11'((14'(a_strip[1:0]) + 14'(k[12:0]) + 14'd3) >> 2);
-                        ld_req <= a_strip[31:2]; ld_dest <= '0; ld_have <= 1'b1;
+                        ld_wbase <= 16'($signed(-16'(a_strip[1:0])) >>> 2);
+                        ld_req <= a_strip[31:2]; ld_have <= 1'b1;
                         state <= S_LOAD;
                     end
                 end
@@ -493,7 +545,8 @@ module aster_npu2_engine #(
     end
 
     logic unused;
-    assign unused = div_rem[13] ^ (^wr_q_addr[1:0]) ^ (^ld_addr[31:2]) ^ ans_tag.read ^ (^ans_twice[63:32]);
+    assign unused = div_rem[13] ^ (^wr_q_addr[1:0]) ^ (^ld_addr[31:2]) ^ ans_tag.read ^ (^ans_twice[63:32])
+                  ^ (^ans_tag.wbase[15:12]) ^ (^ld_db[15:2]);
 
 `ifndef SYNTHESIS
     always_ff @(posedge clk) begin

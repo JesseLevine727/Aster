@@ -2568,7 +2568,7 @@ npu-v1-tests: $(NPU_V1_SIM)
 # (+cycle_check) — the shell's own self-tests through ABI 2's checks, and the
 # dense GEMM gate cases (docs/npu.md §7), each at least 50% utilization
 # (useful MACs / (16 x JOB_CYCLES)) on the two-cycle memory, with the N = 1
-# cases measured beside them.
+# cases (K-split, 19.2: MNIST's two layers and Conv2D) measured beside them.
 NPU_V2_RTL := rtl/accelerator/aster_npu2_ram.sv rtl/accelerator/aster_npu2_engine.sv rtl/accelerator/aster_npu2.sv
 NPU_V2_SIM := $(NPU_DIR)/npu_shell_v2
 $(NPU_V2_SIM): $(NPU_V2_RTL) verification/npu/shell_npu_v2.sv $(NPU_SHELL_SRC) Makefile
@@ -2589,18 +2589,18 @@ npu-tests: $(NPU_V2_SIM)
 				|| { tail -4 $(NPU_DIR)/v2-$$mode-$$seed.log; exit 1; }; \
 		done; \
 		$(NPU_V2_SIM) +edges $$extra > $(NPU_DIR)/v2-$$mode-edges.log 2>&1 || { tail -4 $(NPU_DIR)/v2-$$mode-edges.log; exit 1; }; \
-		echo "PASS: v2 NPU in the NPU shell, $$mode: $(NPU_SEEDS) seeds x 1,000 jobs and the 15 edge jobs as the reference, every coverage bin$$(case $$mode in plain|latency1) echo ', every job as the cycle model';; esac)"; \
+		echo "PASS: v2 NPU in the NPU shell, $$mode: $(NPU_SEEDS) seeds x 1,000 jobs and the 23 edge jobs as the reference, every coverage bin$$(case $$mode in plain|latency1) echo ', every job as the cycle model';; esac)"; \
 	done
 	@for test in 1:MEMORY_MISMATCH 3:COUNTER_MISMATCH; do \
 		n=$${test%%:*}; want=$${test#*:}; \
 		got=$$($(NPU_V2_SIM) +seed=1 +jobs=1000 +selftest=$$n 2>/dev/null | tail -1 | awk '{print $$2}'); \
 		[ "$$got" = "$$want" ] || { echo "FAIL: NPU shell self-test $$n on v2 reported $$got, expected $$want"; exit 1; }; \
 	done; echo "PASS: the NPU shell's own self-tests through ABI 2's checks (corrupted result, wrong counter)"
-	@rm -f $(NPU_DIR)/v2-cases.log; for case in 64,64,64 96,96,96 128,64,128 32,1,784 784,1,25; do \
+	@rm -f $(NPU_DIR)/v2-cases.log; for case in 64,64,64 96,96,96 128,64,128 32,1,784 784,1,25 10,1,32; do \
 		$(NPU_V2_SIM) +case=$$case +cycle_check >> $(NPU_DIR)/v2-cases.log 2>&1 || { cat $(NPU_DIR)/v2-cases.log; exit 1; }; \
 	done; awk '/case=(64x64x64|96x96x96|128x64x128) / { split($$0, f, "utilization="); u = f[2] + 0; \
 		if (u < 50) { print "FAIL: " $$0 " (below 50%)"; bad = 1 } else print "PASS: v2 NPU gate case, two-cycle memory: " $$0 } \
-		/case=(32x1x784|784x1x25) / { print "PASS: v2 NPU N=1 case (measured), two-cycle memory: " $$0 } END { exit bad }' \
+		/case=(32x1x784|784x1x25|10x1x32) / { print "PASS: v2 NPU N=1 case (K-split, measured), two-cycle memory: " $$0 } END { exit bad }' \
 		$(NPU_DIR)/v2-cases.log
 
 # The v2 NPU's timing at 10 ns (milestone 19.1): Vivado out of context on the

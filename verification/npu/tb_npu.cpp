@@ -185,7 +185,7 @@ public:
         bool error = false;
         if (accept) rdata = perform(addr, error);
         reg_accepted = d.r_req_valid && d.r_req_ready;
-        if (reg_accepted) reg_accept_cycle = cycles;
+        if (reg_accepted) { reg_accept_cycle = cycles; reg_accept_busy = !in_reset && d.chk_busy; }
         reg_answered = !in_reset && d.r_rsp_valid;
         reg_rdata = d.r_rsp_rdata;
         reg_error = d.r_rsp_error;
@@ -230,18 +230,20 @@ public:
 
     bool terminal(std::uint32_t status) const { return status & (p.done_bit | p.error_bit | p.aborted_bit); }
 
-    // ABI 2's register page out of reset, once per run (npu.md §3): every
-    // offset reads 0 but ABI and GEOMETRY; writes to read-only and unmapped
-    // offsets change nothing; MODE reads back.
+    // ABI 2's register page as out of reset: every offset reads 0 but ABI and
+    // GEOMETRY.
+    void sweep(const char* when) {
+        for (std::uint32_t offset = 0; offset < 0x1000; offset += 4) {
+            const std::uint32_t want = offset == ABI ? 2u : offset == GEOMETRY ? 0x10100404u : 0u;
+            if (const std::uint32_t got = reg(false, offset); got != want)
+                fail("STATUS_MISMATCH", "register " + hex(offset) + " reads " + hex(got) + " " + when);
+        }
+    }
+
+    // ABI 2's register page, once per run (npu.md §3): as out of reset;
+    // writes to read-only and unmapped offsets change nothing; MODE reads back.
     void check_identity() {
         if (p.abi != 2) return;
-        auto sweep = [&](const char* when) {
-            for (std::uint32_t offset = 0; offset < 0x1000; offset += 4) {
-                const std::uint32_t want = offset == ABI ? 2u : offset == GEOMETRY ? 0x10100404u : 0u;
-                if (const std::uint32_t got = reg(false, offset); got != want)
-                    fail("STATUS_MISMATCH", "register " + hex(offset) + " reads " + hex(got) + " " + when);
-            }
-        };
         sweep("out of reset");
         for (std::uint32_t offset = 0x004; offset < 0x1000; offset += 4)
             if (offset < A_BASE || offset > V2_MODE) reg(true, offset, 0xFFFFFFFFu);
@@ -274,7 +276,10 @@ public:
         write_descriptor(j);
         const std::uint64_t accesses = p.abi == 1 ? npu::v1_counters(j).bytes_read + npu::v1_counters(j).bytes_written
                                                   : npu::v2_words_read(j) + std::uint64_t(j.m) * j.n;
-        const std::uint64_t estimate = accesses * (latency + 2) + 64;
+        // When to abort or reset: within the job — for ABI 2 its length on the
+        // memory that answers on time (the cycle model; stalls only lengthen it).
+        const std::uint64_t estimate = p.abi == 2 ? npu::v2_job_cycles(p, j, latency) + 4
+                                                  : accesses * (latency + 2) + 64;
         busy_cycles = reads_accepted = lanes_written = writes_accepted = accesses_seen = 0;
         std::fill(written.begin(), written.end(), 0);
         inject_at = kind == Kind::BusError && accesses ? 1 + rng() % accesses : 0;
@@ -282,9 +287,30 @@ public:
         control(START);
         const std::uint64_t start_cycle = reg_accept_cycle;
         const std::uint64_t started = cycles;
-        const std::uint64_t abort_at = started + rng() % (estimate + 1);
+        const std::uint64_t abort_at = started + (rng() % 4 == 0 ? rng() % 12 : rng() % (estimate + 1));
         const std::uint64_t reset_at = started + rng() % (estimate + 1);
         bool aborted_sent = false, was_reset = false;
+        // ABI 2 aims each abort or reset at a phase of the job (the engine's
+        // state, chk_state: 1 CHECK, 3 LOAD, 5 TILES; 2, 4, 6, 7 between) and
+        // fires in it, at random, or else at the drawn cycle.
+        const unsigned target = p.abi != 2 ? 0 : kind == Kind::Abort ? rng() % 5 : kind == Kind::Reset ? rng() % 3 : 0;
+        auto in_phase = [&](unsigned aim) {
+            const unsigned state = d.chk_state;
+            switch (aim) {
+                case 1: return state == 1u;
+                case 2: return state == 3u;
+                case 3: return state == 5u;
+                case 4: return state == 2u || state == 4u || state == 6u || state == 7u;
+                default: return false;
+            }
+        };
+        auto fire_abort = [&]() {
+            return job_error ? cycles >= abort_at || in_phase(1) && rng() % 4 == 0
+                 : target ? in_phase(target) && rng() % 4 == 0 : cycles >= abort_at;
+        };
+        auto fire_reset = [&]() {
+            return target ? in_phase(target + 1) && rng() % 4 == 0 : cycles >= reset_at;   // 2 LOAD, 3 TILES
+        };
         bool busy_during_writes = false;
         if (kind == Kind::BusyWrites) {
             // Descriptor writes and START while busy must be ignored.
@@ -298,18 +324,22 @@ public:
             const int wait = 1 + int(rng() % 32);
             for (int i = 0; i < wait; ++i) {
                 tick();
-                if (kind == Kind::Reset && !was_reset && cycles >= reset_at) {
+                if (kind == Kind::Reset && !was_reset && fire_reset()) {
                     reset_while_busy = d.chk_busy;
+                    reset_phase = d.chk_state;
                     reset(3);
                     was_reset = true;
                     break;
                 }
+                if (kind == Kind::Abort && !aborted_sent && fire_abort()) {
+                    abort_phase = d.chk_state;
+                    control(ABORT);
+                    aborted_sent = true;
+                    abort_accept_cycle = reg_accept_cycle;
+                    abort_accept_busy = reg_accept_busy;
+                }
             }
             if (was_reset) break;
-            if (kind == Kind::Abort && !aborted_sent && cycles >= abort_at) {
-                control(ABORT);
-                aborted_sent = true;
-            }
             status = reg(false, STATUS);
             if (terminal(status)) break;
             if (cycles > limit) { fail("TIMEOUT", "job did not end"); return false; }
@@ -323,11 +353,23 @@ public:
         const bool aborted = status & p.aborted_bit;
         if (aborted && !(kind == Kind::Abort && aborted_sent))
             fail("STATUS_MISMATCH", "ABORTED without an ABORT during the job");
-        if (aborted) covered.insert("abort");
+        if (aborted && error) covered.insert("abort_error_descriptor");
+        // An ABORT the NPU took while busy aborts the job, unless the job ended
+        // in that same cycle (npu.md §3); one that reached an idle NPU does not.
+        if (kind == Kind::Abort && aborted_sent) {
+            if (aborted && !abort_accept_busy) fail("STATUS_MISMATCH", "ABORTED though the ABORT reached an idle NPU");
+            if (!aborted && abort_accept_busy && done_cycle != abort_accept_cycle + 1)
+                fail("STATUS_MISMATCH", "an ABORT taken while busy did not abort the job");
+        }
+        if (aborted) {
+            covered.insert("abort");
+            if (p.abi == 2) covered.insert(abort_phase == 1 ? "abort_check" : abort_phase == 3 ? "abort_load"
+                                          : abort_phase == 5 ? "abort_tiles" : "abort_between");
+        }
         if (kind == Kind::AbortAfterEnd && !aborted) covered.insert("abort_after_end");
         // A memory error ends the job with error 6, unless it ended first.
         const bool bus_error = !error && !aborted && kind == Kind::BusError && injected;
-        const std::uint32_t code = bus_error ? 6 : error;
+        const std::uint32_t code = aborted ? 0 : bus_error ? 6 : error;   // an ABORT before the check ends wins
         if (bus_error) covered.insert(injected_write ? "bus_error_write" : "bus_error_read");
         // STATUS, irq and ERROR_CODE.
         const std::uint32_t with_done = p.done_with_error ? p.done_bit : 0;
@@ -338,7 +380,8 @@ public:
         if (got_code != code) fail("STATUS_MISMATCH", "ERROR_CODE " + dec(got_code) + ", expected " + dec(code));
         // Memory.
         if (selftest == 1 && !npu::region_c(j).empty()) memory.at(j.c_base + 1) ^= 0x10;
-        if (aborted || bus_error) check_partial(j, before, expected, 4);
+        if (error) compare(before, "after a job with a descriptor error (aborted or not): nothing written");
+        else if (aborted || bus_error) check_partial(j, before, expected, 4);
         else compare(expected, "after the job");
         // Counters.
         JobCounters c = read_counters();
@@ -414,6 +457,13 @@ private:
                 const npu::Counters v1 = npu::v1_counters(j);
                 want.read = v1.bytes_read; want.written = v1.bytes_written; want.active = v1.compute_cycles;
                 want.tiles = v1.tiles;
+            } else if (npu::v2_ksplit(j)) {      // a strip of ceil(K/4) steps, one word a row
+                const std::uint64_t strips = j.m && j.n ? (j.m + 3) / 4 : 0;
+                want.macs = std::uint64_t(j.m) * j.n * j.k;
+                want.tiles = strips;
+                want.active = std::uint64_t((j.k + 3) / 4) * strips;
+                want.read = 4 * npu::v2_words_read(j);
+                want.written = 4ull * j.m * j.n;
             } else {
                 want.macs = std::uint64_t(j.m) * j.n * j.k;
                 want.tiles = tiles;
@@ -507,6 +557,10 @@ private:
             for (std::uint32_t col = 0; col < j.n; ++col)
                 for (int start = 0; start < 4; start += grain) {
                     const std::uint32_t at = j.c_base + row * j.c_stride + 4 * col + start;
+                    if (!memory.contains(at, grain)) {      // (a valid job's C is in the window)
+                        fail("MEMORY_MISMATCH", "C element " + hex(at) + " outside the window in a partial check");
+                        return;
+                    }
                     bool old = true, fresh = true;
                     for (int b = 0; b < grain; ++b) {
                         old = old && memory.at(at + b) == before.at(at + b);
@@ -521,14 +575,20 @@ private:
     }
 
     bool after_reset(const npu::Job& j, const npu::Memory& before, const npu::Memory& expected) {
-        if (reset_while_busy) covered.insert("reset");
+        if (reset_while_busy) {
+            covered.insert("reset");
+            if (p.abi == 2 && reset_phase == 3) covered.insert("reset_load");
+            if (p.abi == 2 && reset_phase == 5) covered.insert("reset_tiles");
+        }
         if (const std::uint32_t status = reg(false, STATUS); status != 0)
             fail("STATUS_MISMATCH", "STATUS " + hex(status) + " after reset");
         const JobCounters c = read_counters();
         if (reg(false, A_BASE) != 0 || c.cycles != 0 || c.written != 0)
             fail("STATUS_MISMATCH", "registers not cleared by reset");
+        if (p.abi == 2) sweep("after a reset");
         if (d.irq) fail("STATUS_MISMATCH", "irq high after reset");
-        check_partial(j, before, expected, p.abi == 1 ? 1 : 4);
+        if (job_error) compare(before, "after a reset of a job with a descriptor error");
+        else check_partial(j, before, expected, p.abi == 1 ? 1 : 4);
         check_totals();
         job = nullptr;
         inject_at = 0;
@@ -594,6 +654,12 @@ private:
         if (j.m > 1 && j.n && j.c_stride == 4 * j.n) covered.insert("c_stride_min");
         if (p.abi == 2) {
             covered.insert("mode" + dec(j.mode));
+            if (npu::v2_ksplit(j) && j.m && j.k) {
+                covered.insert(j.mode == 2 ? "ksplit_mode2" : "ksplit_auto");
+                covered.insert(j.b_stride == 1 ? "ksplit_b_stride1" : "ksplit_b_gathered");
+                covered.insert("ksplit_k%4=" + dec(j.k % 4));
+            }
+            if (!npu::v2_ksplit(j) && j.n == 1 && j.m && j.k) covered.insert("tiles_n1");
             if (j.m > 1 && j.k && j.a_stride < j.k) covered.insert("a_rows_overlap");
             if (j.k > 1 && j.n && j.b_stride < j.n) covered.insert("b_rows_overlap");
             if (j.m && j.k && j.n && (j.n + 3) / 4 > 4096 / j.k) covered.insert("multiple_panels");
@@ -614,12 +680,14 @@ private:
     bool error_cycle = false, error_next = false;
     bool reg_accepted = false, reg_answered = false, reg_error = false;
     std::uint32_t reg_rdata = 0;
-    std::uint64_t reg_accept_cycle = 0, done_cycle = 0;
+    std::uint64_t reg_accept_cycle = 0, done_cycle = 0, abort_accept_cycle = 0;
+    bool reg_accept_busy = false, abort_accept_busy = false;
     bool done_seen = false;
     std::uint64_t busy_cycles = 0, reads_accepted = 0, lanes_written = 0, writes_accepted = 0, accesses_seen = 0;
     std::uint64_t inject_at = 0;
     bool injected = false, injected_write = false;
     bool reset_while_busy = false;
+    unsigned abort_phase = 0, reset_phase = 0;     // the engine's state then (shell_npu_v2.sv's chk_state)
     JobCounters totals;
     std::uint64_t total_jobs = 0;
     const npu::Job* job = nullptr;
@@ -685,6 +753,15 @@ int main(int argc, char** argv) {
             {base, base + 0x100, base + 0x200, 4, 4, 0xFFFFFFF0u, 2, 4, 4, 0},          // C's extent past 2^32
             {0xFFFFFFF0u, base + 0x100, base + 0x200, 4, 4, 16, 2, 4, 32, 0},           // A's base near 2^32
             {base, base + 0x100, base + 0x201, 4, 4, 16, 0, 4, 4, 0},                   // M = 0, C misaligned: error 2
+            // K-split (N = 1; 19.2)
+            {base + 1, base + 0x9003, base + 0xD000, 4096, 3, 4, 9, 1, 4096, 0},       // K at the limit, B gathered
+            {base + 2, base + 0x9001, base + 0xB000, 4096, 1, 4, 5, 1, 4096, 2},       // K at the limit, B packed, MODE 2
+            {base + 3, base + 0x101, base + 0x200, 1, 1, 4, 6, 1, 1, 0},               // K = 1
+            {base + 1, base + 0x102, base + 0x200, 2, 0, 4, 5, 1, 2, 2},               // K = 2, B_STRIDE 0
+            {base + 2, base + 0x103, base + 0x200, 3, 7, 8, 7, 1, 3, 0},               // K = 3, B gathered
+            {base + 3, base + 0x2001, base + 0x3000, 5, 1, 4, 11, 1, 23, 0},           // A rows overlapping
+            {base, base + 0x2000, base + 0x3000, 37, 1, 4, 4096, 1, 0, 0},             // K = 0, M at the limit
+            {base + 1, base + 0x2003, base + 0x3000, 37, 1, 4, 9, 1, 37, 1},           // N = 1 as tiles (MODE 1)
         };
         std::mt19937 rng(seed);
         int ran = 0;
@@ -713,7 +790,8 @@ int main(int argc, char** argv) {
                   : roll < 85 ? Kind::AbortAfterEnd : roll < 88 ? Kind::Reset : roll < 93 ? Kind::BusyWrites
                   : roll < 96 ? Kind::BadControl : Kind::BusError;
         if (kind == Kind::BusError && profile.abi == 1) kind = Kind::Normal;
-        npu::Job j = kind == Kind::Error ? gen.error(1 + int(rng() % 6)) : gen.valid();
+        npu::Job j = kind == Kind::Error || (kind == Kind::Abort && profile.abi == 2 && rng() % 5 == 0)
+                         ? gen.error(1 + int(rng() % 6)) : gen.valid();
         if (kind == Kind::BusyWrites) {
             // Only a job long enough that the writes land while it is busy.
             const bool long_enough = profile.abi == 1

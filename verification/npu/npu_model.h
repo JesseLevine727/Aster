@@ -107,13 +107,23 @@ inline std::uint32_t expected_error(const Profile& p, const Job& j) {
     return 0;
 }
 
-// ABI 2: the words a completed job reads (npu.md §4.2): B's panels — as many
-// columns as fit 16 KiB, floor(4096 / K) groups of four — each read once, row
-// by row; for each panel, A read once, strip by strip; each row segment as
-// the aligned words that cover it.
+// ABI 2: does the job run the K-split mapping (npu.md §3 MODE, §4.3)?
+inline bool v2_ksplit(const Job& j) { return j.mode == 2 || (j.mode == 0 && j.n == 1); }
+
+// ABI 2: the words a completed job reads. Tiles (npu.md §4.2): B's panels —
+// as many columns as fit 16 KiB, floor(4096 / K) groups of four — each read
+// once, row by row; for each panel, A read once, strip by strip; each row
+// segment as the aligned words that cover it. K-split (§4.3): B, the vector,
+// once — the words covering its K bytes when B_STRIDE is 1, else a word per
+// byte — then A once.
 inline std::uint64_t v2_words_read(const Job& j) {
     if (!j.m || !j.n || !j.k || j.k > 4096) return 0;     // (K above the limit: a descriptor error)
     auto words = [](std::uint64_t addr, std::uint64_t len) { return ((addr % 4) + len + 3) / 4; };
+    if (v2_ksplit(j)) {
+        std::uint64_t total = j.b_stride == 1 ? words(j.b_base, j.k) : j.k;
+        for (std::uint64_t i = 0; i < j.m; ++i) total += words(j.a_base + i * j.a_stride, j.k);
+        return total;
+    }
     const std::uint64_t groups = (j.n + 3) / 4, fit = 4096 / j.k;
     const std::uint64_t panel = std::min(groups, fit);
     std::uint64_t total = 0;
@@ -175,7 +185,8 @@ inline bool in_c(const Job& j, std::uint32_t addr) {
 //   unanswered past the cycle; the next phase starts three cycles after the
 //   last word's answer (the answer registered, written to its buffer, then
 //   the end seen);
-// - TILES: each tile's max(K, 1) steps on consecutive cycles, a tile starting
+// - TILES: each tile's max(K, 1) steps (K-split: one tile a strip, of
+//   max(ceil(K/4), 1) steps, writing one element a row) on consecutive cycles, a tile starting
 //   right after the previous one unless its output bank (the one two tiles
 //   back used) is still held, which it is until the cycle after the writer
 //   took that tile's last element; a tile's results are in its bank three
@@ -209,9 +220,10 @@ inline std::uint64_t v2_job_cycles(const Profile& p, const Job& j, int latency) 
         return last + latency + 3;
     };
     auto words = [](std::uint64_t addr, std::uint64_t len) { return ((addr % 4) + len + 3) / 4; };
+    const bool ksplit = v2_ksplit(j);
     const std::uint64_t groups = (j.n + 3) / 4;
-    const std::uint64_t panel = j.k ? std::min<std::uint64_t>(groups, 4096 / j.k) : groups;
-    const std::uint64_t steps = std::max<std::uint32_t>(j.k, 1);
+    const std::uint64_t panel = j.k && !ksplit ? std::min<std::uint64_t>(groups, 4096 / j.k) : groups;
+    const std::uint64_t steps = std::max<std::uint64_t>(ksplit ? (j.k + 3) / 4 : j.k, 1);
     std::vector<std::uint64_t> release;              // per tile: the cycle the writer took its last element
     bool wrote = false;
     std::uint64_t last_accept = 0;
@@ -222,7 +234,8 @@ inline std::uint64_t v2_job_cycles(const Profile& p, const Job& j, int latency) 
         c += 1;                                                       // PANEL
         if (j.k) {
             std::uint64_t total = 0;
-            for (std::uint64_t k = 0; k < j.k; ++k) total += words(j.b_base + k * j.b_stride + 4 * g0, cols);
+            if (ksplit) total = j.b_stride == 1 ? words(j.b_base, j.k) : j.k;
+            else for (std::uint64_t k = 0; k < j.k; ++k) total += words(j.b_base + k * j.b_stride + 4 * g0, cols);
             c = load(c, total);
         }
         for (std::uint64_t i0 = 0; i0 < j.m; i0 += 4) {
@@ -235,7 +248,7 @@ inline std::uint64_t v2_job_cycles(const Profile& p, const Job& j, int latency) 
             }
             std::uint64_t next = c, last_step = 0;
             for (std::uint64_t t = 0; t < gp; ++t) {
-                const std::uint64_t cv = std::min<std::uint64_t>(4, cols - 4 * t);
+                const std::uint64_t cv = ksplit ? 1 : std::min<std::uint64_t>(4, cols - 4 * t);
                 std::uint64_t start = next;
                 if (release.size() >= 2) start = std::max(start, release[release.size() - 2] + 1);
                 next = start + steps;
@@ -282,7 +295,10 @@ inline std::vector<std::string> bins(const Profile& p) {
         names.erase(std::find(names.begin(), names.end(), "bad_control"));
         for (const char* name : {"bad_access", "bus_error_read", "bus_error_write", "clear_totals", "a_rows_overlap",
                                  "b_rows_overlap", "mode0", "mode1", "mode2", "multiple_panels", "register_map",
-                                 "extent_past_2^32"})
+                                 "extent_past_2^32", "ksplit_auto", "ksplit_mode2", "ksplit_b_stride1",
+                                 "ksplit_b_gathered", "ksplit_k%4=0", "ksplit_k%4=1", "ksplit_k%4=2", "ksplit_k%4=3",
+                                 "tiles_n1", "abort_check", "abort_load", "abort_tiles", "abort_between",
+                                 "reset_load", "reset_tiles", "abort_error_descriptor"})
             names.push_back(name);
     }
     return names;
@@ -320,6 +336,8 @@ public:
             j.c_stride = 4 * j.n + (rng() % 3 ? 0 : 4 * (rng() % 3) + (p.c_any_alignment ? rng() % 4 : 0));
             if (p.rows_may_overlap && rng() % 8 == 0) j.a_stride = j.k ? rng() % j.k : 0;
             if (p.rows_may_overlap && rng() % 8 == 0) j.b_stride = j.n ? rng() % j.n : 0;
+            if (p.abi == 2 && rng() % 6 == 0) j.n = 1;              // N = 1: K-split (or tiles under MODE 1)
+            if (p.abi == 2 && j.n == 1 && rng() % 2) j.b_stride = 1;
             if (p.abi == 2) j.mode = j.n == 1 && rng() % 3 == 0 ? 2 : rng() % 2;
             if (p.abi == 2 && rng() % 16 == 0) {       // more than one B panel: K x N beyond 16 KiB, kept small
                 j.k = 600 + rng() % 400;

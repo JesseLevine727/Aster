@@ -33,6 +33,7 @@ module shell_npu_v2 (
     output logic        chk_busy,
     output logic        chk_done,
     output logic        chk_counting,
+    output logic [3:0]  chk_state,
     output logic [1:0]  chk_abi
 );
     aster_npu2 #(.MEM_BASE(32'h8000_0000), .MEM_BYTES(32'h0001_8000), .OUTSTANDING(2)) npu (
@@ -45,6 +46,7 @@ module shell_npu_v2 (
     assign m_req_be = 4'hF;
     assign chk_busy = npu.busy;
     assign chk_done = npu.done || npu.error || npu.aborted;
+    assign chk_state = 4'(npu.engine.state);           // for the abort and reset coverage
     assign chk_counting = npu.ev_step || npu.ev_tile || npu.ev_read || npu.ev_write;
     assign chk_abi  = 2'd2;
 
