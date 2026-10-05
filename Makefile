@@ -2084,7 +2084,7 @@ parallel-workloads:
 
 test: smoke phase1 hello bench cache uart fpga-sim linux-sim counters retirement npu-pe npu-array npu-engine npu-regs npu-driver npu-runtime npu-stop npu-bench-validate arbiter shared-fabric multicore-runtime parallel
 
-check: tools smoke phase1 hello bench cache uart fpga-sim linux-sim linux-dual-sim linux-coherent-sim counters retirement pcpi-probe dot8-unit npu-pe npu-array npu-engine npu-regs device-arbiter dma-counters l2-unit npu-driver npu-runtime npu-stop npu-bench-validate xe-bench-validate phase11-infer-validate workloads atomic-fabric atomic-runtime atomic-faults coherent-cache warm-stop coherent-counters coherent-soc timer-unit timer-firmware irq-unit timer-interrupt sram-unit sram-lint freeze-interfaces coherent-bench riscv-reference riscv-reference-negative coherent-litmus arbiter shared-fabric multicore-runtime multicore-adversarial parallel phase17-baseline-audit core-riscv-tests core-riscv-tests-stall core-arch-tests core-random-lockstep core-lockstep-selftest core-ports-tests core-kernels core-aster-fetch core-aster-tests core-aster-kernels core-aster-act4 core-aster-l1-unit core-aster-l1-tests core-aster-firmware
+check: tools smoke phase1 hello bench cache uart fpga-sim linux-sim linux-dual-sim linux-coherent-sim counters retirement pcpi-probe dot8-unit npu-pe npu-array npu-engine npu-regs device-arbiter dma-counters l2-unit npu-driver npu-runtime npu-stop npu-bench-validate xe-bench-validate phase11-infer-validate workloads atomic-fabric atomic-runtime atomic-faults coherent-cache warm-stop coherent-counters coherent-soc timer-unit timer-firmware irq-unit timer-interrupt sram-unit sram-lint freeze-interfaces coherent-bench riscv-reference riscv-reference-negative coherent-litmus arbiter shared-fabric multicore-runtime multicore-adversarial parallel phase17-baseline-audit core-riscv-tests core-riscv-tests-stall core-arch-tests core-random-lockstep core-lockstep-selftest core-ports-tests core-kernels core-aster-fetch core-aster-tests core-aster-kernels core-aster-act4 core-aster-l1-unit core-aster-l1-tests core-aster-firmware core-performance-gate aster-board-sim
 
 # Phase 18 CPU shell: one CPU with a synchronous SRAM at 0x8000_0000 and an
 # RVFI trace for lockstep against Spike (docs/phase18.md).
@@ -2460,6 +2460,54 @@ core-aster-kernels: $(ASTER_PORTS_SIM) $(ASTER_CLOCK_PLUGIN) $(ASTER_DOT8_PLUGIN
 		--shell-arg +latency=1 --build-dir $(CORE_TESTS_DIR)/aster-kernels \
 		| tee $(CORE_TESTS_DIR)/aster-kernels.log | tail -14 \
 		|| { grep -v '^PASS' $(CORE_TESTS_DIR)/aster-kernels.log; exit 1; }
+
+# The 18.7 performance gate (docs/cpu.md §7): the Aster core's window cycles
+# against PicoRV32's on the CPU set — PicoRV32 in its look-ahead shell, the
+# Aster core on the one-cycle memory without its L1 — from the two kernel
+# runs (scripts/performance_gate.py): a geometric mean of the seven gate
+# kernels' speedups of at least 2.0x and none below 1.5x.
+.PHONY: core-performance-gate
+core-performance-gate: core-kernels core-aster-kernels
+	@set -o pipefail; $(PYTHON) scripts/performance_gate.py $(CORE_TESTS_DIR)/kernels.log $(CORE_TESTS_DIR)/aster-kernels.log \
+		| tee $(CORE_TESTS_DIR)/performance-gate.log
+
+# The Aster core on the PYNQ-Z1 (milestone 18.7's feasibility run): the board
+# design (rtl/soc/aster_core_pynq.sv: the core, its caches, 128 KiB of block
+# RAM and the register page, driven through AXI4-Lite from the ARM side).
+# aster-board-sim runs every program the board can run (scripts/aster_board.py:
+# the CPU kernels and the self-checking programs that need only memory) on the
+# design's simulation, driven as the board script drives it, and requires each
+# to end as in the CPU shell, cycle for cycle. fpga-aster-core builds the
+# bitstream at 100 MHz in context (fpga/pynq_z1/build_aster_core.tcl);
+# aster-board runs the programs on the board (ASTER_BOARD_SUDO: the board's
+# sudo password, from the environment only; ASTER_BOARD_OUTPUT: the evidence
+# directory, which must not exist). Neither is in make check.
+ASTER_BOARD_SIM := $(BUILD_DIR)/aster_board/board_sim
+ASTER_BOARD_RTL := $(ASTER_CORE_RTL) $(ASTER_L1_RTL) rtl/soc/aster_core_pynq.sv
+ASTER_BOARD_DIR := $(FPGA_BUILD_DIR)/aster_core
+ASTER_BOARD_HOST ?= xilinx@10.0.0.82
+$(ASTER_BOARD_SIM): $(ASTER_BOARD_RTL) verification/fpga/tb_aster_core_pynq.cpp Makefile
+	mkdir -p $(dir $@)
+	$(VERILATOR) --cc --exe --build -O3 --assert --Wall --top-module aster_core_pynq \
+		--Mdir $(BUILD_DIR)/aster_board/obj -o $(abspath $@) \
+		$(addprefix $(ROOT)/,$(ASTER_BOARD_RTL)) $(ROOT)/verification/fpga/tb_aster_core_pynq.cpp
+	@touch $@
+.PHONY: aster-board-sim fpga-aster-core aster-board
+aster-board-sim: $(ASTER_BOARD_SIM) $(ASTER_L1_SIM) $(ASTER_DOT8_PLUGIN)
+	@set -o pipefail; RISCV_PREFIX=$(RISCV_PREFIX) $(PYTHON) scripts/aster_board.py --sim $(ASTER_BOARD_SIM) \
+		--build-dir $(BUILD_DIR)/aster_board/programs | tee $(BUILD_DIR)/aster_board/sim.log | tail -1 \
+		|| { grep -v '^PASS' $(BUILD_DIR)/aster_board/sim.log; exit 1; }
+fpga-aster-core:
+	@command -v $(VIVADO) >/dev/null || { echo "ERROR: Vivado not found (set VIVADO=/path/to/vivado)" >&2; exit 1; }
+	@mkdir -p $(ASTER_BOARD_DIR) && rm -f $(ASTER_BOARD_DIR)/aster_core.bit   # never a stale bitstream
+	$(VIVADO) -mode batch -nojournal -nolog -notrace -source $(ROOT)/fpga/pynq_z1/build_aster_core.tcl \
+		-tclargs $(ROOT) $(ASTER_BOARD_DIR) > $(ASTER_BOARD_DIR)/build.out 2>&1 || { tail -30 $(ASTER_BOARD_DIR)/build.out; exit 1; }
+	@grep -E '^(ASTER_SIGNOFF|SUMMARY)' $(ASTER_BOARD_DIR)/build.out $(ASTER_BOARD_DIR)/summary.txt
+aster-board: $(ASTER_L1_SIM)
+	@test -n "$(ASTER_BOARD_OUTPUT)" || { echo "ERROR: set ASTER_BOARD_OUTPUT to a new evidence directory" >&2; exit 1; }
+	@test -f $(ASTER_BOARD_DIR)/aster_core.bit || { echo "ERROR: make fpga-aster-core first" >&2; exit 1; }
+	RISCV_PREFIX=$(RISCV_PREFIX) $(PYTHON) scripts/aster_board.py --board $(ASTER_BOARD_DIR)/aster_core.bit \
+		--host $(ASTER_BOARD_HOST) --output $(ASTER_BOARD_OUTPUT) --build-dir $(BUILD_DIR)/aster_board/programs
 
 # Planted bugs in the Aster core's RTL and, from 18.6, its L1 caches
 # (scripts/mutation_campaign.py): each of its mutants must be caught by the runs
