@@ -494,9 +494,12 @@ last, a choice for the owner.
   channel, or channels last, up to 4 channels, 3×3 kernels).
 - New bins: each level, both levels at once, A_K0 not dividing K, and blocks
   of A_M0 rows crossing a strip.
-- 10 edge jobs join the list (33 in all):
+- 14 edge jobs join the list (37 in all):
   - Conv2D and CIFAR's two convolutions, direct;
-  - levels of 1, and levels larger than M or K;
+  - a convolution over two B panels (K = 1,024);
+  - levels of 1, levels larger than M or K, and levels far beyond them
+    (A_M0 = 0x8000_0003, A_K0 = 0x1_0005);
+  - M at its limit with A_M0 = 1;
   - A_K0 not dividing K, including a last segment that starts a byte into a
     word;
   - a two-level extent past 2^32;
@@ -509,19 +512,22 @@ last, a choice for the owner.
 The NPU passes, in each of the six memory modes:
 - 4 seeds × 1,000 random jobs with every coverage bin: 71 on the memories
   that answer on time, 70 in the stall modes;
-- the 33 edge jobs;
+- the 37 edge jobs;
 - every completed job exactly as the cycle model on the memories that
   answer on time.
 
-**Planted bugs.** 9 bugs were planted in the new paths (not retained):
+Over seeds 1–40 in all six modes (240 runs) every run passes with every bin.
+
+**Planted bugs.** 10 bugs were planted in the new paths (not retained):
 - the row stepper's wrap and its jump;
 - a segment's length and buffer byte;
 - the extent's k bound and m quotient;
 - the panel's first strip;
 - the bytes left in a row;
-- the strip's first row.
+- the strip's first row;
+- the registered wrap test (after the timing work).
 
-All 9 are caught. Three were at first caught only by some random runs, until
+All 10 are caught. Three were at first caught only by some random runs, until
 three edge jobs were added that catch them by construction: a last segment's
 over-read crossing a word, and A ending at the window's top and one byte past
 it.
@@ -572,6 +578,20 @@ it.
   to 5,438) and 859 to the top with its memory (4,780 to 5,639). Vivado's
   counts move by a few hundred between runs. It added four DSPs: the
   extent's three products in place of 19.2's one.
+
+**Review.** The milestone's watchdog review found no RTL bug; it re-derived
+every measured number. It found test gaps, now closed:
+- no test combined two levels with several panels, or used level counts
+  beyond 4,096 (edge jobs added);
+- the generator sized two-level regions the plain way, so it never pinned
+  one to the window's top (fixed);
+- a loose bin;
+- writes while busy that never touched the new registers;
+- `+conv` not refusing an erroneous descriptor.
+
+It also found stale spec text (§2, §3's table, §3.2's region) and an area
+claim that needed qualifying, both now fixed. It proposed the two timing
+steps that made the final run.
 
 **Carried to 19.4:** the Phase 19 SoC, the DOT8 baselines and the speedup
 gates. CIFAR's and Conv2D's end-to-end runs are Phase 20's workload matrix.
