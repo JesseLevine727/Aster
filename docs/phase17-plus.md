@@ -1,8 +1,8 @@
 # Aster v2 performance roadmap: Phase 17 and beyond
 
 Status: **Phase 17 complete (29 September 2026); Phase 18 — the Aster core —
-complete (5 October 2026, [`phase18.md`](phase18.md)); Phase 19 — the NPU — being
-specified ([`phase19.md`](phase19.md), [`npu.md`](npu.md)).** See [`phase17-todo.md`](phase17-todo.md).
+complete (5 October 2026, [`phase18.md`](phase18.md)); Phase 19 — the NPU — in
+progress ([`phase19.md`](phase19.md), [`npu.md`](npu.md)).** See [`phase17-todo.md`](phase17-todo.md).
 Revised 29 September 2026; [section 7](#7-plan-revision--29-september-2026)
 records what changed from the first draft and why. This plan defines the
 performance-oriented successor to the functionally verified v1 system. It does
@@ -455,7 +455,7 @@ proposed pipeline/area trade-off before the target is revised.
 
 **Purpose:** make the array useful on real shapes rather than merely functional.
 The phase plan is [`phase19.md`](phase19.md) and its contract the NPU
-specification [`npu.md`](npu.md) (draft, 5 October 2026), which also records
+specification [`npu.md`](npu.md) (approved 5 October 2026), which also records
 the owner's decisions of that day: the gate cases, the baseline (the best CPU
 code, DOT8 included), the platform and the output format.
 

@@ -176,9 +176,9 @@ with a drift-rejecting audit, corrected Phase 15/16 reporting and audits, the
 ([`docs/phase18.md`](docs/phase18.md), 5 October 2026): a seven-stage RV32IMA
 core with Zicsr, Zifencei and DOT8, lockstep-verified against Spike, 3.68×
 PicoRV32 on the CPU set, with coherent L1 caches, running at 100 MHz on the
-PYNQ-Z1. **Phase 19 — the high-utilization NPU — is being specified**
-([`docs/phase19.md`](docs/phase19.md); the draft
-[NPU specification](docs/npu.md) awaits approval).
+PYNQ-Z1. **Phase 19 — the high-utilization NPU — is in progress**
+([`docs/phase19.md`](docs/phase19.md); the approved
+[NPU specification](docs/npu.md)).
 
 ## Historical phase links
 

@@ -1,7 +1,9 @@
 # Phase 19: high-utilization NPU and data movement
 
-Status: **not started — the NPU specification [`npu.md`](npu.md) awaits the
-owner's approval.** The owner's four decisions of 5 October 2026 (platform,
+Status: **in progress — milestone 19.0 (the NPU shell) complete, awaiting the
+owner's sign-off.** The NPU
+specification [`npu.md`](npu.md) was approved by the owner on 5 October 2026.
+The owner's four decisions of 5 October 2026 (platform,
 gate cases, baseline, output format) are recorded below and in npu.md §9.
 The phase sits in the [v2 plan](phase17-plus.md#6-phase-17-sequence) after
 [Phase 18](phase18.md) (complete, 5 October 2026). As in Phase 18, every
@@ -44,8 +46,8 @@ Aster core, which the plan builds only in Phase 20):
    beside its program in the 96 KiB main memory); the batch-one MNIST MLP
    784 → 32 → 10; N = 1 measured on 32×1×784 and 784×1×25.
 3. **Baseline:** the best CPU code on the Aster core, DOT8 included (the
-   strictest option). npu.md applies it to the MLP as well; the owner
-   confirms that with the specification.
+   strictest option), for the GEMM's 5× and the MLP's 2× alike (the owner
+   confirmed the MLP with the specification).
 4. **Output:** raw int32, as v1; the CPU keeps scaling and activation.
 
 ## Verification architecture
@@ -58,6 +60,108 @@ and back-pressure tests; harness self-tests; v1's engine as the shell's
 first DUT; a mutation campaign; in the SoC, the CPU in lockstep where no
 NPU result is read, self-checking programs where one is, and a snoop
 checker for every NPU write.
+
+## Milestone 19.0: the NPU shell (5 October 2026)
+
+**The shell** (`verification/npu/`; `make npu-v1-tests`, in `make check`).
+An NPU runs on the CPU shell's memory model (`verification/core/shell_ports.h`):
+answers in order after one or two cycles, random back-pressure, extra and
+long latencies, room for more requests in flight, garbage outside answers and
+the error in the cycle after acceptance. The shell drives the NPU job by job
+through its register port. Every cycle it checks the memory port: a waiting
+request held unchanged; every access in the window; reads overlapping A or B;
+writes only to C's bytes; no access in a job that must end in a descriptor
+error; nothing presented or owed while the NPU shows DONE or is not busy.
+
+After every job it checks:
+- STATUS, exactly, and ERROR_CODE;
+- the **whole** memory window, against the reference: every byte, not only
+  C. After an abort, each C element must be unchanged or final; after a
+  reset, each C byte;
+- JOB_CYCLES against the cycles the shell saw the NPU busy;
+- BYTES_READ and BYTES_WRITTEN against the reads and written bytes the shell
+  accepted;
+- for a whole job, v1's documented counters;
+- ACK clearing STATUS.
+
+**The reference** (`npu_model.h`) is written from the documents, not the RTL:
+npu.md §2's arithmetic, and phase9.md's limits, regions and counters for v1.
+v1's error-code numbers are documented only in its RTL, so the v1 profile
+takes them from there.
+
+**The generator** produces 1,000 random jobs per run:
+- dimensions 0–40, with a longer K now and then;
+- one dimension at the limit (1,024) in one job of 32;
+- one region pinned to the window's base or top in one job in four;
+- unaligned A, B and C, and minimal and padded strides;
+- each descriptor error;
+- ABORT during a job and after it ended;
+- a reset during a job;
+- descriptor writes and START while busy;
+- a malformed CONTROL write.
+
+A run fails unless it hits all 40 coverage bins.
+
+**Exit gate met:**
+- **v1 passes** (the shell's first DUT, through an adapter, `shell_npu_v1.sv`)
+  in its 32 KiB window: 4 seeds × 1,000 jobs in each of six memory modes —
+  two-cycle, one-cycle, stalls, one-cycle with stalls, long stalls, and room
+  for three requests (only another stall pattern for v1, which takes one
+  transaction at a time).
+- **Every self-test is rejected, each with its own failure:**
+
+  | Planted fault | Failure |
+  | --- | --- |
+  | a corrupted C byte | `MEMORY_MISMATCH` |
+  | a stray write | `STRAY_WRITE` |
+  | a misread counter | `COUNTER_MISMATCH` |
+  | DONE before the last write's answer | `DONE_EARLY` |
+  | a waiting request changed | `REQ_UNSTABLE` |
+
+- **Planted bugs:** beyond the self-tests, 13 bugs were planted in scratch
+  copies of v1's RTL (not retained), and every one is caught:
+  - sign handling: a zero-extended product, an unsigned multiply;
+  - addressing: B addressed by the row tile, C by A's stride;
+  - computation and counting: the last K step skipped, BYTES_READ miscounted,
+    no drain on abort;
+  - bounds: no A-stride check, a region ending at the window's top or a
+    dimension of 1,024 wrongly rejected;
+  - status: an ABORTED the shell never asked for, STATUS bit 4 miswired.
+- **v1's same-shell utilization** (useful MACs ÷ 16 × JOB_CYCLES), on the
+  two-cycle memory:
+
+  | Case (M×N×K) | JOB_CYCLES | Array steps | Utilization |
+  | --- | ---: | ---: | ---: |
+  | 64×64×64 | 492,546 | 16,384 | 3.33% |
+  | 32×1×784 (MNIST's first layer) | 132,226 | 6,272 | 1.19% |
+  | 784×1×25 (Conv2D) | 115,446 | 4,900 | 1.06% |
+
+  This is higher than in v1's SoC (0.33–0.80%), because here no fabric
+  serializes the NPU behind the CPU. It is the baseline the new data path is
+  measured against in the same shell. The other two gate GEMMs (96³ and
+  128×64×128) do not fit v1's window.
+
+**Review.** The milestone's watchdog review found three holes, each proven
+with a planted bug that passed, and all fixed:
+- an ABORTED the shell had not asked for was accepted, with its partial
+  result: such a bug printed a 64×64×64 "baseline" of 14%;
+- the generator never placed a region at the window's top or a dimension at
+  1,024, so bound checks off by one there passed;
+- STATUS bit 4 was never compared.
+
+It also led to:
+- exact read and write counts;
+- the no-access-while-idle check;
+- coverage credited only when a reset or a write really landed while busy;
+- 1,000 jobs per run (the rarest error was missed once at 300).
+
+**Carried to 19.1** (the ABI 2 DUT): the register map and counter widths into
+the profile; the register port's access size and error answer (npu.md §3's
+sub-word rule); memory-error injection (error 6) and its partial-result
+check; overlapping A and B rows and N = 1 in each MODE in the generator;
+JOB_CYCLES measured from START's acceptance; each C word written exactly
+once; `irq`, ABI and GEOMETRY read back. More than one request in flight is
+first exercised by the new NPU: v1 takes one transaction at a time.
 
 ## Milestones and gates
 
@@ -73,7 +177,7 @@ checker for every NPU write.
 ## Checklist
 
 - [x] The owner's decisions of 5 October 2026 (above)
-- [ ] npu.md approved by the owner
+- [x] npu.md approved by the owner (5 October 2026)
 - [ ] 19.0 as in the table above
 - [ ] 19.1 as in the table above
 - [ ] 19.2 as in the table above

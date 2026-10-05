@@ -1,6 +1,6 @@
 # The Aster NPU, v2: specification
 
-Status: **draft for the owner's approval** (5 October 2026). This is the
+Status: **approved by the owner, 5 October 2026.** This is the
 Phase 19 contract, as [`cpu.md`](cpu.md) is Phase 18's: the design, its
 programming interface, how it is verified and the gates it must pass. The
 phase plan is [`phase19.md`](phase19.md); the targets are those frozen in
@@ -412,11 +412,13 @@ oracle instead of an instruction-set model:
   MNIST MLP (784 → 32 → 10); the N = 1 mapping measured on MNIST's
   32×1×784 layer and Conv2D's 784×1×25.
 - **Baseline:** the best CPU code on the Aster core, DOT8 included — the
-  strictest of the options offered. This draft applies it to the MLP's 2×
-  as well as the GEMM's 5× (the stricter reading; the question named the
-  GEMM gate).
+  strictest of the options offered — for the MLP's 2× as well as the GEMM's
+  5× (the question named the GEMM gate; the owner confirmed the MLP with the
+  specification).
 - **Output:** raw int32 as in v1; scaling, activation and pooling stay on the
   CPU.
 
-The rest of this document is the design's proposal, awaiting the owner's
-approval as cpu.md's was before Phase 18's RTL.
+**Approved by the owner, 5 October 2026:** this specification, as reviewed
+(cpu.md was approved the same way before Phase 18's RTL). Changes found
+necessary during the phase are recorded here as clarifications or owner
+decisions, as cpu.md §9 records Phase 18's.

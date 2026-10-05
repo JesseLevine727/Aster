@@ -2084,7 +2084,7 @@ parallel-workloads:
 
 test: smoke phase1 hello bench cache uart fpga-sim linux-sim counters retirement npu-pe npu-array npu-engine npu-regs npu-driver npu-runtime npu-stop npu-bench-validate arbiter shared-fabric multicore-runtime parallel
 
-check: tools smoke phase1 hello bench cache uart fpga-sim linux-sim linux-dual-sim linux-coherent-sim counters retirement pcpi-probe dot8-unit npu-pe npu-array npu-engine npu-regs device-arbiter dma-counters l2-unit npu-driver npu-runtime npu-stop npu-bench-validate xe-bench-validate phase11-infer-validate workloads atomic-fabric atomic-runtime atomic-faults coherent-cache warm-stop coherent-counters coherent-soc timer-unit timer-firmware irq-unit timer-interrupt sram-unit sram-lint freeze-interfaces coherent-bench riscv-reference riscv-reference-negative coherent-litmus arbiter shared-fabric multicore-runtime multicore-adversarial parallel phase17-baseline-audit core-riscv-tests core-riscv-tests-stall core-arch-tests core-random-lockstep core-lockstep-selftest core-ports-tests core-kernels core-aster-fetch core-aster-tests core-aster-kernels core-aster-act4 core-aster-l1-unit core-aster-l1-tests core-aster-firmware core-performance-gate aster-board-sim
+check: tools smoke phase1 hello bench cache uart fpga-sim linux-sim linux-dual-sim linux-coherent-sim counters retirement pcpi-probe dot8-unit npu-pe npu-array npu-engine npu-regs device-arbiter dma-counters l2-unit npu-driver npu-runtime npu-stop npu-bench-validate xe-bench-validate phase11-infer-validate workloads atomic-fabric atomic-runtime atomic-faults coherent-cache warm-stop coherent-counters coherent-soc timer-unit timer-firmware irq-unit timer-interrupt sram-unit sram-lint freeze-interfaces coherent-bench riscv-reference riscv-reference-negative coherent-litmus arbiter shared-fabric multicore-runtime multicore-adversarial parallel phase17-baseline-audit core-riscv-tests core-riscv-tests-stall core-arch-tests core-random-lockstep core-lockstep-selftest core-ports-tests core-kernels core-aster-fetch core-aster-tests core-aster-kernels core-aster-act4 core-aster-l1-unit core-aster-l1-tests core-aster-firmware core-performance-gate aster-board-sim npu-v1-tests
 
 # Phase 18 CPU shell: one CPU with a synchronous SRAM at 0x8000_0000 and an
 # RVFI trace for lockstep against Spike (docs/phase18.md).
@@ -2514,6 +2514,50 @@ aster-board: $(ASTER_L1_SIM)
 	@test -f $(ASTER_BOARD_DIR)/aster_core.bit || { echo "ERROR: make fpga-aster-core first" >&2; exit 1; }
 	RISCV_PREFIX=$(RISCV_PREFIX) $(PYTHON) scripts/aster_board.py --board $(ASTER_BOARD_DIR)/aster_core.bit \
 		--host $(ASTER_BOARD_HOST) --output $(ASTER_BOARD_OUTPUT) --build-dir $(BUILD_DIR)/aster_board/programs
+
+# The NPU shell (Phase 19, docs/npu.md §6; verification/npu): an NPU on the CPU
+# shell's memory model, driven job by job through its register port, every
+# job's whole memory window, status and counters checked against the
+# independent reference (npu_model.h). 19.0: v1's NPU (rtl/accelerator) as the
+# shell's first DUT, through an adapter (shell_npu_v1.sv) — NPU_SEEDS seeds of
+# 1,000 random jobs (valid and erroneous descriptors, aborts during and after a
+# job, resets, writes while busy, malformed commands) with every coverage bin
+# required, in each memory mode; the shell's self-tests (each planted fault
+# must be reported as its own failure); and v1's same-shell utilization on the
+# gate cases that fit its 32 KiB window, on the two-cycle memory.
+NPU_DIR := $(BUILD_DIR)/npu
+NPU_SEEDS ?= 4
+NPU_V1_RTL := rtl/accelerator/aster_int8_pe.sv rtl/accelerator/aster_int8_array.sv \
+	rtl/accelerator/aster_npu_engine.sv rtl/accelerator/aster_npu_regs.sv
+NPU_V1_SIM := $(NPU_DIR)/npu_shell_v1
+NPU_SHELL_SRC := verification/npu/tb_npu.cpp verification/npu/npu_model.h verification/core/shell_ports.h
+$(NPU_V1_SIM): $(NPU_V1_RTL) verification/npu/shell_npu_v1.sv $(NPU_SHELL_SRC) Makefile
+	mkdir -p $(NPU_DIR)
+	$(VERILATOR) --cc --exe --build -O3 --assert --Wall --top-module shell_npu_v1 --prefix Vnpu_shell \
+		--Mdir $(NPU_DIR)/v1_obj -o $(abspath $@) \
+		$(addprefix $(ROOT)/,$(NPU_V1_RTL)) $(ROOT)/verification/npu/shell_npu_v1.sv $(ROOT)/verification/npu/tb_npu.cpp
+	@touch $@
+.PHONY: npu-v1-sim npu-v1-tests
+npu-v1-sim: $(NPU_V1_SIM)
+npu-v1-tests: $(NPU_V1_SIM)
+	@set -o pipefail; for mode in plain latency1 stall latency1-stall long-stall inflight3; do \
+		extra=$$(case $$mode in plain) echo "";; latency1) echo "+latency=1";; stall) echo "+stall_seed=5";; \
+			latency1-stall) echo "+latency=1 +stall_seed=9";; long-stall) echo "+stall_seed=3 +long_stall";; \
+			inflight3) echo "+stall_seed=7 +max_inflight=3";; esac); \
+		for seed in $$(seq 1 $(NPU_SEEDS)); do \
+			$(NPU_V1_SIM) +seed=$$seed +jobs=1000 +require_coverage $$extra > $(NPU_DIR)/v1-$$mode-$$seed.log 2>&1 \
+				|| { tail -3 $(NPU_DIR)/v1-$$mode-$$seed.log; exit 1; }; \
+		done; \
+		echo "PASS: v1 NPU in the NPU shell, $$mode: $(NPU_SEEDS) seeds x 1,000 jobs as the reference, every coverage bin"; \
+	done
+	@for test in 1:MEMORY_MISMATCH 2:STRAY_WRITE 3:COUNTER_MISMATCH 4:DONE_EARLY 5:REQ_UNSTABLE; do \
+		n=$${test%%:*}; want=$${test#*:}; extra=$$([ $$n = 5 ] && echo "+stall_seed=3"); \
+		got=$$($(NPU_V1_SIM) +seed=1 +jobs=1000 +selftest=$$n $$extra 2>/dev/null | tail -1 | awk '{print $$2}'); \
+		[ "$$got" = "$$want" ] || { echo "FAIL: NPU shell self-test $$n reported $$got, expected $$want"; exit 1; }; \
+	done; echo "PASS: the NPU shell reports each planted fault (corrupted result, stray write, wrong counter, DONE early, unstable request)"
+	@rm -f $(NPU_DIR)/v1-baseline.log; for case in 64,64,64 32,1,784 784,1,25; do \
+		$(NPU_V1_SIM) +case=$$case >> $(NPU_DIR)/v1-baseline.log 2>&1 || { cat $(NPU_DIR)/v1-baseline.log; exit 1; }; \
+	done; sed 's/^NPU PASS /PASS: v1 NPU baseline, two-cycle memory: /' $(NPU_DIR)/v1-baseline.log
 
 # Planted bugs in the Aster core's RTL and, from 18.6, its L1 caches
 # (scripts/mutation_campaign.py): each of its mutants must be caught by the runs
