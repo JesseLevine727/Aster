@@ -422,3 +422,32 @@ oracle instead of an instruction-set model:
 (cpu.md was approved the same way before Phase 18's RTL). Changes found
 necessary during the phase are recorded here as clarifications or owner
 decisions, as cpu.md §9 records Phase 18's.
+
+### Clarifications in 19.1 (the tile mapping)
+
+Found necessary while building and verifying 19.1; awaiting the owner's
+acceptance with the milestone:
+
+- §4.2: there are **two** output banks, used in turn, so a tile's results are
+  written while the next tile computes; a tile starts only when its bank
+  (the one two tiles back used) has been handed to the memory port. The array
+  still waits when K is small (§4.2's "When K < 16").
+- §1, §4.3: 19.1 runs every job as tiles — MODE 2, and N = 1 under MODE 0,
+  included (one column in four busy). The K-split mapping is 19.2's.
+- §3: CHECK takes 16 cycles, so a descriptor error (or M or N = 0) ends the
+  job 17 cycles after START.
+- §3: JOB_MACS and JOB_TILES count the tiles whose results reached an output
+  bank (their useful MACs, and the tiles), including, after an abort or a
+  memory error, tiles whose results were then not written.
+- §3: one 64-bit latch serves the counters, tagged with the counter whose low
+  word was read: a high-word read returns the latch, once, only when its
+  counter's low word was the last one read, and its live high word
+  otherwise. No
+  simulation reaches 2^32 counts, so the latch is checked by inspection only.
+- §3.2 (error 6): STOP is registered, so the request presented in the cycle
+  the error arrives may still be accepted, then or later while held — at
+  most one late request; such a write still writes its final value, so §2's
+  rule (each C word unchanged or final) holds.
+- §3: a job ends only once the array's pipeline is empty too (after an abort
+  or an error, the steps in flight finish first), so a job's counters hold
+  from the cycle its end shows.

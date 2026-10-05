@@ -1,0 +1,1 @@
+top=timing_npu2_bram part=xc7z020clg400-1 period_ns=10.0 wns_ns=0.622 whs_ns=0.094 implied_period_ns=9.378 implied_fmax_mhz=106.6 luts=4385 ffs=4188 brams=40 dsps=7

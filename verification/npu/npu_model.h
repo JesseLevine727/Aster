@@ -16,11 +16,19 @@
 // loaded, one per load, the 4x4 tile traversal rereading A for every column
 // tile and B for every row tile; BYTES_WRITTEN one per C byte; COMPUTE_CYCLES
 // one per K step of each tile; TILES the output tiles.
+//
+// v2 (ABI 2, docs/npu.md §2-§4): the SoC's main memory (96 KiB at
+// 0x8000_0000 here); M, N, K at most 4096; C_BASE and C_STRIDE multiples of 4,
+// C_STRIDE >= 4N; A's and B's rows may overlap each other and A and B may
+// overlap; C may not overlap A or B; error codes as §3.2 (the lowest that
+// applies, regions without bytes not checked). Its counters count whole words;
+// the words a job reads follow from §4.2's mapping (v2_words_read).
 #ifndef ASTER_NPU_MODEL_H
 #define ASTER_NPU_MODEL_H
 
 #include <algorithm>
 #include <cstdint>
+#include <deque>
 #include <map>
 #include <random>
 #include <string>
@@ -32,10 +40,12 @@ struct Job {
     std::uint32_t a_base = 0, b_base = 0, c_base = 0;
     std::uint32_t a_stride = 0, b_stride = 0, c_stride = 0;
     std::uint32_t m = 0, n = 0, k = 0;
+    std::uint32_t mode = 0;              // ABI 2: 0 automatic, 1 tiles, 2 K-split (N = 1)
 };
 
 struct Profile {
     std::string name;
+    int abi;
     std::uint32_t mem_base, mem_bytes;   // the NPU's memory window
     std::uint32_t max_dim;
     bool c_any_alignment;                // v1: C at any byte offset
@@ -44,10 +54,14 @@ struct Profile {
     // STATUS bits
     std::uint32_t busy_bit, done_bit, error_bit, aborted_bit;
     bool done_with_error;                // v1 sets done with error and with abort
+    std::size_t max_in_flight;           // requests the DUT may have unanswered (v1: one at a time)
 };
 
 inline Profile v1_profile() {
-    return {"v1", 0x10000000u, 0x8000u, 1024, true, false, false, 1u, 2u, 4u, 8u, true};
+    return {"v1", 1, 0x10000000u, 0x8000u, 1024, true, false, false, 1u, 2u, 4u, 8u, true, 1};
+}
+inline Profile v2_profile() {
+    return {"v2", 2, 0x80000000u, 0x18000u, 4096, false, true, true, 1u, 2u, 4u, 8u, false, 2};
 }
 
 // A region's bytes as a half-open interval [lo, hi) in 64-bit arithmetic; empty
@@ -84,7 +98,32 @@ inline std::uint32_t expected_error(const Profile& p, const Job& j) {
         if (overlap(a, b) || overlap(a, c) || overlap(b, c)) return 6;
         return 0;
     }
-    return 0xFFFFFFFFu;   // ABI 2 arrives with 19.1
+    // ABI 2, npu.md §3.2.
+    if (j.m > p.max_dim || j.n > p.max_dim || j.k > p.max_dim || j.mode == 3 || (j.mode == 2 && j.n != 1)) return 1;
+    if (j.c_base % 4 || j.c_stride % 4) return 2;
+    if (std::uint64_t(j.c_stride) < 4ull * j.n) return 3;
+    if (outside(a) || outside(b) || outside(c)) return 4;
+    if (overlap(c, a) || overlap(c, b)) return 5;
+    return 0;
+}
+
+// ABI 2: the words a completed job reads (npu.md §4.2): B's panels — as many
+// columns as fit 16 KiB, floor(4096 / K) groups of four — each read once, row
+// by row; for each panel, A read once, strip by strip; each row segment as
+// the aligned words that cover it.
+inline std::uint64_t v2_words_read(const Job& j) {
+    if (!j.m || !j.n || !j.k || j.k > 4096) return 0;     // (K above the limit: a descriptor error)
+    auto words = [](std::uint64_t addr, std::uint64_t len) { return ((addr % 4) + len + 3) / 4; };
+    const std::uint64_t groups = (j.n + 3) / 4, fit = 4096 / j.k;
+    const std::uint64_t panel = std::min(groups, fit);
+    std::uint64_t total = 0;
+    for (std::uint64_t g0 = 0; g0 < groups; g0 += panel) {
+        const std::uint64_t gp = std::min(panel, groups - g0);
+        const std::uint64_t cols = std::min<std::uint64_t>(4 * gp, j.n - 4 * g0);
+        for (std::uint64_t k = 0; k < j.k; ++k) total += words(j.b_base + k * j.b_stride + 4 * g0, cols);
+        for (std::uint64_t i = 0; i < j.m; ++i) total += words(j.a_base + i * j.a_stride, j.k);
+    }
+    return total;
 }
 
 // Memory as the shell holds it: the window's bytes.
@@ -124,6 +163,98 @@ inline bool in_c(const Job& j, std::uint32_t addr) {
     return (addr - j.c_base) % j.c_stride < 4 * j.n;
 }
 
+// ABI 2: a completed job's JOB_CYCLES on a memory that answers on time — every
+// request accepted when offered, answered `latency` cycles later (1 or 2) —
+// from the schedule npu.md §4 describes, as 19.1 builds it (phase19.md,
+// "Milestone 19.1"; the CPI model's role for the core). Cycle 0 is the first
+// busy cycle (the one after START's acceptance):
+// - CHECK: cycles 0-15; a descriptor error, or M or N = 0, ends the job at
+//   cycle 16 (17 cycles);
+// - PANEL and STRIP: one cycle each;
+// - LOAD: one word requested a cycle, as long as fewer than two requests stay
+//   unanswered past the cycle; the next phase starts three cycles after the
+//   last word's answer (the answer registered, written to its buffer, then
+//   the end seen);
+// - TILES: each tile's max(K, 1) steps on consecutive cycles, a tile starting
+//   right after the previous one unless its output bank (the one two tiles
+//   back used) is still held, which it is until the cycle after the writer
+//   took that tile's last element; a tile's results are in its bank three
+//   cycles after its last step;
+// - the writer takes a bank's elements in order, row by row, one a cycle, each
+//   offered the cycle after it is taken and taken again (the next) in the cycle
+//   the previous is accepted, under the same two-unanswered rule;
+// - DRAIN: one cycle after the last step's results are in the bank, the
+//   writer's last element accepted and its bank released; then the next
+//   strip, panel, or FINISH;
+// - FINISH: the job ends in the first cycle with no answer still owed.
+inline std::uint64_t v2_job_cycles(const Profile& p, const Job& j, int latency) {
+    if (expected_error(p, j) || !j.m || !j.n) return 17;
+    std::deque<std::uint64_t> owed;                  // answer cycles of the requests in flight
+    std::uint64_t last_answer = 0;
+    auto issue = [&](std::uint64_t c) {              // the first cycle from c a request is accepted
+        for (;; ++c) {
+            while (!owed.empty() && owed.front() < c) owed.pop_front();
+            std::size_t remaining = 0;
+            for (const std::uint64_t t : owed) remaining += t > c;
+            if (remaining < 2) {
+                owed.push_back(c + latency);
+                last_answer = c + latency;
+                return c;
+            }
+        }
+    };
+    auto load = [&](std::uint64_t c, std::uint64_t words) {   // returns the next phase's first cycle
+        std::uint64_t at = c, last = 0;
+        for (std::uint64_t w = 0; w < words; ++w) { last = issue(at); at = last + 1; }
+        return last + latency + 3;
+    };
+    auto words = [](std::uint64_t addr, std::uint64_t len) { return ((addr % 4) + len + 3) / 4; };
+    const std::uint64_t groups = (j.n + 3) / 4;
+    const std::uint64_t panel = j.k ? std::min<std::uint64_t>(groups, 4096 / j.k) : groups;
+    const std::uint64_t steps = std::max<std::uint32_t>(j.k, 1);
+    std::vector<std::uint64_t> release;              // per tile: the cycle the writer took its last element
+    bool wrote = false;
+    std::uint64_t last_accept = 0;
+    std::uint64_t c = 16;
+    for (std::uint64_t g0 = 0; g0 < groups; g0 += panel) {
+        const std::uint64_t gp = std::min(panel, groups - g0);
+        const std::uint64_t cols = std::min<std::uint64_t>(4 * gp, j.n - 4 * g0);
+        c += 1;                                                       // PANEL
+        if (j.k) {
+            std::uint64_t total = 0;
+            for (std::uint64_t k = 0; k < j.k; ++k) total += words(j.b_base + k * j.b_stride + 4 * g0, cols);
+            c = load(c, total);
+        }
+        for (std::uint64_t i0 = 0; i0 < j.m; i0 += 4) {
+            const std::uint64_t rv = std::min<std::uint64_t>(4, j.m - i0);
+            c += 1;                                                   // STRIP
+            if (j.k) {
+                std::uint64_t total = 0;
+                for (std::uint64_t r = 0; r < rv; ++r) total += words(j.a_base + (i0 + r) * j.a_stride, j.k);
+                c = load(c, total);
+            }
+            std::uint64_t next = c, last_step = 0;
+            for (std::uint64_t t = 0; t < gp; ++t) {
+                const std::uint64_t cv = std::min<std::uint64_t>(4, cols - 4 * t);
+                std::uint64_t start = next;
+                if (release.size() >= 2) start = std::max(start, release[release.size() - 2] + 1);
+                next = start + steps;
+                last_step = next - 1;
+                const std::uint64_t full = start + steps + 3;         // the results in the bank
+                std::uint64_t taken = 0;
+                for (std::uint64_t e = 0; e < rv * cv; ++e) {
+                    taken = wrote ? std::max(full, last_accept) : full;
+                    last_accept = issue(taken + 1);
+                    wrote = true;
+                }
+                release.push_back(taken);
+            }
+            c = std::max({next, last_step + 4, last_accept + 1, release.back() + 1}) + 1;   // DRAIN
+        }
+    }
+    return std::max(c, last_answer + 1) + 1;                          // FINISH
+}
+
 // v1's counters for a completed job (phase9.md).
 struct Counters { std::uint64_t bytes_read, bytes_written, compute_cycles, tiles; };
 inline Counters v1_counters(const Job& j) {
@@ -145,7 +276,15 @@ inline std::vector<std::string> bins(const Profile& p) {
                              "reset", "busy_writes", "bad_control"})
         names.push_back(name);
     if (p.c_any_alignment) names.push_back("c_unaligned");
-    for (int code = 1; code <= 6; ++code) names.push_back("error" + std::to_string(code));
+    for (int code = 1; code <= (p.abi == 1 ? 6 : 5); ++code) names.push_back("error" + std::to_string(code));
+    if (p.abi == 2) {
+        // bad_control is v1's malformed command; ABI 2's is a sub-word access.
+        names.erase(std::find(names.begin(), names.end(), "bad_control"));
+        for (const char* name : {"bad_access", "bus_error_read", "bus_error_write", "clear_totals", "a_rows_overlap",
+                                 "b_rows_overlap", "mode0", "mode1", "mode2", "multiple_panels", "register_map",
+                                 "extent_past_2^32"})
+            names.push_back(name);
+    }
     return names;
 }
 
@@ -179,6 +318,17 @@ public:
             j.a_stride = j.k + (rng() % 3 ? 0 : rng() % 9);
             j.b_stride = j.n + (rng() % 3 ? 0 : rng() % 9);
             j.c_stride = 4 * j.n + (rng() % 3 ? 0 : 4 * (rng() % 3) + (p.c_any_alignment ? rng() % 4 : 0));
+            if (p.rows_may_overlap && rng() % 8 == 0) j.a_stride = j.k ? rng() % j.k : 0;
+            if (p.rows_may_overlap && rng() % 8 == 0) j.b_stride = j.n ? rng() % j.n : 0;
+            if (p.abi == 2) j.mode = j.n == 1 && rng() % 3 == 0 ? 2 : rng() % 2;
+            if (p.abi == 2 && rng() % 16 == 0) {       // more than one B panel: K x N beyond 16 KiB, kept small
+                j.k = 600 + rng() % 400;
+                j.n = 5 + rng() % 20;
+                j.m = 1 + rng() % 8;
+                j.a_stride = j.k + rng() % 4;
+                j.b_stride = j.n + rng() % 4;
+                j.c_stride = 4 * j.n;
+            }
             if (!place(j)) continue;
             return j;
         }
@@ -191,6 +341,7 @@ public:
         if (!j.n) j.n = 1;
         if (!j.k) j.k = 1;
         const std::uint32_t lo = p.mem_base, hi = p.mem_base + p.mem_bytes;
+        if (p.abi == 2) return error_v2(j, code % 5 + 1, lo, hi);
         switch (code) {
             case 1: (rng() % 3 == 0 ? j.m : rng() % 2 ? j.n : j.k) = p.max_dim + 1 + rng() % 4; break;
             case 2: switch (rng() % 3) {
@@ -212,6 +363,40 @@ public:
 
     std::mt19937& random() { return rng; }
 
+    // An ABI 2 descriptor error of the given code (npu.md §3.2); the job may
+    // still end with a lower code that also applies.
+    Job error_v2(Job j, int code, std::uint32_t lo, std::uint32_t hi) {
+        j.a_stride = std::max(j.a_stride, 1u);
+        switch (code) {
+            case 1: switch (rng() % 4) {
+                        case 0: j.m = p.max_dim + 1 + rng() % 4; break;
+                        case 1: j.k = p.max_dim + 1 + rng() % 4; break;
+                        case 2: j.mode = 3; break;
+                        default: j.mode = 2; j.n = 2 + rng() % 5; j.c_stride = std::max(j.c_stride, 4 * j.n); break;
+                    } break;
+            case 2: if (rng() % 2) j.c_base += 1 + rng() % 3; else j.c_stride += 1 + rng() % 3; break;
+            case 3: j.c_stride = 4 * (j.n - 1 - (j.n > 1 ? rng() % (j.n - 1) : 0)); break;
+            case 4: if (rng() % 4 == 0) {                 // an extent past 2^32 (a stride near 2^32)
+                        j.m = std::max(j.m, 2u); j.k = std::max(j.k, 2u);
+                        switch (rng() % 3) {
+                            case 0: j.a_stride = 0xFFFFFFFFu - rng() % 64; break;
+                            case 1: j.b_stride = 0xFFFFFFFFu - rng() % 64; break;
+                            default: j.c_stride = 0xFFFFFFFCu - 4 * (rng() % 16); break;
+                        }
+                        break;
+                    }
+                    switch (rng() % 3) {
+                        case 0: j.a_base = rng() % 2 ? lo - 1 - rng() % 64 : hi - std::uint32_t(region_a(j).hi - region_a(j).lo) + 1; break;
+                        case 1: j.b_base = rng() % 2 ? lo - 1 - rng() % 64 : hi - std::uint32_t(region_b(j).hi - region_b(j).lo) + 1; break;
+                        default: j.c_base = rng() % 2 ? lo - 4 - 4 * (rng() % 16) : (hi - std::uint32_t(region_c(j).hi - region_c(j).lo) + 4) & ~3u; break;
+                    } break;
+            default: if (rng() % 2) j.c_base = (j.a_base + std::uint32_t(rng() % (region_a(j).hi - region_a(j).lo))) & ~3u;
+                     else j.c_base = (j.b_base + std::uint32_t(rng() % (region_b(j).hi - region_b(j).lo))) & ~3u;
+                     break;
+        }
+        return j;
+    }
+
 private:
     // Place A, B and C at random disjoint offsets in the window; one job in
     // four pins one region to the window's base or to its top (its last byte
@@ -226,7 +411,7 @@ private:
             j.a_base = p.mem_base + std::uint32_t(rng() % (p.mem_bytes - sa + 1));
             j.b_base = p.mem_base + std::uint32_t(rng() % (p.mem_bytes - sb + 1));
             std::uint32_t c = std::uint32_t(rng() % (p.mem_bytes - sc + 1));
-            if (!p.c_any_alignment || rng() % 2) c &= ~3u;
+            if (!p.c_any_alignment || rng() % 2) c &= ~3u;   // (the top pin below keeps C aligned: sc is)
             j.c_base = p.mem_base + c;
             if (rng() % 3 == 0) j.a_base &= ~3u;
             if (rng() % 3 == 0) j.b_base &= ~3u;
@@ -239,7 +424,7 @@ private:
                 case 5: j.b_base = top - std::uint32_t(sb); break;
                 case 6: j.c_base = top - std::uint32_t(sc); break;
             }
-            if (!overlap(region_a(j), region_b(j)) && !overlap(region_a(j), region_c(j))
+            if ((p.operands_may_overlap || !overlap(region_a(j), region_b(j))) && !overlap(region_a(j), region_c(j))
                 && !overlap(region_b(j), region_c(j)) && expected_error(p, j) == 0)
                 return true;
         }

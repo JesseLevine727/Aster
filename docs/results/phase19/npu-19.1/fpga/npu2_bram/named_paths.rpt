@@ -1,0 +1,687 @@
+NAMED label=answer_to_request slack_ns=3.455 from=v2_reg/C to=npu/engine/tags_reg[0][dest]_0_3_6_11/RAMA/WE levels=4
+Copyright 1986-2022 Xilinx, Inc. All Rights Reserved. Copyright 2022-2025 Advanced Micro Devices, Inc. All Rights Reserved.
+------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+| Tool Version : Vivado v.2025.1 (lin64) Build 6140274 Wed May 21 22:58:25 MDT 2025
+| Date         : Mon Oct  5 13:00:03 2026
+| Host         : gondor running 64-bit Ubuntu 24.04.5 LTS
+| Command      : report_timing -of_objects [get_timing_paths -setup -from [get_cells -hier -quiet -filter {NAME =~ *v2_reg* && IS_SEQUENTIAL}] -to [get_cells -hier -quiet -filter {(NAME =~ *engine/*) && IS_SEQUENTIAL}] -max_paths 1 -nworst 1] -return_string
+| Design       : timing_npu2_bram
+| Device       : 7z020-clg400
+| Speed File   : -1  PRODUCTION 1.12 2019-11-22
+| Design State : Routed
+------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+Timing Report
+
+Slack (MET) :             3.455ns  (required time - arrival time)
+  Source:                 v2_reg/C
+                            (rising edge-triggered cell FDRE clocked by clk  {rise@0.000ns fall@5.000ns period=10.000ns})
+  Destination:            npu/engine/tags_reg[0][dest]_0_3_6_11/RAMA/WE
+                            (rising edge-triggered cell RAMD32 clocked by clk  {rise@0.000ns fall@5.000ns period=10.000ns})
+  Path Group:             clk
+  Path Type:              Setup (Max at Slow Process Corner)
+  Requirement:            10.000ns  (clk rise@10.000ns - clk rise@0.000ns)
+  Data Path Delay:        5.720ns  (logic 1.042ns (18.218%)  route 4.678ns (81.782%))
+  Logic Levels:           4  (LUT2=2 LUT5=1 LUT6=1)
+  Clock Path Skew:        -0.049ns (DCD - SCD + CPR)
+    Destination Clock Delay (DCD):    0.924ns = ( 10.924 - 10.000 ) 
+    Source Clock Delay      (SCD):    0.973ns
+    Clock Pessimism Removal (CPR):    0.000ns
+  Clock Uncertainty:      0.035ns  ((TSJ^2 + TIJ^2)^1/2 + DJ) / 2 + PE
+    Total System Jitter     (TSJ):    0.071ns
+    Total Input Jitter      (TIJ):    0.000ns
+    Discrete Jitter          (DJ):    0.000ns
+    Phase Error              (PE):    0.000ns
+
+    Location             Delay type                Incr(ns)  Path(ns)    Netlist Resource(s)
+  -------------------------------------------------------------------    -------------------
+                         (clock clk rise edge)        0.000     0.000 r  
+                                                      0.000     0.000 r  clk (IN)
+                         net (fo=4398, unset)         0.973     0.973    clk
+    SLICE_X50Y8          FDRE                                         r  v2_reg/C
+  -------------------------------------------------------------------    -------------------
+    SLICE_X50Y8          FDRE (Prop_fdre_C_Q)         0.518     1.491 r  v2_reg/Q
+                         net (fo=7, routed)           0.587     2.078    npu/engine/v2
+    SLICE_X47Y8                                                       r  npu/engine/observe[31]_i_4/I3
+    SLICE_X47Y8          LUT6 (Prop_lut6_I3_O)        0.124     2.202 f  npu/engine/observe[31]_i_4/O
+                         net (fo=1, routed)           0.474     2.676    npu/engine/observe[31]_i_4_n_0
+    SLICE_X47Y8                                                       f  npu/engine/observe[31]_i_3/I1
+    SLICE_X47Y8          LUT5 (Prop_lut5_I1_O)        0.124     2.800 f  npu/engine/observe[31]_i_3/O
+                         net (fo=7, routed)           0.468     3.268    npu/engine/observe[31]_i_3_n_0
+    SLICE_X49Y8                                                       f  npu/engine/ld_word[10]_i_5/I0
+    SLICE_X49Y8          LUT2 (Prop_lut2_I0_O)        0.124     3.392 r  npu/engine/ld_word[10]_i_5/O
+                         net (fo=30, routed)          2.019     5.411    npu/engine/p_48_in
+    SLICE_X27Y8                                                       r  npu/engine/tags_reg[0][read]_0_3_0_0_i_1/I1
+    SLICE_X27Y8          LUT2 (Prop_lut2_I1_O)        0.152     5.563 r  npu/engine/tags_reg[0][read]_0_3_0_0_i_1/O
+                         net (fo=41, routed)          1.130     6.693    npu/engine/tags_reg[0][dest]_0_3_6_11/WE
+    SLICE_X18Y6          RAMD32                                       r  npu/engine/tags_reg[0][dest]_0_3_6_11/RAMA/WE
+  -------------------------------------------------------------------    -------------------
+
+                         (clock clk rise edge)       10.000    10.000 r  
+                                                      0.000    10.000 r  clk (IN)
+                         net (fo=4398, unset)         0.924    10.924    npu/engine/tags_reg[0][dest]_0_3_6_11/WCLK
+    SLICE_X18Y6          RAMD32                                       r  npu/engine/tags_reg[0][dest]_0_3_6_11/RAMA/CLK
+                         clock pessimism              0.000    10.924    
+                         clock uncertainty           -0.035    10.889    
+    SLICE_X18Y6          RAMD32 (Setup_ramd32_CLK_WE)
+                                                     -0.741    10.148    npu/engine/tags_reg[0][dest]_0_3_6_11/RAMA
+  -------------------------------------------------------------------
+                         required time                         10.148    
+                         arrival time                          -6.693    
+  -------------------------------------------------------------------
+                         slack                                  3.455    
+
+
+
+
+
+NAMED label=ready_to_request slack_ns=4.342 from=ready_reg/C to=npu/engine/tags_reg[0][dest]_0_3_6_11/RAMA/WE levels=2
+Copyright 1986-2022 Xilinx, Inc. All Rights Reserved. Copyright 2022-2025 Advanced Micro Devices, Inc. All Rights Reserved.
+---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+| Tool Version : Vivado v.2025.1 (lin64) Build 6140274 Wed May 21 22:58:25 MDT 2025
+| Date         : Mon Oct  5 13:00:03 2026
+| Host         : gondor running 64-bit Ubuntu 24.04.5 LTS
+| Command      : report_timing -of_objects [get_timing_paths -setup -from [get_cells -hier -quiet -filter {NAME =~ *ready_reg* && IS_SEQUENTIAL}] -to [get_cells -hier -quiet -filter {(NAME =~ *engine/*) && IS_SEQUENTIAL}] -max_paths 1 -nworst 1] -return_string
+| Design       : timing_npu2_bram
+| Device       : 7z020-clg400
+| Speed File   : -1  PRODUCTION 1.12 2019-11-22
+| Design State : Routed
+---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+Timing Report
+
+Slack (MET) :             4.342ns  (required time - arrival time)
+  Source:                 ready_reg/C
+                            (rising edge-triggered cell FDRE clocked by clk  {rise@0.000ns fall@5.000ns period=10.000ns})
+  Destination:            npu/engine/tags_reg[0][dest]_0_3_6_11/RAMA/WE
+                            (rising edge-triggered cell RAMD32 clocked by clk  {rise@0.000ns fall@5.000ns period=10.000ns})
+  Path Group:             clk
+  Path Type:              Setup (Max at Slow Process Corner)
+  Requirement:            10.000ns  (clk rise@10.000ns - clk rise@0.000ns)
+  Data Path Delay:        4.833ns  (logic 0.794ns (16.428%)  route 4.039ns (83.572%))
+  Logic Levels:           2  (LUT2=2)
+  Clock Path Skew:        -0.049ns (DCD - SCD + CPR)
+    Destination Clock Delay (DCD):    0.924ns = ( 10.924 - 10.000 ) 
+    Source Clock Delay      (SCD):    0.973ns
+    Clock Pessimism Removal (CPR):    0.000ns
+  Clock Uncertainty:      0.035ns  ((TSJ^2 + TIJ^2)^1/2 + DJ) / 2 + PE
+    Total System Jitter     (TSJ):    0.071ns
+    Total Input Jitter      (TIJ):    0.000ns
+    Discrete Jitter          (DJ):    0.000ns
+    Phase Error              (PE):    0.000ns
+
+    Location             Delay type                Incr(ns)  Path(ns)    Netlist Resource(s)
+  -------------------------------------------------------------------    -------------------
+                         (clock clk rise edge)        0.000     0.000 r  
+                                                      0.000     0.000 r  clk (IN)
+                         net (fo=4398, unset)         0.973     0.973    clk
+    SLICE_X50Y0          FDRE                                         r  ready_reg/C
+  -------------------------------------------------------------------    -------------------
+    SLICE_X50Y0          FDRE (Prop_fdre_C_Q)         0.518     1.491 r  ready_reg/Q
+                         net (fo=3, routed)           0.891     2.382    npu/engine/ready
+    SLICE_X49Y8                                                       r  npu/engine/ld_word[10]_i_5/I1
+    SLICE_X49Y8          LUT2 (Prop_lut2_I1_O)        0.124     2.506 r  npu/engine/ld_word[10]_i_5/O
+                         net (fo=30, routed)          2.019     4.524    npu/engine/p_48_in
+    SLICE_X27Y8                                                       r  npu/engine/tags_reg[0][read]_0_3_0_0_i_1/I1
+    SLICE_X27Y8          LUT2 (Prop_lut2_I1_O)        0.152     4.676 r  npu/engine/tags_reg[0][read]_0_3_0_0_i_1/O
+                         net (fo=41, routed)          1.130     5.806    npu/engine/tags_reg[0][dest]_0_3_6_11/WE
+    SLICE_X18Y6          RAMD32                                       r  npu/engine/tags_reg[0][dest]_0_3_6_11/RAMA/WE
+  -------------------------------------------------------------------    -------------------
+
+                         (clock clk rise edge)       10.000    10.000 r  
+                                                      0.000    10.000 r  clk (IN)
+                         net (fo=4398, unset)         0.924    10.924    npu/engine/tags_reg[0][dest]_0_3_6_11/WCLK
+    SLICE_X18Y6          RAMD32                                       r  npu/engine/tags_reg[0][dest]_0_3_6_11/RAMA/CLK
+                         clock pessimism              0.000    10.924    
+                         clock uncertainty           -0.035    10.889    
+    SLICE_X18Y6          RAMD32 (Setup_ramd32_CLK_WE)
+                                                     -0.741    10.148    npu/engine/tags_reg[0][dest]_0_3_6_11/RAMA
+  -------------------------------------------------------------------
+                         required time                         10.148    
+                         arrival time                          -5.806    
+  -------------------------------------------------------------------
+                         slack                                  4.342    
+
+
+
+
+
+NAMED label=register_port slack_ns=2.802 from=q_addr_reg[2]/C to=npu/r_rsp_rdata_reg[2]/D levels=4
+Copyright 1986-2022 Xilinx, Inc. All Rights Reserved. Copyright 2022-2025 Advanced Micro Devices, Inc. All Rights Reserved.
+------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+| Tool Version : Vivado v.2025.1 (lin64) Build 6140274 Wed May 21 22:58:25 MDT 2025
+| Date         : Mon Oct  5 13:00:03 2026
+| Host         : gondor running 64-bit Ubuntu 24.04.5 LTS
+| Command      : report_timing -of_objects [get_timing_paths -setup -from [get_cells -hier -quiet -filter {NAME =~ *q_addr_reg* && IS_SEQUENTIAL}] -max_paths 1 -nworst 1] -return_string
+| Design       : timing_npu2_bram
+| Device       : 7z020-clg400
+| Speed File   : -1  PRODUCTION 1.12 2019-11-22
+| Design State : Routed
+------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+Timing Report
+
+Slack (MET) :             2.802ns  (required time - arrival time)
+  Source:                 q_addr_reg[2]/C
+                            (rising edge-triggered cell FDRE clocked by clk  {rise@0.000ns fall@5.000ns period=10.000ns})
+  Destination:            npu/r_rsp_rdata_reg[2]/D
+                            (rising edge-triggered cell FDRE clocked by clk  {rise@0.000ns fall@5.000ns period=10.000ns})
+  Path Group:             clk
+  Path Type:              Setup (Max at Slow Process Corner)
+  Requirement:            10.000ns  (clk rise@10.000ns - clk rise@0.000ns)
+  Data Path Delay:        7.191ns  (logic 1.242ns (17.271%)  route 5.949ns (82.729%))
+  Logic Levels:           4  (LUT2=1 LUT6=3)
+  Clock Path Skew:        -0.049ns (DCD - SCD + CPR)
+    Destination Clock Delay (DCD):    0.924ns = ( 10.924 - 10.000 ) 
+    Source Clock Delay      (SCD):    0.973ns
+    Clock Pessimism Removal (CPR):    0.000ns
+  Clock Uncertainty:      0.035ns  ((TSJ^2 + TIJ^2)^1/2 + DJ) / 2 + PE
+    Total System Jitter     (TSJ):    0.071ns
+    Total Input Jitter      (TIJ):    0.000ns
+    Discrete Jitter          (DJ):    0.000ns
+    Phase Error              (PE):    0.000ns
+
+    Location             Delay type                Incr(ns)  Path(ns)    Netlist Resource(s)
+  -------------------------------------------------------------------    -------------------
+                         (clock clk rise edge)        0.000     0.000 r  
+                                                      0.000     0.000 r  clk (IN)
+                         net (fo=4398, unset)         0.973     0.973    clk
+    SLICE_X50Y4          FDRE                                         r  q_addr_reg[2]/C
+  -------------------------------------------------------------------    -------------------
+    SLICE_X50Y4          FDRE (Prop_fdre_C_Q)         0.518     1.491 f  q_addr_reg[2]/Q
+                         net (fo=421, routed)         2.223     3.714    npu/Q[2]
+    SLICE_X58Y10                                                      f  npu/c_base[31]_i_2/I1
+    SLICE_X58Y10         LUT2 (Prop_lut2_I1_O)        0.148     3.862 r  npu/c_base[31]_i_2/O
+                         net (fo=3, routed)           1.939     5.800    npu/c_base[31]_i_2_n_0
+    SLICE_X42Y2                                                       r  npu/r_rsp_rdata[2]_i_12/I2
+    SLICE_X42Y2          LUT6 (Prop_lut6_I2_O)        0.328     6.128 r  npu/r_rsp_rdata[2]_i_12/O
+                         net (fo=1, routed)           0.430     6.558    npu/r_rsp_rdata[2]_i_12_n_0
+    SLICE_X43Y4                                                       r  npu/r_rsp_rdata[2]_i_4/I4
+    SLICE_X43Y4          LUT6 (Prop_lut6_I4_O)        0.124     6.682 f  npu/r_rsp_rdata[2]_i_4/O
+                         net (fo=1, routed)           1.358     8.040    npu/r_rsp_rdata[2]_i_4_n_0
+    SLICE_X54Y5                                                       f  npu/r_rsp_rdata[2]_i_1/I3
+    SLICE_X54Y5          LUT6 (Prop_lut6_I3_O)        0.124     8.164 r  npu/r_rsp_rdata[2]_i_1/O
+                         net (fo=1, routed)           0.000     8.164    npu/r_rsp_rdata[2]_i_1_n_0
+    SLICE_X54Y5          FDRE                                         r  npu/r_rsp_rdata_reg[2]/D
+  -------------------------------------------------------------------    -------------------
+
+                         (clock clk rise edge)       10.000    10.000 r  
+                                                      0.000    10.000 r  clk (IN)
+                         net (fo=4398, unset)         0.924    10.924    npu/clk
+    SLICE_X54Y5          FDRE                                         r  npu/r_rsp_rdata_reg[2]/C
+                         clock pessimism              0.000    10.924    
+                         clock uncertainty           -0.035    10.889    
+    SLICE_X54Y5          FDRE (Setup_fdre_C_D)        0.077    10.966    npu/r_rsp_rdata_reg[2]
+  -------------------------------------------------------------------
+                         required time                         10.966    
+                         arrival time                          -8.164    
+  -------------------------------------------------------------------
+                         slack                                  2.802    
+
+
+
+
+
+NAMED label=error_to_request slack_ns=8.237 from=err1_reg/C to=npu/engine/bus_err_reg/D levels=1
+Copyright 1986-2022 Xilinx, Inc. All Rights Reserved. Copyright 2022-2025 Advanced Micro Devices, Inc. All Rights Reserved.
+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+| Tool Version : Vivado v.2025.1 (lin64) Build 6140274 Wed May 21 22:58:25 MDT 2025
+| Date         : Mon Oct  5 13:00:03 2026
+| Host         : gondor running 64-bit Ubuntu 24.04.5 LTS
+| Command      : report_timing -of_objects [get_timing_paths -setup -from [get_cells -hier -quiet -filter {NAME =~ *err1_reg* && IS_SEQUENTIAL}] -to [get_cells -hier -quiet -filter {(NAME =~ *engine/*) && IS_SEQUENTIAL}] -max_paths 1 -nworst 1] -return_string
+| Design       : timing_npu2_bram
+| Device       : 7z020-clg400
+| Speed File   : -1  PRODUCTION 1.12 2019-11-22
+| Design State : Routed
+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+Timing Report
+
+Slack (MET) :             8.237ns  (required time - arrival time)
+  Source:                 err1_reg/C
+                            (rising edge-triggered cell FDRE clocked by clk  {rise@0.000ns fall@5.000ns period=10.000ns})
+  Destination:            npu/engine/bus_err_reg/D
+                            (rising edge-triggered cell FDRE clocked by clk  {rise@0.000ns fall@5.000ns period=10.000ns})
+  Path Group:             clk
+  Path Type:              Setup (Max at Slow Process Corner)
+  Requirement:            10.000ns  (clk rise@10.000ns - clk rise@0.000ns)
+  Data Path Delay:        1.708ns  (logic 0.773ns (45.252%)  route 0.935ns (54.748%))
+  Logic Levels:           1  (LUT6=1)
+  Clock Path Skew:        -0.049ns (DCD - SCD + CPR)
+    Destination Clock Delay (DCD):    0.924ns = ( 10.924 - 10.000 ) 
+    Source Clock Delay      (SCD):    0.973ns
+    Clock Pessimism Removal (CPR):    0.000ns
+  Clock Uncertainty:      0.035ns  ((TSJ^2 + TIJ^2)^1/2 + DJ) / 2 + PE
+    Total System Jitter     (TSJ):    0.071ns
+    Total Input Jitter      (TIJ):    0.000ns
+    Discrete Jitter          (DJ):    0.000ns
+    Phase Error              (PE):    0.000ns
+
+    Location             Delay type                Incr(ns)  Path(ns)    Netlist Resource(s)
+  -------------------------------------------------------------------    -------------------
+                         (clock clk rise edge)        0.000     0.000 r  
+                                                      0.000     0.000 r  clk (IN)
+                         net (fo=4398, unset)         0.973     0.973    clk
+    SLICE_X50Y8          FDRE                                         r  err1_reg/C
+  -------------------------------------------------------------------    -------------------
+    SLICE_X50Y8          FDRE (Prop_fdre_C_Q)         0.478     1.451 r  err1_reg/Q
+                         net (fo=1, routed)           0.935     2.386    npu/err1
+    SLICE_X48Y8                                                       r  npu/bus_err_i_1/I2
+    SLICE_X48Y8          LUT6 (Prop_lut6_I2_O)        0.295     2.681 r  npu/bus_err_i_1/O
+                         net (fo=1, routed)           0.000     2.681    npu/engine/bus_err_reg_0
+    SLICE_X48Y8          FDRE                                         r  npu/engine/bus_err_reg/D
+  -------------------------------------------------------------------    -------------------
+
+                         (clock clk rise edge)       10.000    10.000 r  
+                                                      0.000    10.000 r  clk (IN)
+                         net (fo=4398, unset)         0.924    10.924    npu/engine/clk
+    SLICE_X48Y8          FDRE                                         r  npu/engine/bus_err_reg/C
+                         clock pessimism              0.000    10.924    
+                         clock uncertainty           -0.035    10.889    
+    SLICE_X48Y8          FDRE (Setup_fdre_C_D)        0.029    10.918    npu/engine/bus_err_reg
+  -------------------------------------------------------------------
+                         required time                         10.918    
+                         arrival time                          -2.681    
+  -------------------------------------------------------------------
+                         slack                                  8.237    
+
+
+
+
+
+NAMED label=accumulate slack_ns=5.189 from=npu/engine/acc_reg[3][2][1]/C to=npu/engine/bank_data_reg[0][14][31]/D levels=9
+Copyright 1986-2022 Xilinx, Inc. All Rights Reserved. Copyright 2022-2025 Advanced Micro Devices, Inc. All Rights Reserved.
+----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+| Tool Version : Vivado v.2025.1 (lin64) Build 6140274 Wed May 21 22:58:25 MDT 2025
+| Date         : Mon Oct  5 13:00:03 2026
+| Host         : gondor running 64-bit Ubuntu 24.04.5 LTS
+| Command      : report_timing -of_objects [get_timing_paths -setup -from [get_cells -hier -quiet -filter {NAME =~ *acc_reg* && IS_SEQUENTIAL}] -to [get_cells -hier -quiet -filter {(NAME =~ *acc_reg* || NAME =~ *bank_data_reg*) && IS_SEQUENTIAL}] -max_paths 1 -nworst 1] -return_string
+| Design       : timing_npu2_bram
+| Device       : 7z020-clg400
+| Speed File   : -1  PRODUCTION 1.12 2019-11-22
+| Design State : Routed
+----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+Timing Report
+
+Slack (MET) :             5.189ns  (required time - arrival time)
+  Source:                 npu/engine/acc_reg[3][2][1]/C
+                            (rising edge-triggered cell FDRE clocked by clk  {rise@0.000ns fall@5.000ns period=10.000ns})
+  Destination:            npu/engine/bank_data_reg[0][14][31]/D
+                            (rising edge-triggered cell FDRE clocked by clk  {rise@0.000ns fall@5.000ns period=10.000ns})
+  Path Group:             clk
+  Path Type:              Setup (Max at Slow Process Corner)
+  Requirement:            10.000ns  (clk rise@10.000ns - clk rise@0.000ns)
+  Data Path Delay:        4.486ns  (logic 2.208ns (49.220%)  route 2.278ns (50.780%))
+  Logic Levels:           9  (CARRY4=8 LUT3=1)
+  Clock Path Skew:        -0.049ns (DCD - SCD + CPR)
+    Destination Clock Delay (DCD):    0.924ns = ( 10.924 - 10.000 ) 
+    Source Clock Delay      (SCD):    0.973ns
+    Clock Pessimism Removal (CPR):    0.000ns
+  Clock Uncertainty:      0.035ns  ((TSJ^2 + TIJ^2)^1/2 + DJ) / 2 + PE
+    Total System Jitter     (TSJ):    0.071ns
+    Total Input Jitter      (TIJ):    0.000ns
+    Discrete Jitter          (DJ):    0.000ns
+    Phase Error              (PE):    0.000ns
+
+    Location             Delay type                Incr(ns)  Path(ns)    Netlist Resource(s)
+  -------------------------------------------------------------------    -------------------
+                         (clock clk rise edge)        0.000     0.000 r  
+                                                      0.000     0.000 r  clk (IN)
+                         net (fo=4398, unset)         0.973     0.973    npu/engine/clk
+    SLICE_X26Y16         FDRE                                         r  npu/engine/acc_reg[3][2][1]/C
+  -------------------------------------------------------------------    -------------------
+    SLICE_X26Y16         FDRE (Prop_fdre_C_Q)         0.518     1.491 r  npu/engine/acc_reg[3][2][1]/Q
+                         net (fo=1, routed)           0.653     2.144    npu/engine/acc_reg[3][2]_26[1]
+    SLICE_X26Y16                                                      r  npu/engine/acc[3][2][3]_i_4/I2
+    SLICE_X26Y16         LUT3 (Prop_lut3_I2_O)        0.124     2.268 r  npu/engine/acc[3][2][3]_i_4/O
+                         net (fo=1, routed)           0.000     2.268    npu/engine/acc[3][2][3]_i_4_n_0
+    SLICE_X26Y16                                                      r  npu/engine/acc_reg[3][2][3]_i_1/S[1]
+    SLICE_X26Y16         CARRY4 (Prop_carry4_S[1]_CO[3])
+                                                      0.533     2.801 r  npu/engine/acc_reg[3][2][3]_i_1/CO[3]
+                         net (fo=1, routed)           0.000     2.801    npu/engine/acc_reg[3][2][3]_i_1_n_0
+    SLICE_X26Y17                                                      r  npu/engine/acc_reg[3][2][7]_i_1/CI
+    SLICE_X26Y17         CARRY4 (Prop_carry4_CI_CO[3])
+                                                      0.117     2.918 r  npu/engine/acc_reg[3][2][7]_i_1/CO[3]
+                         net (fo=1, routed)           0.000     2.918    npu/engine/acc_reg[3][2][7]_i_1_n_0
+    SLICE_X26Y18                                                      r  npu/engine/acc_reg[3][2][11]_i_1/CI
+    SLICE_X26Y18         CARRY4 (Prop_carry4_CI_CO[3])
+                                                      0.117     3.035 r  npu/engine/acc_reg[3][2][11]_i_1/CO[3]
+                         net (fo=1, routed)           0.000     3.035    npu/engine/acc_reg[3][2][11]_i_1_n_0
+    SLICE_X26Y19                                                      r  npu/engine/acc_reg[3][2][15]_i_1/CI
+    SLICE_X26Y19         CARRY4 (Prop_carry4_CI_CO[3])
+                                                      0.117     3.152 r  npu/engine/acc_reg[3][2][15]_i_1/CO[3]
+                         net (fo=1, routed)           0.000     3.152    npu/engine/acc_reg[3][2][15]_i_1_n_0
+    SLICE_X26Y20                                                      r  npu/engine/acc_reg[3][2][19]_i_1/CI
+    SLICE_X26Y20         CARRY4 (Prop_carry4_CI_CO[3])
+                                                      0.117     3.269 r  npu/engine/acc_reg[3][2][19]_i_1/CO[3]
+                         net (fo=1, routed)           0.000     3.269    npu/engine/acc_reg[3][2][19]_i_1_n_0
+    SLICE_X26Y21                                                      r  npu/engine/acc_reg[3][2][23]_i_1/CI
+    SLICE_X26Y21         CARRY4 (Prop_carry4_CI_CO[3])
+                                                      0.117     3.386 r  npu/engine/acc_reg[3][2][23]_i_1/CO[3]
+                         net (fo=1, routed)           0.000     3.386    npu/engine/acc_reg[3][2][23]_i_1_n_0
+    SLICE_X26Y22                                                      r  npu/engine/acc_reg[3][2][27]_i_1/CI
+    SLICE_X26Y22         CARRY4 (Prop_carry4_CI_CO[3])
+                                                      0.117     3.503 r  npu/engine/acc_reg[3][2][27]_i_1/CO[3]
+                         net (fo=1, routed)           0.000     3.503    npu/engine/acc_reg[3][2][27]_i_1_n_0
+    SLICE_X26Y23                                                      r  npu/engine/acc_reg[3][2][31]_i_1/CI
+    SLICE_X26Y23         CARRY4 (Prop_carry4_CI_O[3])
+                                                      0.331     3.834 r  npu/engine/acc_reg[3][2][31]_i_1/O[3]
+                         net (fo=3, routed)           1.625     5.459    npu/engine/acc_reg[3][2][31]_i_1_n_4
+    SLICE_X23Y37         FDRE                                         r  npu/engine/bank_data_reg[0][14][31]/D
+  -------------------------------------------------------------------    -------------------
+
+                         (clock clk rise edge)       10.000    10.000 r  
+                                                      0.000    10.000 r  clk (IN)
+                         net (fo=4398, unset)         0.924    10.924    npu/engine/clk
+    SLICE_X23Y37         FDRE                                         r  npu/engine/bank_data_reg[0][14][31]/C
+                         clock pessimism              0.000    10.924    
+                         clock uncertainty           -0.035    10.889    
+    SLICE_X23Y37         FDRE (Setup_fdre_C_D)       -0.241    10.648    npu/engine/bank_data_reg[0][14][31]
+  -------------------------------------------------------------------
+                         required time                         10.648    
+                         arrival time                          -5.459    
+  -------------------------------------------------------------------
+                         slack                                  5.189    
+
+
+
+
+
+NAMED label=buffer_to_operands slack_ns=5.873 from=npu/engine/a_bank[2].ram/mem_reg/CLKARDCLK to=npu/engine/a2_reg[2][3]/D levels=1
+Copyright 1986-2022 Xilinx, Inc. All Rights Reserved. Copyright 2022-2025 Advanced Micro Devices, Inc. All Rights Reserved.
+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+| Tool Version : Vivado v.2025.1 (lin64) Build 6140274 Wed May 21 22:58:25 MDT 2025
+| Date         : Mon Oct  5 13:00:03 2026
+| Host         : gondor running 64-bit Ubuntu 24.04.5 LTS
+| Command      : report_timing -of_objects [get_timing_paths -setup -from [get_cells -hier -quiet -filter {NAME =~ *mem_reg* && IS_SEQUENTIAL}] -to [get_cells -hier -quiet -filter {(NAME =~ *a2_reg* || NAME =~ *b2_reg*) && IS_SEQUENTIAL}] -max_paths 1 -nworst 1] -return_string
+| Design       : timing_npu2_bram
+| Device       : 7z020-clg400
+| Speed File   : -1  PRODUCTION 1.12 2019-11-22
+| Design State : Routed
+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+Timing Report
+
+Slack (MET) :             5.873ns  (required time - arrival time)
+  Source:                 npu/engine/a_bank[2].ram/mem_reg/CLKARDCLK
+                            (rising edge-triggered cell RAMB36E1 clocked by clk  {rise@0.000ns fall@5.000ns period=10.000ns})
+  Destination:            npu/engine/a2_reg[2][3]/D
+                            (rising edge-triggered cell FDRE clocked by clk  {rise@0.000ns fall@5.000ns period=10.000ns})
+  Path Group:             clk
+  Path Type:              Setup (Max at Slow Process Corner)
+  Requirement:            10.000ns  (clk rise@10.000ns - clk rise@0.000ns)
+  Data Path Delay:        4.072ns  (logic 2.578ns (63.306%)  route 1.494ns (36.694%))
+  Logic Levels:           1  (LUT6=1)
+  Clock Path Skew:        -0.049ns (DCD - SCD + CPR)
+    Destination Clock Delay (DCD):    0.924ns = ( 10.924 - 10.000 ) 
+    Source Clock Delay      (SCD):    0.973ns
+    Clock Pessimism Removal (CPR):    0.000ns
+  Clock Uncertainty:      0.035ns  ((TSJ^2 + TIJ^2)^1/2 + DJ) / 2 + PE
+    Total System Jitter     (TSJ):    0.071ns
+    Total Input Jitter      (TIJ):    0.000ns
+    Discrete Jitter          (DJ):    0.000ns
+    Phase Error              (PE):    0.000ns
+
+    Location             Delay type                Incr(ns)  Path(ns)    Netlist Resource(s)
+  -------------------------------------------------------------------    -------------------
+                         (clock clk rise edge)        0.000     0.000 r  
+                                                      0.000     0.000 r  clk (IN)
+                         net (fo=4398, unset)         0.973     0.973    npu/engine/a_bank[2].ram/clk
+    RAMB36_X0Y2          RAMB36E1                                     r  npu/engine/a_bank[2].ram/mem_reg/CLKARDCLK
+  -------------------------------------------------------------------    -------------------
+    RAMB36_X0Y2          RAMB36E1 (Prop_ramb36e1_CLKARDCLK_DOADO[3])
+                                                      2.454     3.427 r  npu/engine/a_bank[2].ram/mem_reg/DOADO[3]
+                         net (fo=1, routed)           1.494     4.921    npu/engine/a_bank[2].ram/a_rdata[2]_2[3]
+    SLICE_X9Y14                                                       r  npu/engine/a_bank[2].ram/a2[2][3]_i_1/I1
+    SLICE_X9Y14          LUT6 (Prop_lut6_I1_O)        0.124     5.045 r  npu/engine/a_bank[2].ram/a2[2][3]_i_1/O
+                         net (fo=1, routed)           0.000     5.045    npu/engine/a_bank[2].ram_n_11
+    SLICE_X9Y14          FDRE                                         r  npu/engine/a2_reg[2][3]/D
+  -------------------------------------------------------------------    -------------------
+
+                         (clock clk rise edge)       10.000    10.000 r  
+                                                      0.000    10.000 r  clk (IN)
+                         net (fo=4398, unset)         0.924    10.924    npu/engine/clk
+    SLICE_X9Y14          FDRE                                         r  npu/engine/a2_reg[2][3]/C
+                         clock pessimism              0.000    10.924    
+                         clock uncertainty           -0.035    10.889    
+    SLICE_X9Y14          FDRE (Setup_fdre_C_D)        0.029    10.918    npu/engine/a2_reg[2][3]
+  -------------------------------------------------------------------
+                         required time                         10.918    
+                         arrival time                          -5.045    
+  -------------------------------------------------------------------
+                         slack                                  5.873    
+
+
+
+
+
+NAMED label=operands_onward slack_ns=2.644 from=npu/engine/a2_reg[1][1]/C to=npu/engine/p3_reg[1][3][13]/D levels=7
+Copyright 1986-2022 Xilinx, Inc. All Rights Reserved. Copyright 2022-2025 Advanced Micro Devices, Inc. All Rights Reserved.
+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+| Tool Version : Vivado v.2025.1 (lin64) Build 6140274 Wed May 21 22:58:25 MDT 2025
+| Date         : Mon Oct  5 13:00:03 2026
+| Host         : gondor running 64-bit Ubuntu 24.04.5 LTS
+| Command      : report_timing -of_objects [get_timing_paths -setup -from [get_cells -hier -quiet -filter {NAME =~ *a2_reg* && IS_SEQUENTIAL}] -max_paths 1 -nworst 1] -return_string
+| Design       : timing_npu2_bram
+| Device       : 7z020-clg400
+| Speed File   : -1  PRODUCTION 1.12 2019-11-22
+| Design State : Routed
+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+Timing Report
+
+Slack (MET) :             2.644ns  (required time - arrival time)
+  Source:                 npu/engine/a2_reg[1][1]/C
+                            (rising edge-triggered cell FDRE clocked by clk  {rise@0.000ns fall@5.000ns period=10.000ns})
+  Destination:            npu/engine/p3_reg[1][3][13]/D
+                            (rising edge-triggered cell FDRE clocked by clk  {rise@0.000ns fall@5.000ns period=10.000ns})
+  Path Group:             clk
+  Path Type:              Setup (Max at Slow Process Corner)
+  Requirement:            10.000ns  (clk rise@10.000ns - clk rise@0.000ns)
+  Data Path Delay:        7.381ns  (logic 2.630ns (35.630%)  route 4.751ns (64.370%))
+  Logic Levels:           7  (CARRY4=3 LUT3=1 LUT4=1 LUT6=2)
+  Clock Path Skew:        -0.049ns (DCD - SCD + CPR)
+    Destination Clock Delay (DCD):    0.924ns = ( 10.924 - 10.000 ) 
+    Source Clock Delay      (SCD):    0.973ns
+    Clock Pessimism Removal (CPR):    0.000ns
+  Clock Uncertainty:      0.035ns  ((TSJ^2 + TIJ^2)^1/2 + DJ) / 2 + PE
+    Total System Jitter     (TSJ):    0.071ns
+    Total Input Jitter      (TIJ):    0.000ns
+    Discrete Jitter          (DJ):    0.000ns
+    Phase Error              (PE):    0.000ns
+
+    Location             Delay type                Incr(ns)  Path(ns)    Netlist Resource(s)
+  -------------------------------------------------------------------    -------------------
+                         (clock clk rise edge)        0.000     0.000 r  
+                                                      0.000     0.000 r  clk (IN)
+                         net (fo=4398, unset)         0.973     0.973    npu/engine/clk
+    SLICE_X23Y14         FDRE                                         r  npu/engine/a2_reg[1][1]/C
+  -------------------------------------------------------------------    -------------------
+    SLICE_X23Y14         FDRE (Prop_fdre_C_Q)         0.456     1.429 r  npu/engine/a2_reg[1][1]/Q
+                         net (fo=76, routed)          2.435     3.864    npu/engine/b_ram/p3_reg[1][3][15]_i_2_0[1]
+    SLICE_X18Y25                                                      r  npu/engine/b_ram/p3[1][3][11]_i_17/I1
+    SLICE_X18Y25         LUT6 (Prop_lut6_I1_O)        0.124     3.988 r  npu/engine/b_ram/p3[1][3][11]_i_17/O
+                         net (fo=2, routed)           0.793     4.780    npu/engine/b_ram/p3[1][3][11]_i_17_n_0
+    SLICE_X17Y25                                                      r  npu/engine/b_ram/p3[1][3][11]_i_21/I0
+    SLICE_X17Y25         LUT6 (Prop_lut6_I0_O)        0.124     4.904 r  npu/engine/b_ram/p3[1][3][11]_i_21/O
+                         net (fo=1, routed)           0.000     4.904    npu/engine/b_ram/p3[1][3][11]_i_21_n_0
+    SLICE_X17Y25                                                      r  npu/engine/b_ram/p3_reg[1][3][11]_i_10/S[0]
+    SLICE_X17Y25         CARRY4 (Prop_carry4_S[0]_O[2])
+                                                      0.547     5.451 r  npu/engine/b_ram/p3_reg[1][3][11]_i_10/O[2]
+                         net (fo=2, routed)           0.665     6.116    npu/engine/b_ram/p3_reg[1][3][11]_i_10_n_5
+    SLICE_X16Y27                                                      r  npu/engine/b_ram/p3[1][3][11]_i_3/I1
+    SLICE_X16Y27         LUT3 (Prop_lut3_I1_O)        0.328     6.444 r  npu/engine/b_ram/p3[1][3][11]_i_3/O
+                         net (fo=2, routed)           0.859     7.303    npu/engine/b_ram/p3[1][3][11]_i_3_n_0
+    SLICE_X16Y27                                                      r  npu/engine/b_ram/p3[1][3][11]_i_7/I0
+    SLICE_X16Y27         LUT4 (Prop_lut4_I0_O)        0.348     7.651 r  npu/engine/b_ram/p3[1][3][11]_i_7/O
+                         net (fo=1, routed)           0.000     7.651    npu/engine/b_ram/p3[1][3][11]_i_7_n_0
+    SLICE_X16Y27                                                      r  npu/engine/b_ram/p3_reg[1][3][11]_i_1/S[2]
+    SLICE_X16Y27         CARRY4 (Prop_carry4_S[2]_CO[3])
+                                                      0.380     8.031 r  npu/engine/b_ram/p3_reg[1][3][11]_i_1/CO[3]
+                         net (fo=1, routed)           0.000     8.031    npu/engine/b_ram/p3_reg[1][3][11]_i_1_n_0
+    SLICE_X16Y28                                                      r  npu/engine/b_ram/p3_reg[1][3][15]_i_1/CI
+    SLICE_X16Y28         CARRY4 (Prop_carry4_CI_O[1])
+                                                      0.323     8.354 r  npu/engine/b_ram/p3_reg[1][3][15]_i_1/O[1]
+                         net (fo=1, routed)           0.000     8.354    npu/engine/b_ram_n_148
+    SLICE_X16Y28         FDRE                                         r  npu/engine/p3_reg[1][3][13]/D
+  -------------------------------------------------------------------    -------------------
+
+                         (clock clk rise edge)       10.000    10.000 r  
+                                                      0.000    10.000 r  clk (IN)
+                         net (fo=4398, unset)         0.924    10.924    npu/engine/clk
+    SLICE_X16Y28         FDRE                                         r  npu/engine/p3_reg[1][3][13]/C
+                         clock pessimism              0.000    10.924    
+                         clock uncertainty           -0.035    10.889    
+    SLICE_X16Y28         FDRE (Setup_fdre_C_D)        0.109    10.998    npu/engine/p3_reg[1][3][13]
+  -------------------------------------------------------------------
+                         required time                         10.998    
+                         arrival time                          -8.354    
+  -------------------------------------------------------------------
+                         slack                                  2.644    
+
+
+
+
+
+NAMED label=answer_to_buffer slack_ns=3.787 from=npu/engine/ans_data_reg[22]/C to=npu/engine/b_ram/mem_reg_2/DIBDI[6] levels=1
+Copyright 1986-2022 Xilinx, Inc. All Rights Reserved. Copyright 2022-2025 Advanced Micro Devices, Inc. All Rights Reserved.
+------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+| Tool Version : Vivado v.2025.1 (lin64) Build 6140274 Wed May 21 22:58:25 MDT 2025
+| Date         : Mon Oct  5 13:00:03 2026
+| Host         : gondor running 64-bit Ubuntu 24.04.5 LTS
+| Command      : report_timing -of_objects [get_timing_paths -setup -from [get_cells -hier -quiet -filter {NAME =~ *ans_data_reg* && IS_SEQUENTIAL}] -to [get_cells -hier -quiet -filter {(NAME =~ *mem_reg*) && IS_SEQUENTIAL}] -max_paths 1 -nworst 1] -return_string
+| Design       : timing_npu2_bram
+| Device       : 7z020-clg400
+| Speed File   : -1  PRODUCTION 1.12 2019-11-22
+| Design State : Routed
+------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+Timing Report
+
+Slack (MET) :             3.787ns  (required time - arrival time)
+  Source:                 npu/engine/ans_data_reg[22]/C
+                            (rising edge-triggered cell FDRE clocked by clk  {rise@0.000ns fall@5.000ns period=10.000ns})
+  Destination:            npu/engine/b_ram/mem_reg_2/DIBDI[6]
+                            (rising edge-triggered cell RAMB36E1 clocked by clk  {rise@0.000ns fall@5.000ns period=10.000ns})
+  Path Group:             clk
+  Path Type:              Setup (Max at Slow Process Corner)
+  Requirement:            10.000ns  (clk rise@10.000ns - clk rise@0.000ns)
+  Data Path Delay:        5.392ns  (logic 0.580ns (10.757%)  route 4.812ns (89.243%))
+  Logic Levels:           1  (LUT6=1)
+  Clock Path Skew:        -0.049ns (DCD - SCD + CPR)
+    Destination Clock Delay (DCD):    0.924ns = ( 10.924 - 10.000 ) 
+    Source Clock Delay      (SCD):    0.973ns
+    Clock Pessimism Removal (CPR):    0.000ns
+  Clock Uncertainty:      0.035ns  ((TSJ^2 + TIJ^2)^1/2 + DJ) / 2 + PE
+    Total System Jitter     (TSJ):    0.071ns
+    Total Input Jitter      (TIJ):    0.000ns
+    Discrete Jitter          (DJ):    0.000ns
+    Phase Error              (PE):    0.000ns
+
+    Location             Delay type                Incr(ns)  Path(ns)    Netlist Resource(s)
+  -------------------------------------------------------------------    -------------------
+                         (clock clk rise edge)        0.000     0.000 r  
+                                                      0.000     0.000 r  clk (IN)
+                         net (fo=4398, unset)         0.973     0.973    npu/engine/clk
+    SLICE_X78Y29         FDRE                                         r  npu/engine/ans_data_reg[22]/C
+  -------------------------------------------------------------------    -------------------
+    SLICE_X78Y29         FDRE (Prop_fdre_C_Q)         0.456     1.429 r  npu/engine/ans_data_reg[22]/Q
+                         net (fo=4, routed)           2.505     3.934    npu/engine/b_ram/mem_reg_2_0[22]
+    SLICE_X30Y14                                                      r  npu/engine/b_ram/mem_reg_i_21/I5
+    SLICE_X30Y14         LUT6 (Prop_lut6_I5_O)        0.124     4.058 r  npu/engine/b_ram/mem_reg_i_21/O
+                         net (fo=10, routed)          2.307     6.365    npu/engine/b_ram/p_1_in[22]
+    RAMB36_X0Y1          RAMB36E1                                     r  npu/engine/b_ram/mem_reg_2/DIBDI[6]
+  -------------------------------------------------------------------    -------------------
+
+                         (clock clk rise edge)       10.000    10.000 r  
+                                                      0.000    10.000 r  clk (IN)
+                         net (fo=4398, unset)         0.924    10.924    npu/engine/b_ram/clk
+    RAMB36_X0Y1          RAMB36E1                                     r  npu/engine/b_ram/mem_reg_2/CLKBWRCLK
+                         clock pessimism              0.000    10.924    
+                         clock uncertainty           -0.035    10.889    
+    RAMB36_X0Y1          RAMB36E1 (Setup_ramb36e1_CLKBWRCLK_DIBDI[6])
+                                                     -0.737    10.152    npu/engine/b_ram/mem_reg_2
+  -------------------------------------------------------------------
+                         required time                         10.152    
+                         arrival time                          -6.365    
+  -------------------------------------------------------------------
+                         slack                                  3.787    
+
+
+
+
+
+NAMED label=bank_to_write slack_ns=5.839 from=npu/engine/bank_data_reg[0][2][6]/C to=npu/engine/wr_q_data_reg[6]/D levels=3
+Copyright 1986-2022 Xilinx, Inc. All Rights Reserved. Copyright 2022-2025 Advanced Micro Devices, Inc. All Rights Reserved.
+-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+| Tool Version : Vivado v.2025.1 (lin64) Build 6140274 Wed May 21 22:58:25 MDT 2025
+| Date         : Mon Oct  5 13:00:03 2026
+| Host         : gondor running 64-bit Ubuntu 24.04.5 LTS
+| Command      : report_timing -of_objects [get_timing_paths -setup -from [get_cells -hier -quiet -filter {NAME =~ *bank_data_reg* && IS_SEQUENTIAL}] -to [get_cells -hier -quiet -filter {(NAME =~ *wr_q_data_reg*) && IS_SEQUENTIAL}] -max_paths 1 -nworst 1] -return_string
+| Design       : timing_npu2_bram
+| Device       : 7z020-clg400
+| Speed File   : -1  PRODUCTION 1.12 2019-11-22
+| Design State : Routed
+-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+Timing Report
+
+Slack (MET) :             5.839ns  (required time - arrival time)
+  Source:                 npu/engine/bank_data_reg[0][2][6]/C
+                            (rising edge-triggered cell FDRE clocked by clk  {rise@0.000ns fall@5.000ns period=10.000ns})
+  Destination:            npu/engine/wr_q_data_reg[6]/D
+                            (rising edge-triggered cell FDRE clocked by clk  {rise@0.000ns fall@5.000ns period=10.000ns})
+  Path Group:             clk
+  Path Type:              Setup (Max at Slow Process Corner)
+  Requirement:            10.000ns  (clk rise@10.000ns - clk rise@0.000ns)
+  Data Path Delay:        4.106ns  (logic 1.289ns (31.395%)  route 2.817ns (68.605%))
+  Logic Levels:           3  (LUT6=2 MUXF7=1)
+  Clock Path Skew:        -0.049ns (DCD - SCD + CPR)
+    Destination Clock Delay (DCD):    0.924ns = ( 10.924 - 10.000 ) 
+    Source Clock Delay      (SCD):    0.973ns
+    Clock Pessimism Removal (CPR):    0.000ns
+  Clock Uncertainty:      0.035ns  ((TSJ^2 + TIJ^2)^1/2 + DJ) / 2 + PE
+    Total System Jitter     (TSJ):    0.071ns
+    Total Input Jitter      (TIJ):    0.000ns
+    Discrete Jitter          (DJ):    0.000ns
+    Phase Error              (PE):    0.000ns
+
+    Location             Delay type                Incr(ns)  Path(ns)    Netlist Resource(s)
+  -------------------------------------------------------------------    -------------------
+                         (clock clk rise edge)        0.000     0.000 r  
+                                                      0.000     0.000 r  clk (IN)
+                         net (fo=4398, unset)         0.973     0.973    npu/engine/clk
+    SLICE_X38Y30         FDRE                                         r  npu/engine/bank_data_reg[0][2][6]/C
+  -------------------------------------------------------------------    -------------------
+    SLICE_X38Y30         FDRE (Prop_fdre_C_Q)         0.478     1.451 r  npu/engine/bank_data_reg[0][2][6]/Q
+                         net (fo=1, routed)           1.113     2.564    npu/engine/bank_data_reg[0][2]_33[6]
+    SLICE_X39Y30                                                      r  npu/engine/wr_q_data[6]_i_13/I5
+    SLICE_X39Y30         LUT6 (Prop_lut6_I5_O)        0.295     2.859 r  npu/engine/wr_q_data[6]_i_13/O
+                         net (fo=1, routed)           0.000     2.859    npu/engine/wr_q_data[6]_i_13_n_0
+    SLICE_X39Y30                                                      r  npu/engine/wr_q_data_reg[6]_i_5/I1
+    SLICE_X39Y30         MUXF7 (Prop_muxf7_I1_O)      0.217     3.076 r  npu/engine/wr_q_data_reg[6]_i_5/O
+                         net (fo=1, routed)           1.704     4.780    npu/engine/wr_q_data_reg[6]_i_5_n_0
+    SLICE_X19Y18                                                      r  npu/engine/wr_q_data[6]_i_1/I5
+    SLICE_X19Y18         LUT6 (Prop_lut6_I5_O)        0.299     5.079 r  npu/engine/wr_q_data[6]_i_1/O
+                         net (fo=1, routed)           0.000     5.079    npu/engine/bank_data[6]
+    SLICE_X19Y18         FDRE                                         r  npu/engine/wr_q_data_reg[6]/D
+  -------------------------------------------------------------------    -------------------
+
+                         (clock clk rise edge)       10.000    10.000 r  
+                                                      0.000    10.000 r  clk (IN)
+                         net (fo=4398, unset)         0.924    10.924    npu/engine/clk
+    SLICE_X19Y18         FDRE                                         r  npu/engine/wr_q_data_reg[6]/C
+                         clock pessimism              0.000    10.924    
+                         clock uncertainty           -0.035    10.889    
+    SLICE_X19Y18         FDRE (Setup_fdre_C_D)        0.029    10.918    npu/engine/wr_q_data_reg[6]
+  -------------------------------------------------------------------
+                         required time                         10.918    
+                         arrival time                          -5.079    
+  -------------------------------------------------------------------
+                         slack                                  5.839    
+
+
+
+
+

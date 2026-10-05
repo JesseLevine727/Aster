@@ -2084,7 +2084,7 @@ parallel-workloads:
 
 test: smoke phase1 hello bench cache uart fpga-sim linux-sim counters retirement npu-pe npu-array npu-engine npu-regs npu-driver npu-runtime npu-stop npu-bench-validate arbiter shared-fabric multicore-runtime parallel
 
-check: tools smoke phase1 hello bench cache uart fpga-sim linux-sim linux-dual-sim linux-coherent-sim counters retirement pcpi-probe dot8-unit npu-pe npu-array npu-engine npu-regs device-arbiter dma-counters l2-unit npu-driver npu-runtime npu-stop npu-bench-validate xe-bench-validate phase11-infer-validate workloads atomic-fabric atomic-runtime atomic-faults coherent-cache warm-stop coherent-counters coherent-soc timer-unit timer-firmware irq-unit timer-interrupt sram-unit sram-lint freeze-interfaces coherent-bench riscv-reference riscv-reference-negative coherent-litmus arbiter shared-fabric multicore-runtime multicore-adversarial parallel phase17-baseline-audit core-riscv-tests core-riscv-tests-stall core-arch-tests core-random-lockstep core-lockstep-selftest core-ports-tests core-kernels core-aster-fetch core-aster-tests core-aster-kernels core-aster-act4 core-aster-l1-unit core-aster-l1-tests core-aster-firmware core-performance-gate aster-board-sim npu-v1-tests
+check: tools smoke phase1 hello bench cache uart fpga-sim linux-sim linux-dual-sim linux-coherent-sim counters retirement pcpi-probe dot8-unit npu-pe npu-array npu-engine npu-regs device-arbiter dma-counters l2-unit npu-driver npu-runtime npu-stop npu-bench-validate xe-bench-validate phase11-infer-validate workloads atomic-fabric atomic-runtime atomic-faults coherent-cache warm-stop coherent-counters coherent-soc timer-unit timer-firmware irq-unit timer-interrupt sram-unit sram-lint freeze-interfaces coherent-bench riscv-reference riscv-reference-negative coherent-litmus arbiter shared-fabric multicore-runtime multicore-adversarial parallel phase17-baseline-audit core-riscv-tests core-riscv-tests-stall core-arch-tests core-random-lockstep core-lockstep-selftest core-ports-tests core-kernels core-aster-fetch core-aster-tests core-aster-kernels core-aster-act4 core-aster-l1-unit core-aster-l1-tests core-aster-firmware core-performance-gate aster-board-sim npu-v1-tests npu-tests
 
 # Phase 18 CPU shell: one CPU with a synchronous SRAM at 0x8000_0000 and an
 # RVFI trace for lockstep against Spike (docs/phase18.md).
@@ -2558,6 +2558,75 @@ npu-v1-tests: $(NPU_V1_SIM)
 	@rm -f $(NPU_DIR)/v1-baseline.log; for case in 64,64,64 32,1,784 784,1,25; do \
 		$(NPU_V1_SIM) +case=$$case >> $(NPU_DIR)/v1-baseline.log 2>&1 || { cat $(NPU_DIR)/v1-baseline.log; exit 1; }; \
 	done; sed 's/^NPU PASS /PASS: v1 NPU baseline, two-cycle memory: /' $(NPU_DIR)/v1-baseline.log
+
+# The v2 NPU (milestone 19.1; rtl/accelerator/aster_npu2*.sv, docs/npu.md) in
+# the NPU shell (shell_npu_v2.sv): NPU_SEEDS seeds of 1,000 random jobs and the
+# directed edge list (+edges: the limits, every panel shape, zero strides,
+# empty regions outside the window, extents past 2^32) in each memory mode,
+# with every coverage bin required — on the memories that answer
+# on time every completed job's JOB_CYCLES equal to the cycle model's
+# (+cycle_check) — the shell's own self-tests through ABI 2's checks, and the
+# dense GEMM gate cases (docs/npu.md §7), each at least 50% utilization
+# (useful MACs / (16 x JOB_CYCLES)) on the two-cycle memory, with the N = 1
+# cases measured beside them.
+NPU_V2_RTL := rtl/accelerator/aster_npu2_ram.sv rtl/accelerator/aster_npu2_engine.sv rtl/accelerator/aster_npu2.sv
+NPU_V2_SIM := $(NPU_DIR)/npu_shell_v2
+$(NPU_V2_SIM): $(NPU_V2_RTL) verification/npu/shell_npu_v2.sv $(NPU_SHELL_SRC) Makefile
+	mkdir -p $(NPU_DIR)
+	$(VERILATOR) --cc --exe --build -O3 --assert --Wall --top-module shell_npu_v2 --prefix Vnpu_shell \
+		--Mdir $(NPU_DIR)/v2_obj -o $(abspath $@) \
+		$(addprefix $(ROOT)/,$(NPU_V2_RTL)) $(ROOT)/verification/npu/shell_npu_v2.sv $(ROOT)/verification/npu/tb_npu.cpp
+	@touch $@
+.PHONY: npu-v2-sim npu-tests
+npu-v2-sim: $(NPU_V2_SIM)
+npu-tests: $(NPU_V2_SIM)
+	@set -o pipefail; for mode in plain latency1 stall latency1-stall long-stall inflight3; do \
+		extra=$$(case $$mode in plain) echo "+cycle_check";; latency1) echo "+latency=1 +cycle_check";; \
+			stall) echo "+stall_seed=5";; latency1-stall) echo "+latency=1 +stall_seed=9";; \
+			long-stall) echo "+stall_seed=3 +long_stall";; inflight3) echo "+stall_seed=7 +max_inflight=3";; esac); \
+		for seed in $$(seq 1 $(NPU_SEEDS)); do \
+			$(NPU_V2_SIM) +seed=$$seed +jobs=1000 +require_coverage $$extra > $(NPU_DIR)/v2-$$mode-$$seed.log 2>&1 \
+				|| { tail -4 $(NPU_DIR)/v2-$$mode-$$seed.log; exit 1; }; \
+		done; \
+		$(NPU_V2_SIM) +edges $$extra > $(NPU_DIR)/v2-$$mode-edges.log 2>&1 || { tail -4 $(NPU_DIR)/v2-$$mode-edges.log; exit 1; }; \
+		echo "PASS: v2 NPU in the NPU shell, $$mode: $(NPU_SEEDS) seeds x 1,000 jobs and the 15 edge jobs as the reference, every coverage bin$$(case $$mode in plain|latency1) echo ', every job as the cycle model';; esac)"; \
+	done
+	@for test in 1:MEMORY_MISMATCH 3:COUNTER_MISMATCH; do \
+		n=$${test%%:*}; want=$${test#*:}; \
+		got=$$($(NPU_V2_SIM) +seed=1 +jobs=1000 +selftest=$$n 2>/dev/null | tail -1 | awk '{print $$2}'); \
+		[ "$$got" = "$$want" ] || { echo "FAIL: NPU shell self-test $$n on v2 reported $$got, expected $$want"; exit 1; }; \
+	done; echo "PASS: the NPU shell's own self-tests through ABI 2's checks (corrupted result, wrong counter)"
+	@rm -f $(NPU_DIR)/v2-cases.log; for case in 64,64,64 96,96,96 128,64,128 32,1,784 784,1,25; do \
+		$(NPU_V2_SIM) +case=$$case +cycle_check >> $(NPU_DIR)/v2-cases.log 2>&1 || { cat $(NPU_DIR)/v2-cases.log; exit 1; }; \
+	done; awk '/case=(64x64x64|96x96x96|128x64x128) / { split($$0, f, "utilization="); u = f[2] + 0; \
+		if (u < 50) { print "FAIL: " $$0 " (below 50%)"; bad = 1 } else print "PASS: v2 NPU gate case, two-cycle memory: " $$0 } \
+		/case=(32x1x784|784x1x25) / { print "PASS: v2 NPU N=1 case (measured), two-cycle memory: " $$0 } END { exit bad }' \
+		$(NPU_DIR)/v2-cases.log
+
+# The v2 NPU's timing at 10 ns (milestone 19.1): Vivado out of context on the
+# PYNQ-Z1 part — the NPU alone (its own area; register-to-register paths only,
+# its ports unconstrained, its memory port's write data keeping the data
+# path), and the NPU in verification/npu/timing_npu2_bram.sv: a two-cycle
+# 96 KiB block RAM on its memory port, readiness from a register
+# (back-pressure), the register port's inputs registered — with the paths from
+# the memory's answer and readiness to the next request, through the array,
+# and into and out of the operand buffers named.
+# Not part of `check`.
+.PHONY: timing-fpga-npu2
+timing-fpga-npu2:
+	@command -v $(VIVADO) >/dev/null || { echo "ERROR: Vivado not found (set VIVADO=/path/to/vivado)" >&2; exit 1; }
+	@mkdir -p $(TIMING_DIR)/fpga/npu2 && cd $(TIMING_DIR)/fpga/npu2 && \
+		$(VIVADO) -mode batch -nojournal -log vivado.log -source $(ROOT)/scripts/timing/vivado_ooc.tcl \
+		-tclargs $(abspath $(TIMING_DIR))/fpga/npu2 aster_npu2 $(TIMING_PERIOD_NS) $(addprefix $(ROOT)/,$(NPU_V2_RTL)) \
+		> run.out || { tail -20 run.out; exit 1; }; \
+		grep -E '^SUMMARY' run.out
+	@mkdir -p $(TIMING_DIR)/fpga/npu2_bram && cd $(TIMING_DIR)/fpga/npu2_bram && \
+		OOC_NAMED_PATHS="answer_to_request=*v2_reg*>*engine/*;ready_to_request=*ready_reg*>*engine/*;register_port=*q_addr_reg*>*;error_to_request=*err1_reg*>*engine/*;accumulate=*acc_reg*>*acc_reg*|*bank_data_reg*;buffer_to_operands=*mem_reg*>*a2_reg*|*b2_reg*;operands_onward=*a2_reg*>*;answer_to_buffer=*ans_data_reg*>*mem_reg*;bank_to_write=*bank_data_reg*>*wr_q_data_reg*" \
+		$(VIVADO) -mode batch -nojournal -log vivado.log -source $(ROOT)/scripts/timing/vivado_ooc.tcl \
+		-tclargs $(abspath $(TIMING_DIR))/fpga/npu2_bram timing_npu2_bram $(TIMING_PERIOD_NS) \
+		$(addprefix $(ROOT)/,$(NPU_V2_RTL)) $(ROOT)/verification/npu/timing_npu2_bram.sv \
+		> run.out || { tail -20 run.out; exit 1; }; \
+		grep -E '^(SUMMARY|NAMED)' run.out
 
 # Planted bugs in the Aster core's RTL and, from 18.6, its L1 caches
 # (scripts/mutation_campaign.py): each of its mutants must be caught by the runs

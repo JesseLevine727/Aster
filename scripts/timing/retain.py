@@ -1,9 +1,10 @@
 #!/usr/bin/env python3
-"""Copy a Phase 18 timing result into a retained, checksummed evidence folder.
+"""Copy a timing result into a retained, checksummed evidence folder (Phase 18
+and on; --phase picks the results folder, phase18 by default).
 
 Vivado out-of-context results (scripts/timing/vivado_ooc.tcl) and LibreLane
 runs (scripts/run_asic.py) live in git-ignored directories. This copies the
-files a timing claim rests on into docs/results/phase18/<name>/ and writes
+files a timing claim rests on into docs/results/<phase>/<name>/ and writes
 SHA256SUMS over the folder:
 
 - from each Vivado directory (--fpga NAME=DIR): summary.txt, timing_summary.rpt,
@@ -127,12 +128,13 @@ def rehash(folder: Path) -> None:
 
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
-    parser.add_argument("name", help="folder under docs/results/phase18/")
+    parser.add_argument("name", help="folder under docs/results/<phase>/")
+    parser.add_argument("--phase", default="phase18", help="the results folder's phase (default phase18)")
     parser.add_argument("--fpga", action="append", default=[], metavar="NAME=DIR")
     parser.add_argument("--asic", action="append", default=[], metavar="NAME=RUN")
     parser.add_argument("--rehash", action="store_true", help="only rewrite SHA256SUMS")
     args = parser.parse_args()
-    folder = RESULTS / args.name
+    folder = RESULTS.parent / args.phase / args.name
     if not args.rehash:
         for name, source in pairs(args.fpga):
             retain_fpga(source, folder / "fpga" / name)
