@@ -172,8 +172,13 @@ revised on 29 September 2026; its final section records what changed and why.
 [retained same-top v1 baseline](docs/results/phase17/baseline-56067a15815a/README.md)
 with a drift-rejecting audit, corrected Phase 15/16 reporting and audits, the
 96 KiB memory decision, and the approved [Aster core specification](docs/cpu.md).
-**Phase 18 — designing and verifying the Aster core — is in progress**
-([`docs/phase18.md`](docs/phase18.md)).
+**Phase 18 — designing and verifying the Aster core — is complete**
+([`docs/phase18.md`](docs/phase18.md), 5 October 2026): a seven-stage RV32IMA
+core with Zicsr, Zifencei and DOT8, lockstep-verified against Spike, 3.68×
+PicoRV32 on the CPU set, with coherent L1 caches, running at 100 MHz on the
+PYNQ-Z1. **Phase 19 — the high-utilization NPU — is being specified**
+([`docs/phase19.md`](docs/phase19.md); the draft
+[NPU specification](docs/npu.md) awaits approval).
 
 ## Historical phase links
 

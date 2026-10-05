@@ -1,7 +1,8 @@
 # Aster v2 performance roadmap: Phase 17 and beyond
 
-Status: **Phase 17 complete (29 September 2026); Phase 18 — the Aster core — in
-progress ([`phase18.md`](phase18.md)).** See [`phase17-todo.md`](phase17-todo.md).
+Status: **Phase 17 complete (29 September 2026); Phase 18 — the Aster core —
+complete (5 October 2026, [`phase18.md`](phase18.md)); Phase 19 — the NPU — being
+specified ([`phase19.md`](phase19.md), [`npu.md`](npu.md)).** See [`phase17-todo.md`](phase17-todo.md).
 Revised 29 September 2026; [section 7](#7-plan-revision--29-september-2026)
 records what changed from the first draft and why. This plan defines the
 performance-oriented successor to the functionally verified v1 system. It does
@@ -84,7 +85,7 @@ claim that the current RTL already meets it.
 | CPU | **Aster core**: our own in-order RV32IMA CPU with at least **2× fewer cycles** than the v1 PicoRV32 baseline on the predeclared CPU-bound kernel set at the same clock and memory configuration (aggregation rule: [`cpu.md`](cpu.md) §7) | Same firmware semantics, compiler settings, inputs, cache policy, and measurement window. Lockstep-verified against an independent reference model before any performance claim. |
 | NPU peak | 4×4 INT8 array: 3.2 GOPS at 100 MHz, counting one MAC as two operations | Report peak separately from sustained throughput. Publish MAC/s as well as GOPS and state the MAC counting convention in every report. |
 | NPU utilization | At least **50% of peak** on predeclared dense GEMM cases with M, N, K ≥ 64, and a declared N=1 mapping with its own measured utilization | Independently checked outputs, cumulative active cycles over every job, active-PE utilization, memory bytes/cycle, and end-to-end latency. |
-| Accelerator speedup | At least **5×** over the optimized scalar implementation for large dense GEMM; at least **2×** end-to-end on the selected batch-one MLP | All methods run on the same SoC configuration and input. Include setup, transfer, and completion in end-to-end results; publish kernel-only results separately. Small workloads may be slower and remain in the report. |
+| Accelerator speedup | At least **5×** over the optimized scalar implementation for large dense GEMM; at least **2×** end-to-end on the selected batch-one MLP. **Made stricter by the owner, 5 October 2026:** the baseline is the best CPU code on the Aster core, DOT8 included; the GEMM cases (64×64×64, 96×96×96, 128×64×128) and the MLP (MNIST 784 → 32 → 10) are declared in [`npu.md`](npu.md) §7 | All methods run on the same SoC configuration and input. Include setup, transfer, and completion in end-to-end results; publish kernel-only results separately. Small workloads may be slower and remain in the report. |
 | FPGA resource margin | ≤80% of each PYNQ-Z1 LUT, BRAM, and DSP resource | Post-route utilization report for the exact tested bitstream. Timing closure takes priority over fitting one more feature. |
 | ASIC physical signoff | **Dropped 1 October 2026** (owner decision) | — |
 | Energy | Measured or vector-based energy per workload, not one global power number divided among workloads | Workload-specific post-route activity, or a clearly labeled board measurement. Separate FPGA PL from PS. State the corner of every power number. (SRAM-macro and ASIC energy evidence was dropped with SKY130 on 1 October 2026.) |
@@ -453,6 +454,10 @@ proposed pipeline/area trade-off before the target is revised.
 ### Phase 19 — High-utilization NPU and data movement
 
 **Purpose:** make the array useful on real shapes rather than merely functional.
+The phase plan is [`phase19.md`](phase19.md) and its contract the NPU
+specification [`npu.md`](npu.md) (draft, 5 October 2026), which also records
+the owner's decisions of that day: the gate cases, the baseline (the best CPU
+code, DOT8 included), the platform and the output format.
 
 **Work:** add local operand buffers fed by DMA, full-word operand reads and
 result writes, tile reuse, a pipelined address/descriptor path with no
