@@ -1857,6 +1857,14 @@ a few hundred picoseconds from one netlist to the next (the §5 form gave
 (and the first version's,
 [`results/phase18/aster-18.6`](results/phase18/aster-18.6/README.md)).
 
+**Signed off.** The owner signed off 18.6 on 5 October 2026, accepting
+cpu.md §9's 18.6 clarifications and the 4 October change: CSR instructions
+and `mret` waiting for M1 and M2 (on both cores); ACT4's shell timer at one
+tick per 8 cycles; the firmware regression's set, `atomic_runtime.c` left
+for the Phase 20 memory side's reservation rule; the snoop contract the
+Phase 20 fabric must keep; and stores to cacheable memory answered in the
+cycle after the memory side accepts them.
+
 ## Milestones and gates
 
 | Milestone | Content | Exit gate |
@@ -2133,7 +2141,10 @@ a few hundred picoseconds from one netlist to the next (the §5 form gave
   reservation rules the memory side must keep)
 - [x] 18.5 as in the table above — complete (owner, 2 October 2026), with
   cpu.md §9's 18.5 clarifications
-- [ ] 18.6 … 18.7 as in the table above
+- [x] 18.6 as in the table above — complete (owner, 5 October 2026), with
+  cpu.md §9's 18.6 clarifications and the 4 October coherence and
+  posted-store change
+- [ ] 18.7 as in the table above
 
 ## Non-goals
 

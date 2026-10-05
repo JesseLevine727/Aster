@@ -652,9 +652,9 @@ verifying Xasterdot8. The owner accepted them with 18.5 (2 October 2026):
   a cost close to the multiplies it saves — a matter for the software
   (Phase 19/20), not the core.
 
-Clarifications during milestone 18.6 (3 October 2026), from building and
-verifying the L1 caches and the runtime port. They await the owner's
-acceptance with 18.6:
+Clarifications during milestone 18.6 (3–4 October 2026), from building and
+verifying the L1 caches and the runtime port. The owner accepted them with
+18.6 (5 October 2026), with the 4 October change below:
 
 - §4: CSR instructions and `mret` wait in Execute until M1 **and M2** are
   empty (18.3: M1). With the data cache a store reaches the memory side only
