@@ -1178,6 +1178,9 @@ def main() -> int:
                         help="fail a random run that misses a required hazard bin")
     parser.add_argument("--require-div-waits", action="store_true",
                         help="fail a random run in which no finished division waits in Execute")
+    parser.add_argument("--require-trap-covers", action="store_true",
+                        help="fail a suite run in which no data-port error waits in M1 or no trap "
+                             "kills a running division (the shell's m1_error_waits, div_kills)")
     parser.add_argument("--stall-seed", type=int, help="random memory back-pressure with this seed")
     parser.add_argument("--max-cycles", type=int, default=None,
                         help=f"shell cycle limit (default {MAX_CYCLES}; {KERNEL_MAX_CYCLES} with --kernels)")
@@ -1200,6 +1203,11 @@ def main() -> int:
     parser.add_argument("--interrupts", type=int, metavar="SEED",
                         help="random interrupts (+irq_random=SEED), checked by cutting the handlers out")
     args = parser.parse_args()
+    if args.require_trap_covers and (args.random or args.kernels or args.firmware or args.act4 or args.arch
+                                     or args.inject or args.expect_status or args.interrupts is not None):
+        parser.error("--require-trap-covers counts a plain suite run (traps/m1_traps reaches the covers); "
+                     "not with --random, --kernels, --firmware, --act4, --arch, --inject, --expect-status "
+                     "or --interrupts")
     args.interrupt_pairs = {}
     if args.cpi_check and (args.dut != "aster" or args.stall_seed is not None or args.interrupts is not None):
         parser.error("--cpi-check is for the Aster core on a memory without back-pressure (no --stall-seed) "
@@ -1256,6 +1264,7 @@ def main() -> int:
         print(f"FAIL: {args.dut}: no programs found for {', '.join(empty + missing)}")
         return 1
     failures, skipped, total_cycles, total_retired = [], [], 0, 0
+    covers = {"m1_error_waits": 0, "div_kills": 0}
     for test in tests:
         name = f"{test.parent.parent.name if args.arch else test.parent.name}/{test.stem}"
         if name in config["skip"]:
@@ -1274,6 +1283,10 @@ def main() -> int:
         else:
             total_cycles += run.cycles
             total_retired += run.retired
+            for item in run.summary.split(";")[0].split():
+                key, _, value = item.partition("=")
+                if key in covers:
+                    covers[key] += int(value)
     ran = len(tests) - len(skipped)
     if ran == 0:
         print(f"FAIL: {args.dut}: no test ran ({len(skipped)} skipped)")
@@ -1286,9 +1299,17 @@ def main() -> int:
     if selfchecking:
         what += f" ({selfchecking} self-checking programs in the shell alone)"
     covered = interrupt_coverage(args)
+    if args.require_trap_covers:
+        # traps/m1_traps' purpose (docs/phase18.md, checklist): a data-port
+        # error held in M1 while M2 waits, and a division started behind it
+        # that the trap kills — counted by the shell, not left to the seed.
+        print(f"trap coverage: {covers['m1_error_waits']} cycles in which a data-port error waited in M1, "
+              f"{covers['div_kills']} traps that killed a running division")
+        if not all(covers.values()):
+            covered = False
     print(f"{'PASS' if not failures and covered else 'FAIL'}: {args.dut} {ran - len(failures)}/{ran} {what} "
           f"with Spike ({len(skipped)} skipped{mode}); {total_retired} instructions in {total_cycles} cycles"
-          + ("" if covered else "; required interrupt coverage missed"))
+          + ("" if covered else "; required coverage missed"))
     return 1 if failures or not covered else 0
 
 

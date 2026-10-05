@@ -9,10 +9,12 @@
 // shell's cache model (0 without the caches), and chk_core_* the core's own
 // side of its ports — the shell checks the protocol there too when the caches
 // stand between (the ports themselves then being the caches' memory side);
-// chk_div_wait marks a cycle in
-// which a finished division waits in Execute (the long-stall mode's coverage,
-// 18.6). The wrapper drives the core's reset and
-// passes the shell's interrupt lines through; the core takes its traps (18.3),
+// chk_div_wait marks a cycle in which a finished division waits in Execute
+// (the long-stall mode's coverage, 18.6); chk_m1_err_wait a cycle in which a
+// data-port error waits in M1 (M2 still busy), chk_div_kill a trap taken
+// while a division in Execute runs (the trap tests' coverage, closed at the
+// end of Phase 18). The wrapper drives the core's reset and passes the
+// shell's interrupt lines through; the core takes its traps (18.3),
 // so `trap` (a core that stops on a trap, as PicoRV32 does) is 0;
 // chk_i_redirect comes from the core's fetch unit. Without the caches
 // `selftest` is unused (the core has no self-test mutants); with them it
@@ -56,6 +58,8 @@ module shell_aster_ports #(
     output logic        chk_dc_hit,
     output logic        chk_fencei,
     output logic        chk_div_wait,
+    output logic        chk_m1_err_wait,
+    output logic        chk_div_kill,
     // the core's side of its ports (with the caches, not the shell's ports)
     output logic        chk_core_i_req_valid,
     output logic [31:2] chk_core_i_req_addr,
@@ -204,6 +208,8 @@ module shell_aster_ports #(
 
     /* verilator lint_off PINCONNECTEMPTY */
     assign chk_div_wait = core.div_done && !core.e_advance && !core.kill;   // waiting, not squashed
+    assign chk_m1_err_wait = core.m1.valid && core.m1_bus_err && !core.m1_advance;
+    assign chk_div_kill    = core.kill && core.m1_trap && core.div_count != 6'd0;  // started, then killed
     assign {chk_core_i_req_valid, chk_core_i_req_addr, chk_core_i_req_ready, chk_core_i_redirect} =
            {k_i_req_valid, c_i_req_addr, c_i_req_ready, core_redirect};
     assign {chk_core_d_req_valid, chk_core_d_req_op, chk_core_d_req_addr, chk_core_d_req_wdata, chk_core_d_req_be,

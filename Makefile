@@ -2198,7 +2198,9 @@ core-aster-fetch: $(ASTER_FETCH_TEST)
 # directed tests and random programs, each run's stream with the handlers cut
 # out equal to Spike's, covering every (interrupted, next) instruction class
 # pair. On the memories that answer on time, every program's cycle count must
-# equal the seven-stage CPI model's (--cpi-check). The comparator must catch
+# equal the seven-stage CPI model's (--cpi-check). In the back-pressure suite
+# modes a data-port error must wait in M1 and a trap kill a running division
+# (--require-trap-covers; traps/m1_traps). The comparator must catch
 # corrupted CSR writes and trap records (--inject on a trapping program), and
 # the shell a load performed twice (+duplicate_read) and an sc answered as
 # Spike's when its own reservation did not hold (SC_MISMATCH).
@@ -2263,9 +2265,10 @@ core-aster-tests: $(ASTER_PORTS_SIM) $(ASTER_DOT8_PLUGIN)
 	@set -o pipefail; for mode in plain latency1 stall latency1-stall inflight3 inflight4 arch arch-latency1 \
 			random random-latency1 random-stall irq random-irq random-irq-stall random-irq-latency1; do \
 		extra=$$(case $$mode in plain) echo "--cpi-check";; latency1) echo "--cpi-check --shell-arg +latency=1";; \
-			stall) echo "--stall-seed 5";; latency1-stall) echo "--stall-seed 9 --shell-arg +latency=1";; \
-			inflight3) echo "--stall-seed 7 --shell-arg +max_inflight=3";; \
-			inflight4) echo "--stall-seed 7 --shell-arg +max_inflight=4";; \
+			stall) echo "--stall-seed 5 --require-trap-covers";; \
+			latency1-stall) echo "--stall-seed 9 --shell-arg +latency=1 --require-trap-covers";; \
+			inflight3) echo "--stall-seed 7 --shell-arg +max_inflight=3 --require-trap-covers";; \
+			inflight4) echo "--stall-seed 7 --shell-arg +max_inflight=4 --require-trap-covers";; \
 			arch) echo "--arch --cpi-check";; arch-latency1) echo "--arch --cpi-check --shell-arg +latency=1";; \
 			random) echo "--random $(CORE_RANDOM_PROGRAMS) --random-seed 1 --require-coverage --cpi-check";; \
 			random-latency1) echo "--random $(CORE_RANDOM_PROGRAMS) --random-seed 201 --require-coverage --cpi-check \
@@ -2296,7 +2299,9 @@ core-aster-tests: $(ASTER_PORTS_SIM) $(ASTER_DOT8_PLUGIN)
 # ACT4 in seven modes, the firmware regression and the CPU kernels (L1 CPI, on
 # the one-cycle memory and with long stalls), and the self-tests proving the
 # cache model, the load check and the core-side protocol checks fail when they
-# should (shell_aster_ports.sv's +selftest faults). No
+# should (shell_aster_ports.sv's +selftest faults). In every suite mode a
+# data-port error must wait in M1 and a trap kill a running division
+# (--require-trap-covers; traps/m1_traps). No
 # CPI check: the CPI model does not know the caches' misses. With long stalls
 # and an interrupt about every 20 cycles most cycles go to the handlers (a
 # handler outlasts the gap to the next interrupt), so that mode runs ten times
@@ -2313,11 +2318,12 @@ core-aster-l1-tests: $(ASTER_L1_SIM) $(ASTER_DOT8_PLUGIN) $(ASTER_CLOCK_PLUGIN) 
 			firmware firmware-latency1 firmware-stall firmware-latency1-stall firmware-inflight3 firmware-inflight4 \
 			firmware-long-stall kernels kernels-long-stall; do \
 		act4="--act4 $(ACT4_WORK)/aster-rv32ima/elfs"; fw="--firmware --aster-clock $(ASTER_CLOCK_PLUGIN)"; \
-		extra=$$(case $$mode in plain) echo "";; latency1) echo "--shell-arg +latency=1";; \
-			stall) echo "--stall-seed 5";; latency1-stall) echo "--stall-seed 9 --shell-arg +latency=1";; \
-			inflight3) echo "--stall-seed 7 --shell-arg +max_inflight=3";; \
-			inflight4) echo "--stall-seed 7 --shell-arg +max_inflight=4";; \
-			long-stall) echo "--stall-seed 3 --shell-arg +long_stall";; \
+		covers="--require-trap-covers"; \
+		extra=$$(case $$mode in plain) echo "$$covers";; latency1) echo "--shell-arg +latency=1 $$covers";; \
+			stall) echo "--stall-seed 5 $$covers";; latency1-stall) echo "--stall-seed 9 --shell-arg +latency=1 $$covers";; \
+			inflight3) echo "--stall-seed 7 --shell-arg +max_inflight=3 $$covers";; \
+			inflight4) echo "--stall-seed 7 --shell-arg +max_inflight=4 $$covers";; \
+			long-stall) echo "--stall-seed 3 --shell-arg +long_stall $$covers";; \
 			arch) echo "--arch";; arch-latency1) echo "--arch --shell-arg +latency=1";; \
 			random) echo "--random $(CORE_RANDOM_PROGRAMS) --random-seed 1 --require-coverage";; \
 			random-latency1) echo "--random $(CORE_RANDOM_PROGRAMS) --random-seed 201 --require-coverage \

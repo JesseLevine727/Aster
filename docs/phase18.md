@@ -1,6 +1,7 @@
 # Phase 18: Aster core — CPU, L1/SRAM interface, and 100 MHz feasibility on the FPGA
 
-Status: **in progress — milestone 18.0 (tooling) exit gate met; the owner chose
+Status: **complete (5 October 2026): milestones 18.1–18.7 signed off by the owner
+(18.0's exit gate met), the last, 18.7, on 5 October 2026, and the checklist closed. Milestone 18.0 (tooling) exit gate met; the owner chose
 a two-stage memory access (a seven-stage core) and approved the revised cpu.md
 §4–§5; the CPU kernels run in the shell and the CPI model projects the 18.7
 gate at about 3.7×. Milestone 18.1 (complete; owner, 1 October 2026): the
@@ -59,8 +60,8 @@ other masters by snooped invalidations and answering stores to cacheable
 memory once the memory side accepts them; a cache reference model on every
 cached run, back-pressure with long stalls, and v1's runtime and firmware on
 the core; the FPGA meets 10 ns with the caches (102.2 MHz; see "Milestone
-18.6"). Milestone 18.7 (evaluation and feasibility; awaiting the owner's
-sign-off): the performance gate passes at a 3.681× geometric mean, lowest
+18.6"). Milestone 18.7 (evaluation and feasibility; complete, owner,
+5 October 2026; `ecf1740`): the performance gate passes at a 3.681× geometric mean, lowest
 2.586× (sort/search); the core with its caches closes 10 ns in context on
 the PYNQ-Z1 and runs there at a measured 99.999 MHz, 100 programs ending
 exactly as in the CPU shell, cycle for cycle (see "Milestone 18.7").** The CPU specification this
@@ -842,7 +843,8 @@ Verification (`make core-aster-tests`, `make core-aster-kernels`):
   its layout the division runs before the kill with stall seed 2, seed 9 on
   the one-cycle memory and seed 7 with room for three or four requests, and
   seeds 2 and 5 hold the error in M1 — measured with cover counters in an
-  instrumented copy of the RTL);
+  instrumented copy of the RTL; enforced from the end of Phase 18, see the
+  checklist);
 - assertions: a squashed division never starts, the divider runs only for
   Execute's division, a division leaves Execute only when done, a multiply
   never waits in M2, and a finished division's result holds while it waits
@@ -1958,7 +1960,11 @@ builds should be swept over placement; and the core paths above are where
 to look first if a build misses, before any design change.
 
 Evidence: [`results/phase18/aster-18.7-board`](results/phase18/aster-18.7-board/README.md)
-(the in-context reports, the board's report and log).
+(the in-context reports, the board's report and log). The board's report
+compares again with the shell (`scripts/aster_board.py --report`) at
+`ecf1740`, the revision it was recorded at: `traps/m1_traps` was extended
+afterwards (the checklist's trap cover points), so from then on it no
+longer matches that program, while `make aster-board-sim` runs the new one.
 
 - **Review.** The milestone's watchdog review found two bugs, both fixed
   before the board run:
@@ -1989,8 +1995,8 @@ Evidence: [`results/phase18/aster-18.7-board`](results/phase18/aster-18.7-board/
 | 18.3 | Zicsr, traps, interrupts, counters | arch-test Zicsr; directed traps in every stage; interrupt tests in every pipeline state — **met** (owner, 2 October 2026; "Milestone 18.3"; riscv-arch-test 3.10.0 has no Zicsr suite: its privilege suite and riscv-tests rv32mi stand in, as the owner accepted) |
 | 18.4 | A extension, `fence`, `fence.i` | ua/arch-test A and Zifencei; atomic and self-modifying-code tests — **met** (owner, 2 October 2026; "Milestone 18.4"; the litmus tests of cpu.md §8 are single-hart until two cores share memory, as the owner accepted) |
 | 18.5 | Xasterdot8 | v1 DOT8 reference tests on the core — **met** (owner, 2 October 2026; "Milestone 18.5") |
-| 18.6 | L1 caches with two-stage pipelined hits; SRAM interface; runtime port | cache reference model, back-pressure, firmware regression |
-| 18.7 | Evaluation and feasibility | Against PicoRV32 on the CPU set in the same shell: geometric mean of the per-kernel speedups ≥2.0× and every kernel ≥1.5×, each kernel's speedup published; 100 MHz feasibility report for the FPGA (SKY130 dropped, 1 October 2026) |
+| 18.6 | L1 caches with two-stage pipelined hits; SRAM interface; runtime port | cache reference model, back-pressure, firmware regression — **met** (owner, 5 October 2026; "Milestone 18.6"; coherent by snooped invalidations, stores answered once memory accepts them, the owner's 4 October change) |
+| 18.7 | Evaluation and feasibility | Against PicoRV32 on the CPU set in the same shell: geometric mean of the per-kernel speedups ≥2.0× and every kernel ≥1.5×, each kernel's speedup published; 100 MHz feasibility report for the FPGA (SKY130 dropped, 1 October 2026) — **met** (owner, 5 October 2026; "Milestone 18.7": 3.681×, lowest 2.586×; 100 MHz in context and on the PYNQ-Z1) |
 
 ## Checklist
 
@@ -2138,11 +2144,28 @@ Evidence: [`results/phase18/aster-18.7-board`](results/phase18/aster-18.7-board/
   shell's fetches blind to unanswered writes), AMO operands (address and
   data) as hazard consumers and atomic results as producers, and `fence_i` —
   "Milestone 18.4"
-- [ ] **By the milestone named:** a cover point that a data-port error
-  really waits in M1 and that a division really runs before a trap kills it
-  (both depend on the stall seed; `traps/m1_traps` reaches them in today's
-  modes, measured with an instrumented copy of the RTL, but nothing enforces
-  it)
+- [x] **Closed at the end of Phase 18 (5 October 2026):** a cover point that
+  a data-port error really waits in M1 and that a division really runs
+  before a trap kills it. The shell counts both (`shell_aster_ports.sv`'s
+  `chk_m1_err_wait` — a data-port error in M1 while M2 is still busy — and
+  `chk_div_kill` — an exception taken while Execute's division has started;
+  `m1_error_waits`, `div_kills`), and `run_core_tests.py
+  --require-trap-covers` fails a suite run that misses either: in the four
+  back-pressure modes of `core-aster-tests` (on the memories that answer on
+  time M2 never waits, so neither can occur there) and in every suite mode of
+  `core-aster-l1-tests`. `traps/m1_traps` now reaches them by construction:
+  32 faulting loads, each right behind a load of a new line with a division
+  and a multiply behind it (the cached core misses on that load, so the
+  error waits for the refill; the uncached core's answer is late on some
+  iterations under back-pressure). In `make check`: the uncached core 13, 3,
+  20 and 13 cycles of a waiting error and 6, 2, 10 and 9 killed divisions
+  (stall, one-cycle memory with stalls, three and four requests in flight);
+  the cached core 158–920 cycles and 31 killed divisions in each of its seven
+  modes. Found on the way: the 2 October measurement had drifted — before the
+  change the one-cycle memory with stalls reached neither, four requests in
+  flight only the waiting error, and the cached core never killed a running
+  division — and the shell counted the core's cover points only with the
+  caches (now in every configuration).
 - [x] **Aster-core shell, 18.1 step 1 — protocol checks (30 September 2026):**
   the two-port shell now enforces the core's side of §4–§5 in every run: a
   fetch presented and not accepted must be presented unchanged in the next
@@ -2258,7 +2281,7 @@ Evidence: [`results/phase18/aster-18.7-board`](results/phase18/aster-18.7-board/
 - [x] 18.6 as in the table above — complete (owner, 5 October 2026), with
   cpu.md §9's 18.6 clarifications and the 4 October coherence and
   posted-store change
-- [ ] 18.7 as in the table above
+- [x] 18.7 as in the table above — complete (owner, 5 October 2026)
 
 ## Non-goals
 

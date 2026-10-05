@@ -745,6 +745,7 @@ int main(int argc, char** argv) {
         std::fclose(file);
     }
     std::uint64_t accepted_writes = 0, fetch_errors = 0, interrupts = 0, div_waits = 0;
+    std::uint64_t m1_error_waits = 0, div_kills = 0;
     shell::Port iport, dport;
     bool d_error_next = false;              // d_rsp_error for the request accepted at the last edge
     bool d_error_cycle = false;             // a data request was accepted at the last edge
@@ -855,9 +856,12 @@ int main(int argc, char** argv) {
                 reads.push_back(read);
                 if (++accepted_reads == duplicate_read) reads.push_back(read);   // the self-test's
             }
-            div_waits += d.chk_div_wait;
             if (!l1.error.empty()) { result = "CACHE_MISMATCH"; std::cerr << "L1: " << l1.error << "\n"; break; }
         }
+        // The core's own cover points (with or without the caches; 0 on PicoRV32).
+        div_waits += d.chk_div_wait;
+        m1_error_waits += d.chk_m1_err_wait;
+        div_kills += d.chk_div_kill;
 
         d.clk = 1; d.eval();
         ++cycles;
@@ -1036,6 +1040,8 @@ int main(int argc, char** argv) {
               << " fetch_errors=" << fetch_errors + l1.i_errors << " interrupts=" << interrupts;
     if (div_waits) std::cout << " div_waits=" << div_waits;   // cycles a finished division waited in Execute
     if (core_d_waits) std::cout << " core_d_waits=" << core_d_waits;   // the core's data request waited (caches)
+    if (m1_error_waits) std::cout << " m1_error_waits=" << m1_error_waits;   // a data-port error waited in M1
+    if (div_kills) std::cout << " div_kills=" << div_kills;   // traps taken while a division ran
     if (l1.enabled)
         std::cout << " icache_hits=" << l1.i_hits << " icache_misses=" << l1.i_misses
                   << " dcache_hits=" << l1.d_hits << " dcache_misses=" << l1.d_misses;
