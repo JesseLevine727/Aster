@@ -2084,7 +2084,7 @@ parallel-workloads:
 
 test: smoke phase1 hello bench cache uart fpga-sim linux-sim counters retirement npu-pe npu-array npu-engine npu-regs npu-driver npu-runtime npu-stop npu-bench-validate arbiter shared-fabric multicore-runtime parallel
 
-check: tools smoke phase1 hello bench cache uart fpga-sim linux-sim linux-dual-sim linux-coherent-sim counters retirement pcpi-probe dot8-unit npu-pe npu-array npu-engine npu-regs device-arbiter dma-counters l2-unit npu-driver npu-runtime npu-stop npu-bench-validate xe-bench-validate phase11-infer-validate workloads atomic-fabric atomic-runtime atomic-faults coherent-cache warm-stop coherent-counters coherent-soc timer-unit timer-firmware irq-unit timer-interrupt sram-unit sram-lint freeze-interfaces coherent-bench riscv-reference riscv-reference-negative coherent-litmus arbiter shared-fabric multicore-runtime multicore-adversarial parallel phase17-baseline-audit core-riscv-tests core-riscv-tests-stall core-arch-tests core-random-lockstep core-lockstep-selftest core-ports-tests core-kernels core-aster-fetch core-aster-tests core-aster-kernels core-aster-act4 core-aster-l1-unit core-aster-l1-tests core-aster-firmware core-performance-gate aster-board-sim npu-v1-tests npu-tests npu-im2col-cost
+check: tools smoke phase1 hello bench cache uart fpga-sim linux-sim linux-dual-sim linux-coherent-sim counters retirement pcpi-probe dot8-unit npu-pe npu-array npu-engine npu-regs device-arbiter dma-counters l2-unit npu-driver npu-runtime npu-stop npu-bench-validate xe-bench-validate phase11-infer-validate workloads atomic-fabric atomic-runtime atomic-faults coherent-cache warm-stop coherent-counters coherent-soc timer-unit timer-firmware irq-unit timer-interrupt sram-unit sram-lint freeze-interfaces coherent-bench riscv-reference riscv-reference-negative coherent-litmus arbiter shared-fabric multicore-runtime multicore-adversarial parallel phase17-baseline-audit core-riscv-tests core-riscv-tests-stall core-arch-tests core-random-lockstep core-lockstep-selftest core-ports-tests core-kernels core-aster-fetch core-aster-tests core-aster-kernels core-aster-act4 core-aster-l1-unit core-aster-l1-tests core-aster-firmware core-performance-gate aster-board-sim npu-v1-tests npu-tests npu-im2col-cost npu-soc-tests
 
 # Phase 18 CPU shell: one CPU with a synchronous SRAM at 0x8000_0000 and an
 # RVFI trace for lockstep against Spike (docs/phase18.md).
@@ -2509,6 +2509,17 @@ fpga-aster-core:
 	$(VIVADO) -mode batch -nojournal -nolog -notrace -source $(ROOT)/fpga/pynq_z1/build_aster_core.tcl \
 		-tclargs $(ROOT) $(ASTER_BOARD_DIR) > $(ASTER_BOARD_DIR)/build.out 2>&1 || { tail -30 $(ASTER_BOARD_DIR)/build.out; exit 1; }
 	@grep -E '^(ASTER_SIGNOFF|SUMMARY)' $(ASTER_BOARD_DIR)/build.out $(ASTER_BOARD_DIR)/summary.txt
+# The Phase 19 SoC's board design (milestone 19.4: rtl/soc/aster_npu_soc.sv,
+# the core, its caches and the v2 NPU) built at 100 MHz in context the same way
+# (build_aster_core.tcl, design npu). Not part of `check`.
+ASTER_NPU_BOARD_DIR := $(FPGA_BUILD_DIR)/aster_npu
+.PHONY: fpga-aster-npu
+fpga-aster-npu:
+	@command -v $(VIVADO) >/dev/null || { echo "ERROR: Vivado not found (set VIVADO=/path/to/vivado)" >&2; exit 1; }
+	@mkdir -p $(ASTER_NPU_BOARD_DIR) && rm -f $(ASTER_NPU_BOARD_DIR)/aster_npu.bit   # never a stale bitstream
+	$(VIVADO) -mode batch -nojournal -nolog -notrace -source $(ROOT)/fpga/pynq_z1/build_aster_core.tcl \
+		-tclargs $(ROOT) $(ASTER_NPU_BOARD_DIR) 100 npu > $(ASTER_NPU_BOARD_DIR)/build.out 2>&1 || { tail -30 $(ASTER_NPU_BOARD_DIR)/build.out; exit 1; }
+	@grep -E '^(ASTER_SIGNOFF|SUMMARY)' $(ASTER_NPU_BOARD_DIR)/build.out $(ASTER_NPU_BOARD_DIR)/summary.txt
 aster-board: $(ASTER_L1_SIM)
 	@test -n "$(ASTER_BOARD_OUTPUT)" || { echo "ERROR: set ASTER_BOARD_OUTPUT to a new evidence directory" >&2; exit 1; }
 	@test -f $(ASTER_BOARD_DIR)/aster_core.bit || { echo "ERROR: make fpga-aster-core first" >&2; exit 1; }
@@ -2615,6 +2626,35 @@ npu-tests: $(NPU_V2_SIM)
 npu-im2col-cost: $(ASTER_L1_SIM)
 	@set -o pipefail; RISCV_PREFIX=$(RISCV_PREFIX) $(PYTHON) scripts/npu_im2col_cost.py --sim $(ASTER_L1_SIM) \
 		--build-dir $(NPU_DIR)/im2col_cost | tee $(NPU_DIR)/im2col-cost.log
+
+# The Phase 19 SoC (milestone 19.4; rtl/soc/aster_npu_soc.sv: the Aster core,
+# its caches and the v2 NPU on 96 KiB of main memory, the NPU's writes snooped)
+# in simulation, driven through its AXI4-Lite port as on the board, every NPU
+# job, write and snoop and each CPU result checked by tb_npu_soc.cpp against
+# the independent reference; scripts/npu_soc.py runs the gate programs
+# (software/npu2: the GEMM cases and the N = 1 cases, the MNIST MLP, the
+# coherence tests) and checks npu.md §7's utilization and speedup gates; and
+# scripts/aster_board.py runs 18.7's board programs on it (--design npu: the CPU
+# kernels and self-checking programs, but traps/m1_traps, whose "outside
+# memory" is the NPU's register page here), each as in the CPU shell, cycle
+# for cycle.
+NPU_SOC_RTL := $(ASTER_CORE_RTL) $(ASTER_L1_RTL) $(NPU_V2_RTL) rtl/soc/aster_npu_soc.sv
+NPU_SOC_SIM := $(NPU_DIR)/npu_soc
+$(NPU_SOC_SIM): $(NPU_SOC_RTL) verification/npu/sim_npu_soc.sv verification/npu/tb_npu_soc.cpp $(NPU_SHELL_SRC) Makefile
+	mkdir -p $(NPU_DIR)
+	$(VERILATOR) --cc --exe --build -O3 --assert --Wall --top-module sim_npu_soc \
+		--Mdir $(NPU_DIR)/soc_obj -o $(abspath $@) \
+		$(addprefix $(ROOT)/,$(NPU_SOC_RTL)) $(ROOT)/verification/npu/sim_npu_soc.sv $(ROOT)/verification/npu/tb_npu_soc.cpp
+	@touch $@
+.PHONY: npu-soc-sim npu-soc-tests
+npu-soc-sim: $(NPU_SOC_SIM)
+npu-soc-tests: $(NPU_SOC_SIM) $(ASTER_L1_SIM) $(ASTER_DOT8_PLUGIN)
+	@set -o pipefail; RISCV_PREFIX=$(RISCV_PREFIX) $(PYTHON) scripts/npu_soc.py --sim $(NPU_SOC_SIM) \
+		--build-dir $(NPU_DIR)/soc | tee $(NPU_DIR)/soc.log
+	@set -o pipefail; RISCV_PREFIX=$(RISCV_PREFIX) $(PYTHON) scripts/aster_board.py --sim $(NPU_SOC_SIM) --design npu \
+		--build-dir $(NPU_DIR)/soc/board_programs > $(NPU_DIR)/soc-board.log \
+		|| { grep -v '^PASS' $(NPU_DIR)/soc-board.log; exit 1; }; \
+		tail -1 $(NPU_DIR)/soc-board.log | sed 's/on the board design in simulation/(18.7'"'"'s board programs) on the Phase 19 SoC in simulation/'
 
 # The v2 NPU's timing at 10 ns (milestone 19.1): Vivado out of context on the
 # PYNQ-Z1 part — the NPU alone (its own area; register-to-register paths only,

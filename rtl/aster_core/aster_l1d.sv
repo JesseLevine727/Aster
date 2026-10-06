@@ -9,6 +9,8 @@
 // A request accepted at an edge reads the data array (block RAM, two-cycle
 // read) at that edge and is registered (stage 1). In stage 1 its address is
 // decoded — the cacheable main memory, an I/O window, or neither (an error,
+// as is any access but a word load or a word store to a window marked
+// IO_WORD_ONLY, 19.4: the NPU's registers;
 // reported on d_rsp_error in that cycle, as §4 requires) — and its tag is
 // compared (tags in LUT RAM, read with the registered address), and it moves
 // to stage 2, the head, already in the state of its service, which answers in
@@ -49,7 +51,9 @@ module aster_l1d #(
     // I/O windows: an address a is in window i when (a & ~MASK_i) == BASE_i.
     parameter int unsigned IO_WINDOWS = 4,
     parameter logic [IO_WINDOWS*32-1:0] IO_BASE = '0,
-    parameter logic [IO_WINDOWS*32-1:0] IO_MASK = '0
+    parameter logic [IO_WINDOWS*32-1:0] IO_MASK = '0,
+    // Windows that take only word loads and word stores (bit i: window i).
+    parameter logic [IO_WINDOWS-1:0] IO_WORD_ONLY = '0
 ) (
     input  logic        clk,
     input  logic        rst_n,
@@ -94,6 +98,11 @@ module aster_l1d #(
             if ((a & ~IO_MASK[32*i +: 32]) == IO_BASE[32*i +: 32]) return 1'b1;
         return 1'b0;
     endfunction
+    function automatic logic in_word_only_io(input logic [31:0] a);
+        for (int unsigned i = 0; i < IO_WINDOWS; i++)
+            if (IO_WORD_ONLY[i] && (a & ~IO_MASK[32*i +: 32]) == IO_BASE[32*i +: 32]) return 1'b1;
+        return 1'b0;
+    endfunction
 
     logic [19:0]  tag_ram [256];
     logic [255:0] valid;
@@ -102,7 +111,7 @@ module aster_l1d #(
     // d_rsp_error reports its error); its word is on the array's output at age
     // 1, and kept (s1_word) if it waits. s1_stale: the array was written since
     // its read.
-    logic        s1_valid, s1_stale, s1_have;
+    logic        s1_valid, s1_stale, s1_have, s1_plain;   // s1_plain: a word load or a word store
     logic [1:0]  s1_age;
     logic [3:0]  s1_op, s1_be;
     logic [31:0] s1_addr, s1_wdata, s1_word;
@@ -129,7 +138,7 @@ module aster_l1d #(
     logic [31:0] rd_data;
 
     assign s1_cacheable = s1_addr - MEM_BASE < cacheable_bytes;
-    assign s1_io        = !s1_cacheable && in_io(s1_addr);
+    assign s1_io        = !s1_cacheable && in_io(s1_addr) && !(in_word_only_io(s1_addr) && !s1_plain);
     assign s1_error     = !s1_cacheable && !s1_io;
     assign s1_load      = s1_op == OP_LOAD;
     // A snoop of the request's own line in the cycle of its lookup: it misses.
@@ -226,6 +235,7 @@ module aster_l1d #(
             s1_valid     <= 1'b0;
             s1_stale     <= 1'b0;
             s1_have      <= 1'b0;
+            s1_plain     <= 1'b0;
             s1_age       <= '0;
             s1_op        <= '0;
             s1_be        <= '0;
@@ -262,6 +272,7 @@ module aster_l1d #(
                 s1_stale <= array_write;
                 s1_op    <= d_req_op;
                 s1_be    <= d_req_be;
+                s1_plain <= (d_req_op == OP_LOAD || d_req_op == OP_STORE) && d_req_be == 4'hF;
                 s1_addr  <= d_req_addr;
                 s1_wdata <= d_req_wdata;
             end else if (s1_valid) begin

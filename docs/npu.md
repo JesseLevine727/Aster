@@ -473,8 +473,8 @@ with the milestone (5 October 2026):
 
 ### Clarifications in 19.3 (direct convolution)
 
-Found necessary while building and verifying 19.3; awaiting the owner's
-acceptance with the milestone:
+Found necessary while building and verifying 19.3; accepted by the owner
+with the milestone (5 October 2026), CIFAR channels last included:
 
 - §4.5: each level is off on its own: A_M0 = 0 makes a row's offset
   i × A_STRIDE, A_K0 = 0 makes a k's offset k (both 0: §2's form). The four
@@ -498,3 +498,40 @@ acceptance with the milestone:
   stores its images and weights reordered at build time and writes its
   pooled activations channels last, at no run-time cost. A third level was
   the alternative.
+
+### Clarifications in 19.4 (the Phase 19 SoC)
+
+Found necessary while building and verifying 19.4:
+
+- §5.2: the SoC's port B serves the data cache first and the NPU in any
+  other cycle (not while an AMO holds it), so the data cache's readiness
+  never depends on the NPU. Each NPU write is snooped in the cycle after its
+  acceptance (the first cycle the port can accept the data cache's next
+  request) and answered in the cycle after that.
+- §5.2 (cpu.md §5's reservation): an NPU write to the word the core's `lr`
+  reserved ends the reservation, so the `sc` after it fails, as the A
+  extension requires of another device's write.
+- §3, §5.3: the NPU's register page is the data cache's second I/O window,
+  0x4000_0000–0x4000_0FFF, marked word-only. The data cache faults any
+  access but a word load or a word store there (sub-word, `lr`, `sc`, AMOs)
+  in its first stage, as it does an unmapped address (a new aster_l1d
+  parameter, `IO_WORD_ONLY`, off by default). The register port's own error
+  answer stays for the shell. A late error is one the cache does not take
+  (cpu.md §4). 18.7's `traps/m1_traps`, which uses 0x4000_0000 as unmapped,
+  is not run on the SoC.
+- §6, item 9 ("the CPU in lockstep with Spike where no NPU result is
+  read"): the CPU programs (18.7's board programs) run on the SoC retiring
+  exactly the CPU shell's RVFI records, record for record. Phase 18's suites
+  compare the shell's runs of them with Spike. Against those runs' traces,
+  97 of the 99 are byte for byte the same. `rv32ua/lrsc` differs from one
+  `sc` on: Phase 18's run answers each `sc` as Spike did, where Spike's
+  reservation ended differently. `selfcheck/dot8_arith` is self-checking,
+  never compared with Spike. The SoC has no Spike run of its own.
+- §7, the speedup windows: the NPU's runs from before the descriptor's first
+  store to the CPU seeing DONE (ACK and the counters are read after). The
+  CPU's runs from A and B in memory to C in memory, B's packing included; A
+  needs none, since a row-major row already holds four consecutive k a word.
+  The CPU's GEMM is built for each K (the gate cases' 64, 96 and 128). In the
+  MLP, both paths use weights stored in their own layout before the windows:
+  the CPU's 16 neurons interleaved a word, the NPU's the model's row-major
+  ones. The workload's window is otherwise the same for both.

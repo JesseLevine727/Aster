@@ -1,0 +1,45 @@
+Copyright 1986-2022 Xilinx, Inc. All Rights Reserved. Copyright 2022-2025 Advanced Micro Devices, Inc. All Rights Reserved.
+---------------------------------------------------------------------------------------------------------------------------------------------
+| Tool Version : Vivado v.2025.1 (lin64) Build 6140274 Wed May 21 22:58:25 MDT 2025
+| Date         : Mon Oct  5 20:00:38 2026
+| Host         : gondor running 64-bit Ubuntu 24.04.5 LTS
+| Command      : report_methodology -file /home/elfo/Documents/Aster/build/fpga/pynq_z1/aster_npu/methodology.rpt
+| Design       : aster_npu_board_wrapper
+| Device       : xc7z020clg400-1
+| Speed File   : -1
+| Design State : Fully Routed
+---------------------------------------------------------------------------------------------------------------------------------------------
+
+Report Methodology
+
+Table of Contents
+-----------------
+1. REPORT SUMMARY
+2. REPORT DETAILS
+
+1. REPORT SUMMARY
+-----------------
+            Netlist: netlist
+          Floorplan: design_1
+      Design limits: <entire design considered>
+             Max checks: <unlimited>
+             Checks found: 1
++--------+----------+-----------------------------+--------+
+| Rule   | Severity | Description                 | Checks |
++--------+----------+-----------------------------+--------+
+| RTGT-1 | Advisory | RAM retargeting possibility | 1      |
++--------+----------+-----------------------------+--------+
+
+2. REPORT DETAILS
+-----------------
+RTGT-1#1 Advisory
+RAM retargeting possibility  
+Identified 6 RAM32X1D primitives that could be retargeted to RAM32M. Retargeting will save approximately 2 memory LUTs and improve routability. These can usually be achieved using synthesis inference or XPMs. The memories are aster_npu_board_i/aster/inst/implementation/npu/engine/tags_reg[0][bank]_0_3_0_0,
+aster_npu_board_i/aster/inst/implementation/npu/engine/tags_reg[0][bank]_0_3_1_1,
+aster_npu_board_i/aster/inst/implementation/npu/engine/tags_reg[0][is_b]_0_3_0_0,
+aster_npu_board_i/aster/inst/implementation/npu/engine/tags_reg[0][read]_0_3_0_0,
+aster_npu_board_i/aster/inst/implementation/npu/engine/tags_reg[0][shift]_0_3_0_0
+aster_npu_board_i/aster/inst/implementation/npu/engine/tags_reg[0][shift]_0_3_1_1
+Related violations: <none>
+
+

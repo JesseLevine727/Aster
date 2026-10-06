@@ -1,0 +1,1 @@
+SUMMARY top=aster_npu_board_wrapper fclk_mhz=100 wns_ns=0.267 whs_ns=0.028 from=aster_npu_board_i/aster/inst/implementation/dcache/s1_addr_reg[21]/C to=aster_npu_board_i/aster/inst/implementation/core/fsel1_n_reg[2]/D

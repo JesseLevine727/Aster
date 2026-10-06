@@ -16,7 +16,7 @@ board itself (--board). On the same program the board design must:
   tohost store, with the same instructions retired, for the others (the
   board's counters start at the edge that starts the core, as the shell's).
 
-    aster_board.py --sim BOARD_SIM [--only NAME]
+    aster_board.py --sim BOARD_SIM [--only NAME] [--design npu]
     aster_board.py --board BITSTREAM --host xilinx@10.0.0.82 --output DIR [--only NAME]
     aster_board.py --report DIR/report.json [--only NAME]   # a board run's report, compared again
 
@@ -53,22 +53,33 @@ BOARD_SKIP = {
     "directed/wrongpath_fetch_fault": "fetches past the shell's memory end, which is memory on the board",
     "traps/fetch_traps": "expects a fetch fault past the shell's memory end, which is memory on the board",
 }
+# --design npu (19.4): the Phase 19 SoC (rtl/soc/aster_npu_soc.sv; its
+# simulation build/npu/npu_soc, given +board for this script's status line),
+# where 0x4000_0000 is the NPU's register page. Its run must also retire the
+# shell's RVFI records exactly, record for record (both write the shell's
+# trace format; the SoC's run may go on past the shell's end, as the board
+# script polls).
+NPU_SOC_SKIP = {
+    "traps/m1_traps": "uses 0x4000_0000 as outside memory: the NPU's registers in the Phase 19 SoC",
+}
 KERNEL_CYCLES = 60_000_000
 PROGRAM_CYCLES = 20_000_000
 # The board's cycle count to the tohost store against the shell's: both count
 # from the edge that starts the core (the board's clear at the start), so
 # none.
 CYCLE_OFFSET = 0
+SIM_ARGS: list[str] = []   # extra plusargs for --sim
+TRACES = False             # --design npu: compare the RVFI traces
 
 
-def programs(only: str | None) -> list[tuple[str, str]]:
+def programs(only: str | None, skip: dict[str, str]) -> list[tuple[str, str]]:
     """(kind, name): kernels first, then the self-checking programs (as the
     runner lists them, without the cached core's skips)."""
     found = [("kernel", name) for name in rct.KERNELS]
     for suite in SUITES:
         for path in sorted(rct.suite_dir(suite).glob("*.c" if suite == "c" else "*.S")):
             name = f"{suite}/{path.stem}"
-            if name not in CONFIG["skip"] and name not in BOARD_SKIP:
+            if name not in CONFIG["skip"] and name not in skip:
                 found.append(("program", name))
     if only:
         found = [(kind, name) for kind, name in found if name == only or name.endswith("/" + only)]
@@ -89,8 +100,12 @@ def shell_run(kind: str, elf: Path, binary: Path, symbols: dict) -> dict:
                *CONFIG["shell_args"]]
     if kind == "kernel":
         command += ["+io_page", f"+console={elf.with_suffix('.shell.console')}", "+kernel_end"]
+    if TRACES:
+        command += [f"+trace={elf.with_suffix('.shell.trace')}"]
     result = subprocess.run(command, capture_output=True, text=True, timeout=1200)
     out = fields(result.stdout.strip(), "SHELL")
+    if TRACES:
+        out["trace"] = elf.with_suffix(".shell.trace").read_text().splitlines()
     if kind == "kernel":
         out["console"] = elf.with_suffix(".shell.console").read_text(errors="replace")
     return out
@@ -108,12 +123,27 @@ def fields(status: str, tag: str) -> dict:
     return out
 
 
+def trace_compare(shell: list[str], board: list[str]) -> tuple[bool, str]:
+    """The board's RVFI records from the first must be the shell's, all of them."""
+    if not shell:
+        return False, "the shell wrote no trace"
+    for index, record in enumerate(shell):
+        if index >= len(board) or board[index] != record:
+            return False, (f"RVFI record {index} differs: the shell's {record!r}, the board's "
+                           f"{board[index] if index < len(board) else '(none)'!r}")
+    return True, ""
+
+
 def board_sim_run(sim: Path, kind: str, elf: Path, binary: Path, symbols: dict) -> dict:
     command = [str(sim), f"+bin={binary}", f"+max_cycles={KERNEL_CYCLES if kind == 'kernel' else PROGRAM_CYCLES}",
-               f"+console={elf.with_suffix('.board.console')}"]
+               f"+console={elf.with_suffix('.board.console')}", *SIM_ARGS]
     command += ["+kernel"] if kind == "kernel" else [f"+tohost={symbols['tohost']:x}"]
+    if TRACES:
+        command += [f"+trace={elf.with_suffix('.board.trace')}"]
     result = subprocess.run(command, capture_output=True, text=True, timeout=1200)
     out = fields(result.stdout.strip(), "BOARD")
+    if TRACES:
+        out["trace"] = elf.with_suffix(".board.trace").read_text().splitlines()
     out["console"] = elf.with_suffix(".board.console").read_text(errors="replace")
     return out
 
@@ -123,6 +153,10 @@ def compare(kind: str, name: str, shell: dict, board: dict) -> tuple[bool, str]:
         return False, f"the shell's run: {shell}"
     if board.get("status") != "PASS":
         return False, f"the board's run: {board}"
+    if TRACES:
+        ok, message = trace_compare(shell.get("trace", []), board.get("trace", []))
+        if not ok:
+            return False, message
     if kind == "kernel":
         same = (board.get("window_cycles"), board.get("window_retired")) == \
                (shell.get("window_cycles"), shell.get("window_retired"))
@@ -141,6 +175,8 @@ def compare(kind: str, name: str, shell: dict, board: dict) -> tuple[bool, str]:
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument("--sim", type=Path, help="the board design's Verilator simulation")
+    parser.add_argument("--design", choices=("core", "npu"), default="core",
+                        help="npu: the Phase 19 SoC's simulation (19.4), not 18.7's design")
     parser.add_argument("--board", type=Path, help="the bitstream, to run on the board")
     parser.add_argument("--report", type=Path, help="a board run's report.json, to compare again")
     parser.add_argument("--host", default="xilinx@10.0.0.82")
@@ -151,7 +187,14 @@ def main() -> int:
     if sum(map(bool, (args.sim, args.board, args.report))) != 1:
         parser.error("give one of --sim, --board or --report")
     prefix = os.environ.get("RISCV_PREFIX", "riscv32-unknown-elf-")
-    rows = programs(args.only)
+    skip = BOARD_SKIP | (NPU_SOC_SKIP if args.design == "npu" else {})
+    if args.design == "npu":
+        if not args.sim:
+            parser.error("--design npu is for --sim (the board run is 19.5's)")
+        SIM_ARGS.append("+board")
+        global TRACES
+        TRACES = True
+    rows = programs(args.only, skip)
     if not rows:
         print(f"FAIL: no program matches {args.only}")
         return 1
@@ -178,7 +221,7 @@ def main() -> int:
         if not ok:
             failures.append(name)
     print(f"{'PASS' if not failures else 'FAIL'}: {len(built) - len(failures)}/{len(built)} programs on {where} "
-          f"end as in the CPU shell, cycle for cycle")
+          f"end as in the CPU shell, cycle for cycle" + (", every RVFI record as the shell's" if TRACES else ""))
     return 1 if failures else 0
 
 

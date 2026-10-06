@@ -1,10 +1,11 @@
 # Phase 19: high-utilization NPU and data movement
 
-Status: **in progress — milestone 19.3 (direct convolution) complete, awaiting
-the owner's sign-off.** 19.2 signed off by the owner on 5 October 2026.
-19.0 (the NPU shell) and 19.1 (the tile mapping) signed off by the owner on
-5 October 2026. The NPU
-specification [`npu.md`](npu.md) was approved by the owner on 5 October 2026.
+Status: **in progress — milestone 19.4 (the Phase 19 SoC and the gates)
+complete, awaiting the owner's sign-off.** 19.0 (the NPU shell), 19.1 (the
+tile mapping), 19.2 (the K-split mapping) and 19.3 (direct convolution, with
+CIFAR's channels last) were signed off by the owner on 5 October 2026. The
+NPU specification [`npu.md`](npu.md) was approved by the owner on 5 October
+2026.
 The owner's four decisions of 5 October 2026 (platform,
 gate cases, baseline, output format) are recorded below and in npu.md §9.
 The phase sits in the [v2 plan](phase17-plus.md#6-phase-17-sequence) after
@@ -596,6 +597,218 @@ steps that made the final run.
 **Carried to 19.4:** the Phase 19 SoC, the DOT8 baselines and the speedup
 gates. CIFAR's and Conv2D's end-to-end runs are Phase 20's workload matrix.
 
+## Milestone 19.4: the Phase 19 SoC and the gates (5 October 2026)
+
+**The SoC** (`rtl/soc/aster_npu_soc.sv`, grown from 18.7's board design
+`aster_core_pynq.sv`): the Aster core, its two 4 KiB caches and the v2 NPU on
+96 KiB of block-RAM main memory, with the register page, driven from the ARM
+side through the same AXI4-Lite port (magic "ASTN"). npu.md §5.2's contracts:
+- main memory's port A answers the instruction cache; port B is shared by
+  the data cache (first) and the NPU (any other cycle, not while an AMO holds
+  the port), each in its acceptance order;
+- each NPU write to main memory is snooped in the next cycle, its line
+  invalidated in the data cache, and answered the cycle after that; it also
+  ends the core's lr reservation on that word;
+- the NPU's registers are the data cache's second I/O window
+  (0x4000_0000–0x4000_0FFF), now word-only: the data cache faults any other
+  access (sub-word, lr, sc, AMO) in its first stage, as for an unmapped
+  address, so npu.md §3's access fault holds in the SoC (`IO_WORD_ONLY`, a
+  new aster_l1d parameter, off by default);
+- the NPU's interrupt drives the core's external interrupt input.
+
+**Software:** `software/drivers/aster_npu2.h` (descriptor, START, wait,
+ACK, 64-bit counters) and four programs in `software/npu2`:
+- `npu2_gemm_gate.c`: each GEMM case by the best CPU code and by the NPU,
+  then the N = 1 cases on the NPU;
+- `npu2_mnist_gate.c`: the MNIST MLP on its 32 test images, both ways, each
+  image's logits checked against the reference on both paths;
+- `npu2_coherence.c`: the coherence tests (below);
+- `npu2_faults.S`: sub-word and atomic accesses to the NPU's registers, each
+  an access fault (a trap test, as Phase 18's).
+
+**The DOT8 baselines** (the owner's "best CPU code, DOT8 included"):
+- **GEMM:** B packed inside the timed window, four columns a block, a word
+  holding four consecutive k (`dot8` needs them). A needs no packing: four
+  of its rows are 4K contiguous bytes, read in place at immediate offsets
+  (a kernel built for each K). Each 4×4 block of C sits in 16 registers;
+  per 8 k the loop is 16 loads, 32 `dot8`s and 32 adds, scheduled by hand
+  so it never stalls: **85 cycles per 8 k, measured** (the loop's ceiling,
+  1.51 MACs a cycle). B's groups of columns (3.5 KiB each) sit 4 KiB apart,
+  so a group stays in the direct-mapped data cache while every row block
+  meets it, and the 512 bytes left keep the stack's top and the globals.
+- **The MLP:** each layer a DOT8 matrix–vector product, **16 neurons a
+  pass**, so the input vector is read twice in the first layer, not eight
+  times. The weights are interleaved 16 neurons a word: the model's CPU
+  layout, prepared before the windows, as the NPU's row-major weights are.
+  It is hand-scheduled the same way: 52 instructions per 4 k, no stall. Its
+  first layer is 34,210 cycles for 25,088 MACs, about 40% of them cache
+  misses streaming the 25 KB of weights, which each image uses once.
+
+  The GEMM baseline was tuned until the remaining cycles were packing, C's
+  stores and misses (cycles for 64³ / 96³ / 128×64×128):
+
+  | Step | 64³ | 96³ | 128×64×128 | MACs a cycle |
+  | --- | ---: | ---: | ---: | ---: |
+  | Compiler-scheduled 4×4 blocks, A and B packed | 300,955 | 1,033,371 | 1,224,347 | 0.86–0.87 |
+  | The loop hand-scheduled, B's columns in cache-sized groups | 253,873 | 803,626 | 962,618 | 1.03–1.10 |
+  | Groups 4 KiB apart, A's block copied beside them, the loop unrolled to 8 k, the first 4 k into the accumulators | 229,969 | 737,903 | 902,792 | 1.14–1.20 |
+  | **A read in place (no copy)** | **219,684** | **714,614** | **853,188** | **1.19–1.24** |
+
+  The final row is in the SoC; the third was measured in the CPU shell.
+  That shell runs the core cycle for cycle as the SoC does. Ordering a
+  group's column blocks to keep A's rows in the cache saved 11% of the
+  misses but cost more loop overhead, so it was not kept. npu.md §7 estimated
+  1.2–1.5 MACs a cycle for this code. The MLP's first baseline, four neurons
+  a pass, took 43,218 cycles an image; this one takes 36,520.
+
+**Verification** (`make npu-soc-tests`, in `make check`):
+- The SoC testbench (`verification/npu/tb_npu_soc.cpp`) drives the SoC
+  through AXI as the board script does. Every cycle, independently of the
+  RTL, it follows a copy of main memory and checks:
+  - every NPU job against npu_model.h's reference on the memory as it was at
+    START: every C element of a completed job, and the error code of a job
+    not aborted;
+  - every NPU write: inside its C, each byte once, none in a job that must
+    end with an error; and each end after a start;
+  - every snoop: exactly the cycle after each NPU write, of its line, and no
+    other;
+  - **every load the data cache answers from main memory**, as Phase 18's
+    L1 unit test checks (1.08 million in the coherence program). A load
+    must return the word memory held at its lookup, or a newer one written
+    before its answer. (A defensive rule never fired: no load was looked up
+    while a store of the core's to its word was still on its way to memory,
+    as the cache answers a posted store only once memory takes it);
+  - each GEMM the CPU computed and asked it to check.
+- **The gates' programs** pass with every check. The GEMM program's 5 jobs
+  and 3 CPU results are checked; the MLP's 65 jobs; and the coherence
+  program's 162 completed jobs and 4 ended ones.
+- **Coherence** (`npu2_coherence.c`, checked by the program from what it
+  stored, since the testbench's start snapshot would follow a late store):
+  - 160 jobs of random shapes (M, N ≤ 20, K ≤ 40), strides and mappings
+    (tiles and K-split), one after another;
+  - before each, the CPU reads C and its padding (their lines cached); after
+    each, it reads them back. Every C word must be the job's, and every
+    padding word unchanged, so each line the NPU wrote must have been
+    invalidated;
+  - in 80 of them the CPU reads C over and over while the job runs,
+    refilling lines the NPU is writing. Between passes it adds to a counter
+    with `amoadd` and with `lr`/`sc` (282 adds, the total checked), so the
+    port's AMO hold is exercised against the NPU;
+  - A and B are stored just before START, with no fence;
+  - mip.MEIP rises at the end and falls after ACK;
+  - two error jobs (a C past the window; MODE 3) end with their codes and
+    write nothing; two aborts (in CHECK and mid-job) end aborted; a
+    completed job follows each;
+  - an `lr` of a word the next job writes, then `sc`: it fails, and the word
+    keeps the NPU's value; with the job writing another word, it succeeds.
+- **The core is unchanged in the SoC:** 18.7's board programs (the 9 CPU
+  kernels and 90 self-checking programs, by `scripts/aster_board.py
+  --design npu`) end as in the CPU shell, **99/99, cycle for cycle, every
+  RVFI record as the shell's**. `c/dot8_jobs` runs at 1,743,609 cycles, as
+  on the board in 18.7. Against Phase 18's Spike-compared traces of the same
+  programs (npu.md §9), 97 of the 99 are byte for byte the same. The other
+  two:
+  - `rv32ua/lrsc` differs from record 4,996 on, at an `sc` that Phase 18's
+    run answered as Spike did (failed) and the SoC, like the shell on its
+    own reservation, let succeed;
+  - `selfcheck/dot8_arith` is self-checking, never compared with Spike.
+
+  One program is not run: `traps/m1_traps`, whose "outside memory"
+  (0x4000_0000) is the NPU's register page here.
+
+**Exit gate met** (in the SoC, on its main memory):
+- **Utilization** (JOB_MACS / (16 × JOB_CYCLES), gate 50%) and **speedup**
+  end to end (gate 5×). The NPU's window runs from before the descriptor's
+  first store to the CPU seeing DONE. The CPU's runs from A and B in memory
+  to C in memory, packing included:
+
+  | GEMM | Best CPU code (DOT8) | NPU, end to end | **Speedup** | NPU job cycles | **Utilization** |
+  | --- | ---: | ---: | ---: | ---: | ---: |
+  | 64×64×64 | 219,684 | 18,990 | **11.57×** | 18,871 | **86.8%** |
+  | 96×96×96 | 714,614 | 60,670 | **11.78×** | 60,551 | **91.3%** |
+  | 128×64×128 | 853,188 | 72,654 | **11.74×** | 72,535 | **90.4%** |
+
+  The NPU's job cycles equal the NPU shell's on its two-cycle memory (19.1).
+  The CPU polls STATUS through its I/O window, so the job has port B to
+  itself.
+- **The MLP** (784 → 32 → 10, batch one, the workload's window: from the
+  image in memory to its prediction, gate 2× per image): **3.53× on the worst
+  image**, 3.54× over all 32. The best CPU code takes 36,520 cycles an image
+  and the NPU path 10,309: two jobs, with the CPU's requantization, ReLU and
+  argmax between and after, which both paths share. Logits are as the
+  reference on both paths for all 32 images; 30 of 32 are labelled
+  correctly, the model's own accuracy.
+- **N = 1 utilization, measured** (K-split): MNIST's first layer 32×1×784
+  **19.2%** (8,171 cycles), Conv2D 784×1×25 **12.7%** (9,634 cycles), both as
+  in the shell.
+- **10 ns in context** (`make fpga-aster-npu`: the whole device with the
+  Zynq PS, 18.7's flow and sign-off; [`results/phase19/npu-19.4`](results/phase19/npu-19.4/README.md)):
+  - worst setup slack **+0.267 ns**, hold slack +0.028 ns;
+  - no failing endpoint among 30,601; all 21,420 nets routed; no DRC
+    error;
+  - 12,625 LUTs (23.7%), 8,982 flip-flops, 47 block-RAM tiles (33.6%),
+    19 DSPs (8.6%), all within the 80% limit.
+
+  The worst path (16 logic levels) runs from the data cache's stage-1
+  address through its window decode into the error answer it must give in
+  that cycle (cpu.md §4). From there it goes through the core's M1 trap
+  logic and Execute's advance into the forwarding select. 18.7's worst path
+  ended at the same select, from M1's result (+0.140 ns). The NPU's own paths
+  are not the worst. The build before the review's fixes met +0.074 ns on
+  the same path family; placement moves it.
+
+**Planted bugs** (each in a copy of the RTL, the four programs run; not
+retained). A dash means that program passed:
+
+| Bug | Coherence program | MLP, GEMM | Fault program |
+| --- | --- | --- | --- |
+| No snoops | SNOOP | SNOOP | — |
+| No snoops (snoop check off) | STALE_LOAD | STALE_LOAD (MLP) | — |
+| Snoop a cycle late | SNOOP | SNOOP | — |
+| Snoop a cycle late (snoop check off) | STALE_LOAD | — | — |
+| Snoop of the next line | SNOOP | SNOOP | — |
+| Snoop dropped when the cache takes the page | SNOOP | SNOOP | — |
+| NPU's answer a cycle early | NPU_MISMATCH | NPU_MISMATCH | — |
+| NPU before the data cache on port B | NPU_MISMATCH | — | — |
+| No AMO hold for the NPU | NPU_MISMATCH | — | — |
+| Interrupt not connected | MEIP check | — | — |
+| NPU write keeps the reservation | sc check | — | — |
+| NPU window not word-only | — | — | stopped by the SoC's assertion |
+| Cache: lookup hits in its snoop's cycle (snoop check off) | STALE_LOAD | — | — |
+| Cache: refill installs though snooped (snoop check off) | STALE_LOAD | — | — |
+| Cache: refill never poisoned (snoop check off) | — | — | — |
+
+All but the last are caught in the SoC. With the snoop check off
+(`+no_snoop_check`), the load check alone catches a late snoop and the
+cache's faults. The
+last one is caught by Phase 18's L1 unit test (`make
+core-aster-l1-unit`, 39 of 40 seeds). In the SoC it needs a refill to read
+a word just before the NPU overwrites it, a timing the programs cannot aim
+at.
+
+**Review.** The watchdog review re-derived the gates and found them fair:
+both sides timed end to end, the MLP's window the workload's. It found:
+- **two RTL gaps, fixed:**
+  - an NPU write did not end the core's `lr` reservation on that word;
+  - a sub-word or atomic access to the NPU's registers could not fault as
+    npu.md §3 requires. The cache took no late errors, so a sub-word load
+    would have silently read 0 on the board;
+- **test gaps, closed:**
+  - no AMO or `lr`/`sc` raced the NPU, so a missing AMO hold went unseen;
+  - an error job's "nothing written" was checked at the wrong address, and
+    the testbench allowed writes in an error job;
+  - the gate script required only the GEMM records;
+  - the SoC tests did not check loads, so a late snoop was caught only by
+    the snoop check;
+- AXI reads past main memory returned the page RAM's output (now 0).
+
+It noted that the MLP's baseline could gain about 10% from more neurons a
+pass. The 16-neuron kernel, made alongside the review, gained 15%.
+
+**Carried to 19.5:** npu.md §4.6's options, measured against these numbers,
+and the board run: the gate programs on the PYNQ-Z1 at 100 MHz, cycle for
+cycle as simulated, with `aster_board.py`'s board path taught the SoC.
+
 ## Milestones and gates
 
 | Milestone | Content | Exit gate |
@@ -616,7 +829,8 @@ gates. CIFAR's and Conv2D's end-to-end runs are Phase 20's workload matrix.
   npu.md §9's 19.1 clarifications
 - [x] 19.2 as in the table above — complete (owner, 5 October 2026), with
   npu.md §9's 19.2 clarifications
-- [ ] 19.3 as in the table above
+- [x] 19.3 as in the table above — complete (owner, 5 October 2026), with
+  npu.md §9's 19.3 clarifications (CIFAR channels last for direct convolution)
 - [ ] 19.4 as in the table above
 - [ ] 19.5 as in the table above
 
