@@ -17,6 +17,7 @@ board itself (--board). On the same program the board design must:
   board's counters start at the edge that starts the core, as the shell's).
 
     aster_board.py --sim BOARD_SIM [--only NAME] [--design npu]
+    aster_board.py --design npu --board BITSTREAM --host xilinx@10.0.0.82 --output DIR [--soc-sim SIM]
     aster_board.py --board BITSTREAM --host xilinx@10.0.0.82 --output DIR [--only NAME]
     aster_board.py --report DIR/report.json [--only NAME]   # a board run's report, compared again
 
@@ -37,6 +38,9 @@ import re
 import shutil
 import subprocess
 import sys
+
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+import npu_soc  # noqa: E402  (19.5: the gate programs' build)
 import tempfile
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -62,6 +66,13 @@ BOARD_SKIP = {
 NPU_SOC_SKIP = {
     "traps/m1_traps": "uses 0x4000_0000 as outside memory: the NPU's registers in the Phase 19 SoC",
 }
+# --design npu on the board (19.5) adds the gate programs (software/npu2,
+# built as scripts/npu_soc.py builds them), each compared with the SoC's
+# simulation (--soc-sim) of the same build: the same console, byte for byte
+# (its records carry the cycle counts), and tohost at the same cycle with the
+# same instructions retired.
+GATE_PROGRAMS = ("npu2_gemm_gate", "npu2_mnist_gate", "npu2_coherence", "npu2_faults")
+NPU_DESIGN = {"magic": 0x4153544E, "main_bytes": 0x18000}    # "ASTN", 96 KiB (aster_npu_soc.sv)
 KERNEL_CYCLES = 60_000_000
 PROGRAM_CYCLES = 20_000_000
 # The board's cycle count to the tohost store against the shell's: both count
@@ -72,7 +83,7 @@ SIM_ARGS: list[str] = []   # extra plusargs for --sim
 TRACES = False             # --design npu: compare the RVFI traces
 
 
-def programs(only: str | None, skip: dict[str, str]) -> list[tuple[str, str]]:
+def programs(only: str | None, skip: dict[str, str], gates: bool = False) -> list[tuple[str, str]]:
     """(kind, name): kernels first, then the self-checking programs (as the
     runner lists them, without the cached core's skips)."""
     found = [("kernel", name) for name in rct.KERNELS]
@@ -81,6 +92,8 @@ def programs(only: str | None, skip: dict[str, str]) -> list[tuple[str, str]]:
             name = f"{suite}/{path.stem}"
             if name not in CONFIG["skip"] and name not in skip:
                 found.append(("program", name))
+    if gates:
+        found += [("gate", name) for name in GATE_PROGRAMS]
     if only:
         found = [(kind, name) for kind, name in found if name == only or name.endswith("/" + only)]
     return found
@@ -89,6 +102,10 @@ def programs(only: str | None, skip: dict[str, str]) -> list[tuple[str, str]]:
 def build(kind: str, name: str, out: Path, prefix: str) -> tuple[Path, Path, dict]:
     if kind == "kernel":
         return rct.build_kernel(name, out, prefix)
+    if kind == "gate":
+        (out / "gate").mkdir(parents=True, exist_ok=True)
+        elf, binary, tohost = npu_soc.build_program(out / "gate", name, prefix)
+        return elf, binary, {"tohost": tohost}
     return rct.build(rct.test_path(name), CONFIG["march"], out, prefix)
 
 
@@ -157,6 +174,15 @@ def compare(kind: str, name: str, shell: dict, board: dict) -> tuple[bool, str]:
         ok, message = trace_compare(shell.get("trace", []), board.get("trace", []))
         if not ok:
             return False, message
+    if kind == "gate":                                 # against the SoC's simulation
+        same = all(board.get(key) == shell.get(key) for key in ("tohost_cycles", "tohost_retired"))
+        console = board.get("console") == shell.get("console")
+        return same and console, (f"tohost at cycle {board.get('tohost_cycles')}, {board.get('tohost_retired')} "
+                                  f"instructions"
+                                  + ("" if same else f"; the simulation's {shell.get('tohost_cycles')}, "
+                                                     f"{shell.get('tohost_retired')}")
+                                  + ("; the simulation's console" if console else "; the console differs from the "
+                                                                                  "simulation's"))
     if kind == "kernel":
         same = (board.get("window_cycles"), board.get("window_retired")) == \
                (shell.get("window_cycles"), shell.get("window_retired"))
@@ -183,18 +209,19 @@ def main() -> int:
     parser.add_argument("--output", type=Path, help="the board run's evidence directory")
     parser.add_argument("--build-dir", type=Path, default=ROOT / "build/aster_board")
     parser.add_argument("--only")
+    parser.add_argument("--soc-sim", type=Path, default=ROOT / "build/npu/npu_soc",
+                        help="--design npu --board: the SoC's simulation the gate programs are compared with")
     args = parser.parse_args()
     if sum(map(bool, (args.sim, args.board, args.report))) != 1:
         parser.error("give one of --sim, --board or --report")
     prefix = os.environ.get("RISCV_PREFIX", "riscv32-unknown-elf-")
     skip = BOARD_SKIP | (NPU_SOC_SKIP if args.design == "npu" else {})
     if args.design == "npu":
-        if not args.sim:
-            parser.error("--design npu is for --sim (the board run is 19.5's)")
         SIM_ARGS.append("+board")
-        global TRACES
-        TRACES = True
-    rows = programs(args.only, skip)
+        if args.sim:                                  # the RVFI traces: only a simulation writes them
+            global TRACES
+            TRACES = True
+    rows = programs(args.only, skip, gates=args.design == "npu" and not args.sim)
     if not rows:
         print(f"FAIL: no program matches {args.only}")
         return 1
@@ -202,13 +229,18 @@ def main() -> int:
     built = []
     for kind, name in rows:
         elf, binary, symbols = build(kind, name, args.build_dir, prefix)
-        built.append((kind, name, elf, binary, symbols, shell_run(kind, elf, binary, symbols)))
+        reference = (board_sim_run(args.soc_sim, "program", elf, binary, symbols) if kind == "gate"
+                     else shell_run(kind, elf, binary, symbols))
+        built.append((kind, name, elf, binary, symbols, reference))
     if args.sim:
         results = {name: board_sim_run(args.sim, kind, elf, binary, symbols)
                    for kind, name, elf, binary, symbols, _ in built}
         where = "the board design in simulation"
     elif args.report:
         report = json.loads(args.report.read_text())
+        problems = report_problems(report, expected_design(args, built))
+        if problems:
+            raise SystemExit("FAIL: " + "; ".join(problems))
         results = {entry["name"]: entry for entry in report["programs"]}
         where = f"the board (its report {args.report.name})"
     else:
@@ -220,9 +252,39 @@ def main() -> int:
         print(f"{'PASS' if ok else 'FAIL'}: {kind} {name}: {message}")
         if not ok:
             failures.append(name)
+    gates = sum(1 for kind, *_ in built if kind == "gate")
     print(f"{'PASS' if not failures else 'FAIL'}: {len(built) - len(failures)}/{len(built)} programs on {where} "
-          f"end as in the CPU shell, cycle for cycle" + (", every RVFI record as the shell's" if TRACES else ""))
+          f"end as in the CPU shell" + (f" (the {gates} gate programs as in the SoC's simulation)" if gates else "")
+          + ", cycle for cycle" + (", every RVFI record as the shell's" if TRACES else ""))
     return 1 if failures else 0
+
+
+def expected_design(args, built) -> dict | None:
+    """--design npu: the identity the board must report (design.json). The NPU's
+    configuration (0x3F058) is the one the gate programs' references ran with,
+    the SoC simulation's (none when no gate program is run)."""
+    if args.design != "npu":
+        return None
+    configs = {reference.get("npu_config") for kind, *_, reference in built if kind == "gate"}
+    if None in configs or len(configs) > 1:
+        raise SystemExit(f"FAIL: the SoC simulation's NPU configuration is not one value: {configs}")
+    return NPU_DESIGN | ({"npu_config": configs.pop()} if configs else {})
+
+
+def report_problems(report: dict, design: dict | None) -> list[str]:
+    """A board report's run: complete, at 100 MHz, the design's identity."""
+    problems = []
+    if report.get("status") != "complete":
+        problems.append(f"the board run is {report.get('status')}: {report.get('error')}")
+    clock = report.get("clock", {})
+    if clock.get("mhz") != 100.0 or not 99.0 <= clock.get("measured_mhz", 0) <= 101.0:
+        problems.append(f"the clock is not 100 MHz: {clock}")
+    if design:
+        identity = report.get("identity", {})
+        for key in ("magic", "main_bytes", "npu_config"):
+            if key in design and identity.get(key) != design[key]:
+                problems.append(f"the design's {key} is {identity.get(key)}, not {design[key]}")
+    return problems
 
 
 def run_on_board(args, built) -> dict:
@@ -240,10 +302,13 @@ def run_on_board(args, built) -> dict:
     for kind, name, elf, binary, symbols, _ in built:
         image = stage / (name.replace("/", "__") + ".bin")
         shutil.copyfile(binary, image)
-        manifest.append({"kind": kind, "name": name, "image": image.name,
+        manifest.append({"kind": "kernel" if kind == "kernel" else "program", "name": name, "image": image.name,
                          "tohost": 0 if kind == "kernel" else symbols["tohost"],
                          "max_cycles": KERNEL_CYCLES if kind == "kernel" else PROGRAM_CYCLES})
     (stage / "manifest.json").write_text(json.dumps(manifest, indent=1))
+    design = expected_design(args, built)
+    if design:                                        # the Phase 19 SoC's identity (the remote script's default: 18.7's)
+        (stage / "design.json").write_text(json.dumps(design))
     shutil.copyfile(args.board, stage / "aster_core.bit")
     shutil.copyfile(ROOT / "scripts/aster_board_remote.py", stage / "aster_board_remote.py")
     remote = "/home/xilinx/aster_core_board"
@@ -257,16 +322,12 @@ def run_on_board(args, built) -> dict:
     subprocess.run(["scp", "-q", f"{args.host}:{remote}/report.json", str(output / "report.json")], check=True)
     report = json.loads((output / "report.json").read_text())
     shutil.rmtree(stage, ignore_errors=True)
-    problems = []
+    problems = report_problems(report, design)
     if run.returncode:
         problems.append(f"the board script exited {run.returncode}")
-    if report.get("status") != "complete":
-        problems.append(f"the board run is {report.get('status')}: {report.get('error')}")
     if report.get("bitstream_sha256") != hashlib.sha256(args.board.read_bytes()).hexdigest():
         problems.append("the board ran a different bitstream")
     clock = report.get("clock", {})
-    if clock.get("mhz") != 100.0 or not 99.0 <= clock.get("measured_mhz", 0) <= 101.0:
-        problems.append(f"the clock is not 100 MHz: {clock}")
     if problems:
         raise SystemExit("FAIL: " + "; ".join(problems))
     print(f"board: FCLK0 {clock['mhz']} MHz, measured {clock['measured_mhz']:.3f} MHz; "

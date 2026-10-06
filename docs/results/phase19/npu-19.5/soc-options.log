@@ -1,0 +1,80 @@
+== base (-GA_STRIPS=1 -GPORT_BYTES=4 -GDIM=4)
+PASS: the Phase 19 SoC runs npu2_gemm_gate: every NPU job (5 completed, 0 ended by an error or an abort), write and snoop, 3 CPU results and 344,509 main-memory loads as the reference
+PASS: GEMM 64x64x64 utilization in the SoC 86.8% (gate 50%): 262,144 MACs in 18,871 job cycles (86.3% end to end, a 4x4 array)
+PASS: GEMM 64x64x64 speedup end to end 11.57x (gate 5x): the best CPU code (DOT8) 219,676 cycles (1.19 MACs a cycle), the NPU 18,990
+PASS: GEMM 96x96x96 utilization in the SoC 91.3% (gate 50%): 884,736 MACs in 60,551 job cycles (91.1% end to end, a 4x4 array)
+PASS: GEMM 96x96x96 speedup end to end 11.78x (gate 5x): the best CPU code (DOT8) 714,621 cycles (1.24 MACs a cycle), the NPU 60,670
+PASS: GEMM 128x64x128 utilization in the SoC 90.4% (gate 50%): 1,048,576 MACs in 72,535 job cycles (90.2% end to end, a 4x4 array)
+PASS: GEMM 128x64x128 speedup end to end 11.74x (gate 5x): the best CPU code (DOT8) 853,188 cycles (1.23 MACs a cycle), the NPU 72,654
+PASS: N=1 32x1x784 (K-split) utilization in the SoC, measured: 19.2% (8,171 job cycles, 8,286 end to end)
+PASS: N=1 784x1x25 (K-split) utilization in the SoC, measured: 12.7% (9,634 job cycles, 9,730 end to end)
+PASS: the Phase 19 SoC runs npu2_mnist_gate: every NPU job (65 completed, 0 ended by an error or an abort), write and snoop, 0 CPU results and 256,685 main-memory loads as the reference
+PASS: MNIST MLP 784-32-10 batch one, speedup per image 3.53x at the worst of 32 (gate 2x), 3.54x over all: the best CPU code (DOT8) 36,520 cycles an image, the NPU 10,309; logits as the reference on both, 30/32 labels
+PASS: the Phase 19 SoC runs npu2_coherence: every NPU job (162 completed, 4 ended by an error or an abort), write and snoop, 0 CPU results and 1,084,700 main-memory loads as the reference
+PASS: coherence: 160 jobs (80 with the CPU reading C as the NPU writes it), C's lines cached before each and read after, A and B stored just before START with no fence, the interrupt, 282 AMO and lr/sc adds racing the jobs; 2 error jobs and 2 aborts, each followed by a completed job; an sc after an NPU write to its word fails
+PASS: the Phase 19 SoC runs npu2_faults: every NPU job (0 completed, 0 ended by an error or an abort), write and snoop, 0 CPU results and 50 main-memory loads as the reference (and its 7 traps: sub-word and atomic accesses to the NPU's registers)
+PASS: every gate record present
+== s2 (-GA_STRIPS=2 -GPORT_BYTES=4 -GDIM=4)
+PASS: the Phase 19 SoC runs npu2_gemm_gate: every NPU job (5 completed, 0 ended by an error or an abort), write and snoop, 3 CPU results and 344,509 main-memory loads as the reference
+PASS: GEMM 64x64x64 utilization in the SoC 93.4% (gate 50%): 262,144 MACs in 17,536 job cycles (92.8% end to end, a 4x4 array)
+PASS: GEMM 64x64x64 speedup end to end 12.44x (gate 5x): the best CPU code (DOT8) 219,676 cycles (1.19 MACs a cycle), the NPU 17,654
+PASS: GEMM 96x96x96 utilization in the SoC 95.7% (gate 50%): 884,736 MACs in 57,768 job cycles (95.5% end to end, a 4x4 array)
+PASS: GEMM 96x96x96 speedup end to end 12.35x (gate 5x): the best CPU code (DOT8) 714,621 cycles (1.24 MACs a cycle), the NPU 57,886
+PASS: GEMM 128x64x128 utilization in the SoC 96.7% (gate 50%): 1,048,576 MACs in 67,792 job cycles (96.5% end to end, a 4x4 array)
+PASS: GEMM 128x64x128 speedup end to end 12.56x (gate 5x): the best CPU code (DOT8) 853,188 cycles (1.23 MACs a cycle), the NPU 67,910
+PASS: N=1 32x1x784 (K-split) utilization in the SoC, measured: 23.2% (6,757 job cycles, 6,878 end to end)
+PASS: N=1 784x1x25 (K-split) utilization in the SoC, measured: 17.3% (7,099 job cycles, 7,194 end to end)
+PASS: the Phase 19 SoC runs npu2_mnist_gate: every NPU job (65 completed, 0 ended by an error or an abort), write and snoop, 0 CPU results and 256,685 main-memory loads as the reference
+PASS: MNIST MLP 784-32-10 batch one, speedup per image 4.11x at the worst of 32 (gate 2x), 4.12x over all: the best CPU code (DOT8) 36,520 cycles an image, the NPU 8,868; logits as the reference on both, 30/32 labels
+PASS: the Phase 19 SoC runs npu2_coherence: every NPU job (162 completed, 4 ended by an error or an abort), write and snoop, 0 CPU results and 1,084,568 main-memory loads as the reference
+PASS: coherence: 160 jobs (80 with the CPU reading C as the NPU writes it), C's lines cached before each and read after, A and B stored just before START with no fence, the interrupt, 270 AMO and lr/sc adds racing the jobs; 2 error jobs and 2 aborts, each followed by a completed job; an sc after an NPU write to its word fails
+PASS: the Phase 19 SoC runs npu2_faults: every NPU job (0 completed, 0 ended by an error or an abort), write and snoop, 0 CPU results and 50 main-memory loads as the reference (and its 7 traps: sub-word and atomic accesses to the NPU's registers)
+PASS: every gate record present
+== p8 (-GA_STRIPS=1 -GPORT_BYTES=8 -GDIM=4)
+PASS: the Phase 19 SoC runs npu2_gemm_gate: every NPU job (5 completed, 0 ended by an error or an abort), write and snoop, 3 CPU results and 344,509 main-memory loads as the reference
+PASS: GEMM 64x64x64 utilization in the SoC 91.8% (gate 50%): 262,144 MACs in 17,847 job cycles (91.2% end to end, a 4x4 array)
+PASS: GEMM 64x64x64 speedup end to end 12.23x (gate 5x): the best CPU code (DOT8) 219,676 cycles (1.19 MACs a cycle), the NPU 17,966
+PASS: GEMM 96x96x96 utilization in the SoC 94.9% (gate 50%): 884,736 MACs in 58,247 job cycles (94.7% end to end, a 4x4 array)
+PASS: GEMM 96x96x96 speedup end to end 12.24x (gate 5x): the best CPU code (DOT8) 714,621 cycles (1.24 MACs a cycle), the NPU 58,366
+PASS: GEMM 128x64x128 utilization in the SoC 94.3% (gate 50%): 1,048,576 MACs in 69,463 job cycles (94.2% end to end, a 4x4 array)
+PASS: GEMM 128x64x128 speedup end to end 12.26x (gate 5x): the best CPU code (DOT8) 853,188 cycles (1.23 MACs a cycle), the NPU 69,582
+PASS: N=1 32x1x784 (K-split) utilization in the SoC, measured: 31.8% (4,937 job cycles, 5,054 end to end)
+PASS: N=1 784x1x25 (K-split) utilization in the SoC, measured: 16.8% (7,279 job cycles, 7,378 end to end)
+PASS: the Phase 19 SoC runs npu2_mnist_gate: every NPU job (65 completed, 0 ended by an error or an abort), write and snoop, 0 CPU results and 256,685 main-memory loads as the reference
+PASS: MNIST MLP 784-32-10 batch one, speedup per image 5.17x at the worst of 32 (gate 2x), 5.20x over all: the best CPU code (DOT8) 36,520 cycles an image, the NPU 7,028; logits as the reference on both, 30/32 labels
+PASS: the Phase 19 SoC runs npu2_coherence: every NPU job (162 completed, 4 ended by an error or an abort), write and snoop, 0 CPU results and 1,084,542 main-memory loads as the reference
+PASS: coherence: 160 jobs (80 with the CPU reading C as the NPU writes it), C's lines cached before each and read after, A and B stored just before START with no fence, the interrupt, 267 AMO and lr/sc adds racing the jobs; 2 error jobs and 2 aborts, each followed by a completed job; an sc after an NPU write to its word fails
+PASS: the Phase 19 SoC runs npu2_faults: every NPU job (0 completed, 0 ended by an error or an abort), write and snoop, 0 CPU results and 50 main-memory loads as the reference (and its 7 traps: sub-word and atomic accesses to the NPU's registers)
+PASS: every gate record present
+== s2p8 (-GA_STRIPS=2 -GPORT_BYTES=8 -GDIM=4)
+PASS: the Phase 19 SoC runs npu2_gemm_gate: every NPU job (5 completed, 0 ended by an error or an abort), write and snoop, 3 CPU results and 344,509 main-memory loads as the reference
+PASS: GEMM 64x64x64 utilization in the SoC 96.4% (gate 50%): 262,144 MACs in 16,992 job cycles (95.8% end to end, a 4x4 array)
+PASS: GEMM 64x64x64 speedup end to end 12.84x (gate 5x): the best CPU code (DOT8) 219,676 cycles (1.19 MACs a cycle), the NPU 17,110
+PASS: GEMM 96x96x96 utilization in the SoC 97.8% (gate 50%): 884,736 MACs in 56,568 job cycles (97.5% end to end, a 4x4 array)
+PASS: GEMM 96x96x96 speedup end to end 12.61x (gate 5x): the best CPU code (DOT8) 714,621 cycles (1.24 MACs a cycle), the NPU 56,686
+PASS: GEMM 128x64x128 utilization in the SoC 98.2% (gate 50%): 1,048,576 MACs in 66,704 job cycles (98.1% end to end, a 4x4 array)
+PASS: GEMM 128x64x128 speedup end to end 12.77x (gate 5x): the best CPU code (DOT8) 853,188 cycles (1.23 MACs a cycle), the NPU 66,822
+PASS: N=1 32x1x784 (K-split) utilization in the SoC, measured: 44.5% (3,523 job cycles, 3,638 end to end)
+PASS: N=1 784x1x25 (K-split) utilization in the SoC, measured: 25.8% (4,744 job cycles, 4,842 end to end)
+PASS: the Phase 19 SoC runs npu2_mnist_gate: every NPU job (65 completed, 0 ended by an error or an abort), write and snoop, 0 CPU results and 256,685 main-memory loads as the reference
+PASS: MNIST MLP 784-32-10 batch one, speedup per image 6.51x at the worst of 32 (gate 2x), 6.54x over all: the best CPU code (DOT8) 36,520 cycles an image, the NPU 5,581; logits as the reference on both, 30/32 labels
+PASS: the Phase 19 SoC runs npu2_coherence: every NPU job (162 completed, 4 ended by an error or an abort), write and snoop, 0 CPU results and 1,084,456 main-memory loads as the reference
+PASS: coherence: 160 jobs (80 with the CPU reading C as the NPU writes it), C's lines cached before each and read after, A and B stored just before START with no fence, the interrupt, 258 AMO and lr/sc adds racing the jobs; 2 error jobs and 2 aborts, each followed by a completed job; an sc after an NPU write to its word fails
+PASS: the Phase 19 SoC runs npu2_faults: every NPU job (0 completed, 0 ended by an error or an abort), write and snoop, 0 CPU results and 50 main-memory loads as the reference (and its 7 traps: sub-word and atomic accesses to the NPU's registers)
+PASS: every gate record present
+== s2p8d8 (-GA_STRIPS=2 -GPORT_BYTES=8 -GDIM=8)
+PASS: the Phase 19 SoC runs npu2_gemm_gate: every NPU job (5 completed, 0 ended by an error or an abort), write and snoop, 3 CPU results and 344,497 main-memory loads as the reference
+PASS: GEMM 64x64x64 utilization in the SoC 78.4% (gate 50%): 262,144 MACs in 5,225 job cycles (76.7% end to end, a 8x8 array)
+PASS: GEMM 64x64x64 speedup end to end 41.12x (gate 5x): the best CPU code (DOT8) 219,676 cycles (1.19 MACs a cycle), the NPU 5,342
+PASS: GEMM 96x96x96 utilization in the SoC 91.1% (gate 50%): 884,736 MACs in 15,180 job cycles (90.4% end to end, a 8x8 array)
+PASS: GEMM 96x96x96 speedup end to end 46.73x (gate 5x): the best CPU code (DOT8) 714,621 cycles (1.24 MACs a cycle), the NPU 15,294
+PASS: GEMM 128x64x128 utilization in the SoC 92.8% (gate 50%): 1,048,576 MACs in 17,648 job cycles (92.2% end to end, a 8x8 array)
+PASS: GEMM 128x64x128 speedup end to end 48.02x (gate 5x): the best CPU code (DOT8) 853,188 cycles (1.23 MACs a cycle), the NPU 17,766
+PASS: N=1 32x1x784 (K-split) utilization in the SoC, measured: 11.5% (3,409 job cycles, 3,526 end to end)
+PASS: N=1 784x1x25 (K-split) utilization in the SoC, measured: 7.0% (4,349 job cycles, 4,450 end to end)
+PASS: the Phase 19 SoC runs npu2_mnist_gate: every NPU job (65 completed, 0 ended by an error or an abort), write and snoop, 0 CPU results and 256,685 main-memory loads as the reference
+PASS: MNIST MLP 784-32-10 batch one, speedup per image 6.65x at the worst of 32 (gate 2x), 6.69x over all: the best CPU code (DOT8) 36,520 cycles an image, the NPU 5,460; logits as the reference on both, 30/32 labels
+PASS: the Phase 19 SoC runs npu2_coherence: every NPU job (162 completed, 4 ended by an error or an abort), write and snoop, 0 CPU results and 1,084,436 main-memory loads as the reference
+PASS: coherence: 160 jobs (80 with the CPU reading C as the NPU writes it), C's lines cached before each and read after, A and B stored just before START with no fence, the interrupt, 255 AMO and lr/sc adds racing the jobs; 2 error jobs and 2 aborts, each followed by a completed job; an sc after an NPU write to its word fails
+PASS: the Phase 19 SoC runs npu2_faults: every NPU job (0 completed, 0 ended by an error or an abort), write and snoop, 0 CPU results and 50 main-memory loads as the reference (and its 7 traps: sub-word and atomic accesses to the NPU's registers)
+PASS: every gate record present

@@ -45,7 +45,8 @@ TRAP_ENV = [f"-I{ROOT / 'verification/core/env'}", f"-I{ROOT / 'vendor/riscv-tes
             f"-I{ROOT / 'vendor/riscv-arch-test/riscv-test-suite/env'}", f"-I{ROOT / 'verification/core/traps'}"]
 
 
-def build_and_run(sim: Path, build_dir: Path, name: str, prefix: str) -> tuple[str, list[dict[str, str]]]:
+def build_program(build_dir: Path, name: str, prefix: str) -> tuple[Path, Path, int]:
+    """Build one of software/npu2's programs: its ELF, flat image and tohost address."""
     elf = build_dir / f"{name}.elf"
     link = f"-T{ROOT / 'verification/core/directed/link.ld'}"
     source = ROOT / f"software/npu2/{name}.S"
@@ -58,7 +59,12 @@ def build_and_run(sim: Path, build_dir: Path, name: str, prefix: str) -> tuple[s
     binary = elf.with_suffix(".bin")
     subprocess.run([f"{prefix}objcopy", "-O", "binary", str(elf), str(binary)], check=True)
     symbols = subprocess.run([f"{prefix}nm", str(elf)], capture_output=True, text=True, check=True).stdout
-    tohost = re.search(r"^([0-9a-f]+) \S tohost$", symbols, re.M).group(1)
+    return elf, binary, int(re.search(r"^([0-9a-f]+) \S tohost$", symbols, re.M).group(1), 16)
+
+
+def build_and_run(sim: Path, build_dir: Path, name: str, prefix: str) -> tuple[str, list[dict[str, str]]]:
+    elf, binary, tohost_addr = build_program(build_dir, name, prefix)
+    tohost = f"{tohost_addr:x}"
     console = build_dir / f"{name}.console"
     console.unlink(missing_ok=True)
     run = subprocess.run([str(sim), f"+bin={binary}", f"+tohost={tohost}", f"+console={console}",
@@ -108,19 +114,21 @@ def main() -> int:
             if r["kind"] == "GEMM":
                 m, n, k = int(r["m"]), int(r["n"]), int(r["k"])
                 macs, job, cpu, npu = int(r["job_macs"]), int(r["job_cycles"]), int(r["cpu_cycles"]), int(r["npu_cycles"])
-                utilization = 100.0 * macs / (16 * job)
+                pes = int(r["dim"]) ** 2                    # the array's MACs a cycle (4x4; 19.5's 8x8)
+                utilization = 100.0 * macs / (pes * job)
                 speedup = cpu / npu
                 result(macs == m * n * k and utilization >= 50.0,
                        f"GEMM {m}x{n}x{k} utilization in the SoC {utilization:.1f}% (gate 50%): {macs:,} MACs in "
-                       f"{job:,} job cycles ({100.0 * macs / (16 * npu):.1f}% end to end)")
+                       f"{job:,} job cycles ({100.0 * macs / (pes * npu):.1f}% end to end, a {r['dim']}x{r['dim']} array)")
                 result(speedup >= 5.0,
                        f"GEMM {m}x{n}x{k} speedup end to end {speedup:.2f}x (gate 5x): the best CPU code (DOT8) "
                        f"{cpu:,} cycles ({macs / cpu:.2f} MACs a cycle), the NPU {npu:,}")
             elif r["kind"] == "N1":
                 m, k = int(r["m"]), int(r["k"])
                 macs, job, npu = int(r["job_macs"]), int(r["job_cycles"]), int(r["npu_cycles"])
+                pes = int(r["dim"]) ** 2
                 result(macs == m * k, f"N=1 {m}x1x{k} (K-split) utilization in the SoC, measured: "
-                       f"{100.0 * macs / (16 * job):.1f}% ({job:,} job cycles, {npu:,} end to end)")
+                       f"{100.0 * macs / (pes * job):.1f}% ({job:,} job cycles, {npu:,} end to end)")
             elif r["kind"] == "MNIST":
                 images, cpu, npu = int(r["images"]), int(r["cpu_cycles"]), int(r["npu_cycles"])
                 worst = int(r["worst_ratio_x1000"]) / 1000.0

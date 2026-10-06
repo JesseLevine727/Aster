@@ -17,6 +17,9 @@ clock.
 
 The PL is reached through /dev/mem: on this board's kernel, PL stores must be
 32-bit mmap slice assignments (ctypes and struct.pack_into stores fault).
+
+A design.json beside it (19.5: the Phase 19 SoC) gives the design's identity
+instead of 18.7's: its magic and its main memory's bytes.
 """
 import hashlib
 import json
@@ -28,6 +31,8 @@ import time
 
 BASE, SIZE = 0x40000000, 0x40000
 MAIN_BYTES, PAGE_BASE, PAGE_BYTES, CONSOLE, REGS = 0x20000, 0x20000, 0x4000, 0x30000, 0x3F000
+MAGIC = 0x41535452                               # "ASTR": 18.7's design
+NPU_CONFIG = None                                # 19.5: the NPU's configuration word (0x3F058), when given
 CLOCK_MHZ = 100.0
 
 
@@ -106,7 +111,7 @@ def run_program(pl, entry, image):
         word = struct.unpack_from("<I", data, offset)[0]
         if word:
             pl.write(offset, word)
-    for offset in range(0, len(data), 4096):     # spot-check the load
+    for offset in range(0, len(data), 4):        # check the load, every word (19.5: odd words too)
         if pl.read(offset) != struct.unpack_from("<I", data, offset)[0]:
             raise RuntimeError(f"{entry['name']}: image read-back mismatch at {offset:#x}")
     pl.write(REGS + 0x30, entry["tohost"])
@@ -155,14 +160,22 @@ def main():
     report = {"schema": "aster.18.7.board.v1", "status": "running", "board": os.uname().nodename,
               "kernel": os.uname().release, "programs": []}
     report_path = here / "report.json"
+    global MAIN_BYTES, MAGIC, NPU_CONFIG
+    if (here / "design.json").exists():
+        design = json.loads((here / "design.json").read_text())
+        MAIN_BYTES, MAGIC, NPU_CONFIG = design["main_bytes"], design["magic"], design.get("npu_config")
+        report["design"] = design
     try:
         report["bitstream_sha256"] = hashlib.sha256((here / "aster_core.bit").read_bytes()).hexdigest()
         report["clock"] = set_fclk0(CLOCK_MHZ)  # before the load, so the design starts on its clock
         program_pl(here / "aster_core.bit")
         pl = Mmio(BASE, SIZE)
         identity = {"magic": pl.read(REGS + 0x40), "clk_hz": pl.read(REGS + 0x44), "main_bytes": pl.read(REGS + 0x48)}
+        want = {"magic": MAGIC, "clk_hz": 100_000_000, "main_bytes": MAIN_BYTES}
+        if NPU_CONFIG is not None:
+            identity["npu_config"], want["npu_config"] = pl.read(REGS + 0x58), NPU_CONFIG
         report["identity"] = identity
-        if identity != {"magic": 0x41535452, "clk_hz": 100_000_000, "main_bytes": MAIN_BYTES}:
+        if identity != want:
             raise RuntimeError(f"wrong design identity {identity}")
         report["clock"]["measured_mhz"] = measure_clock(pl)
         for entry in manifest:

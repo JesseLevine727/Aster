@@ -1,9 +1,10 @@
 # Phase 19: high-utilization NPU and data movement
 
-Status: **in progress — milestone 19.4 (the Phase 19 SoC and the gates)
-complete, awaiting the owner's sign-off.** 19.0 (the NPU shell), 19.1 (the
-tile mapping), 19.2 (the K-split mapping) and 19.3 (direct convolution, with
-CIFAR's channels last) were signed off by the owner on 5 October 2026. The
+Status: **milestone 19.5 (the options and the board run) complete, awaiting
+the owner's sign-off; with it, Phase 19.**
+19.0 (the NPU shell), 19.1 (the tile mapping), 19.2 (the K-split mapping),
+19.3 (direct convolution, with CIFAR's channels last) and 19.4 (the Phase 19
+SoC and the gates) were signed off by the owner on 5 October 2026. The
 NPU specification [`npu.md`](npu.md) was approved by the owner on 5 October
 2026.
 The owner's four decisions of 5 October 2026 (platform,
@@ -809,6 +810,255 @@ pass. The 16-neuron kernel, made alongside the review, gained 15%.
 and the board run: the gate programs on the PYNQ-Z1 at 100 MHz, cycle for
 cycle as simulated, with `aster_board.py`'s board path taught the SoC.
 
+## Milestone 19.5: the options and the board run (5–6 October 2026)
+
+**Adoption rule** (owner decision, 5 October 2026, before any measurement;
+npu.md §4.6): an option is adopted when it is verified against the reference
+in the NPU shell in every memory mode, and:
+- it cuts the end-to-end cycles of at least one gate workload by at least
+  10%, and slows none;
+- the Phase 19 SoC with it still closes 10 ns in context within the 80% area
+  limit;
+- for 8×8 only: it is no worse than 4×4 in area per sustained MAC per cycle.
+  Area is the NPU's share of the device, LUTs/53,200 + flip-flops/106,400 +
+  block RAMs/140 + DSPs/220 (owner decision, 5 October 2026, before the 8×8
+  measurements).
+
+A rejected option is published with its measurements.
+
+**The options in the RTL.** Each is a parameter of the v2 NPU; 19.4's NPU is
+`A_STRIPS = 1, PORT_BYTES = 4, DIM = 4`, and those stay its defaults:
+- **`A_STRIPS = 2`, a second A strip buffer.**
+  - Each A bank gets a second RAM. While the array computes a strip from
+    one set, the loader loads the next strip into the other.
+  - The loader uses the cycles the C writer leaves on the memory port; the
+    writer comes first.
+  - A strip's last step goes to a new state, NEXT, which waits for that load
+    and then starts the next strip's tiles. The pipeline drains only at a
+    panel's end.
+- **`PORT_BYTES = 8`, a 64-bit memory port.**
+  - The loader reads aligned eight-byte units, and the buffers are eight
+    bytes wide; the array takes the half or the byte it needs.
+  - The writer still writes one C word a request, with the byte enables of
+    its half.
+  - In the SoC, main memory becomes 64 bits wide (the same 96 KiB and block
+    RAMs). The instruction cache, the data cache, the AMOs and the ARM side
+    each use their word's half.
+- **`DIM = 8`, the 8×8 array** (it needs eight-byte buffer words, so it is
+  built with the 64-bit port).
+  - Strips of eight rows and tiles of eight columns; K-split steps of eight k.
+  - The B buffer holds 4,096 entries of eight bytes (32 KiB), so a panel is
+    still floor(4096/K) groups and K still reaches 4,096.
+  - Output banks of 64; GEOMETRY reads 0x20200808.
+
+The SoC (`aster_npu_soc.sv`) takes them as `NPU_A_STRIPS`, `NPU_PORT_BYTES`
+and `NPU_DIM`, and since 19.5 defaults to the adopted configuration (below).
+Its register 0x3F058 reports the configuration.
+
+**Verification.**
+- **The NPU shell** (`make npu-options-tests`, in `make check`;
+  `scripts/npu_options.py`). Every option and combination is built:
+  - the second strip, the 64-bit port, both, 8×8, and all three;
+  - each passes, in every memory mode, random jobs with every coverage bin
+    and the 42 edge jobs;
+  - on the memories that answer on time, every job's JOB_CYCLES equals the
+    cycle model's;
+  - the adopted configuration runs 4 seeds a mode, the others 1.
+- **Coverage for the options:**
+  - the second strip: a load during compute, NEXT waiting, an abort and a
+    reset aimed at NEXT;
+  - the 64-bit port: C words written in each half, A and B starting in a
+    unit's upper half;
+  - 8×8: M, N, K and K-split K in every residue mod 8.
+- **Edge jobs added:** five that matter at 8×8. K = 4,096 over two panels;
+  two panels of two groups; a K-split with K mod 8 = 7; 17 rows and columns;
+  a tile of 2^17 MACs.
+- **The cycle model.** A new model in npu_model.h steps the engine's
+  sequencing a cycle at a time (`v2_job_cycles_stepped`).
+  - It equals 19.1's model by phases on 19.4's configuration: 20,000 random
+    jobs at both on-time latencies, 40,000 comparisons.
+    That check is in `make npu-tests`, which still runs 19.4's NPU with the
+    phase model.
+  - It follows the engine's own control, so for the options it locks the
+    timing against change rather than proving it independently (npu.md §9).
+- **Seed sweep.** Seeds 1–24 in all six modes on the second strip, both
+  options, and the adopted NPU: 432 runs, none with a wrong result.
+  - Three runs missed one coverage bin each: abort_next once, and the
+    generator's extent_past_2^32 twice.
+  - NEXT usually lasts a single cycle, and the shell cannot fire an abort
+    while it polls STATUS, so abort_next stays statistical.
+  - make check's fixed seeds hit every bin.
+- **The SoC** (`make npu-soc-tests`, now on the adopted SoC). All the gate
+  programs pass, with every NPU job, write, snoop and load checked. 18.7's
+  99 board programs run with every RVFI record as the CPU shell's.
+- **Planted bugs** (each in a copy of the engine, run through the shell; not
+  retained). 15 were planted, 5 per option:
+  - the second strip: the background load into the slot being read; NEXT not
+    waiting; the loader before the writer (caught as CYCLE_MISMATCH); the
+    load after next set up one strip early;
+  - the 64-bit port: swapped byte enables; the loader stepping a word; both
+    half selects; the last lane's width;
+  - 8×8: the row sum's last pair dropped; the K-split step count; the tail
+    mask; the C strip step; the MAC count truncated to 17 bits.
+
+  All are caught but one, an equivalent mutant: the strip's data selected by
+  the current slot instead of the registered one, which NEXT's cycle makes
+  identical. The 17-bit truncation as first written was also equivalent (a
+  cast's operand takes the cast's width). Rewritten, the edge jobs catch it
+  as COUNTER_MISMATCH. The watchdog review's own 10 mutants on the new paths
+  were all caught.
+
+**Measured** (the SoC, the NPU's cycles end to end, each option alone against
+19.4's NPU, and 8×8 against 4×4 with both other options; `make
+npu-soc-options` builds the SoC in each configuration and runs the gate
+programs, every check passing in each):
+
+| Configuration | GEMM 64³ | GEMM 96³ | GEMM 128×64×128 | MNIST, an image |
+| --- | ---: | ---: | ---: | ---: |
+| 19.4: 4×4, one strip, 32-bit | 18,990 | 60,670 | 72,654 | 10,309 |
+| A second A strip buffer | 17,654 (−7.0%) | 57,886 (−4.6%) | 67,910 (−6.5%) | 8,868 (**−14.0%**) |
+| A 64-bit port | 17,966 (−5.4%) | 58,366 (−3.8%) | 69,582 (−4.2%) | 7,028 (**−31.8%**) |
+| Both | 17,110 | 56,686 | 66,822 | 5,581 |
+| **8×8 with both (adopted)** | **5,342** (−68.8%) | **15,294** (−73.0%) | **17,766** (−73.4%) | **5,460** (−2.2%) |
+
+In the NPU shell (job cycles, the two-cycle memory), the N = 1 cases and
+the convolutions are no slower under any adopted option either. On the
+adopted NPU, 32×1×784 takes 3,409 cycles (19.4: 8,171) and 784×1×25 takes
+4,349 (9,634).
+
+**Timing and area.** The SoC with each option, in context
+([`results/phase19/npu-19.5`](results/phase19/npu-19.5/README.md)):
+
+| SoC | Setup slack | LUTs | Block RAM tiles | DSPs |
+| --- | ---: | ---: | ---: | ---: |
+| A second A strip buffer | +0.128 ns | 12,738 | 51 | 19 |
+| A 64-bit port | +0.247 ns | 12,909 | 51 | 19 |
+| Both | +0.183 ns | 13,005 | 59 | 19 |
+| 8×8 with both (the adopted SoC, below) | +0.221 ns | 21,520 | 79 | 19 |
+
+These are the final RTL's builds (`make fpga-aster-npu SOC_PARAMS=...`). The
+first builds of each option, before the review's fixes, met +0.262, +0.254,
++0.227 and +0.153 ns; placement moves the margin.
+
+The NPU alone, out of context:
+
+| NPU | Slack | LUTs | FFs | BRAM | DSPs |
+| --- | ---: | ---: | ---: | ---: | ---: |
+| 19.4 | +0.591 ns | 5,438 | 4,712 | 8 | 11 |
+| Second strip | +0.721 ns | 5,470 | 4,723 | 12 | 11 |
+| Both options | +0.455 ns | 5,905 | 4,789 | 20 | 11 |
+| 8×8 with both | +0.187 ns | 14,344 | 10,730 | 40 | 11 |
+
+(`make timing-fpga-npu2 NPU_GENERICS=... NPU_TAG=...`. With the second strip
+and a 32-bit two-cycle memory the NPU meets +0.720 ns; the 64-bit
+configurations have no such top, and the SoC's in-context builds time them.)
+
+The 8×8 array's 64 multipliers are LUTs (the DSP count stays 11). Its first
+run missed 10 ns by 0.521 ns, with two fixes:
+- **The writer's K-split row sum:** 17 levels, a row select and eight
+  partials summed in one cycle. The partials now go to the bank as pair
+  sums, so the writer adds four.
+- **A tile's MAC count:** the tile's columns, min(8, columns left), fed a
+  multiply in the same cycle. The count is now registered beside the columns
+  left.
+
+Neither changes a cycle.
+
+**The adoption:**
+- **The second A strip buffer: adopted.** The MLP is 14.0% faster, nothing
+  slower, +0.128 ns in context.
+- **The 64-bit port: adopted.** The MLP is 31.8% faster, nothing slower,
+  +0.247 ns.
+- **The 8×8 array: adopted.** Against 4×4 with both options, the GEMMs are
+  68.8–73.4% faster and the MLP 2.2%, with nothing slower and +0.221 ns in
+  context. Its area per sustained MAC per cycle is 0.706 / 57.2 = **0.0124**
+  against 4×4's 0.349 / 15.6 = 0.0223:
+  - sustained MACs per cycle are the three GEMM cases' MACs over their
+    end-to-end NPU cycles in the SoC;
+  - area is from the NPU-alone runs above.
+
+**The adopted SoC, in context** (`make fpga-aster-npu`, its defaults):
+- worst setup slack **+0.221 ns**, hold +0.024 ns;
+- no failing endpoint among 47,656; all 37,374 nets routed; no DRC error;
+- 21,520 LUTs (40.5%), 15,077 flip-flops (14.2%), 79 block-RAM tiles
+  (56.4%), 19 DSPs (8.6%).
+
+The worst path is the 64-bit main memory's AMO write data through its half
+select (10 levels).
+
+**The board run** (`make aster-npu-board`, 6 October 2026): **103/103 pass at
+100 MHz** (FCLK0 measured at 100.000 MHz).
+- The bitstream reports the SoC's identity (magic "ASTN", 96 KiB) and the
+  adopted configuration (0x080802).
+- 18.7's 99 board programs end as in the CPU shell, cycle for cycle.
+- The four gate programs end as the SoC's simulation ran them: tohost at the
+  same cycle with the same instructions, and the same console byte for byte.
+  The console's records carry the measured cycles, so the board's gate
+  numbers are the simulation's:
+
+| Gate (on the board) | Best CPU code (DOT8) | NPU, end to end | **Speedup** | **Utilization** |
+| --- | ---: | ---: | ---: | ---: |
+| GEMM 64×64×64 | 219,676 | 5,342 | **41.1×** | **78.4%** |
+| GEMM 96×96×96 | 714,621 | 15,294 | **46.7×** | **91.1%** |
+| GEMM 128×64×128 | 853,188 | 17,766 | **48.0×** | **92.8%** |
+| MNIST MLP (32 images) | 36,520 an image | 5,460 an image | **6.69×** over all, **6.65×** on the worst image | — |
+
+Utilization on 8×8 is JOB_MACS / (64 × JOB_CYCLES). The CPU's GEMM cycles
+moved by up to 8 from 19.4's (219,684 → 219,676; 714,614 → 714,621). The
+GEMM program now also prints the array's size, which shifted its code.
+
+**Review.** The watchdog review traced every new path in the engine and found
+no bug there. It re-derived the adoption numbers. It found:
+- **an RTL bug in the 64-bit main memory, fixed:** an ARM-side read of an
+  odd word returned the even word. The word's half select was registered
+  every cycle, but the read takes it three cycles later. The CPU and NPU
+  were unaffected; they take their answers at two. The SoC testbench and the
+  board script now read back every word of a loaded program;
+- the configuration of a bitstream was not checked: hence register 0x3F058,
+  compared on the board with the simulation's;
+- a flaky coverage bin (reset_next), the 40,000-job model comparison not in
+  the repository, bins and edges sized for 4×4, and a timing top that would
+  have timed a 64-bit NPU as 32-bit. All fixed.
+
+The second coherence abort now lands after 300 spins, not 1,500: the 8×8
+NPU finished the 64³ job before the old abort arrived.
+
+**Carried to Phase 20:** the second core, the shared fabric and the full
+workload matrix, on this NPU.
+
+## Phase 19 report
+
+Phase 19 set out to make the NPU useful on real shapes (phase17-plus.md
+§6). v1's 4×4 array reached 3.3% on a 64³ GEMM. Against the gates the owner
+declared before any measurement:
+
+| Gate (npu.md §7) | Target | Result (the adopted SoC, on the board at 100 MHz) |
+| --- | --- | --- |
+| GEMM utilization, 64³ / 96³ / 128×64×128 | ≥ 50% | 78.4% / 91.1% / 92.8% (8×8) |
+| GEMM speedup end to end vs the best CPU code (DOT8) | ≥ 5× | 41.1× / 46.7× / 48.0× |
+| MNIST MLP, batch one, per image | ≥ 2× | 6.65× (the worst image) |
+| N = 1 utilization, measured | published | 32×1×784: 11.5%; 784×1×25: 7.0% (8×8) |
+| Timing | 10 ns in context; the board at 100 MHz cycle for cycle | +0.221 ns; 103/103 on the board, cycle for cycle |
+| Area | ≤ 80% | 40.5% LUTs, 56.4% block RAMs, 8.6% DSPs |
+
+The path there, milestone by milestone, on the gate cases:
+
+| Milestone | What it added | 64³ GEMM | MNIST first layer |
+| --- | --- | ---: | ---: |
+| v1 (19.0's baseline) | a byte at a time, no reuse | 492,546 cycles (3.3%) | 132,226 cycles |
+| 19.1 | tiles: B panel, A strips, pipelined array, two output banks | 18,871 (86.8%) | 13,463 (as tiles, 11.6%) |
+| 19.2 | the K-split mapping for N = 1 | 18,871 | 8,171 (19.2%) |
+| 19.3 | A in two levels: direct convolution | 18,871 | 8,171 |
+| 19.4 | the SoC; the DOT8 baselines | 18,990 end to end (11.6×) | MLP 3.53× |
+| 19.5 | a second strip, a 64-bit port, 8×8 | 5,342 end to end (41.1×) | 3,409 (MLP 6.65×) |
+
+Every milestone was reviewed by a watchdog, and every bug the reviews found
+was fixed and is recorded in its milestone above. The NPU is checked against
+an independent reference in its own shell. The SoC is checked by a testbench
+that follows every NPU job, write, snoop and CPU load. The CPU in the SoC
+retires exactly the CPU shell's records. The board runs the gate programs as
+simulated.
+
 ## Milestones and gates
 
 | Milestone | Content | Exit gate |
@@ -831,7 +1081,8 @@ cycle as simulated, with `aster_board.py`'s board path taught the SoC.
   npu.md §9's 19.2 clarifications
 - [x] 19.3 as in the table above — complete (owner, 5 October 2026), with
   npu.md §9's 19.3 clarifications (CIFAR channels last for direct convolution)
-- [ ] 19.4 as in the table above
+- [x] 19.4 as in the table above — complete (owner, 5 October 2026), with
+  npu.md §9's 19.4 clarifications
 - [ ] 19.5 as in the table above
 
 ## Risks

@@ -1,5 +1,7 @@
-// The Phase 19 SoC (milestone 19.4; docs/npu.md §5.2): the Aster core with its
-// L1 caches and the v2 NPU (rtl/accelerator/aster_npu2*.sv) on 96 KiB of
+// The Phase 19 SoC (milestones 19.4-19.5; docs/npu.md §5.2): the Aster core
+// with its L1 caches and the v2 NPU (rtl/accelerator/aster_npu2*.sv; from
+// 19.5 an 8x8 array with two A strip buffers and a 64-bit memory port, the
+// options npu.md §4.6 adopted) on 96 KiB of
 // block-RAM main memory at 0x8000_0000 (the frozen memory point), with the
 // SoC register page the programs use — grown from the 18.7 board design
 // (aster_core_pynq.sv), driven the same way from the ARM side through an
@@ -34,13 +36,20 @@
 // is held in reset, else reads return 0xDEADBEEF and writes are dropped):
 //   0x00000-0x17FFF main memory (0x18000-0x1FFFF reads 0, writes dropped);
 //   0x20000-0x23FFF the register page;
+//   0x3F058 (19.5) the NPU's configuration: [7:0] A strip buffers, [15:8] its
+//   port's bytes, [23:16] its array's rows;
 //   0x30000-0x30FFF the console; 0x3F000 onwards the registers of 18.7's
 //   design (aster_core_pynq.sv), with the magic "ASTN" and 0x3F048 the main
 //   memory's bytes (96 KiB). The NPU and the core share the reset the CONTROL
 //   register's run bit releases.
 `timescale 1 ns / 1 ps
 module aster_npu_soc #(
-    parameter int unsigned CLK_HZ = 100_000_000
+    parameter int unsigned CLK_HZ = 100_000_000,
+    // 19.5's options, all adopted (npu.md §4.6; 19.4's NPU: 1, 4, 4): the NPU's
+    // A strip buffers, its memory port (8: main memory 64 bits wide), its array.
+    parameter int          NPU_A_STRIPS = 2,
+    parameter int          NPU_PORT_BYTES = 8,
+    parameter int          NPU_DIM = 8
 ) (
     input  logic        aclk,
     input  logic        aresetn,
@@ -152,18 +161,21 @@ module aster_npu_soc #(
     logic [31:0] npu_r_rdata, npu_q2;
     logic        n_req_valid, n_req_ready, n_req_we, n_rsp_valid, n_accept, nv1, nv2;
     logic [31:2] n_req_addr;
-    logic [31:0] n_req_wdata;
+    logic [8*NPU_PORT_BYTES-1:0] n_req_wdata, n_rsp_rdata;
+    logic [NPU_PORT_BYTES-1:0]   n_req_be;
     logic        snoop_valid;
     logic [31:4] snoop_line;
     assign d_npu       = m_d_req_addr[31:12] == 20'h4_0000;
     assign npu_r_valid = d_accept && d_npu;
-    aster_npu2 #(.MEM_BASE(32'h8000_0000), .MEM_BYTES(32'(MAIN_WORDS * 4)), .OUTSTANDING(2)) npu (
+    aster_npu2 #(.MEM_BASE(32'h8000_0000), .MEM_BYTES(32'(MAIN_WORDS * 4)), .OUTSTANDING(2),
+                 .A_STRIPS(NPU_A_STRIPS), .PORT_BYTES(NPU_PORT_BYTES), .DIM(NPU_DIM)) npu (
         .clk(aclk), .resetn(core_rst_n),
         .r_req_valid(npu_r_valid), .r_req_ready(npu_r_ready), .r_req_write(m_d_req_op == OP_STORE),
         .r_req_addr(m_d_req_addr[11:0]), .r_req_wdata(m_d_req_wdata), .r_req_be(m_d_req_be),
         .r_rsp_valid(npu_r_rsp_valid), .r_rsp_rdata(npu_r_rdata), .r_rsp_error(npu_r_rsp_error),
         .m_req_valid(n_req_valid), .m_req_ready(n_req_ready), .m_req_addr(n_req_addr), .m_req_we(n_req_we),
-        .m_req_wdata(n_req_wdata), .m_rsp_valid(n_rsp_valid), .m_rsp_rdata(b_q2), .m_rsp_error(1'b0),
+        .m_req_wdata(n_req_wdata), .m_req_be(n_req_be), .m_rsp_valid(n_rsp_valid), .m_rsp_rdata(n_rsp_rdata),
+        .m_rsp_error(1'b0),
         .irq(npu_irq)
     );
     // Port B is the NPU's in a cycle the data cache does not take it and no AMO holds it.
@@ -182,31 +194,73 @@ module aster_npu_soc #(
     end
 
     // ---- main memory: port A the instruction side, port B the data side, the NPU or the ARM side ----
-    (* ram_style = "block" *) logic [31:0] main_ram [MAIN_WORDS];
-    logic [31:0] a_q, a_q2;
+    // Port B's request this cycle (b_*: a word): the data cache's, an AMO's
+    // write, the NPU's, or the ARM side's. With a 64-bit NPU port (19.5) main
+    // memory is 64 bits wide: each word request uses its half (word index bit
+    // 0), the NPU its whole unit with its byte enables (n_req_be). mb_*: port
+    // B's write as a 64-bit unit, either way (for the testbench).
+    logic        b_en, b_we;
+    logic [3:0]  b_be;
+    logic [14:0] b_idx;
+    logic [31:0] b_wdata, b_q2;
+    logic        b_npu;                               // the NPU's access (its whole unit)
+    logic        mb_we;
+    logic [7:0]  mb_be;
+    logic [13:0] mb_unit;
+    logic [63:0] mb_wdata;
     logic        i_v1, i_v2;
     always_ff @(posedge aclk) begin
-        if (m_i_req_valid) a_q <= main_ram[m_i_req_addr[16:2]];
-        a_q2 <= a_q;
         i_v1 <= core_rst_n && m_i_req_valid;
         i_v2 <= core_rst_n && i_v1;
     end
     assign m_i_rsp_valid = i_v2;
-    assign m_i_rsp_data  = a_q2;
-
-    // Port B's request this cycle: the data cache's, an AMO's write, or the ARM side's.
-    logic        b_en, b_we;
-    logic [3:0]  b_be;
-    logic [14:0] b_idx;
-    logic [31:0] b_wdata, b_q, b_q2;
-    always_ff @(posedge aclk) begin
-        if (b_en) begin
-            for (int lane = 0; lane < 4; lane++)
-                if (b_we && b_be[lane]) main_ram[b_idx][8*lane +: 8] <= b_wdata[8*lane +: 8];
-            b_q <= main_ram[b_idx];
+    generate if (NPU_PORT_BYTES == 8) begin : main64
+        (* ram_style = "block" *) logic [63:0] main_ram [MAIN_WORDS / 2];
+        logic [63:0] a_q, a_q2, b_q, b_q64;
+        logic        a_sel1, a_sel2, b_sel1, b_sel2;  // the word's half, with its answer
+        logic [7:0]  be8;
+        logic [63:0] wdata64;
+        assign be8     = b_npu ? 8'(n_req_be) : b_idx[0] ? {b_be, 4'h0} : {4'h0, b_be};
+        assign wdata64 = b_npu ? 64'(n_req_wdata) : {b_wdata, b_wdata};
+        always_ff @(posedge aclk) begin
+            if (m_i_req_valid) a_q <= main_ram[m_i_req_addr[16:3]];
+            a_sel1 <= m_i_req_addr[2];
+            a_q2   <= a_q;
+            a_sel2 <= a_sel1;
+            if (b_en) begin
+                for (int lane = 0; lane < 8; lane++)
+                    if (b_we && be8[lane]) main_ram[b_idx[14:1]][8*lane +: 8] <= wdata64[8*lane +: 8];
+                b_q    <= main_ram[b_idx[14:1]];
+                b_sel1 <= b_idx[0];                   // (with b_q: an ARM-side read takes it later)
+            end
+            b_q64  <= b_q;
+            b_sel2 <= b_sel1;
         end
-        b_q2 <= b_q;
-    end
+        assign m_i_rsp_data = a_sel2 ? a_q2[63:32] : a_q2[31:0];
+        assign b_q2         = b_sel2 ? b_q64[63:32] : b_q64[31:0];
+        assign n_rsp_rdata  = (8 * NPU_PORT_BYTES)'(b_q64);
+        assign mb_be        = be8;
+        assign mb_wdata     = wdata64;
+    end else begin : main32
+        (* ram_style = "block" *) logic [31:0] main_ram [MAIN_WORDS];
+        logic [31:0] a_q, a_q2, b_q;
+        always_ff @(posedge aclk) begin
+            if (m_i_req_valid) a_q <= main_ram[m_i_req_addr[16:2]];
+            a_q2 <= a_q;
+            if (b_en) begin
+                for (int lane = 0; lane < 4; lane++)
+                    if (b_we && b_be[lane]) main_ram[b_idx][8*lane +: 8] <= b_wdata[8*lane +: 8];
+                b_q <= main_ram[b_idx];
+            end
+            b_q2 <= b_q;
+        end
+        assign m_i_rsp_data = a_q2;
+        assign n_rsp_rdata  = (8 * NPU_PORT_BYTES)'(b_q2);
+        assign mb_be        = b_idx[0] ? {b_be, 4'h0} : {4'h0, b_be};
+        assign mb_wdata     = {b_wdata, b_wdata};
+    end endgenerate
+    assign mb_we   = b_en && b_we;
+    assign mb_unit = b_idx[14:1];
 
     // ---- the register page ----
     (* ram_style = "block" *) logic [31:0] page_ram [PAGE_WORDS];
@@ -307,7 +361,7 @@ module aster_npu_soc #(
 
     // Port B and the page: the data side while running, the ARM side while held.
     always_comb begin
-        b_en = 1'b0; b_we = 1'b0; b_be = 4'h0; b_idx = '0; b_wdata = '0;
+        b_en = 1'b0; b_we = 1'b0; b_be = 4'h0; b_idx = '0; b_wdata = '0; b_npu = 1'b0;
         p_en = 1'b0; p_we = 1'b0; p_be = 4'h0; p_idx = '0; p_wdata = '0;
         if (run) begin
             if (amo_write) begin
@@ -319,7 +373,8 @@ module aster_npu_soc #(
                 b_idx = m_d_req_addr[16:2];
                 b_wdata = m_d_req_wdata;
             end else if (n_accept) begin
-                b_en = 1'b1; b_we = n_req_we; b_be = 4'hF; b_idx = n_req_addr[16:2]; b_wdata = n_req_wdata;
+                b_en = 1'b1; b_we = n_req_we; b_be = 4'hF; b_idx = n_req_addr[16:2]; b_wdata = n_req_wdata[31:0];
+                b_npu = NPU_PORT_BYTES == 8;
             end
             if (d_accept && !d_main && !d_npu) begin
                 p_en = 1'b1; p_we = m_d_req_op == OP_STORE; p_be = m_d_req_be;
@@ -393,7 +448,7 @@ module aster_npu_soc #(
     end
 
     logic unused;                          // address bits no decode needs
-    assign unused = ^{s_axi_awaddr[1:0], m_i_req_addr[31:17], rvfi_mem_addr[1:0], npu_r_ready, npu_r_rsp_valid,
+    assign unused = ^{n_req_be, b_npu, mb_we, mb_be, mb_unit, mb_wdata, s_axi_awaddr[1:0], m_i_req_addr[31:17], rvfi_mem_addr[1:0], npu_r_ready, npu_r_rsp_valid,
                       n_req_addr[31:17]};
 
     always_comb begin
@@ -419,6 +474,8 @@ module aster_npu_soc #(
             18'h3F04C: reg_rdata = {28'b0, tohost_mask};
             18'h3F050: reg_rdata = tohost_retired[31:0];
             18'h3F054: reg_rdata = tohost_retired[63:32];
+            // 19.5: the NPU's configuration, {DIM, PORT_BYTES, A_STRIPS} a byte each.
+            18'h3F058: reg_rdata = {8'b0, 8'(NPU_DIM), 8'(NPU_PORT_BYTES), 8'(NPU_A_STRIPS)};
             default:   reg_rdata = 32'b0;
         endcase
     end

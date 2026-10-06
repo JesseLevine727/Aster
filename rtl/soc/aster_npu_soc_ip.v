@@ -5,7 +5,10 @@
 // FREQ_HZ is fixed here (the block design will not let the build override it):
 // 100 MHz, FCLK0.
 module aster_npu_soc_ip #(
-    parameter integer CLK_HZ = 100000000
+    parameter integer CLK_HZ = 100000000,
+    parameter integer NPU_A_STRIPS = 2,                // 19.5's options, as adopted (aster_npu_soc.sv)
+    parameter integer NPU_PORT_BYTES = 8,
+    parameter integer NPU_DIM = 8
 ) (
     (* X_INTERFACE_INFO = "xilinx.com:signal:clock:1.0 aclk CLK",
        X_INTERFACE_PARAMETER = "ASSOCIATED_BUSIF s_axi, ASSOCIATED_RESET aresetn, FREQ_HZ 100000000" *)
@@ -49,7 +52,7 @@ module aster_npu_soc_ip #(
     (* X_INTERFACE_INFO = "xilinx.com:interface:aximm:1.0 s_axi RREADY" *)
     input wire s_axi_rready
 );
-    aster_npu_soc #(.CLK_HZ(CLK_HZ)) implementation (
+    aster_npu_soc #(.CLK_HZ(CLK_HZ), .NPU_A_STRIPS(NPU_A_STRIPS), .NPU_PORT_BYTES(NPU_PORT_BYTES), .NPU_DIM(NPU_DIM)) implementation (
         .aclk(aclk), .aresetn(aresetn),
         .s_axi_awaddr(s_axi_awaddr), .s_axi_awvalid(s_axi_awvalid), .s_axi_awready(s_axi_awready),
         .s_axi_wdata(s_axi_wdata), .s_axi_wstrb(s_axi_wstrb),

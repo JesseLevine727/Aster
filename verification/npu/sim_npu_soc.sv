@@ -11,7 +11,11 @@
 // - the core's RVFI record, as the CPU shell's (shell_aster_ports.sv) presents
 //   it, for the testbench's trace.
 `timescale 1 ns / 1 ps
-module sim_npu_soc (
+module sim_npu_soc #(
+    parameter int A_STRIPS = 2,                         // 19.5's options, as adopted (19.4's: 1, 4, 4)
+    parameter int PORT_BYTES = 8,
+    parameter int DIM = 8
+) (
     input  logic        aclk,
     input  logic        aresetn,
     input  logic [17:0] s_axi_awaddr,
@@ -32,10 +36,10 @@ module sim_npu_soc (
     output logic        s_axi_rvalid,
     input  logic        s_axi_rready,
     output logic        chk_run,
-    output logic        chk_b_en, chk_b_we,
-    output logic [3:0]  chk_b_be,
-    output logic [14:0] chk_b_idx,
-    output logic [31:0] chk_b_wdata,
+    output logic        chk_b_we,                      // port B's write as a 64-bit unit
+    output logic [7:0]  chk_b_be,
+    output logic [13:0] chk_b_unit,
+    output logic [63:0] chk_b_wdata,
     output logic        chk_p_en, chk_p_we,
     output logic [3:0]  chk_p_be,
     output logic [11:0] chk_p_idx,
@@ -47,6 +51,7 @@ module sim_npu_soc (
     output logic [1:0]  chk_mode,
     output logic        chk_n_accept, chk_n_we,
     output logic [31:2] chk_n_addr,
+    output logic [7:0]  chk_n_be,                      // the NPU's write: its lanes in its unit
     output logic        chk_d_main_accept,
     output logic        chk_snoop_valid,
     output logic [31:4] chk_snoop_line,
@@ -66,13 +71,14 @@ module sim_npu_soc (
     output logic [14:0] rvfi_csr_wvalid,
     output logic [14:0][31:0] rvfi_csr_wdata
 );
-    aster_npu_soc soc (
+    aster_npu_soc #(.NPU_A_STRIPS(A_STRIPS), .NPU_PORT_BYTES(PORT_BYTES), .NPU_DIM(DIM)) soc (
         .aclk, .aresetn, .s_axi_awaddr, .s_axi_awvalid, .s_axi_awready, .s_axi_wdata, .s_axi_wstrb, .s_axi_wvalid,
         .s_axi_wready, .s_axi_bresp, .s_axi_bvalid, .s_axi_bready, .s_axi_araddr, .s_axi_arvalid, .s_axi_arready,
         .s_axi_rdata, .s_axi_rresp, .s_axi_rvalid, .s_axi_rready
     );
     assign chk_run = soc.run;
-    assign {chk_b_en, chk_b_we, chk_b_be, chk_b_idx, chk_b_wdata} = {soc.b_en, soc.b_we, soc.b_be, soc.b_idx, soc.b_wdata};
+    assign {chk_b_we, chk_b_be, chk_b_unit, chk_b_wdata} = {soc.mb_we, soc.mb_be, soc.mb_unit, soc.mb_wdata};
+    assign chk_n_be = PORT_BYTES == 8 ? 8'(soc.n_req_be) : (soc.n_req_addr[2] ? 8'hF0 : 8'h0F);
     assign {chk_p_en, chk_p_we, chk_p_be, chk_p_idx, chk_p_wdata} = {soc.p_en, soc.p_we, soc.p_be, soc.p_idx, soc.p_wdata};
     assign chk_npu_start   = soc.npu.start;
     assign chk_npu_finish  = soc.npu.finish;

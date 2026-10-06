@@ -27,8 +27,9 @@
 // npu2_check_gemm, the NPU's at the job's end), and the NPU's here against the
 // CPU's (a checksum: the two do not fit side by side). One record a case, then
 // main returns 0:
-//   GEMM,m=..,n=..,k=..,cpu_cycles=..,npu_cycles=..,job_cycles=..,job_macs=..,status=PASS
-//   N1,m=..,n=1,k=..,npu_cycles=..,job_cycles=..,job_macs=..,status=PASS
+//   GEMM,m=..,n=..,k=..,cpu_cycles=..,npu_cycles=..,job_cycles=..,job_macs=..,dim=..,status=PASS
+//   N1,m=..,n=1,k=..,npu_cycles=..,job_cycles=..,job_macs=..,dim=..,status=PASS
+// (dim: the NPU's array, GEOMETRY's ROWS: 4, or 8 with 19.5's 8x8 option.)
 #include <stdint.h>
 #include "aster_npu2.h"
 #include "npu2_soc.h"
@@ -218,6 +219,7 @@ int main(void) {
         npu2_field("m", m); npu2_field("n", n); npu2_field("k", k);
         npu2_field("cpu_cycles", cpu_cycles); npu2_field("npu_cycles", npu_cycles);
         npu2_field("job_cycles", job_cycles); npu2_field("job_macs", job_macs);
+        npu2_field("dim", ASTER_NPU2_REG(ASTER_NPU2_GEOMETRY) & 0xFFu);
         npu2_puts(pass ? ",status=PASS\n" : ",status=FAIL\n");
         if (!pass) return (int)(t + 2);
     }
@@ -235,6 +237,7 @@ int main(void) {
         npu2_puts("N1");
         npu2_field("m", m); npu2_field("n", 1); npu2_field("k", k);
         npu2_field("npu_cycles", npu_cycles); npu2_field("job_cycles", job_cycles); npu2_field("job_macs", job_macs);
+        npu2_field("dim", ASTER_NPU2_REG(ASTER_NPU2_GEOMETRY) & 0xFFu);
         npu2_puts(pass ? ",status=PASS\n" : ",status=FAIL\n");
         if (!pass) return (int)(t + 10);
     }

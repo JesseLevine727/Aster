@@ -46,17 +46,20 @@ module shell_npu_v1 (
     input  logic        m_req_ready,
     output logic [31:2] m_req_addr,
     output logic        m_req_we,
-    output logic [31:0] m_req_wdata,
-    output logic [3:0]  m_req_be,
+    output logic [63:0] m_req_wdata,                   // the shell's port is 64 bits wide (19.5);
+    output logic [7:0]  m_req_be,                      // v1 uses its low half
     input  logic        m_rsp_valid,
-    input  logic [31:0] m_rsp_rdata,
+    input  logic [63:0] m_rsp_rdata,
     input  logic        m_rsp_error,
     output logic        irq,
     output logic        chk_busy,
     output logic        chk_done,
     output logic        chk_counting,
     output logic [3:0]  chk_state,
-    output logic [1:0]  chk_abi
+    output logic [1:0]  chk_abi,
+    output logic [1:0]  chk_strips,
+    output logic [3:0]  chk_port_bytes,
+    output logic [3:0]  chk_dim
 );
     logic        v1_valid, v1_write, v1_ready;
     logic [31:0] v1_addr, v1_wdata, v1_rdata, reg_rdata;
@@ -85,6 +88,9 @@ module shell_npu_v1 (
     assign chk_state = 4'd0;                          // (ABI 2's engine state; v1 has none)
     assign chk_counting = 1'b0;                       // v1's counting is not exposed
     assign chk_abi     = 2'd1;
+    assign chk_strips  = 2'd1;
+    assign chk_port_bytes = 4'd4;
+    assign chk_dim        = 4'd4;
     always_ff @(posedge clk) begin
         if (!resetn) begin
             r_rsp_valid <= 1'b0;
@@ -105,13 +111,13 @@ module shell_npu_v1 (
         m_req_valid = v1_valid && !waiting;
         m_req_addr  = v1_addr[31:2];
         m_req_we    = v1_write;
-        m_req_wdata = v1_wdata;
-        m_req_be    = v1_write ? v1_wstrb : 4'hF;
+        m_req_wdata = {32'b0, v1_wdata};
+        m_req_be    = {4'b0, v1_write ? v1_wstrb : 4'hF};
         if (selftest == 4'd2 && v1_write && !first_write_done) m_req_addr = v1_addr[31:2] + 30'd1;
         if (selftest == 4'd5 && held) m_req_addr = held_addr + 30'd1;
     end
     assign v1_ready = (waiting && !posted && m_rsp_valid) || (selftest == 4'd4 && accept && v1_write);
-    assign v1_rdata = m_rsp_rdata;
+    assign v1_rdata = m_rsp_rdata[31:0];
     always_ff @(posedge clk) begin
         if (!resetn) begin
             waiting <= 1'b0; posted <= 1'b0; first_write_done <= 1'b0; held <= 1'b0; held_addr <= '0;
@@ -136,6 +142,6 @@ module shell_npu_v1 (
     assign chk_done = done || error || aborted;
 
     logic unused;
-    assign unused = m_rsp_error ^ (^v1_addr[1:0]) ^ (^status) ^ (^error_code) ^ (^bytes_read) ^ (^bytes_written) ^ (^tiles)
+    assign unused = m_rsp_error ^ (^m_rsp_rdata[63:32]) ^ (^v1_addr[1:0]) ^ (^status) ^ (^error_code) ^ (^bytes_read) ^ (^bytes_written) ^ (^tiles)
                     ^ (^job_cycles) ^ (^compute_cycles);
 endmodule

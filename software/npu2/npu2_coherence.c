@@ -208,7 +208,7 @@ int main(void) {
         }
         if (index == 140u) reservation = (uint32_t)reservation_test();
         if (index == 80u || index == 120u)
-            aborts += (uint32_t)aborted_job(2000u + index, index == 80u ? 50u : 1500u);
+            aborts += (uint32_t)aborted_job(2000u + index, index == 80u ? 50u : 300u);   // (mid-job on 8x8 too)
     }
     if (counter != counter_adds || counter_adds == 0) fail("amo_counter", counter);
     const int pass = failures == 0 && jobs == JOBS && errors == 2u && aborts == 2u && reservation == 1u;

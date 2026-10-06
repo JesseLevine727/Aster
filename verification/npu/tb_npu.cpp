@@ -158,7 +158,9 @@ public:
         for (int i = 0; i < length; ++i) tick();
         d.resetn = 1;
         port.owed.clear();              // answers owed to the reset DUT are dropped
+        high_owed.clear();
         stable = shell::StableCheck{};
+        stable_high = shell::StableCheck{};
         error_cycle = error_next = false;
         totals = JobCounters{};
         total_jobs = 0;
@@ -168,16 +170,23 @@ public:
     // the edge, then the accepted request performed.
     void tick() {
         d.m_rsp_valid = port.responding();
-        d.m_rsp_rdata = port.responding() ? port.owed.front().data : std::uint32_t(garbage());
+        // The port is 64 bits wide (19.5); a 32-bit NPU uses the low half. The
+        // high halves owed ride beside the port's queue.
+        d.m_rsp_rdata = port.responding() ? (std::uint64_t(high_owed.front()) << 32) | port.owed.front().data
+                                          : (std::uint64_t(garbage()) << 32) | std::uint32_t(garbage());
         d.m_rsp_error = error_cycle ? error_next : garbage() & 1u;
         d.m_req_ready = port.remaining() < max_inflight && !(stall && stall_rng() % 4 == 0);
         d.clk = 0;
         d.eval();
         const bool in_reset = !d.resetn;
         const std::uint32_t addr = std::uint32_t(d.m_req_addr) << 2;
-        const std::string violation = in_reset ? "" :
+        std::string violation = in_reset ? "" :
             stable.cycle({bool(d.m_req_valid), addr, d.m_req_we ? 1 : 0, std::uint32_t(d.m_req_wdata),
                           std::uint32_t(d.m_req_be)}, d.m_req_ready, false);
+        if (violation.empty() && !in_reset)
+            violation = stable_high.cycle({bool(d.m_req_valid), addr, d.m_req_we ? 1 : 0,
+                                           std::uint32_t(d.m_req_wdata >> 32), std::uint32_t(d.m_req_be) >> 4},
+                                          d.m_req_ready, false);
         if (!violation.empty()) fail("REQ_UNSTABLE", "memory request " + violation);
         if (!in_reset && d.chk_busy) ++busy_cycles;
         if (!in_reset && d.chk_busy && d.irq) fail("STATUS_MISMATCH", "irq high while busy");
@@ -188,10 +197,20 @@ public:
         else if (!in_reset && !d.chk_busy && (!port.owed.empty() || d.m_req_valid))
             fail("IDLE_ACCESS", "a memory request presented or an answer owed while not busy");
         const bool accept = !in_reset && d.m_req_valid && d.m_req_ready;
+        // Two strip buffers (19.5): a strip's load while the array computes the
+        // one before (a read in TILES), and NEXT waiting for that load.
+        if (p.a_strips == 2 && !in_reset) {
+            if (accept && !d.m_req_we && d.chk_state == 5u) covered.insert("strip_overlap");
+            if (d.chk_state == 9u && previous_state == 9u) covered.insert("next_wait");
+            previous_state = d.chk_state;
+        }
+        // The 64-bit port (19.5): C words written in each half of a port word.
+        if (p.port_bytes == 8 && accept && d.m_req_we)
+            covered.insert((d.m_req_addr & 1u) ? "write_high_half" : "write_low_half");
         if (accept && port.remaining() + 1 > p.max_in_flight)
             fail("INFLIGHT", "a request accepted with " + dec(port.remaining()) + " unanswered (at most " +
                  dec(p.max_in_flight) + " in flight)");
-        std::uint32_t rdata = std::uint32_t(garbage());
+        std::uint64_t rdata = (std::uint64_t(garbage()) << 32) | std::uint32_t(garbage());
         bool error = false;
         if (accept) rdata = perform(addr, error);
         reg_accepted = d.r_req_valid && d.r_req_ready;
@@ -202,12 +221,14 @@ public:
         d.clk = 1;
         d.eval();
         ++cycles;
+        if (port.responding()) high_owed.pop_front();
         port.advance();
         error_cycle = accept;
         error_next = error;
         if (accept) {
             const int extra = stall ? int(stall_rng() % 3) + (long_stall && stall_rng() % 16 == 0 ? 16 + int(stall_rng() % 48) : 0) : 0;
-            port.accept(latency, extra, rdata, error);
+            port.accept(latency, extra, std::uint32_t(rdata), error);
+            high_owed.push_back(std::uint32_t(rdata >> 32));
         }
     }
 
@@ -250,7 +271,10 @@ public:
     // GEOMETRY.
     void sweep(const char* when) {
         for (std::uint32_t offset = 0; offset < 0x1000; offset += 4) {
-            const std::uint32_t want = offset == ABI ? 2u : offset == GEOMETRY ? 0x10100404u : 0u;
+            const std::uint32_t want = offset == ABI ? 2u
+                                     : offset == GEOMETRY ? std::uint32_t(4 * p.dim) << 24 | std::uint32_t(4 * p.dim) << 16
+                                                            | std::uint32_t(p.dim) << 8 | std::uint32_t(p.dim)
+                                     : 0u;
             if (const std::uint32_t got = reg(false, offset); got != want)
                 fail("STATUS_MISMATCH", "register " + hex(offset) + " reads " + hex(got) + " " + when);
         }
@@ -295,10 +319,10 @@ public:
         if (kind == Kind::BadControl) return bad_control();
         write_descriptor(j);
         const std::uint64_t accesses = p.abi == 1 ? npu::v1_counters(j).bytes_read + npu::v1_counters(j).bytes_written
-                                                  : npu::v2_words_read(j) + std::uint64_t(j.m) * j.n;
+                                                  : npu::v2_words_read(j, p.port_bytes, p.dim) + std::uint64_t(j.m) * j.n;
         // When to abort or reset: within the job — for ABI 2 its length on the
         // memory that answers on time (the cycle model; stalls only lengthen it).
-        const std::uint64_t estimate = p.abi == 2 ? npu::v2_job_cycles(p, j, latency) + 4
+        const std::uint64_t estimate = p.abi == 2 ? npu::v2_model_cycles(p, j, latency) + 4
                                                   : accesses * (latency + 2) + 64;
         busy_cycles = reads_accepted = lanes_written = writes_accepted = accesses_seen = 0;
         std::fill(written.begin(), written.end(), 0);
@@ -311,25 +335,36 @@ public:
         const std::uint64_t reset_at = started + rng() % (estimate + 1);
         bool aborted_sent = false, was_reset = false;
         // ABI 2 aims each abort or reset at a phase of the job (the engine's
-        // state, chk_state: 1 CHECK, 3 LOAD, 5 TILES; 2, 4, 6, 7 between) and
+        // state, chk_state: 1 CHECK, 3 LOAD, 5 TILES; 2, 4, 6, 7, 9 between) and
         // fires in it, at random, or else at the drawn cycle.
-        const unsigned target = p.abi != 2 ? 0 : kind == Kind::Abort ? rng() % 5 : kind == Kind::Reset ? rng() % 3 : 0;
+        // Two strip buffers: NEXT (9) as a fifth phase for aborts and a fourth for resets.
+        // 19.5's configurations fire an aimed abort or reset in its phase's first
+        // cycle (their phases can be short); 19.4's keeps its draw.
+        const bool first_cycle = p.a_strips == 2 || p.port_bytes == 8 || p.dim == 8;
+        const unsigned phases = p.a_strips == 2 ? 1 : 0;
+        const unsigned target = p.abi != 2 ? 0 : kind == Kind::Abort ? rng() % (5 + phases)
+                              : kind == Kind::Reset ? rng() % (3 + phases) : 0;
         auto in_phase = [&](unsigned aim) {
             const unsigned state = d.chk_state;
             switch (aim) {
                 case 1: return state == 1u;
                 case 2: return state == 3u;
                 case 3: return state == 5u;
-                case 4: return state == 2u || state == 4u || state == 6u || state == 7u;
+                case 4: return state == 2u || state == 4u || state == 6u || state == 7u || state == 9u;
+                case 5: return state == 9u;
                 default: return false;
             }
         };
         auto fire_abort = [&]() {
             return job_error ? cycles >= abort_at || in_phase(1) && rng() % 4 == 0
+                 : target == 5 || (target && first_cycle) ? in_phase(target)
                  : target ? in_phase(target) && rng() % 4 == 0 : cycles >= abort_at;
         };
         auto fire_reset = [&]() {
-            return target ? in_phase(target + 1) && rng() % 4 == 0 : cycles >= reset_at;   // 2 LOAD, 3 TILES
+            // (NEXT, often a single cycle: its first, so the bin is certain)
+            return target == 3 ? in_phase(5) : target && first_cycle ? in_phase(target + 1)
+                               : target ? in_phase(target + 1) && rng() % 4 == 0   // 2 LOAD, 3 TILES
+                               : cycles >= reset_at;
         };
         bool busy_during_writes = false;
         if (kind == Kind::BusyWrites) {
@@ -385,6 +420,7 @@ public:
             covered.insert("abort");
             if (p.abi == 2) covered.insert(abort_phase == 1 ? "abort_check" : abort_phase == 3 ? "abort_load"
                                           : abort_phase == 5 ? "abort_tiles" : "abort_between");
+            if (p.a_strips == 2 && abort_phase == 9) covered.insert("abort_next");
         }
         if (kind == Kind::AbortAfterEnd && !aborted) covered.insert("abort_after_end");
         // A memory error ends the job with error 6, unless it ended first.
@@ -415,14 +451,14 @@ public:
         if (c.cycles != busy_cycles || c.cycles != measured)
             fail("COUNTER_MISMATCH", "JOB_CYCLES " + dec(c.cycles) + ", the shell saw " + dec(busy_cycles) +
                  " busy cycles and " + dec(measured) + " from START to the end");
-        const std::uint64_t want_read = p.abi == 1 ? reads_accepted : 4 * reads_accepted;
+        const std::uint64_t want_read = p.abi == 1 ? reads_accepted : p.port_bytes * reads_accepted;
         const std::uint64_t want_written = p.abi == 1 ? lanes_written : 4 * writes_accepted;
         if (c.read != want_read || c.written != want_written)
             fail("COUNTER_MISMATCH", "bytes read/written " + dec(c.read) + "/" + dec(c.written) + ", the shell accepted " +
                  dec(want_read) + "/" + dec(want_written));
         check_job_counters(j, c, error != 0, aborted || bus_error);
         if (cycle_check && p.abi == 2 && !aborted && !bus_error) {
-            const std::uint64_t model = npu::v2_job_cycles(p, j, latency);
+            const std::uint64_t model = npu::v2_model_cycles(p, j, latency);
             if (c.cycles != model)
                 fail("CYCLE_MISMATCH", "JOB_CYCLES " + dec(c.cycles) + ", the cycle model's " + dec(model));
             else covered.insert("cycle_model");
@@ -474,24 +510,25 @@ private:
 
     void check_job_counters(const npu::Job& j, const JobCounters& c, bool descriptor_error, bool partial) {
         JobCounters want;
-        const std::uint64_t tiles = j.m && j.n ? std::uint64_t((j.m + 3) / 4) * ((j.n + 3) / 4) : 0;
+        const std::uint64_t dim = p.dim;
+        const std::uint64_t tiles = j.m && j.n ? std::uint64_t((j.m + dim - 1) / dim) * ((j.n + dim - 1) / dim) : 0;
         if (!descriptor_error) {
             if (p.abi == 1) {
                 const npu::Counters v1 = npu::v1_counters(j);
                 want.read = v1.bytes_read; want.written = v1.bytes_written; want.active = v1.compute_cycles;
                 want.tiles = v1.tiles;
             } else if (npu::v2_ksplit(j)) {      // a strip of ceil(K/4) steps, one word a row
-                const std::uint64_t strips = j.m && j.n ? (j.m + 3) / 4 : 0;
+                const std::uint64_t strips = j.m && j.n ? (j.m + dim - 1) / dim : 0;
                 want.macs = std::uint64_t(j.m) * j.n * j.k;
                 want.tiles = strips;
-                want.active = std::uint64_t((j.k + 3) / 4) * strips;
-                want.read = 4 * npu::v2_words_read(j);
+                want.active = std::uint64_t((j.k + dim - 1) / dim) * strips;
+                want.read = p.port_bytes * npu::v2_words_read(j, p.port_bytes, p.dim);
                 want.written = 4ull * j.m * j.n;
             } else {
                 want.macs = std::uint64_t(j.m) * j.n * j.k;
                 want.tiles = tiles;
                 want.active = std::uint64_t(j.k) * tiles;
-                want.read = 4 * npu::v2_words_read(j);
+                want.read = p.port_bytes * npu::v2_words_read(j, p.port_bytes, p.dim);
                 want.written = 4ull * j.m * j.n;
             }
         }
@@ -518,8 +555,13 @@ private:
                  dec(totals.read) + "/" + dec(totals.written));
     }
 
-    std::uint32_t perform(std::uint32_t addr, bool& error) {
-        if (!memory.contains(addr, 4)) {
+    // One accepted request: a read of the aligned port word (p.port_bytes:
+    // 4, or 8 with 19.5's 64-bit port) at addr, or a write of the lanes its byte
+    // enables select in the port word containing addr.
+    std::uint64_t perform(std::uint32_t addr, bool& error) {
+        const std::uint32_t pb = std::uint32_t(p.port_bytes), unit = addr & ~(pb - 1);
+        auto noise = [&]() { return (std::uint64_t(garbage()) << 32) | std::uint32_t(garbage()); };
+        if (!memory.contains(unit, pb)) {
             fail("OUT_OF_WINDOW", "access at " + hex(addr));
             error = true;
             return 0;
@@ -530,29 +572,33 @@ private:
             injected = true;
             injected_write = d.m_req_we;
             ++(d.m_req_we ? writes_accepted : reads_accepted);
-            return std::uint32_t(garbage());
+            return noise();
         }
         if (d.m_req_we) {
-            if (p.abi == 2 && d.m_req_be != 0xF) fail("PARTIAL_WRITE", "write to " + hex(addr) + " not a whole word");
+            const std::uint32_t want_be = p.abi == 2 ? 0xFu << (addr & (pb - 1)) : 0xFu;
+            if (p.abi == 2 && std::uint32_t(d.m_req_be) != want_be)
+                fail("PARTIAL_WRITE", "write to " + hex(addr) + " not its whole word (byte enables " +
+                     hex(std::uint32_t(d.m_req_be)) + ")");
             ++writes_accepted;
-            for (int lane = 0; lane < 4; ++lane) {
+            for (std::uint32_t lane = 0; lane < pb; ++lane) {
                 if (!((d.m_req_be >> lane) & 1u)) continue;
-                if (!job || !npu::in_c(*job, addr + lane))
-                    fail("STRAY_WRITE", "write to " + hex(addr + lane) + ", not a byte of C");
-                std::uint8_t& mark = written[addr + lane - memory.base];
-                if (mark) fail("DOUBLE_WRITE", "C byte " + hex(addr + lane) + " written twice");
+                if (!job || !npu::in_c(*job, unit + lane))
+                    fail("STRAY_WRITE", "write to " + hex(unit + lane) + ", not a byte of C");
+                std::uint8_t& mark = written[unit + lane - memory.base];
+                if (mark) fail("DOUBLE_WRITE", "C byte " + hex(unit + lane) + " written twice");
                 mark = 1;
                 ++lanes_written;
-                memory.at(addr + lane) = std::uint8_t(std::uint32_t(d.m_req_wdata) >> (8 * lane));
+                memory.at(unit + lane) = std::uint8_t(d.m_req_wdata >> (8 * lane));
             }
-            return std::uint32_t(garbage());
+            return noise();
         }
-        if (!job || !(npu::overlap({addr, addr + 4ull}, npu::region_a(*job))
-                      || npu::overlap({addr, addr + 4ull}, npu::region_b(*job))))
-            fail("STRAY_READ", "read of " + hex(addr) + ", outside A and B");
+        if (addr != unit) fail("MISALIGNED_READ", "read at " + hex(addr) + ", not its port word's first byte");
+        if (!job || !(npu::overlap({unit, unit + std::uint64_t(pb)}, npu::region_a(*job))
+                      || npu::overlap({unit, unit + std::uint64_t(pb)}, npu::region_b(*job))))
+            fail("STRAY_READ", "read of " + hex(unit) + ", outside A and B");
         ++reads_accepted;
-        std::uint32_t word = 0;
-        for (int lane = 0; lane < 4; ++lane) word |= std::uint32_t(memory.at(addr + lane)) << (8 * lane);
+        std::uint64_t word = 0;
+        for (std::uint32_t lane = 0; lane < pb; ++lane) word |= std::uint64_t(memory.at(unit + lane)) << (8 * lane);
         return word;
     }
 
@@ -602,6 +648,7 @@ private:
             covered.insert("reset");
             if (p.abi == 2 && reset_phase == 3) covered.insert("reset_load");
             if (p.abi == 2 && reset_phase == 5) covered.insert("reset_tiles");
+            if (p.a_strips == 2 && reset_phase == 9) covered.insert("reset_next");
         }
         if (const std::uint32_t status = reg(false, STATUS); status != 0)
             fail("STATUS_MISMATCH", "STATUS " + hex(status) + " after reset");
@@ -667,10 +714,13 @@ private:
         const std::pair<const char*, std::uint32_t> dims[] = {{"m", j.m}, {"n", j.n}, {"k", j.k}};
         for (const auto& [name, value] : dims) {
             if (value) covered.insert(std::string(name) + "%4=" + dec(value % 4));
+            if (value && p.dim == 8) covered.insert(std::string(name) + "%8=" + dec(value % 8));   // (19.5's 8x8)
             if (value <= 1) covered.insert(std::string(name) + "=" + dec(value));
         }
         if (j.m && j.k && j.a_base % 4) covered.insert("a_unaligned");
         if (j.k && j.n && j.b_base % 4) covered.insert("b_unaligned");
+        if (p.port_bytes == 8 && j.m && j.k && j.a_base % 8 >= 4) covered.insert("a_unit_high_half");   // (64-bit)
+        if (p.port_bytes == 8 && j.k && j.n && j.b_base % 8 >= 4) covered.insert("b_unit_high_half");
         if (j.m && j.n && j.c_base % 4) covered.insert("c_unaligned");
         if (j.m > 1 && j.k && j.a_stride == j.k) covered.insert("a_stride_min");
         if (j.k > 1 && j.n && j.b_stride == j.n) covered.insert("b_stride_min");
@@ -681,6 +731,7 @@ private:
                 covered.insert(j.mode == 2 ? "ksplit_mode2" : "ksplit_auto");
                 covered.insert(j.b_stride == 1 ? "ksplit_b_stride1" : "ksplit_b_gathered");
                 covered.insert("ksplit_k%4=" + dec(j.k % 4));
+                if (p.dim == 8) covered.insert("ksplit_k%8=" + dec(j.k % 8));
             }
             if (!npu::v2_ksplit(j) && j.n == 1 && j.m && j.k) covered.insert("tiles_n1");
             if (j.m && j.k && j.a_m0 && j.a_m0 < j.m) covered.insert("a_two_level_m");
@@ -690,7 +741,7 @@ private:
             if (j.m > 4 && j.k && j.a_m0 && j.a_m0 < j.m && j.a_m0 % 4) covered.insert("a_m0_wraps_strip");
             if (j.m > 1 && j.k && j.a_stride < j.k) covered.insert("a_rows_overlap");
             if (j.k > 1 && j.n && j.b_stride < j.n) covered.insert("b_rows_overlap");
-            if (j.m && j.k && j.n && (j.n + 3) / 4 > 4096 / j.k) covered.insert("multiple_panels");
+            if (j.m && j.k && j.n && (j.n + p.dim - 1) / p.dim > 4096 / j.k) covered.insert("multiple_panels");
         }
     }
 
@@ -699,7 +750,8 @@ private:
     npu::Memory memory;
     std::vector<std::uint8_t> written;   // C bytes written in this job
     shell::Port port;
-    shell::StableCheck stable;
+    shell::StableCheck stable, stable_high;          // the request's low and high halves
+    std::deque<std::uint32_t> high_owed;             // the high halves of the answers owed
     std::mt19937 stall_rng, garbage;
     bool stall = false, long_stall = false;
     int latency = 2, selftest = 0;
@@ -716,6 +768,7 @@ private:
     bool injected = false, injected_write = false;
     bool reset_while_busy = false;
     unsigned abort_phase = 0, reset_phase = 0;     // the engine's state then (shell_npu_v2.sv's chk_state)
+    unsigned previous_state = 0;                   // chk_state in the cycle before (two strip buffers)
     JobCounters totals;
     std::uint64_t total_jobs = 0;
     const npu::Job* job = nullptr;
@@ -730,7 +783,10 @@ int main(int argc, char** argv) {
     const unsigned seed = plusarg("seed").empty() ? 1u : unsigned(std::stoul(plusarg("seed")));
     Vnpu_shell dut;
     dut.eval();
-    const npu::Profile profile = dut.chk_abi == 2 ? npu::v2_profile() : npu::v1_profile();
+    npu::Profile profile = dut.chk_abi == 2 ? npu::v2_profile() : npu::v1_profile();
+    profile.a_strips = dut.chk_strips;                 // 19.5's options (19.4's v2 and v1: 1 strip, 4 bytes)
+    profile.port_bytes = dut.chk_port_bytes;
+    profile.dim = dut.chk_dim;
     Shell shell(dut, profile, seed * 7919u + 13u);
     shell.reset(8);
     shell.check_identity();
@@ -753,7 +809,7 @@ int main(int argc, char** argv) {
                     "utilization=%.4f%%\n", shell.failure.empty() ? "PASS" : shell.failure.c_str(),
                     profile.name.c_str(), j.m, j.n, j.k, (unsigned long long)shell.last.cycles,
                     (unsigned long long)shell.last.active, macs,
-                    shell.last.cycles ? 100.0 * macs / (16.0 * double(shell.last.cycles)) : 0.0);
+                    shell.last.cycles ? 100.0 * macs / (double(profile.dim * profile.dim) * double(shell.last.cycles)) : 0.0);
         return shell.failure.empty() ? 0 : 1;
     }
 
@@ -795,7 +851,7 @@ int main(int argc, char** argv) {
         for (std::uint32_t i = 0; i < result.size() && shell.failure.empty(); ++i)
             if (shell.peek(out + i) != result[i]) shell.fail("MEMORY_MISMATCH", "the two lowerings' results differ");
         const double macs = double(m) * n * k;
-        auto util = [&](std::uint64_t cyc) { return cyc ? 100.0 * macs / (16.0 * double(cyc)) : 0.0; };
+        auto util = [&](std::uint64_t cyc) { return cyc ? 100.0 * macs / (double(profile.dim * profile.dim) * double(cyc)) : 0.0; };
         std::printf("NPU %s profile=%s conv=%ux%ux%u kernel=%ux%u n=%u m=%u k=%u direct_cycles=%llu direct_utilization=%.4f%% "
                     "im2col_cycles=%llu im2col_utilization=%.4f%% im2col_bytes=%u\n",
                     shell.failure.empty() ? "PASS" : shell.failure.c_str(), profile.name.c_str(), h, w, c, kh, kw, n, m, k,
@@ -856,6 +912,13 @@ int main(int argc, char** argv) {
             {base + 2, base + 0x100, base + 0x200, 4, 3, 12, 3, 3, 10, 0, 0, 0, 0x10005, 7},       // A_K0 above K
             {base + 1, base + 0x100, base + 0x200, 5, 3, 12, 5, 3, 9, 1, 0x80000003u, 9, 0, 0},     // A_M0 above M
             {base, base + 0x1800, base + 0x2000, 3, 1, 4, 4096, 1, 1, 0, 1, 1, 0, 0},               // M at its limit, A_M0 = 1
+            // 19.5's 8x8 array (here on every configuration): panels of eight-column groups,
+            // a K-split tail of seven, partial strips and tiles, a tile of 8 x 8 x 2048 MACs (2^17).
+            {base + 1, base + 0x4001, base + 0x14000, 4096, 9, 36, 3, 9, 4096, 0},     // K = 4096: 2 panels (8x8)
+            {base + 2, base + 0x3400, base + 0x9400, 1366, 17, 68, 9, 17, 1366, 0},   // 2 panels of two groups (8x8)
+            {base + 5, base + 0x9006, base + 0xB000, 4095, 1, 4, 9, 1, 4095, 0},      // K-split, K % 8 = 7
+            {base + 3, base + 0x200, base + 0x800, 7, 17, 68, 17, 17, 7, 0},           // 17 rows and columns
+            {base, base + 0x4000, base + 0x8000, 2048, 8, 32, 8, 8, 2048, 0},          // a tile of 2^17 MACs (8x8)
         };
         std::mt19937 rng(seed);
         int ran = 0;
@@ -884,13 +947,17 @@ int main(int argc, char** argv) {
                   : roll < 85 ? Kind::AbortAfterEnd : roll < 88 ? Kind::Reset : roll < 93 ? Kind::BusyWrites
                   : roll < 96 ? Kind::BadControl : Kind::BusError;
         if (kind == Kind::BusError && profile.abi == 1) kind = Kind::Normal;
-        npu::Job j = kind == Kind::Error || (kind == Kind::Abort && profile.abi == 2 && rng() % 5 == 0)
-                         ? gen.error(1 + int(rng() % 6)) : gen.valid();
+        const bool error_job = kind == Kind::Error || (kind == Kind::Abort && profile.abi == 2 && rng() % 5 == 0);
+        npu::Job j = error_job ? gen.error(1 + int(rng() % 6)) : gen.valid();
+        // Two strip buffers (19.5): an abort or a reset may aim at NEXT, which a
+        // job reaches only with more rows than a strip, so draw one that has them.
+        if (profile.a_strips == 2 && !error_job && (kind == Kind::Abort || kind == Kind::Reset))
+            for (int tries = 0; tries < 8 && j.m <= profile.dim; ++tries) j = gen.valid();
         if (kind == Kind::BusyWrites) {
             // Only a job long enough that the writes land while it is busy.
             const bool long_enough = profile.abi == 1
                 ? npu::v1_counters(j).bytes_read + npu::v1_counters(j).bytes_written >= 400
-                : npu::v2_job_cycles(profile, j, 2) >= 80;
+                : npu::v2_model_cycles(profile, j, 2) >= 80;
             if (!long_enough) kind = Kind::Normal;
         }
         if (trace)

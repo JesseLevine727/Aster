@@ -15,7 +15,11 @@
 // written word) keeps the data path — operand buffers, array, output banks —
 // from being trimmed as unobservable.
 `timescale 1 ns / 1 ps
-module timing_npu2_bram (
+module timing_npu2_bram #(
+    parameter int A_STRIPS = 1,                         // 19.5's options (a 32-bit memory here: PORT_BYTES
+    parameter int PORT_BYTES = 4,                       // 4 only, so DIM 4; the SoC's in-context build
+    parameter int DIM = 4                               // times the others)
+) (
     input  logic        clk,
     input  logic        resetn,
     input  logic        r_req_valid,
@@ -29,6 +33,9 @@ module timing_npu2_bram (
     output logic        irq,
     output logic [31:0] observe
 );
+    if (PORT_BYTES != 4) begin : bad_port
+        $error("timing_npu2_bram: its memory is 32 bits wide (PORT_BYTES 4 only)");
+    end
     localparam int unsigned WORDS = 96 * 1024 / 4;
 
     logic        m_req_valid, m_req_we, m_rsp_valid, m_rsp_error;
@@ -47,11 +54,11 @@ module timing_npu2_bram (
     end
 
     /* verilator lint_off PINCONNECTEMPTY */
-    aster_npu2 #(.MEM_BASE(32'h8000_0000), .MEM_BYTES(32'h0001_8000), .OUTSTANDING(2)) npu (
+    aster_npu2 #(.MEM_BASE(32'h8000_0000), .MEM_BYTES(32'h0001_8000), .OUTSTANDING(2), .A_STRIPS(A_STRIPS), .DIM(DIM)) npu (
         .clk, .resetn,
         .r_req_valid(q_valid), .r_req_ready(), .r_req_write(q_write), .r_req_addr(q_addr), .r_req_wdata(q_wdata),
         .r_req_be(q_be), .r_rsp_valid, .r_rsp_rdata, .r_rsp_error,
-        .m_req_valid, .m_req_ready(ready), .m_req_addr, .m_req_we, .m_req_wdata,
+        .m_req_valid, .m_req_ready(ready), .m_req_addr, .m_req_we, .m_req_wdata, .m_req_be(),
         .m_rsp_valid, .m_rsp_rdata, .m_rsp_error, .irq
     );
     /* verilator lint_on PINCONNECTEMPTY */

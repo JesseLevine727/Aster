@@ -85,7 +85,7 @@ SoC in 19.4).
 | 0x000 | CONTROL | W | bit 0 START, 1 ABORT, 2 ACK, 3 CLEAR_TOTALS |
 | 0x004 | STATUS | R | bit 0 BUSY, 1 DONE, 2 ERROR, 3 ABORTED |
 | 0x008 | ABI | R | 2 |
-| 0x00C | GEOMETRY | R | [7:0] ROWS, [15:8] COLS, [23:16] A strip KiB, [31:24] B buffer KiB |
+| 0x00C | GEOMETRY | R | [7:0] ROWS, [15:8] COLS, [23:16] A strip KiB, [31:24] B buffer KiB (19.4's 4×4: 0x10100404; 19.5's 8×8: 0x20200808) |
 | 0x010–0x018 | A_BASE, B_BASE, C_BASE | RW | byte addresses |
 | 0x01C–0x024 | A_STRIDE, B_STRIDE, C_STRIDE | RW | byte strides |
 | 0x028–0x030 | M, N, K | RW | dimensions |
@@ -95,7 +95,7 @@ SoC in 19.4).
 | 0x080 | JOB_CYCLES | R | 64-bit (low word first): START accepted to DONE |
 | 0x088 | JOB_ACTIVE | R | 64-bit: cycles in which the array stepped |
 | 0x090 | JOB_MACS | R | 64-bit: useful MACs of the tiles (strips) completed — M × N × K for a completed job |
-| 0x098 | JOB_BYTES_READ | R | 64-bit: 4 × words the NPU read |
+| 0x098 | JOB_BYTES_READ | R | 64-bit: the bytes of the reads the NPU made: 4 × reads, or 8 × reads with 19.5's 64-bit port |
 | 0x0A0 | JOB_BYTES_WRITTEN | R | 64-bit: 4 × words the NPU wrote |
 | 0x0A8 | JOB_TILES | R | 32-bit: output tiles (or K-split strips) completed |
 | 0x100 | TOTAL_JOBS | R | 32-bit: jobs ended (completed, errored or aborted) |
@@ -265,6 +265,36 @@ benefit"):
 - the 8×8 array (64 MACs per cycle), judged by throughput, resources, timing
   and area per throughput against the 4×4 baseline, which is retained.
 
+**Adoption rule (owner decision, 5 October 2026, before any measurement):**
+an option is adopted when, verified against the reference in the NPU shell
+(every memory mode), it cuts the end-to-end cycles of at least one gate
+workload (a GEMM case of §7 or the MLP) by at least 10% and slows none, and
+the Phase 19 SoC with it still closes 10 ns in context within §7's 80% area
+limit. The 8×8 array must also be no worse than 4×4 in area per sustained
+MAC per cycle on the GEMM cases. Area there is the NPU's share of the device
+(owner decision, 5 October 2026, before the 8×8 measurements): LUTs/53,200 +
+flip-flops/106,400 + block RAMs/140 + DSPs/220. Sustained MACs per cycle are
+measured on the three GEMM cases in the SoC. A rejected option is published
+with its measurements.
+
+**Outcome (19.5): all three adopted** ([`phase19.md`](phase19.md),
+Milestone 19.5). Each was built as a parameter of the RTL (A_STRIPS,
+PORT_BYTES, DIM: 19.4's NPU is 1, 4, 4) and verified in the NPU shell in
+every memory mode, its cycles on the memories that answer on time exactly as
+the cycle model's. Measured end to
+end in the SoC (the NPU's cycles):
+
+| Option | Gate workload gained | Slower | SoC at 10 ns in context |
+| --- | --- | --- | --- |
+| A second A strip buffer | MLP −14.0% an image; GEMMs −4.6% to −7.0% | none | +0.128 ns |
+| A 64-bit memory port | MLP −31.8%; GEMMs −3.8% to −5.4% | none | +0.247 ns |
+| The 8×8 array (with both) | GEMMs −68.8% to −73.4% against 4×4 with both; MLP −2.2% | none | +0.221 ns |
+
+The 8×8 array uses 0.0124 of the device per sustained MAC per cycle, against
+4×4's 0.0223 (both with the other two options). The Phase 19 SoC adopts all
+three: an 8×8 array with two A strip buffers on a 64-bit port, its main
+memory 64 bits wide (aster_npu_soc.sv's defaults).
+
 ## 5. Interfaces
 
 ### 5.1 Memory port
@@ -424,6 +454,12 @@ oracle instead of an instruction-set model:
 necessary during the phase are recorded here as clarifications or owner
 decisions, as cpu.md §9 records Phase 18's.
 
+**Decided by the owner, 5 October 2026** (before 19.5's measurements): the
+adoption rule of §4.6's options, recorded there: at least 10% fewer
+end-to-end cycles on a gate workload with none slower, 10 ns in context
+within the area limit, and for 8×8 no worse area per sustained MAC per
+cycle than 4×4.
+
 ### Clarifications in 19.1 (the tile mapping)
 
 Found necessary while building and verifying 19.1; accepted by the owner
@@ -501,7 +537,8 @@ with the milestone (5 October 2026), CIFAR channels last included:
 
 ### Clarifications in 19.4 (the Phase 19 SoC)
 
-Found necessary while building and verifying 19.4:
+Found necessary while building and verifying 19.4; accepted by the owner
+with the milestone (5 October 2026):
 
 - §5.2: the SoC's port B serves the data cache first and the NPU in any
   other cycle (not while an AMO holds it), so the data cache's readiness
@@ -535,3 +572,40 @@ Found necessary while building and verifying 19.4:
   MLP, both paths use weights stored in their own layout before the windows:
   the CPU's 16 neurons interleaved a word, the NPU's the model's row-major
   ones. The workload's window is otherwise the same for both.
+
+### Clarifications in 19.5 (the options)
+
+Found necessary while building and verifying 19.5:
+
+- §4.4, §4.6, the second A strip buffer: the A banks are doubled (one set
+  per strip buffer, each its own RAMs). While the array computes a strip
+  from one set, the loader loads the next strip into the other, in the
+  cycles the C writer leaves the memory port: the writer comes first on the
+  port. A strip's last step goes to a state that waits for the next strip's
+  load, then starts its tiles; the pipeline drains only at a panel's end.
+- §5.1, the 64-bit port: a request's address is a word address. A read
+  names the first word of an aligned 8-byte unit and returns all eight
+  bytes. A write names one C word and its byte enables select that word's
+  half of the unit (0x0F or 0xF0); C is still written a word a request. The
+  loader reads the aligned units covering each row segment (a gathered B
+  byte: one unit), and the buffers are eight bytes wide. JOB_BYTES_READ
+  counts eight bytes a read (§3).
+- §4.2-§4.4, the 8×8 array: strips of eight rows (eight A banks), tiles of
+  eight columns, K-split steps of eight k. The B buffer holds 4,096 entries
+  of eight bytes (32 KiB), so a panel is still floor(4096/K) groups and K
+  still reaches 4,096. The output banks hold 64 results each. GEOMETRY reads
+  0x20200808. §7's utilization is JOB_MACS / (64 × JOB_CYCLES) there (16 is
+  the 4×4 array's MACs a cycle). The array needs eight-byte buffer words, so
+  it is built with the 64-bit port.
+- §5.2, the SoC with the 64-bit port: main memory is 64 bits wide (the same
+  96 KiB and block RAMs). The instruction cache, the data cache, the AMOs
+  and the ARM side each take their word's half. The NPU reads a whole unit
+  and writes a word with its byte enables. The SoC's register 0x3F058 reports
+  the NPU's configuration (A strip buffers, port bytes, array rows), which
+  the board run checks.
+- §6: the options' cycles are checked by a cycle model stepped a cycle at a
+  time through the engine's sequencing (npu_model.h). It equals 19.1's model
+  by phases on 19.4's configuration (40,000 comparisons in `make
+  npu-tests`), but it follows the engine's own control, so it locks the
+  options' timing against change rather than proving it independently.
+

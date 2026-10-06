@@ -66,6 +66,9 @@ struct Profile {
     std::uint32_t busy_bit, done_bit, error_bit, aborted_bit;
     bool done_with_error;                // v1 sets done with error and with abort
     std::size_t max_in_flight;           // requests the DUT may have unanswered (v1: one at a time)
+    int a_strips = 1;                    // v2: the A strip buffers (19.5's option: 2)
+    std::uint64_t port_bytes = 4;        // v2: the memory port's word (19.5's option: 8)
+    std::uint64_t dim = 4;               // v2: the array's rows and columns (19.5's option: 8)
 };
 
 inline Profile v1_profile() {
@@ -127,16 +130,16 @@ inline std::uint32_t expected_error(const Profile& p, const Job& j) {
     return 0;
 }
 
-// ABI 2: the words row i of A takes — one segment of K bytes, or with
-// A_K0 a segment of up to A_K0 bytes per kernel row (npu.md §4.5) — each as
-// the aligned words that cover it.
-inline std::uint64_t v2_a_row_words(const Job& j, std::uint64_t i) {
+// ABI 2: the port's words (pb bytes: 4, or 8 with 19.5's 64-bit port) row i
+// of A takes — one segment of K bytes, or with A_K0 a segment of up to A_K0
+// bytes per kernel row (npu.md §4.5) — each as the aligned words that cover it.
+inline std::uint64_t v2_a_row_words(const Job& j, std::uint64_t i, std::uint64_t pb = 4) {
     const std::uint64_t row = j.a_base + a_row_offset(j, i);
-    if (!j.a_k0 || j.a_k0 >= j.k) return ((row % 4) + j.k + 3) / 4;
+    if (!j.a_k0 || j.a_k0 >= j.k) return ((row % pb) + j.k + pb - 1) / pb;
     std::uint64_t total = 0;
     for (std::uint64_t k0 = 0; k0 < j.k; k0 += j.a_k0) {
         const std::uint64_t addr = row + (k0 / j.a_k0) * j.a_stride_k1, len = std::min<std::uint64_t>(j.a_k0, j.k - k0);
-        total += ((addr % 4) + len + 3) / 4;
+        total += ((addr % pb) + len + pb - 1) / pb;
     }
     return total;
 }
@@ -150,22 +153,22 @@ inline bool v2_ksplit(const Job& j) { return j.mode == 2 || (j.mode == 0 && j.n 
 // segment as the aligned words that cover it. K-split (§4.3): B, the vector,
 // once — the words covering its K bytes when B_STRIDE is 1, else a word per
 // byte — then A once.
-inline std::uint64_t v2_words_read(const Job& j) {
+inline std::uint64_t v2_words_read(const Job& j, std::uint64_t pb = 4, std::uint64_t dim = 4) {
     if (!j.m || !j.n || !j.k || j.k > 4096) return 0;     // (K above the limit: a descriptor error)
-    auto words = [](std::uint64_t addr, std::uint64_t len) { return ((addr % 4) + len + 3) / 4; };
+    auto words = [pb](std::uint64_t addr, std::uint64_t len) { return ((addr % pb) + len + pb - 1) / pb; };
     if (v2_ksplit(j)) {
         std::uint64_t total = j.b_stride == 1 ? words(j.b_base, j.k) : j.k;
-        for (std::uint64_t i = 0; i < j.m; ++i) total += v2_a_row_words(j, i);
+        for (std::uint64_t i = 0; i < j.m; ++i) total += v2_a_row_words(j, i, pb);
         return total;
     }
-    const std::uint64_t groups = (j.n + 3) / 4, fit = 4096 / j.k;
+    const std::uint64_t groups = (j.n + dim - 1) / dim, fit = 4096 / j.k;   // panels: 4096 B entries of dim bytes
     const std::uint64_t panel = std::min(groups, fit);
     std::uint64_t total = 0;
     for (std::uint64_t g0 = 0; g0 < groups; g0 += panel) {
         const std::uint64_t gp = std::min(panel, groups - g0);
-        const std::uint64_t cols = std::min<std::uint64_t>(4 * gp, j.n - 4 * g0);
-        for (std::uint64_t k = 0; k < j.k; ++k) total += words(j.b_base + k * j.b_stride + 4 * g0, cols);
-        for (std::uint64_t i = 0; i < j.m; ++i) total += v2_a_row_words(j, i);
+        const std::uint64_t cols = std::min<std::uint64_t>(dim * gp, j.n - dim * g0);
+        for (std::uint64_t k = 0; k < j.k; ++k) total += words(j.b_base + k * j.b_stride + dim * g0, cols);
+        for (std::uint64_t i = 0; i < j.m; ++i) total += v2_a_row_words(j, i, pb);
     }
     return total;
 }
@@ -302,6 +305,149 @@ inline std::uint64_t v2_job_cycles(const Profile& p, const Job& j, int latency) 
     return std::max(c, last_answer + 1) + 1;                          // FINISH
 }
 
+// The v2 engine's JOB_CYCLES on a memory that answers on time, stepped a cycle
+// at a time through the engine's sequencing (aster_npu2_engine.sv): the memory
+// port (the writer first, the loader in the cycles it leaves; at most two
+// requests in flight), the loader's requests and their answers into the
+// buffers, the tiles' steps through the three-stage pipeline into the two
+// output banks, and the writer. With a_strips = 1 it must equal
+// v2_job_cycles (19.1's model, by phases) on every job; with a_strips = 2
+// (19.5's option) the next strip of A loads while the array computes, and a
+// strip's last step goes to NEXT (which waits for that load) instead of DRAIN.
+inline std::uint64_t v2_job_cycles_stepped(const Profile& p, const Job& j, int latency, int a_strips,
+                                           std::uint64_t pb = 4, std::uint64_t dim = 4) {
+    if (expected_error(p, j) || !j.m || !j.n) return 17;
+    enum St { CHECK, PANEL, LOAD, STRIP, TILES, DRAIN, FINISH, NEXT };
+    const bool ksplit = v2_ksplit(j);
+    // dim: the array's rows and columns (19.5's 8x8 option: 8), so a strip is dim
+    // rows, a tile dim columns, a B panel entry dim bytes (4096 of them).
+    const std::uint64_t groups = (j.n + dim - 1) / dim;
+    const std::uint64_t panel = j.k && !ksplit ? std::min<std::uint64_t>(groups, 4096 / j.k) : groups;
+    const std::uint64_t steps = std::max<std::uint64_t>(ksplit ? (j.k + dim - 1) / dim : j.k, 1);
+    auto words = [pb](std::uint64_t addr, std::uint64_t len) { return ((addr % pb) + len + pb - 1) / pb; };
+    auto strip_words = [&](std::uint64_t i0) {
+        std::uint64_t total = 0;
+        for (std::uint64_t r = i0; r < std::min<std::uint64_t>(i0 + dim, j.m); ++r) total += v2_a_row_words(j, r, pb);
+        return total;
+    };
+    struct Req { std::uint64_t at; bool read; };
+    std::deque<Req> inflight;
+    St st = CHECK;
+    std::uint64_t chk = 0, g0 = 0, gp = 0, cols = 0, rows_left = 0, i0 = 0, t_idx = 0, kstep = 0;
+    bool ld_have = false, ld_is_b = false, ans_valid = false, wr_q_valid = false;
+    std::uint64_t ld_left = 0, ld_pending = 0, wr_elem = 0, rv = 0;
+    unsigned wr_sel = 0, tile_bank = 0;
+    bool bank_busy[2] = {false, false}, bank_full[2] = {false, false};
+    std::uint64_t bank_n[2] = {0, 0};
+    struct Stage { bool v = false, last = false; unsigned bank = 0; } s1, s2, s3;
+    for (std::uint64_t c = 0;; ++c) {
+        // This cycle's combinational signals, from the registers.
+        const bool rsp = !inflight.empty() && inflight.front().at == c;
+        const bool rsp_read = rsp && inflight.front().read;
+        const bool can_issue = inflight.size() - (rsp ? 1 : 0) < 2;
+        const bool src_ld = ld_have && !wr_q_valid;
+        const bool req_valid = (src_ld ? ld_have : wr_q_valid) && can_issue;
+        const bool accept = req_valid;                                   // ready every cycle
+        const bool load_done = !ld_have && ld_pending == 0 && !ans_valid;
+        const bool tile_start = kstep == 0;
+        const bool last_step = j.k == 0 || kstep + 1 == steps;
+        const bool issue = st == TILES && (!tile_start || !bank_busy[tile_bank]);
+        const bool wr_load = bank_full[wr_sel] && (!wr_q_valid || (accept && !src_ld));
+        const bool drained = !s1.v && !s2.v && !s3.v && !bank_busy[0] && !bank_busy[1] && !wr_q_valid;
+        if (st == FINISH && !req_valid && inflight.empty() && !s1.v && !s2.v && !s3.v) return c + 1;
+        bool a_setup = false;
+        std::uint64_t a_row = i0;
+        if (j.k) {
+            if (st == STRIP) a_setup = true;
+            else if (a_strips == 2 && st == LOAD && !ld_is_b && load_done && rows_left > dim) { a_setup = true; a_row = i0 + dim; }
+            else if (a_strips == 2 && st == NEXT && load_done && rows_left > 2 * dim) { a_setup = true; a_row = i0 + 2 * dim; }
+        }
+        // The edge: the registers' next values.
+        if (rsp) inflight.pop_front();
+        if (accept) inflight.push_back({c + std::uint64_t(latency), src_ld});
+        const bool ans_next = rsp_read;
+        ld_pending = ld_pending + (accept && src_ld ? 1 : 0) - (ans_valid ? 1 : 0);
+        ans_valid = ans_next;
+        if (accept && src_ld && --ld_left == 0) ld_have = false;
+        // The pipeline into the banks.
+        if (s3.v && s3.last) bank_full[s3.bank] = true;
+        s3 = s2; s2 = s1; s1 = Stage{issue, last_step, tile_bank};
+        // The writer.
+        if (wr_load) {
+            wr_q_valid = true;
+            if (++wr_elem == bank_n[wr_sel]) {
+                wr_elem = 0;
+                bank_full[wr_sel] = bank_busy[wr_sel] = false;
+                wr_sel ^= 1u;
+            }
+        } else if (accept && !src_ld) {
+            wr_q_valid = false;
+        }
+        // The tiles.
+        St next = st;
+        if (issue) {
+            if (tile_start) {
+                bank_busy[tile_bank] = true;
+                bank_n[tile_bank] = rv * (ksplit ? 1 : std::min<std::uint64_t>(dim, cols - dim * t_idx));
+            }
+            if (last_step) {
+                kstep = 0;
+                tile_bank ^= 1u;
+                if (++t_idx == gp) next = a_strips == 2 && rows_left > dim ? NEXT : DRAIN;
+            } else {
+                ++kstep;
+            }
+        }
+        switch (st) {
+            case CHECK: if (++chk == 16) next = PANEL; break;
+            case PANEL:
+                gp = std::min(panel, groups - g0);
+                cols = std::min<std::uint64_t>(dim * gp, j.n - dim * g0);
+                rows_left = j.m; i0 = 0;
+                if (j.k) {
+                    std::uint64_t total = 0;
+                    if (ksplit) total = j.b_stride == 1 ? words(j.b_base, j.k) : j.k;
+                    else for (std::uint64_t kk = 0; kk < j.k; ++kk) total += words(j.b_base + kk * j.b_stride + dim * g0, cols);
+                    ld_have = true; ld_left = total; ld_is_b = true;
+                    next = LOAD;
+                } else {
+                    next = STRIP;
+                }
+                break;
+            case LOAD: if (load_done) next = ld_is_b ? STRIP : TILES; break;
+            case STRIP:
+                rv = std::min<std::uint64_t>(dim, rows_left); t_idx = 0; kstep = 0;
+                next = j.k ? LOAD : TILES;
+                break;
+            case NEXT:
+                if (load_done) {
+                    rows_left -= dim; i0 += dim; rv = std::min<std::uint64_t>(dim, rows_left); t_idx = 0; kstep = 0;
+                    next = TILES;
+                }
+                break;
+            case DRAIN:
+                if (drained) {
+                    if (rows_left > dim) { rows_left -= dim; i0 += dim; next = STRIP; }
+                    else if (g0 + gp < groups) { g0 += gp; next = PANEL; }
+                    else next = FINISH;
+                }
+                break;
+            default: break;
+        }
+        if (a_setup) { ld_have = true; ld_is_b = false; ld_left = strip_words(a_row); }
+        st = next;
+        if (c > 100000000) return 0;                                      // (never: a model fault)
+    }
+}
+
+// The cycle model for the profile's configuration: 19.1's by phases for 19.4's
+// NPU (one A strip buffer, a 32-bit port), the stepped one for 19.5's options.
+inline std::uint64_t v2_model_cycles(const Profile& p, const Job& j, int latency) {
+    return p.a_strips == 1 && p.port_bytes == 4 && p.dim == 4
+               ? v2_job_cycles(p, j, latency)
+               : v2_job_cycles_stepped(p, j, latency, p.a_strips, p.port_bytes, p.dim);
+}
+
 // v1's counters for a completed job (phase9.md).
 struct Counters { std::uint64_t bytes_read, bytes_written, compute_cycles, tiles; };
 inline Counters v1_counters(const Job& j) {
@@ -336,6 +482,14 @@ inline std::vector<std::string> bins(const Profile& p) {
                                  "a_two_level_k", "a_conv", "a_k0_partial", "a_m0_wraps_strip"})
             names.push_back(name);
     }
+    if (p.a_strips == 2)                                  // 19.5's second A strip buffer
+        for (const char* name : {"strip_overlap", "next_wait", "abort_next", "reset_next"}) names.push_back(name);
+    if (p.port_bytes == 8)                                // 19.5's 64-bit memory port
+        for (const char* name : {"write_low_half", "write_high_half", "a_unit_high_half", "b_unit_high_half"})
+            names.push_back(name);
+    if (p.dim == 8)                                       // 19.5's 8x8 array
+        for (const char* d : {"m", "n", "k", "ksplit_k"})
+            for (int r = 0; r < 8; ++r) names.push_back(std::string(d) + "%8=" + std::to_string(r));
     return names;
 }
 
@@ -393,7 +547,7 @@ public:
             }
             if (p.abi == 2 && rng() % 16 == 0) {       // more than one B panel: K x N beyond 16 KiB, kept small
                 j.k = 600 + rng() % 400;
-                j.n = 5 + rng() % 20;
+                j.n = 5 + rng() % (p.dim == 8 ? 44 : 20);   // (8x8: groups of eight columns)
                 j.m = 1 + rng() % 8;
                 j.a_stride = j.k + rng() % 4;
                 j.b_stride = j.n + rng() % 4;

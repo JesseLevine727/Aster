@@ -10,8 +10,12 @@
 # and the v2 NPU on 96 KiB of main memory (rtl/soc/aster_npu_soc.sv, through
 # aster_npu_soc_ip.v), the same port and window; its outputs named aster_npu.
 #
-#   vivado -mode batch -source build_aster_core.tcl -tclargs <repo-root> <output-dir> ?fclk-mhz? ?core|npu?
-if {$argc < 2 || $argc > 4} { error "usage: build_aster_core.tcl <repo-root> <output-dir> ?fclk-mhz? ?core|npu?" }
+# With design npu, an optional fifth argument sets the SoC's parameters
+# ("NAME=VALUE;...", 19.5's options, e.g. NPU_A_STRIPS=2): the shim is read
+# from a copy in the output directory with those parameters' defaults set.
+#
+#   vivado -mode batch -source build_aster_core.tcl -tclargs <repo-root> <output-dir> ?fclk-mhz? ?core|npu? ?params?
+if {$argc < 2 || $argc > 5} { error "usage: build_aster_core.tcl <repo-root> <output-dir> ?fclk-mhz? ?core|npu? ?params?" }
 set repo_root [file normalize [lindex $argv 0]]
 set output_dir [file normalize [lindex $argv 1]]
 set fclk 100
@@ -19,6 +23,8 @@ if {$argc >= 3} { set fclk [lindex $argv 2] }
 set design core
 if {$argc >= 4} { set design [lindex $argv 3] }
 if {$design ni {core npu}} { error "design must be core or npu" }
+set params {}
+if {$argc >= 5} { set params [lindex $argv 4] }
 # The shim's clock interface carries FREQ_HZ 100000000 as a fixed attribute
 # (the block design will not let this script override it).
 if {$fclk != 100} { error "the shim's FREQ_HZ is 100 MHz; change the shim (rtl/soc/*_ip.v) with the clock" }
@@ -36,7 +42,20 @@ create_project $board $output_dir -part $part -force
 set rtl_files [concat [list rtl/aster_core/aster_core_pkg.sv rtl/aster_core/aster_core_fetch.sv rtl/aster_core/aster_core.sv \
     rtl/aster_core/aster_l1_ram.sv rtl/aster_core/aster_l1i.sv rtl/aster_core/aster_l1d.sv] $top_rtl]
 foreach relative $rtl_files { read_verilog -sv [file join $repo_root $relative] }
-read_verilog [file join $repo_root rtl/soc/$shim.v]
+set shim_file [file join $repo_root rtl/soc/$shim.v]
+if {$params ne ""} {
+    set fp [open $shim_file r]; set text [read $fp]; close $fp
+    foreach param [split $params ";"] {
+        if {$param eq ""} continue
+        lassign [split $param "="] pname pvalue
+        if {![regsub "(parameter integer $pname = )\\d+" $text "\\1$pvalue" text]} {
+            error "the shim has no parameter $pname"
+        }
+    }
+    set shim_file [file join $output_dir $shim.v]
+    set fp [open $shim_file w]; puts -nonewline $fp $text; close $fp
+}
+read_verilog $shim_file
 
 # Not "aster_core": that is the core's RTL module, which the wrapper would pick up.
 create_bd_design $board

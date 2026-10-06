@@ -1,0 +1,1 @@
+SUMMARY top=aster_npu_board_wrapper fclk_mhz=100 wns_ns=0.183 whs_ns=0.026 from=aster_npu_board_i/aster/inst/implementation/main64.b_sel2_reg_rep__0/C to=aster_npu_board_i/aster/inst/implementation/main64.main_ram_reg_6_0/DIADI[0]

@@ -1,0 +1,1 @@
+top=aster_npu2 part=xc7z020clg400-1 period_ns=10.0 wns_ns=0.455 whs_ns=0.087 implied_period_ns=9.545 implied_fmax_mhz=104.8 luts=5905 ffs=4789 brams=20 dsps=11

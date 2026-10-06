@@ -30,7 +30,12 @@ foreach source $sources {
     if {[string match *.sv $source]} { read_verilog -sv $source } else { read_verilog $source }
 }
 read_xdc -mode out_of_context $xdc
-synth_design -top $top -part $part -mode out_of_context
+# OOC_GENERICS (optional): the top's parameters, "NAME=VALUE;..." (19.5's NPU options).
+set generics {}
+if {[info exists ::env(OOC_GENERICS)] && $::env(OOC_GENERICS) ne ""} {
+    foreach generic [split $::env(OOC_GENERICS) ";"] { lappend generics -generic $generic }
+}
+synth_design -top $top -part $part -mode out_of_context {*}$generics
 opt_design
 place_design
 phys_opt_design

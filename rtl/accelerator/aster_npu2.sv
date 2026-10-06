@@ -18,7 +18,10 @@
 module aster_npu2 #(
     parameter logic [31:0] MEM_BASE    = 32'h8000_0000,
     parameter logic [31:0] MEM_BYTES   = 32'h0001_8000,
-    parameter int          OUTSTANDING = 2
+    parameter int          OUTSTANDING = 2,
+    parameter int          A_STRIPS    = 1,     // 19.5: 2 loads the next A strip while the array computes
+    parameter int          PORT_BYTES  = 4,     // 19.5: 8, a 64-bit memory port
+    parameter int          DIM         = 4      // 19.5: 8, the 8x8 array (with PORT_BYTES = 8)
 ) (
     input  logic        clk,
     input  logic        resetn,
@@ -35,9 +38,10 @@ module aster_npu2 #(
     input  logic        m_req_ready,
     output logic [31:2] m_req_addr,
     output logic        m_req_we,
-    output logic [31:0] m_req_wdata,
+    output logic [8*PORT_BYTES-1:0] m_req_wdata,
+    output logic [PORT_BYTES-1:0]   m_req_be,
     input  logic        m_rsp_valid,
-    input  logic [31:0] m_rsp_rdata,
+    input  logic [8*PORT_BYTES-1:0] m_rsp_rdata,
     input  logic        m_rsp_error,
     output logic        irq
 );
@@ -54,7 +58,7 @@ module aster_npu2 #(
 
     logic busy, finish, finish_aborted, ev_read, ev_write, ev_step, ev_tile;
     logic [2:0]  finish_code;
-    logic [16:0] ev_tile_macs;
+    logic [18:0] ev_tile_macs;
     logic        req, wr, word, start, abort, ack, clear;
 
     assign r_req_ready = resetn;
@@ -67,7 +71,8 @@ module aster_npu2 #(
     assign clear = wr && r_req_addr == 12'h000 && r_req_wdata[3] && !busy;
     assign irq   = done || error || aborted;
 
-    aster_npu2_engine #(.MEM_BASE(MEM_BASE), .MEM_BYTES(MEM_BYTES), .OUTSTANDING(OUTSTANDING)) engine (
+    aster_npu2_engine #(.MEM_BASE(MEM_BASE), .MEM_BYTES(MEM_BYTES), .OUTSTANDING(OUTSTANDING), .A_STRIPS(A_STRIPS),
+                        .PORT_BYTES(PORT_BYTES), .DIM(DIM)) engine (
         .clk, .resetn, .start,
         .d_a_base(a_base), .d_b_base(b_base), .d_c_base(c_base),
         .d_a_stride(a_stride), .d_b_stride(b_stride), .d_c_stride(c_stride),
@@ -75,7 +80,7 @@ module aster_npu2 #(
         .d_a_m0(a_m0), .d_a_stride_m1(a_stride_m1), .d_a_k0(a_k0), .d_a_stride_k1(a_stride_k1), .abort,
         .busy, .finish, .finish_code, .finish_aborted,
         .ev_read, .ev_write, .ev_step, .ev_tile, .ev_tile_macs,
-        .m_req_valid, .m_req_ready, .m_req_addr, .m_req_we, .m_req_wdata,
+        .m_req_valid, .m_req_ready, .m_req_addr, .m_req_we, .m_req_wdata, .m_req_be,
         .m_rsp_valid, .m_rsp_rdata, .m_rsp_error
     );
 
@@ -86,7 +91,7 @@ module aster_npu2 #(
         unique case (r_req_addr)
             12'h004: rdata = {28'b0, aborted, error, done, busy};
             12'h008: rdata = 32'd2;
-            12'h00C: rdata = {8'd16, 8'd16, 8'd4, 8'd4};        // B buffer KiB, A strip KiB, COLS, ROWS
+            12'h00C: rdata = {8'(4 * DIM), 8'(4 * DIM), 8'(DIM), 8'(DIM)};   // B buffer KiB, A strip KiB, COLS, ROWS
             12'h010: rdata = a_base;
             12'h014: rdata = b_base;
             12'h018: rdata = c_base;
@@ -208,8 +213,8 @@ module aster_npu2 #(
                 total_macs <= total_macs + 64'(ev_tile_macs);
             end
             if (ev_read) begin
-                job_read <= job_read + 64'd4;
-                total_read <= total_read + 64'd4;
+                job_read <= job_read + 64'(PORT_BYTES);       // the bytes of an accepted read
+                total_read <= total_read + 64'(PORT_BYTES);
             end
             if (ev_write) begin
                 job_written <= job_written + 64'd4;

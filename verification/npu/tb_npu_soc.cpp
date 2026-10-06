@@ -215,6 +215,9 @@ void cycle() {
     // The NPU's writes: only C's bytes, each once.
     if (running && dut->chk_n_accept && dut->chk_n_we) {
         const std::uint32_t addr = std::uint32_t(dut->chk_n_addr) << 2;
+        // A write is one C word: its byte enables select that word in its unit.
+        if (std::uint32_t(dut->chk_n_be) != (addr & 4u ? 0xF0u : 0x0Fu))
+            fail("STRAY_WRITE", "an NPU write's byte enables not its word's");
         for (int lane = 0; lane < 4; ++lane) {
             if (!job_live || !npu::in_c(job, addr + lane)) { fail("STRAY_WRITE", "an NPU write outside its C"); break; }
             if (job_error) { fail("ERROR_JOB_WRITE", "an NPU write in a job that must end with an error"); break; }
@@ -224,13 +227,17 @@ void cycle() {
         }
     }
     // Port B's and the page's writes, at this edge.
-    if (dut->chk_b_en && dut->chk_b_we) {
-        const std::uint32_t word = profile.mem_base + 4 * std::uint32_t(dut->chk_b_idx);
-        for (int lane = 0; lane < 4; ++lane)
+    if (dut->chk_b_we) {                       // port B's write, as a 64-bit unit
+        const std::uint32_t unit = profile.mem_base + 8 * std::uint32_t(dut->chk_b_unit);
+        for (int lane = 0; lane < 8; ++lane)
             if ((dut->chk_b_be >> lane) & 1u)
-                main_copy.at(word + lane) = std::uint8_t(std::uint32_t(dut->chk_b_wdata) >> (8 * lane));
-        for (DReq& r : dreqs)                  // a value a looked-up load may now return
-            if (r.looked && r.main_load && r.word == word) r.allowed.push_back(main_word(word));
+                main_copy.at(unit + lane) = std::uint8_t(std::uint64_t(dut->chk_b_wdata) >> (8 * lane));
+        for (std::uint32_t half = 0; half < 2; ++half) {
+            if (!((dut->chk_b_be >> (4 * half)) & 0xFu)) continue;
+            const std::uint32_t word = unit + 4 * half;
+            for (DReq& r : dreqs)              // a value a looked-up load may now return
+                if (r.looked && r.main_load && r.word == word) r.allowed.push_back(main_word(word));
+        }
     }
     bool check_word = false;
     if (dut->chk_p_en && dut->chk_p_we) {
@@ -325,11 +332,12 @@ int main(int argc, char** argv) {
         for (int b = 0; b < 4; ++b) word |= std::uint32_t(std::uint8_t(image[i + b])) << (8 * b);
         axi_write(std::uint32_t(i), word);
     }
-    for (std::size_t i = 0; i < image.size(); i += 4096) {
+    for (std::size_t i = 0; i < image.size(); i += 4) {      // every word read back, odd and even
         std::uint32_t word = 0;
         for (int b = 0; b < 4; ++b) word |= std::uint32_t(std::uint8_t(image[i + b])) << (8 * b);
         if (axi_read(std::uint32_t(i)) != word) { std::cerr << "image read-back mismatch at " << i << "\n"; return 2; }
     }
+    const std::uint32_t npu_config = axi_read(0x3F058);    // {DIM, PORT_BYTES, A_STRIPS} (19.5)
     axi_write(0x3F030, tohost);
     axi_write(0x3F000, 1);
 
@@ -374,18 +382,18 @@ int main(int argc, char** argv) {
     if (board) {
         const std::uint64_t window_cycles = read64(0x3F020), window_retired = read64(0x3F028);
         std::printf("BOARD %s cycles=%llu retired=%llu window_cycles=%llu window_retired=%llu tohost=%x "
-                    "tohost_cycles=%llu tohost_retired=%llu console_bytes=%zu\n", result.c_str(),
+                    "tohost_cycles=%llu tohost_retired=%llu console_bytes=%zu npu_config=%u\n", result.c_str(),
                     (unsigned long long)read64(0x3F010), (unsigned long long)read64(0x3F018),
                     (unsigned long long)window_cycles, (unsigned long long)window_retired, value,
-                    (unsigned long long)cycles, (unsigned long long)read64(0x3F050), console.size());
+                    (unsigned long long)cycles, (unsigned long long)read64(0x3F050), console.size(), npu_config);
     }
     axi_write(0x3F000, 0);
     if (!plusarg("console").empty()) std::ofstream(plusarg("console")) << console;
     if (!board) std::printf("SOC %s cycles=%llu tohost=%x npu_jobs=%llu npu_unfinished=%llu cpu_checks=%llu "
-                            "snoops=%llu loads=%llu\n", result.c_str(), (unsigned long long)cycles, value,
+                            "snoops=%llu loads=%llu npu_config=%u\n", result.c_str(), (unsigned long long)cycles, value,
                             (unsigned long long)npu_jobs, (unsigned long long)npu_unfinished,
                             (unsigned long long)cpu_checks, (unsigned long long)snoops,
-                            (unsigned long long)loads_checked);
+                            (unsigned long long)loads_checked, npu_config);
     if (trace) std::fclose(trace);
     delete dut;
     return result == "PASS" ? 0 : 1;

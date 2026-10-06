@@ -1,0 +1,100 @@
+PASS: kernel coremark: window 466606 cycles, 284865 instructions; the same console
+PASS: kernel dhrystone: window 857421 cycles, 492302 instructions; the same console
+PASS: kernel sort_search: window 696877 cycles, 420942 instructions; the same console
+PASS: kernel fft: window 317562 cycles, 248399 instructions; the same console
+PASS: kernel strided: window 2722 cycles, 1559 instructions; the same console
+PASS: kernel conv2d: window 1111121 cycles, 704346 instructions; the same console
+PASS: kernel conv2d_scalar_coh: window 1481208 cycles, 971011 instructions; the same console
+PASS: kernel reduction: window 75234 cycles, 53305 instructions; the same console
+PASS: kernel conv2d_dot8: window 1484436 cycles, 1145218 instructions; the same console
+PASS: program rv32ui/add: tohost at cycle 1607, 472 instructions
+PASS: program rv32ui/addi: tohost at cycle 907, 249 instructions
+PASS: program rv32ui/and: tohost at cycle 1589, 492 instructions
+PASS: program rv32ui/andi: tohost at cycle 736, 205 instructions
+PASS: program rv32ui/auipc: tohost at cycle 296, 66 instructions
+PASS: program rv32ui/beq: tohost at cycle 1099, 298 instructions
+PASS: program rv32ui/bge: tohost at cycle 1213, 316 instructions
+PASS: program rv32ui/bgeu: tohost at cycle 1268, 341 instructions
+PASS: program rv32ui/blt: tohost at cycle 1099, 298 instructions
+PASS: program rv32ui/bltu: tohost at cycle 1154, 323 instructions
+PASS: program rv32ui/bne: tohost at cycle 1101, 298 instructions
+PASS: program rv32ui/fence_i: tohost at cycle 875, 296 instructions
+PASS: program rv32ui/jal: tohost at cycle 304, 62 instructions
+PASS: program rv32ui/jalr: tohost at cycle 518, 122 instructions
+PASS: program rv32ui/lb: tohost at cycle 905, 260 instructions
+PASS: program rv32ui/lbu: tohost at cycle 905, 260 instructions
+PASS: program rv32ui/ld_st: tohost at cycle 3682, 970 instructions
+PASS: program rv32ui/lh: tohost at cycle 952, 276 instructions
+PASS: program rv32ui/lhu: tohost at cycle 979, 285 instructions
+PASS: program rv32ui/lui: tohost at cycle 325, 72 instructions
+PASS: program rv32ui/lw: tohost at cycle 998, 290 instructions
+PASS: program rv32ui/ma_data: tohost at cycle 15140, 7786 instructions
+PASS: program rv32ui/or: tohost at cycle 1604, 495 instructions
+PASS: program rv32ui/ori: tohost at cycle 752, 212 instructions
+PASS: program rv32ui/sb: tohost at cycle 1561, 461 instructions
+PASS: program rv32ui/sh: tohost at cycle 1691, 514 instructions
+PASS: program rv32ui/simple: tohost at cycle 209, 48 instructions
+PASS: program rv32ui/sll: tohost at cycle 1712, 500 instructions
+PASS: program rv32ui/slli: tohost at cycle 907, 248 instructions
+PASS: program rv32ui/slt: tohost at cycle 1574, 466 instructions
+PASS: program rv32ui/slti: tohost at cycle 892, 244 instructions
+PASS: program rv32ui/sltiu: tohost at cycle 892, 244 instructions
+PASS: program rv32ui/sltu: tohost at cycle 1574, 466 instructions
+PASS: program rv32ui/sra: tohost at cycle 1773, 519 instructions
+PASS: program rv32ui/srai: tohost at cycle 954, 263 instructions
+PASS: program rv32ui/srl: tohost at cycle 1754, 513 instructions
+PASS: program rv32ui/srli: tohost at cycle 942, 257 instructions
+PASS: program rv32ui/st_ld: tohost at cycle 1882, 490 instructions
+PASS: program rv32ui/sub: tohost at cycle 1577, 464 instructions
+PASS: program rv32ui/sw: tohost at cycle 1708, 521 instructions
+PASS: program rv32ui/xor: tohost at cycle 1607, 494 instructions
+PASS: program rv32ui/xori: tohost at cycle 763, 214 instructions
+PASS: program rv32um/div: tohost at cycle 657, 103 instructions
+PASS: program rv32um/divu: tohost at cycle 652, 104 instructions
+PASS: program rv32um/mul: tohost at cycle 1577, 466 instructions
+PASS: program rv32um/mulh: tohost at cycle 1577, 466 instructions
+PASS: program rv32um/mulhsu: tohost at cycle 1577, 466 instructions
+PASS: program rv32um/mulhu: tohost at cycle 1577, 466 instructions
+PASS: program rv32um/rem: tohost at cycle 657, 103 instructions
+PASS: program rv32um/remu: tohost at cycle 657, 103 instructions
+PASS: program rv32ua/amoadd_w: tohost at cycle 322, 73 instructions
+PASS: program rv32ua/amoand_w: tohost at cycle 311, 71 instructions
+PASS: program rv32ua/amomax_w: tohost at cycle 367, 85 instructions
+PASS: program rv32ua/amomaxu_w: tohost at cycle 325, 72 instructions
+PASS: program rv32ua/amomin_w: tohost at cycle 367, 85 instructions
+PASS: program rv32ua/amominu_w: tohost at cycle 325, 72 instructions
+PASS: program rv32ua/amoor_w: tohost at cycle 311, 71 instructions
+PASS: program rv32ua/amoswap_w: tohost at cycle 311, 71 instructions
+PASS: program rv32ua/amoxor_w: tohost at cycle 326, 75 instructions
+PASS: program rv32ua/lrsc: tohost at cycle 22989, 6248 instructions
+PASS: program rv32mi/csr: tohost at cycle 564, 130 instructions
+PASS: program rv32mi/illegal: tohost at cycle 402, 70 instructions
+PASS: program rv32mi/instret_overflow: tohost at cycle 325, 70 instructions
+PASS: program rv32mi/lh-misaligned: tohost at cycle 341, 69 instructions
+PASS: program rv32mi/lw-misaligned: tohost at cycle 474, 105 instructions
+PASS: program rv32mi/ma_addr: tohost at cycle 857, 171 instructions
+PASS: program rv32mi/ma_fetch: tohost at cycle 677, 151 instructions
+PASS: program rv32mi/mcsr: tohost at cycle 295, 64 instructions
+PASS: program rv32mi/sbreak: tohost at cycle 311, 59 instructions
+PASS: program rv32mi/scall: tohost at cycle 371, 74 instructions
+PASS: program rv32mi/sh-misaligned: tohost at cycle 373, 77 instructions
+PASS: program rv32mi/shamt: tohost at cycle 296, 59 instructions
+PASS: program rv32mi/sw-misaligned: tohost at cycle 513, 109 instructions
+PASS: program rv32mi/zicntr: tohost at cycle 472, 112 instructions
+PASS: program directed/atomics: tohost at cycle 647, 154 instructions
+PASS: program directed/dot8: tohost at cycle 855, 249 instructions
+PASS: program directed/dot8_fields_0: tohost at cycle 32789, 8736 instructions
+PASS: program directed/dot8_fields_1: tohost at cycle 32788, 8735 instructions
+PASS: program directed/dot8_fields_2: tohost at cycle 32789, 8736 instructions
+PASS: program directed/dot8_fields_3: tohost at cycle 32789, 8736 instructions
+PASS: program directed/halfword_branch_target: tohost at cycle 289, 83 instructions
+PASS: program directed/redirect_while_waiting: tohost at cycle 475, 136 instructions
+PASS: program directed/smc: tohost at cycle 2634, 476 instructions
+PASS: program directed/wrongpath_muldiv: tohost at cycle 410, 82 instructions
+PASS: program traps/csr_ordering: tohost at cycle 1340, 339 instructions
+PASS: program traps/decode_traps: tohost at cycle 2311, 760 instructions
+PASS: program traps/dot8_traps: tohost at cycle 54087, 19013 instructions
+PASS: program traps/execute_traps: tohost at cycle 2058, 667 instructions
+PASS: program selfcheck/dot8_arith: tohost at cycle 3882380, 2645248 instructions
+PASS: program c/dot8_jobs: tohost at cycle 1743609, 1114993 instructions
+PASS: 99/99 programs on the board design in simulation end as in the CPU shell, cycle for cycle, every RVFI record as the shell's

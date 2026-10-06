@@ -2084,7 +2084,7 @@ parallel-workloads:
 
 test: smoke phase1 hello bench cache uart fpga-sim linux-sim counters retirement npu-pe npu-array npu-engine npu-regs npu-driver npu-runtime npu-stop npu-bench-validate arbiter shared-fabric multicore-runtime parallel
 
-check: tools smoke phase1 hello bench cache uart fpga-sim linux-sim linux-dual-sim linux-coherent-sim counters retirement pcpi-probe dot8-unit npu-pe npu-array npu-engine npu-regs device-arbiter dma-counters l2-unit npu-driver npu-runtime npu-stop npu-bench-validate xe-bench-validate phase11-infer-validate workloads atomic-fabric atomic-runtime atomic-faults coherent-cache warm-stop coherent-counters coherent-soc timer-unit timer-firmware irq-unit timer-interrupt sram-unit sram-lint freeze-interfaces coherent-bench riscv-reference riscv-reference-negative coherent-litmus arbiter shared-fabric multicore-runtime multicore-adversarial parallel phase17-baseline-audit core-riscv-tests core-riscv-tests-stall core-arch-tests core-random-lockstep core-lockstep-selftest core-ports-tests core-kernels core-aster-fetch core-aster-tests core-aster-kernels core-aster-act4 core-aster-l1-unit core-aster-l1-tests core-aster-firmware core-performance-gate aster-board-sim npu-v1-tests npu-tests npu-im2col-cost npu-soc-tests
+check: tools smoke phase1 hello bench cache uart fpga-sim linux-sim linux-dual-sim linux-coherent-sim counters retirement pcpi-probe dot8-unit npu-pe npu-array npu-engine npu-regs device-arbiter dma-counters l2-unit npu-driver npu-runtime npu-stop npu-bench-validate xe-bench-validate phase11-infer-validate workloads atomic-fabric atomic-runtime atomic-faults coherent-cache warm-stop coherent-counters coherent-soc timer-unit timer-firmware irq-unit timer-interrupt sram-unit sram-lint freeze-interfaces coherent-bench riscv-reference riscv-reference-negative coherent-litmus arbiter shared-fabric multicore-runtime multicore-adversarial parallel phase17-baseline-audit core-riscv-tests core-riscv-tests-stall core-arch-tests core-random-lockstep core-lockstep-selftest core-ports-tests core-kernels core-aster-fetch core-aster-tests core-aster-kernels core-aster-act4 core-aster-l1-unit core-aster-l1-tests core-aster-firmware core-performance-gate aster-board-sim npu-v1-tests npu-tests npu-options-tests npu-im2col-cost npu-soc-tests
 
 # Phase 18 CPU shell: one CPU with a synchronous SRAM at 0x8000_0000 and an
 # RVFI trace for lockstep against Spike (docs/phase18.md).
@@ -2512,14 +2512,18 @@ fpga-aster-core:
 # The Phase 19 SoC's board design (milestone 19.4: rtl/soc/aster_npu_soc.sv,
 # the core, its caches and the v2 NPU) built at 100 MHz in context the same way
 # (build_aster_core.tcl, design npu). Not part of `check`.
+# SOC_PARAMS ("NAME=VALUE;...") builds one of 19.5's options into
+# $(ASTER_NPU_BOARD_DIR)$(NPU_TAG).
+SOC_PARAMS ?=
 ASTER_NPU_BOARD_DIR := $(FPGA_BUILD_DIR)/aster_npu
 .PHONY: fpga-aster-npu
 fpga-aster-npu:
 	@command -v $(VIVADO) >/dev/null || { echo "ERROR: Vivado not found (set VIVADO=/path/to/vivado)" >&2; exit 1; }
-	@mkdir -p $(ASTER_NPU_BOARD_DIR) && rm -f $(ASTER_NPU_BOARD_DIR)/aster_npu.bit   # never a stale bitstream
+	@mkdir -p $(ASTER_NPU_BOARD_DIR)$(NPU_TAG) && rm -f $(ASTER_NPU_BOARD_DIR)$(NPU_TAG)/aster_npu.bit   # never a stale bitstream
 	$(VIVADO) -mode batch -nojournal -nolog -notrace -source $(ROOT)/fpga/pynq_z1/build_aster_core.tcl \
-		-tclargs $(ROOT) $(ASTER_NPU_BOARD_DIR) 100 npu > $(ASTER_NPU_BOARD_DIR)/build.out 2>&1 || { tail -30 $(ASTER_NPU_BOARD_DIR)/build.out; exit 1; }
-	@grep -E '^(ASTER_SIGNOFF|SUMMARY)' $(ASTER_NPU_BOARD_DIR)/build.out $(ASTER_NPU_BOARD_DIR)/summary.txt
+		-tclargs $(ROOT) $(ASTER_NPU_BOARD_DIR)$(NPU_TAG) 100 npu "$(SOC_PARAMS)" > $(ASTER_NPU_BOARD_DIR)$(NPU_TAG)/build.out 2>&1 \
+		|| { tail -30 $(ASTER_NPU_BOARD_DIR)$(NPU_TAG)/build.out; exit 1; }
+	@grep -E '^(ASTER_SIGNOFF|SUMMARY)' $(ASTER_NPU_BOARD_DIR)$(NPU_TAG)/build.out $(ASTER_NPU_BOARD_DIR)$(NPU_TAG)/summary.txt
 aster-board: $(ASTER_L1_SIM)
 	@test -n "$(ASTER_BOARD_OUTPUT)" || { echo "ERROR: set ASTER_BOARD_OUTPUT to a new evidence directory" >&2; exit 1; }
 	@test -f $(ASTER_BOARD_DIR)/aster_core.bit || { echo "ERROR: make fpga-aster-core first" >&2; exit 1; }
@@ -2602,8 +2606,10 @@ npu-tests: $(NPU_V2_SIM)
 				|| { tail -4 $(NPU_DIR)/v2-$$mode-$$seed.log; exit 1; }; \
 		done; \
 		$(NPU_V2_SIM) +edges $$extra > $(NPU_DIR)/v2-$$mode-edges.log 2>&1 || { tail -4 $(NPU_DIR)/v2-$$mode-edges.log; exit 1; }; \
-		echo "PASS: v2 NPU in the NPU shell, $$mode: $(NPU_SEEDS) seeds x 1,000 jobs and the 37 edge jobs as the reference, every coverage bin$$(case $$mode in plain|latency1) echo ', every job as the cycle model';; esac)"; \
+		echo "PASS: v2 NPU in the NPU shell, $$mode: $(NPU_SEEDS) seeds x 1,000 jobs and the 42 edge jobs as the reference, every coverage bin$$(case $$mode in plain|latency1) echo ', every job as the cycle model';; esac)"; \
 	done
+	@set -o pipefail; mkdir -p $(NPU_DIR) && $(CXX) -O2 -std=c++20 -I$(ROOT)/verification/npu $(ROOT)/verification/npu/npu_model_check.cpp \
+		-o $(NPU_DIR)/npu_model_check && $(NPU_DIR)/npu_model_check 1 | sed 's/^MODEL PASS /PASS: the stepped cycle model (19.5) equals 19.1'"'"'s by phases on 19.4'"'"'s NPU: /'
 	@for test in 1:MEMORY_MISMATCH 3:COUNTER_MISMATCH; do \
 		n=$${test%%:*}; want=$${test#*:}; \
 		got=$$($(NPU_V2_SIM) +seed=1 +jobs=1000 +selftest=$$n 2>/dev/null | tail -1 | awk '{print $$2}'); \
@@ -2618,6 +2624,17 @@ npu-tests: $(NPU_V2_SIM)
 	@rm -f $(NPU_DIR)/v2-conv.log; for conv in 32,32,1,5,5,1 16,16,3,3,3,16 7,7,16,3,3,32; do \
 		$(NPU_V2_SIM) +conv=$$conv +cycle_check >> $(NPU_DIR)/v2-conv.log 2>&1 || { cat $(NPU_DIR)/v2-conv.log; exit 1; }; \
 	done; sed 's/^NPU PASS /PASS: v2 NPU convolution, direct and im2col, the same result, two-cycle memory: /' $(NPU_DIR)/v2-conv.log
+
+# npu.md §4.6's options (milestone 19.5; scripts/npu_options.py): each
+# configuration of the v2 NPU (a second A strip buffer, a 64-bit memory port,
+# both, the 8x8 array, all three — the adopted NPU) in the NPU shell as
+# npu-tests runs 19.4's: random and edge jobs in each memory mode (the adopted
+# configuration NPU_SEEDS seeds a mode, the others one), every job on the
+# memories that answer on time as the cycle model, then the gate cases.
+.PHONY: npu-options-tests
+npu-options-tests: $(NPU_V2_RTL) verification/npu/shell_npu_v2.sv $(NPU_SHELL_SRC)
+	@set -o pipefail; $(PYTHON) scripts/npu_options.py --build-dir $(NPU_DIR)/options --seeds $(NPU_SEEDS) \
+		| tee $(NPU_DIR)/options.log
 
 # What im2col costs the CPU (19.3): the Aster core with its caches lowers
 # Conv2D and CIFAR's two convolutions to im2col matrices with the workloads'
@@ -2656,6 +2673,38 @@ npu-soc-tests: $(NPU_SOC_SIM) $(ASTER_L1_SIM) $(ASTER_DOT8_PLUGIN)
 		|| { grep -v '^PASS' $(NPU_DIR)/soc-board.log; exit 1; }; \
 		tail -1 $(NPU_DIR)/soc-board.log | sed 's/on the board design in simulation/(18.7'"'"'s board programs) on the Phase 19 SoC in simulation/'
 
+# The gate programs on the SoC in each of 19.5's configurations (19.4's NPU,
+# the second strip, the 64-bit port, both, and the adopted 8x8 with both):
+# each SoC simulation built with its NPU parameters, scripts/npu_soc.py run on
+# it — the measurements behind npu.md §4.6's adoptions. Not in make check (the
+# 8x8 build is slow); its log is kept with 19.5's evidence.
+NPU_SOC_OPTIONS := base:-GA_STRIPS=1,-GPORT_BYTES=4,-GDIM=4 s2:-GA_STRIPS=2,-GPORT_BYTES=4,-GDIM=4 \
+	p8:-GA_STRIPS=1,-GPORT_BYTES=8,-GDIM=4 s2p8:-GA_STRIPS=2,-GPORT_BYTES=8,-GDIM=4 s2p8d8:-GA_STRIPS=2,-GPORT_BYTES=8,-GDIM=8
+.PHONY: npu-soc-options
+npu-soc-options:
+	@set -o pipefail; rm -f $(NPU_DIR)/soc-options.log; for option in $(NPU_SOC_OPTIONS); do \
+		tag=$${option%%:*}; params=$$(echo $${option#*:} | tr ',' ' '); mkdir -p $(NPU_DIR)/soc_$$tag; \
+		$(VERILATOR) --cc --exe --build -O3 --assert --Wall $$params --top-module sim_npu_soc \
+			--Mdir $(NPU_DIR)/soc_$$tag/obj -o $(abspath $(NPU_DIR))/soc_$$tag/sim \
+			$(addprefix $(ROOT)/,$(NPU_SOC_RTL)) $(ROOT)/verification/npu/sim_npu_soc.sv $(ROOT)/verification/npu/tb_npu_soc.cpp \
+			> $(NPU_DIR)/soc_$$tag.build.log 2>&1 || { tail -5 $(NPU_DIR)/soc_$$tag.build.log; exit 1; }; \
+		echo "== $$tag ($$params)" | tee -a $(NPU_DIR)/soc-options.log; \
+		RISCV_PREFIX=$(RISCV_PREFIX) $(PYTHON) scripts/npu_soc.py --sim $(NPU_DIR)/soc_$$tag/sim \
+			--build-dir $(NPU_DIR)/soc_$$tag/programs | tee -a $(NPU_DIR)/soc-options.log || exit 1; \
+	done
+
+# The Phase 19 SoC on the board (milestone 19.5): fpga-aster-npu's bitstream
+# runs 18.7's programs (compared with the CPU shell, as aster-board) and the
+# gate programs (software/npu2, compared with the SoC's simulation,
+# npu-soc-sim: the same console and tohost cycle). ASTER_BOARD_SUDO and
+# ASTER_BOARD_OUTPUT as aster-board. Not in make check.
+.PHONY: aster-npu-board
+aster-npu-board: $(ASTER_L1_SIM) $(NPU_SOC_SIM)
+	@test -n "$(ASTER_BOARD_OUTPUT)" || { echo "ERROR: set ASTER_BOARD_OUTPUT to a new evidence directory" >&2; exit 1; }
+	@test -f $(ASTER_NPU_BOARD_DIR)/aster_npu.bit || { echo "ERROR: make fpga-aster-npu first" >&2; exit 1; }
+	RISCV_PREFIX=$(RISCV_PREFIX) $(PYTHON) scripts/aster_board.py --design npu --board $(ASTER_NPU_BOARD_DIR)/aster_npu.bit \
+		--soc-sim $(NPU_SOC_SIM) --host $(ASTER_BOARD_HOST) --output $(ASTER_BOARD_OUTPUT) \
+		--build-dir $(NPU_DIR)/board_programs
 # The v2 NPU's timing at 10 ns (milestone 19.1): Vivado out of context on the
 # PYNQ-Z1 part — the NPU alone (its own area; register-to-register paths only,
 # its ports unconstrained, its memory port's write data keeping the data
@@ -2664,19 +2713,24 @@ npu-soc-tests: $(NPU_SOC_SIM) $(ASTER_L1_SIM) $(ASTER_DOT8_PLUGIN)
 # (back-pressure), the register port's inputs registered — with the paths from
 # the memory's answer and readiness to the next request, through the array,
 # and into and out of the operand buffers named.
-# Not part of `check`.
+# NPU_GENERICS ("NAME=VALUE;...", e.g. A_STRIPS=2) times one of 19.5's options,
+# into directories suffixed NPU_TAG. Not part of `check`.
+NPU_GENERICS ?=
+NPU_TAG ?=
 .PHONY: timing-fpga-npu2
 timing-fpga-npu2:
 	@command -v $(VIVADO) >/dev/null || { echo "ERROR: Vivado not found (set VIVADO=/path/to/vivado)" >&2; exit 1; }
-	@mkdir -p $(TIMING_DIR)/fpga/npu2 && cd $(TIMING_DIR)/fpga/npu2 && \
-		$(VIVADO) -mode batch -nojournal -log vivado.log -source $(ROOT)/scripts/timing/vivado_ooc.tcl \
-		-tclargs $(abspath $(TIMING_DIR))/fpga/npu2 aster_npu2 $(TIMING_PERIOD_NS) $(addprefix $(ROOT)/,$(NPU_V2_RTL)) \
+	@test -z "$(NPU_GENERICS)" || test -n "$(NPU_TAG)" || { echo "ERROR: NPU_GENERICS needs an NPU_TAG (19.4's results stay)" >&2; exit 1; }
+	@mkdir -p $(TIMING_DIR)/fpga/npu2$(NPU_TAG) && cd $(TIMING_DIR)/fpga/npu2$(NPU_TAG) && \
+		OOC_GENERICS="$(NPU_GENERICS)" $(VIVADO) -mode batch -nojournal -log vivado.log -source $(ROOT)/scripts/timing/vivado_ooc.tcl \
+		-tclargs $(abspath $(TIMING_DIR))/fpga/npu2$(NPU_TAG) aster_npu2 $(TIMING_PERIOD_NS) $(addprefix $(ROOT)/,$(NPU_V2_RTL)) \
 		> run.out || { tail -20 run.out; exit 1; }; \
 		grep -E '^SUMMARY' run.out
-	@mkdir -p $(TIMING_DIR)/fpga/npu2_bram && cd $(TIMING_DIR)/fpga/npu2_bram && \
+	@case "$(NPU_GENERICS)" in *PORT_BYTES=8*) echo "npu2_bram skipped: its memory is 32 bits wide (the SoC's in-context build times a 64-bit port)"; exit 0;; esac; \
+	mkdir -p $(TIMING_DIR)/fpga/npu2_bram$(NPU_TAG) && cd $(TIMING_DIR)/fpga/npu2_bram$(NPU_TAG) && \
 		OOC_NAMED_PATHS="answer_to_request=*v2_reg*>*engine/*;ready_to_request=*ready_reg*>*engine/*;register_port=*q_addr_reg*>*;error_to_request=*err1_reg*>*engine/*;accumulate=*acc_reg*>*acc_reg*|*bank_data_reg*;buffer_to_operands=*mem_reg*>*a2_reg*|*b2_reg*;operands_onward=*a2_reg*>*;answer_to_buffer=*ans_data_reg*>*mem_reg*;bank_to_write=*bank_data_reg*>*wr_q_data_reg*" \
-		$(VIVADO) -mode batch -nojournal -log vivado.log -source $(ROOT)/scripts/timing/vivado_ooc.tcl \
-		-tclargs $(abspath $(TIMING_DIR))/fpga/npu2_bram timing_npu2_bram $(TIMING_PERIOD_NS) \
+		OOC_GENERICS="$(NPU_GENERICS)" $(VIVADO) -mode batch -nojournal -log vivado.log -source $(ROOT)/scripts/timing/vivado_ooc.tcl \
+		-tclargs $(abspath $(TIMING_DIR))/fpga/npu2_bram$(NPU_TAG) timing_npu2_bram $(TIMING_PERIOD_NS) \
 		$(addprefix $(ROOT)/,$(NPU_V2_RTL)) $(ROOT)/verification/npu/timing_npu2_bram.sv \
 		> run.out || { tail -20 run.out; exit 1; }; \
 		grep -E '^(SUMMARY|NAMED)' run.out

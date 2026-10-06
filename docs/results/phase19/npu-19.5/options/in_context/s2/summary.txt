@@ -1,0 +1,1 @@
+SUMMARY top=aster_npu_board_wrapper fclk_mhz=100 wns_ns=0.128 whs_ns=0.031 from=aster_npu_board_i/aster/inst/implementation/npu/engine/gp_full_reg[3]/C to=aster_npu_board_i/aster/inst/implementation/npu/engine/ld_words_reg[5]/D

@@ -1,0 +1,15 @@
+PASS: the Phase 19 SoC runs npu2_gemm_gate: every NPU job (5 completed, 0 ended by an error or an abort), write and snoop, 3 CPU results and 344,497 main-memory loads as the reference
+PASS: GEMM 64x64x64 utilization in the SoC 78.4% (gate 50%): 262,144 MACs in 5,225 job cycles (76.7% end to end, a 8x8 array)
+PASS: GEMM 64x64x64 speedup end to end 41.12x (gate 5x): the best CPU code (DOT8) 219,676 cycles (1.19 MACs a cycle), the NPU 5,342
+PASS: GEMM 96x96x96 utilization in the SoC 91.1% (gate 50%): 884,736 MACs in 15,180 job cycles (90.4% end to end, a 8x8 array)
+PASS: GEMM 96x96x96 speedup end to end 46.73x (gate 5x): the best CPU code (DOT8) 714,621 cycles (1.24 MACs a cycle), the NPU 15,294
+PASS: GEMM 128x64x128 utilization in the SoC 92.8% (gate 50%): 1,048,576 MACs in 17,648 job cycles (92.2% end to end, a 8x8 array)
+PASS: GEMM 128x64x128 speedup end to end 48.02x (gate 5x): the best CPU code (DOT8) 853,188 cycles (1.23 MACs a cycle), the NPU 17,766
+PASS: N=1 32x1x784 (K-split) utilization in the SoC, measured: 11.5% (3,409 job cycles, 3,526 end to end)
+PASS: N=1 784x1x25 (K-split) utilization in the SoC, measured: 7.0% (4,349 job cycles, 4,450 end to end)
+PASS: the Phase 19 SoC runs npu2_mnist_gate: every NPU job (65 completed, 0 ended by an error or an abort), write and snoop, 0 CPU results and 256,685 main-memory loads as the reference
+PASS: MNIST MLP 784-32-10 batch one, speedup per image 6.65x at the worst of 32 (gate 2x), 6.69x over all: the best CPU code (DOT8) 36,520 cycles an image, the NPU 5,460; logits as the reference on both, 30/32 labels
+PASS: the Phase 19 SoC runs npu2_coherence: every NPU job (162 completed, 4 ended by an error or an abort), write and snoop, 0 CPU results and 1,084,436 main-memory loads as the reference
+PASS: coherence: 160 jobs (80 with the CPU reading C as the NPU writes it), C's lines cached before each and read after, A and B stored just before START with no fence, the interrupt, 255 AMO and lr/sc adds racing the jobs; 2 error jobs and 2 aborts, each followed by a completed job; an sc after an NPU write to its word fails
+PASS: the Phase 19 SoC runs npu2_faults: every NPU job (0 completed, 0 ended by an error or an abort), write and snoop, 0 CPU results and 50 main-memory loads as the reference (and its 7 traps: sub-word and atomic accesses to the NPU's registers)
+PASS: every gate record present

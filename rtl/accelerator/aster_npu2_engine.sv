@@ -33,6 +33,24 @@
 //   and the writer writes each row's sum of its four partials to C(i_r, 0).
 // FINISH: until every request is answered, then the job ends.
 //
+// With A_STRIPS = 2 (19.5, npu.md §4.6: a second A strip buffer) the A banks
+// are doubled: while the array computes a strip from one set, the loader loads
+// the next strip into the other, in the cycles the writer leaves the memory
+// port (the writer comes first). A strip's last step goes to NEXT, which waits
+// for the next strip's load and starts its tiles; DRAIN comes only at a
+// panel's end. With A_STRIPS = 1 the engine is 19.4's.
+//
+// With PORT_BYTES = 8 (19.5, npu.md §4.6: a 64-bit memory port) the loader
+// reads aligned eight-byte units, the buffers are eight bytes wide (the array
+// takes the four-byte half or the byte it needs), and the writer writes each
+// C word with the byte enables of its half. With PORT_BYTES = 4 it is 19.4's.
+//
+// With DIM = 8 (19.5, npu.md §4.6: the 8x8 array; it needs PORT_BYTES = 8)
+// the array is 8x8: strips of eight rows (eight A banks), tiles of eight
+// columns, a B panel entry eight bytes (one buffer word; the B buffer 32 KiB,
+// so a panel is still floor(4096/K) groups and K reaches 4096), output banks
+// of 64 results, and K-split steps of eight k. With DIM = 4 it is 19.4's 4x4.
+//
 // The loader reads the aligned words covering each operand segment (a row, or
 // for the K-split B with a stride other than 1 a single byte) and writes each
 // word's bytes inside the segment, rotated to their buffer byte positions,
@@ -48,7 +66,10 @@
 module aster_npu2_engine #(
     parameter logic [31:0] MEM_BASE    = 32'h8000_0000,
     parameter logic [31:0] MEM_BYTES   = 32'h0001_8000,
-    parameter int          OUTSTANDING = 2
+    parameter int          OUTSTANDING = 2,
+    parameter int          A_STRIPS    = 1,     // 1, or 2: the next strip loads while the array computes
+    parameter int          PORT_BYTES  = 4,     // 4, or 8: a 64-bit memory port
+    parameter int          DIM         = 4      // 4, or 8 (with PORT_BYTES = 8): the array's rows and columns
 ) (
     input  logic        clk,
     input  logic        resetn,
@@ -64,14 +85,15 @@ module aster_npu2_engine #(
     output logic [2:0]  finish_code,       // 0: none; else the error code
     output logic        finish_aborted,
     output logic        ev_read, ev_write, ev_step, ev_tile,
-    output logic [16:0] ev_tile_macs,
+    output logic [18:0] ev_tile_macs,
     output logic        m_req_valid,
     input  logic        m_req_ready,
-    output logic [31:2] m_req_addr,
+    output logic [31:2] m_req_addr,           // a read: its unit's first word; a write: its word
     output logic        m_req_we,
-    output logic [31:0] m_req_wdata,
+    output logic [8*PORT_BYTES-1:0] m_req_wdata,
+    output logic [PORT_BYTES-1:0]   m_req_be,   // a write's lanes in its unit (a read: all)
     input  logic        m_rsp_valid,
-    input  logic [31:0] m_rsp_rdata,
+    input  logic [8*PORT_BYTES-1:0] m_rsp_rdata,
     input  logic        m_rsp_error
 );
     localparam int CHECK_LEN = 16;
@@ -79,11 +101,28 @@ module aster_npu2_engine #(
     if (OUTSTANDING < 1 || OUTSTANDING > 4) begin : bad_outstanding
         $error("aster_npu2_engine: OUTSTANDING must be 1 to 4");
     end
+    if (A_STRIPS < 1 || A_STRIPS > 2) begin : bad_strips
+        $error("aster_npu2_engine: A_STRIPS must be 1 or 2");
+    end
+    if (PORT_BYTES != 4 && PORT_BYTES != 8) begin : bad_port
+        $error("aster_npu2_engine: PORT_BYTES must be 4 or 8");
+    end
+    localparam int PB  = PORT_BYTES;              // the port's and the buffers' word, in bytes
+    localparam int LPB = PB == 8 ? 3 : 2;
+    localparam int DW  = 8 * PB;
+    localparam int A_WORDS = 4096 / PB, AAW = $clog2(A_WORDS);    // an A bank: 4 KiB
+    localparam int B_WORDS = 4096 * DIM / PB, BAW = $clog2(B_WORDS);  // the B buffer: 4096 entries of DIM bytes
+    localparam logic [31:0] PBM = 32'(PB - 1);                    // a byte's offset in its unit
+    if (DIM != 4 && !(DIM == 8 && PB == 8)) begin : bad_dim
+        $error("aster_npu2_engine: DIM must be 4, or 8 with PORT_BYTES = 8");
+    end
+    localparam int LD = DIM == 8 ? 3 : 2;
+    localparam int DIV_BIT = 12;                  // the panel's dividend: 4096 B entries of DIM bytes
     localparam logic [45:0] WIN_LO = {14'b0, MEM_BASE};
     localparam logic [45:0] WIN_HI = {14'b0, MEM_BASE} + {14'b0, MEM_BYTES};
 
     typedef enum logic [3:0] {
-        S_IDLE, S_CHECK, S_PANEL, S_LOAD, S_STRIP, S_TILES, S_DRAIN, S_FINISH, S_STOP
+        S_IDLE, S_CHECK, S_PANEL, S_LOAD, S_STRIP, S_TILES, S_DRAIN, S_FINISH, S_STOP, S_NEXT
     } state_t;
     state_t state;
 
@@ -122,23 +161,23 @@ module aster_npu2_engine #(
     logic [2:0]  check_code, check_code_q;
     logic [12:0] gtot13;
     logic        end_now;
-    assign gtot13 = (d_n_now + 13'd3) >> 2;
+    assign gtot13 = (d_n_now + 13'(DIM - 1)) >> LD;
     assign empty_a = m == 0 || k == 0;
     assign empty_b = k == 0 || n == 0;
     assign empty_c = m == 0 || n == 0;
-    assign div_shift = {div_rem[12:0], div_i == 4'd12};          // the dividend is 4096
+    assign div_shift = {div_rem[12:0], div_i == 4'(DIV_BIT)};    // the dividend is 4096
     assign check_code = code1 ? 3'd1 : code2 ? 3'd2 : code3 ? 3'd3 : code4 ? 3'd4 : code5 ? 3'd5 : 3'd0;
 
     // ------------------------------------------------------------ geometry
-    logic [10:0] gp_full, g_left, gp;            // groups of four columns
+    logic [10:0] gp_full, g_left, gp;            // groups of DIM columns
     logic [12:0] cols_left, panel_cols;          // columns left from the panel's first; this panel's
     logic [12:0] rows_left;                      // rows left from the strip's first
-    logic [2:0]  rv;                             // rows in this strip
+    logic [LD:0] rv;                             // rows in this strip
     logic [31:0] b_panel, c_panel, c_strip;
     logic [10:0] gp_now;
     logic [12:0] pcols_now;
     assign gp_now    = gp_full < g_left ? gp_full : g_left;
-    assign pcols_now = {gp_now, 2'b00} < cols_left ? {gp_now, 2'b00} : cols_left;
+    assign pcols_now = 13'(gp_now) << LD < cols_left ? 13'(gp_now) << LD : cols_left;
 
     // ------------------------------------------------------------ memory port
     logic        held, held_ld, src_ld, can_issue, accept, acc_q, stop, bus_err, abort_pending;
@@ -146,13 +185,18 @@ module aster_npu2_engine #(
     logic        ld_have, wr_q_valid;
     logic [31:2] ld_req;
     logic [31:0] wr_q_addr, wr_q_data;
-    assign src_ld    = held ? held_ld : state == S_LOAD;
+    logic [PB-1:0] wr_be;
+    assign wr_be = PB == 8 ? (wr_q_addr[2] ? PB'(8'hF0) : PB'(8'h0F)) : PB'(4'hF);
+    // The loader presents when it has a request and the writer has none (in
+    // LOAD the writer is empty, so the loader has the port).
+    assign src_ld    = held ? held_ld : ld_have && !wr_q_valid;
     assign can_issue = (count - {2'b0, m_rsp_valid}) < 3'(OUTSTANDING);
     assign stop      = abort_pending || bus_err;
     assign m_req_valid = held || ((src_ld ? ld_have : wr_q_valid) && can_issue && !stop);
     assign m_req_addr  = src_ld ? ld_req : wr_q_addr[31:2];
     assign m_req_we    = !src_ld;
-    assign m_req_wdata = wr_q_data;
+    assign m_req_wdata = {(PB / 4){wr_q_data}};
+    assign m_req_be    = src_ld ? {PB{1'b1}} : wr_be;
     assign accept      = m_req_valid && m_req_ready;
     assign ev_read     = accept && src_ld;
     assign ev_write    = accept && !src_ld;
@@ -164,36 +208,37 @@ module aster_npu2_engine #(
     typedef struct packed {
         logic        read;
         logic        is_b;
-        logic [1:0]  bank;     // A: the bank
+        logic [2:0]  bank;     // A: the bank (a row of the strip)
         logic [15:0] wbase;    // signed: the buffer word of the lanes that do not wrap
-        logic [1:0]  shift;
-        logic [3:0]  lanes;    // the word's lanes inside the segment
+        logic [2:0]  shift;
+        logic [7:0]  lanes;    // the unit's lanes inside the segment
+        logic        slot;     // A: the strip buffer (A_STRIPS = 2)
     } tag_t;
     tag_t        tags [0:3];
     logic [1:0]  tag_head, tag_tail;
     tag_t        tag_new;
 
     // ------------------------------------------------------------ loader
-    logic        ld_is_b;
+    logic        ld_is_b, ld_slot;
     logic [12:0] ld_segs, ld_lseg;
     logic [31:0] ld_addr, ld_next, ld_stride;
     logic [10:0] ld_word, ld_words;
-    logic [1:0]  ld_bank;
+    logic [2:0]  ld_bank;
     logic [15:0] ld_dbyte, ld_dstep;             // the segment's first buffer byte; per segment
     logic [15:0] ld_wbase;                       // signed: (ld_dbyte - alignment + 4 x word) >> 2
     logic [2:0]  ld_pending;                     // reads accepted and not yet written to a buffer
     logic [10:0] next_words;
     logic [15:0] ld_db, next_db;                 // signed: buffer byte - alignment, this segment's and the next's
-    logic [3:0]  ld_lanes;
-    logic [1:0]  last_lane;
-    assign next_words = 11'((14'(seg_addr_n[1:0]) + 14'(seg_len_n) + 14'd3) >> 2);
-    assign ld_db      = ld_dbyte - 16'(ld_addr[1:0]);
-    assign next_db    = seg_db_n - 16'(seg_addr_n[1:0]);
-    assign last_lane  = 2'(ld_addr[1:0] + ld_lseg[1:0] - 2'd1);
-    assign ld_lanes   = (ld_word == 11'd0 ? 4'hF << ld_addr[1:0] : 4'hF)
-                      & (ld_word + 11'd1 == ld_words ? 4'hF >> (2'd3 - last_lane) : 4'hF);
-    assign tag_new = '{read: src_ld, is_b: ld_is_b, bank: ld_bank, wbase: ld_wbase, shift: ld_db[1:0],
-                       lanes: ld_lanes};
+    logic [PB-1:0]  ld_lanes;
+    logic [LPB-1:0] last_lane;
+    assign next_words = 11'((14'(seg_addr_n & PBM) + 14'(seg_len_n) + 14'(PB - 1)) >> LPB);
+    assign ld_db      = ld_dbyte - 16'(ld_addr & PBM);
+    assign next_db    = seg_db_n - 16'(seg_addr_n & PBM);
+    assign last_lane  = LPB'(ld_addr[LPB-1:0] + LPB'(ld_lseg) - LPB'(1));
+    assign ld_lanes   = (ld_word == 11'd0 ? {PB{1'b1}} << ld_addr[LPB-1:0] : {PB{1'b1}})
+                      & (ld_word + 11'd1 == ld_words ? {PB{1'b1}} >> (LPB'(PB - 1) - last_lane) : {PB{1'b1}});
+    assign tag_new = '{read: src_ld, is_b: ld_is_b, bank: ld_bank, wbase: ld_wbase, shift: 3'(ld_db[LPB-1:0]),
+                       lanes: 8'(ld_lanes), slot: ld_slot};
 
     // A's rows: the row being loaded (its address, i mod A_M0, and the address
     // of its block of A_M0 rows) and the next; A's segments within a row.
@@ -222,18 +267,36 @@ module aster_npu2_engine #(
     assign seg_len_n  = ld_is_b ? ld_lseg : a_inner ? a_inner_len : a_first_len;
     assign seg_db_n   = ld_is_b ? ld_dbyte + ld_dstep : a_inner ? ld_dbyte + 16'(a_k0) : 16'd0;
 
+    // A strip's load is set up (the loader's registers, from the row steppers)
+    // in S_STRIP for the strip itself, and with A_STRIPS = 2 for the strip after
+    // it when its own load ends, or (in NEXT) for the one after next.
+    logic        a_setup, a_setup_slot, load_done, rd_slot;
+    logic [12:0] a_setup_rows;                   // the strip's rows from its first to M
+    assign load_done = !ld_have && ld_pending == 0 && !ans_valid;
+    always_comb begin
+        a_setup = 1'b0; a_setup_rows = rows_left; a_setup_slot = rd_slot;
+        if (k != 0 && !stop) begin
+            if (state == S_STRIP) a_setup = 1'b1;
+            else if (A_STRIPS == 2 && state == S_LOAD && !ld_is_b && load_done && rows_left > 13'(DIM)) begin
+                a_setup = 1'b1; a_setup_rows = rows_left - 13'(DIM); a_setup_slot = !rd_slot;
+            end else if (A_STRIPS == 2 && state == S_NEXT && load_done && rows_left > 13'(2 * DIM)) begin
+                a_setup = 1'b1; a_setup_rows = rows_left - 13'(2 * DIM); a_setup_slot = rd_slot;
+            end
+        end
+    end
+
     // The answer stage: a read's data and tag, written to its buffer next cycle.
     logic        ans_valid;
     tag_t        ans_tag;
-    logic [31:0] ans_data, ans_rot;
-    logic [3:0]  ans_we0, ans_we1;               // lanes to word wbase, to wbase + 1
-    logic [63:0] ans_twice;
-    logic [7:0]  ans_lanes_up;
-    assign ans_twice    = {ans_data, ans_data} >> (6'd32 - {1'b0, ans_tag.shift, 3'b000});
-    assign ans_rot      = ans_twice[31:0];              // rotated left by `shift` bytes
-    assign ans_lanes_up = {4'b0, ans_tag.lanes} << ans_tag.shift;
-    assign ans_we0      = ans_lanes_up[3:0];
-    assign ans_we1      = ans_lanes_up[7:4];
+    logic [DW-1:0]   ans_data, ans_rot;
+    logic [PB-1:0]   ans_we0, ans_we1;           // lanes to word wbase, to wbase + 1
+    logic [2*DW-1:0] ans_twice;
+    logic [2*PB-1:0] ans_lanes_up;
+    assign ans_twice    = {ans_data, ans_data} >> (7'(DW) - {1'b0, ans_tag.shift, 3'b000});
+    assign ans_rot      = ans_twice[DW-1:0];            // rotated left by `shift` bytes
+    assign ans_lanes_up = {{PB{1'b0}}, ans_tag.lanes[PB-1:0]} << ans_tag.shift;
+    assign ans_we0      = ans_lanes_up[PB-1:0];
+    assign ans_we1      = ans_lanes_up[2*PB-1:PB];
 
     // ------------------------------------------------------------ tiles
     logic [10:0] t_idx;                          // tile in the strip
@@ -242,62 +305,82 @@ module aster_npu2_engine #(
     logic        tile_bank;
     logic [31:0] c_tile;
     logic [12:0] tcols_left;
-    logic [2:0]  cv_now;
+    logic [LD:0] cv_now;
     logic        issue, tile_start, last_step;
     logic [1:0]  bank_busy, bank_full;
     logic [31:0] bank_addr [0:1];
-    logic [2:0]  bank_rv [0:1], bank_cv [0:1];
-    logic [16:0] bank_macs [0:1];
-    logic [31:0] bank_data [0:1][0:15];
+    logic [LD:0] bank_rv [0:1], bank_cv [0:1];
+    logic [18:0] bank_macs [0:1];
+    logic [31:0] bank_data [0:1][0:DIM*DIM-1];
     logic        ksplit;                         // the job runs the K-split mapping
-    logic [12:0] ksteps;                         // steps of a tile: K, or ceil(K/4) in K-split
-    logic [9:0]  a_word;                         // the A banks' word a step reads
-    logic [1:0]  k_tail;                         // K-split: the last step's lanes inside K (0: all four)
-    assign cv_now     = tcols_left > 13'd4 ? 3'd4 : tcols_left[2:0];
+    logic [12:0] ksteps;                         // steps of a tile: K, or ceil(K/DIM) in K-split
+    logic [AAW-1:0] a_word;                      // the A banks' word a step reads
+    logic [LD-1:0] k_tail;                       // K-split: the last step's lanes inside K (0: all)
+    // cv_now, the tile's columns, is kept in a register beside tcols_left (it
+    // feeds a tile's MAC count at its start).
+    function automatic logic [LD:0] cols_of(input logic [12:0] left);
+        return left > 13'(DIM) ? (LD+1)'(DIM) : left[LD:0];
+    endfunction
     assign tile_start = kstep == 13'd0;
     assign last_step  = k == 0 || kstep + 13'd1 == ksteps;
-    assign a_word     = ksplit ? kstep[9:0] : kstep[11:2];
+    // Tiles: byte k is word k / PB; K-split: DIM bytes a step, so word DIM t / PB.
+    assign a_word     = ksplit ? AAW'((32'(kstep) << LD) >> LPB) : AAW'(kstep >> LPB);
     assign issue      = state == S_TILES && !stop && (!tile_start || !bank_busy[tile_bank]);
 
     // Pipeline: s1 buffer data, s2 operands, s3 products.
-    logic        s1_v, s1_first, s1_last, s1_zero, s1_bank;
-    logic [1:0]  s1_lane;
-    logic [3:0]  s1_kmask;                       // K-split: the step's lanes inside K
+    logic        s1_v, s1_first, s1_last, s1_zero, s1_bank, s1_slot;
+    logic [LPB-1:0] s1_lane;                     // tiles: A's byte in its word
+    logic        s1_ahalf, s1_bhalf;             // 4x4 on PB = 8: the four-byte half (K-split A; B)
+    logic [DIM-1:0] s1_kmask;                    // K-split: the step's lanes inside K
     logic        s2_v, s2_first, s2_last, s2_zero, s2_bank;
     logic        s3_v, s3_first, s3_last, s3_zero, s3_bank;
-    logic signed [7:0]  a2 [0:3][0:3], b2 [0:3];   // A per PE (K-split takes a lane per column)
-    logic signed [15:0] p3 [0:3][0:3];
-    logic [31:0] acc [0:3][0:3];
-    logic [31:0] a_rdata [0:3], b_rdata;
+    logic signed [7:0]  a2 [0:DIM-1][0:DIM-1], b2 [0:DIM-1];   // A per PE (K-split: a lane per column)
+    logic signed [15:0] p3 [0:DIM-1][0:DIM-1];
+    logic [31:0] acc [0:DIM-1][0:DIM-1];
+    logic [DW-1:0] a_rdata [0:DIM-1], b_rdata;
 
     // ------------------------------------------------------------ buffers
-    genvar r;
+    // A's banks, one set per strip buffer: the array reads set rd_slot, the
+    // loader writes its tag's set.
+    logic [DW-1:0] a_rdata_s [0:A_STRIPS-1][0:DIM-1];
+    genvar r, sl;
     generate
-        for (r = 0; r < 4; r++) begin : a_bank
-            logic        wr_here;
-            assign wr_here = ans_valid && !ans_tag.is_b && ans_tag.bank == 2'(r);
-            aster_npu2_ram #(.WORDS(1024)) ram (
-                .clk,
-                .a_en(wr_here ? |ans_we1 : issue), .a_we(wr_here ? ans_we1 : 4'h0),
-                .a_addr(wr_here ? 10'(ans_tag.wbase + 16'd1) : a_word),
-                .a_wdata(ans_rot), .a_rdata(a_rdata[r]),
-                .b_we(wr_here ? ans_we0 : 4'h0), .b_addr(10'(ans_tag.wbase)), .b_wdata(ans_rot)
-            );
+        for (sl = 0; sl < A_STRIPS; sl++) begin : a_set
+            for (r = 0; r < DIM; r++) begin : a_bank
+                logic        wr_here, rd_here;
+                assign wr_here = ans_valid && !ans_tag.is_b && ans_tag.bank == 3'(r) && ans_tag.slot == 1'(sl);
+                assign rd_here = issue && rd_slot == 1'(sl);
+                aster_npu2_ram #(.WORDS(A_WORDS), .BYTES(PB)) ram (
+                    .clk,
+                    .a_en(wr_here ? |ans_we1 : rd_here), .a_we(wr_here ? ans_we1 : {PB{1'b0}}),
+                    .a_addr(wr_here ? AAW'(ans_tag.wbase + 16'd1) : a_word),
+                    .a_wdata(ans_rot), .a_rdata(a_rdata_s[sl][r]),
+                    .b_we(wr_here ? ans_we0 : {PB{1'b0}}), .b_addr(AAW'(ans_tag.wbase)), .b_wdata(ans_rot)
+                );
+            end
         end
     endgenerate
+    always_comb for (int i = 0; i < DIM; i++) a_rdata[i] = a_rdata_s[A_STRIPS == 1 ? 0 : 32'(s1_slot)][i];
     logic b_wr;
     assign b_wr = ans_valid && ans_tag.is_b;
-    aster_npu2_ram #(.WORDS(4096)) b_ram (
+    aster_npu2_ram #(.WORDS(B_WORDS), .BYTES(PB)) b_ram (
         .clk,
-        .a_en(b_wr ? |ans_we1 : issue), .a_we(b_wr ? ans_we1 : 4'h0),
-        .a_addr(b_wr ? 12'(ans_tag.wbase + 16'd1) : bentry),   // (K-split: one tile, Gp = 1, so bentry = kstep)
+        .a_en(b_wr ? |ans_we1 : issue), .a_we(b_wr ? ans_we1 : {PB{1'b0}}),
+        // (K-split: one tile, Gp = 1, so bentry = kstep); an entry is four bytes
+        .a_addr(b_wr ? BAW'(ans_tag.wbase + 16'd1) : BAW'((32'(bentry) << LD) >> LPB)),
         .a_wdata(ans_rot), .a_rdata(b_rdata),
-        .b_we(b_wr ? ans_we0 : 4'h0), .b_addr(12'(ans_tag.wbase)), .b_wdata(ans_rot)
+        .b_we(b_wr ? ans_we0 : {PB{1'b0}}), .b_addr(BAW'(ans_tag.wbase)), .b_wdata(ans_rot)
     );
 
     // ------------------------------------------------------------ writer
     logic        wr_sel, wr_fresh, wr_load;
-    logic [2:0]  wr_r, wr_c;
+    logic [LD:0] wr_r, wr_c;
+    logic [31:0] wr_rowsum;                      // K-split: the row's DIM partials, summed
+    always_comb begin
+        wr_rowsum = '0;
+        for (int c = 0; c < (DIM == 8 ? DIM / 2 : DIM); c++)   // (8x8: the row's pair sums)
+            wr_rowsum = wr_rowsum + bank_data[wr_sel][DIM * 32'(wr_r[LD-1:0]) + c];
+    end
     logic [31:0] wr_row, wr_base;
     assign wr_base = wr_fresh ? bank_addr[wr_sel] : wr_row;
     assign wr_load = bank_full[wr_sel] && (!wr_q_valid || (accept && !src_ld)) && !stop;
@@ -334,12 +417,12 @@ module aster_npu2_engine #(
             count <= '0; tag_head <= '0; tag_tail <= '0;
             ld_have <= 1'b0; ld_is_b <= 1'b0; ld_segs <= '0; ld_lseg <= '0; ld_addr <= '0; ld_next <= '0;
             ld_stride <= '0; ld_word <= '0; ld_words <= '0; ld_bank <= '0; ld_dbyte <= '0; ld_dstep <= '0;
-            ld_wbase <= '0; ksplit <= 1'b0; ksteps <= '0; k_tail <= '0;
+            ld_wbase <= '0; ksplit <= 1'b0; ksteps <= '0; k_tail <= '0; ld_slot <= 1'b0; rd_slot <= 1'b0;
             ld_req <= '0; ld_pending <= '0;
             ans_valid <= 1'b0; ans_tag <= '0; ans_data <= '0;
-            t_idx <= '0; kstep <= '0; bentry <= '0; tile_bank <= 1'b0; c_tile <= '0; tcols_left <= '0;
+            t_idx <= '0; kstep <= '0; bentry <= '0; tile_bank <= 1'b0; c_tile <= '0; tcols_left <= '0; cv_now <= '0;
             bank_busy <= '0; bank_full <= '0;
-            s1_v <= 1'b0; s2_v <= 1'b0; s3_v <= 1'b0;
+            s1_v <= 1'b0; s2_v <= 1'b0; s3_v <= 1'b0; s1_slot <= 1'b0; s1_ahalf <= 1'b0; s1_bhalf <= 1'b0;
             wr_sel <= 1'b0; wr_fresh <= 1'b1; wr_r <= '0; wr_c <= '0; wr_row <= '0;
             wr_q_valid <= 1'b0; wr_q_addr <= '0; wr_q_data <= '0;
             check_code_q <= '0;
@@ -367,7 +450,7 @@ module aster_npu2_engine #(
             if (ev_read) begin
                 if (ld_word + 11'd1 < ld_words) begin
                     ld_word  <= ld_word + 11'd1;
-                    ld_req   <= ld_req + 30'd1;
+                    ld_req   <= ld_req + 30'(PB / 4);
                     ld_wbase <= ld_wbase + 16'd1;
                 end else if (ld_segs == 13'd1 && (ld_is_b || !a_inner)) begin
                     ld_have <= 1'b0;
@@ -380,13 +463,13 @@ module aster_npu2_engine #(
                     ld_lseg  <= seg_len_n;
                     ld_word  <= '0;
                     ld_words <= next_words;
-                    ld_req   <= seg_addr_n[31:2];
+                    ld_req   <= seg_addr_n[31:2] & ~30'(PB / 4 - 1);
                     ld_dbyte <= seg_db_n;
-                    ld_wbase <= 16'($signed(next_db) >>> 2);
+                    ld_wbase <= 16'($signed(next_db) >>> LPB);
                     if (!ld_is_b) begin
                         ld_krem <= a_inner ? ld_krem - ld_lseg : k[12:0];
                         if (!a_inner) begin
-                            ld_bank  <= ld_bank + 2'd1;
+                            ld_bank  <= ld_bank + 3'd1;
                             rw_addr  <= rw_next_addr;
                             rw_qbase <= rw_next_qbase;
                             rw_r     <= rw_next_r;
@@ -398,44 +481,50 @@ module aster_npu2_engine #(
 
             // ---------------------------------------------- the pipeline
             s1_v <= issue; s1_first <= tile_start; s1_last <= last_step; s1_zero <= k == 0;
-            s1_bank <= tile_bank; s1_lane <= kstep[1:0];
-            s1_kmask <= !ksplit || !last_step || k_tail == 2'd0 ? 4'hF : 4'hF >> (3'd4 - {1'b0, k_tail});
+            s1_bank <= tile_bank; s1_lane <= kstep[LPB-1:0]; s1_slot <= rd_slot;
+            s1_ahalf <= DIM == 4 && PB == 8 && kstep[0]; s1_bhalf <= DIM == 4 && PB == 8 && bentry[0];
+            s1_kmask <= !ksplit || !last_step || k_tail == '0 ? {DIM{1'b1}}
+                        : {DIM{1'b1}} >> ((LD+1)'(DIM) - (LD+1)'(k_tail));
             s2_v <= s1_v; s2_first <= s1_first; s2_last <= s1_last; s2_zero <= s1_zero; s2_bank <= s1_bank;
-            for (int i = 0; i < 4; i++) begin
-                for (int j = 0; j < 4; j++)
-                    a2[i][j] <= $signed(a_rdata[i][{ksplit ? 2'(j) : s1_lane, 3'b000} +: 8]);
-                b2[i] <= s1_kmask[i] ? $signed(b_rdata[8*i +: 8]) : 8'sd0;
+            for (int i = 0; i < DIM; i++) begin
+                for (int j = 0; j < DIM; j++)
+                    a2[i][j] <= $signed(a_rdata[i][{ksplit ? LPB'(4 * 32'(s1_ahalf) + j) : s1_lane, 3'b000} +: 8]);
+                b2[i] <= s1_kmask[i] ? $signed(b_rdata[{LPB'(4 * 32'(s1_bhalf) + i), 3'b000} +: 8]) : 8'sd0;
             end
             s3_v <= s2_v; s3_first <= s2_first; s3_last <= s2_last; s3_zero <= s2_zero; s3_bank <= s2_bank;
-            for (int i = 0; i < 4; i++)
-                for (int j = 0; j < 4; j++) p3[i][j] <= a2[i][j] * b2[j];
+            for (int i = 0; i < DIM; i++)
+                for (int j = 0; j < DIM; j++) p3[i][j] <= a2[i][j] * b2[j];
             if (s3_v) begin
-                for (int i = 0; i < 4; i++)
-                    for (int j = 0; j < 4; j++) begin
-                        logic [31:0] sum;
-                        sum = s3_zero ? 32'd0 : (s3_first ? 32'd0 : acc[i][j]) + 32'($signed(p3[i][j]));
-                        acc[i][j] <= sum;
-                        if (s3_last) bank_data[s3_bank][4*i + j] <= sum;
+                for (int i = 0; i < DIM; i++) begin
+                    logic [31:0] row [0:DIM-1];
+                    for (int j = 0; j < DIM; j++) begin
+                        row[j] = s3_zero ? 32'd0 : (s3_first ? 32'd0 : acc[i][j]) + 32'($signed(p3[i][j]));
+                        acc[i][j] <= row[j];
                     end
+                    // 8x8 K-split: a row's partials go to the bank as pair sums, so the
+                    // writer adds four (its row sum in one cycle at 10 ns).
+                    if (s3_last)
+                        for (int j = 0; j < DIM; j++)
+                            bank_data[s3_bank][DIM*i + j] <= DIM == 8 && ksplit && j < DIM / 2 ? row[2*j] + row[2*j + 1]
+                                                                                              : row[j];
+                end
                 if (s3_last) bank_full[s3_bank] <= 1'b1;
             end
 
             // ---------------------------------------------- the writer
             if (wr_load) begin
                 wr_q_valid <= 1'b1;
-                wr_q_data  <= ksplit ? bank_data[wr_sel][{wr_r[1:0], 2'd0}] + bank_data[wr_sel][{wr_r[1:0], 2'd1}]
-                                       + bank_data[wr_sel][{wr_r[1:0], 2'd2}] + bank_data[wr_sel][{wr_r[1:0], 2'd3}]
-                                     : bank_data[wr_sel][{wr_r[1:0], wr_c[1:0]}];
-                wr_q_addr  <= wr_base + {27'b0, wr_c, 2'b00};
+                wr_q_data  <= ksplit ? wr_rowsum : bank_data[wr_sel][DIM * 32'(wr_r[LD-1:0]) + 32'(wr_c[LD-1:0])];
+                wr_q_addr  <= wr_base + (32'(wr_c) << 2);
                 wr_fresh   <= 1'b0;
-                if (wr_c + 3'd1 < bank_cv[wr_sel]) begin
-                    wr_c   <= wr_c + 3'd1;
+                if (wr_c + 1'b1 < bank_cv[wr_sel]) begin
+                    wr_c   <= wr_c + 1'b1;
                     wr_row <= wr_base;
                 end else begin
                     wr_c   <= '0;
                     wr_row <= wr_base + c_stride;
-                    if (wr_r + 3'd1 < bank_rv[wr_sel]) begin
-                        wr_r <= wr_r + 3'd1;
+                    if (wr_r + 1'b1 < bank_rv[wr_sel]) begin
+                        wr_r <= wr_r + 1'b1;
                     end else begin
                         wr_r      <= '0;
                         wr_fresh  <= 1'b1;
@@ -455,16 +544,17 @@ module aster_npu2_engine #(
                     bank_addr[tile_bank] <= c_tile;
                     bank_rv[tile_bank]   <= rv;
                     bank_cv[tile_bank]   <= cv_now;
-                    bank_macs[tile_bank] <= 17'(5'(rv) * 5'(cv_now)) * 17'(k[12:0]);
+                    bank_macs[tile_bank] <= 19'(7'(rv) * 7'(cv_now)) * 19'(k[12:0]);
                 end
                 if (last_step) begin
                     kstep      <= '0;
                     t_idx      <= t_idx + 11'd1;
                     bentry     <= 12'(t_idx) + 12'd1;
                     tile_bank  <= !tile_bank;
-                    c_tile     <= c_tile + 32'd16;
-                    tcols_left <= tcols_left - 13'd4;
-                    if (t_idx + 11'd1 == gp) state <= S_DRAIN;
+                    c_tile     <= c_tile + 32'(4 * DIM);
+                    tcols_left <= tcols_left - 13'(DIM);
+                    cv_now     <= cols_of(tcols_left - 13'(DIM));
+                    if (t_idx + 11'd1 == gp) state <= A_STRIPS == 2 && rows_left > 13'(DIM) ? S_NEXT : S_DRAIN;
                 end else begin
                     kstep  <= kstep + 13'd1;
                     bentry <= bentry + 12'(gp);
@@ -545,8 +635,8 @@ module aster_npu2_engine #(
                     if (chk_cnt == 5'(CHECK_LEN - 1)) begin
                         check_code_q <= check_code;
                         ksplit <= mode == 2'd2 || (mode == 2'd0 && n == 32'd1);
-                        ksteps <= mode == 2'd2 || (mode == 2'd0 && n == 32'd1) ? (k[12:0] + 13'd3) >> 2 : k[12:0];
-                        k_tail <= k[1:0];
+                        ksteps <= mode == 2'd2 || (mode == 2'd0 && n == 32'd1) ? (k[12:0] + 13'(DIM - 1)) >> LD : k[12:0];
+                        k_tail <= k[LD-1:0];
                         g_left    <= 11'(gtot13);
                         gp_full   <= k == 0 || gtot13 <= div_q ? 11'(gtot13) : 11'(div_q);
                         cols_left <= n[12:0];
@@ -556,6 +646,7 @@ module aster_npu2_engine #(
                     end
                 end
                 S_PANEL: begin
+                    rd_slot    <= 1'b0;
                     gp         <= gp_now;
                     panel_cols <= pcols_now;
                     rows_left  <= m[12:0];
@@ -569,21 +660,21 @@ module aster_npu2_engine #(
                         // when B's stride is 1, else K one-byte segments, a byte apart.
                         ld_is_b <= 1'b1; ld_bank <= '0; ld_dbyte <= '0; ld_have <= 1'b1;
                         ld_word <= '0; ld_addr <= b_panel; ld_next <= b_panel + b_stride; ld_stride <= b_stride;
-                        ld_req <= b_panel[31:2];
-                        ld_wbase <= 16'($signed(-16'(b_panel[1:0])) >>> 2);
+                        ld_req <= b_panel[31:2] & ~30'(PB / 4 - 1);
+                        ld_wbase <= 16'($signed(-16'(b_panel & PBM)) >>> LPB);
                         if (ksplit && b_stride == 32'd1) begin
                             ld_segs <= 13'd1; ld_lseg <= k[12:0]; ld_dstep <= '0;
-                            ld_words <= 11'((14'(b_panel[1:0]) + 14'(k[12:0]) + 14'd3) >> 2);
+                            ld_words <= 11'((14'(b_panel & PBM) + 14'(k[12:0]) + 14'(PB - 1)) >> LPB);
                         end else if (ksplit) begin
                             ld_segs <= k[12:0]; ld_lseg <= 13'd1; ld_dstep <= 16'd1; ld_words <= 11'd1;
                         end else begin
-                            ld_segs <= k[12:0]; ld_lseg <= pcols_now; ld_dstep <= {3'b0, gp_now, 2'b00};
-                            ld_words <= 11'((14'(b_panel[1:0]) + 14'(pcols_now) + 14'd3) >> 2);
+                            ld_segs <= k[12:0]; ld_lseg <= pcols_now; ld_dstep <= 16'(gp_now) << LD;
+                            ld_words <= 11'((14'(b_panel & PBM) + 14'(pcols_now) + 14'(PB - 1)) >> LPB);
                         end
                         state <= S_LOAD;
                     end
                 end
-                S_LOAD: if (!ld_have && ld_pending == 0 && !ans_valid) begin
+                S_LOAD: if (load_done) begin
                     if (ld_is_b) begin
                         state <= S_STRIP;
                     end else begin
@@ -591,38 +682,31 @@ module aster_npu2_engine #(
                     end
                 end
                 S_STRIP: begin
-                    rv <= rows_left > 13'd4 ? 3'd4 : rows_left[2:0];
+                    rv <= rows_left > 13'(DIM) ? (LD+1)'(DIM) : rows_left[LD:0];
                     t_idx <= '0; kstep <= '0; bentry <= '0; c_tile <= c_strip; tcols_left <= panel_cols;
-                    if (k == 0) begin
-                        state <= S_TILES;
-                    end else begin
-                        // The strip's first row: A's first (the panel's first strip) or the
-                        // row after the previous strip's last.
-                        ld_is_b <= 1'b0; ld_segs <= rows_left > 13'd4 ? 13'd4 : rows_left; ld_lseg <= a_first_len;
-                        ld_krem <= k[12:0]; ld_bank <= '0; ld_dbyte <= '0; ld_dstep <= '0; ld_stride <= '0;
-                        ld_addr <= strip_addr; ld_next <= strip_addr; ld_word <= '0;
-                        ld_words <= 11'((14'(strip_addr[1:0]) + 14'(a_first_len) + 14'd3) >> 2);
-                        ld_wbase <= 16'($signed(-16'(strip_addr[1:0])) >>> 2);
-                        ld_req <= strip_addr[31:2]; ld_have <= 1'b1;
-                        rw_addr  <= strip_addr;
-                        rw_qbase <= first_strip ? a_base : rw_next_qbase;
-                        rw_r     <= first_strip ? 13'd0 : rw_next_r;
-                        rw_wrap_q <= first_strip ? a_m0 == 32'd1 : wrap_after_next;
-                        first_strip <= 1'b0;
-                        state <= S_LOAD;
-                    end
+                    cv_now <= cols_of(panel_cols);
+                    state <= k == 0 ? S_TILES : S_LOAD;      // (the load is set up below)
+                end
+                S_NEXT: if (load_done) begin                 // the next strip of the panel, loaded
+                    rows_left  <= rows_left - 13'(DIM);
+                    c_strip    <= c_strip + (c_stride << LD);
+                    rv         <= rows_left - 13'(DIM) > 13'(DIM) ? (LD+1)'(DIM) : (LD+1)'(rows_left - 13'(DIM));
+                    t_idx <= '0; kstep <= '0; bentry <= '0; tcols_left <= panel_cols; cv_now <= cols_of(panel_cols);
+                    c_tile     <= c_strip + (c_stride << LD);
+                    rd_slot    <= !rd_slot;
+                    state      <= S_TILES;
                 end
                 S_TILES: ;                                    // the tile issue above moves on to S_DRAIN
                 S_DRAIN: if (!s1_v && !s2_v && !s3_v && bank_busy == 2'b00 && !wr_q_valid) begin
-                    if (rows_left > 13'd4) begin
-                        rows_left <= rows_left - 13'd4;
-                        c_strip   <= c_strip + {c_stride[29:0], 2'b00};
+                    if (rows_left > 13'(DIM)) begin
+                        rows_left <= rows_left - 13'(DIM);
+                        c_strip   <= c_strip + (c_stride << LD);
                         state <= S_STRIP;
                     end else if (g_left > gp) begin
                         g_left    <= g_left - gp;
-                        cols_left <= cols_left - {gp, 2'b00};
-                        b_panel   <= b_panel + {19'b0, gp, 2'b00};
-                        c_panel   <= c_panel + {17'b0, gp, 4'b0000};
+                        cols_left <= cols_left - (13'(gp) << LD);
+                        b_panel   <= b_panel + (32'(gp) << LD);
+                        c_panel   <= c_panel + (32'(gp) << (LD + 2));
                         state <= S_PANEL;
                     end else begin
                         state <= S_FINISH;
@@ -631,6 +715,23 @@ module aster_npu2_engine #(
                 S_FINISH, S_STOP: if (end_now) state <= S_IDLE;
                 default: state <= S_IDLE;
             endcase
+
+            // A strip's load: its first row is A's first (the panel's first strip) or
+            // the row after the previous strip's last.
+            if (a_setup) begin
+                ld_is_b <= 1'b0; ld_slot <= a_setup_slot;
+                ld_segs <= a_setup_rows > 13'(DIM) ? 13'(DIM) : a_setup_rows; ld_lseg <= a_first_len;
+                ld_krem <= k[12:0]; ld_bank <= '0; ld_dbyte <= '0; ld_dstep <= '0; ld_stride <= '0;
+                ld_addr <= strip_addr; ld_next <= strip_addr; ld_word <= '0;
+                ld_words <= 11'((14'(strip_addr & PBM) + 14'(a_first_len) + 14'(PB - 1)) >> LPB);
+                ld_wbase <= 16'($signed(-16'(strip_addr & PBM)) >>> LPB);
+                ld_req <= strip_addr[31:2] & ~30'(PB / 4 - 1); ld_have <= 1'b1;
+                rw_addr  <= strip_addr;
+                rw_qbase <= first_strip ? a_base : rw_next_qbase;
+                rw_r     <= first_strip ? 13'd0 : rw_next_r;
+                rw_wrap_q <= first_strip ? a_m0 == 32'd1 : wrap_after_next;
+                first_strip <= 1'b0;
+            end
 
             // ABORT or a memory error: stop, and end once every request is answered.
             if (stop && state != S_IDLE && state != S_FINISH && state != S_STOP) state <= S_STOP;
@@ -643,8 +744,9 @@ module aster_npu2_engine #(
     end
 
     logic unused;
-    assign unused = div_rem[13] ^ (^wr_q_addr[1:0]) ^ (^ld_addr[31:2]) ^ ans_tag.read ^ (^ans_twice[63:32])
-                  ^ (^ans_tag.wbase[15:12]) ^ (^ld_db[15:2]) ^ dm_rem[32] ^ dk_rem[32];
+    assign unused = div_rem[13] ^ (^wr_q_addr[1:0]) ^ (^ld_addr[31:2]) ^ ans_tag.read ^ (^ans_twice[2*DW-1:DW])
+                  ^ (^ans_tag.wbase[15:12]) ^ (^ld_db[15:LPB]) ^ dm_rem[32] ^ dk_rem[32] ^ (^ans_tag.lanes)
+                  ^ (^ans_tag.shift);
 
 `ifndef SYNTHESIS
     always_ff @(posedge clk) begin
