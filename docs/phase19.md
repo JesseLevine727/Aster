@@ -1,10 +1,10 @@
 # Phase 19: high-utilization NPU and data movement
 
-Status: **milestone 19.5 (the options and the board run) complete, awaiting
-the owner's sign-off; with it, Phase 19.**
-19.0 (the NPU shell), 19.1 (the tile mapping), 19.2 (the K-split mapping),
-19.3 (direct convolution, with CIFAR's channels last) and 19.4 (the Phase 19
-SoC and the gates) were signed off by the owner on 5 October 2026. The
+Status: **complete (6 October 2026): milestones 19.0–19.5 signed off by the
+owner, the last, 19.5 (the options, all three adopted, and the board run), on
+6 October 2026.** 19.0 (the NPU shell), 19.1 (the tile mapping), 19.2 (the
+K-split mapping), 19.3 (direct convolution, with CIFAR's channels last) and
+19.4 (the Phase 19 SoC and the gates) were signed off on 5 October 2026. The
 NPU specification [`npu.md`](npu.md) was approved by the owner on 5 October
 2026.
 The owner's four decisions of 5 October 2026 (platform,
@@ -1083,7 +1083,9 @@ simulated.
   npu.md §9's 19.3 clarifications (CIFAR channels last for direct convolution)
 - [x] 19.4 as in the table above — complete (owner, 5 October 2026), with
   npu.md §9's 19.4 clarifications
-- [ ] 19.5 as in the table above
+- [x] 19.5 as in the table above — complete (owner, 6 October 2026), all
+  three of npu.md §4.6's options adopted, with npu.md §9's 19.5
+  clarifications
 
 ## Risks
 

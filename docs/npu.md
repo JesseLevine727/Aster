@@ -575,7 +575,8 @@ with the milestone (5 October 2026):
 
 ### Clarifications in 19.5 (the options)
 
-Found necessary while building and verifying 19.5:
+Found necessary while building and verifying 19.5; accepted by the owner
+with the milestone (6 October 2026):
 
 - §4.4, §4.6, the second A strip buffer: the A banks are doubled (one set
   per strip buffer, each its own RAMs). While the array computes a strip
