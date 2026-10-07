@@ -19,6 +19,7 @@ module timing_fabric (
     input  logic [1:0]    d_req_valid_in,
     input  logic [7:0]    d_req_op_in,
     input  logic [63:0]   d_req_addr_in,
+    input  logic [1:0]    d_req_main_in,
     input  logic [63:0]   d_req_wdata_in,
     input  logic [7:0]    d_req_be_in,
     input  logic          n_req_valid_in,
@@ -44,7 +45,7 @@ module timing_fabric (
     output logic [72:0]   io_req_q,
     output logic [1:0]    ev_resv_end_q
 );
-    logic [1:0]       hart_rst_n, hart_exception, i_req_valid, d_req_valid;
+    logic [1:0]       hart_rst_n, hart_exception, i_req_valid, d_req_valid, d_req_main;
     logic [1:0][29:0] i_req_addr;
     logic [1:0][3:0]  d_req_op, d_req_be;
     logic [1:0][31:0] d_req_addr, d_req_wdata;
@@ -57,7 +58,7 @@ module timing_fabric (
     always_ff @(posedge clk) begin
         hart_rst_n <= hart_rst_n_in; hart_exception <= hart_exception_in;
         i_req_valid <= i_req_valid_in; i_req_addr <= i_req_addr_in;
-        d_req_valid <= d_req_valid_in; d_req_op <= d_req_op_in; d_req_addr <= d_req_addr_in;
+        d_req_valid <= d_req_valid_in; d_req_op <= d_req_op_in; d_req_addr <= d_req_addr_in; d_req_main <= d_req_main_in;
         d_req_wdata <= d_req_wdata_in; d_req_be <= d_req_be_in;
         n_req_valid <= n_req_valid_in; n_req_addr <= n_req_addr_in; n_req_we <= n_req_we_in;
         n_req_wdata <= n_req_wdata_in; n_req_be <= n_req_be_in;
@@ -79,7 +80,7 @@ module timing_fabric (
     aster_fabric fabric (
         .clk, .rst_n, .hart_rst_n, .hart_exception,
         .i_req_valid, .i_req_addr, .i_req_ready, .i_rsp_valid, .i_rsp_data, .i_rsp_error,
-        .d_req_valid, .d_req_op, .d_req_addr, .d_req_wdata, .d_req_be, .d_req_ready, .d_rsp_valid, .d_rsp_rdata,
+        .d_req_valid, .d_req_op, .d_req_addr, .d_req_main, .d_req_wdata, .d_req_be, .d_req_ready, .d_rsp_valid, .d_rsp_rdata,
         .d_rsp_error, .snoop_valid, .snoop_line,
         .n_req_valid, .n_req_addr, .n_req_we, .n_req_wdata, .n_req_be, .n_req_ready, .n_rsp_valid, .n_rsp_rdata,
         .n_rsp_error,

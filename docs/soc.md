@@ -627,7 +627,7 @@ refines this specification without changing its contract:
 Found necessary while building and timing the fabric (phase20.md, Milestone
 20.1):
 
-**§4.4, arbitration — for the owner's approval.** Each port of each bank has
+**§4.4, arbitration — approved by the owner, 7 October 2026.** Each port of each bank has
 its own round-robin arbiter over a fixed group of four requesters, the two
 arbiters working in parallel:
 - port A: the data caches (every operation), the DMA's writes (W) and the
@@ -695,3 +695,133 @@ shell (§4.3), so the fallback would need the owner's decision. It helps only
 the request-to-bank path, not request to readiness or to the reservations;
 for those the levers are D_ON_B off (the twin traffic's 16% back) and the
 reservation-ended event registered a cycle later.
+
+### Clarifications in 20.2 (the two-hart SoC)
+
+Found necessary while building and verifying the SoC (phase20.md, Milestone
+20.2). None changes a cycle of the approved design except where it says so.
+
+**§4.4, the arbiters as synthesized — a defect in 20.1's fabric, fixed.**
+Each round robin indexed its members by a size cast of an `int`
+(`2'(int'(ptr) + s)`). IEEE 1800 keeps a cast's signedness, so members 2 and 3
+were indexed as −2 and −1. Vivado synthesized them as never granted: in each
+bank, port A served only the data caches, and port B only the instruction
+caches. Verilator treats the index as unsigned, so every simulation (the
+fabric shell, its mutants, 20.1's measurements) saw the intended fabric, and
+no check failed. Synthesis then removed what that made unused: the NPU's whole
+datapath, and the DMA's and NPU's write data. 20.2 found it when the
+in-context build came out at half its expected area. Consequences:
+- 20.1's timing (+0.384 ns alone, +0.327 ns with front ends) and area (3,622
+  LUTs) were measured on that netlist. Corrected, with the index an unsigned
+  2-bit sum: the fabric alone **−1.425 ns** (4,634 LUTs), with front ends
+  **−1.906 ns**; in the SoC the fabric is 5,793 LUTs. So 20.1's "10 ns out of
+  context" does not hold for the fabric as specified. 20.2's timing work
+  (phase20.md) starts from these numbers.
+- The SoC's build now checks the synthesized netlist. It fails if any of
+  these is gone, since synthesis removes each when its port's data goes
+  unused: the NPU's block RAMs, its writer's data registers, or the ARM
+  side's write-data registers, which only port W reads. A first version of
+  this check looked for port pins, which the synthesized hierarchy does not
+  keep, and so checked nothing; the review found it.
+- No other cast in the RTL is used as an index of a signed value.
+
+**§4.1, a data cache's target.** Each data cache tells the fabric whether its
+request is main memory's (`d_req_main`, from its registers: a refill, or a
+cacheable access). The fabric no longer decodes a data cache's address for
+that. The SoC's testbench checks every cache's flag against its address
+(MAIN_FLAG); the fabric shell, which has no caches, derives it from the
+address.
+
+**§4.1 (20.0's clarification), the ARM side.** It uses ports R (reads) and W
+(writes) while the harts are held, not D0's port: that keeps a multiplexer out
+of every data-cache request. From 20.3, R and W are shared with the DMA, which
+is held then too. Its writes are snooped on each cache's port 2. An ARM access
+to main memory completes on the AXI side once the fabric has answered it, so
+none is owed when the next begins, with any WAIT.
+
+**§3, the device windows.** In the device build the data caches' word-only
+I/O windows are exactly the device pages: `0x2000_0000`–`0x2000_3FFF` (UART,
+timer, hart control, counters), `0x2000_4000`–`0x2000_4FFF` (interrupt
+controller), `0x3000_0000`–`0x3000_0FFF` (DMA) and `0x4000_0000`–`0x4000_0FFF`
+(NPU). Any other address outside main memory faults in the cache, as §3
+requires. An unmapped offset inside a device page reads 0 and ignores writes,
+as the NPU's page does. The regression build keeps the shell's 64 KiB register
+page, as the Phase 19 SoC did.
+
+**§7, the I/O bus's devices.** The devices register the bus's request and
+answer from that register in the next cycle, as §4.1 requires. A device write
+therefore takes effect at the end of the cycle after its acceptance. No
+program can tell: each data cache's next I/O access is accepted only after
+the answer. The NPU's register port takes the request at acceptance, as in
+Phase 19, and its reset is registered beside it (it leaves reset a cycle after
+hart 0).
+
+**§7.3, the mailboxes.** As in v1: hart 0 alone writes TO_HART1 and hart 1
+alone writes TO_HART0. Both clear when hart 0 holds hart 1 (v1 cleared them
+when it stopped hart 1).
+
+**§8, the counters.**
+- **The command word:** hart 0's, its low byte exactly 1 (START), 2 (FREEZE)
+  or 4 (RESUME), as in v1. Any other value is ignored.
+- **ABI 4's metadata:**
+  - 0x8C reads 3 (caches on, synchronous memory);
+  - 0x90 reads 4 words a line and 0x94 256 lines;
+  - 0x98, the memory's wait cycles, reads 1 + WAIT: v1's synchronous memory
+    read 1, and the v2 memory is the same two-cycle block RAM.
+  - Counter 0 (cycles) is the window's cycles, the same for both harts.
+- **Width:** counters count in 48 bits and read as 64, as §2 allows.
+- **Timing:** each event is counted from a registered copy of the signal it
+  comes from, so no counter's logic lies on the fabric's or a cache's paths.
+  The fabric's and snoop events count two cycles late, the others one
+  (measurement only). A longest wait saturates at 65,535 cycles.
+- **Invalidations:** a data cache now invalidates an sc's or AMO's line from
+  the time the atomic heads it, not at its acceptance (20.2's timing; every
+  cycle is the same). So a snoop of that line while the atomic waits finds it
+  already invalid, and is not counted as an invalidation.
+- **The fabric's counters** take 0x2000_3300–0x2000_34FF, not 0x3300–0x3400:
+  48 counters of 8 bytes do not fit in 256. Their order:
+  - 0–6 accepted requests and 7–13 cycles waited, per requester (I0, D0, I1,
+    D1, N, R, W);
+  - 14–17 each bank's reads (loads, lr, refills, AMOs), 18–21 its writes
+    (stores, sc, AMOs), 22–25 its conflicts (cycles a request to it waited);
+  - 26–31 snoops delivered and 32–37 lines invalidated, cache 0's ports 0–2
+    then cache 1's;
+  - 38–39 each hart's reservations ended by another requester;
+  - 40 AMOs;
+  - 41–47 each requester's longest wait, in cycles, in place of §8's single
+    longest wait.
+
+  Metadata at 0x2000_34F0: the ABI (1), the count (48), and whether the
+  counters are running.
+- **Reading the counters:** the ARM side reaches main memory (while the harts
+  are held), the console and the AXI registers. It does not reach the devices,
+  and every counter resets at each start. So a program prints its records
+  before it stores to tohost, as v1's and Phase 19's do.
+
+**§10.3, hart 1's resets.** The reset tests hold hart 1 at random points:
+- 5,334 resets over four seeds;
+- they caught 562 answers owed, 86 AMOs before their write, 43 refills and
+  297 reservations.
+
+A release before the answers owed at the hold are due cannot happen from
+software: each store to SECONDARY_RUN waits for its answer, so the release
+comes at least three cycles after the last of them, with any WAIT. That case
+of §7.3 is covered by the fabric shell's reset mode (20.1).
+
+**§10.4, Phase 19's gate programs on the regression build.** Their results
+are the same and every NPU job checks against the reference. Their cycles:
+- MNIST and the faults program: the same as in the Phase 19 SoC.
+- The GEMM gate: 4 more (3,451,511). Each is a cycle the NPU waited while an
+  instruction cache's refill read its bank. Since 20.1 an NPU read shares
+  port B with the refills. So `job_cycles` is one higher on 4 of its 5 jobs,
+  and its console differs in those numbers.
+- The coherence program: 46 fewer (7,591,166). Its 244 NPU waits are 3
+  refills and 241 data-cache accesses to the same bank on port A. In
+  Phase 19 the NPU always gave way to the data cache.
+
+The testbench attributes every NPU wait; none is left unexplained.
+
+**The runtime's dispatch and join** (`software/runtime/aster_smp.h`): a job
+(a function and its argument) is published in coherent shared memory and a
+sequence number. Hart 1 spins on it in its own cache, and a snoop wakes it.
+A round trip with an empty job takes 69–95 cycles, 72 on average.

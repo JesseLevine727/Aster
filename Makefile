@@ -1,6 +1,7 @@
 SHELL := /usr/bin/env bash
 
 ROOT := $(abspath .)
+comma := ,
 BUILD_DIR := $(ROOT)/build
 VERILATOR ?= verilator
 PYTHON ?= python3
@@ -2084,7 +2085,7 @@ parallel-workloads:
 
 test: smoke phase1 hello bench cache uart fpga-sim linux-sim counters retirement npu-pe npu-array npu-engine npu-regs npu-driver npu-runtime npu-stop npu-bench-validate arbiter shared-fabric multicore-runtime parallel
 
-check: tools smoke phase1 hello bench cache uart fpga-sim linux-sim linux-dual-sim linux-coherent-sim counters retirement pcpi-probe dot8-unit npu-pe npu-array npu-engine npu-regs device-arbiter dma-counters l2-unit npu-driver npu-runtime npu-stop npu-bench-validate xe-bench-validate phase11-infer-validate workloads atomic-fabric atomic-runtime atomic-faults coherent-cache warm-stop coherent-counters coherent-soc timer-unit timer-firmware irq-unit timer-interrupt sram-unit sram-lint freeze-interfaces coherent-bench riscv-reference riscv-reference-negative coherent-litmus arbiter shared-fabric multicore-runtime multicore-adversarial parallel phase17-baseline-audit core-riscv-tests core-riscv-tests-stall core-arch-tests core-random-lockstep core-lockstep-selftest core-ports-tests core-kernels core-aster-fetch core-aster-tests core-aster-kernels core-aster-act4 core-aster-l1-unit core-aster-l1-tests core-aster-firmware core-performance-gate aster-board-sim npu-v1-tests npu-tests npu-options-tests npu-im2col-cost npu-soc-tests fabric-tests fabric-checker-tests litmus-tests
+check: tools smoke phase1 hello bench cache uart fpga-sim linux-sim linux-dual-sim linux-coherent-sim counters retirement pcpi-probe dot8-unit npu-pe npu-array npu-engine npu-regs device-arbiter dma-counters l2-unit npu-driver npu-runtime npu-stop npu-bench-validate xe-bench-validate phase11-infer-validate workloads atomic-fabric atomic-runtime atomic-faults coherent-cache warm-stop coherent-counters coherent-soc timer-unit timer-firmware irq-unit timer-interrupt sram-unit sram-lint freeze-interfaces coherent-bench riscv-reference riscv-reference-negative coherent-litmus arbiter shared-fabric multicore-runtime multicore-adversarial parallel phase17-baseline-audit core-riscv-tests core-riscv-tests-stall core-arch-tests core-random-lockstep core-lockstep-selftest core-ports-tests core-kernels core-aster-fetch core-aster-tests core-aster-kernels core-aster-act4 core-aster-l1-unit core-aster-l1-tests core-aster-firmware core-performance-gate aster-board-sim npu-v1-tests npu-tests npu-options-tests npu-im2col-cost npu-soc-tests fabric-tests fabric-checker-tests litmus-tests soc-tests
 
 # Phase 18 CPU shell: one CPU with a synchronous SRAM at 0x8000_0000 and an
 # RVFI trace for lockstep against Spike (docs/phase18.md).
@@ -2535,6 +2536,24 @@ fpga-aster-npu:
 		-tclargs $(ROOT) $(ASTER_NPU_BOARD_DIR)$(NPU_TAG) 100 npu "$(SOC_PARAMS)" > $(ASTER_NPU_BOARD_DIR)$(NPU_TAG)/build.out 2>&1 \
 		|| { tail -30 $(ASTER_NPU_BOARD_DIR)$(NPU_TAG)/build.out; exit 1; }
 	@grep -E '^(ASTER_SIGNOFF|SUMMARY)' $(ASTER_NPU_BOARD_DIR)$(NPU_TAG)/build.out $(ASTER_NPU_BOARD_DIR)$(NPU_TAG)/summary.txt
+# The Phase 20 SoC's board design (milestone 20.2: rtl/soc/aster_soc.sv, two
+# cores, the banked fabric, the NPU and the devices) built at 100 MHz in context
+# the same way (build_aster_core.tcl, design soc) into $(ASTER_SOC_BOARD_DIR)$(SOC_TAG).
+# SOC_PARAMS as above (e.g. SHELL_PAGE=1, the regression build); SOC_DIRECTIVES
+# ("place=...;route=...") and SOC_XDC (a pblock file) are 20.2's margin levers.
+# Not part of `check`.
+ASTER_SOC_BOARD_DIR := $(FPGA_BUILD_DIR)/aster_soc
+SOC_TAG ?=
+SOC_DIRECTIVES ?=
+SOC_XDC ?=
+.PHONY: fpga-aster-soc
+fpga-aster-soc:
+	@command -v $(VIVADO) >/dev/null || { echo "ERROR: Vivado not found (set VIVADO=/path/to/vivado)" >&2; exit 1; }
+	@mkdir -p $(ASTER_SOC_BOARD_DIR)$(SOC_TAG) && rm -f $(ASTER_SOC_BOARD_DIR)$(SOC_TAG)/aster_soc.bit   # never a stale bitstream
+	$(VIVADO) -mode batch -nojournal -nolog -notrace -source $(ROOT)/fpga/pynq_z1/build_aster_core.tcl \
+		-tclargs $(ROOT) $(ASTER_SOC_BOARD_DIR)$(SOC_TAG) 100 soc "$(SOC_PARAMS)" "$(SOC_DIRECTIVES)" "$(if $(SOC_XDC),$(abspath $(SOC_XDC)))" \
+		> $(ASTER_SOC_BOARD_DIR)$(SOC_TAG)/build.out 2>&1 || { tail -30 $(ASTER_SOC_BOARD_DIR)$(SOC_TAG)/build.out; exit 1; }
+	@grep -E '^(ASTER_SIGNOFF|SUMMARY)' $(ASTER_SOC_BOARD_DIR)$(SOC_TAG)/build.out $(ASTER_SOC_BOARD_DIR)$(SOC_TAG)/summary.txt
 aster-board: $(ASTER_L1_SIM)
 	@test -n "$(ASTER_BOARD_OUTPUT)" || { echo "ERROR: set ASTER_BOARD_OUTPUT to a new evidence directory" >&2; exit 1; }
 	@test -f $(ASTER_BOARD_DIR)/aster_core.bit || { echo "ERROR: make fpga-aster-core first" >&2; exit 1; }
@@ -2920,6 +2939,12 @@ FABRIC_OVERTAKE_aster_fabric := 12
 # fabric's round robins (its worst in 328 runs, hammer mode included: 8; unfair arbiters
 # reach 24 to 212 in the hammer and edges modes)
 FABRIC_OVERTAKE_ref_fabric := 16
+# 20.2: the restructured fabric and the golden one in lockstep (equiv_fabric.sv), every output equal in
+# every cycle under every mode: make fabric-tests-dut FABRIC_DUT=equiv_fabric (in fabric-tests).
+FABRIC_RTL_equiv_fabric := rtl/fabric/aster_fabric_bank.sv rtl/fabric/aster_fabric.sv \
+	verification/fabric/aster_fabric_golden.sv verification/fabric/equiv_fabric.sv
+FABRIC_BANKS_equiv_fabric := 4
+FABRIC_OVERTAKE_equiv_fabric := 12
 FABRIC_RTL := rtl/aster_core/aster_core_pkg.sv $(FABRIC_RTL_$(FABRIC_DUT)) verification/fabric/shell_fabric.sv
 FABRIC_SRC := verification/fabric/tb_fabric.cpp verification/fabric/fabric_ref.h
 $(FABRIC_DIR)/$(FABRIC_DUT)-w%: $(FABRIC_RTL) $(FABRIC_SRC) Makefile
@@ -2930,7 +2955,7 @@ $(FABRIC_DIR)/$(FABRIC_DUT)-w%: $(FABRIC_RTL) $(FABRIC_SRC) Makefile
 		-CFLAGS "-std=c++20 -I$(ROOT)/verification/fabric"
 	@touch $@
 
-FABRIC_DUTS ?= aster_fabric ref_fabric
+FABRIC_DUTS ?= aster_fabric ref_fabric equiv_fabric
 fabric-tests:
 	@for dut in $(FABRIC_DUTS); do $(MAKE) --no-print-directory fabric-tests-dut FABRIC_DUT=$$dut || exit 1; done
 fabric-tests-dut: $(addprefix $(FABRIC_DIR)/$(FABRIC_DUT)-w,$(FABRIC_WAITS))
@@ -2962,7 +2987,7 @@ fabric-tests-dut: $(addprefix $(FABRIC_DIR)/$(FABRIC_DUT)-w,$(FABRIC_WAITS))
 # must be caught. Not in check (a few minutes); run at each fabric milestone.
 fabric-mutants:
 	@mkdir -p $(FABRIC_DIR)
-	@for dut in $(FABRIC_DUTS); do \
+	@for dut in $(filter-out equiv_fabric,$(FABRIC_DUTS)); do \
 		$(PYTHON) scripts/fabric_mutants.py --dut $$dut --build-dir $(FABRIC_DIR)/mutants > $(FABRIC_DIR)/mutants-$$dut.log \
 			|| { cat $(FABRIC_DIR)/mutants-$$dut.log; exit 1; }; tail -1 $(FABRIC_DIR)/mutants-$$dut.log; done
 
@@ -2999,6 +3024,43 @@ litmus-tests: $(LITMUS_DIR)/litmus_v2.elf
 		> $(LITMUS_DIR)/spike.log || { cat $(LITMUS_DIR)/spike.log; exit 1; }
 	@echo "PASS: the litmus program on Spike with two harts: 26 shapes x $(LITMUS_TRIALS) trials, nothing forbidden ($(LITMUS_DIR)/spike.log)"
 	@$(PYTHON) scripts/litmus.py --selftest
+
+# The Phase 20 SoC (milestone 20.2; rtl/soc/aster_soc.sv: two Aster cores, the
+# banked fabric, the NPU and the devices) in simulation, driven through its
+# AXI4-Lite port as on the board (verification/aster_soc/tb_soc.cpp: the
+# memory checker, the reservation model, the snoop and NPU checks). Three
+# builds: soc_shell, the regression build (SHELL_PAGE = 1: hart 1 held, the
+# CPU shell's register page); soc_dev, the two-hart device build; and
+# soc_dev_w3, the device build with three added answer cycles (WAIT = 3).
+# soc-tests runs 18.7's 99 programs on soc_shell, each as in the CPU shell,
+# cycle for cycle and record for record (scripts/aster_board.py --design soc),
+# and scripts/soc_tests.py's two-hart programs on the device builds: the
+# litmus shapes (classified by scripts/litmus.py), hart 1's reset stress, the
+# runtime's dispatch and join, and the devices.
+ASTER_SOC_DIR := $(BUILD_DIR)/aster_soc
+ASTER_SOC_RTL := $(ASTER_CORE_RTL) $(ASTER_L1_RTL) $(NPU_V2_RTL) rtl/fabric/aster_fabric_bank.sv rtl/fabric/aster_fabric.sv \
+	rtl/soc/aster_soc_devices.sv rtl/soc/aster_soc.sv
+ASTER_SOC_TB := verification/aster_soc/sim_soc.sv verification/aster_soc/tb_soc.cpp verification/fabric/mem_checker.h \
+	verification/fabric/fabric_ref.h verification/npu/npu_model.h
+ASTER_SOC_BUILDS := soc_shell:-GSHELL_PAGE=1 soc_dev:-GSHELL_PAGE=0 soc_dev_w3:-GSHELL_PAGE=0,-GWAIT=3
+ASTER_SOC_SIMS := $(foreach b,$(ASTER_SOC_BUILDS),$(ASTER_SOC_DIR)/$(firstword $(subst :, ,$(b))))
+$(ASTER_SOC_DIR)/soc_%: $(ASTER_SOC_RTL) $(ASTER_SOC_TB) Makefile
+	mkdir -p $(ASTER_SOC_DIR)
+	$(VERILATOR) --cc --exe --build -O3 --assert --Wall --top-module sim_soc \
+		$(subst $(comma), ,$(word 2,$(subst :, ,$(filter soc_$*:%,$(ASTER_SOC_BUILDS))))) \
+		-CFLAGS "-O2 -I$(ROOT)/verification/fabric -I$(ROOT)/verification/npu" \
+		--Mdir $(ASTER_SOC_DIR)/soc_$*_obj -o $(abspath $@) \
+		$(addprefix $(ROOT)/,$(ASTER_SOC_RTL)) $(ROOT)/verification/aster_soc/sim_soc.sv $(ROOT)/verification/aster_soc/tb_soc.cpp
+	@touch $@
+.PHONY: soc-sim soc-tests
+soc-sim: $(ASTER_SOC_SIMS)
+soc-tests: $(ASTER_SOC_SIMS) $(ASTER_L1_SIM) $(ASTER_DOT8_PLUGIN)
+	@set -o pipefail; RISCV_PREFIX=$(RISCV_PREFIX) $(PYTHON) scripts/aster_board.py --sim $(ASTER_SOC_DIR)/soc_shell --design soc \
+		--build-dir $(ASTER_SOC_DIR)/board_programs > $(ASTER_SOC_DIR)/soc-board.log \
+		|| { grep -v '^PASS' $(ASTER_SOC_DIR)/soc-board.log; exit 1; }; \
+		tail -1 $(ASTER_SOC_DIR)/soc-board.log | sed 's/on the board design in simulation/(18.7'"'"'s board programs) on the Phase 20 SoC'"'"'s regression build in simulation/'
+	@set -o pipefail; RISCV_PREFIX=$(RISCV_PREFIX) $(PYTHON) scripts/soc_tests.py --sim-dir $(ASTER_SOC_DIR) \
+		--build-dir $(ASTER_SOC_DIR)/programs --cflags "$(LITMUS_CFLAGS)" | tee $(ASTER_SOC_DIR)/soc-tests.log
 
 # Print a make variable (used by scripts/phase17_baseline.py to find firmware images).
 print-%:

@@ -111,7 +111,7 @@ module timing_aster_l1 #(
         .m_req_valid(m_d_req_valid), .m_req_op(m_d_req_op), .m_req_addr(m_d_req_addr),
         .m_req_wdata(m_d_req_wdata), .m_req_be(m_d_req_be), .m_req_ready(d_ready),
         .m_rsp_valid(m_d_rsp_valid), .m_rsp_rdata(m_d_rsp_rdata), .m_rsp_error(1'b0),
-        .snoop_valid, .snoop_line, .posted_pending,
+        .snoop_valid, .snoop_line, .posted_pending, .ev_snoop_hit(), .m_req_main(),
         .chk_lookup(), .chk_lookup_op(), .chk_lookup_addr(), .chk_lookup_be(), .chk_lookup_wdata(),
         .chk_lookup_hit()
     );

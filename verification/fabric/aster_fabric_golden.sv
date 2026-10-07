@@ -1,3 +1,6 @@
+// Phase 20.2: the banked fabric as it stood before 20.2's timing restructuring (the arbiter fix and
+// d_req_main included), kept as the golden model that equiv_fabric.sv compares the restructured
+// fabric with, cycle for cycle. Not synthesized.
 // The Phase 20 memory fabric (milestone 20.1; docs/soc.md §4): seven
 // requesters — the instruction caches I0 and I1, the data caches D0 and D1,
 // the NPU's port N, the DMA's ports R and W — on 96 KiB of main memory in
@@ -62,7 +65,7 @@
 // grant and terms of its request alone, so they add little after the
 // arbiters.
 `timescale 1 ns / 1 ps
-module aster_fabric #(
+module aster_fabric_golden #(
     parameter logic [31:0] MEM_BASE  = 32'h8000_0000,
     parameter int unsigned MEM_BYTES = 96 * 1024,
     parameter int unsigned WAIT      = 0,               // cycles added to every answer (simulation)

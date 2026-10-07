@@ -42,7 +42,7 @@ module timing_fabric_fe (
     st_t  [1:0]       d_state, i_state;
     logic [1:0][2:0]  d_issued, i_issued, i_received;
     logic [1:0][1:0]  d_inflight;
-    logic [1:0]       d_sent, i_fenced, i_waiting;
+    logic [1:0]       d_sent, i_fenced, i_waiting, d_s2_cacheable;
     logic [1:0][31:0] d_s2_addr, d_s2_wdata, i_s2_addr;
     logic [1:0][3:0]  d_s2_op, d_s2_be;
     logic [1:0][255:0] d_valid_bits;
@@ -59,7 +59,7 @@ module timing_fabric_fe (
     logic [7:0]       w_be_q;
 
     // ---- the requests, formed as the requesters form them ----
-    logic [1:0]       i_req_valid, d_req_valid, i_req_ready, d_req_ready;
+    logic [1:0]       i_req_valid, d_req_valid, i_req_ready, d_req_ready, d_req_main;
     logic [1:0][29:0] i_req_addr;
     logic [1:0][3:0]  d_req_op, d_req_be;
     logic [1:0][31:0] d_req_addr, d_req_wdata;
@@ -74,6 +74,7 @@ module timing_fabric_fe (
             d_req_addr[h]  = d_state[h] == REFILL ? {d_s2_addr[h][31:4], d_issued[h][1:0], 2'b00} : d_s2_addr[h];
             d_req_wdata[h] = d_s2_wdata[h];
             d_req_be[h]    = d_state[h] == REFILL ? 4'hf : d_s2_be[h];
+            d_req_main[h]  = d_state[h] == REFILL || d_s2_cacheable[h];
             i_req_valid[h] = i_state[h] == REFILL && i_issued[h] != 3'd4 && i_issued[h] - i_received[h] < 3'd2
                              && (!i_fenced[h] || i_waiting[h]);
             i_req_addr[h]  = {i_s2_addr[h][31:4], i_issued[h][1:0]};
@@ -100,7 +101,7 @@ module timing_fabric_fe (
     aster_fabric fabric (
         .clk, .rst_n, .hart_rst_n, .hart_exception,
         .i_req_valid, .i_req_addr, .i_req_ready, .i_rsp_valid, .i_rsp_data, .i_rsp_error,
-        .d_req_valid, .d_req_op, .d_req_addr, .d_req_wdata, .d_req_be, .d_req_ready, .d_rsp_valid, .d_rsp_rdata,
+        .d_req_valid, .d_req_op, .d_req_addr, .d_req_main, .d_req_wdata, .d_req_be, .d_req_ready, .d_rsp_valid, .d_rsp_rdata,
         .d_rsp_error, .snoop_valid, .snoop_line,
         .n_req_valid, .n_req_addr, .n_req_we, .n_req_wdata, .n_req_be, .n_req_ready, .n_rsp_valid, .n_rsp_rdata,
         .n_rsp_error,
@@ -116,12 +117,13 @@ module timing_fabric_fe (
     always_ff @(posedge clk) begin
         hart_rst_n <= hart_rst_n_in; hart_exception <= hart_exception_in; io_rsp_rdata <= io_rsp_rdata_in;
         for (int h = 0; h < 2; h++) begin
-            automatic logic d_acc = d_req_valid[h] && d_req_ready[h];
-            automatic logic i_acc = i_req_valid[h] && i_req_ready[h];
+            logic d_acc, i_acc;
+            d_acc = d_req_valid[h] && d_req_ready[h];
+            i_acc = i_req_valid[h] && i_req_ready[h];
             if (load_sel == 8'(h)) begin
                 d_state[h] <= st_t'(load_in[1:0]); d_issued[h] <= load_in[4:2]; d_inflight[h] <= load_in[6:5];
                 d_sent[h] <= load_in[7]; d_s2_addr[h] <= load_in[39:8]; d_s2_wdata[h] <= load_in[71:40];
-                d_s2_op[h] <= load_in[75:72]; d_s2_be[h] <= load_in[79:76];
+                d_s2_op[h] <= load_in[75:72]; d_s2_be[h] <= load_in[79:76]; d_s2_cacheable[h] <= load_in[80];
             end else begin
                 if (d_acc && d_state[h] == REFILL) d_issued[h] <= d_issued[h] + 3'd1;
                 if (d_acc && d_state[h] == ACCESS) d_sent[h] <= 1'b1;
@@ -129,7 +131,8 @@ module timing_fabric_fe (
             end
             // a posted store's register and an AMO's invalidation, on acceptance (store_write, amo_inval)
             if (d_acc && d_state[h] == ACCESS && d_s2_op[h] == OP_STORE) d_posted_word[h] <= d_s2_wdata[h];
-            if (d_acc && d_state[h] == ACCESS && d_s2_op[h] > 4'd3) d_valid_bits[h][d_s2_addr[h][11:4]] <= 1'b0;
+            // an sc's or AMO's line, invalidated from the head's registers while it waits (aster_l1d, 20.2)
+            if (d_state[h] == ACCESS && !d_sent[h] && d_s2_op[h] > 4'd3) d_valid_bits[h][d_s2_addr[h][11:4]] <= 1'b0;
             if (load_sel == 8'(h + 2)) d_valid_bits[h] <= load_in;
             if (load_sel == 8'(h + 4)) begin
                 i_state[h] <= st_t'(load_in[1:0]); i_issued[h] <= load_in[4:2]; i_received[h] <= load_in[7:5];

@@ -16,8 +16,8 @@ board itself (--board). On the same program the board design must:
   tohost store, with the same instructions retired, for the others (the
   board's counters start at the edge that starts the core, as the shell's).
 
-    aster_board.py --sim BOARD_SIM [--only NAME] [--design npu]
-    aster_board.py --design npu --board BITSTREAM --host xilinx@10.0.0.82 --output DIR [--soc-sim SIM]
+    aster_board.py --sim BOARD_SIM [--only NAME] [--design npu|soc]
+    aster_board.py --design npu|soc --board BITSTREAM --host xilinx@10.0.0.82 --output DIR [--soc-sim SIM]
     aster_board.py --board BITSTREAM --host xilinx@10.0.0.82 --output DIR [--only NAME]
     aster_board.py --report DIR/report.json [--only NAME]   # a board run's report, compared again
 
@@ -73,6 +73,11 @@ NPU_SOC_SKIP = {
 # same instructions retired.
 GATE_PROGRAMS = ("npu2_gemm_gate", "npu2_mnist_gate", "npu2_coherence", "npu2_faults")
 NPU_DESIGN = {"magic": 0x4153544E, "main_bytes": 0x18000}    # "ASTN", 96 KiB (aster_npu_soc.sv)
+# --design soc (20.2): the Phase 20 SoC's regression build (rtl/soc/aster_soc.sv
+# with SHELL_PAGE = 1: hart 1 held, the CPU shell's register page; its
+# simulation build/aster_soc/soc_shell), as --design npu in all else: its
+# register page, its NPU at 0x4000_0000, its board flow and identity.
+SOC_DESIGN = {"magic": 0x41535432, "main_bytes": 0x18000}     # "AST2", 96 KiB (aster_soc.sv)
 KERNEL_CYCLES = 60_000_000
 PROGRAM_CYCLES = 20_000_000
 # The board's cycle count to the tohost store against the shell's: both count
@@ -201,8 +206,8 @@ def compare(kind: str, name: str, shell: dict, board: dict) -> tuple[bool, str]:
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument("--sim", type=Path, help="the board design's Verilator simulation")
-    parser.add_argument("--design", choices=("core", "npu"), default="core",
-                        help="npu: the Phase 19 SoC's simulation (19.4), not 18.7's design")
+    parser.add_argument("--design", choices=("core", "npu", "soc"), default="core",
+                        help="npu: the Phase 19 SoC (19.4); soc: the Phase 20 SoC's regression build (20.2)")
     parser.add_argument("--board", type=Path, help="the bitstream, to run on the board")
     parser.add_argument("--report", type=Path, help="a board run's report.json, to compare again")
     parser.add_argument("--host", default="xilinx@10.0.0.82")
@@ -215,13 +220,13 @@ def main() -> int:
     if sum(map(bool, (args.sim, args.board, args.report))) != 1:
         parser.error("give one of --sim, --board or --report")
     prefix = os.environ.get("RISCV_PREFIX", "riscv32-unknown-elf-")
-    skip = BOARD_SKIP | (NPU_SOC_SKIP if args.design == "npu" else {})
-    if args.design == "npu":
+    skip = BOARD_SKIP | (NPU_SOC_SKIP if args.design in ("npu", "soc") else {})
+    if args.design in ("npu", "soc"):
         SIM_ARGS.append("+board")
         if args.sim:                                  # the RVFI traces: only a simulation writes them
             global TRACES
             TRACES = True
-    rows = programs(args.only, skip, gates=args.design == "npu" and not args.sim)
+    rows = programs(args.only, skip, gates=args.design in ("npu", "soc") and not args.sim)
     if not rows:
         print(f"FAIL: no program matches {args.only}")
         return 1
@@ -263,12 +268,12 @@ def expected_design(args, built) -> dict | None:
     """--design npu: the identity the board must report (design.json). The NPU's
     configuration (0x3F058) is the one the gate programs' references ran with,
     the SoC simulation's (none when no gate program is run)."""
-    if args.design != "npu":
+    if args.design not in ("npu", "soc"):
         return None
     configs = {reference.get("npu_config") for kind, *_, reference in built if kind == "gate"}
     if None in configs or len(configs) > 1:
         raise SystemExit(f"FAIL: the SoC simulation's NPU configuration is not one value: {configs}")
-    return NPU_DESIGN | ({"npu_config": configs.pop()} if configs else {})
+    return (SOC_DESIGN if args.design == "soc" else NPU_DESIGN) | ({"npu_config": configs.pop()} if configs else {})
 
 
 def report_problems(report: dict, design: dict | None) -> list[str]:

@@ -55,6 +55,7 @@ module ref_fabric #(
     input  logic [1:0]            d_req_valid,
     input  logic [1:0][3:0]       d_req_op,
     input  logic [1:0][31:0]      d_req_addr,
+    input  logic [1:0]            d_req_main,     // (aster_fabric's hint; the reference decodes the address)
     input  logic [1:0][31:0]      d_req_wdata,
     input  logic [1:0][3:0]       d_req_be,
     output logic [1:0]            d_req_ready,
@@ -114,6 +115,13 @@ module ref_fabric #(
     function automatic logic in_mem(input logic [31:0] a);
         return a - MEM_BASE < 32'(MEM_BYTES);
     endfunction
+    // The data caches' main-memory hint (aster_fabric's d_req_main, from each cache's registers) must
+    // agree with the address the reference decodes.
+    always_ff @(posedge clk)
+        if (rst_n)
+            for (int h = 0; h < 2; h++)
+                if (d_req_valid[h] && hart_rst_n[h])
+                    assert (d_req_main[h] == in_mem(d_req_addr[h])) else $error("ref_fabric: d_req_main disagrees with the address");
     function automatic logic [4:0] funct5_of(input logic [3:0] op);
         unique case (op)
             4'd5: return 5'b00000; 4'd6: return 5'b00100; 4'd7: return 5'b01100; 4'd8: return 5'b01000;

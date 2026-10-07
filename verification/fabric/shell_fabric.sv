@@ -95,13 +95,18 @@ module shell_fabric #(
     assign {s0_line2, s0_line1, s0_line0} = snoop_line[0];
     assign {s1_line2, s1_line1, s1_line0} = snoop_line[1];
 
+    // A data cache's main-memory decision (aster_l1d's m_req_main), from its request's address.
+    function automatic logic main_of(input logic [31:0] a);
+        return a - 32'h8000_0000 < 32'h0001_8000;
+    endfunction
     `FABRIC_DUT #(.WAIT(WAIT)) dut (
         .clk, .rst_n, .hart_rst_n, .hart_exception,
         .i_req_valid({i1_req_valid && !hide_i1, i0_req_valid}), .i_req_addr({i1_req_addr, i0_req_addr}),
         .i_req_ready({i1_ready_dut, i0_req_ready}), .i_rsp_valid({i1_rsp_valid, i0_rsp_valid}),
         .i_rsp_data({i1_rsp_data, i0_rsp_data}), .i_rsp_error({i1_rsp_error, i0_rsp_error}),
         .d_req_valid({d1_req_valid, d0_req_valid && !hide_d0}), .d_req_op({d1_req_op, d0_req_op}),
-        .d_req_addr({d1_req_addr, d0_req_addr}), .d_req_wdata({d1_req_wdata, d0_req_wdata}),
+        .d_req_addr({d1_req_addr, d0_req_addr}), .d_req_main({main_of(d1_req_addr), main_of(d0_req_addr)}),
+        .d_req_wdata({d1_req_wdata, d0_req_wdata}),
         .d_req_be({d1_req_be, d0_req_be}), .d_req_ready({d1_req_ready, d0_ready_dut}),
         .d_rsp_valid({d1_rsp_valid, d0_rsp_valid}), .d_rsp_rdata({d1_rsp_rdata, d0_rsp_rdata}),
         .d_rsp_error({d1_rsp_error, d0_error_dut}), .snoop_valid, .snoop_line,

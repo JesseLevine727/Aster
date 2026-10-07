@@ -1,8 +1,13 @@
 # Phase 20: whole-SoC workload placement and concurrency
 
-Status: **milestone 20.1 (the banked fabric) complete, awaiting the owner's
-sign-off and approval of soc.md §13's 20.1 arbitration change.** 20.0 (the
-fabric shell) was signed off by the owner on 7 October 2026. The owner's
+Status: **milestone 20.2 (the two-hart SoC) in progress**; its timing levers that cost cycles or change the contract await the owner's decision (Milestone 20.2 below). 20.0 (the fabric
+shell) and 20.1 (the banked fabric, with its arbitration change to soc.md
+§4.4) were signed off and approved by the owner on 7 October 2026. For 20.2
+the owner asked for good timing margin, not a thin pass, without sacrificing
+much performance: levers that keep every cycle come first (placement and
+floorplanning, implementation strategies, restructuring logic with the same
+cycle behaviour); any that costs cycles is measured and put to the owner.
+Each lever tried is recorded with its result. The owner's
 decisions are recorded below; the SoC specification, [`soc.md`](soc.md), was
 approved by the owner on 7 October 2026. The phase sits in the [v2 plan](phase17-plus.md#6-phase-17-sequence)
 after [Phase 19](phase19.md) (complete, 6 October 2026). As in Phases 18 and
@@ -242,19 +247,27 @@ they are now deterministic.
 - the shell's lone-hart check first excused only writes that took effect;
 - solo mode blocked the final read-back port.
 
-**Timing:** none in 20.0: nothing in it is for the FPGA. The fabric meets
-10 ns from 20.1.
+**Timing:** none in 20.0: nothing in it is for the FPGA. (20.1 recorded the
+fabric meeting 10 ns; 20.2 found that measurement wrong: Milestone 20.1's
+correction below.)
 
 The clarifications of soc.md this milestone found are recorded in soc.md §13
 ("Clarifications in 20.0").
 
 ## Milestone 20.1: the banked fabric (7 October 2026)
 
-**Exit gate met** (soc.md §12: random and edge tests pass in every mode with
-every bin; planted bugs caught; the L1 tests pass; 10 ns out of context).
+**Exit gate met as recorded at sign-off** (soc.md §12: random and edge tests
+pass in every mode with every bin; planted bugs caught; the L1 tests pass;
+10 ns out of context). **Corrected in 20.2:** the 10 ns part does not hold.
+The timing below was measured on a netlist in which Vivado never granted the
+round robins' members 2 and 3 (a signed size cast in the arbiter; soc.md §13,
+20.2). The corrected fabric misses 10 ns out of context: −1.425 ns alone,
+−1.906 ns with its requesters' front ends. The owner signed off 20.1 on the
+incorrect figure. 20.2 asks the owner to re-confirm that sign-off, with the
+timing now carried by 20.2's levers.
 `make fabric-tests fabric-mutants core-aster-l1-unit core-aster-l1-tests
-timing-fpga-fabric`. The arbitration below changes soc.md §4.4 and awaits the
-owner's approval (soc.md §13, 20.1).
+timing-fpga-fabric`. The arbitration below changes soc.md §4.4; the owner
+approved it with the milestone (7 October 2026).
 
 **The fabric** (`rtl/fabric/aster_fabric.sv`, `aster_fabric_bank.sv`) keeps
 the reference fabric's ports and contract.
@@ -356,7 +369,7 @@ in the Phase 19 SoC; 3 here.
 
 | Block | Worst setup slack | LUTs | FFs | Block RAM tiles |
 | --- | ---: | ---: | ---: | ---: |
-| Fabric, with its banks | +0.384 ns | 3,622 | 1,578 | 32 |
+| Fabric, with its banks | +0.384 ns (invalid: −1.425 ns corrected, 20.2) | 3,622 (4,634 corrected) | 1,578 | 32 |
 | Core and caches, three snoop ports | +0.456 ns | 5,968 | 2,542 | 34 |
 | Core and caches, one snoop port (for comparison) | +0.177 ns | 4,971 | 2,481 | 34 |
 
@@ -376,7 +389,8 @@ formed by logic shaped like its requester's, and each readiness feeding its
 requester's state). The data caches' front end is aster_l1d's valid, address
 and op selection, with acceptance advancing the refill count, enabling the
 posted-store register and clearing one of 256 valid bits; the NPU's is its
-loader-or-writer choice. Worst setup slack **+0.327 ns** (3,856 LUTs):
+loader-or-writer choice. Worst setup slack **+0.327 ns** (3,856 LUTs; invalid,
+as above: −1.906 ns corrected, 20.2):
 
 | Path | Slack |
 | --- | ---: |
@@ -411,6 +425,125 @@ path is prepared and recorded, not adopted, with the levers for the others
   - mutants missing for the I/O bus, the answer-delay stages and the snoop
     ports.
 
+## Milestone 20.2: the two-hart SoC (in progress, 7 October 2026)
+
+**What is built.**
+- **The SoC** (`rtl/soc/aster_soc.sv`): two Aster cores, each with its
+  instruction cache and its data cache with three snoop ports; the banked
+  fabric; the NPU on port N; the devices on the I/O bus
+  (`aster_soc_devices.sv`); and the Phase 19 SoC's AXI4-Lite window. A
+  regression build (`SHELL_PAGE = 1`) keeps hart 1 held and the CPU shell's
+  register page, as the Phase 19 SoC did.
+- **The devices** (soc.md §7, §8, with 20.2's clarifications in soc.md §13):
+  the UART into the console; v1's timer, interrupt controller and hart
+  control; ABI 4 counters for each hart; the DOT8 counters; 48 fabric
+  counters.
+- **The runtime's dispatch and join** (`software/runtime/aster_smp.h`): a job
+  published in coherent shared memory, hart 1 spinning in its own cache. A
+  round trip takes 72 cycles on average.
+- **The SoC's testbench** (`verification/aster_soc/`):
+  - the memory checker, at soc.md §10.2's perform points;
+  - Spike's reservation rule, against every sc;
+  - every snoop;
+  - every NPU job against its reference;
+  - each hart's RVFI trace;
+  - hart 1's reset coverage;
+  - the cause of every cycle the NPU waits.
+- **Builds:** `make soc-sim` builds the simulations, `make soc-tests` runs
+  them (`scripts/soc_tests.py`), `make fpga-aster-soc` builds the bitstream.
+  The bitstream build now snapshots its sources and checks its synthesized
+  netlist.
+
+**Results in simulation** (all passing):
+- **soc.md §10.4's regression:** 99 of 99 programs on the regression build,
+  each as in the CPU shell, cycle for cycle and RVFI record for record.
+- **Litmus:** 26 shapes × 2,000 trials on two harts, nothing forbidden. Run
+  without and with three added memory waits:
+  - 2.64 million loads checked;
+  - 124,807 sc's, of which 28,807 failed;
+  - 64,000 AMOs.
+- **Hart 1's reset stress:** four seeds × 1,000 holds, 5,334 resets. They
+  caught answers owed (562), an AMO before its write (86), a refill (43) and a
+  reservation (297).
+- **The devices:** exact counts of AMOs, sc's and dot8s; the timer's and the
+  software interrupt; word-only and unmapped pages faulting; the NPU's job and
+  its interrupt.
+- **Each hart's trace** is consistent, as lockstep.py checks one.
+- **Phase 19's gate programs** on the regression build: the same results.
+  Cycles differ by bank conflicts between the harts and the NPU, each one
+  traced (soc.md §13, 20.2).
+
+**A defect in 20.1's fabric, found here** (soc.md §13, 20.2). The round
+robins indexed members 2 and 3 with a signed size cast. Vivado follows
+IEEE 1800 and never granted them, so it removed the NPU's datapath. Verilator
+hid the defect. 20.1's timing was measured on that netlist:
+
+| | As recorded in 20.1 | Corrected |
+| --- | ---: | ---: |
+| The fabric alone | +0.384 ns | −1.425 ns |
+| With its requesters' front ends | +0.327 ns | −1.906 ns |
+
+The fix is an unsigned index. A golden copy of the fabric
+(`verification/fabric/aster_fabric_golden.sv`) and a lockstep wrapper
+(`equiv_fabric.sv`, in `make fabric-tests`) now require every later
+restructuring to keep every cycle.
+
+**Timing: the levers tried** (in context unless marked; worst setup slack at
+10 ns after routing and physical optimization):
+
+| Lever | Kind | Result |
+| --- | --- | --- |
+| Baseline (round-robin defect present) | — | −2.458 ns on a netlist without the NPU |
+| Placement directives on it: ExtraTimingOpt, ExtraNetDelay_high, EarlyBlockPlacement | strategy | −2.976, −3.084, −2.399 ns: no help |
+| The fabric counters counted from registered copies; the ARM side on R/W; the caches' registered main-memory flag; the NPU's page chosen per cache; the console read from a registered address | keeps every cycle | in r1, with the defect fixed |
+| r1: the above, the real netlist (33,925 LUTs, 64%) | | −11.1 ns: the longest-wait maximum chain (27 levels), the NPU's reset fanout, routing |
+| r2: longest wait per requester; the NPU's reset registered; an atomic's line invalidated from the head's registers | keeps every cycle | **−2.619 ns** |
+| r2 + a floorplan (pblocks: NPU, fabric, each hart) | keeps every cycle | −2.743 ns; but its fabric pblock had 29 block-RAM sites for 32 (the review found it), so not a fair test |
+| r4: r2 + the NPU's job copy loaded while idle (START enables only its state) | keeps every cycle | **−2.428 ns**: the best on the approved design |
+| r4 + the corrected floorplan (36 sites for the fabric) | keeps every cycle | −3.005 ns: worse |
+| r2 + D_ON_B off | costs cycles (below) | −1.076 ns |
+| r2 + the NPU's request buffer | costs cycles (below) | −1.072 ns |
+| r2 + the read-beside-write bypass | contract change, saves cycles | −0.982 ns |
+| r2 + bypass + NPU buffer | | −0.185 ns |
+| r2 + bypass + D_ON_B off | | −0.001 ns |
+| r2 + NPU buffer + D_ON_B off ("the candidate") | | **+0.002 ns**: met |
+| the candidate + bypass | | −0.006 ns: the bypass adds nothing here, so it is not proposed and was removed from the RTL (it was never verified) |
+| the candidate, placement directives: ExtraTimingOpt, ExtraNetDelay_high, EarlyBlockPlacement, AltSpreadLogic_high | strategy | −0.009, −0.060, +0.006, +0.018 ns |
+| the candidate, synthesis: PerformanceOptimized; register retiming | strategy | +0.007, +0.007 ns |
+| the candidate on r4's RTL (cand2) | | −0.070 ns: 9 endpoints within 0.07 ns, in the fabric, the NPU and both cores' own paths |
+| cand2 + the corrected floorplan | keeps every cycle | −0.159 ns: worse |
+| Out of context, the fabric with front ends | | −1.906 ns; D_ON_B off +0.039; NPU from registers −1.155; bypass −0.832; bypass and D_ON_B off +0.302 |
+
+**What the cycle-costing levers cost:**
+- **D_ON_B off** (20.1's second chance, approved with its arbitration):
+  - on two harts summing the same array from cold caches, 0 cycles;
+  - refill-bound, both harts reading one word of every line in step, 5 of
+    18,549 (0.03%) (`software/tests/soc_twin.c`);
+  - in the fabric shell's twin traffic, up to 16% fewer accepted requests.
+- **The NPU's request buffer** (two entries between the NPU and port N,
+  readiness from a register; the NPU keeps three accesses in flight): 2–6
+  cycles per NPU job. On Phase 19's gate programs: +116 cycles on the GEMM
+  gate (+0.003%), +264 on MNIST (+0.015%), +335 on the coherence program
+  (+0.004%).
+- **The read-beside-write bypass** (measured, then removed): a port-B read
+  beside a port-A write of the same 8-byte unit would take the unit's old
+  value from port A's read-first output instead of waiting. It would have
+  changed soc.md §4.2's bank rule. With the other two levers it adds no
+  timing, so it is not proposed.
+
+**Where 20.2's timing stands.**
+- **The approved design:** keeping every cycle, the best is −2.428 ns. Most
+  of the gap is 20.1's second chance (about 1.9 ns) and the NPU's paths
+  through the fabric's grant (about 1.9 ns).
+- **The candidate** (D_ON_B off and the NPU's request buffer): at zero, from
+  −0.07 to +0.02 ns with the strategy. The paths left at the limit include
+  each core's own (forwarding into Execute, the dot8 sum), which met with
+  +0.14 to +0.22 ns in 18.7's and 19.5's lighter designs. At 64% of the
+  LUTs, no single block holds the margin any more.
+
+So good margin needs more than these levers. That is the owner's decision,
+together with the two cycle-costing levers and 20.1's sign-off.
+
 ## Milestones and gates
 
 | Milestone | Scope | Exit |
@@ -427,7 +560,7 @@ path is prepared and recorded, not adopted, with the levers for the others
 - [x] The owner's decisions (7 October 2026)
 - [x] soc.md approved by the owner (7 October 2026)
 - [x] 20.0 as in the table above — signed off by the owner (7 October 2026)
-- [x] 20.1 as in the table above — exit gate met (7 October 2026), awaiting the owner's sign-off
+- [x] 20.1 as in the table above — signed off by the owner (7 October 2026), the §4.4 arbitration change approved
 - [ ] 20.2 as in the table above
 - [ ] 20.3 as in the table above
 - [ ] 20.4 as in the table above

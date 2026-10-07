@@ -76,6 +76,7 @@ module aster_l1d #(
     output logic        m_req_valid,
     output logic [3:0]  m_req_op,
     output logic [31:0] m_req_addr,
+    output logic        m_req_main,     // the request is main memory's, not an I/O access (from registers)
     output logic [31:0] m_req_wdata,
     output logic [3:0]  m_req_be,
     input  logic        m_req_ready,
@@ -85,6 +86,8 @@ module aster_l1d #(
     input  logic [SNOOPS-1:0]        snoop_valid,
     input  logic [SNOOPS-1:0][31:4]  snoop_line,
     output logic        posted_pending,
+    // counters: each snoop port's snoop that invalidated a line (Phase 20's fabric counters)
+    output logic [SNOOPS-1:0] ev_snoop_hit,
     // verification: a lookup (a request entering stage 2) and its outcome
     output logic        chk_lookup,
     output logic [3:0]  chk_lookup_op,
@@ -181,6 +184,7 @@ module aster_l1d #(
     assign m_req_valid  = inflight != 2'd2 && (state == REFILL ? issued != 3'd4 : state == ACCESS && !sent);
     assign m_req_op     = state == REFILL ? OP_LOAD : s2_op;
     assign m_req_addr   = state == REFILL ? {s2_addr[31:4], issued[1:0], 2'b00} : s2_addr;
+    assign m_req_main   = state == REFILL || s2_cacheable;   // main memory's (else an I/O access), from registers
     assign m_req_wdata  = s2_wdata;
     assign m_req_be     = state == REFILL ? 4'hf : s2_be;
     assign m_drop       = m_rsp_valid && posted != 2'd0;
@@ -217,8 +221,8 @@ module aster_l1d #(
     // Lines: a refill invalidates the line it replaces as it starts (its words
     // overwrite that line's) and installs its own with its last word, unless
     // its line was snooped meanwhile (that cycle included); a snoop invalidates
-    // its line where it is held; sc and the AMOs invalidate theirs as they are
-    // sent.
+    // its line where it is held; sc and the AMOs invalidate theirs from the
+    // time they head the cache until they are sent.
     assign refill_start = s1_move && s1_cacheable && s1_load && !lookup_hit;
     always_comb begin
         snoop_s2 = 1'b0;
@@ -228,7 +232,11 @@ module aster_l1d #(
         end
     end
     assign install   = refill_write && received == 3'd3 && !poisoned && !snoop_s2;
-    assign amo_inval = state == ACCESS && !sent && m_accept && s2_cacheable
+    assign ev_snoop_hit = snoop_hit;
+    // (from the head's registers, while it waits to be sent as well as when it is: no lookup or
+    // install can happen while an sc or AMO holds the head, so this keeps every cycle, and keeps the
+    // memory side's readiness away from the valid bits; 20.2's timing)
+    assign amo_inval = state == ACCESS && !sent && s2_cacheable
                        && s2_op != OP_STORE && s2_op != OP_LR && s2_op != OP_LOAD;
     always_comb begin
         valid_next = valid;

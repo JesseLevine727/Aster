@@ -563,7 +563,11 @@ module aster_npu2_engine #(
 
             // ---------------------------------------------- sequencing
             case (state)
-                S_IDLE: if (start) begin
+                S_IDLE: begin
+                    // The job's copy of the descriptor and the dividers' start, loaded in every idle cycle
+                    // (from registers: a descriptor write and START never share a cycle), so that START
+                    // itself changes only the state and the two flags (20.2's timing: it arrives late,
+                    // through the I/O bus). Nothing reads these while idle.
                     a_base <= d_a_base; b_base <= d_b_base; c_base <= d_c_base;
                     a_stride <= d_a_stride; b_stride <= d_b_stride; c_stride <= d_c_stride;
                     m <= d_m; n <= d_n; k <= d_k; mode <= d_mode;
@@ -571,8 +575,10 @@ module aster_npu2_engine #(
                     m1 <= 12'(d_m - 32'd1); k1 <= 12'(d_k - 32'd1);
                     chk_cnt <= '0; div_rem <= '0; div_q <= '0; div_i <= 4'd12;
                     dm_rem <= '0; dk_rem <= '0; dm_q <= '0; dk_q <= '0; dmk_i <= 4'd11;
-                    bus_err <= 1'b0; abort_pending <= 1'b0;
-                    state <= S_CHECK;
+                    if (start) begin
+                        bus_err <= 1'b0; abort_pending <= 1'b0;
+                        state <= S_CHECK;
+                    end
                 end
                 S_CHECK: begin
                     chk_cnt <= chk_cnt + 5'd1;

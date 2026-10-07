@@ -31,6 +31,6 @@ module l1d_unit #(parameter int unsigned SNOOPS = 1) (
         .clk, .rst_n, .cacheable_bytes, .d_req_valid, .d_req_op, .d_req_addr, .d_req_wdata, .d_req_be,
         .d_req_ready, .d_rsp_valid, .d_rsp_rdata, .d_rsp_error,
         .m_req_valid, .m_req_op, .m_req_addr, .m_req_wdata, .m_req_be, .m_req_ready,
-        .m_rsp_valid, .m_rsp_rdata, .m_rsp_error, .snoop_valid, .snoop_line, .posted_pending,
+        .m_rsp_valid, .m_rsp_rdata, .m_rsp_error, .snoop_valid, .snoop_line, .posted_pending, .ev_snoop_hit(), .m_req_main(),
         .chk_lookup, .chk_lookup_op(), .chk_lookup_addr(), .chk_lookup_be(), .chk_lookup_wdata(), .chk_lookup_hit());
 endmodule

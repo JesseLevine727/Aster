@@ -153,6 +153,7 @@ module shell_aster_ports #(
         always_ff @(posedge clk) tick <= resetn && !tick;
         assign held          = selftest == 4'd1 && tick;
         assign c_d_req_ready = dcache_ready && !held;
+        /* verilator lint_off PINCONNECTEMPTY */
         aster_l1d #(.IO_WINDOWS(4), .IO_BASE(IO_BASE), .IO_MASK(IO_MASK)) dcache (
             .clk, .rst_n(resetn), .cacheable_bytes,
             .d_req_valid(c_d_req_valid && !held), .d_req_op(c_d_req_op), .d_req_addr(k_d_req_addr),
@@ -161,10 +162,11 @@ module shell_aster_ports #(
             .m_req_valid(d_req_valid), .m_req_op(d_req_op), .m_req_addr(d_req_addr), .m_req_wdata(d_req_wdata),
             .m_req_be(d_req_be), .m_req_ready(d_req_ready),
             .m_rsp_valid(d_rsp_valid), .m_rsp_rdata(d_rsp_rdata), .m_rsp_error(d_rsp_error),
-            .snoop_valid, .snoop_line, .posted_pending,
+            .snoop_valid, .snoop_line, .posted_pending, .ev_snoop_hit(), .m_req_main(),
             .chk_lookup(chk_dc_lookup), .chk_lookup_op(chk_dc_op), .chk_lookup_addr(chk_dc_addr),
             .chk_lookup_be(chk_dc_be), .chk_lookup_wdata(chk_dc_wdata), .chk_lookup_hit(chk_dc_hit)
         );
+        /* verilator lint_on PINCONNECTEMPTY */
         // The self-tests' broken rules (above), from whether the request waited.
         logic i_waited, d_waited;
         always_ff @(posedge clk) begin
