@@ -13,9 +13,9 @@
 // harts are held: it presents its main-memory reads on port R and its writes on
 // port W then (soc.md §13, 20.2), and the fabric's hart 0 never counts as held.
 //
-// Build options for 20.2's timing measurements (the approved design is the
-// default): FABRIC_D_ON_B = 0 turns off the fabric's second chance; NPU_BUFFER
-// = 1 puts a two-entry buffer between the NPU and port N.
+// The NPU's requests reach port N through a two-entry buffer (NPU_BUFFER = 1, the
+// owner's decision in 20.2: soc.md §13); NPU_BUFFER = 0 connects them directly,
+// for measurement only.
 //
 // SHELL_PAGE = 1 is the regression build (soc.md §10.4): instead of the
 // devices, the data caches' I/O window 0x2000_0000-0x2000_FFFF is the CPU
@@ -42,8 +42,7 @@ module aster_soc #(
     parameter int unsigned HARTS = 2,
     parameter int unsigned SHELL_PAGE = 0,
     parameter int unsigned WAIT = 0,                    // the fabric's added answer cycles (simulation)
-    parameter int unsigned FABRIC_D_ON_B = 1,           // the fabric's second chance (soc.md §13, 20.1); 0 for 20.2's measurements
-    parameter int unsigned NPU_BUFFER = 0               // 1: the NPU's requests through a two-entry buffer (20.2's measurements)
+    parameter int unsigned NPU_BUFFER = 1               // the NPU's requests through a two-entry buffer (soc.md §13, 20.2); 0 to measure without
 ) (
     input  logic        aclk,
     input  logic        aresetn,
@@ -235,39 +234,45 @@ module aster_soc #(
     // readiness and output are registers, so neither side's logic meets the other's in one cycle. The buffer
     // adds a cycle to each access (the NPU then keeps three in flight); it answers an access outside main
     // memory with the error itself, the cycle after taking it, as the NPU expects (the fabric's comes later).
-    logic        f_n_valid, f_n_we, n_ready_f;
+    logic        f_n_valid, f_n_we, f_n_main, n_ready_f;
     logic [31:2] f_n_addr;
     logic [63:0] f_n_wdata;
     logic [7:0]  f_n_be;
+    // the NPU's request is main memory's (the fabric's flag; the buffer keeps it with the request)
+    logic n_main;
+    assign n_main = {n_req_addr, 2'b00} - 32'h8000_0000 < 32'(MAIN_BYTES);
     if (NPU_BUFFER != 0) begin : g_npu_buffer
         logic [1:0]       count;
         logic             full, err_q;
         logic [1:0][31:2] e_addr;
-        logic [1:0]       e_we;
+        logic [1:0]       e_we, e_main;
         logic [1:0][63:0] e_wdata;
         logic [1:0][7:0]  e_be;
         logic             enq, deq;
         assign n_req_ready = !full;
         assign enq = n_req_valid && !full;
         assign deq = f_n_valid && n_ready_f;
-        assign {f_n_valid, f_n_addr, f_n_we, f_n_wdata, f_n_be} = {count != 2'd0, e_addr[0], e_we[0], e_wdata[0], e_be[0]};
+        assign {f_n_valid, f_n_addr, f_n_we, f_n_wdata, f_n_be, f_n_main} = {count != 2'd0, e_addr[0], e_we[0], e_wdata[0],
+                                                                         e_be[0], e_main[0]};
         always_ff @(posedge aclk) begin
             if (!npu_rst_n) begin
                 count <= '0; full <= 1'b0; err_q <= 1'b0;
             end else begin
                 count <= count + {1'b0, enq} - {1'b0, deq};
                 full  <= count + {1'b0, enq} - {1'b0, deq} == 2'd2;
-                err_q <= enq && {n_req_addr, 2'b00} - 32'h8000_0000 >= 32'(MAIN_BYTES);
+                err_q <= enq && !n_main;
             end
             // entry 0 is the head; a request joins behind what stays
             if (deq) begin
-                e_addr[0] <= e_addr[1]; e_we[0] <= e_we[1]; e_wdata[0] <= e_wdata[1]; e_be[0] <= e_be[1];
+                e_addr[0] <= e_addr[1]; e_we[0] <= e_we[1]; e_wdata[0] <= e_wdata[1]; e_be[0] <= e_be[1]; e_main[0] <= e_main[1];
             end
             if (enq) begin
                 if (count - {1'b0, deq} == 2'd0) begin
                     e_addr[0] <= n_req_addr; e_we[0] <= n_req_we; e_wdata[0] <= 64'(n_req_wdata); e_be[0] <= 8'(n_req_be);
+                    e_main[0] <= n_main;
                 end else begin
                     e_addr[1] <= n_req_addr; e_we[1] <= n_req_we; e_wdata[1] <= 64'(n_req_wdata); e_be[1] <= 8'(n_req_be);
+                    e_main[1] <= n_main;
                 end
             end
         end
@@ -275,7 +280,8 @@ module aster_soc #(
         logic unused_fabric_error;                         // (the buffer answers errors itself)
         assign unused_fabric_error = n_rsp_error;
     end else begin : g_npu_direct
-        assign {f_n_valid, f_n_addr, f_n_we, f_n_wdata, f_n_be} = {n_req_valid, n_req_addr, n_req_we, 64'(n_req_wdata), 8'(n_req_be)};
+        assign {f_n_valid, f_n_addr, f_n_we, f_n_wdata, f_n_be, f_n_main} = {n_req_valid, n_req_addr, n_req_we,
+                                                                         64'(n_req_wdata), 8'(n_req_be), n_main};
         assign n_req_ready = n_ready_f;
         assign n_mem_error = n_rsp_error;
     end
@@ -284,20 +290,21 @@ module aster_soc #(
     logic [1:0] hart_exception, ev_resv_end;
     assign hart_exception = rvfi_valid & rvfi_trap;
     /* verilator lint_off PINCONNECTEMPTY */
-    aster_fabric #(.MEM_BASE(32'h8000_0000), .MEM_BYTES(MAIN_BYTES), .WAIT(WAIT), .D_ON_B(FABRIC_D_ON_B != 0)) fabric (
+    aster_fabric #(.MEM_BASE(32'h8000_0000), .MEM_BYTES(MAIN_BYTES), .WAIT(WAIT)) fabric (
         .clk(aclk), .rst_n(aresetn && !start && !stop), .hart_rst_n({core_rst_n[1], 1'b1}), .hart_exception,
-        .i_req_valid(m_i_valid), .i_req_addr(m_i_addr), .i_req_ready(m_i_ready), .i_rsp_valid(m_i_rsp_valid),
+        // (an instruction cache sends only main memory's fetches, and the ARM side addresses only main memory)
+        .i_req_valid(m_i_valid), .i_req_addr(m_i_addr), .i_req_main(2'b11), .i_req_ready(m_i_ready), .i_rsp_valid(m_i_rsp_valid),
         .i_rsp_data(m_i_rsp_data), .i_rsp_error(m_i_rsp_error),
         .d_req_valid(f_d_valid), .d_req_op(f_d_op), .d_req_addr(f_d_addr), .d_req_main(m_d_main), .d_req_wdata(f_d_wdata),
         .d_req_be(f_d_be),
         .d_req_ready(f_d_ready), .d_rsp_valid(f_d_rsp_valid), .d_rsp_rdata(f_d_rsp_rdata), .d_rsp_error(f_d_rsp_error),
         .snoop_valid, .snoop_line,
-        .n_req_valid(f_n_valid && core_rst_n[0]), .n_req_addr(f_n_addr), .n_req_we(f_n_we),
+        .n_req_valid(f_n_valid && core_rst_n[0]), .n_req_addr(f_n_addr), .n_req_main(f_n_main), .n_req_we(f_n_we),
         .n_req_wdata(f_n_wdata), .n_req_be(f_n_be), .n_req_ready(n_ready_f), .n_rsp_valid(n_rsp_valid),
         .n_rsp_rdata(n_rsp_rdata), .n_rsp_error(n_rsp_error),
-        .r_req_valid(arm_v && !arm_write), .r_req_addr(arm_addr[31:3]), .r_req_ready(r_ready), .r_rsp_valid,
+        .r_req_valid(arm_v && !arm_write), .r_req_addr(arm_addr[31:3]), .r_req_main(1'b1), .r_req_ready(r_ready), .r_rsp_valid,
         .r_rsp_rdata, .r_rsp_error(),
-        .w_req_valid(arm_v && arm_write), .w_req_addr(arm_addr[31:3]), .w_req_wdata({arm_wdata, arm_wdata}),
+        .w_req_valid(arm_v && arm_write), .w_req_addr(arm_addr[31:3]), .w_req_main(1'b1), .w_req_wdata({arm_wdata, arm_wdata}),
         .w_req_be(arm_addr[2] ? {arm_be, 4'h0} : {4'h0, arm_be}), .w_req_ready(w_ready), .w_rsp_valid,
         .w_rsp_error(),
         .io_req_valid(io_valid), .io_req_hart(io_hart), .io_req_op(io_op), .io_req_addr(io_addr),

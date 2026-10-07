@@ -47,6 +47,7 @@ module ref_fabric #(
     // instruction caches I0, I1
     input  logic [1:0]            i_req_valid,
     input  logic [1:0][29:0]      i_req_addr,           // byte address [31:2]
+    input  logic [1:0]            i_req_main,           // (aster_fabric's flags; the reference decodes the addresses)
     output logic [1:0]            i_req_ready,
     output logic [1:0]            i_rsp_valid,
     output logic [1:0][31:0]      i_rsp_data,
@@ -67,6 +68,7 @@ module ref_fabric #(
     // the NPU (N): 8-byte units, writes with byte enables
     input  logic                  n_req_valid,
     input  logic [29:0]           n_req_addr,           // [31:2], bit 2 zero
+    input  logic                  n_req_main,
     input  logic                  n_req_we,
     input  logic [63:0]           n_req_wdata,
     input  logic [7:0]            n_req_be,
@@ -77,12 +79,14 @@ module ref_fabric #(
     // the DMA's read port R and write port W
     input  logic                  r_req_valid,
     input  logic [28:0]           r_req_addr,           // [31:3]
+    input  logic                  r_req_main,
     output logic                  r_req_ready,
     output logic                  r_rsp_valid,
     output logic [63:0]           r_rsp_rdata,
     output logic                  r_rsp_error,
     input  logic                  w_req_valid,
     input  logic [28:0]           w_req_addr,
+    input  logic                  w_req_main,
     input  logic [63:0]           w_req_wdata,
     input  logic [7:0]            w_req_be,
     output logic                  w_req_ready,
@@ -122,6 +126,14 @@ module ref_fabric #(
             for (int h = 0; h < 2; h++)
                 if (d_req_valid[h] && hart_rst_n[h])
                     assert (d_req_main[h] == in_mem(d_req_addr[h])) else $error("ref_fabric: d_req_main disagrees with the address");
+    always_ff @(posedge clk)
+        if (rst_n) begin
+            for (int h = 0; h < 2; h++)
+                if (i_req_valid[h]) assert (i_req_main[h] == in_mem({i_req_addr[h], 2'b00})) else $error("ref_fabric: i_req_main");
+            if (n_req_valid) assert (n_req_main == in_mem({n_req_addr, 2'b00})) else $error("ref_fabric: n_req_main");
+            if (r_req_valid) assert (r_req_main == in_mem({r_req_addr, 3'b000})) else $error("ref_fabric: r_req_main");
+            if (w_req_valid) assert (w_req_main == in_mem({w_req_addr, 3'b000})) else $error("ref_fabric: w_req_main");
+        end
     function automatic logic [4:0] funct5_of(input logic [3:0] op);
         unique case (op)
             4'd5: return 5'b00000; 4'd6: return 5'b00100; 4'd7: return 5'b01100; 4'd8: return 5'b01000;

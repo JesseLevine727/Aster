@@ -10,10 +10,13 @@
 //   register's enable and clearing a valid bit of 256 (as amo_inval does);
 // - I0, I1: the instruction cache's (aster_l1i.sv): valid = refilling, words
 //   left, fewer than two in flight; acceptance advancing the count;
-// - N: the NPU's (aster_npu2_engine.sv): the loader or the writer, whichever
-//   holds the port, valid gated by its in-flight count; acceptance loading
-//   the writer's next word;
-// - R, W: the DMA's: a request register gated by its in-flight count.
+// - N: the SoC's two-entry buffer in front of the NPU (aster_soc.sv, 20.2):
+//   its head entry's registers, with its main-memory flag; acceptance moving
+//   the next entry up;
+// - R, W: the DMA's: a request register gated by its in-flight count, with a
+//   registered main-memory flag;
+// - I0, I1: their main-memory flag is 1 (an instruction cache never sends a
+//   fetch outside main memory to the fabric).
 // The registers the front ends start from are loaded from ports.
 `timescale 1 ns / 1 ps
 module timing_fabric_fe (
@@ -47,13 +50,13 @@ module timing_fabric_fe (
     logic [1:0][3:0]  d_s2_op, d_s2_be;
     logic [1:0][255:0] d_valid_bits;
     logic [1:0][31:0] d_posted_word;
-    logic             n_held, n_held_ld, n_ld_have, n_wr_q_valid, n_abort, n_bus_err;
+    logic             n_held, n_held_ld, n_wr_q_valid, n_abort, n_bus_err;
     logic [2:0]       n_count;
     logic [29:0]      n_ld_req, n_wr_addr;
     logic [63:0]      n_wr_data, n_next_data;
     logic [7:0]       n_wr_be;
     logic [1:0]       r_count, w_count;
-    logic             r_have, w_have;
+    logic             r_have, w_have, r_main_q, w_main_q;
     logic [28:0]      r_addr_q, w_addr_q;
     logic [63:0]      w_data_q;
     logic [7:0]       w_be_q;
@@ -63,7 +66,7 @@ module timing_fabric_fe (
     logic [1:0][29:0] i_req_addr;
     logic [1:0][3:0]  d_req_op, d_req_be;
     logic [1:0][31:0] d_req_addr, d_req_wdata;
-    logic             n_req_valid, n_req_we, n_req_ready, r_req_valid, r_req_ready, w_req_valid, w_req_ready, n_src_ld;
+    logic             n_req_valid, n_req_we, n_req_ready, r_req_valid, r_req_ready, w_req_valid, w_req_ready;
     logic [29:0]      n_req_addr;
     logic [63:0]      n_req_wdata;
     logic [7:0]       n_req_be;
@@ -79,12 +82,12 @@ module timing_fabric_fe (
                              && (!i_fenced[h] || i_waiting[h]);
             i_req_addr[h]  = {i_s2_addr[h][31:4], i_issued[h][1:0]};
         end
-        n_src_ld    = n_held ? n_held_ld : n_ld_have && !n_wr_q_valid;
-        n_req_valid = n_held || ((n_src_ld ? n_ld_have : n_wr_q_valid) && n_count < 3'd2 && !(n_abort || n_bus_err));
-        n_req_addr  = n_src_ld ? n_ld_req : n_wr_addr;
-        n_req_we    = !n_src_ld;
+        // the buffer's head (registers): n_held its valid, n_held_ld a read, n_abort its main-memory flag
+        n_req_valid = n_held;
+        n_req_addr  = n_ld_req;
+        n_req_we    = !n_held_ld;
         n_req_wdata = n_wr_data;
-        n_req_be    = n_src_ld ? 8'hFF : n_wr_be;
+        n_req_be    = n_wr_be;
         r_req_valid = r_have && r_count != 2'd2;
         w_req_valid = w_have && w_count != 2'd2;
     end
@@ -100,13 +103,13 @@ module timing_fabric_fe (
     /* verilator lint_off PINCONNECTEMPTY */
     aster_fabric fabric (
         .clk, .rst_n, .hart_rst_n, .hart_exception,
-        .i_req_valid, .i_req_addr, .i_req_ready, .i_rsp_valid, .i_rsp_data, .i_rsp_error,
+        .i_req_valid, .i_req_addr, .i_req_main(2'b11), .i_req_ready, .i_rsp_valid, .i_rsp_data, .i_rsp_error,
         .d_req_valid, .d_req_op, .d_req_addr, .d_req_main, .d_req_wdata, .d_req_be, .d_req_ready, .d_rsp_valid, .d_rsp_rdata,
         .d_rsp_error, .snoop_valid, .snoop_line,
-        .n_req_valid, .n_req_addr, .n_req_we, .n_req_wdata, .n_req_be, .n_req_ready, .n_rsp_valid, .n_rsp_rdata,
+        .n_req_valid, .n_req_addr, .n_req_main(n_abort), .n_req_we, .n_req_wdata, .n_req_be, .n_req_ready, .n_rsp_valid, .n_rsp_rdata,
         .n_rsp_error,
-        .r_req_valid, .r_req_addr(r_addr_q), .r_req_ready, .r_rsp_valid, .r_rsp_rdata, .r_rsp_error,
-        .w_req_valid, .w_req_addr(w_addr_q), .w_req_wdata(w_data_q), .w_req_be(w_be_q), .w_req_ready, .w_rsp_valid,
+        .r_req_valid, .r_req_addr(r_addr_q), .r_req_main(r_main_q), .r_req_ready, .r_rsp_valid, .r_rsp_rdata, .r_rsp_error,
+        .w_req_valid, .w_req_addr(w_addr_q), .w_req_main(w_main_q), .w_req_wdata(w_data_q), .w_req_be(w_be_q), .w_req_ready, .w_rsp_valid,
         .w_rsp_error,
         .io_req_valid, .io_req_hart, .io_req_op, .io_req_addr, .io_req_wdata, .io_req_be, .io_rsp_rdata,
         .ev_resv_end, .chk_banks()
@@ -140,18 +143,18 @@ module timing_fabric_fe (
             end else if (i_acc) i_issued[h] <= i_issued[h] + 3'd1;
         end
         if (load_sel == 8'd6) begin
-            n_held <= load_in[0]; n_held_ld <= load_in[1]; n_ld_have <= load_in[2]; n_wr_q_valid <= load_in[3];
+            n_held <= load_in[0]; n_held_ld <= load_in[1]; n_wr_q_valid <= load_in[3];
             n_abort <= load_in[4]; n_bus_err <= load_in[5]; n_count <= load_in[8:6]; n_ld_req <= load_in[38:9];
             n_wr_addr <= load_in[68:39]; n_wr_data <= load_in[132:69]; n_wr_be <= load_in[140:133];
             n_next_data <= load_in[204:141];
-        end else if (n_req_valid && n_req_ready) begin
+        end else if (n_req_valid && n_req_ready) begin                  // the next entry moves up
+            n_held <= n_wr_q_valid; n_held_ld <= n_bus_err; n_ld_req <= n_wr_addr; n_wr_data <= n_next_data;
             n_count <= n_count + 3'd1;
-            if (!n_src_ld) begin n_wr_data <= n_next_data; n_wr_q_valid <= 1'b0; end      // the writer's next word
         end
         if (load_sel == 8'd7) begin
             r_have <= load_in[0]; r_count <= load_in[2:1]; r_addr_q <= load_in[31:3];
             w_have <= load_in[32]; w_count <= load_in[34:33]; w_addr_q <= load_in[63:35];
-            w_data_q <= load_in[127:64]; w_be_q <= load_in[135:128];
+            w_data_q <= load_in[127:64]; w_be_q <= load_in[135:128]; r_main_q <= load_in[136]; w_main_q <= load_in[137];
         end else begin
             if (r_req_valid && r_req_ready) r_count <= r_count + 2'd1;
             if (w_req_valid && w_req_ready) w_count <= w_count + 2'd1;

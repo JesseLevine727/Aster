@@ -95,13 +95,15 @@ module shell_fabric #(
     assign {s0_line2, s0_line1, s0_line0} = snoop_line[0];
     assign {s1_line2, s1_line1, s1_line0} = snoop_line[1];
 
-    // A data cache's main-memory decision (aster_l1d's m_req_main), from its request's address.
+    // A requester's main-memory decision (its main-memory flag: aster_l1d's m_req_main, and the others'),
+    // from its request's address.
     function automatic logic main_of(input logic [31:0] a);
         return a - 32'h8000_0000 < 32'h0001_8000;
     endfunction
     `FABRIC_DUT #(.WAIT(WAIT)) dut (
         .clk, .rst_n, .hart_rst_n, .hart_exception,
         .i_req_valid({i1_req_valid && !hide_i1, i0_req_valid}), .i_req_addr({i1_req_addr, i0_req_addr}),
+        .i_req_main({main_of({i1_req_addr, 2'b00}), main_of({i0_req_addr, 2'b00})}),
         .i_req_ready({i1_ready_dut, i0_req_ready}), .i_rsp_valid({i1_rsp_valid, i0_rsp_valid}),
         .i_rsp_data({i1_rsp_data, i0_rsp_data}), .i_rsp_error({i1_rsp_error, i0_rsp_error}),
         .d_req_valid({d1_req_valid, d0_req_valid && !hide_d0}), .d_req_op({d1_req_op, d0_req_op}),
@@ -110,10 +112,10 @@ module shell_fabric #(
         .d_req_be({d1_req_be, d0_req_be}), .d_req_ready({d1_req_ready, d0_ready_dut}),
         .d_rsp_valid({d1_rsp_valid, d0_rsp_valid}), .d_rsp_rdata({d1_rsp_rdata, d0_rsp_rdata}),
         .d_rsp_error({d1_rsp_error, d0_error_dut}), .snoop_valid, .snoop_line,
-        .n_req_valid, .n_req_addr, .n_req_we, .n_req_wdata, .n_req_be, .n_req_ready, .n_rsp_valid, .n_rsp_rdata,
+        .n_req_valid, .n_req_addr, .n_req_main(main_of({n_req_addr, 2'b00})), .n_req_we, .n_req_wdata, .n_req_be, .n_req_ready, .n_rsp_valid, .n_rsp_rdata,
         .n_rsp_error,
-        .r_req_valid, .r_req_addr, .r_req_ready, .r_rsp_valid, .r_rsp_rdata, .r_rsp_error,
-        .w_req_valid, .w_req_addr, .w_req_wdata, .w_req_be, .w_req_ready, .w_rsp_valid, .w_rsp_error,
+        .r_req_valid, .r_req_addr, .r_req_main(main_of({r_req_addr, 3'b000})), .r_req_ready, .r_rsp_valid, .r_rsp_rdata, .r_rsp_error,
+        .w_req_valid, .w_req_addr, .w_req_main(main_of({w_req_addr, 3'b000})), .w_req_wdata, .w_req_be, .w_req_ready, .w_rsp_valid, .w_rsp_error,
         .io_req_valid, .io_req_hart, .io_req_op, .io_req_addr, .io_req_wdata, .io_req_be, .io_rsp_rdata,
         .ev_resv_end, .chk_banks(banks_dut)
     );

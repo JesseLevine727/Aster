@@ -11,8 +11,7 @@ module aster_soc_ip #(
     parameter integer NPU_DIM = 8,
     parameter integer HARTS = 2,
     parameter integer SHELL_PAGE = 0,                    // 1: the regression build (aster_soc.sv)
-    parameter integer FABRIC_D_ON_B = 1,                 // the fabric's second chance (aster_soc.sv)
-    parameter integer NPU_BUFFER = 0                     // (aster_soc.sv)
+    parameter integer NPU_BUFFER = 1                     // (aster_soc.sv)
 ) (
     (* X_INTERFACE_INFO = "xilinx.com:signal:clock:1.0 aclk CLK",
        X_INTERFACE_PARAMETER = "ASSOCIATED_BUSIF s_axi, ASSOCIATED_RESET aresetn, FREQ_HZ 100000000" *)
@@ -57,8 +56,7 @@ module aster_soc_ip #(
     input wire s_axi_rready
 );
     aster_soc #(.CLK_HZ(CLK_HZ), .NPU_A_STRIPS(NPU_A_STRIPS), .NPU_PORT_BYTES(NPU_PORT_BYTES), .NPU_DIM(NPU_DIM),
-                .HARTS(HARTS), .SHELL_PAGE(SHELL_PAGE), .FABRIC_D_ON_B(FABRIC_D_ON_B),
-                .NPU_BUFFER(NPU_BUFFER)) implementation (
+                .HARTS(HARTS), .SHELL_PAGE(SHELL_PAGE), .NPU_BUFFER(NPU_BUFFER)) implementation (
         .aclk(aclk), .aresetn(aresetn),
         .s_axi_awaddr(s_axi_awaddr), .s_axi_awvalid(s_axi_awvalid), .s_axi_awready(s_axi_awready),
         .s_axi_wdata(s_axi_wdata), .s_axi_wstrb(s_axi_wstrb),

@@ -1,6 +1,9 @@
 # Phase 20: whole-SoC workload placement and concurrency
 
-Status: **milestone 20.2 (the two-hart SoC) in progress**; its timing levers that cost cycles or change the contract await the owner's decision (Milestone 20.2 below). 20.0 (the fabric
+Status: **milestone 20.2 (the two-hart SoC) in progress.** The owner decided 20.2's
+timing levers on 7 October 2026 (below, and soc.md §13): the second chance is removed,
+the NPU's request buffer is adopted, and 20.1's sign-off is re-confirmed with its timing
+correction. Work continues on margin with restructuring that keeps every cycle. 20.0 (the fabric
 shell) and 20.1 (the banked fabric, with its arbitration change to soc.md
 §4.4) were signed off and approved by the owner on 7 October 2026. For 20.2
 the owner asked for good timing margin, not a thin pass, without sacrificing
@@ -512,6 +515,9 @@ restructuring to keep every cycle.
 | the candidate, synthesis: PerformanceOptimized; register retiming | strategy | +0.007, +0.007 ns |
 | the candidate on r4's RTL (cand2) | | −0.070 ns: 9 endpoints within 0.07 ns, in the fabric, the NPU and both cores' own paths |
 | cand2 + the corrected floorplan | keeps every cycle | −0.159 ns: worse |
+| r5: the owner's decisions as defaults (the second chance removed, the NPU buffer) | | −0.070 ns (the same netlist as cand2); AltSpreadLogic_medium +0.059, AltSpreadLogic_high +0.002, ExtraPostPlacementOpt −0.234, AlternateFlowWithRetiming −0.102 |
+| r5 + harts-only floorplan | keeps every cycle | −0.086 ns: no help |
+| r6: every requester's main-memory flag (the fabric decodes no address) | keeps every cycle | **+0.006 ns**; AltSpreadLogic_high +0.001, _medium +0.009: met on every strategy. Out of context the fabric with front ends +0.260 ns (from +0.020); request to reservation +1.616 ns (from +0.318) |
 | Out of context, the fabric with front ends | | −1.906 ns; D_ON_B off +0.039; NPU from registers −1.155; bypass −0.832; bypass and D_ON_B off +0.302 |
 
 **What the cycle-costing levers cost:**
@@ -541,8 +547,17 @@ restructuring to keep every cycle.
   +0.14 to +0.22 ns in 18.7's and 19.5's lighter designs. At 64% of the
   LUTs, no single block holds the margin any more.
 
-So good margin needs more than these levers. That is the owner's decision,
-together with the two cycle-costing levers and 20.1's sign-off.
+So good margin needs more than these levers.
+
+**Decided by the owner, 7 October 2026:**
+- adopt both cycle-costing levers: the second chance is removed from the
+  fabric, and the NPU's request buffer is the default;
+- keep restructuring, keeping every cycle, for good margin (+0.3 ns or
+  better);
+- re-confirm 20.1's sign-off with its timing correction, its timing carried
+  by 20.2.
+
+These are recorded in soc.md §13.
 
 ## Milestones and gates
 
@@ -560,7 +575,7 @@ together with the two cycle-costing levers and 20.1's sign-off.
 - [x] The owner's decisions (7 October 2026)
 - [x] soc.md approved by the owner (7 October 2026)
 - [x] 20.0 as in the table above — signed off by the owner (7 October 2026)
-- [x] 20.1 as in the table above — signed off by the owner (7 October 2026), the §4.4 arbitration change approved
+- [x] 20.1 as in the table above — signed off by the owner (7 October 2026), the §4.4 arbitration change approved; re-confirmed by the owner (7 October 2026) after 20.2 corrected its timing (the fabric missed 10 ns; carried by 20.2)
 - [ ] 20.2 as in the table above
 - [ ] 20.3 as in the table above
 - [ ] 20.4 as in the table above

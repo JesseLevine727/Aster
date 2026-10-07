@@ -131,10 +131,10 @@ BANKED_MUTANTS: dict[str, list[tuple[str, str]]] = {
     "held_hart_accepted": [("n_req_valid, d_req_valid[1] && hart_rst_n[1],", "n_req_valid, d_req_valid[1],")],
     "reset_keeps_answers": [("v2[h == 0 ? I0 : I1] <= 1'b0; v2[h == 0 ? D0 : D1] <= 1'b0;", ";")],
     "error_has_effect": [("tgt_err[k] = !tgt_mem[k] && !tgt_io[k];", "tgt_err[k] = !tgt_mem[k] && !tgt_io[k] && k != W;"),
-                         ("tgt_mem[k] = addr[k][31:AB] == MEM_BASE[31:AB] && addr[k][AB-1:0] < AB'(MEM_BYTES);",
-                          "tgt_mem[k] = (addr[k][31:AB] == MEM_BASE[31:AB] && addr[k][AB-1:0] < AB'(MEM_BYTES)) || k == W;")],
-    "memory_too_short": [("tgt_mem[k] = addr[k][31:AB] == MEM_BASE[31:AB] && addr[k][AB-1:0] < AB'(MEM_BYTES);",
-                          "tgt_mem[k] = addr[k][31:AB] == MEM_BASE[31:AB] && addr[k][AB-1:0] < AB'(MEM_BYTES - 8);")],
+                         ("tgt_mem[k] = main_hint[k];", "tgt_mem[k] = main_hint[k] || k == W;")],
+    # (20.2: the fabric takes each requester's main-memory flag instead of decoding the range; an NPU
+    # request outside main memory taken as memory's replaces the range planted too short)
+    "npu_error_has_effect": [("tgt_mem[k] = main_hint[k];", "tgt_mem[k] = main_hint[k] || k == N;")],
     "two_io_a_cycle": [("else if (valid[D1] && tgt_io[D1] && !hold[1]) io_grant[D1] = 1'b1;",
                         "if (valid[D1] && tgt_io[D1] && !hold[1]) io_grant[D1] = 1'b1;")],
     # fairness (the reviews of 20.1)
@@ -143,16 +143,7 @@ BANKED_MUTANTS: dict[str, list[tuple[str, str]]] = {
     "io_fixed_priority": [("if (io_grant[D0]) io_ptr <= 1'b1;", ";")],
     "starvation_unmasked": [("&& !(blk_v[b] && wclass[k] && unit[k] == blk_unit[b]);", ";")],
     "wait_stages_kept_on_reset": [("for (int s = 0; s < WAIT; s++) begin wv[s][h == 0 ? I0 : I1] <= 1'b0; wv[s][h == 0 ? D0 : D1] <= 1'b0; end", ";")],
-    # the second chance on port B
-    "second_chance_beside_write": [("dtake[b][h] = dcand[b][h] && !pick_a[b][h] && !blocked;", "dtake[b][h] = dcand[b][h] && !pick_a[b][h];")],
-    "second_chance_for_lr": [("&& d_req_op[h] == OP_LOAD && !(amo_wr_now[b] && unit[k] == amo_wr_unit[b]) && !b_wanted;",
-                              "&& (d_req_op[h] == OP_LOAD || d_req_op[h] == OP_LR) && !(amo_wr_now[b] && unit[k] == amo_wr_unit[b]) && !b_wanted;")],
-    "second_chance_wrong_address": [("if (dcand[b][0] && !(|pick_b[b])) addr_b[b] = index[D0];", "if (dcand[b][0] && !(|pick_b[b])) addr_b[b] = index[D1];")],
-    "second_chance_inverted_candidate": [("dcand[b] = dchance[b] == 2'b11 ? (ptr_a[b] == 2'd1 ? 2'b01 : 2'b10) : dchance[b];",
-                                          "dcand[b] = dchance[b] == 2'b11 ? (ptr_a[b] == 2'd1 ? 2'b10 : 2'b01) : dchance[b];")],
-    "second_chance_off": [("    parameter bit          D_ON_B    = 1'b1 ", "    parameter bit          D_ON_B    = 1'b0 ")],
-    "second_chance_beside_port_b": [("&& d_req_op[h] == OP_LOAD && !(amo_wr_now[b] && unit[k] == amo_wr_unit[b]) && !b_wanted;",
-                                     "&& d_req_op[h] == OP_LOAD && !(amo_wr_now[b] && unit[k] == amo_wr_unit[b]);")],
+    # (20.1's second chance on port B, and its six mutants, were removed with it in 20.2)
 }
 
 DUTS = {

@@ -22,13 +22,10 @@
 // four eligibilities and a two-bit pointer, one LUT. Port B's pick waits when
 // port A's pick writes the same unit (a store, an sc or an AMO's acceptance);
 // then in the next cycle port A takes no write to that unit, so the held-back
-// read goes through (no requester waits forever, soc.md §4.4). With D_ON_B, a
-// data cache's load (a refill's read; lr and sc stay on port A) that port A
-// did not take may use port B when no port-B requester presents one for that
-// bank, so the two harts' refills of one bank proceed together. Which data
-// cache is port B's candidate is decided from registers (the one port A's
-// pointer does not favour, when both load there), so port B's address does
-// not wait for port A's pick. A hart alone is never slowed:
+// read goes through (no requester waits forever, soc.md §4.4). (20.1's second
+// chance, a data cache's load on an idle port B, was removed by the owner's
+// decision in 20.2: it cost about 2 ns at 10 ns and at most 0.03% of the
+// cycles measured; soc.md §13, 20.2.) A hart alone is never slowed:
 // its data cache is on port A and its instruction cache on port B. Each
 // pointer moves past the requester its port took. An AMO's new value is
 // computed in its bank, from that bank's port A output, for both halves of
@@ -65,8 +62,7 @@
 module aster_fabric #(
     parameter logic [31:0] MEM_BASE  = 32'h8000_0000,
     parameter int unsigned MEM_BYTES = 96 * 1024,
-    parameter int unsigned WAIT      = 0,               // cycles added to every answer (simulation)
-    parameter bit          D_ON_B    = 1'b1             // a data cache's read may use an idle port B
+    parameter int unsigned WAIT      = 0                // cycles added to every answer (simulation)
 ) (
     input  logic                  clk,
     input  logic                  rst_n,
@@ -74,6 +70,8 @@ module aster_fabric #(
     input  logic [1:0]            hart_exception,
     input  logic [1:0]            i_req_valid,
     input  logic [1:0][29:0]      i_req_addr,
+    input  logic [1:0]            i_req_main,     // each requester's request is main memory's (else an error, or a data
+                                                  // cache's I/O access): its registered decision, not decoded here
     output logic [1:0]            i_req_ready,
     output logic [1:0]            i_rsp_valid,
     output logic [1:0][31:0]      i_rsp_data,
@@ -92,6 +90,7 @@ module aster_fabric #(
     output logic [1:0][2:0][27:0] snoop_line,
     input  logic                  n_req_valid,
     input  logic [29:0]           n_req_addr,
+    input  logic                  n_req_main,
     input  logic                  n_req_we,
     input  logic [63:0]           n_req_wdata,
     input  logic [7:0]            n_req_be,
@@ -101,12 +100,14 @@ module aster_fabric #(
     output logic                  n_rsp_error,
     input  logic                  r_req_valid,
     input  logic [28:0]           r_req_addr,
+    input  logic                  r_req_main,
     output logic                  r_req_ready,
     output logic                  r_rsp_valid,
     output logic [63:0]           r_rsp_rdata,
     output logic                  r_rsp_error,
     input  logic                  w_req_valid,
     input  logic [28:0]           w_req_addr,
+    input  logic                  w_req_main,
     input  logic [63:0]           w_req_wdata,
     input  logic [7:0]            w_req_be,
     output logic                  w_req_ready,
@@ -170,7 +171,7 @@ module aster_fabric #(
     localparam int gb[4] = '{GB0, GB1, GB2, GB3};
 
     // ---- each request, decoded ----
-    logic [NREQ-1:0]          valid, tgt_mem, tgt_io, tgt_err, wclass, is_amo, on_port_a, eff_write;
+    logic [NREQ-1:0]          valid, tgt_mem, tgt_io, tgt_err, wclass, is_amo, on_port_a, eff_write, main_hint;
     logic [NREQ-1:0][31:0]    addr;
     logic [NREQ-1:0][UB-1:0]  unit;
     logic [NREQ-1:0][1:0]     bank;
@@ -185,6 +186,7 @@ module aster_fabric #(
         addr[N]  = {n_req_addr, 2'b00};
         addr[R]  = {r_req_addr, 3'b000};
         addr[W]  = {w_req_addr, 3'b000};
+        main_hint = {w_req_main, r_req_main, n_req_main, d_req_main[1], i_req_main[1], d_req_main[0], i_req_main[0]};
         valid = {w_req_valid, r_req_valid, n_req_valid, d_req_valid[1] && hart_rst_n[1],
                  i_req_valid[1] && hart_rst_n[1], d_req_valid[0] && hart_rst_n[0], i_req_valid[0] && hart_rst_n[0]};
         wclass = '0;
@@ -198,9 +200,8 @@ module aster_fabric #(
         on_port_a = '0;
         on_port_a[D0] = 1'b1; on_port_a[D1] = 1'b1; on_port_a[W] = 1'b1; on_port_a[N] = n_req_we;
         for (int k = 0; k < NREQ; k++) begin
-            tgt_mem[k] = addr[k][31:AB] == MEM_BASE[31:AB] && addr[k][AB-1:0] < AB'(MEM_BYTES);
-            // a data cache's target from its own registers, not decoded again from the address (20.2's timing)
-            if (k == D0 || k == D1) tgt_mem[k] = d_req_main[k == D0 ? 0 : 1];
+            // the target from the requester's own registers, not decoded again from the address (20.2's timing)
+            tgt_mem[k] = main_hint[k];
             tgt_io[k]  = (k == D0 || k == D1) && !tgt_mem[k];
             tgt_err[k] = !tgt_mem[k] && !tgt_io[k];
             unit[k]    = addr[k][UB+2:3];
@@ -260,15 +261,12 @@ module aster_fabric #(
     logic [BANKS-1:0][3:0]      elig_a, elig_b, pick_a, pick_b, take_b;
     logic [BANKS-1:0]           blk_v;               // port B's pick was held back last cycle ...
     logic [BANKS-1:0][UB-1:0]   blk_unit;            // ... by a write of this unit, which port A now refuses
-    logic [3:0][1:0]            blocks_d;            // blocks_d[i][h]: port A's member i writes D_h's unit
-    logic [BANKS-1:0][1:0]      dchance, dcand, dtake;   // a data cache's load on an idle port B
     logic [NREQ-1:0]            grant, io_grant;
     logic                       io_ptr;              // the data cache the I/O bus favours (0: D0)
     always_comb begin
         int k;
         for (int i = 0; i < 4; i++) begin
             for (int j = 0; j < 4; j++) blocks[i][j] = wclass[ga[i]] && unit[ga[i]] == unit[gb[j]];
-            for (int h = 0; h < 2; h++) blocks_d[i][h] = wclass[ga[i]] && unit[ga[i]] == unit[h == 0 ? D0 : D1];
         end
         grant = '0;
         for (int b = 0; b < BANKS; b++) begin
@@ -289,34 +287,10 @@ module aster_fabric #(
                 for (int i = 0; i < 4; i++) if (pick_a[b][i] && blocks[i][j]) blocked = 1'b1;
                 take_b[b][j] = pick_b[b][j] && !blocked;
             end
-            // a data cache's load on port B, when no port-B requester presents one for this bank:
-            // the candidate from registers (if both load here, the one port A's pointer does not
-            // favour: port A takes D1 first only from pointer 1), then taken unless port A took it
-            // or writes its unit
-            begin
-                logic b_wanted;
-                b_wanted = 1'b0;
-                for (int i = 0; i < 4; i++)
-                    if (valid[gb[i]] && !on_port_a[gb[i]] && tgt_mem[gb[i]] && bank[gb[i]] == 2'(b)) b_wanted = 1'b1;
-                for (int h = 0; h < 2; h++) begin
-                    k = h == 0 ? D0 : D1;
-                    dchance[b][h] = D_ON_B && valid[k] && tgt_mem[k] && bank[k] == 2'(b) && !hold[h]
-                                    && d_req_op[h] == OP_LOAD && !(amo_wr_now[b] && unit[k] == amo_wr_unit[b]) && !b_wanted;
-                end
-                dcand[b] = dchance[b] == 2'b11 ? (ptr_a[b] == 2'd1 ? 2'b01 : 2'b10) : dchance[b];
-                for (int h = 0; h < 2; h++) begin
-                    logic blocked;
-                    blocked = 1'b0;
-                    for (int i = 0; i < 4; i++) if (pick_a[b][i] && blocks_d[i][h]) blocked = 1'b1;
-                    dtake[b][h] = dcand[b][h] && !pick_a[b][h] && !blocked;
-                end
-            end
             for (int i = 0; i < 4; i++) begin
                 if (pick_a[b][i]) grant[ga[i]] = 1'b1;
                 if (take_b[b][i]) grant[gb[i]] = 1'b1;
             end
-            if (dtake[b][0]) grant[D0] = 1'b1;
-            if (dtake[b][1]) grant[D1] = 1'b1;
         end
         // the I/O bus: one access a cycle, D0 and D1 in turn; a data cache waiting for its AMO's write waits
         io_grant = '0;
@@ -350,7 +324,7 @@ module aster_fabric #(
             amo_new[b] = {aster_core_pkg::amo_value(amo_f5[b], q_a[b][63:32], amo_operand_b[b]),
                           aster_core_pkg::amo_value(amo_f5[b], q_a[b][31:0], amo_operand_b[b])};
             en_a[b] = |pick_a[b] || amo_wr_now[b];
-            en_b[b] = |take_b[b] || |dtake[b];
+            en_b[b] = |take_b[b];
             addr_a[b] = '0; addr_b[b] = '0; din_a[b] = '0; we_a[b] = '0;
             for (int i = 0; i < 4; i++) begin
                 if (pick_a[b][i]) begin
@@ -360,8 +334,6 @@ module aster_fabric #(
                 end
                 if (pick_b[b][i]) addr_b[b] = index[gb[i]];
             end
-            if (dcand[b][0] && !(|pick_b[b])) addr_b[b] = index[D0];    // (read even if port A takes it)
-            if (dcand[b][1] && !(|pick_b[b])) addr_b[b] = index[D1];
             if (amo_wr_now[b]) begin
                 addr_a[b] = amo_index[b];
                 din_a[b]  = amo_new[b];
@@ -481,7 +453,6 @@ module aster_fabric #(
                 half1[k]   <= addr[k][2];
                 scfail1[k] <= !sc_ok[k];
                 port1[k]   <= !on_port_a[k];
-                for (int b = 0; b < BANKS; b++) if ((k == D0 && dtake[b][0]) || (k == D1 && dtake[b][1])) port1[k] <= 1'b1;
                 if (v1[k] && kind1[k] == K_IO) io2[k] <= io_rsp_rdata;
             end
             // AMOs: accepted now, then writing two edges on (each bank's write registers loaded
@@ -535,4 +506,15 @@ module aster_fabric #(
                 end
         end
     end
+
+`ifndef SYNTHESIS
+    // Each requester's main-memory flag (main_hint) must agree with its address: the fabric trusts it
+    // and decodes no address itself (20.2). Simulation only.
+    always_ff @(posedge clk)
+        if (rst_n)
+            for (int k = 0; k < NREQ; k++)
+                if (valid[k])
+                    assert (main_hint[k] == (addr[k][31:AB] == MEM_BASE[31:AB] && addr[k][AB-1:0] < AB'(MEM_BYTES)))
+                    else $error("aster_fabric: requester %0d's main-memory flag disagrees with its address %h", k, addr[k]);
+`endif
 endmodule

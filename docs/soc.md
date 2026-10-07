@@ -725,12 +725,21 @@ in-context build came out at half its expected area. Consequences:
   keep, and so checked nothing; the review found it.
 - No other cast in the RTL is used as an index of a signed value.
 
-**§4.1, a data cache's target.** Each data cache tells the fabric whether its
-request is main memory's (`d_req_main`, from its registers: a refill, or a
-cacheable access). The fabric no longer decodes a data cache's address for
-that. The SoC's testbench checks every cache's flag against its address
-(MAIN_FLAG); the fabric shell, which has no caches, derives it from the
-address.
+**§4.1, each requester's target.** Every requester tells the fabric whether its
+request is main memory's, from its own registers, and the fabric decodes no
+address for that (20.2's timing):
+- a data cache: a refill, or a cacheable access (`d_req_main`);
+- an instruction cache: always, since it answers a fetch outside main memory
+  with an error itself (`i_req_main` = 1);
+- the NPU: decided as its buffer takes the request (`n_req_main`);
+- the ARM side on R and W: always, and the DMA's engine from 20.3 (`r_req_main`,
+  `w_req_main`).
+
+An access whose flag is 0 is still answered with an error and has no effect,
+as §4.3 requires. The fabric asserts in simulation that every flag agrees with
+its address. The SoC's testbench also checks every data cache's flag
+against its address (MAIN_FLAG); the fabric shell, which has no caches,
+derives each flag from the address.
 
 **§4.1 (20.0's clarification), the ARM side.** It uses ports R (reads) and W
 (writes) while the harts are held, not D0's port: that keeps a multiplexer out
@@ -825,3 +834,30 @@ The testbench attributes every NPU wait; none is left unexplained.
 (a function and its argument) is published in coherent shared memory and a
 sequence number. Hart 1 spins on it in its own cache, and a snoop wakes it.
 A round trip with an empty job takes 69–95 cycles, 72 on average.
+
+**Decided by the owner, 7 October 2026 (20.2's timing).**
+- **§4.4, 20.1's second chance removed.** A data cache's load no longer uses
+  an idle port B; it waits for port A. It cost about 1.9 ns at 10 ns, in the
+  fabric and in context. In cycles it cost:
+  - 0 when two harts sum a shared array from cold caches;
+  - 5 of 18,549 (0.03%) when both read one word of every line in step;
+  - in the fabric shell's synthetic twin traffic, 16.7% fewer requests
+    accepted.
+
+  The fabric shell's twin rule (TWIN_SERIAL) now applies only to a DUT that
+  can take both loads at once: the reference, or a fabric run with
+  `+second_chance=1`.
+- **§2 and §5, the NPU's request buffer.** The NPU's requests reach port N
+  through a two-entry buffer whose readiness and output are registers. The
+  NPU keeps three accesses in flight. The buffer answers an access outside
+  main memory with the error itself, in the cycle after taking it, as the
+  NPU expects; the NPU never makes one, since it checks its descriptors
+  first. Each access takes a cycle more: 2–6 cycles per NPU job, which is
+  +0.003% to +0.015% on Phase 19's gate programs. It removed about 1.9 ns of
+  NPU paths through the fabric's grant.
+- **Timing margin:** the owner asked for good margin, not a thin pass. With
+  these two decisions the SoC sits at about 0 ns in context. 20.2 continues
+  with restructuring that keeps every cycle (each proven by the lockstep
+  equivalence and regression suites), aiming at +0.3 ns or better.
+- **20.1's sign-off** is re-confirmed, with its timing correction recorded
+  above. Its timing is now carried by 20.2.

@@ -46,8 +46,10 @@
 // hammer (every requester at nearly every cycle on one bank, which changes
 // every 1,000 cycles, and on four of its units: fairness and starvation),
 // twin (only the data caches, loading the same lines word by word in step, as
-// two harts' refills of shared data: both must be taken whenever they load
-// one bank, TWIN_SERIAL — the banked fabric's second chance),
+// two harts' refills of shared data: where the DUT can take both, the
+// reference or a fabric run with +second_chance=1, both must be taken whenever
+// they load one bank, TWIN_SERIAL; the banked fabric has had no second chance
+// since 20.2, and serves them in turn),
 // and edges: directed scenarios, each request at a set cycle (all seven
 // requesters on one bank; four banks written at once; one unit read and
 // written together; a read of a unit two writers keep writing; both harts' AMOs on one word a cycle apart, with writes
@@ -157,6 +159,7 @@ public:
         solo = solo_hart >= 0;
         overtake_limit = plusarg("overtake_limit").empty() ? 16 : std::stoul(plusarg("overtake_limit"));
         declared_banks = plusarg("banks").empty() ? -1 : std::stoi(plusarg("banks"));
+        second_chance = !plusarg("second_chance").empty() && plusarg("second_chance") != "0";
         p_issue = mode == "dense" || mode == "hammer" || mode == "twin" ? 0.95 : mode == "sparse" ? 0.12 : 0.5;
         for (int i = 0; i < 8; ++i) hot_lines.push_back(MEM_BASE + 16u * std::uint32_t(rng() % (MEM_BYTES / 16)));
         for (int i = 0; i < 4; ++i) solo_lines.push_back(MEM_BASE + 16u * std::uint32_t(rng() % (MEM_BYTES / 16)));
@@ -226,6 +229,10 @@ private:
     std::uint64_t cycles = 0, cycle = 0;
     int selftest = 0;
     bool solo = false, draining = false, sweeping = false;
+    // whether both data caches' loads to one bank, nothing else asking, are taken together: the
+    // reference's (no banks), or a banked fabric declared with a second chance (+second_chance=1;
+    // 20.1's, removed in 20.2)
+    bool second_chance = false, both_d_together = true;
     int solo_hart = -1, declared_banks = -1;
     unsigned overtake_limit = 16;
     std::vector<std::uint32_t> solo_lines;
@@ -799,7 +806,7 @@ void Shell::take_effect() {
     // twin: both data caches' loads to one bank, nothing else asking, are both taken (the banked
     // fabric's second chance on port B; a performance rule of this design, not of the contract)
     auto presented = [&](int k) { return acc[k] || (pres[k].valid && !pres[k].ghost); };   // (taken ones are cleared)
-    if (mode == "twin" && !sweeping && presented(D0) && presented(D1)
+    if (mode == "twin" && both_d_together && !sweeping && presented(D0) && presented(D1)
         && mem.contains(pres[D0].addr) && mem.contains(pres[D1].addr) && bank(pres[D0].addr) == bank(pres[D1].addr)
         && acc[D0] != acc[D1]) {
         fail("TWIN_SERIAL", "D0's and D1's loads to one bank, nothing else asking, not both taken");
@@ -877,6 +884,7 @@ int Shell::run() {
     for (int i = 0; i < 4; ++i) { d.clk = 1; d.eval(); d.clk = 0; d.eval(); }
     d.rst_n = 1;
     banks = d.chk_banks;
+    both_d_together = banks == 0 || second_chance;
     wait = d.chk_wait;
     latency = 2 + wait;
     if (mode == "edges") build_edges();
@@ -934,7 +942,9 @@ int Shell::run() {
     }
     if (solo) required = {"d_held_by_own_amo", "solo_together", "solo_unit:store", "solo_unit:sc", "solo_unit:amo_accept",
                           "solo_unit:amo_write"};
-    if (mode == "twin") required = {"twin_together"};
+    // twin: both loads taken together where the DUT can (the reference; a fabric with a second chance),
+    // else the two data caches' conflicts in one bank exercised
+    if (mode == "twin") required = {both_d_together ? "twin_together" : "conflict:D0-D1"};
     if (mode == "hammer" && banks) {
         required = {"two_in_bank", "read_beside_write", "read_held_by_write"};
         for (int a = 0; a < NREQ; ++a)

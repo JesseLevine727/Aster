@@ -16,6 +16,7 @@ module timing_fabric (
     input  logic [1:0]    hart_exception_in,
     input  logic [1:0]    i_req_valid_in,
     input  logic [59:0]   i_req_addr_in,
+    input  logic [4:0]    main_in,                 // the requesters' main-memory flags: I0, I1, N, R, W
     input  logic [1:0]    d_req_valid_in,
     input  logic [7:0]    d_req_op_in,
     input  logic [63:0]   d_req_addr_in,
@@ -46,6 +47,7 @@ module timing_fabric (
     output logic [1:0]    ev_resv_end_q
 );
     logic [1:0]       hart_rst_n, hart_exception, i_req_valid, d_req_valid, d_req_main;
+    logic [4:0]       main_q;
     logic [1:0][29:0] i_req_addr;
     logic [1:0][3:0]  d_req_op, d_req_be;
     logic [1:0][31:0] d_req_addr, d_req_wdata;
@@ -57,7 +59,7 @@ module timing_fabric (
     logic [31:0]      io_rsp_rdata;
     always_ff @(posedge clk) begin
         hart_rst_n <= hart_rst_n_in; hart_exception <= hart_exception_in;
-        i_req_valid <= i_req_valid_in; i_req_addr <= i_req_addr_in;
+        i_req_valid <= i_req_valid_in; i_req_addr <= i_req_addr_in; main_q <= main_in;
         d_req_valid <= d_req_valid_in; d_req_op <= d_req_op_in; d_req_addr <= d_req_addr_in; d_req_main <= d_req_main_in;
         d_req_wdata <= d_req_wdata_in; d_req_be <= d_req_be_in;
         n_req_valid <= n_req_valid_in; n_req_addr <= n_req_addr_in; n_req_we <= n_req_we_in;
@@ -79,13 +81,13 @@ module timing_fabric (
     /* verilator lint_off PINCONNECTEMPTY */
     aster_fabric fabric (
         .clk, .rst_n, .hart_rst_n, .hart_exception,
-        .i_req_valid, .i_req_addr, .i_req_ready, .i_rsp_valid, .i_rsp_data, .i_rsp_error,
+        .i_req_valid, .i_req_addr, .i_req_main(main_q[1:0]), .i_req_ready, .i_rsp_valid, .i_rsp_data, .i_rsp_error,
         .d_req_valid, .d_req_op, .d_req_addr, .d_req_main, .d_req_wdata, .d_req_be, .d_req_ready, .d_rsp_valid, .d_rsp_rdata,
         .d_rsp_error, .snoop_valid, .snoop_line,
-        .n_req_valid, .n_req_addr, .n_req_we, .n_req_wdata, .n_req_be, .n_req_ready, .n_rsp_valid, .n_rsp_rdata,
+        .n_req_valid, .n_req_addr, .n_req_main(main_q[2]), .n_req_we, .n_req_wdata, .n_req_be, .n_req_ready, .n_rsp_valid, .n_rsp_rdata,
         .n_rsp_error,
-        .r_req_valid, .r_req_addr, .r_req_ready, .r_rsp_valid, .r_rsp_rdata, .r_rsp_error,
-        .w_req_valid, .w_req_addr, .w_req_wdata, .w_req_be, .w_req_ready, .w_rsp_valid, .w_rsp_error,
+        .r_req_valid, .r_req_addr, .r_req_main(main_q[3]), .r_req_ready, .r_rsp_valid, .r_rsp_rdata, .r_rsp_error,
+        .w_req_valid, .w_req_addr, .w_req_main(main_q[4]), .w_req_wdata, .w_req_be, .w_req_ready, .w_rsp_valid, .w_rsp_error,
         .io_req_valid, .io_req_hart, .io_req_op, .io_req_addr, .io_req_wdata, .io_req_be, .io_rsp_rdata,
         .ev_resv_end, .chk_banks()
     );
