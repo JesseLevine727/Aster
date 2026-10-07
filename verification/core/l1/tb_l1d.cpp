@@ -18,6 +18,13 @@
 // the newest value whose snoop came (or own store was accepted) in or before
 // the cycle of its lookup, or a newer one, and no older than the core's own
 // last store to the word before the load.
+//
+// Built with L1D_SNOOPS=3 (the Phase 20 fabric's data cache, soc.md §4.6;
+// milestone 20.1), there are three other masters, each snooped on its own
+// port (one write a cycle each, never two to one 8-byte unit in a cycle, as
+// the fabric's bank rule), so up to three snoops come in one cycle. A run of
+// a million cycles or more must see snoops on two or more ports in one cycle,
+// and a snoop on each port of a line the cache is refilling.
 //     l1d_unit <seed> [cycles]
 #include "Vl1d_unit.h"
 #include "verilated.h"
@@ -29,6 +36,10 @@
 #include <random>
 #include <string>
 #include <vector>
+
+#ifndef L1D_SNOOPS
+#define L1D_SNOOPS 1
+#endif
 
 static uint32_t initial(uint32_t w) { return w * 2654435761u ^ 0x5a5a1234u; }
 struct Mem {
@@ -101,7 +112,9 @@ int main(int argc, char** argv) {
     };
     size_t looked = 0;                            // answered-or-not requests already looked up
     struct Owed { uint32_t word; size_t index; long wait; };
-    std::deque<Owed> snoops;                      // snoops owed to the cache, in order
+    std::deque<Owed> snoops[L1D_SNOOPS];          // snoops owed to the cache on each port, in order
+    uint64_t together = 0, refill_snooped[L1D_SNOOPS] = {};
+    std::map<uint32_t, uint64_t> refilling;       // lines with a refill read accepted lately: when
     const bool lazy = (seed / 4) % 2 == 1;
     std::deque<Exp> expect;            // core-side responses expected, in order
     struct MRsp { uint64_t at; uint32_t data; };
@@ -150,24 +163,49 @@ int main(int argc, char** argv) {
         d.m_req_ready = mready;
         bool mrsp = !mq.empty() && mq.front().at <= cyc;
         d.m_rsp_valid = mrsp; d.m_rsp_rdata = mrsp ? mq.front().data : rng(); d.m_rsp_error = 0;
-        // Another master's write this cycle: performed now, its snoop owed.
-        if (rng() % 30 == 0) {
+        // Other masters' writes this cycle (one a master, never two to one
+        // 8-byte unit): performed now, each snoop owed on its master's port.
+        std::vector<uint32_t> units;
+        for (int port = 0; port < L1D_SNOOPS; ++port) {
+            if (rng() % (L1D_SNOOPS == 1 ? 30 : 20) != 0) continue;
             const uint32_t a = 0x80003000u + (rng() % 6) * 16 + (rng() % 4) * 4, v = rng();
+            if (std::find(units.begin(), units.end(), a >> 3) != units.end()) continue;
+            units.push_back(a >> 3);
             mem.wr(a, v, 0xf);
             hist[a].push_back({cyc, v, 0, ~uint64_t(0)});
-            snoops.push_back({a, hist[a].size() - 1, lazy ? long(rng() % 16) : 0});
+            snoops[port].push_back({a, hist[a].size() - 1, lazy ? long(rng() % 16) : 0});
         }
-        // A snoop now: the oldest owed, when its wait is over or the cache
-        // presents a memory-side request (its m_req_valid comes from registers).
-        d.snoop_valid = 0;
-        if (!snoops.empty() && (snoops.front().wait <= 0 || d.m_req_valid)) {
-            d.snoop_valid = 1;
-            d.snoop_line = snoops.front().word >> 4;
-            hist[snoops.front().word][snoops.front().index].seen = cyc;
-            snoops.pop_front();
+        // A snoop now on each port: its oldest owed, when its wait is over or
+        // the cache presents a memory-side request (its m_req_valid comes
+        // from registers).
+        uint32_t snoop_valid = 0, presented = 0;
+        uint32_t lines[L1D_SNOOPS] = {};
+        bool owed_any = false;
+        for (int port = 0; port < L1D_SNOOPS; ++port) {
+            auto& q = snoops[port];
+            if (!q.empty() && (q.front().wait <= 0 || d.m_req_valid)) {
+                snoop_valid |= 1u << port;
+                lines[port] = q.front().word >> 4;
+                hist[q.front().word][q.front().index].seen = cyc;
+                for (auto [line, when] : refilling)
+                    if (line == lines[port] && cyc - when < 8) ++refill_snooped[port];
+                q.pop_front();
+                ++presented;
+            }
+            for (auto& owed : q) --owed.wait;
+            owed_any = owed_any || !q.empty();
         }
-        for (auto& owed : snoops) --owed.wait;
-        d.m_req_ready = mready && snoops.empty(); // no acceptance before the owed snoops
+        if (presented >= 2) ++together;
+        d.snoop_valid = snoop_valid;
+#if L1D_SNOOPS == 1
+        d.snoop_line = lines[0];
+#else
+        for (int w = 0; w < int((28 * L1D_SNOOPS + 31) / 32); ++w) d.snoop_line[w] = 0;
+        for (int port = 0; port < L1D_SNOOPS; ++port)
+            for (int b = 0; b < 28; ++b)
+                if (lines[port] >> b & 1u) d.snoop_line[(28 * port + b) / 32] |= 1u << ((28 * port + b) % 32);
+#endif
+        d.m_req_ready = mready && !owed_any;      // no acceptance before the owed snoops
         d.eval();
         // checks this cycle
         if (acc_last) {
@@ -228,6 +266,7 @@ int main(int argc, char** argv) {
                     printf("FAIL seed %u cyc %llu: mem access op %u %08x be %x, expected op %u %08x be %x\n", seed, (unsigned long long)cyc, op, a, d.m_req_be, x.op, x.addr, x.be); return 1;
                 }
             } else if ((a & 3) || d.m_req_be != 0xf) { printf("FAIL: odd refill\n"); return 1; }
+            if (refill) refilling[a >> 4] = cyc;
             uint32_t data = mem.perform(op, a, d.m_req_wdata, d.m_req_be);
             if (op == 1 && remote_region(a)) hist[a & ~3u].push_back({cyc, mem.rd(a), ++own_done[a & ~3u], cyc});
             uint64_t lat = 1 + rng() % 2;
@@ -252,6 +291,20 @@ int main(int argc, char** argv) {
                (unsigned long long)ncycles);
         return 1;
     }
-    printf("PASS seed %u answered %llu\n", seed, (unsigned long long)answered);
+    if (L1D_SNOOPS > 1 && ncycles >= 1000000) {
+        bool each = together > 0;
+        for (int port = 0; port < L1D_SNOOPS; ++port) each = each && refill_snooped[port] > 0;
+        if (!each) {
+            printf("FAIL seed %u: coverage: %llu cycles with snoops on two ports or more; refills snooped by port:", seed,
+                   (unsigned long long)together);
+            for (int port = 0; port < L1D_SNOOPS; ++port) printf(" %llu", (unsigned long long)refill_snooped[port]);
+            printf("\n");
+            return 1;
+        }
+    }
+    printf("PASS seed %u answered %llu snoops_together %llu refills_snooped", seed, (unsigned long long)answered,
+           (unsigned long long)together);
+    for (int port = 0; port < L1D_SNOOPS; ++port) printf(" %llu", (unsigned long long)refill_snooped[port]);
+    printf("\n");
     return 0;
 }

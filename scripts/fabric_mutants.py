@@ -5,10 +5,11 @@ Each mutant is the DUT's source with one textual change: a bug a fabric could
 plausibly have. Each is built into the fabric shell (verification/fabric) and
 run in a battery of modes and seeds; the shell must report every one. A
 mutant the shell misses is either a hole in the shell (to be fixed) or an
-equivalent mutant (to be argued in the record). In 20.0 the DUT is the serial
-reference fabric; the banked fabric (20.1) gets its own list.
+equivalent mutant (to be argued in the record). --dut chooses the fabric:
+ref_fabric, the serial reference (20.0), or aster_fabric, the banked fabric
+(20.1), each with its own list.
 
-    fabric_mutants.py --build-dir build/fabric/mutants [--jobs 8] [--only NAME]
+    fabric_mutants.py --dut aster_fabric --build-dir build/fabric/mutants [--jobs 8] [--only NAME]
 
 First the unmutated DUT runs the battery and must pass it. Then a mutant is
 caught only by a rule's report (not COVERAGE or BANKS_MISMATCH, which a shift
@@ -24,10 +25,9 @@ import subprocess
 import sys
 
 ROOT = Path(__file__).resolve().parents[1]
-DUT = "verification/fabric/ref_fabric.sv"
-BANKS = 0
-OVERTAKE = 16
-BATTERY = [("mix", 1), ("hot", 1), ("hot", 2), ("reset", 1), ("solo", 1), ("solo1", 1), ("errors", 1), ("dense", 1)]
+# (mode, seed, WAIT): a build at each WAIT the battery uses
+BATTERY = [("mix", 1, 0), ("hot", 1, 0), ("hot", 2, 0), ("reset", 1, 0), ("solo", 1, 0), ("solo1", 1, 0), ("errors", 1, 0),
+           ("dense", 1, 0), ("hammer", 1, 0), ("twin", 1, 0), ("edges", 1, 0), ("reset", 2, 2)]
 CYCLES = 100000
 
 HOLD = "assign hold = {(amo1 && amo1_hart) || (amo2 && amo2_hart), (amo1 && !amo1_hart) || (amo2 && !amo2_hart)};"
@@ -35,7 +35,7 @@ KEEP = "if (hart_exception[h] || !hart_rst_n[h]) keep = 1'b0;"
 WRITE_END = "if (wrote && writer != (h == 0 ? D0 : D1) && touches(waddr[31:3], wbe, word)) keep = 1'b0;"
 READ_RULE = "else if (!(wr_granted && write_unit == unit[k]) && !(amo2 && amo_unit == unit[k]))"
 SNOOP_PORT = "automatic int port = writer == N ? 1 : writer == W ? 2 : 0;"
-MUTANTS: dict[str, list[tuple[str, str]]] = {
+REF_MUTANTS: dict[str, list[tuple[str, str]]] = {
     "no_amo_hold": [(HOLD, "assign hold = 2'b00;")],
     "amo_hold_one_cycle": [(HOLD, "assign hold = {amo1 && amo1_hart, amo1 && !amo1_hart};")],
     "unit_rule_off": [("if (grant[r] && tgt_mem[r] && !is_write[r] && unit[r] == unit[k]) conflict = 1'b1;", ""),
@@ -85,20 +85,99 @@ MUTANTS: dict[str, list[tuple[str, str]]] = {
 NOT_A_CATCH = ("COVERAGE", "BANKS_MISMATCH")
 
 
-def build(name: str, edits: list[tuple[str, str]], out: Path) -> Path:
-    source = (ROOT / DUT).read_text()
+# The banked fabric (rtl/fabric/aster_fabric.sv).
+B_ELIG_A = "&& !((k == D0 && hold[0]) || (k == D1 && hold[1])) && !(wclass[k] && amo_busy[b])"
+B_KEEP = "if (hart_exception[h] || !hart_rst_n[h]) resv[h] <= 1'b0;"
+BANKED_MUTANTS: dict[str, list[tuple[str, str]]] = {
+    "no_amo_hold": [("hold = amo1 | amo2;", "hold = '0;")],
+    "amo_hold_one_cycle": [("hold = amo1 | amo2;", "hold = amo1;")],
+    "io_ignores_amo_hold": [("if (valid[D0] && tgt_io[D0] && !hold[0] && (!io_ptr || !(valid[D1] && tgt_io[D1] && !hold[1]))) io_grant[D0] = 1'b1;",
+                             "if (valid[D0] && tgt_io[D0] && (!io_ptr || !(valid[D1] && tgt_io[D1]))) io_grant[D0] = 1'b1;")],
+    "port_b_read_beside_write": [("take_b[b][j] = pick_b[b][j] && !blocked;", "take_b[b][j] = pick_b[b][j];")],
+    "writes_beside_amo": [(B_ELIG_A, "&& !((k == D0 && hold[0]) || (k == D1 && hold[1]))")],
+    "port_a_beside_amo_write": [("elig_a[b][i] = valid[k] && on_port_a[k] && tgt_mem[k] && bank[k] == 2'(b) && !amo_wr_now[b]",
+                                 "elig_a[b][i] = valid[k] && on_port_a[k] && tgt_mem[k] && bank[k] == 2'(b)")],
+    "amo_unit_readable": [("                               && !(amo_wr_now[b] && unit[k] == amo_wr_unit[b]);", "                               ;")],
+    "fixed_priority": [("if (|pick_a[b]) ptr_a[b] <= after(pick_a[b]);", ";"),
+                       ("if (|take_b[b]) ptr_b[b] <= after(take_b[b]);", ";")],
+    # (port B's pointer moving past a pick port A held back: equivalent at the contract — the held-back
+    # requester loses its turn, but no wait exceeds the fairness bound the shell checks)
+    "npu_write_on_port_b": [("on_port_a[D0] = 1'b1; on_port_a[D1] = 1'b1; on_port_a[W] = 1'b1; on_port_a[N] = n_req_we;",
+                             "on_port_a[D0] = 1'b1; on_port_a[D1] = 1'b1; on_port_a[W] = 1'b1; on_port_a[N] = 1'b0;")],
+    "answer_wrong_port": [("unit_data = port2[k] ? q_b[bank2[k]] : q_a[bank2[k]];", "unit_data = port2[k] ? q_a[bank2[k]] : q_b[bank2[k]];")],
+    "answer_wrong_half": [("{32'b0, half2[k] ? unit_data[63:32] : unit_data[31:0]}", "{32'b0, half2[k] ? unit_data[31:0] : unit_data[63:32]}")],
+    "bank_index_aliased": [("index[k]   = IB'({unit[k][UB-1:3], unit[k][0]});", "index[k]   = IB'(unit[k]);")],
+    "amo_writes_wrong_half": [("we_a[b]   = amo_hi[b] ? 8'hF0 : 8'h0F;", "we_a[b]   = amo_hi[b] ? 8'h0F : 8'hF0;")],
+    "amo_old_wrong_half": [("amo_new[b] = {aster_core_pkg::amo_value(amo_f5[b], q_a[b][63:32], amo_operand_b[b]),",
+                            "amo_new[b] = {aster_core_pkg::amo_value(amo_f5[b], q_a[b][31:0], amo_operand_b[b]),")],
+    "amo_wrong_op": [("amo_f5[b]        <= funct5_of(amo1_op[h]);", "amo_f5[b]        <= 5'b00000;")],
+    "byte_enables_ignored": [("we_a[b]   = eff_write[ga[i]] ? be8[ga[i]] : 8'h00;", "we_a[b]   = eff_write[ga[i]] ? 8'hFF : 8'h00;")],
+    "sc_without_reservation": [("sc_ok[h == 0 ? D0 : D1] = resv[h] && resv_word[h] == d_req_addr[h][31:2];",
+                                "sc_ok[h == 0 ? D0 : D1] = resv_word[h] == d_req_addr[h][31:2];")],
+    "sc_by_unit": [("sc_ok[h == 0 ? D0 : D1] = resv[h] && resv_word[h] == d_req_addr[h][31:2];",
+                    "sc_ok[h == 0 ? D0 : D1] = resv[h] && resv_word[h][29:1] == d_req_addr[h][31:3];")],
+    "sc_keeps_reservation": [("end else if (sc_now || touched) resv[h] <= 1'b0;", "end else if (touched) resv[h] <= 1'b0;")],
+    "writes_never_end_reservations": [("end else if (sc_now || touched) resv[h] <= 1'b0;", "end else if (sc_now) resv[h] <= 1'b0;")],
+    "own_writes_end_reservation": [("for (int w = 0; w < 4; w++) if (w != h && wrote[w] && touches_resv[h][w]) touched = 1'b1;",
+                                    "for (int w = 0; w < 4; w++) if (wrote[w] && touches_resv[h][w]) touched = 1'b1;")],
+    "exception_keeps_reservation": [(B_KEEP, "if (!hart_rst_n[h]) resv[h] <= 1'b0;")],
+    "reservation_event_lost": [("ev_resv_end[h] <= resv[h] && !lr_now && !sc_now && touched;", "ev_resv_end[h] <= 1'b0;")],
+    "snoop_to_writer": [("snoop_valid[c] <= {wrote[3], wrote[2], wrote[1 - c]};", "snoop_valid[c] <= {wrote[3], wrote[2], wrote[c]};"),
+                        ("snoop_line[c]  <= {wr_addr[3][31:4], wr_addr[2][31:4], wr_addr[1 - c][31:4]};",
+                         "snoop_line[c]  <= {wr_addr[3][31:4], wr_addr[2][31:4], wr_addr[c][31:4]};")],
+    "snoop_wrong_port": [("snoop_valid[c] <= {wrote[3], wrote[2], wrote[1 - c]};", "snoop_valid[c] <= {wrote[2], wrote[3], wrote[1 - c]};")],
+    "snoop_wrong_line": [("snoop_line[c]  <= {wr_addr[3][31:4], wr_addr[2][31:4], wr_addr[1 - c][31:4]};",
+                          "snoop_line[c]  <= {wr_addr[3][31:4], wr_addr[2][31:4] ^ 28'd4, wr_addr[1 - c][31:4]};")],
+    "held_hart_accepted": [("n_req_valid, d_req_valid[1] && hart_rst_n[1],", "n_req_valid, d_req_valid[1],")],
+    "reset_keeps_answers": [("v2[h == 0 ? I0 : I1] <= 1'b0; v2[h == 0 ? D0 : D1] <= 1'b0;", ";")],
+    "error_has_effect": [("tgt_err[k] = !tgt_mem[k] && !tgt_io[k];", "tgt_err[k] = !tgt_mem[k] && !tgt_io[k] && k != W;"),
+                         ("tgt_mem[k] = addr[k][31:AB] == MEM_BASE[31:AB] && addr[k][AB-1:0] < AB'(MEM_BYTES);",
+                          "tgt_mem[k] = (addr[k][31:AB] == MEM_BASE[31:AB] && addr[k][AB-1:0] < AB'(MEM_BYTES)) || k == W;")],
+    "memory_too_short": [("tgt_mem[k] = addr[k][31:AB] == MEM_BASE[31:AB] && addr[k][AB-1:0] < AB'(MEM_BYTES);",
+                          "tgt_mem[k] = addr[k][31:AB] == MEM_BASE[31:AB] && addr[k][AB-1:0] < AB'(MEM_BYTES - 8);")],
+    "two_io_a_cycle": [("else if (valid[D1] && tgt_io[D1] && !hold[1]) io_grant[D1] = 1'b1;",
+                        "if (valid[D1] && tgt_io[D1] && !hold[1]) io_grant[D1] = 1'b1;")],
+    # fairness (the reviews of 20.1)
+    "sticky_winner": [("if (|pick_a[b]) ptr_a[b] <= after(pick_a[b]);", "if (|pick_a[b]) ptr_a[b] <= after(pick_a[b]) - 2'd1;")],
+    "port_b_fixed_priority": [("if (|take_b[b]) ptr_b[b] <= after(take_b[b]);", ";")],
+    "io_fixed_priority": [("if (io_grant[D0]) io_ptr <= 1'b1;", ";")],
+    "starvation_unmasked": [("&& !(blk_v[b] && wclass[k] && unit[k] == blk_unit[b]);", ";")],
+    "wait_stages_kept_on_reset": [("for (int s = 0; s < WAIT; s++) begin wv[s][h == 0 ? I0 : I1] <= 1'b0; wv[s][h == 0 ? D0 : D1] <= 1'b0; end", ";")],
+    # the second chance on port B
+    "second_chance_beside_write": [("dtake[b][h] = dcand[b][h] && !pick_a[b][h] && !blocked;", "dtake[b][h] = dcand[b][h] && !pick_a[b][h];")],
+    "second_chance_for_lr": [("&& d_req_op[h] == OP_LOAD && !(amo_wr_now[b] && unit[k] == amo_wr_unit[b]) && !b_wanted;",
+                              "&& (d_req_op[h] == OP_LOAD || d_req_op[h] == OP_LR) && !(amo_wr_now[b] && unit[k] == amo_wr_unit[b]) && !b_wanted;")],
+    "second_chance_wrong_address": [("if (dcand[b][0] && !(|pick_b[b])) addr_b[b] = index[D0];", "if (dcand[b][0] && !(|pick_b[b])) addr_b[b] = index[D1];")],
+    "second_chance_inverted_candidate": [("dcand[b] = dchance[b] == 2'b11 ? (ptr_a[b] == 2'd1 ? 2'b01 : 2'b10) : dchance[b];",
+                                          "dcand[b] = dchance[b] == 2'b11 ? (ptr_a[b] == 2'd1 ? 2'b10 : 2'b01) : dchance[b];")],
+    "second_chance_off": [("    parameter bit          D_ON_B    = 1'b1 ", "    parameter bit          D_ON_B    = 1'b0 ")],
+    "second_chance_beside_port_b": [("&& d_req_op[h] == OP_LOAD && !(amo_wr_now[b] && unit[k] == amo_wr_unit[b]) && !b_wanted;",
+                                     "&& d_req_op[h] == OP_LOAD && !(amo_wr_now[b] && unit[k] == amo_wr_unit[b]);")],
+}
+
+DUTS = {
+    "ref_fabric": {"files": ["verification/fabric/ref_fabric.sv"], "mutated": "verification/fabric/ref_fabric.sv",
+                   "banks": 0, "overtake": 16, "mutants": REF_MUTANTS},
+    "aster_fabric": {"files": ["rtl/fabric/aster_fabric_bank.sv", "rtl/fabric/aster_fabric.sv"],
+                     "mutated": "rtl/fabric/aster_fabric.sv", "banks": 4, "overtake": 12, "mutants": BANKED_MUTANTS},
+}
+
+
+def build(dut: dict, name: str, edits: list[tuple[str, str]], out: Path, wait: int = 0) -> Path:
+    source = (ROOT / dut["mutated"]).read_text()
     for old, new in edits:
         if source.count(old) != 1:
             raise SystemExit(f"FAIL: mutant {name}: its pattern matches {source.count(old)} times: {old[:70]!r}")
         source = source.replace(old, new)
-    work = out / name
+    work = out / name / f"w{wait}"
     work.mkdir(parents=True, exist_ok=True)
-    (work / Path(DUT).name).write_text(source)
+    (work / Path(dut["mutated"]).name).write_text(source)
+    sources = [str(work / Path(f).name) if f == dut["mutated"] else str(ROOT / f) for f in dut["files"]]
     sim = (work / "sim").resolve()
     result = subprocess.run(["verilator", "--cc", "--exe", "--build", "-O3", "--assert", "-Wno-fatal", "--top-module",
                              "shell_fabric", "--prefix", "Vfabric_shell", "--Mdir", str(work / "obj"), "-o", str(sim),
-                             f"-DFABRIC_DUT={Path(DUT).stem}", str(ROOT / "rtl/aster_core/aster_core_pkg.sv"),
-                             str(work / Path(DUT).name), str(ROOT / "verification/fabric/shell_fabric.sv"),
+                             f"-DFABRIC_DUT={Path(dut['mutated']).stem}", f"-GWAIT={wait}", str(ROOT / "rtl/aster_core/aster_core_pkg.sv"),
+                             *sources, str(ROOT / "verification/fabric/shell_fabric.sv"),
                              str(ROOT / "verification/fabric/tb_fabric.cpp"),
                              "-CFLAGS", f"-std=c++20 -I{ROOT / 'verification/fabric'}"], capture_output=True, text=True)
     if result.returncode:
@@ -106,10 +185,13 @@ def build(name: str, edits: list[tuple[str, str]], out: Path) -> Path:
     return sim
 
 
-def try_mutant(name: str, out: Path) -> str:
-    sim = build(name, MUTANTS.get(name, []), out)
-    for mode, seed in BATTERY:
-        result = subprocess.run([str(sim), f"+banks={BANKS}", f"+overtake_limit={OVERTAKE}", f"+seed={seed}",
+def try_mutant(dut: dict, name: str, out: Path) -> str:
+    sims = {}
+    for mode, seed, wait in BATTERY:
+        if wait not in sims:
+            sims[wait] = build(dut, name, dut["mutants"].get(name, []), out, wait)
+        sim = sims[wait]
+        result = subprocess.run([str(sim), f"+banks={dut['banks']}", f"+overtake_limit={dut['overtake']}", f"+seed={seed}",
                                  f"+cycles={CYCLES}", f"+mode={mode}", "+require_coverage"],
                                 capture_output=True, text=True, timeout=1800)
         line = (result.stdout.strip().splitlines() or ["(no output)"])[-1]
@@ -118,27 +200,30 @@ def try_mutant(name: str, out: Path) -> str:
             status = fields[1] if len(fields) > 1 else line
             detail = line.split(" at=", 1)[1] if " at=" in line else ""
             if status in NOT_A_CATCH:
-                return f"MISSED: {name} ({mode}, seed {seed}): only {status} {detail}"[:220]
-            return f"CAUGHT: {name} ({mode}, seed {seed}): {status} {detail}"[:220]
+                return f"MISSED: {name} ({mode}, seed {seed}, WAIT {wait}): only {status} {detail}"[:220]
+            return f"CAUGHT: {name} ({mode}, seed {seed}, WAIT {wait}): {status} {detail}"[:220]
     return f"MISSED: {name} (every mode of the battery passed)"
 
 
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
+    parser.add_argument("--dut", choices=sorted(DUTS), default="aster_fabric")
     parser.add_argument("--build-dir", type=Path, default=ROOT / "build/fabric/mutants")
     parser.add_argument("--jobs", type=int, default=8)
     parser.add_argument("--only")
     args = parser.parse_args()
-    names = [args.only] if args.only else list(MUTANTS)
-    clean = try_mutant("unmutated", args.build_dir)
+    dut = DUTS[args.dut]
+    out = args.build_dir / args.dut
+    names = [args.only] if args.only else list(dut["mutants"])
+    clean = try_mutant(dut, "unmutated", out)
     if not clean.startswith("MISSED: unmutated (every mode"):
-        print(f"FAIL: the unmutated {Path(DUT).stem} does not pass the battery: {clean}")
+        print(f"FAIL: the unmutated {args.dut} does not pass the battery: {clean}")
         return 1
     with ThreadPoolExecutor(max_workers=args.jobs) as pool:
-        lines = list(pool.map(lambda n: try_mutant(n, args.build_dir), names))
+        lines = list(pool.map(lambda n: try_mutant(dut, n, out), names))
     print("\n".join(lines))
     missed = [line for line in lines if line.startswith("MISSED")]
-    print(f"{'PASS' if not missed else 'FAIL'}: planted bugs in {Path(DUT).stem}: {len(lines) - len(missed)} of "
+    print(f"{'PASS' if not missed else 'FAIL'}: planted bugs in {args.dut}: {len(lines) - len(missed)} of "
           f"{len(lines)} caught by the fabric shell")
     return 1 if missed else 0
 

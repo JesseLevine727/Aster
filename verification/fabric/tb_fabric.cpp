@@ -18,6 +18,8 @@
 //   acceptance), and no other snoop (SNOOP_MISMATCH);
 // - a data cache's access outside main memory on the I/O bus in its cycle,
 //   one a cycle (IO_MISMATCH);
+// - ev_resv_end (for the fabric counters, soc.md §8): a hart's reservation
+//   ended by another requester's write, in the cycle after (EVENT_MISMATCH);
 // - never a read and a write, or two writes, of one 8-byte unit in a cycle
 //   (SAME_UNIT); with a banked DUT (chk_banks > 0) at most two accesses and
 //   one write a bank a cycle (BANK_RULE); until an AMO's write, no other
@@ -40,7 +42,20 @@
 // accesses outside main memory), reset (hart 1 held in reset at random,
 // exceptions on both harts; a held hart's requesters keep presenting
 // requests, which the DUT must ignore), solo and solo1 (only hart 0's, or
-// hart 1's, caches request, half their accesses on four lines both share).
+// hart 1's, caches request, half their accesses on four lines both share),
+// hammer (every requester at nearly every cycle on one bank, which changes
+// every 1,000 cycles, and on four of its units: fairness and starvation),
+// twin (only the data caches, loading the same lines word by word in step, as
+// two harts' refills of shared data: both must be taken whenever they load
+// one bank, TWIN_SERIAL — the banked fabric's second chance),
+// and edges: directed scenarios, each request at a set cycle (all seven
+// requesters on one bank; four banks written at once; one unit read and
+// written together; a read of a unit two writers keep writing; both harts' AMOs on one word a cycle apart, with writes
+// and reads of their bank meanwhile; a reservation ended by each kind of
+// writer, by an exception in the lr's cycle and by a reset; sc without a
+// reservation or on another word; hart 1 reset with an AMO in flight; both
+// harts' I/O at once, streaming, and behind an AMO; errors from I, N, R and W at once; the
+// NPU streaming beside a hart's stores), each checked like any request.
 // +banks=<n> declares the DUT's banks (0: unbanked), which must equal its
 // chk_banks (BANKS_MISMATCH), so a DUT cannot turn the bank checks off.
 // +cycles=<n> (default 100,000) +seed=<n>. With +require_coverage a run
@@ -53,11 +68,11 @@
 // wrapper's (shell_fabric.sv); 5 a D0 load's data misread (DATA_MISMATCH); 6
 // a snoop to D1 from the NPU missed (SNOOP_MISMATCH); 7 an N answer seen a
 // cycle late (ANSWER_TIMING); 8 an sc's outcome misread (SC_MISMATCH); 9 the
-// reference keeps every reservation another requester's write ends (it then
-// expects the sc's write, whose snoop is missed first: SNOOP_MISMATCH); 10
+// reference keeps every reservation another requester's write ends (the
+// DUT's reservation-ended event is then unexpected: EVENT_MISMATCH); 10
 // the reference computes every AMO wrongly (DATA_MISMATCH);
 // 11 a reference byte corrupted before the read-back (DATA_MISMATCH); 12 is the wrapper's (the
-// reference reported as four banks, run with +banks=4: BANK_RULE). The
+// DUT reported with other banks than it has: BANK_RULE). The
 // rules no self-test reaches (SAME_UNIT, AMO_RULE, TWO_WRITES, IO_MISMATCH,
 // UNFAIR) are proven by planted bugs in the DUT (scripts/fabric_mutants.py).
 //
@@ -142,7 +157,7 @@ public:
         solo = solo_hart >= 0;
         overtake_limit = plusarg("overtake_limit").empty() ? 16 : std::stoul(plusarg("overtake_limit"));
         declared_banks = plusarg("banks").empty() ? -1 : std::stoi(plusarg("banks"));
-        p_issue = mode == "dense" ? 0.95 : mode == "sparse" ? 0.12 : 0.5;
+        p_issue = mode == "dense" || mode == "hammer" || mode == "twin" ? 0.95 : mode == "sparse" ? 0.12 : 0.5;
         for (int i = 0; i < 8; ++i) hot_lines.push_back(MEM_BASE + 16u * std::uint32_t(rng() % (MEM_BYTES / 16)));
         for (int i = 0; i < 4; ++i) solo_lines.push_back(MEM_BASE + 16u * std::uint32_t(rng() % (MEM_BYTES / 16)));
         for (int k = 0; k < NREQ; ++k) stream_at[k] = MEM_BASE + 8u * std::uint32_t(rng() % (MEM_BYTES / 8));
@@ -155,7 +170,13 @@ private:
     double uni() { return std::uniform_real_distribution<double>(0.0, 1.0)(rng); }
     std::uint32_t main_addr(int k, std::uint32_t align) {
         std::uint32_t a;
-        if (mode == "hot" && uni() < 0.7) a = hot_lines[rng() % hot_lines.size()] + std::uint32_t(rng() % 16);
+        if (mode == "hammer") {                     // two lines (four units) of this epoch's bank
+            const std::uint32_t b = std::uint32_t(cycle / 1000) % 4, line = 40 + std::uint32_t(rng() % 2);
+            a = MEM_BASE + 16u * (4u * line + b) + std::uint32_t(rng() % 16);
+        } else if (mode == "twin" && is_d(k)) {    // the next word of the lines both data caches walk
+            a = MEM_BASE + 4u * twin_at[hart_of(k)]++;
+            if (twin_at[hart_of(k)] >= MEM_BYTES / 4) twin_at[hart_of(k)] = 0;
+        } else if (mode == "hot" && uni() < 0.7) a = hot_lines[rng() % hot_lines.size()] + std::uint32_t(rng() % 16);
         else if (solo && uni() < 0.5) a = solo_lines[rng() % solo_lines.size()] + std::uint32_t(rng() % 16);
         else if (mode == "stream" && (k == N || k == R || k == W)) {
             a = stream_at[k];
@@ -168,9 +189,16 @@ private:
     bool hart_requests(int k) const {
         const int h = hart_of(k);
         if (solo && !sweeping && h != solo_hart) return false;
+        if (mode == "twin" && !sweeping && !is_d(k)) return false;
         return h < 0 || hart_up[h];
     }
     void new_request(int k);
+    void build_edges();
+    struct Step { std::uint64_t at; Pres p; };
+    std::deque<Step> script[NREQ];              // +mode=edges: each requester's requests, each from its cycle
+    std::map<std::uint64_t, unsigned> script_reset;      // cycle -> cycles hart 1 is held
+    std::map<std::uint64_t, unsigned> script_exception;  // cycle -> harts (bit h)
+    std::uint64_t script_end = 0;
 
     // ---- per cycle ----
     void drive();
@@ -207,6 +235,7 @@ private:
     unsigned banks = 0, wait = 0, latency = 2;
     std::vector<std::uint32_t> hot_lines;
     std::uint32_t stream_at[NREQ] = {};
+    std::uint32_t twin_at[2] = {};
     std::uint32_t sweep_at = MEM_BASE;
     std::uint32_t last_lr[2] = {MEM_BASE, MEM_BASE};
 
@@ -217,6 +246,7 @@ private:
     unsigned reset_left = 0;
     std::vector<Amo> amos;                     // accepted, write not yet taken effect
     bool exp_snoop[2][3] = {}, next_snoop[2][3] = {};
+    bool exp_ev[2] = {}, next_ev[2] = {};
     std::uint32_t exp_line[2][3] = {}, next_line[2][3] = {};
     std::uint32_t io_rdata = 0, io_rdata_next = 0;
     std::vector<fabric::Write> writes;         // the writes taking effect at this cycle's edge
@@ -248,6 +278,7 @@ void Shell::new_request(int k) {
             p.be = p.op == fabric::LOAD ? 0xF : std::uint8_t(1 + rng() % 15);
             break;
         }
+        if (mode == "twin") { p.op = fabric::LOAD; p.addr = main_addr(k, 4); p.be = 0xF; break; }
         const double r = uni();
         p.op = r < 0.38 ? fabric::LOAD : r < 0.66 ? fabric::STORE : r < 0.73 ? fabric::LR : r < 0.82 ? fabric::SC
              : int(fabric::SWAP + rng() % 9);
@@ -283,6 +314,107 @@ void Shell::new_request(int k) {
     }
 }
 
+// +mode=edges: the directed scenarios, one every 64 cycles.
+void Shell::build_edges() {
+    auto at_bank = [](unsigned bank, unsigned line, unsigned word) {   // word w of the line-th line of a bank
+        return MEM_BASE + 16u * (4u * line + bank) + 4u * word;
+    };
+    std::uint64_t t = 8;
+    auto req = [&](int k, std::uint64_t when, std::uint32_t addr, int op = fabric::LOAD, std::uint64_t wdata = 0,
+                   std::uint8_t be = 0) {
+        Pres p;
+        p.addr = addr; p.op = op; p.wdata = wdata;
+        p.be = be ? be : (is_d(k) ? 0xF : (op == fabric::STORE ? 0xFF : 0));
+        script[k].push_back({when, p});
+    };
+    auto next = [&]() { t += 64; };
+    std::uint64_t seed = 0x5eed;
+    auto val = [&]() { seed = seed * 6364136223846793005ull + 1442695040888963407ull; return seed >> 17; };
+    // 1. all seven requesters on one bank in one cycle, then all writing it; first a lone request
+    // moves the bank's round-robin pointer, so each bank's round starts from another requester
+    for (unsigned b = 0; b < 4; ++b) {
+        req(int(b), t, at_bank(b, 20, 0));
+        t += 4;
+        req(I0, t, at_bank(b, 1, 0)); req(I1, t, at_bank(b, 2, 0)); req(D0, t, at_bank(b, 3, 0));
+        req(D1, t, at_bank(b, 4, 0)); req(N, t, at_bank(b, 5, 0)); req(R, t, at_bank(b, 6, 0));
+        req(W, t, at_bank(b, 7, 0), fabric::STORE, val(), 0xFF);
+        next();
+        req(D0, t, at_bank(b, 3, 1), fabric::STORE, val()); req(D1, t, at_bank(b, 4, 1), fabric::STORE, val());
+        req(N, t, at_bank(b, 5, 0), fabric::STORE, val(), 0xF0); req(W, t, at_bank(b, 7, 0), fabric::STORE, val(), 0x3C);
+        req(I0, t, at_bank(b, 1, 0)); req(I1, t, at_bank(b, 2, 0)); req(R, t, at_bank(b, 6, 0));
+        next();
+    }
+    // 2. four banks written in one cycle (every snoop port at once)
+    for (int i = 0; i < 4; ++i) {
+        req(D0, t, at_bank(i, 8, 0), fabric::STORE, val()); req(D1, t, at_bank((i + 1) % 4, 8, 1), fabric::STORE, val());
+        req(N, t, at_bank((i + 2) % 4, 8, 2), fabric::STORE, val(), 0xFF); req(W, t, at_bank((i + 3) % 4, 8, 3), fabric::STORE, val(), 0xFF);
+        next();
+    }
+    // 3. one unit read and written in one cycle, by every pair of kinds
+    req(I0, t, at_bank(1, 9, 0)); req(D0, t, at_bank(1, 9, 1), fabric::STORE, val()); next();
+    req(R, t, at_bank(2, 9, 0)); req(W, t, at_bank(2, 9, 0), fabric::STORE, val(), 0x01); next();
+    req(N, t, at_bank(3, 9, 0)); req(D1, t, at_bank(3, 9, 0), fabric::SC, val()); next();
+    req(D1, t, at_bank(0, 9, 0)); req(N, t, at_bank(0, 9, 0), fabric::STORE, val(), 0x80); next();
+    // 3b. a read of a unit two writers (and the DMA) keep writing: it must not wait forever
+    for (unsigned i = 0; i < 24; ++i) {
+        req(D0, t + i, at_bank(2, 17, 0), fabric::STORE, val()); req(D1, t + i, at_bank(2, 17, 0), fabric::STORE, val());
+        req(W, t + i, at_bank(2, 17, 0), fabric::STORE, val(), 0x0F);
+    }
+    req(I1, t + 1, at_bank(2, 17, 1)); req(R, t + 2, at_bank(2, 17, 0)); req(N, t + 3, at_bank(2, 17, 0));
+    t += 96;
+    // 4. both harts' AMOs on one word a cycle apart; meanwhile a write held, reads of the word
+    for (int op : {fabric::ADD, fabric::SWAP, fabric::MAX, fabric::MINU}) {
+        const std::uint32_t w = at_bank(2, 10, 1);
+        req(D0, t, w, op, val()); req(D1, t + 1, w, op, val());
+        req(N, t + 1, at_bank(2, 11, 0), fabric::STORE, val(), 0xFF); req(I0, t + 1, w); req(R, t + 2, w);
+        req(D0, t + 1, at_bank(0, 11, 0));       // its data cache waits for the AMO's write
+        next();
+    }
+    // 5. a reservation ended by each kind of writer (and kept by a write beside it)
+    struct Ender { int k; int op; std::uint8_t be; bool ends; };
+    const Ender enders[] = {{D1, fabric::STORE, 0x1, true}, {D1, fabric::SC, 0xF, true}, {D1, fabric::ADD, 0xF, true},
+                            {N, fabric::STORE, 0xF0, false}, {N, fabric::STORE, 0x0F, true}, {W, fabric::STORE, 0x01, true},
+                            {W, fabric::STORE, 0x10, false}};
+    for (const Ender& e : enders) {
+        const std::uint32_t w = at_bank(3, 12, 0);
+        req(D0, t, w, fabric::LR);
+        if (e.op == fabric::SC) { req(D1, t, w, fabric::LR); req(D1, t + 3, w, fabric::SC, val()); }
+        else req(e.k, t + 3, e.k == D1 ? w : (w & ~7u), e.op, val(), e.be);
+        req(D0, t + 8, w, fabric::SC, val());
+        next();
+    }
+    // 6. an lr in an exception's cycle; an lr before hart 1's reset
+    req(D0, t, at_bank(1, 13, 0), fabric::LR); script_exception[t] = 1;
+    req(D0, t + 4, at_bank(1, 13, 0), fabric::SC, val()); next();
+    req(D1, t, at_bank(1, 13, 1), fabric::LR); script_reset[t + 3] = 2;
+    req(D1, t + 8, at_bank(1, 13, 1), fabric::SC, val()); next();
+    req(D0, t, at_bank(1, 13, 2), fabric::LR); script_exception[t + 2] = 1;
+    req(D0, t + 5, at_bank(1, 13, 2), fabric::SC, val()); next();
+    // 7. sc without a reservation, on another word, twice
+    req(D1, t, at_bank(0, 14, 0), fabric::SC, val()); req(D1, t + 3, at_bank(0, 14, 1), fabric::LR);
+    req(D1, t + 6, at_bank(0, 14, 2), fabric::SC, val()); req(D1, t + 9, at_bank(0, 14, 1), fabric::SC, val());
+    next();
+    // 8. hart 1 reset with an AMO in flight and answers owed; released at once
+    req(D1, t, at_bank(2, 15, 0), fabric::ADD, val()); req(I1, t, at_bank(1, 15, 0)); script_reset[t + 1] = 1;
+    req(D1, t + 6, at_bank(2, 15, 0)); next();
+    // 9. both harts' I/O at once; an I/O access behind its hart's AMO
+    req(D0, t, IO_BASE + 16, fabric::LOAD); req(D1, t, IO_BASE + 20, fabric::STORE, val());
+    req(D0, t + 4, at_bank(3, 16, 0), fabric::XOR, val()); req(D0, t + 5, IO_BASE + 20); next();
+    // 9b. both harts streaming I/O loads at once: the bus alternates
+    for (unsigned i = 0; i < 32; ++i) { req(D0, t + i, IO_BASE + 4u * i); req(D1, t + i, IO_BASE + 0x200u + 4u * i); }
+    t += 128;
+    // 10. errors from I, N, R and W at once
+    req(I0, t, 0x90000000u); req(N, t, 0x90000008u); req(R, t, 0x90000010u);
+    req(W, t, 0x90000018u, fabric::STORE, val(), 0xFF); next();
+    // 11. the NPU streaming across the banks beside hart 0's stores to them
+    for (unsigned i = 0; i < 32; ++i) {
+        req(N, t + i, MEM_BASE + 0x4000u + 8u * i);
+        req(D0, t + i, MEM_BASE + 0x4000u + 16u * (i / 2) + 4u * (i % 2) + 8u, fabric::STORE, val());
+    }
+    t += 96;
+    script_end = t;
+}
+
 bool Shell::rsp_valid(int k) const {
     switch (k) {
     case I0: return d.i0_rsp_valid; case I1: return d.i1_rsp_valid;
@@ -313,8 +445,13 @@ bool Shell::req_ready(int k) const {
 }
 
 void Shell::drive() {
-    // hart 1's reset and exceptions (+mode=reset)
-    if (mode == "reset" && !draining) {
+    // hart 1's reset and exceptions (+mode=reset, or scripted)
+    if (mode == "edges") {
+        if (reset_left) --reset_left;
+        if (script_reset.count(cycle)) reset_left = script_reset[cycle];
+        const unsigned exc = script_exception.count(cycle) ? script_exception[cycle] : 0;
+        hart_exc[0] = exc & 1u; hart_exc[1] = exc & 2u;
+    } else if (mode == "reset" && !draining) {
         if (reset_left) --reset_left;
         else if (uni() < 0.002) reset_left = 1 + unsigned(rng() % 8);
         for (int h = 0; h < 2; ++h) hart_exc[h] = uni() < 0.003;
@@ -343,6 +480,15 @@ void Shell::drive() {
         const std::size_t owing = owed[k].size() - (!owed[k].empty() && owed[k].front().accept + latency == cycle);
         if (pres[k].valid || owing >= 2) continue;
         if (sweeping) { if (k == R && sweep_at < MEM_BASE + MEM_BYTES) new_request(k); continue; }
+        if (mode == "edges") {
+            if (!script[k].empty() && script[k].front().at <= cycle) {
+                pres[k] = script[k].front().p;
+                pres[k].valid = true;
+                pres[k].since = cycle;
+                script[k].pop_front();
+            }
+            continue;
+        }
         if (!draining && uni() < p_issue) new_request(k);
     }
     const Pres* p = pres;
@@ -391,6 +537,10 @@ bool Shell::check_outputs() {
                 return fail("ERROR_MISMATCH", std::string(kName[k]) + " error " + std::to_string(rsp_error(k))
                             + " in the cycle after acceptance, expected " + std::to_string(o.error));
     }
+    for (int h = 0; h < 2; ++h)
+        if (bool((d.ev_resv_end >> h) & 1u) != exp_ev[h])
+            return fail("EVENT_MISMATCH", "hart " + std::to_string(h) + "'s reservation-ended event "
+                        + std::to_string((d.ev_resv_end >> h) & 1u) + ", expected " + std::to_string(exp_ev[h]));
     // snoops
     const std::uint8_t sv[2] = {d.s0_valid, d.s1_valid};
     const std::uint32_t sl[2][3] = {{d.s0_line0, d.s0_line1, d.s0_line2}, {d.s1_line0, d.s1_line1, d.s1_line2}};
@@ -597,9 +747,24 @@ void Shell::take_effect() {
         for (const Amo& a : due) if (bank(a.addr) == bank(pres[k].addr)) return true;
         return false;
     };
+    for (int k : {D0, D1}) {                       // the I/O bus: the other data cache taken ahead of a waiting one
+        const int j = D0 + D1 - k;
+        if (pres[k].valid && !pres[k].ghost && !acc[k] && !mem.contains(pres[k].addr) && !held[hart_of(k)]
+            && acc[j] && !mem.contains(pres[j].addr)) {
+            max_overtake = std::max(max_overtake, ++overtaken[k][j]);
+            if (overtaken[k][j] > overtake_limit) {
+                fail("UNFAIR", std::string(kName[j]) + " taken on the I/O bus ahead of waiting " + kName[k] + " "
+                     + std::to_string(overtaken[k][j]) + " times");
+                return;
+            }
+        }
+    }
     for (int k = 0; k < NREQ; ++k) {
         const bool waiting = pres[k].valid && !pres[k].ghost && !acc[k] && mem.contains(pres[k].addr);
-        if (!waiting) { for (int j = 0; j < NREQ; ++j) overtaken[k][j] = 0; continue; }
+        if (!waiting) {
+            if (!(pres[k].valid && !pres[k].ghost && !acc[k])) for (int j = 0; j < NREQ; ++j) overtaken[k][j] = 0;
+            continue;
+        }
         const int h = hart_of(k);
         const bool own_hold = is_d(k) && held[h];
         for (const fabric::Write& w : writes)
@@ -628,6 +793,17 @@ void Shell::take_effect() {
                 return;
             }
         }
+    }
+    if (acc[D0] && acc[D1] && mem.contains(pres[D0].addr) && mem.contains(pres[D1].addr)
+        && (!banks || bank(pres[D0].addr) == bank(pres[D1].addr))) hit("twin_together");
+    // twin: both data caches' loads to one bank, nothing else asking, are both taken (the banked
+    // fabric's second chance on port B; a performance rule of this design, not of the contract)
+    auto presented = [&](int k) { return acc[k] || (pres[k].valid && !pres[k].ghost); };   // (taken ones are cleared)
+    if (mode == "twin" && !sweeping && presented(D0) && presented(D1)
+        && mem.contains(pres[D0].addr) && mem.contains(pres[D1].addr) && bank(pres[D0].addr) == bank(pres[D1].addr)
+        && acc[D0] != acc[D1]) {
+        fail("TWIN_SERIAL", "D0's and D1's loads to one bank, nothing else asking, not both taken");
+        return;
     }
     // the solo modes: the hart alone is never slowed but for its AMO's hold and the unit exception
     if (solo) {
@@ -660,12 +836,14 @@ void Shell::take_effect() {
     // ---- the writes take effect; reservations; next cycle's snoops ----
     for (const fabric::Write& w : writes) mem.write(w);
     for (int h = 0; h < 2; ++h) {
+        next_ev[h] = false;
         if (lr_set[h].valid) resv[h] = lr_set[h];
         if (sc_end[h]) resv[h].valid = false;
         for (const fabric::Write& w : writes)
             if (w.writer != d_of(h) && resv[h].valid && fabric::touches(w, resv[h].word)) {
                 if (selftest == 9) continue;
                 resv[h].valid = false;
+                next_ev[h] = true;
                 hit(std::string("resv_end:") + (!is_d(w.writer) ? (w.writer == N ? "npu" : "dma")
                                                 : w.kind == fabric::BY_AMO ? "other_d_amo" : w.kind == fabric::BY_SC ? "other_d_sc"
                                                                                                   : "other_d_store"));
@@ -701,12 +879,13 @@ int Shell::run() {
     banks = d.chk_banks;
     wait = d.chk_wait;
     latency = 2 + wait;
+    if (mode == "edges") build_edges();
     if (declared_banks < 0) fail("BANKS_MISMATCH", "+banks=<n> is required (the DUT's banks, 0 for none)");
     else if (unsigned(declared_banks) != banks)
         fail("BANKS_MISMATCH", "the DUT reports " + std::to_string(banks) + " banks, declared " + std::to_string(declared_banks));
     std::uint64_t limit = cycles + 200000;
     for (cycle = 0; cycle < limit && failure.empty(); ++cycle) {
-        if (cycle == cycles) draining = true;
+        if (cycle == cycles || (mode == "edges" && cycle == script_end)) draining = true;
         if (draining && !sweeping) {
             bool idle = amos.empty();
             for (int k = 0; k < NREQ; ++k) idle = idle && !pres[k].valid && owed[k].empty();
@@ -726,6 +905,7 @@ int Shell::run() {
         for (int c = 0; c < 2; ++c)
             for (int p = 0; p < 3; ++p) { exp_snoop[c][p] = next_snoop[c][p]; exp_line[c][p] = next_line[c][p]; }
         io_rdata = io_rdata_next;
+        exp_ev[0] = next_ev[0]; exp_ev[1] = next_ev[1];
         d.clk = 1;
         d.eval();
     }
@@ -749,10 +929,24 @@ int Shell::run() {
     if (banks) {
         for (int a = 0; a < NREQ; ++a)
             for (int b = a + 1; b < NREQ; ++b) required.push_back("conflict:" + std::string(kName[a]) + "-" + kName[b]);
-        for (const char* b : {"two_in_bank", "read_beside_write", "four_bank_writes"}) required.push_back(b);
+        for (const char* b : {"two_in_bank", "read_beside_write"}) required.push_back(b);
+        if (mode != "sparse") required.push_back("four_bank_writes");   // four writers at once: rare at sparse rates
     }
     if (solo) required = {"d_held_by_own_amo", "solo_together", "solo_unit:store", "solo_unit:sc", "solo_unit:amo_accept",
                           "solo_unit:amo_write"};
+    if (mode == "twin") required = {"twin_together"};
+    if (mode == "hammer" && banks) {
+        required = {"two_in_bank", "read_beside_write", "read_held_by_write"};
+        for (int a = 0; a < NREQ; ++a)
+            for (int b = a + 1; b < NREQ; ++b) required.push_back("conflict:" + std::string(kName[a]) + "-" + kName[b]);
+    }
+    if (mode == "edges") {
+        for (const char* b : {"resv_end:other_d_store", "resv_end:other_d_sc", "resv_end:other_d_amo", "resv_end:npu",
+                              "resv_end:dma", "resv_end:exception", "resv_end:reset", "read_held_by_write", "amo_held_amo",
+                              "amo_pair", "reset:owed", "reset:amo", "reset:quick", "io_both", "error:I", "error:N", "error:R",
+                              "error:W"}) required.push_back(b);
+        if (banks) required.push_back("four_bank_writes");
+    }
     std::sort(required.begin(), required.end());
     required.erase(std::unique(required.begin(), required.end()), required.end());
     std::vector<std::string> missing;

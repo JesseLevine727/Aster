@@ -356,7 +356,7 @@ BENCH_CFLAGS := $(HELLO_CFLAGS) -DBENCHMARK_WORDS=$(BENCH_WORDS) \
 	-DBENCH_RANDOM=$(if $(filter walk_random,$(BENCH_WORKLOAD)),1,0)
 BENCH_LDFLAGS := -T software/boot/link.ld -Wl,--gc-sections -Wl,-Map,$(BENCH_FW_DIR)/benchmark.map
 
-.PHONY: all tools structure firmware smoke test directed hello bench cache fpga fpga-sim check clean help fabric-tests fabric-checker-tests litmus-tests fabric-mutants \
+.PHONY: all tools structure firmware smoke test directed hello bench cache fpga fpga-sim check clean help fabric-tests fabric-checker-tests litmus-tests fabric-mutants timing-fpga-fabric fabric-tests-dut \
 	runtime memory-map traps phase1 phase1-matrix host-tests uart fpga-linux linux-sim counters retirement bench-config cache-random cache-matrix cache-boundaries phase4-soc-matrix
 .SECONDARY:
 
@@ -2253,11 +2253,22 @@ $(L1I_UNIT_SIM): $(ASTER_L1_RTL) verification/core/l1/tb_l1i.cpp Makefile
 		$(ROOT)/rtl/aster_core/aster_l1i.sv $(ROOT)/verification/core/l1/tb_l1i.cpp
 	@touch $@
 .PHONY: core-aster-l1-unit
-core-aster-l1-unit: $(L1D_UNIT_SIM) $(L1I_UNIT_SIM)
+# The data cache with three snoop ports (the Phase 20 fabric's, soc.md §4.6; 20.1).
+L1D3_UNIT_SIM := $(L1_UNIT_DIR)/l1d_unit_snoops3
+$(L1D3_UNIT_SIM): rtl/aster_core/aster_core_pkg.sv $(ASTER_L1_RTL) verification/core/l1/l1d_unit.sv verification/core/l1/tb_l1d.cpp Makefile
+	mkdir -p $(L1_UNIT_DIR)
+	$(VERILATOR) --cc --exe --build --assert --Wall --top-module l1d_unit --prefix Vl1d_unit -GSNOOPS=3 \
+		--Mdir $(L1_UNIT_DIR)/d3_obj -o $(abspath $@) $(ROOT)/rtl/aster_core/aster_core_pkg.sv \
+		$(addprefix $(ROOT)/,$(ASTER_L1_RTL)) $(ROOT)/verification/core/l1/l1d_unit.sv $(ROOT)/verification/core/l1/tb_l1d.cpp \
+		-CFLAGS -DL1D_SNOOPS=3
+	@touch $@
+
+core-aster-l1-unit: $(L1D_UNIT_SIM) $(L1I_UNIT_SIM) $(L1D3_UNIT_SIM)
 	@for seed in $$(seq 1 $(L1_UNIT_SEEDS)); do \
 		$(L1D_UNIT_SIM) $$seed 1000000 > /dev/null || { $(L1D_UNIT_SIM) $$seed 1000000; exit 1; }; \
 		$(L1I_UNIT_SIM) $$seed 1000000 > /dev/null || { $(L1I_UNIT_SIM) $$seed 1000000; exit 1; }; \
-	done; echo "PASS: the L1 data and instruction caches pass $(L1_UNIT_SEEDS) random unit-test seeds each"
+		$(L1D3_UNIT_SIM) $$seed 1000000 > /dev/null || { $(L1D3_UNIT_SIM) $$seed 1000000; exit 1; }; \
+	done; echo "PASS: the L1 data and instruction caches pass $(L1_UNIT_SEEDS) random unit-test seeds each; the data cache with three snoop ports (20.1) too, snoops on two ports or more in one cycle and a refill snooped on each port in every seed"
 
 core-aster-sim: $(ASTER_PORTS_SIM) $(ASTER_L1_SIM)
 core-aster-tests: $(ASTER_PORTS_SIM) $(ASTER_DOT8_PLUGIN)
@@ -2735,6 +2746,36 @@ timing-fpga-npu2:
 		> run.out || { tail -20 run.out; exit 1; }; \
 		grep -E '^(SUMMARY|NAMED)' run.out
 
+# The Phase 20 fabric at 10 ns out of context (milestone 20.1): the banked
+# fabric with its block RAM, every input from a register and every output into
+# one (verification/fabric/timing_fabric.sv); and the core with its caches, the
+# data cache with the fabric's three snoop ports (SNOOPS=3).
+timing-fpga-fabric:
+	@command -v $(VIVADO) >/dev/null || { echo "ERROR: Vivado not found (set VIVADO=/path/to/vivado)" >&2; exit 1; }
+	@mkdir -p $(TIMING_DIR)/fpga/fabric && cd $(TIMING_DIR)/fpga/fabric && \
+		OOC_NAMED_PATHS="request_to_ready=*req_*_reg*>*ready_q_reg*;request_to_bank=*req_*_reg*>*ram_reg*;bank_to_answer=*ram_reg*>*rsp_*_q_reg*;amo_through_bank=*ram_reg*>*ram_reg*;request_to_reservation=*req_*_reg*>*resv_*_reg*;request_to_snoop=*req_*_reg*>*snoop_*_reg*" \
+		$(VIVADO) -mode batch -nojournal -log vivado.log -source $(ROOT)/scripts/timing/vivado_ooc.tcl \
+		-tclargs $(abspath $(TIMING_DIR))/fpga/fabric timing_fabric $(TIMING_PERIOD_NS) \
+		$(ROOT)/rtl/aster_core/aster_core_pkg.sv $(addprefix $(ROOT)/,$(FABRIC_RTL_aster_fabric)) $(ROOT)/verification/fabric/timing_fabric.sv \
+		> run.out || { tail -20 run.out; exit 1; }; \
+		grep -E '^(SUMMARY|NAMED)' run.out
+	@mkdir -p $(TIMING_DIR)/fpga/fabric_fe && cd $(TIMING_DIR)/fpga/fabric_fe && \
+		OOC_GENERICS="$(FABRIC_GENERICS)" \
+		OOC_NAMED_PATHS="dcache_to_ready=*d_s2_addr_reg*>*ready_q_reg*;dcache_to_bank=*d_s2_addr_reg*>*ram_reg*;npu_to_bank=*n_ld_req_reg*>*ram_reg*;dcache_to_reservation=*d_s2_addr_reg*>*resv_*_reg*|*ev_resv_end_reg*;ready_to_dcache=*d_s2_addr_reg*>*d_valid_bits_reg*|*d_posted_word_reg*|*d_issued_reg*|*d_sent_reg*;ready_to_npu=*n_*_reg*>*n_wr_data_reg*|*n_count_reg*" \
+		$(VIVADO) -mode batch -nojournal -log vivado.log -source $(ROOT)/scripts/timing/vivado_ooc.tcl \
+		-tclargs $(abspath $(TIMING_DIR))/fpga/fabric_fe timing_fabric_fe $(TIMING_PERIOD_NS) \
+		$(ROOT)/rtl/aster_core/aster_core_pkg.sv $(addprefix $(ROOT)/,$(FABRIC_RTL_aster_fabric)) $(ROOT)/verification/fabric/timing_fabric_fe.sv \
+		> run.out || { tail -20 run.out; exit 1; }; \
+		grep -E '^(SUMMARY|NAMED)' run.out
+	@mkdir -p $(TIMING_DIR)/fpga/aster_l1_snoops3 && cd $(TIMING_DIR)/fpga/aster_l1_snoops3 && \
+		OOC_GENERICS="SNOOPS=3" \
+		OOC_NAMED_PATHS="snoop_to_dcache=*snoop_*_reg*>*dcache/*;core_to_dcache=*core/*>*dcache/*;dcache_to_core=*dcache/*>*core/*" \
+		$(VIVADO) -mode batch -nojournal -log vivado.log -source $(ROOT)/scripts/timing/vivado_ooc.tcl \
+		-tclargs $(abspath $(TIMING_DIR))/fpga/aster_l1_snoops3 timing_aster_l1 $(TIMING_PERIOD_NS) \
+		$(addprefix $(ROOT)/,$(ASTER_CORE_RTL) $(ASTER_L1_RTL)) $(ROOT)/verification/core/timing_aster_l1.sv \
+		> run.out || { tail -20 run.out; exit 1; }; \
+		grep -E '^(SUMMARY|NAMED)' run.out
+
 # Planted bugs in the Aster core's RTL and, from 18.6, its L1 caches
 # (scripts/mutation_campaign.py): each of its mutants must be caught by the runs
 # above — the caches' (and the core's that only the caches expose) on the
@@ -2855,24 +2896,29 @@ timing-asic-picorv32:
 # Phase 20 fabric shell (milestone 20.0; docs/soc.md §10.1, verification/fabric):
 # a Phase 20 fabric driven by seven random requesters (I0, I1, D0, D1, N, R,
 # W), every answer, snoop and ordering rule checked against fabric_ref.h cycle
-# by cycle, the whole memory read back at the end. The DUT in 20.0 is the
-# serial reference fabric (FABRIC_DUT=ref_fabric); each answer latency (WAIT
+# by cycle, the whole memory read back at the end. The DUTs (FABRIC_DUTS):
+# the banked fabric (aster_fabric, 20.1) and the serial reference fabric
+# (ref_fabric, 20.0), which keeps the shell honest; each answer latency (WAIT
 # 0, 1, 2, 4 cycles added) is its own build; every mode, FABRIC_SEEDS seeds of
 # FABRIC_CYCLES cycles, every coverage bin that applies (some bins are rare:
 # set for runs of 500,000 cycles; shorter runs can miss one, which shows as
 # COVERAGE, not as a failed check); then the shell's self-tests, each of which
 # must be reported.
 FABRIC_DIR := $(BUILD_DIR)/fabric
-FABRIC_DUT ?= ref_fabric
+FABRIC_DUT ?= aster_fabric
 FABRIC_SEEDS ?= 4
 FABRIC_CYCLES ?= 500000
 FABRIC_WAITS := 0 1 2 4
-FABRIC_MODES := mix hot stream dense sparse errors reset solo solo1
+FABRIC_MODES := mix hot stream dense sparse errors reset solo solo1 hammer twin edges
 FABRIC_RTL_ref_fabric := verification/fabric/ref_fabric.sv
 FABRIC_BANKS_ref_fabric := 0
-# the most times one requester may be accepted ahead of a waiting one (UNFAIR); the
-# reference's rotation moves one requester a cycle (its worst in 144 runs: 14), which a real
-# round robin tightens
+FABRIC_RTL_aster_fabric := rtl/fabric/aster_fabric_bank.sv rtl/fabric/aster_fabric.sv
+FABRIC_BANKS_aster_fabric := 4
+FABRIC_OVERTAKE_aster_fabric := 12
+# the most times one requester may be accepted ahead of a waiting one (UNFAIR): the
+# reference's rotation moves one requester a cycle (its worst in 192 runs: 14); the banked
+# fabric's round robins (its worst in 328 runs, hammer mode included: 8; unfair arbiters
+# reach 24 to 212 in the hammer and edges modes)
 FABRIC_OVERTAKE_ref_fabric := 16
 FABRIC_RTL := rtl/aster_core/aster_core_pkg.sv $(FABRIC_RTL_$(FABRIC_DUT)) verification/fabric/shell_fabric.sv
 FABRIC_SRC := verification/fabric/tb_fabric.cpp verification/fabric/fabric_ref.h
@@ -2884,7 +2930,10 @@ $(FABRIC_DIR)/$(FABRIC_DUT)-w%: $(FABRIC_RTL) $(FABRIC_SRC) Makefile
 		-CFLAGS "-std=c++20 -I$(ROOT)/verification/fabric"
 	@touch $@
 
-fabric-tests: $(addprefix $(FABRIC_DIR)/$(FABRIC_DUT)-w,$(FABRIC_WAITS))
+FABRIC_DUTS ?= aster_fabric ref_fabric
+fabric-tests:
+	@for dut in $(FABRIC_DUTS); do $(MAKE) --no-print-directory fabric-tests-dut FABRIC_DUT=$$dut || exit 1; done
+fabric-tests-dut: $(addprefix $(FABRIC_DIR)/$(FABRIC_DUT)-w,$(FABRIC_WAITS))
 	@set -o pipefail; for wait in $(FABRIC_WAITS); do for mode in $(FABRIC_MODES); do \
 		for seed in $$(seq 1 $(FABRIC_SEEDS)); do \
 			log=$(FABRIC_DIR)/$(FABRIC_DUT)-w$$wait-$$mode-$$seed.log; \
@@ -2893,14 +2942,17 @@ fabric-tests: $(addprefix $(FABRIC_DIR)/$(FABRIC_DUT)-w,$(FABRIC_WAITS))
 				+mode=$$mode +require_coverage \
 				> $$log 2>&1 || { cat $$log; exit 1; }; \
 		done; \
-		echo "PASS: $(FABRIC_DUT) in the fabric shell, WAIT $$wait, $$mode: $(FABRIC_SEEDS) seeds x $(FABRIC_CYCLES) cycles, every answer, snoop and rule as the reference, the memory read back, every bin ($$(sed -n 's/.*coverage=\([0-9/]*\).*/\1/p' $$log)), longest wait $$(sed -n 's/.*max_wait=\([0-9]*\).*/\1/p' $$log), most overtakes $$(sed -n 's/.*max_overtake=\([0-9]*\).*/\1/p' $$log)"; \
+		what=$$([ $$mode = edges ] && echo "the scripted scenarios" || echo "$(FABRIC_SEEDS) seeds x $(FABRIC_CYCLES) cycles"); \
+		echo "PASS: $(FABRIC_DUT) in the fabric shell, WAIT $$wait, $$mode: $$what, every answer, snoop and rule as the reference, the memory read back, every bin ($$(sed -n 's/.*coverage=\([0-9/]*\).*/\1/p' $$log)), longest wait $$(cat $(FABRIC_DIR)/$(FABRIC_DUT)-w$$wait-$$mode-*.log | sed -n 's/.*max_wait=\([0-9]*\).*/\1/p' | sort -n | tail -1), most overtakes $$(cat $(FABRIC_DIR)/$(FABRIC_DUT)-w$$wait-$$mode-*.log | sed -n 's/.*max_overtake=\([0-9]*\).*/\1/p' | sort -n | tail -1) (worst over the seeds)"; \
 	done; done
 	@for test in 1:mix:STARVED 2:mix:SNOOP_MISMATCH 3:mix:ERROR_MISMATCH 4:solo:SOLO_SLOWED 5:mix:DATA_MISMATCH \
-		6:mix:SNOOP_MISMATCH 7:mix:ANSWER_TIMING 8:mix:SC_MISMATCH 9:hot:SNOOP_MISMATCH 10:mix:DATA_MISMATCH \
+		6:mix:SNOOP_MISMATCH 7:mix:ANSWER_TIMING 8:mix:SC_MISMATCH 9:hot:EVENT_MISMATCH 10:mix:DATA_MISMATCH \
 		11:mix:DATA_MISMATCH 12:mix:BANK_RULE; do \
 		n=$${test%%:*}; rest=$${test#*:}; mode=$${rest%%:*}; want=$${rest#*:}; \
-		banks=$$([ $$n = 12 ] && echo 4 || echo $(FABRIC_BANKS_$(FABRIC_DUT))); \
-		got=$$($(FABRIC_DIR)/$(FABRIC_DUT)-w0 +banks=$$banks +seed=1 +cycles=50000 +mode=$$mode +selftest=$$n 2>/dev/null \
+		banks=$(FABRIC_BANKS_$(FABRIC_DUT)); [ $$n = 12 ] && banks=$$([ $$banks = 0 ] && echo 4 || echo $$((banks / 2))); \
+		limit=$$([ $$n = 1 ] && echo 1000000 || echo $(FABRIC_OVERTAKE_$(FABRIC_DUT))); \
+		got=$$($(FABRIC_DIR)/$(FABRIC_DUT)-w0 +banks=$$banks +overtake_limit=$$limit +seed=1 +cycles=50000 +mode=$$mode \
+			+selftest=$$n 2>/dev/null \
 			| awk '{print $$2}'); \
 		[ "$$got" = "$$want" ] || { echo "FAIL: fabric shell self-test $$n reported $$got, expected $$want"; exit 1; }; \
 	done; echo "PASS: the fabric shell's 12 self-tests, each reported (starved, spurious and missed snoops, error bit, a lone hart slowed, data, answer timing, sc outcome, reservation, AMO, memory, the bank rule)"
@@ -2910,7 +2962,9 @@ fabric-tests: $(addprefix $(FABRIC_DIR)/$(FABRIC_DUT)-w,$(FABRIC_WAITS))
 # must be caught. Not in check (a few minutes); run at each fabric milestone.
 fabric-mutants:
 	@mkdir -p $(FABRIC_DIR)
-	@$(PYTHON) scripts/fabric_mutants.py --build-dir $(FABRIC_DIR)/mutants | tee $(FABRIC_DIR)/mutants.log | tail -1
+	@for dut in $(FABRIC_DUTS); do \
+		$(PYTHON) scripts/fabric_mutants.py --dut $$dut --build-dir $(FABRIC_DIR)/mutants > $(FABRIC_DIR)/mutants-$$dut.log \
+			|| { cat $(FABRIC_DIR)/mutants-$$dut.log; exit 1; }; tail -1 $(FABRIC_DIR)/mutants-$$dut.log; done
 
 # The memory checker (soc.md §10.2; verification/fabric/mem_checker.h, wired
 # into the two-hart SoC in 20.2) and its self-tests.

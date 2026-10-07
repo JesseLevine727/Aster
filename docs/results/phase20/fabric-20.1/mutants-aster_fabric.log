@@ -1,0 +1,43 @@
+CAUGHT: no_amo_hold (mix, seed 1, WAIT 0): AMO_RULE 19 D0 accepted in its AMO's write cycle
+CAUGHT: amo_hold_one_cycle (mix, seed 1, WAIT 0): AMO_RULE 19 D0 accepted in its AMO's write cycle
+CAUGHT: io_ignores_amo_hold (mix, seed 1, WAIT 0): AMO_RULE 19 D0 accepted in its AMO's write cycle
+CAUGHT: port_b_read_beside_write (mix, seed 1, WAIT 0): SAME_UNIT 6674 N's read and D1's write of unit 0x800044d8 in one cycle
+CAUGHT: writes_beside_amo (mix, seed 1, WAIT 0): AMO_RULE 14 W wrote in the bank of an AMO waiting for its write
+CAUGHT: port_a_beside_amo_write (mix, seed 1, WAIT 0): BANK_RULE 1631 3 accesses in bank 1
+CAUGHT: amo_unit_readable (mix, seed 1, WAIT 0): SAME_UNIT 54132 I1's read and D1's write of unit 0x8000a3f0 in one cycle
+CAUGHT: fixed_priority (hot, seed 2, WAIT 0): UNFAIR 79126 I0 accepted ahead of waiting R 13 times
+CAUGHT: npu_write_on_port_b (mix, seed 1, WAIT 0): BANK_RULE 59 2 writes in bank 2
+CAUGHT: answer_wrong_port (mix, seed 1, WAIT 0): DATA_MISMATCH 125 R answered 0x0, expected 0xd9000000000000 (accepted 123)
+CAUGHT: answer_wrong_half (mix, seed 1, WAIT 0): DATA_MISMATCH 203 I1 answered 0x0, expected 0x4bcf (accepted 201)
+CAUGHT: bank_index_aliased (mix, seed 1, WAIT 0): DATA_MISMATCH 151 D1 answered 0xb7f3, expected 0x0 (accepted 149)
+CAUGHT: amo_writes_wrong_half (mix, seed 1, WAIT 0): DATA_MISMATCH 277 I0 answered 0x67e33fa9, expected 0x0 (accepted 275)
+CAUGHT: amo_old_wrong_half (mix, seed 1, WAIT 0): DATA_MISMATCH 3827 D0 answered 0x4e008c00, expected 0x882bc9f (accepted 3825)
+CAUGHT: amo_wrong_op (mix, seed 1, WAIT 0): DATA_MISMATCH 313 I0 answered 0xbdf820f2, expected 0x0 (accepted 311)
+CAUGHT: byte_enables_ignored (mix, seed 1, WAIT 0): DATA_MISMATCH 125 R answered 0x37d9ac7837d9ac78, expected 0xd9000000000000 (accepted 123)
+CAUGHT: sc_without_reservation (mix, seed 1, WAIT 0): SNOOP_MISMATCH 160 D1 port 0: line 0x80004d90, expected none
+CAUGHT: sc_by_unit (hot, seed 1, WAIT 0): SNOOP_MISMATCH 233 D0 port 0: line 0x8000f680, expected none
+CAUGHT: sc_keeps_reservation (mix, seed 1, WAIT 0): SNOOP_MISMATCH 160 D1 port 0: line 0x80004d90, expected none
+CAUGHT: writes_never_end_reservations (mix, seed 1, WAIT 0): SNOOP_MISMATCH 6071 D0 port 0: line 0x800014f0, expected none
+CAUGHT: own_writes_end_reservation (hot, seed 1, WAIT 0): EVENT_MISMATCH 318 hart 1's reservation-ended event 1, expected 0
+CAUGHT: exception_keeps_reservation (reset, seed 1, WAIT 0): SNOOP_MISMATCH 381 D1 port 0: line 0x80012b00, expected none
+CAUGHT: reservation_event_lost (mix, seed 1, WAIT 0): EVENT_MISMATCH 6035 hart 1's reservation-ended event 0, expected 1
+CAUGHT: snoop_to_writer (mix, seed 1, WAIT 0): SNOOP_MISMATCH 2 D0 port 0: none, expected line 0x80010e60
+CAUGHT: snoop_wrong_port (mix, seed 1, WAIT 0): SNOOP_MISMATCH 1 D0 port 1: line 0x0, expected none
+CAUGHT: snoop_wrong_line (mix, seed 1, WAIT 0): SNOOP_MISMATCH 7 D0 port 1: line 0x80011590, expected line 0x800115d0
+CAUGHT: held_hart_accepted (reset, seed 1, WAIT 0): SNOOP_MISMATCH 1384 D0 port 0: line 0x800161b0, expected none
+CAUGHT: reset_keeps_answers (reset, seed 1, WAIT 0): ANSWER_TIMING 4405 D1 answered with nothing due (accepted -)
+CAUGHT: error_has_effect (errors, seed 1, WAIT 0): ERROR_MISMATCH 123 W error 0 in the cycle after acceptance, expected 1
+CAUGHT: memory_too_short (mix, seed 1, WAIT 0): ERROR_MISMATCH 16310 R error 1 in the cycle after acceptance, expected 0
+CAUGHT: two_io_a_cycle (mix, seed 1, WAIT 0): IO_MISMATCH 1598 two I/O accesses accepted in one cycle
+CAUGHT: sticky_winner (hammer, seed 1, WAIT 0): UNFAIR 32 D0 accepted ahead of waiting D1 13 times
+CAUGHT: port_b_fixed_priority (dense, seed 1, WAIT 0): UNFAIR 16168 I0 accepted ahead of waiting N 13 times
+CAUGHT: io_fixed_priority (edges, seed 1, WAIT 0): UNFAIR 2244 D0 taken on the I/O bus ahead of waiting D1 13 times
+CAUGHT: starvation_unmasked (edges, seed 1, WAIT 0): UNFAIR 1085 D1 accepted ahead of waiting I1 13 times
+CAUGHT: wait_stages_kept_on_reset (reset, seed 2, WAIT 2): ANSWER_TIMING 1356 I1 answered with nothing due (accepted -)
+CAUGHT: second_chance_beside_write (mix, seed 1, WAIT 0): SAME_UNIT 56010 D1's read and W's write of unit 0x8000fbf0 in one cycle
+CAUGHT: second_chance_for_lr (mix, seed 1, WAIT 0): SNOOP_MISMATCH 346 D0 port 0: none, expected line 0x80001750
+CAUGHT: second_chance_wrong_address (mix, seed 1, WAIT 0): DATA_MISMATCH 1379 D0 answered 0xc70000, expected 0x0 (accepted 1377)
+CAUGHT: second_chance_inverted_candidate (twin, seed 1, WAIT 0): TWIN_SERIAL 0 D0's and D1's loads to one bank, nothing else asking, not both taken
+CAUGHT: second_chance_off (twin, seed 1, WAIT 0): TWIN_SERIAL 0 D0's and D1's loads to one bank, nothing else asking, not both taken
+CAUGHT: second_chance_beside_port_b (mix, seed 1, WAIT 0): BANK_RULE 48 3 accesses in bank 1
+PASS: planted bugs in aster_fabric: 42 of 42 caught by the fabric shell

@@ -1,0 +1,1 @@
+PASS: the L1 data and instruction caches pass 200 random unit-test seeds each; the data cache with three snoop ports (20.1) too, snoops on two ports or more in one cycle and a refill snooped on each port in every seed

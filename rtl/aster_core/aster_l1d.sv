@@ -35,8 +35,10 @@
 // instruction cache waits for them after fence.i).
 //
 // Coherence (cpu.md §9): when another master writes cacheable memory, the
-// memory side presents the written line on snoop_valid/snoop_line, in the
-// order of the writes, no later than the first cycle anyone else can observe
+// memory side presents the written line on a snoop port (snoop_valid[p] /
+// snoop_line[p]; SNOOPS ports: 1 in the Phase 19 SoC, one per other writer —
+// 3 — on the Phase 20 fabric, soc.md §4.6, each with the contract below), in
+// the order of the writes, no later than the first cycle anyone else can observe
 // the write and no later than the cycle it accepts any request of this cache
 // that it orders after the write; a read it accepts after that cycle returns
 // the write or newer. The line is invalidated at the edge ending that cycle; a
@@ -53,7 +55,9 @@ module aster_l1d #(
     parameter logic [IO_WINDOWS*32-1:0] IO_BASE = '0,
     parameter logic [IO_WINDOWS*32-1:0] IO_MASK = '0,
     // Windows that take only word loads and word stores (bit i: window i).
-    parameter logic [IO_WINDOWS-1:0] IO_WORD_ONLY = '0
+    parameter logic [IO_WINDOWS-1:0] IO_WORD_ONLY = '0,
+    // Snoop ports (soc.md §4.6): any of them may carry a line in a cycle.
+    parameter int unsigned SNOOPS = 1
 ) (
     input  logic        clk,
     input  logic        rst_n,
@@ -78,8 +82,8 @@ module aster_l1d #(
     input  logic        m_rsp_valid,
     input  logic [31:0] m_rsp_rdata,
     input  logic        m_rsp_error,
-    input  logic        snoop_valid,
-    input  logic [31:4] snoop_line,
+    input  logic [SNOOPS-1:0]        snoop_valid,
+    input  logic [SNOOPS-1:0][31:4]  snoop_line,
     output logic        posted_pending,
     // verification: a lookup (a request entering stage 2) and its outcome
     output logic        chk_lookup,
@@ -132,7 +136,8 @@ module aster_l1d #(
     logic [1:0]  inflight;            // memory-side requests not yet answered
 
     logic s2_load, s2_error, s2_ready, s2_answer, s2_free, s1_move, replay_issue, lookup_hit;
-    logic refill_write, store_write, array_write, m_accept, m_mine, m_drop, snoop_s1, snoop_s2, snoop_hit;
+    logic refill_write, store_write, array_write, m_accept, m_mine, m_drop, snoop_s1, snoop_s2;
+    logic [SNOOPS-1:0] snoop_hit;
     logic install, amo_inval, refill_start;
     logic [255:0] valid_next;
     logic [31:0] rd_data;
@@ -142,7 +147,10 @@ module aster_l1d #(
     assign s1_error     = !s1_cacheable && !s1_io;
     assign s1_load      = s1_op == OP_LOAD;
     // A snoop of the request's own line in the cycle of its lookup: it misses.
-    assign snoop_s1     = snoop_valid && snoop_line == s1_addr[31:4];
+    always_comb begin
+        snoop_s1 = 1'b0;
+        for (int unsigned p = 0; p < SNOOPS; p++) if (snoop_valid[p] && snoop_line[p] == s1_addr[31:4]) snoop_s1 = 1'b1;
+    end
     assign lookup_hit   = s1_cacheable && valid[s1_addr[11:4]] && tag_ram[s1_addr[11:4]] == s1_addr[31:12]
                           && !snoop_s1;
     // The head's word when it moves: on the array's output in its first cycle
@@ -212,14 +220,19 @@ module aster_l1d #(
     // its line where it is held; sc and the AMOs invalidate theirs as they are
     // sent.
     assign refill_start = s1_move && s1_cacheable && s1_load && !lookup_hit;
-    assign snoop_s2  = snoop_valid && snoop_line == s2_addr[31:4];
+    always_comb begin
+        snoop_s2 = 1'b0;
+        for (int unsigned p = 0; p < SNOOPS; p++) begin
+            if (snoop_valid[p] && snoop_line[p] == s2_addr[31:4]) snoop_s2 = 1'b1;
+            snoop_hit[p] = snoop_valid[p] && valid[snoop_line[p][11:4]] && tag_ram[snoop_line[p][11:4]] == snoop_line[p][31:12];
+        end
+    end
     assign install   = refill_write && received == 3'd3 && !poisoned && !snoop_s2;
-    assign snoop_hit = snoop_valid && valid[snoop_line[11:4]] && tag_ram[snoop_line[11:4]] == snoop_line[31:12];
     assign amo_inval = state == ACCESS && !sent && m_accept && s2_cacheable
                        && s2_op != OP_STORE && s2_op != OP_LR && s2_op != OP_LOAD;
     always_comb begin
         valid_next = valid;
-        if (snoop_hit) valid_next[snoop_line[11:4]] = 1'b0;
+        for (int unsigned p = 0; p < SNOOPS; p++) if (snoop_hit[p]) valid_next[snoop_line[p][11:4]] = 1'b0;
         if (refill_start) valid_next[s1_addr[11:4]] = 1'b0;
         if (amo_inval) valid_next[s2_addr[11:4]] = 1'b0;
         if (install) valid_next[s2_addr[11:4]] = 1'b1;

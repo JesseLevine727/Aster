@@ -1,7 +1,8 @@
 # Phase 20: whole-SoC workload placement and concurrency
 
-Status: **milestone 20.0 (the fabric shell) complete, awaiting the owner's
-sign-off.** The owner's
+Status: **milestone 20.1 (the banked fabric) complete, awaiting the owner's
+sign-off and approval of soc.md §13's 20.1 arbitration change.** 20.0 (the
+fabric shell) was signed off by the owner on 7 October 2026. The owner's
 decisions are recorded below; the SoC specification, [`soc.md`](soc.md), was
 approved by the owner on 7 October 2026. The phase sits in the [v2 plan](phase17-plus.md#6-phase-17-sequence)
 after [Phase 19](phase19.md) (complete, 6 October 2026). As in Phases 18 and
@@ -247,6 +248,169 @@ they are now deterministic.
 The clarifications of soc.md this milestone found are recorded in soc.md §13
 ("Clarifications in 20.0").
 
+## Milestone 20.1: the banked fabric (7 October 2026)
+
+**Exit gate met** (soc.md §12: random and edge tests pass in every mode with
+every bin; planted bugs caught; the L1 tests pass; 10 ns out of context).
+`make fabric-tests fabric-mutants core-aster-l1-unit core-aster-l1-tests
+timing-fpga-fabric`. The arbitration below changes soc.md §4.4 and awaits the
+owner's approval (soc.md §13, 20.1).
+
+**The fabric** (`rtl/fabric/aster_fabric.sv`, `aster_fabric_bank.sv`) keeps
+the reference fabric's ports and contract.
+- **Banks:** four line-interleaved banks of 64-bit block RAM. Port A takes
+  the bank's write (or a read); port B only reads.
+- **Arbitration**, per port of each bank: a round robin over four
+  requesters, the two in parallel, each grant one LUT:
+  - port A: D0, D1, the DMA's W and the NPU's writes;
+  - port B: I0, I1, the DMA's R and the NPU's reads.
+- **Two rules:**
+  - a write on port A that holds back port B's read of its unit blocks
+    writes to that unit for a cycle (no starvation);
+  - a data cache's load may use an idle port B (the second chance).
+- **AMOs:** each bank computes its AMO's new value for both halves of the
+  unit, from registers loaded the cycle before.
+- **Reservations and snoops:** both come from each writer's grant and its
+  own request.
+- **The counters:** the event output `ev_resv_end`, a reservation ended by
+  another requester, on both fabrics, checked every cycle.
+
+**The data cache** (`aster_l1d`) gains `SNOOPS` snoop ports: 1, as before,
+in the Phase 19 SoC; 3 here.
+
+**Verification:**
+- **The fabric shell, on both fabrics** (`make fabric-tests`): 12 modes × WAIT
+  0, 1, 2, 4 × 4 seeds — 192 runs a fabric. The random modes run 500,000
+  cycles each.
+  - **The new random modes:**
+    - hammer: every requester on one bank at a time, on four units;
+    - twin: both data caches loading the same lines in step. It also checks
+      a performance rule of this design: both caches' loads to one bank,
+      with nothing else asking, are both taken (TWIN_SERIAL).
+  - **The directed modes:**
+    - edges, 15,000 cycles of scripted scenarios. Its seeds change only the
+      ghost requests and the garbage data, so it is effectively one run a
+      WAIT.
+  - **Results:** every check passes, with every bin that applies. The banked
+    fabric's 192 runs accept 173 million requests; its bins include every
+    pair of requesters conflicting, two accesses in a bank, a read beside a
+    write, and four banks written at once. The 12 self-tests are reported
+    on both fabrics:
+    - self-test 12 now reports a banked fabric with half its banks;
+    - self-test 9 is now caught a cycle earlier, by the reservation event.
+- **The edge scenarios**, 13 of them:
+  - all seven requesters on one bank, after a lone request moves that bank's
+    pointers;
+  - four banks written at once;
+  - one unit read and written together, by four pairs of kinds;
+  - a read of a unit that two harts and the DMA keep writing;
+  - both harts' AMOs on one word a cycle apart, with a write held and reads
+    of the word;
+  - a reservation ended by each kind of writer (another hart's store, sc and
+    AMO, the NPU, the DMA) and kept by a write beside it;
+  - lr with an exception, and lr before a reset;
+  - sc without a reservation;
+  - hart 1 reset with an AMO in flight;
+  - both harts' I/O at once, streaming, and behind an AMO;
+  - errors from four requesters at once;
+  - the NPU streaming beside a hart's stores.
+- **The banked fabric's waits:**
+  - longest wait 25 cycles, in hammer mode; the reference's is 64;
+  - at most 8 overtakes in 312 saved runs (the suite's 192, and 120 more
+    hammer runs at WAIT 0 and 2 in `build/fabric/hammer-extra`), so its
+    limit is 12;
+  - a lone hart waits only for its AMO's hold (2 cycles).
+- **Planted bugs** (`make fabric-mutants`; the battery adds the hammer and
+  twin modes and a WAIT 2 build for reset): 42 of 42 in the banked fabric,
+  each caught by a rule's report, and 31 of 31 in the reference. They
+  include:
+  - the starvation fix removed;
+  - a sticky winner;
+  - fixed priority on either port or on the I/O bus;
+  - the answer-delay stages kept across a reset;
+  - six bugs in the second chance: off, its candidate inverted, beside a
+    write, for lr, at a wrong address, beside port B's own pick. One mutant is recorded in the script as undetected: port
+  B's pointer moving past a pick port A held back. It costs that requester
+  its turn but stays within the fairness bound.
+- **The data cache with three snoop ports:**
+  - its unit test (`make core-aster-l1-unit`): three other masters, each on
+    its own port, 200 seeds × 1,000,000 cycles; in every seed, snoops on two
+    or more ports in one cycle and a refill snooped on each port;
+  - the core campaign (`scripts/mutation_campaign.py`): its anchor updated,
+    and three snoop-port bugs added, caught by a new three-port unit stage
+    (the rarest at seed 9).
+- **The CPU shell's L1 suites** (`make core-aster-l1-tests`) pass with the
+  modified cache at its single port.
+
+**Throughput** (the shell's random traffic, WAIT 0, accepted requests):
+
+| Traffic | Banked fabric against its first design | Against the serial reference |
+| --- | ---: | ---: |
+| mix | −4.0% | +8.6% |
+| dense | −9.4% | +5.0% |
+| twin (refills of shared lines) | equal; −16.4% without the second chance | equal |
+| hammer (one bank) | — | about half: a bank serves two accesses, the reference any number |
+
+**Timing at 10 ns, out of context** (`make timing-fpga-fabric`, Vivado
+2025.1; every input and output registered):
+
+| Block | Worst setup slack | LUTs | FFs | Block RAM tiles |
+| --- | ---: | ---: | ---: | ---: |
+| Fabric, with its banks | +0.384 ns | 3,622 | 1,578 | 32 |
+| Core and caches, three snoop ports | +0.456 ns | 5,968 | 2,542 | 34 |
+| Core and caches, one snoop port (for comparison) | +0.177 ns | 4,971 | 2,481 | 34 |
+
+The fabric's named paths:
+
+| Path | Slack |
+| --- | ---: |
+| request to readiness | +1.630 ns |
+| request to the banks (worst) | +0.384 ns |
+| an AMO through its bank | +0.565 ns |
+| request to the reservations | +0.639 ns |
+| request to the snoops | +1.623 ns |
+| bank to answer | +3.738 ns |
+
+**With the requesters' front ends** (`timing_fabric_fe.sv`: each request
+formed by logic shaped like its requester's, and each readiness feeding its
+requester's state). The data caches' front end is aster_l1d's valid, address
+and op selection, with acceptance advancing the refill count, enabling the
+posted-store register and clearing one of 256 valid bits; the NPU's is its
+loader-or-writer choice. Worst setup slack **+0.327 ns** (3,856 LUTs):
+
+| Path | Slack |
+| --- | ---: |
+| data cache to readiness | +1.135 ns |
+| data cache to the banks | +0.483 ns |
+| NPU to the banks | +0.779 ns |
+| data cache to the reservations | +0.570 ns |
+| readiness into the data cache's state (11 levels) | +0.674 ns |
+| readiness into the NPU's state | +4.876 ns |
+
+The SoC's placement, at about three quarters of the device, will take some of
+this margin; 20.2 measures it in context. A fallback for the request-to-bank
+path is prepared and recorded, not adopted, with the levers for the others
+(soc.md §13, 20.1).
+
+**How the design got here.**
+- **The first version** (any two compatible requests, the second chosen
+  after the first) passed the shell but missed 10 ns by **7.5 ns**: 18
+  logic levels from the arbiters through the banks' multiplexers into the
+  snoops and reservations.
+- **What closed it:**
+  - the per-port groups, with parallel one-LUT arbiters;
+  - snoops and reservations from each writer's grant;
+  - each bank's AMO arithmetic, from registers and for both halves at once.
+- **Found by the shell:** the I/O bus at first ignored an AMO's hold.
+- **Found by the review** of this milestone, and fixed:
+  - port B's read could starve while two writers kept writing its unit;
+  - the core campaign's anchor was stale, breaking `make check`;
+  - the groups cost more than the random traffic showed when both data
+    caches refill shared lines, which the second chance recovers;
+  - the fairness limit was not sensitive enough without hammer mode;
+  - mutants missing for the I/O bus, the answer-delay stages and the snoop
+    ports.
+
 ## Milestones and gates
 
 | Milestone | Scope | Exit |
@@ -262,8 +426,8 @@ The clarifications of soc.md this milestone found are recorded in soc.md §13
 
 - [x] The owner's decisions (7 October 2026)
 - [x] soc.md approved by the owner (7 October 2026)
-- [x] 20.0 as in the table above — exit gate met (7 October 2026), awaiting the owner's sign-off
-- [ ] 20.1 as in the table above
+- [x] 20.0 as in the table above — signed off by the owner (7 October 2026)
+- [x] 20.1 as in the table above — exit gate met (7 October 2026), awaiting the owner's sign-off
 - [ ] 20.2 as in the table above
 - [ ] 20.3 as in the table above
 - [ ] 20.4 as in the table above

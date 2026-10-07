@@ -621,3 +621,77 @@ refines this specification without changing its contract:
 - **§10.3, the litmus shapes:** 26. LRSC_PEER's forbidden outcome, an sc
   failing with no write to its word, is this design's contract (§4.5), not
   RVWMO's, which allows spurious failures.
+
+### Clarifications in 20.1 (the banked fabric)
+
+Found necessary while building and timing the fabric (phase20.md, Milestone
+20.1):
+
+**§4.4, arbitration — for the owner's approval.** Each port of each bank has
+its own round-robin arbiter over a fixed group of four requesters, the two
+arbiters working in parallel:
+- port A: the data caches (every operation), the DMA's writes (W) and the
+  NPU's writes;
+- port B: the instruction caches, the DMA's reads (R) and the NPU's reads.
+
+Two rules keep the bank and the contract whole:
+- **No starvation.** Port B's pick waits when port A's pick writes the same
+  8-byte unit. In the next cycle port A takes no write to that unit, so the
+  held-back read goes through and no requester waits forever. A first
+  version without this let a read wait indefinitely while two writers kept
+  writing its unit; the review found it.
+- **A second chance.** A data cache's load (a refill's read; lr, sc and the
+  AMOs stay on port A) that port A did not take may use port B, when no
+  port-B requester presents one for that bank. So the two harts' refills of
+  one bank proceed together.
+
+What it costs: two accesses that the bank rule would allow together now take
+turns when they belong to one group and no second chance applies. For
+example: a data-cache read beside a DMA or NPU write, or beside the other
+cache's write, in one bank while port B is busy; or an NPU or DMA read beside
+an instruction refill.
+- The lone-hart rule (§4.3) holds: a hart's data and instruction caches use
+  different ports.
+- Measured in the fabric shell's traffic, against the first design (any two
+  compatible requests, the second chosen after the first):
+  - random traffic: 4.0% fewer requests accepted (mix) to 9.4% fewer
+    (dense);
+  - both data caches refilling the same lines in step (the twin mode, two
+    harts' refills of shared data, as in a two-hart GEMM): as many as the
+    first design and the serial reference, where without the second chance
+    16.4% fewer;
+  - against the serial reference: 8.6% more in mix and 5.0% more in dense.
+    With every requester on one bank (the hammer mode), about half, since a
+    real bank serves two accesses a cycle and the reference any number.
+
+The reason is timing. The first design missed 10 ns by 7.5 ns; this one meets
+it with +0.384 ns out of context.
+
+**§4.4, the fairness limit:** 12 overtakes for the banked fabric. Its worst in
+312 saved runs, the hammer mode included, was 8; unfair arbiters (planted)
+reach 24–212 in the hammer and edges modes.
+
+**§2, area:** measured, the fabric is 3,622 LUTs, against ~3,000 estimated. A
+data cache's two extra snoop ports cost 997 LUTs, about 2,000 for both caches
+against ~1,200 estimated. So §2's total grows by about 1,400 LUTs, to about
+40,700 (77%): under 80%, with about 1,850 LUTs of room.
+
+**§10.6, timing in context — a prepared fallback, not adopted.** In the SoC
+each request crosses 1–2 more LUTs of its requester's logic before the
+arbiters, and readiness 2–3 more after (a harness with such front ends,
+`timing_fabric_fe.sv`, times them: phase20.md, 20.1). If 20.2's in-context
+build misses 10 ns on the request-to-bank path, the fallback is:
+- register the banks' address, data and enables after the arbiters;
+- read the block RAM without its output register.
+
+What it keeps: answers still come two cycles after acceptance (the
+bank-to-answer path has 3.7 ns of slack to absorb the slower read); every
+access lands in its bank one edge after acceptance, for all requesters
+alike, so the memory order is unchanged.
+
+What it costs: an AMO's write would land one edge later and its hold grow by
+a cycle. A lone hart's AMOs would then take a cycle more than in the CPU
+shell (§4.3), so the fallback would need the owner's decision. It helps only
+the request-to-bank path, not request to readiness or to the reservations;
+for those the levers are D_ON_B off (the twin traffic's 16% back) and the
+reservation-ended event registered a cycle later.

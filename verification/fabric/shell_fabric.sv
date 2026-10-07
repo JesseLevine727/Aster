@@ -8,7 +8,9 @@
 // DUT (STARVED); 2 a spurious snoop to D0 on port 2 in cycles 1000-1063
 // (SNOOP_MISMATCH: some of them carry no real one); 3 D0's error raised from cycle 1000 on (ERROR_MISMATCH);
 // 4 D0's requests hidden in cycles 1000-1031 (SOLO_SLOWED, with +solo); 12
-// the DUT reported as four banks (BANK_RULE, with +banks=4, on an unbanked DUT).
+// the DUT reported with other banks than it has — an unbanked DUT as four, a
+// banked one as half its banks, merging them (BANK_RULE, run with +banks= the
+// reported number).
 `timescale 1 ns / 1 ps
 `ifndef FABRIC_DUT
 `define FABRIC_DUT ref_fabric
@@ -67,12 +69,13 @@ module shell_fabric #(
     output logic [31:0] io_req_wdata,
     output logic [3:0]  io_req_be,
     input  logic [31:0] io_rsp_rdata,
+    output logic [1:0]  ev_resv_end,
     output logic [2:0]  chk_banks,
     output logic [3:0]  chk_wait
 );
     logic [2:0] banks_dut;
     assign chk_wait = 4'(WAIT);
-    assign chk_banks = selftest == 4'd12 ? 3'd4 : banks_dut;
+    assign chk_banks = selftest != 4'd12 ? banks_dut : banks_dut == 3'd0 ? 3'd4 : banks_dut >> 1;
     logic [31:0] cycle;
     always_ff @(posedge clk) cycle <= !rst_n ? '0 : cycle + 1;
     logic        hide_i1, hide_d0;
@@ -107,6 +110,6 @@ module shell_fabric #(
         .r_req_valid, .r_req_addr, .r_req_ready, .r_rsp_valid, .r_rsp_rdata, .r_rsp_error,
         .w_req_valid, .w_req_addr, .w_req_wdata, .w_req_be, .w_req_ready, .w_rsp_valid, .w_rsp_error,
         .io_req_valid, .io_req_hart, .io_req_op, .io_req_addr, .io_req_wdata, .io_req_be, .io_rsp_rdata,
-        .chk_banks(banks_dut)
+        .ev_resv_end, .chk_banks(banks_dut)
     );
 endmodule

@@ -12,7 +12,8 @@ the cheapest stage (the suites with the CPI check — without it on the cached
 core, whose misses the CPI model does not know — back-pressure, long stalls on
 the cached core, random programs, random interrupts, arch-test, and ACT4; then,
 for a cache's mutant, that cache's random unit test, make core-aster-l1-unit's
-seeds) and the first failing stage is reported; MISSED means none failed. A few are
+seeds — the data cache's also with three snoop ports, as on the Phase 20
+fabric, 20.1) and the first failing stage is reported; MISSED means none failed. A few are
 recorded as equivalent or unobservable (docs/phase18.md, 18.3).
 
     python3 scripts/mutation_campaign.py OUTDIR [NAME ...]   # all mutants, or those named
@@ -155,7 +156,14 @@ MUTANTS = {
  "l1d-io-store-posted": (D, "s2_post      <= s1_cacheable && s1_op == OP_STORE;", "s2_post      <= s1_op == OP_STORE;"),
  "l1d-posted-answers-not-dropped": (D, "posted   <= posted + (m_accept && state == ACCESS && s2_post ? 2'd1 : 2'd0) - (m_drop ? 2'd1 : 2'd0);", "posted   <= '0;"),
  "l1d-inflight-unlimited": (D, "assign m_req_valid  = inflight != 2'd2 && (", "assign m_req_valid  = ("),
- "l1d-snoop-not-invalidating": (D, "assign snoop_hit = snoop_valid &&", "assign snoop_hit = 1'b0 && snoop_valid &&"),
+ "l1d-snoop-not-invalidating": (D, "snoop_hit[p] = snoop_valid[p] &&", "snoop_hit[p] = 1'b0 && snoop_valid[p] &&"),
+ # the data cache's three snoop ports (20.1), seen only by the three-port unit test
+ "l1d-snoop-port0-only-invalidates": (D, "for (int unsigned p = 0; p < SNOOPS; p++) if (snoop_hit[p]) valid_next",
+                                      "for (int unsigned p = 0; p < 1; p++) if (snoop_hit[p]) valid_next"),
+ "l1d-snoop-refill-ignores-port2": (D, "if (snoop_valid[p] && snoop_line[p] == s2_addr[31:4]) snoop_s2 = 1'b1;",
+                                    "if (p != 2 && snoop_valid[p] && snoop_line[p] == s2_addr[31:4]) snoop_s2 = 1'b1;"),
+ "l1d-snoop-lookup-ignores-port1": (D, "if (snoop_valid[p] && snoop_line[p] == s1_addr[31:4]) snoop_s1 = 1'b1;",
+                                    "if (p != 1 && snoop_valid[p] && snoop_line[p] == s1_addr[31:4]) snoop_s1 = 1'b1;"),
  "l1d-snoop-no-bypass": (D, "                          && !snoop_s1;", "                          ;"),
  "l1d-refill-not-poisoned-by-snoop": (D, "if (snoop_s2) poisoned <= 1'b1;", ""),
  "l1d-refill-keeps-replaced-line": (D, "if (refill_start) valid_next[s1_addr[11:4]] = 1'b0;", ""),
@@ -209,20 +217,23 @@ def stages(l1: bool) -> list[tuple[str, list[str]]]:
 UNIT_SEEDS, UNIT_CYCLES = 200, 1_000_000     # make core-aster-l1-unit's
 
 
-def unit_build(which: str, work: Path) -> list[str]:
-    """The Verilator command for a cache's unit test (verification/core/l1) on the mutant's RTL."""
+def unit_build(which: str, work: Path, snoops: int = 1) -> list[str]:
+    """The Verilator command for a cache's unit test (verification/core/l1) on the mutant's RTL; the
+    data cache's with `snoops` snoop ports (unit, or unit3 for three)."""
     tests = ROOT / "verification/core/l1"
+    name = "unit" if snoops == 1 else f"unit{snoops}"
     if which == D:
         files = [RTL / FILES[P], L1_RAM, work / FILES[D], tests / "l1d_unit.sv", tests / "tb_l1d.cpp"]
         top, prefix = "l1d_unit", "Vl1d_unit"
     else:
         files = [L1_RAM, work / FILES[I], tests / "tb_l1i.cpp"]
         top, prefix = "aster_l1i", "Vaster_l1i"
-    return ["verilator", "--cc", "--exe", "--build", "-Wno-fatal", "--top-module", top, "--prefix", prefix,
-            "--Mdir", str(work / "unit_obj"), "-o", str(work / "unit"), *map(str, files)]
+    extra = [f"-GSNOOPS={snoops}", "-CFLAGS", f"-DL1D_SNOOPS={snoops}"] if snoops != 1 else []
+    return ["verilator", "--cc", "--exe", "--build", "-Wno-fatal", "--top-module", top, "--prefix", prefix, *extra,
+            "--Mdir", str(work / f"{name}_obj"), "-o", str(work / name), *map(str, files)]
 
 
-def verdict(sim: Path, work: Path, l1: bool, unit: Path | None = None) -> str:
+def verdict(sim: Path, work: Path, l1: bool, unit: Path | None = None, unit3: Path | None = None) -> str:
     base = [sys.executable, str(ROOT / "scripts/run_core_tests.py"), "--dut", "aster_l1" if l1 else "aster",
             "--sim", str(sim), "--spike", SPIKE]
     for label, extra in stages(l1):
@@ -237,11 +248,13 @@ def verdict(sim: Path, work: Path, l1: bool, unit: Path | None = None) -> str:
             first = next((line for line in run.stdout.splitlines() if line.startswith("FAIL")),
                          (run.stdout + run.stderr).strip()[-150:])
             return f"CAUGHT by {label}: {' '.join(first.split())[:170]}"
-    if unit is not None:
+    for label, test in (("l1 unit", unit), ("l1 unit, three snoop ports", unit3)):
+        if test is None:
+            continue
         for seed in range(1, UNIT_SEEDS + 1):
-            run = subprocess.run([str(unit), str(seed), str(UNIT_CYCLES)], capture_output=True, text=True, timeout=600)
+            run = subprocess.run([str(test), str(seed), str(UNIT_CYCLES)], capture_output=True, text=True, timeout=600)
             if run.returncode or not run.stdout.startswith("PASS"):
-                return f"CAUGHT by l1 unit: {' '.join((run.stdout + run.stderr).split())[:170]}"
+                return f"CAUGHT by {label}: {' '.join((run.stdout + run.stderr).split())[:170]}"
     return "MISSED"
 
 
@@ -266,15 +279,17 @@ def one(out: Path, original: dict[str, str], name: str) -> str:
         shutil.rmtree(work, ignore_errors=True)
         return f"{name}: BUILD FAILED {' '.join(build.stderr[-200:].split())}"
     shutil.rmtree(work / "obj", ignore_errors=True)        # the simulator is all that is needed
-    unit = None
+    unit = unit3 = None
     if which in (I, D):
-        build = subprocess.run(unit_build(which, work), capture_output=True, text=True)
-        if build.returncode:
-            shutil.rmtree(work, ignore_errors=True)
-            return f"{name}: BUILD FAILED (unit test) {' '.join(build.stderr[-200:].split())}"
+        for snoops in ((1, 3) if which == D else (1,)):
+            build = subprocess.run(unit_build(which, work, snoops), capture_output=True, text=True)
+            if build.returncode:
+                shutil.rmtree(work, ignore_errors=True)
+                return f"{name}: BUILD FAILED (unit test) {' '.join(build.stderr[-200:].split())}"
         unit = work / "unit"
+        unit3 = work / "unit3" if which == D else None
     try:
-        return f"{name}: {verdict(work / 'sim', work, l1, unit)}"
+        return f"{name}: {verdict(work / 'sim', work, l1, unit, unit3)}"
     finally:
         shutil.rmtree(work, ignore_errors=True)            # keep the disk free: the verdict is the record
 

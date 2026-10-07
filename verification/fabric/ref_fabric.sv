@@ -95,6 +95,7 @@ module ref_fabric #(
     output logic [31:0]           io_req_wdata,
     output logic [3:0]            io_req_be,
     input  logic [31:0]           io_rsp_rdata,
+    output logic [1:0]            ev_resv_end,          // a hart's reservation ended by another requester's write
     // verification
     output logic [2:0]            chk_banks             // 0: no banks (the bank rule is not this design's)
 );
@@ -240,6 +241,7 @@ module ref_fabric #(
         int          writer;                           // the requester whose write takes effect at this edge
         if (!rst_n) begin
             pipe_v <= '0; err_q <= '0; amo1 <= 1'b0; amo2 <= 1'b0; resv <= '0; snoop_valid <= '0; prio <= '0;
+            ev_resv_end <= '0;
         end else begin
             prio <= prio == 3'(NREQ - 1) ? 3'd0 : prio + 3'd1;
             // answers advance
@@ -324,6 +326,7 @@ module ref_fabric #(
                 automatic logic [29:0] word = lr_now ? d_req_addr[h][31:2] : resv_word[h];
                 automatic logic        keep = lr_now || resv[h];
                 if (mine && d_req_op[h] == OP_SC) keep = 1'b0;
+                ev_resv_end[h] <= keep && wrote && writer != (h == 0 ? D0 : D1) && touches(waddr[31:3], wbe, word);
                 if (wrote && writer != (h == 0 ? D0 : D1) && touches(waddr[31:3], wbe, word)) keep = 1'b0;
                 if (hart_exception[h] || !hart_rst_n[h]) keep = 1'b0;
                 resv[h] <= keep;

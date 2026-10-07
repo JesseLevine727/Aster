@@ -1,0 +1,4 @@
+l1d-snoop-not-invalidating: CAUGHT by suites: FAIL: coherence/remote_mp CACHE_MISMATCH cycles=392 retired=113 fetch_errors=0 interrupts=0 icache_hits=134 icache_misses=18 dcache_hits=11 dcache_misses=6; lockstep: sel
+l1d-snoop-port0-only-invalidates: CAUGHT by l1 unit, three snoop ports: FAIL seed 1 cyc 10980: remote load 8000305c rdata a36cd0fe older than its lookup (cycle 10979)
+l1d-snoop-refill-ignores-port2: CAUGHT by l1 unit, three snoop ports: FAIL seed 1 cyc 221878: remote load 80003014 rdata dd427bc3 older than its lookup (cycle 221877)
+l1d-snoop-lookup-ignores-port1: CAUGHT by l1 unit, three snoop ports: FAIL seed 9 cyc 539561: remote load 80003030 rdata 3b2f7da9 older than its lookup (cycle 539560)

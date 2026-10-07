@@ -17,17 +17,20 @@
 // their logic is timed; so are the data cache's snoops (another master's
 // writes) and the memory's readiness on each side (back-pressure), registered
 // here as a fabric would present them: the memory performs a request only when
-// ready.
+// ready. SNOOPS: the data cache's snoop ports (1; 3 on the Phase 20 fabric,
+// milestone 20.1).
 `timescale 1 ns / 1 ps
-module timing_aster_l1 (
+module timing_aster_l1 #(
+    parameter int unsigned SNOOPS = 1
+) (
     input  logic        clk,
     input  logic        rst_n,
     input  logic        meip,
     input  logic        mtip,
     input  logic        msip,
     input  logic [63:0] mtime,
-    input  logic        snoop_valid_in,
-    input  logic [31:4] snoop_line_in,
+    input  logic [SNOOPS-1:0]       snoop_valid_in,
+    input  logic [SNOOPS-1:0][31:4] snoop_line_in,
     input  logic [1:0]  mem_ready_in,      // the memory's readiness: [0] instruction side, [1] data
     output logic [31:0] observe            // keeps the data path observable
 );
@@ -41,11 +44,12 @@ module timing_aster_l1 (
     logic        c_d_req_valid, c_d_req_ready, c_d_rsp_valid, c_d_rsp_error;
     logic [3:0]  c_d_req_op, c_d_req_be;
     logic [31:0] c_d_req_addr, c_d_req_wdata, c_d_rsp_rdata;
-    logic        fencei_inval, posted_pending, snoop_valid;
-    logic [31:4] snoop_line;
+    logic        fencei_inval, posted_pending;
+    logic [SNOOPS-1:0]       snoop_valid;
+    logic [SNOOPS-1:0][31:4] snoop_line;
     logic        i_ready, d_ready;
     always_ff @(posedge clk) begin
-        snoop_valid <= rst_n && snoop_valid_in;
+        snoop_valid <= rst_n ? snoop_valid_in : '0;
         snoop_line  <= snoop_line_in;
         i_ready     <= mem_ready_in[0];
         d_ready     <= mem_ready_in[1];
@@ -99,7 +103,7 @@ module timing_aster_l1 (
         .m_rsp_valid(m_i_rsp_valid), .m_rsp_data(m_i_rsp_data), .m_rsp_error(1'b0),
         .chk_lookup(), .chk_lookup_addr(), .chk_lookup_hit()
     );
-    aster_l1d #(.IO_WINDOWS(1), .IO_BASE(32'h2000_0000), .IO_MASK(32'h0000_FFFF)) dcache (
+    aster_l1d #(.IO_WINDOWS(1), .IO_BASE(32'h2000_0000), .IO_MASK(32'h0000_FFFF), .SNOOPS(SNOOPS)) dcache (
         .clk, .rst_n, .cacheable_bytes(32'(WORDS * 4)),
         .d_req_valid(c_d_req_valid), .d_req_op(c_d_req_op), .d_req_addr(c_d_req_addr),
         .d_req_wdata(c_d_req_wdata), .d_req_be(c_d_req_be), .d_req_ready(c_d_req_ready),
