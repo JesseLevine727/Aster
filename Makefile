@@ -356,7 +356,7 @@ BENCH_CFLAGS := $(HELLO_CFLAGS) -DBENCHMARK_WORDS=$(BENCH_WORDS) \
 	-DBENCH_RANDOM=$(if $(filter walk_random,$(BENCH_WORKLOAD)),1,0)
 BENCH_LDFLAGS := -T software/boot/link.ld -Wl,--gc-sections -Wl,-Map,$(BENCH_FW_DIR)/benchmark.map
 
-.PHONY: all tools structure firmware smoke test directed hello bench cache fpga fpga-sim check clean help \
+.PHONY: all tools structure firmware smoke test directed hello bench cache fpga fpga-sim check clean help fabric-tests fabric-checker-tests litmus-tests fabric-mutants \
 	runtime memory-map traps phase1 phase1-matrix host-tests uart fpga-linux linux-sim counters retirement bench-config cache-random cache-matrix cache-boundaries phase4-soc-matrix
 .SECONDARY:
 
@@ -2084,7 +2084,7 @@ parallel-workloads:
 
 test: smoke phase1 hello bench cache uart fpga-sim linux-sim counters retirement npu-pe npu-array npu-engine npu-regs npu-driver npu-runtime npu-stop npu-bench-validate arbiter shared-fabric multicore-runtime parallel
 
-check: tools smoke phase1 hello bench cache uart fpga-sim linux-sim linux-dual-sim linux-coherent-sim counters retirement pcpi-probe dot8-unit npu-pe npu-array npu-engine npu-regs device-arbiter dma-counters l2-unit npu-driver npu-runtime npu-stop npu-bench-validate xe-bench-validate phase11-infer-validate workloads atomic-fabric atomic-runtime atomic-faults coherent-cache warm-stop coherent-counters coherent-soc timer-unit timer-firmware irq-unit timer-interrupt sram-unit sram-lint freeze-interfaces coherent-bench riscv-reference riscv-reference-negative coherent-litmus arbiter shared-fabric multicore-runtime multicore-adversarial parallel phase17-baseline-audit core-riscv-tests core-riscv-tests-stall core-arch-tests core-random-lockstep core-lockstep-selftest core-ports-tests core-kernels core-aster-fetch core-aster-tests core-aster-kernels core-aster-act4 core-aster-l1-unit core-aster-l1-tests core-aster-firmware core-performance-gate aster-board-sim npu-v1-tests npu-tests npu-options-tests npu-im2col-cost npu-soc-tests
+check: tools smoke phase1 hello bench cache uart fpga-sim linux-sim linux-dual-sim linux-coherent-sim counters retirement pcpi-probe dot8-unit npu-pe npu-array npu-engine npu-regs device-arbiter dma-counters l2-unit npu-driver npu-runtime npu-stop npu-bench-validate xe-bench-validate phase11-infer-validate workloads atomic-fabric atomic-runtime atomic-faults coherent-cache warm-stop coherent-counters coherent-soc timer-unit timer-firmware irq-unit timer-interrupt sram-unit sram-lint freeze-interfaces coherent-bench riscv-reference riscv-reference-negative coherent-litmus arbiter shared-fabric multicore-runtime multicore-adversarial parallel phase17-baseline-audit core-riscv-tests core-riscv-tests-stall core-arch-tests core-random-lockstep core-lockstep-selftest core-ports-tests core-kernels core-aster-fetch core-aster-tests core-aster-kernels core-aster-act4 core-aster-l1-unit core-aster-l1-tests core-aster-firmware core-performance-gate aster-board-sim npu-v1-tests npu-tests npu-options-tests npu-im2col-cost npu-soc-tests fabric-tests fabric-checker-tests litmus-tests
 
 # Phase 18 CPU shell: one CPU with a synchronous SRAM at 0x8000_0000 and an
 # RVFI trace for lockstep against Spike (docs/phase18.md).
@@ -2851,6 +2851,100 @@ timing-asic-picorv32:
 	$(PYTHON) scripts/run_asic.py --design core_picorv32 --to OpenROAD.STAPostPNR --run-tag p18-picorv32 -- --overwrite
 	@mkdir -p $(TIMING_DIR)/asic
 	@$(PYTHON) scripts/timing/sky130_summary.py asic/sky130/runs/p18-picorv32 --json $(TIMING_DIR)/asic/picorv32.json
+
+# Phase 20 fabric shell (milestone 20.0; docs/soc.md §10.1, verification/fabric):
+# a Phase 20 fabric driven by seven random requesters (I0, I1, D0, D1, N, R,
+# W), every answer, snoop and ordering rule checked against fabric_ref.h cycle
+# by cycle, the whole memory read back at the end. The DUT in 20.0 is the
+# serial reference fabric (FABRIC_DUT=ref_fabric); each answer latency (WAIT
+# 0, 1, 2, 4 cycles added) is its own build; every mode, FABRIC_SEEDS seeds of
+# FABRIC_CYCLES cycles, every coverage bin that applies (some bins are rare:
+# set for runs of 500,000 cycles; shorter runs can miss one, which shows as
+# COVERAGE, not as a failed check); then the shell's self-tests, each of which
+# must be reported.
+FABRIC_DIR := $(BUILD_DIR)/fabric
+FABRIC_DUT ?= ref_fabric
+FABRIC_SEEDS ?= 4
+FABRIC_CYCLES ?= 500000
+FABRIC_WAITS := 0 1 2 4
+FABRIC_MODES := mix hot stream dense sparse errors reset solo solo1
+FABRIC_RTL_ref_fabric := verification/fabric/ref_fabric.sv
+FABRIC_BANKS_ref_fabric := 0
+# the most times one requester may be accepted ahead of a waiting one (UNFAIR); the
+# reference's rotation moves one requester a cycle (its worst in 144 runs: 14), which a real
+# round robin tightens
+FABRIC_OVERTAKE_ref_fabric := 16
+FABRIC_RTL := rtl/aster_core/aster_core_pkg.sv $(FABRIC_RTL_$(FABRIC_DUT)) verification/fabric/shell_fabric.sv
+FABRIC_SRC := verification/fabric/tb_fabric.cpp verification/fabric/fabric_ref.h
+$(FABRIC_DIR)/$(FABRIC_DUT)-w%: $(FABRIC_RTL) $(FABRIC_SRC) Makefile
+	mkdir -p $(FABRIC_DIR)
+	$(VERILATOR) --cc --exe --build -O3 --assert --Wall --top-module shell_fabric --prefix Vfabric_shell \
+		--Mdir $(FABRIC_DIR)/$(FABRIC_DUT)-w$*_obj -o $(abspath $@) -GWAIT=$* -DFABRIC_DUT=$(FABRIC_DUT) \
+		$(addprefix $(ROOT)/,$(FABRIC_RTL)) $(ROOT)/verification/fabric/tb_fabric.cpp \
+		-CFLAGS "-std=c++20 -I$(ROOT)/verification/fabric"
+	@touch $@
+
+fabric-tests: $(addprefix $(FABRIC_DIR)/$(FABRIC_DUT)-w,$(FABRIC_WAITS))
+	@set -o pipefail; for wait in $(FABRIC_WAITS); do for mode in $(FABRIC_MODES); do \
+		for seed in $$(seq 1 $(FABRIC_SEEDS)); do \
+			log=$(FABRIC_DIR)/$(FABRIC_DUT)-w$$wait-$$mode-$$seed.log; \
+			$(FABRIC_DIR)/$(FABRIC_DUT)-w$$wait +banks=$(FABRIC_BANKS_$(FABRIC_DUT)) +overtake_limit=$(FABRIC_OVERTAKE_$(FABRIC_DUT)) \
+				+seed=$$seed +cycles=$(FABRIC_CYCLES) \
+				+mode=$$mode +require_coverage \
+				> $$log 2>&1 || { cat $$log; exit 1; }; \
+		done; \
+		echo "PASS: $(FABRIC_DUT) in the fabric shell, WAIT $$wait, $$mode: $(FABRIC_SEEDS) seeds x $(FABRIC_CYCLES) cycles, every answer, snoop and rule as the reference, the memory read back, every bin ($$(sed -n 's/.*coverage=\([0-9/]*\).*/\1/p' $$log)), longest wait $$(sed -n 's/.*max_wait=\([0-9]*\).*/\1/p' $$log), most overtakes $$(sed -n 's/.*max_overtake=\([0-9]*\).*/\1/p' $$log)"; \
+	done; done
+	@for test in 1:mix:STARVED 2:mix:SNOOP_MISMATCH 3:mix:ERROR_MISMATCH 4:solo:SOLO_SLOWED 5:mix:DATA_MISMATCH \
+		6:mix:SNOOP_MISMATCH 7:mix:ANSWER_TIMING 8:mix:SC_MISMATCH 9:hot:SNOOP_MISMATCH 10:mix:DATA_MISMATCH \
+		11:mix:DATA_MISMATCH 12:mix:BANK_RULE; do \
+		n=$${test%%:*}; rest=$${test#*:}; mode=$${rest%%:*}; want=$${rest#*:}; \
+		banks=$$([ $$n = 12 ] && echo 4 || echo $(FABRIC_BANKS_$(FABRIC_DUT))); \
+		got=$$($(FABRIC_DIR)/$(FABRIC_DUT)-w0 +banks=$$banks +seed=1 +cycles=50000 +mode=$$mode +selftest=$$n 2>/dev/null \
+			| awk '{print $$2}'); \
+		[ "$$got" = "$$want" ] || { echo "FAIL: fabric shell self-test $$n reported $$got, expected $$want"; exit 1; }; \
+	done; echo "PASS: the fabric shell's 12 self-tests, each reported (starved, spurious and missed snoops, error bit, a lone hart slowed, data, answer timing, sc outcome, reservation, AMO, memory, the bank rule)"
+
+# Planted bugs in the fabric (scripts/fabric_mutants.py): each mutant of the
+# DUT built into the fabric shell and run in a battery of modes; every one
+# must be caught. Not in check (a few minutes); run at each fabric milestone.
+fabric-mutants:
+	@mkdir -p $(FABRIC_DIR)
+	@$(PYTHON) scripts/fabric_mutants.py --build-dir $(FABRIC_DIR)/mutants | tee $(FABRIC_DIR)/mutants.log | tail -1
+
+# The memory checker (soc.md §10.2; verification/fabric/mem_checker.h, wired
+# into the two-hart SoC in 20.2) and its self-tests.
+fabric-checker-tests:
+	@mkdir -p $(FABRIC_DIR)
+	@$(CXX) -O2 -std=c++20 -Wall -Wextra -Werror -I$(ROOT)/verification/fabric $(ROOT)/verification/fabric/mem_checker_test.cpp \
+		-o $(FABRIC_DIR)/mem_checker_test && $(FABRIC_DIR)/mem_checker_test
+
+# Phase 20 litmus harness (milestone 20.0; soc.md §10.3): software/tests/
+# litmus_v2.c, 26 two-hart shapes, LITMUS_TRIALS trials each; the counts
+# dumped as Spike's signature and classified by scripts/litmus.py, which fails
+# on any outcome RVWMO forbids. In 20.0 it runs on Spike with two harts (whose
+# 5,000-instruction interleaving gives sequential outcomes only: a check of
+# the program and the harness); the RTL runs come with the two-hart SoC
+# (20.2). Then the classifier's self-tests.
+LITMUS_DIR := $(BUILD_DIR)/litmus
+LITMUS_TRIALS ?= 2000
+LITMUS_CFLAGS = $(filter-out -march=%,$(HELLO_CFLAGS)) -march=rv32ima_zicsr_zifencei -DASTER_CORE
+LITMUS_SRC := software/runtime/start_multicore_aster.S software/runtime/aster_trap.S verification/core/firmware/exit.c \
+	software/tests/litmus_v2.c
+$(LITMUS_DIR)/litmus_v2.elf: $(LITMUS_SRC) verification/core/firmware/link_multicore.ld software/runtime/aster.h Makefile
+	@mkdir -p $(LITMUS_DIR)
+	$(RISCV_PREFIX)gcc $(LITMUS_CFLAGS) -DLITMUS_TRIALS=$(LITMUS_TRIALS) -Tverification/core/firmware/link_multicore.ld \
+		-Wl,--no-warn-rwx-segments -o $@ $(LITMUS_SRC)
+
+litmus-tests: $(LITMUS_DIR)/litmus_v2.elf
+	@rm -f $(LITMUS_DIR)/spike.sig
+	@$(SPIKE) --isa=rv32ima_zicsr_zifencei --priv=m --pmpregions=0 --triggers=0 --wfi-as-nop -p2 \
+		-m0x80000000:0x18000,0x20000000:0x10000 +signature=$(LITMUS_DIR)/spike.sig +signature-granularity=4 \
+		$(LITMUS_DIR)/litmus_v2.elf || { echo "FAIL: the litmus program did not end on Spike"; exit 1; }
+	@$(PYTHON) scripts/litmus.py --signature $(LITMUS_DIR)/spike.sig --trials $(LITMUS_TRIALS) --platform spike \
+		> $(LITMUS_DIR)/spike.log || { cat $(LITMUS_DIR)/spike.log; exit 1; }
+	@echo "PASS: the litmus program on Spike with two harts: 26 shapes x $(LITMUS_TRIALS) trials, nothing forbidden ($(LITMUS_DIR)/spike.log)"
+	@$(PYTHON) scripts/litmus.py --selftest
 
 # Print a make variable (used by scripts/phase17_baseline.py to find firmware images).
 print-%:

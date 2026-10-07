@@ -859,3 +859,15 @@ Changes after approval, by the owner:
   `start_multicore.S` and the interrupt handlers, to `mtvec`/`mret` (§3) — to
   the Aster core, and its firmware regression runs v1 firmware on the core
   with its caches.
+- **7 October 2026 — Phase 20's fabric (§5, §9's snoop contract):** with
+  soc.md, the owner approved two refinements for the banked fabric. First, a
+  reservation is ended by another requester's write to any byte of its word,
+  by every `sc`, by an exception and by reset, but not by the hart's own
+  store: Spike's rule, which the shell and the Phase 19 SoC keep. This
+  documents, rather than keeps, v1's own-store rule, as 18.6 did. Second,
+  writes by two caches accepted at the same edge, in different banks, are
+  ordered either way. Whichever cache's write is ordered second receives the
+  other's snoop a cycle after its own write's acceptance, which the letter of
+  the contract above would forbid. It is safe: that write reads nothing, and
+  the cache's next lookup comes no earlier than the next cycle, when the snoop
+  has arrived (soc.md §4.6).

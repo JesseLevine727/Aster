@@ -1,0 +1,1 @@
+PASS: the memory checker's self-tests: 6 correct streams accepted, 6 planted faults rejected (stale value, value never written, out of turn, never performed, wrong byte, wrong device value)

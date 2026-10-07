@@ -1,6 +1,6 @@
 # The Aster SoC, v2: specification
 
-Status: **draft for the owner's approval, 7 October 2026.** This is the
+Status: **approved by the owner, 7 October 2026.** This is the
 Phase 20 contract, as [`cpu.md`](cpu.md) is Phase 18's and [`npu.md`](npu.md)
 Phase 19's: the design, its programming interface, how it is verified and the
 gates it must pass. The phase plan is [`phase20.md`](phase20.md); the targets
@@ -211,9 +211,8 @@ cpu.md §9's contract, for each port:
   receives the first one's snoop a cycle after its own write's acceptance.
   That is safe: its write reads nothing, and its next lookup comes no earlier
   than the next cycle, when the snoop has arrived, because the accepted
-  request holds the cache's head through that edge. **For approval:** this
-  refines cpu.md §9's wording for same-edge writes; it is recorded there as
-  a clarification once approved.
+  request holds the cache's head through that edge. This refines cpu.md §9's
+  wording for same-edge writes (approved, recorded there, 7 October 2026).
 
 The data cache's RTL gains a parameter for its number of snoop ports: 1 in
 the Phase 19 SoC, 3 here.
@@ -568,11 +567,57 @@ phase20.md):
 - the multicore GEMM: npu.md §7's cases with DOT8;
 - a new 64-bit DMA behind v1's registers.
 
-**For approval:** this specification, including two points that depart from
-the letter of earlier documents:
+**Approved by the owner, 7 October 2026:** this specification, as reviewed,
+including two points that depart from the letter of earlier documents:
 - §4.6's argument for writes accepted at the same edge, which refines cpu.md
   §9's snoop wording;
 - §9's window for the parallel reduction. Hart 1 is released and ready
   before the window opens, whereas v1's reduction releases it inside its
   window. This favours the scaling gate, and it is set now, before
   measurement. v1's version keeps v1's window.
+
+Changes found necessary during the phase are recorded here as clarifications
+or owner decisions, as npu.md §9 records Phase 19's.
+
+### Clarifications in 20.0 (the fabric shell)
+
+Found necessary while building the shell (phase20.md, Milestone 20.0). Each
+refines this specification without changing its contract:
+- **§4.5, a reservation and an lr in one cycle:** a write ends only the
+  reservation on the word it touches. An lr in that cycle reserves its own
+  word, which the write cannot touch (the unit rule). An exception or a
+  reset in an lr's cycle wins over the lr.
+- **§4.3, a lone hart's exception:** it covers a store, any sc (whatever its
+  outcome) and an AMO, at its acceptance as well as its write, on the unit an
+  instruction refill reads in the same cycle.
+- **§4.3, accesses outside main memory:** the fabric shell tests the error
+  path (its errors mode). In the SoC the caches, the NPU and the DMA never
+  send one, which the SoC's simulation asserts.
+- **§4.3 and §4.5, timing:** an error bit comes only in the cycle after
+  acceptance, with the answer at the usual time. WAIT delays every answer,
+  the I/O bus's included, but not the error bit. A data cache whose AMO is
+  accepted in cycle c has nothing else accepted in c+1 and c+2, as in
+  Phase 19.
+- **§4.1, the I/O bus:** one access a cycle, always taken, and answered in
+  the next cycle without an error (the data caches filter what reaches it).
+  It carries the hart's number.
+- **§4.5, an AMO's hold:** "until that write" includes the write's cycle:
+  neither its data cache's next request nor another AMO in its bank is
+  accepted then.
+- **§4.6, one write a writer:** each writer, its AMOs' writes included, makes
+  at most one write a cycle, since each snoop port carries one line a cycle.
+- **§4.4, fairness, as checked:** no requester is accepted ahead of a waiting
+  one, in its bank, more than a limit set for each fabric. The limit is 16
+  for the reference fabric, whose rotation moves one requester a cycle (its
+  worst in 144 runs: 14); 20.1 sets the banked fabric's from its round robin.
+- **§4.1, the ARM side and the counters:** the ARM side has no port of its
+  own. While the harts are held, the SoC (20.2) presents its accesses on D0's
+  port with the fabric out of reset and hart 0's `hart_rst_n` high; the cores
+  and their caches are held by their own resets. The fabric counters of §8
+  come out of 20.1's fabric as event outputs; the reference fabric has none.
+- **§6, the DMA's error bit:** the engine reads its ports' error bit only
+  in the cycle after an acceptance, as the NPU does (cpu.md §5 gives the bit
+  no meaning in other cycles, and the fabric shell checks it only there).
+- **§10.3, the litmus shapes:** 26. LRSC_PEER's forbidden outcome, an sc
+  failing with no write to its word, is this design's contract (§4.5), not
+  RVWMO's, which allows spurious failures.

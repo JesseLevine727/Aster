@@ -1,0 +1,26 @@
+PASS: litmus MP, 2000 trials, nothing forbidden: r1: y=1 x=1: 2000
+PASS: litmus MP_F, 2000 trials, nothing forbidden: r1: y=1 x=1: 2000
+PASS: litmus SB, 2000 trials, nothing forbidden: r0=0 r1=1: 2000
+PASS: litmus SB_F, 2000 trials, nothing forbidden: r0=0 r1=1: 2000
+PASS: litmus LB, 2000 trials, nothing forbidden: r0=0 r1=1: 2000
+PASS: litmus LB_F, 2000 trials, nothing forbidden: r0=0 r1=1: 2000
+PASS: litmus S_F, 2000 trials, nothing forbidden: r1: y=1, x=1: 2000
+PASS: litmus R_F, 2000 trials, nothing forbidden: r1: x=1, y=2: 2000
+PASS: litmus W22_F, 2000 trials, nothing forbidden: x=2 y=1: 2000
+PASS: litmus CORR, 2000 trials, nothing forbidden: r1 reads x=1 then 1: 2000
+PASS: litmus COWR, 2000 trials, nothing forbidden: r0=1, x=2: 2000
+PASS: litmus CORW, 2000 trials, nothing forbidden: r0=0, x=2: 2000
+PASS: litmus COWW, 2000 trials, nothing forbidden: r1 reads x=2 then x=2: 2000
+PASS: litmus LRSC, 2000 trials, nothing forbidden: every lr/sc increment present: 2000
+PASS: litmus LRSC_PEER, 2000 trials, nothing forbidden: no sc failure, every increment present: 2000
+PASS: litmus AMO, 2000 trials, nothing forbidden: every amoadd present: 2000
+PASS: litmus PUB, 2000 trials, nothing forbidden: the payload seen whole after the flag: 2000
+PASS: litmus S, 2000 trials, nothing forbidden: r1: y=1, x=1: 2000
+PASS: litmus R, 2000 trials, nothing forbidden: r1: x=1, y=2: 2000
+PASS: litmus W22, 2000 trials, nothing forbidden: x=2 y=1: 2000
+PASS: litmus SB_SC, 2000 trials, nothing forbidden: r0=0 r1=1: 2000
+PASS: litmus LB_SC, 2000 trials, nothing forbidden: r0=0 r1=1: 2000
+PASS: litmus SB_SC_SAME, 2000 trials, nothing forbidden: r0=0 r1=1: 2000
+PASS: litmus LB_SC_SAME, 2000 trials, nothing forbidden: r0=0 r1=1: 2000
+PASS: litmus MP_F_SAME, 2000 trials, nothing forbidden: r1: y=1 x=1: 2000
+PASS: litmus SB_F_SAME, 2000 trials, nothing forbidden: r0=0 r1=1: 2000
