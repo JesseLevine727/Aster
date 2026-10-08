@@ -58,7 +58,8 @@ def v12_cpp_verdicts(records: list[str], out: Path) -> list[bool]:
         subprocess.run(["g++", "-std=c++17", "-O1", "-o", str(cli), str(source)], check=True)
     payload = "".join(f"{len(r.encode())}\n{r}" for r in records).encode()
     result = subprocess.run([str(cli)], input=payload, capture_output=True, check=True)
-    return [v == "PASS" for v in result.stdout.decode().split()]
+    verdicts = [v == "PASS" for v in result.stdout.decode().split()]
+    return verdicts if len(verdicts) == len(records) else [False] * len(records)
 
 
 def build(name: str, sources: list[str], defines: list[str], out: Path, cflags: str, prefix: str) -> tuple[Path, dict]:

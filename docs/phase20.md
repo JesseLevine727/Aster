@@ -1137,16 +1137,20 @@ cache state for each of the six kernels, plus one hart.
 | Conv2D | 1,109,067 | 1,111,066 | 1,588,381 | 2,228,542 | 5,820,652 | 5.25× |
 
 - **One hart** gives the same cycles as two, since hart 1 is idle.
-- **The cold column** is 18.7's within a few cycles: CoreMark 466,607 against 466,606, strided 2,732 against
-  2,722. The window is now exactly v1's.
-- **The review's measurement:** the first run's window held about 80 cycles of the harness's own work on
-  strided (3%), until the shadow's START and FREEZE became v1's inline stores.
+- **Against 18.7's figures** (measured with the CPU shell's testbench window and layout):
+  - within a few cycles: CoreMark 466,607 against 466,606 (+1), sort/search +6, strided +10, Conv2D −55;
+  - further off: Dhrystone +1,993 and FFT −1,071. The matrix's layout differs from 18.7's; the cause is not
+    investigated further.
+- **The review's measurement:** the first run's window held the harness's own calls on the kernels that use
+  aster_perf_clear (about 80 cycles of strided's 2,498), until the shadow's START and FREEZE became v1's inline
+  stores. The second run also moved to the matrix's layout, so its other changes are the layout's too
+  (CoreMark warm +368).
 
 **Two fixes to 20.3's DMA program,** whose checks rested on coincidences
 that a slower build broke:
 - **The RESUMEs** are now a burst at the job's start, 0 to 3 `nop`s apart
   in turn, so their phase sweeps every offset against the reads. They drop
-  7 to 21 reads on every build.
+  7 to 22 reads on every build.
 - **The NPU's overlap** is now both engines' busy flags sampled at one instant: right after the DMA's submit,
   and while it runs (check 71). It is no longer required to outlast the job. Under contention the RESUMEs'
   I/O stores take long enough that the job can end before polling begins, so a sample taken only while

@@ -448,12 +448,17 @@ def source_tree_hash() -> dict:
     """The tree the run was made from: its commit, and what differs from it (untracked files included)."""
     revision = subprocess.run(["git", "rev-parse", "HEAD"], cwd=ROOT, capture_output=True, text=True).stdout.strip()
     status = subprocess.run(["git", "status", "--porcelain"], cwd=ROOT, capture_output=True, text=True).stdout
+    # (scripts/sram/ is untracked and not this work's: left out)
     changed = [line[3:] for line in status.splitlines() if not line[3:].startswith("scripts/sram")]
     return dict(revision=revision, dirty=bool(changed), changed=changed[:200])
 
 
 def toolchain(prefix: str) -> dict:
-    first = lambda command: subprocess.run(command, capture_output=True, text=True).stdout.splitlines()[:1]
+    def first(command):
+        try:
+            return subprocess.run(command, capture_output=True, text=True).stdout.splitlines()[:1]
+        except OSError as error:
+            return [f"(unavailable: {error})"]
     return dict(gcc=first([tool(prefix, "gcc"), "--version"]), verilator=first(["verilator", "--version"]),
                 python=sys.version.split()[0])
 
@@ -499,7 +504,11 @@ def main() -> int:
     # the C++ validator over every captured record, in one call
     captured = [r for r in results if r["status"] == "captured"]
     all_lines = [line for r in captured for line in r["lines"]]
-    verdicts = cpp_verdicts(all_lines, out) if all_lines else []
+    try:
+        verdicts = cpp_verdicts(all_lines, out) if all_lines else []
+    except Exception as error:                                  # (recorded: every captured entry fails)
+        verdicts = [False] * len(all_lines)
+        print(f"the C++ validator could not run: {type(error).__name__}: {error}", flush=True)
     k = 0
     for r in captured:
         n = len(r["lines"])
@@ -520,10 +529,14 @@ def main() -> int:
         differ = []
         with concurrent.futures.ThreadPoolExecutor(args.jobs) as pool:
             for r, rr in pool.map(again, sample):
-                if rr.get("lines") != r["lines"]:
+                if rr.get("status") != "captured":
                     differ.append(r["id"])
                     r["status"] = "failed"
-                    r["failure"] = "not deterministic: a second run's records differ"
+                    r["failure"] = f"its second run failed: {rr.get('failure', '')}"[-1500:]
+                elif rr.get("lines") != r["lines"] or rr.get("firmware_sha256") != r.get("firmware_sha256"):
+                    differ.append(r["id"])
+                    r["status"] = "failed"
+                    r["failure"] = "not deterministic: a second run's firmware or records differ"
         determinism = dict(checked=len(sample), identical=len(sample) - len(differ), differ=differ)
     for r in results:
         r.pop("lines", None)

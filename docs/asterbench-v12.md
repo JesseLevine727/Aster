@@ -176,13 +176,29 @@ emitter write `status=FAIL`.
 **Bounds the validators also enforce**, each true of a correct run:
 - a cold record is an end-to-end window (matrix.md §4);
 - each hart's sc successes plus failures are at most its A instructions;
-- every hart, DMA, NPU and fabric count is at most the window's cycles,
-  except:
-  - backing transactions and bank reads, at most twice the window's cycles;
-  - NPU job cycles, at most the window's cycles;
-- the DMA's answers are at most its acceptances;
-- its bytes are at most 8 per write;
+- at most the window's cycles: each present hart's retired instructions,
+  memory transactions and cache accesses; its DOT8 counts; its work
+  interval's end; the DMA's busy cycles; the NPU's job cycles; each
+  requester's acceptances and waits; each bank's writes and conflicts; the
+  fabric's reservations ended and its AMOs;
+- at most twice the window's cycles: each present hart's backing
+  transactions, and each bank's reads;
+- the DMA's answers are at most its acceptances, and its bytes at most 8 a
+  write;
+- the NPU's active cycles are at most its job cycles, and its MACs at most
+  its active cycles × its array;
 - a longest wait is at most 65,535 (it saturates).
+
+No other count is checked against the window's cycles. Some can exceed it in
+a correct run: the NPU's bytes and MACs, the DMA's bytes, its waits (two
+ports, so up to twice the window), and snoops. Others cannot, but are not
+checked: each hart's AMOs and invalidations, and the DMA's and the NPU's job
+counts and tiles.
+
+**A note on CoreMark and Dhrystone:** in the matrix their window is opened by
+their own START (v1's code, unchanged), without v12's set-up (the NPU's
+totals cleared, the NPU idle). That is harmless for CPU kernels, which run
+no NPU job.
 
 ## The validators and the corpus
 
