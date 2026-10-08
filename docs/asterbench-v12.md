@@ -81,12 +81,14 @@ Then:
 | `dma_aborted_jobs` | 11 |
 | `dma_error_jobs` | 12 |
 | `dma_rejected` | 13, rejected commands |
+| `dma_bytes` | 4, payload bytes |
 | `dma_busy_cycles` | 0 |
 | `dma_wait_cycles` | 1, offered but not accepted, both ports |
 | `dma_reads`, `dma_writes` | 2 and 3, answers |
-| `dma_bytes` | 4, payload bytes |
 | `dma_backing_reads`, `dma_backing_writes` | 5 and 6, acceptances |
 | `dma_invalidations` | 9 |
+
+(The table is in the emitter's order.)
 
 Indices 7 and 8 read 0 and are left out.
 
@@ -166,7 +168,21 @@ the record reconcile with itself, which soc.md §11's totals gate needs.
   and a failed sc each count as one bank write at their acceptance.
 
 **A passing record** has every output check passed, every DMA and NPU job
-completed, and none rejected unless the case is about rejection.
+completed (its requests all answered), and no command rejected. No matrix
+case is about rejection; 20.3's DMA program tests rejection, outside the
+matrix. A DMA or NPU job still running at the window's FREEZE makes the
+emitter write `status=FAIL`.
+
+**Bounds the validators also enforce**, each true of a correct run:
+- a cold record is an end-to-end window (matrix.md §4);
+- each hart's sc successes plus failures are at most its A instructions;
+- every hart, DMA, NPU and fabric count is at most the window's cycles,
+  except:
+  - backing transactions and bank reads, at most twice the window's cycles;
+  - NPU job cycles, at most the window's cycles;
+- the DMA's answers are at most its acceptances;
+- its bytes are at most 8 per write;
+- a longest wait is at most 65,535 (it saturates).
 
 ## The validators and the corpus
 

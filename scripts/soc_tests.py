@@ -40,11 +40,25 @@ import sys
 ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT / "scripts"))
 import lockstep  # noqa: E402
+import asterbench_v12  # noqa: E402
+import soc_variants  # noqa: E402
 
 RUNTIME = ["software/runtime/start_multicore_aster.S", "software/runtime/aster_trap.S",
            "verification/core/firmware/exit.c"]
 LINK = "verification/core/firmware/link_multicore.ld"
 SIMS = ("soc_dev", "soc_dev_w3")
+
+
+def v12_cpp_verdicts(records: list[str], out: Path) -> list[bool]:
+    """The C++ validator's verdict on each v12 record (verification/common/asterbench_v12_record.h)."""
+    cli = out / "asterbench_v12_cli"
+    source = ROOT / "verification/host/asterbench_v12_parser_cli.cpp"
+    if not cli.exists() or cli.stat().st_mtime < max(source.stat().st_mtime,
+                                                     (ROOT / "verification/common/asterbench_v12_record.h").stat().st_mtime):
+        subprocess.run(["g++", "-std=c++17", "-O1", "-o", str(cli), str(source)], check=True)
+    payload = "".join(f"{len(r.encode())}\n{r}" for r in records).encode()
+    result = subprocess.run([str(cli)], input=payload, capture_output=True, check=True)
+    return [v == "PASS" for v in result.stdout.decode().split()]
 
 
 def build(name: str, sources: list[str], defines: list[str], out: Path, cflags: str, prefix: str) -> tuple[Path, dict]:
@@ -118,6 +132,7 @@ def main() -> int:
     parser.add_argument("--build-dir", type=Path, required=True)
     parser.add_argument("--cflags", required=True)
     parser.add_argument("--only")
+    parser.add_argument("--sims", default=",".join(SIMS), help="the device builds to run on (comma-separated)")
     parser.add_argument("--trials", type=int, default=2000, help="litmus trials a shape")
     parser.add_argument("--reset-seeds", type=int, default=4)
     args = parser.parse_args()
@@ -132,11 +147,13 @@ def main() -> int:
     def wanted(name: str) -> bool:
         return not args.only or args.only == name
 
-    for sim_name in SIMS:
+    for sim_name in args.sims.split(","):
         sim = args.sim_dir / sim_name
         out = args.build_dir / sim_name
         where = f"on {sim_name}"
-        if wanted("litmus"):
+        # (a one-hart build runs only the one-hart program: the others wait for hart 1)
+        one_hart = soc_variants.VARIANTS.get(sim_name, {}).get("HARTS", 2) == 1
+        if wanted("litmus") and not one_hart:
             elf, symbols = build("litmus", ["software/tests/litmus_v2.c"], [f"-DLITMUS_TRIALS={args.trials}"], out,
                                  args.cflags, prefix)
             sig = elf.with_suffix(f".{sim_name}.sig")
@@ -154,7 +171,7 @@ def main() -> int:
                        f"loads checked {fields.get('loads')}, sc {fields.get('sc')} ({fields.get('sc_failed')} failed), "
                        f"AMOs {fields.get('amos')}, snoops {fields.get('snoops')}; at 200 trials {note200}"
                        + ("" if ok else f"; {fields} {fields200}"))
-        if wanted("reset"):
+        if wanted("reset") and not one_hart:
             totals = {k: 0 for k in ("resets", "resets_owed", "resets_amo", "resets_refill", "resets_resv",
                                      "releases_early", "loads", "sc", "amos")}
             ok = True
@@ -177,7 +194,7 @@ def main() -> int:
                                    f"reservation {totals['resets_resv']}; released with answers due "
                                    f"{totals['releases_early']}), {totals['loads']} loads checked, {totals['sc']} sc, "
                                    f"{totals['amos']} AMOs; seed 1 {reset_note}" + ("" if covered else "; a coverage bin is empty"))
-        if wanted("smp"):
+        if wanted("smp") and not one_hart:
             elf, symbols = build("smp_runtime", ["software/runtime/aster_smp.c", "software/tests/smp_runtime.c"], [], out,
                                  args.cflags, prefix)
             fields, console, note = traced(sim, elf, symbols, [])
@@ -186,15 +203,17 @@ def main() -> int:
             report(ok, f"the runtime's dispatch and join {where}: a round trip "
                        + (f"{match.group(1)}-{match.group(2)} cycles, mean {match.group(3)}" if match else "(no timing)")
                        + f"; {note}" + ("" if ok else f"; {fields} {console.strip()}"))
-        if wanted("devices"):
-            elf, symbols = build("soc_devices", ["software/tests/soc_devices.c"], [], out, args.cflags, prefix)
+        if wanted("devices") and not one_hart:
+            elf, symbols = build("soc_devices", ["software/tests/soc_devices.c"], soc_variants.program_defines(sim_name),
+                                 out, args.cflags, prefix)
             fields, console, note = traced(sim, elf, symbols, [])
             ok = fields["status"] == "PASS" and "SOC DEVICES PASS" in console
             report(ok, f"the devices {where}: hart control, timer, interrupts, counters, word-only pages, the NPU"
                        f" ({fields.get('npu_jobs')} job checked); {note}" + ("" if ok else f"; {fields} {console.strip()}"))
-        if wanted("dma"):
+        if wanted("dma") and not one_hart:
             elf, symbols = build("soc_dma", ["software/drivers/aster_dma.c", "software/runtime/aster_smp.c",
-                                             "software/tests/soc_dma.c"], [], out, args.cflags, prefix)
+                                             "software/tests/soc_dma.c"], soc_variants.program_defines(sim_name),
+                                 out, args.cflags, prefix)
             fields, console = run(sim, elf, symbols, [])
             # (and the testbench's checks of ports R and W not vacuous)
             ok = (fields["status"] == "PASS" and "SOC DMA PASS" in console
@@ -206,6 +225,53 @@ def main() -> int:
             report(ok, f"the DMA {where} through v1's driver: {line}; port R's answers checked {fields.get('dma_reads')}, "
                        f"port W's writes {fields.get('dma_writes')}, loads checked {fields.get('loads')}"
                        + ("" if ok else f"; {fields} {console.strip()[-300:]}"))
+        if wanted("v12") and not one_hart:
+            elf, symbols = build("soc_v12", ["software/runtime/asterbench_v12.c", "software/drivers/aster_dma.c",
+                                             "software/runtime/aster_smp.c", "software/tests/soc_v12.c"],
+                                 soc_variants.program_defines(sim_name), out, args.cflags, prefix)
+            fields, console = run(sim, elf, symbols, [])
+            records = [l + "\n" for l in console.splitlines() if l.startswith("ASTERBENCH,")]
+            (out / f"v12.{sim_name}.log").write_text(console)
+            problems = []
+            cpp = v12_cpp_verdicts(records, out)
+            for text, verdict in zip(records, cpp):
+                try:
+                    record = asterbench_v12.validate_line(text)
+                    asterbench_v12.check_config(record, int(fields.get("npu_config", -1)), int(fields.get("soc_config", -1)))
+                except asterbench_v12.ValidationError as error:
+                    problems.append(f"python: {error}")
+                if not verdict:
+                    problems.append("c++: rejected")
+            names = [l.split(",name=", 1)[1].split(",", 1)[0] for l in records]
+            ok = (fields["status"] == "PASS" and "SOC V12 PASS" in console and not problems
+                  and names == ["v12_selftest_cold", "v12_selftest_engines", "v12_selftest_kernel"])
+            report(ok, f"AsterBench v12's emitter {where}: {len(records)} records ({', '.join(names)}), each valid in "
+                       f"the Python and C++ validators and its configuration as the build's ({out}/v12.{sim_name}.log)"
+                       + ("" if ok else f"; {problems[:3]} {fields.get('status')} {console.strip()[-300:]}"))
+        if wanted("h1") and one_hart:
+            elf, symbols = build("soc_h1", ["software/runtime/asterbench_v12.c", "software/runtime/aster_smp.c",
+                                            "software/tests/soc_h1.c"],
+                                 soc_variants.program_defines(sim_name), out, args.cflags, prefix)
+            fields, console = run(sim, elf, symbols, [])
+            records = [l + "\n" for l in console.splitlines() if l.startswith("ASTERBENCH,")]
+            (out / f"h1.{sim_name}.log").write_text(console)
+            problems = []
+            for text, verdict in zip(records, v12_cpp_verdicts(records, out)):
+                try:
+                    record = asterbench_v12.validate_line(text)
+                    asterbench_v12.check_config(record, int(fields.get("npu_config", -1)), int(fields.get("soc_config", -1)))
+                    if record["harts"] != 1:
+                        problems.append("the record's harts is not 1")
+                except asterbench_v12.ValidationError as error:
+                    problems.append(f"python: {error}")
+                if not verdict:
+                    problems.append("c++: rejected")
+            ok = (fields["status"] == "PASS" and "SOC H1 PASS" in console and not problems and len(records) == 2
+                  and fields.get("retired1") == 0)
+            report(ok, f"the one-hart build {where}: hart count 1, SECONDARY_RUN ignored, hart 1 retired "
+                       f"{fields.get('retired1')} and its ports silent; {len(records)} v12 records, valid in both "
+                       f"validators ({out}/h1.{sim_name}.log)"
+                       + ("" if ok else f"; {problems[:3]} {fields.get('status')} {console.strip()[-300:]}"))
     print(f"{'PASS' if not failures else 'FAIL'}: the Phase 20 SoC's two-hart programs"
           + (f" ({len(failures)} failed)" if failures else ""))
     return 1 if failures else 0

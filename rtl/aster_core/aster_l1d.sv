@@ -62,7 +62,12 @@ module aster_l1d #(
     // line's tag keeps only its address bits [TAG_SPAN-1:12] (32: all of them). Only cacheable lines are
     // installed and valid, so the compare is exact (checked against full tags in simulation); a snoop
     // must carry a line of that span to hit (20.3's timing: the Phase 20 SoC's main memory, 17).
-    parameter int unsigned TAG_SPAN = 32
+    parameter int unsigned TAG_SPAN = 32,
+    // The cache on (1) or off (0; the owner's decision, 20.4: matrix.md §9). Off, no line is ever installed:
+    // a load of main memory goes to the memory side as a store or an atomic does, by the access path, keeping
+    // its main-memory flag (which lr, sc and the AMOs need). Only the cached load (s1_cload) looks up, refills
+    // and replays.
+    parameter int unsigned DCACHE = 1
 ) (
     input  logic        clk,
     input  logic        rst_n,
@@ -162,13 +167,15 @@ module aster_l1d #(
     assign d_cacheable  = d_req_addr - MEM_BASE < cacheable_bytes;
     assign d_io         = !d_cacheable && in_io(d_req_addr) && !(in_word_only_io(d_req_addr) && !d_plain);
     assign s1_error     = !s1_cacheable && !s1_io;
+    logic s1_cload;                                       // a load the cache serves: main memory's, the cache on
+    assign s1_cload     = DCACHE != 0 && s1_cacheable && s1_load;
     assign s1_load      = s1_op == OP_LOAD;
     // A snoop of the request's own line in the cycle of its lookup: it misses.
     always_comb begin
         snoop_s1 = 1'b0;
         for (int unsigned p = 0; p < SNOOPS; p++) if (snoop_valid[p] && snoop_line[p] == s1_addr[31:4]) snoop_s1 = 1'b1;
     end
-    assign lookup_hit   = s1_cacheable && valid[s1_addr[11:4]] && tag_ram[s1_addr[11:4]] == s1_addr[TAG_SPAN-1:12]
+    assign lookup_hit   = DCACHE != 0 && s1_cacheable && valid[s1_addr[11:4]] && tag_ram[s1_addr[11:4]] == s1_addr[TAG_SPAN-1:12]
                           && !snoop_s1;
     // The head's word when it moves: on the array's output in its first cycle
     // there (s1_now), or kept (s1_kept), unless the array was written since its read. (Used only as the
@@ -219,9 +226,9 @@ module aster_l1d #(
             n_s2_valid = 1'b1; n_s2_cacheable = s1_cacheable; n_s2_io = s1_io; n_s2_hit = lookup_hit;
             n_s2_now = s1_now; n_s2_have = s1_kept; n_s2_post = s1_cacheable && s1_op == OP_STORE;
             n_s2_load = s1_load;
-            if (s1_error || (s1_cacheable && s1_load && lookup_hit && (s1_now || s1_kept))) n_state = IDLE;
-            else if (s1_cacheable && s1_load && lookup_hit) begin n_state = REPLAY; n_replay_wait = '0; end
-            else if (s1_cacheable && s1_load) n_state = REFILL;
+            if (s1_error || (s1_cload && lookup_hit && (s1_now || s1_kept))) n_state = IDLE;
+            else if (s1_cload && lookup_hit) begin n_state = REPLAY; n_replay_wait = '0; end
+            else if (s1_cload) n_state = REFILL;
             else begin n_state = ACCESS; n_sent = 1'b0; end
         end else begin
             if (s2_answer) n_s2_valid = 1'b0;
@@ -262,7 +269,7 @@ module aster_l1d #(
         valid_if_taken = 1'b0;
         valid_if_not   = 1'b0;
         if (s1_move) begin                                              // to REFILL or ACCESS: sends
-            valid_if_not = inflight_kept != 2'd2 && (refill_start || (!s1_error && !(s1_cacheable && s1_load)));
+            valid_if_not = inflight_kept != 2'd2 && (refill_start || (!s1_error && !s1_cload));
         end else if (state == REFILL && !(m_mine && received == 3'd3)) begin    // stays in REFILL
             valid_if_not   = inflight_kept != 2'd2 && issued != 3'd4;
             valid_if_taken = inflight_kept + 2'd1 != 2'd2 && issued + 3'd1 != 3'd4;
@@ -318,7 +325,7 @@ module aster_l1d #(
     // its line was snooped meanwhile (that cycle included); a snoop invalidates
     // its line where it is held; sc and the AMOs invalidate theirs from the
     // time they head the cache until they are sent.
-    assign refill_start = s1_move && s1_cacheable && s1_load && !lookup_hit;
+    assign refill_start = s1_move && s1_cload && !lookup_hit;
     always_comb begin
         snoop_s2 = 1'b0;
         for (int unsigned p = 0; p < SNOOPS; p++) begin
@@ -454,12 +461,12 @@ module aster_l1d #(
             // decided as it enters (its memory-side request goes out in its first
             // cycle there); a head that leaves with no successor leaves IDLE.
             if (s1_move) begin
-                if (s1_error || (s1_cacheable && s1_load && lookup_hit && (s1_now || s1_kept)))
+                if (s1_error || (s1_cload && lookup_hit && (s1_now || s1_kept)))
                     state <= IDLE;                // answered from the array, or an error
-                else if (s1_cacheable && s1_load && lookup_hit) begin
+                else if (s1_cload && lookup_hit) begin
                     state       <= REPLAY;        // a hit whose word the array must give again
                     replay_wait <= '0;
-                end else if (s1_cacheable && s1_load) begin
+                end else if (s1_cload) begin
                     state    <= REFILL;
                     issued   <= '0;
                     received <= '0;

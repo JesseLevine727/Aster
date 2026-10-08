@@ -41,6 +41,8 @@ module aster_soc #(
     parameter int          NPU_A_STRIPS = 2,
     parameter int          NPU_PORT_BYTES = 8,
     parameter int          NPU_DIM = 8,
+    // The data caches on (1) or off (0; 20.4's matrix axis, simulation only: aster_l1d's DCACHE)
+    parameter int unsigned DCACHE = 1,
     parameter int unsigned HARTS = 2,
     parameter int unsigned SHELL_PAGE = 0,
     parameter int unsigned WAIT = 0,                    // the fabric's added answer cycles (simulation)
@@ -171,7 +173,7 @@ module aster_soc #(
         assign m_i_addr[h] = i_addr;
         // (tags of main memory's span: 20.3's timing)
         aster_l1d #(.IO_WINDOWS(4), .IO_BASE(IO_BASE), .IO_MASK(IO_MASK), .IO_WORD_ONLY(IO_WORD_ONLY), .SNOOPS(3),
-                    .TAG_SPAN($clog2(MAIN_BYTES))) dcache (
+                    .TAG_SPAN($clog2(MAIN_BYTES)), .DCACHE(DCACHE)) dcache (
             .clk(aclk), .rst_n(core_rst_n[h]), .cacheable_bytes(32'(MAIN_BYTES)),
             .d_req_valid(c_d_req_valid), .d_req_op(c_d_req_op), .d_req_addr(c_d_req_addr),
             .d_req_wdata(c_d_req_wdata), .d_req_be(c_d_req_be), .d_req_ready(c_d_req_ready),
@@ -264,6 +266,47 @@ module aster_soc #(
         .m_rsp_error(n_mem_error), .irq(npu_irq)
     );
 
+    // ---- the NPU's port width (the owner's decision, 20.4: matrix.md §9). The fabric's port N is 64 bits. A
+    // 32-bit NPU (the 4×4's option) writes its word into both halves, with its byte enables in the addressed
+    // half, and takes the addressed half of each answer. The fabric answers in order, so each request's half
+    // (its address bit 2) waits in a small queue from this side's acceptance to its answer. With a 64-bit NPU
+    // the port is wired straight through.
+    logic [63:0] n64_wdata, f_n_rsp_rdata;
+    logic [7:0]  n64_be;
+    if (NPU_PORT_BYTES == 8) begin : g_npu_port64
+        assign n64_wdata = n_req_wdata;
+        assign n64_be = n_req_be;
+        assign n_rsp_rdata = f_n_rsp_rdata;
+    end else begin : g_npu_port32
+        logic [3:0] half_q;                                // each request's address bit 2, the oldest in bit 0
+        logic [2:0] half_count;
+        logic       half_push, half_pop;
+        assign n64_wdata = {2{n_req_wdata}};
+        assign n64_be = n_req_addr[2] ? {n_req_be, 4'b0} : {4'b0, n_req_be};
+        assign n_rsp_rdata = half_q[0] ? f_n_rsp_rdata[63:32] : f_n_rsp_rdata[31:0];
+        assign half_push = n_req_valid && n_req_ready && (NPU_BUFFER == 0 || run);
+        assign half_pop = n_rsp_valid;
+        always_ff @(posedge aclk) begin
+            if (!npu_rst_n || start || stop) begin
+                half_q <= '0; half_count <= '0;                // (the fabric drops what is owed, with it)
+            end else begin
+                logic [3:0] q;
+                logic [2:0] c;
+                q = half_q; c = half_count;
+                if (half_pop) begin q = {1'b0, q[3:1]}; c = c - 3'd1; end
+                if (half_push) begin q[c[1:0]] = n_req_addr[2]; c = c + 3'd1; end
+                half_q <= q; half_count <= c;
+            end
+        end
+`ifndef SYNTHESIS
+        always_ff @(posedge aclk)
+            if (npu_rst_n && !start && !stop) begin
+                assert (!(half_pop && half_count == 3'd0)) else $error("aster_soc: an NPU answer with no request owed");
+                assert (!(half_push && !half_pop && half_count == 3'd4)) else $error("aster_soc: the NPU's half queue overflowed");
+            end
+`endif
+    end
+
     // ---- the NPU's requests to the fabric's port N: direct, or (NPU_BUFFER) through a two-entry buffer whose
     // readiness and output are registers, so neither side's logic meets the other's in one cycle. The buffer
     // adds a cycle to each access (the NPU then keeps three in flight); it answers an access outside main
@@ -306,10 +349,10 @@ module aster_soc #(
             end
             if (enq) begin
                 if (count - {1'b0, deq} == 2'd0) begin
-                    e_addr[0] <= n_req_addr; e_we[0] <= n_req_we; e_wdata[0] <= 64'(n_req_wdata); e_be[0] <= 8'(n_req_be);
+                    e_addr[0] <= n_req_addr; e_we[0] <= n_req_we; e_wdata[0] <= n64_wdata; e_be[0] <= n64_be;
                     e_main[0] <= n_main;
                 end else begin
-                    e_addr[1] <= n_req_addr; e_we[1] <= n_req_we; e_wdata[1] <= 64'(n_req_wdata); e_be[1] <= 8'(n_req_be);
+                    e_addr[1] <= n_req_addr; e_we[1] <= n_req_we; e_wdata[1] <= n64_wdata; e_be[1] <= n64_be;
                     e_main[1] <= n_main;
                 end
             end
@@ -319,7 +362,7 @@ module aster_soc #(
         assign unused_fabric_error = n_rsp_error;
     end else begin : g_npu_direct
         assign {f_n_valid, f_n_addr, f_n_we, f_n_wdata, f_n_be, f_n_main} = {n_req_valid, n_req_addr, n_req_we,
-                                                                         64'(n_req_wdata), 8'(n_req_be), n_main};
+                                                                         n64_wdata, n64_be, n_main};
         assign n_req_ready = n_ready_f;
         assign n_mem_error = n_rsp_error;
     end
@@ -341,7 +384,7 @@ module aster_soc #(
         .n_req_valid(NPU_BUFFER != 0 ? f_n_valid : f_n_valid && core_rst_n[0]), .n_req_addr(f_n_addr), .n_req_main(f_n_main),
         .n_req_we(f_n_we),
         .n_req_wdata(f_n_wdata), .n_req_be(f_n_be), .n_req_ready(n_ready_f), .n_rsp_valid(n_rsp_valid),
-        .n_rsp_rdata(n_rsp_rdata), .n_rsp_error(n_rsp_error),
+        .n_rsp_rdata(f_n_rsp_rdata), .n_rsp_error(n_rsp_error),
         // (ports R and W: the DMA's registers, carrying the DMA's accesses, or the ARM side's while held;
         // both address only main memory)
         .r_req_valid(dma_r_valid), .r_req_addr(dma_r_addr), .r_req_main(1'b1), .r_req_ready(r_ready), .r_rsp_valid,
@@ -607,7 +650,7 @@ module aster_soc #(
             18'h3F050: reg_rdata = tohost_retired[31:0];
             18'h3F054: reg_rdata = tohost_retired[63:32];
             18'h3F058: reg_rdata = {8'b0, 8'(NPU_DIM), 8'(NPU_PORT_BYTES), 8'(NPU_A_STRIPS)};
-            18'h3F05C: reg_rdata = {8'b0, 8'(WAIT), 8'(SHELL_PAGE), 8'(HARTS)};
+            18'h3F05C: reg_rdata = {7'b0, DCACHE == 0, 8'(WAIT), 8'(SHELL_PAGE), 8'(HARTS)};   // (bit 24: the data caches off)
             18'h3F060: reg_rdata = retired[1][31:0];
             18'h3F064: reg_rdata = retired[1][63:32];
             default:   reg_rdata = 32'b0;

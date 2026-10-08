@@ -33,6 +33,10 @@
 #include "aster_multicore.h"
 #include "aster_npu2.h"
 
+#ifndef SOC_DCACHE
+#define SOC_DCACHE 1                                 // the data caches on (0: a cache-off build, from its variant)
+#endif
+
 #define DEV(addr) (*(volatile uint32_t *)(uintptr_t)(addr))
 #define PERF(hart, offset) DEV(0x20003000u + 0x100u * (hart) + (offset))
 #define DOT8_CTR(hart, event) DEV(0x20003200u + 8u * (4u * (hart) + (event)))
@@ -214,7 +218,9 @@ int main(void) {
     check(PERF(0, 0x50) == 3u, 39);                  // failed sc
     check(DOT8_CTR(0, 0) == 50u && DOT8_CTR(0, 2) == 50u && DOT8_CTR(0, 3) == 50u && DOT8_CTR(0, 1) == 0u, 40);
     check(DOT8_CTR(1, 0) == HART1_DOT8S && DOT8_CTR(1, 3) == HART1_DOT8S, 41);
-    check(PERF(0, 0x60) >= 12u, 42);                 // lines hart 0's stores invalidated in hart 1's cache
+    // lines hart 0's stores invalidated in hart 1's cache: none with the data caches off (SOC_DCACHE 0, a
+    // build of 20.4's matrix), which hold no line
+    check(SOC_DCACHE ? PERF(0, 0x60) >= 12u : PERF(0, 0x60) == 0u, 42);
     check(FABRIC_CTR(40) == 100u, 43);               // the fabric's AMOs
     check(FABRIC_CTR(39) >= 1u, 44);                 // hart 1's reservation ended by another requester
     check(hart1_status.word != 0u, 45);

@@ -73,6 +73,12 @@ struct Mem {
     }
 };
 static bool cacheable(uint32_t a, uint32_t bytes) { return a - 0x80000000u < bytes; }
+#ifdef L1D_UNCACHED
+// The cache off (DCACHE = 0, 20.4): a load of main memory is an access of its own, as a store is; no refills.
+static constexpr bool kUncached = true;
+#else
+static constexpr bool kUncached = false;
+#endif
 static bool io(uint32_t a) { return (a & ~0xFFFFu) == 0x20000000u || (a & ~3u) == 0x30000000u; }
 
 int main(int argc, char** argv) {
@@ -257,11 +263,12 @@ int main(int argc, char** argv) {
             if (!err && remote_region(paddr)) {
                 e.remote = true;                 // checked against the region's history
                 if (pop == 1) { ++own_issued[paddr & ~3u]; mexp.push_back({pop, paddr, pdata, pbe}); }
+                else if (kUncached) mexp.push_back({pop, paddr, pdata, pbe});   // (an access of its own, cache off)
                 e.own = own_issued[paddr & ~3u];
             } else if (!err) {
                 e.data = ref.perform(pop, paddr, pdata, pbe);
                 e.check = pop != 1;
-                if (!cacheable(paddr, bytes) || pop != 0) mexp.push_back({pop, paddr, pdata, pbe});
+                if (!cacheable(paddr, bytes) || pop != 0 || kUncached) mexp.push_back({pop, paddr, pdata, pbe});
             }
             expect.push_back(e);
             acc_last = true; err_last = err; pv = false;
@@ -273,7 +280,7 @@ int main(int argc, char** argv) {
         }
         if (macc) {
             uint32_t op = d.m_req_op, a = d.m_req_addr;
-            bool refill = op == 0 && cacheable(a, bytes);
+            bool refill = !kUncached && op == 0 && cacheable(a, bytes);
             if (!refill) {
                 if (mexp.empty()) { printf("FAIL seed %u: unexpected mem access op %u %08x\n", seed, op, a); return 1; }
                 Acc x = mexp.front(); mexp.pop_front();
@@ -308,7 +315,7 @@ int main(int argc, char** argv) {
     }
     if (L1D_SNOOPS > 1 && ncycles >= 1000000) {
         bool each = together > 0;
-        for (int port = 0; port < L1D_SNOOPS; ++port) each = each && refill_snooped[port] > 0;
+        for (int port = 0; port < L1D_SNOOPS; ++port) each = each && (kUncached || refill_snooped[port] > 0);
         if (!each) {
             printf("FAIL seed %u: coverage: %llu cycles with snoops on two ports or more; refills snooped by port:", seed,
                    (unsigned long long)together);

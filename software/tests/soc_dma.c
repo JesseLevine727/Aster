@@ -27,8 +27,8 @@
 //         (lines it holds, each invalidated by the DMA, read again);
 // 65-69   the DMA under contention: copies (their own checks 75-77) while
 //         hart 1 streams through its own buffer (every load checked), then a
-//         4 KiB job while the NPU runs a GEMM (checked whole, still running
-//         when the job ends) as well; the fabric counters showing the DMA
+//         4 KiB job while the NPU runs a GEMM (checked whole, sampled busy
+//         while the job runs) as well; the fabric counters showing the DMA
 //         waited; and RESUMEs while counting during that job, whose cycles
 //         no counter adds (the devices' rule), the counters' cross-checks
 //         again exact;
@@ -43,6 +43,10 @@
 #include "aster.h"
 #include "aster_dma.h"
 #include "aster_npu2.h"
+
+#ifndef SOC_DCACHE
+#define SOC_DCACHE 1        // the data caches on (0: a cache-off build of 20.4's matrix, which holds no line)
+#endif
 #include "aster_smp.h"
 
 #define DMA(offset) (*(volatile uint32_t *)(uintptr_t)(0x30000000u + (offset)))
@@ -230,7 +234,8 @@ int main(void) {
     // snoop hits on W's port (2) in both data caches
     check(DMA(0x128) == FABRIC_CTR(5) && DMA(0x130) == FABRIC_CTR(6), 58);
     check(DMA(0x108) == FABRIC_CTR(7 + 5) + FABRIC_CTR(7 + 6), 58);    // stalls: R and W waiting
-    check(DMA(0x148) >= 1u && DMA(0x148) == FABRIC_CTR(32 + 3 * 0 + 2) + FABRIC_CTR(32 + 3 * 1 + 2), 59);
+    check((SOC_DCACHE ? DMA(0x148) >= 1u : DMA(0x148) == 0u)
+          && DMA(0x148) == FABRIC_CTR(32 + 3 * 0 + 2) + FABRIC_CTR(32 + 3 * 1 + 2), 59);
     check(DMA(0x138) == 0u && DMA(0x140) == 0u, 49);                    // no forwards, no write-backs
     aster_dma_acknowledge();
 
@@ -258,7 +263,7 @@ int main(void) {
     const uint32_t hart1_lines = FABRIC_CTR(32 + 3 * 1 + 2);
     // (shared's 64 lines were in hart 1's cache, but for the few its idle loop's lines may have evicted:
     // the cache is direct-mapped)
-    check(hart1_lines >= 56u && hart1_lines <= 1024u / 16u, 63);
+    check(SOC_DCACHE ? hart1_lines >= 56u && hart1_lines <= 1024u / 16u : hart1_lines == 0u, 63);
     for (uint32_t i = 0; i < 256; ++i) want += (*(const uint32_t *)(src + 4 * i)) * (i + 1);
     aster_smp_dispatch(hart1_sums, (void *)&sum1);
     aster_smp_join();
@@ -287,10 +292,25 @@ int main(void) {
     const struct aster_npu2_job gemm = {na, nb, nc, 64, 32, 128, 32, 32, 64, 0, 0, 0, 0, 0};
     aster_npu2_start(&gemm);
     check(aster_dma_submit(dst, src, 4096) == ASTER_DMA_PENDING, 65);
-    for (uint32_t i = 0; i < 12; ++i) PERF_COMMAND = 4;
-    check(aster_dma_wait(POLLS) == ASTER_DMA_OK, 65);
-    const uint32_t npu_overlapped = ASTER_NPU2_REG(ASTER_NPU2_STATUS) & ASTER_NPU2_BUSY;
-    check(npu_overlapped != 0u, 69);                            // (the NPU ran through the whole job)
+    // As the job starts: a burst of 24 RESUMEs, 0 to 3 nops apart in turn, so their phase against the reads
+    // sweeps every offset and some lands two cycles after a read's acceptance, at any memory wait and with
+    // the data caches on or off. Then, while the job runs, both engines sampled: the NPU busy while the DMA
+    // is, in some sample, is their overlap.
+    for (uint32_t i = 0; i < 24; ++i) {
+        PERF_COMMAND = 4;
+        switch (i % 4u) {
+            case 1: __asm__ volatile ("nop"); break;
+            case 2: __asm__ volatile ("nop\n nop"); break;
+            case 3: __asm__ volatile ("nop\n nop\n nop"); break;
+            default: break;
+        }
+    }
+    uint32_t npu_overlapped = 0, polls = 0;
+    enum aster_dma_result dma_now;
+    while ((dma_now = aster_dma_poll()) == ASTER_DMA_PENDING && ++polls < POLLS)   // (a hung job fails check 65)
+        if (ASTER_NPU2_REG(ASTER_NPU2_STATUS) & ASTER_NPU2_BUSY) ++npu_overlapped;
+    check(dma_now == ASTER_DMA_OK, 65);
+    check(npu_overlapped != 0u, 69);                            // (the NPU ran while the DMA did)
     window_reads += 4096 / 8;
     for (uint32_t i = 0; i < 4096; ++i) if (dst[i] != src[i]) { check(0, 65); break; }
     const uint32_t npu_status = aster_npu2_wait();

@@ -1048,6 +1048,106 @@ is 20.5's, on the board.
 4. the full matrix, its manifest complete, the overlap and totals
    reconciled, and the evidence.
 
+### Step 1: the infrastructure (in progress)
+
+**AsterBench v12:**
+- **The record:** one console line of 133 fields
+  (`software/runtime/asterbench_v12.{h,c}`, with every counter page in
+  `aster_counters.h`). A window opens with START, after the NPU's totals are
+  cleared, and is read after FREEZE.
+- **The validators:** `scripts/asterbench_v12.py` and
+  `verification/common/asterbench_v12_record.h`. Their shared corpus
+  (`verification/host/test_asterbench_v12.py`, in `make host-tests`) is 10
+  valid records, 66 broken invariants and more than 1,000 mutations of
+  fields and framing. The two validators agree on every one.
+- **The self-test:** `software/tests/soc_v12.c`, in `soc-tests`, has three
+  windows: cold; warm with both harts, the DMA and the NPU; and a kernel
+  window. Each record passes both validators on the real counters,
+  including the DMA's exact reconciliation with the fabric. Its
+  configuration matches the testbench's readback (`check_config`).
+
+**The build variants** (`make matrix-sims`, `scripts/soc_variants.py`):
+- one hart;
+- +1, +2 and +4 waits;
+- the NPU's five other geometries;
+- the data caches off, alone and with each wait.
+
+New RTL, both simulation-only by default:
+- **`DCACHE` in the data cache** (the owner's decision). Only a cached load
+  looks up and refills; with the cache off, a main-memory load goes by the
+  access path with its main-memory flag. Its unit test
+  (`l1d_unit_uncached`) passes 200 seeds, and the default build is the same
+  logic.
+- **The NPU's 32-bit port adapter on port N.** Writes are replicated to both
+  halves with placed byte enables; each answer's half comes from an in-order
+  queue, with assertions against overflow and an unowed answer.
+
+Every two-hart variant passes `soc-tests`' two-hart programs: litmus, the
+reset stress, dispatch, the devices, the DMA and the v12 self-test.
+- **The devices and DMA programs** now take the data caches' mode as a
+  build define, since with the cache off no line is held or invalidated.
+- **On a cache-off build,** the reset stress's "a refill" coverage counts
+  uncached loads owed, since there are no refills.
+- **The one-hart build** cannot run the two-hart programs, which wait for
+  hart 1. It runs its own, `software/tests/soc_h1.c`, which checks:
+  - the hart count reads 1;
+  - SECONDARY_RUN is ignored;
+  - hart 1 retires nothing, and its ports accept nothing;
+  - two v12 records, valid in both validators.
+
+**The matrix runner** (`scripts/matrix.py`) works in five stages:
+1. it builds each entry's firmware, cached;
+2. it runs the simulations in parallel;
+3. it validates each record, in both validators, and its configuration;
+4. it applies the family's oracle;
+5. it writes the manifest.
+
+**v1's CPU kernels** run unchanged through `software/matrix`'s compatibility
+layer.
+- **It shadows `workload.h`.** v1's `aster_perf_clear` and
+  `aster_perf_snapshot` are, as in v1, the control word's store inline, now
+  to ABI 4's, so the window is exactly v1's. v12's set-up and reading stay
+  outside it.
+- **A warm run restores `.data` and `.bss`** from the copy taken at entry
+  before its timed pass.
+- **The layout:** all matrix firmware links with
+  `verification/core/firmware/link_matrix.ld`, 96 KiB as one region with
+  both stacks at the top.
+
+**The runner, hardened after review:**
+- every exception is recorded as a failed entry;
+- the firmware's cache key covers every header and the compiler;
+- the manifest records the toolchain, the tree, untracked files included,
+  and each firmware's footprint;
+- `--repeat-every N` runs a sample again and requires byte-identical
+  records.
+
+**The CPU family's first run:** 108 entries, 108 captured, in 54 s. That is
+memory × data cache × cache state for each of the six kernels, plus one hart.
+Each record matches v1's baseline record's identity and the independent
+checksum model.
+
+| Kernel | Warm, R | Cold, R | Cache off, warm | Cache off, +4 waits, cold | v1's aster_minimal | v1 / v2 |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: |
+| CoreMark (CRC run) | 465,832 | 466,420 | 610,953 | 837,206 | 1,922,272 | 4.13× |
+| Dhrystone | 858,225 | 859,392 | 1,113,530 | 1,608,323 | 3,128,553 | 3.65× |
+| sort/search | 696,264 | 697,097 | 894,866 | 1,160,315 | 2,183,301 | 3.14× |
+| FFT | 314,908 | 316,772 | 407,795 | 542,583 | 3,057,473 | 9.71× |
+| strided | 2,498 | 2,964 | 2,746 | 4,098 | 9,087 | 3.64× |
+| Conv2D | 1,109,169 | 1,111,298 | 1,588,493 | 2,228,894 | 5,820,652 | 5.25× |
+
+One hart gives the same cycles as two, since hart 1 is idle. The cold column
+agrees with 18.7's figures within each window's edges.
+
+**Two fixes to 20.3's DMA program,** whose checks rested on coincidences
+that a slower build broke:
+- **The RESUMEs** are now a burst at the job's start, 0 to 3 `nop`s apart
+  in turn, so their phase sweeps every offset against the reads. They drop
+  7 to 21 reads on every build.
+- **The NPU's overlap** is now sampled while the DMA is busy, rather than
+  required to outlast it.
+
+
 ## Milestones and gates
 
 | Milestone | Scope | Exit |

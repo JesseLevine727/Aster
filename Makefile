@@ -2275,6 +2275,16 @@ $(L1D17_UNIT_SIM): rtl/aster_core/aster_core_pkg.sv $(ASTER_L1_RTL) verification
 		-CFLAGS -DL1D_SNOOPS=3 -CFLAGS -DL1D_SPAN17
 	@touch $@
 
+# The data cache off (DCACHE = 0, 20.4's matrix axis): every main-memory load an access of its own.
+L1DUC_UNIT_SIM := $(L1_UNIT_DIR)/l1d_unit_uncached
+$(L1DUC_UNIT_SIM): rtl/aster_core/aster_core_pkg.sv $(ASTER_L1_RTL) verification/core/l1/l1d_unit.sv verification/core/l1/tb_l1d.cpp Makefile
+	mkdir -p $(L1_UNIT_DIR)
+	$(VERILATOR) --cc --exe --build --assert --Wall --top-module l1d_unit --prefix Vl1d_unit -GSNOOPS=3 -GDCACHE=0 \
+		--Mdir $(L1_UNIT_DIR)/duc_obj -o $(abspath $@) $(ROOT)/rtl/aster_core/aster_core_pkg.sv \
+		$(addprefix $(ROOT)/,$(ASTER_L1_RTL)) $(ROOT)/verification/core/l1/l1d_unit.sv $(ROOT)/verification/core/l1/tb_l1d.cpp \
+		-CFLAGS -DL1D_SNOOPS=3 -CFLAGS -DL1D_UNCACHED
+	@touch $@
+
 L1I17_UNIT_SIM := $(L1_UNIT_DIR)/l1i_unit_span17
 $(L1I17_UNIT_SIM): $(ASTER_L1_RTL) verification/core/l1/tb_l1i.cpp Makefile
 	mkdir -p $(L1_UNIT_DIR)
@@ -2283,14 +2293,15 @@ $(L1I17_UNIT_SIM): $(ASTER_L1_RTL) verification/core/l1/tb_l1i.cpp Makefile
 		$(ROOT)/rtl/aster_core/aster_l1i.sv $(ROOT)/verification/core/l1/tb_l1i.cpp -CFLAGS -DL1I_SPAN17
 	@touch $@
 
-core-aster-l1-unit: $(L1D_UNIT_SIM) $(L1I_UNIT_SIM) $(L1D3_UNIT_SIM) $(L1D17_UNIT_SIM) $(L1I17_UNIT_SIM)
+core-aster-l1-unit: $(L1D_UNIT_SIM) $(L1I_UNIT_SIM) $(L1D3_UNIT_SIM) $(L1D17_UNIT_SIM) $(L1I17_UNIT_SIM) $(L1DUC_UNIT_SIM)
 	@for seed in $$(seq 1 $(L1_UNIT_SEEDS)); do \
 		$(L1D_UNIT_SIM) $$seed 1000000 > /dev/null || { $(L1D_UNIT_SIM) $$seed 1000000; exit 1; }; \
 		$(L1I_UNIT_SIM) $$seed 1000000 > /dev/null || { $(L1I_UNIT_SIM) $$seed 1000000; exit 1; }; \
 		$(L1D3_UNIT_SIM) $$seed 1000000 > /dev/null || { $(L1D3_UNIT_SIM) $$seed 1000000; exit 1; }; \
 		$(L1D17_UNIT_SIM) $$seed 1000000 > /dev/null || { $(L1D17_UNIT_SIM) $$seed 1000000; exit 1; }; \
 		$(L1I17_UNIT_SIM) $$seed 1000000 > /dev/null || { $(L1I17_UNIT_SIM) $$seed 1000000; exit 1; }; \
-	done; echo "PASS: the L1 data and instruction caches pass $(L1_UNIT_SEEDS) random unit-test seeds each; the data cache with three snoop ports (20.1) too, snoops on two ports or more in one cycle and a refill snooped on each port in every seed; and both with main memory's tag span (20.3), every lookup and snoop hit as full tags'"
+		$(L1DUC_UNIT_SIM) $$seed 1000000 > /dev/null || { $(L1DUC_UNIT_SIM) $$seed 1000000; exit 1; }; \
+	done; echo "PASS: the L1 data and instruction caches pass $(L1_UNIT_SEEDS) random unit-test seeds each; the data cache with three snoop ports (20.1) too, snoops on two ports or more in one cycle and a refill snooped on each port in every seed; both with main memory's tag span (20.3), every lookup and snoop hit as full tags'; and the data cache off (20.4)"
 
 # Planted bugs in the caches' narrow tags (20.3, scripts/l1_span_mutants.py): each kept tag bit dropped from
 # each narrow compare (the data cache's lookup and snoop hit, the instruction cache's lookup), caught on every
@@ -3076,7 +3087,29 @@ ASTER_SOC_TB := verification/aster_soc/sim_soc.sv verification/aster_soc/tb_soc.
 	verification/fabric/fabric_ref.h verification/npu/npu_model.h
 ASTER_SOC_BUILDS := soc_shell:-GSHELL_PAGE=1 soc_dev:-GSHELL_PAGE=0 soc_dev_w3:-GSHELL_PAGE=0,-GWAIT=3 \
 	soc_shell_p19:-GSHELL_PAGE=1,-GNPU_BUFFER=0,-GNPU_REG_Q=0
-ASTER_SOC_SIMS := $(foreach b,$(ASTER_SOC_BUILDS),$(ASTER_SOC_DIR)/$(firstword $(subst :, ,$(b))))
+# 20.4's matrix variants (docs/matrix.md §2): one hart; +1, +2 and +4 memory waits; the NPU's geometries
+# (8x8 with one strip; 4x4 on a 64- or 32-bit port, with two strips or one); the data caches off, alone and
+# with each memory wait. Built by matrix-sims (not by soc-sim). matrix-sims-tests runs soc-tests' two-hart
+# programs on each two-hart variant, and on the one-hart build (which cannot run them: they wait for hart 1)
+# its own program, software/tests/soc_h1.c: the hart count, SECONDARY_RUN ignored, hart 1 silent.
+ASTER_SOC_MATRIX_BUILDS := soc_h1:-GSHELL_PAGE=0,-GHARTS=1 soc_w1:-GSHELL_PAGE=0,-GWAIT=1 \
+	soc_w2:-GSHELL_PAGE=0,-GWAIT=2 soc_w4:-GSHELL_PAGE=0,-GWAIT=4 \
+	soc_n8s1:-GSHELL_PAGE=0,-GNPU_A_STRIPS=1 \
+	soc_n4p8s2:-GSHELL_PAGE=0,-GNPU_DIM=4,-GNPU_PORT_BYTES=8,-GNPU_A_STRIPS=2 \
+	soc_n4p8s1:-GSHELL_PAGE=0,-GNPU_DIM=4,-GNPU_PORT_BYTES=8,-GNPU_A_STRIPS=1 \
+	soc_n4p4s2:-GSHELL_PAGE=0,-GNPU_DIM=4,-GNPU_PORT_BYTES=4,-GNPU_A_STRIPS=2 \
+	soc_n4p4s1:-GSHELL_PAGE=0,-GNPU_DIM=4,-GNPU_PORT_BYTES=4,-GNPU_A_STRIPS=1 \
+	soc_dc0:-GSHELL_PAGE=0,-GDCACHE=0 soc_w1_dc0:-GSHELL_PAGE=0,-GWAIT=1,-GDCACHE=0 \
+	soc_w2_dc0:-GSHELL_PAGE=0,-GWAIT=2,-GDCACHE=0 soc_w4_dc0:-GSHELL_PAGE=0,-GWAIT=4,-GDCACHE=0
+ASTER_SOC_BUILDS += $(ASTER_SOC_MATRIX_BUILDS)
+ASTER_SOC_MATRIX_SIMS := $(foreach b,$(ASTER_SOC_MATRIX_BUILDS),$(ASTER_SOC_DIR)/$(firstword $(subst :, ,$(b))))
+ASTER_SOC_SIMS := $(filter-out $(ASTER_SOC_MATRIX_SIMS),$(foreach b,$(ASTER_SOC_BUILDS),$(ASTER_SOC_DIR)/$(firstword $(subst :, ,$(b)))))
+.PHONY: matrix-sims matrix-sims-tests
+matrix-sims: $(ASTER_SOC_MATRIX_SIMS)
+matrix-sims-tests: matrix-sims $(ASTER_L1_SIM) $(ASTER_DOT8_PLUGIN)
+	@set -o pipefail; RISCV_PREFIX=$(RISCV_PREFIX) $(PYTHON) scripts/soc_tests.py --sim-dir $(ASTER_SOC_DIR) \
+		--build-dir $(ASTER_SOC_DIR)/programs --cflags "$(LITMUS_CFLAGS)" \
+		--sims $$(echo $(notdir $(ASTER_SOC_MATRIX_SIMS)) | tr ' ' ',') | tee $(ASTER_SOC_DIR)/matrix-sims-tests.log
 $(ASTER_SOC_DIR)/soc_%: $(ASTER_SOC_RTL) $(ASTER_SOC_TB) Makefile
 	mkdir -p $(ASTER_SOC_DIR)
 	$(VERILATOR) --cc --exe --build -O3 --assert --Wall --top-module sim_soc \
