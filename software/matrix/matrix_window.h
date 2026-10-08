@@ -9,7 +9,9 @@
 //                            copies, and poisoning hart 1's lines from hart 0 would make its warm run colder.
 //   matrix_stamp_start(h)    hart h's work interval begun, once a window (matrix_stamps_clear() before it):
 //                            a hart that works in several stretches keeps its first start (v12_work_start
-//                            overwrites).
+//                            overwrites). A stamp is a call and a counter read, about 20 cycles.
+//   matrix_hart0_whole(r)    hart 0 opens and closes every window and works throughout it: its interval is
+//                            the whole window, set after it rather than stamped inside it.
 //   The two-worker kernel window: the computation alone, without the runtime's dispatch and join. Hart 1 is
 //   dispatched before the window and waits at a release flag (matrix_arm); hart 0 opens the window, releases
 //   it (matrix_release), runs its own share, waits for hart 1's done flag (matrix_await) and closes the window;
@@ -41,6 +43,11 @@ static inline void matrix_poison(void *p, uint32_t bytes) {
 }
 
 static volatile uint32_t matrix_stamped[2];
+
+static inline void matrix_hart0_whole(struct v12_record *record) {
+    record->hart[0].work_start = 0;
+    record->hart[0].work_end = (uint32_t)record->hart[0].counter[ASTER_C_CYCLES];
+}
 
 static inline void matrix_stamps_clear(void) { matrix_stamped[0] = matrix_stamped[1] = 0; }
 

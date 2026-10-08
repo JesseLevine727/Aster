@@ -10,9 +10,9 @@
 //   kernel  the engine alone, its inputs in place (the im2col matrix built) and the NPU's descriptor written:
 //           each iteration's interval from START (RESUME) to the engine's end, the four summed. Two workers'
 //           shares are released by a flag inside it, hart 1 armed before it (matrix_window.h).
-// A cold run (matrix_cold.h) is v1's window as the first pass after reset; a warm run is an untimed pass, then
-// the e2e window, then the kernel window. Before each timed pass (and each kernel iteration) the outputs are
-// poisoned. The output is the same for every method, and workload_reference.conv2d_checksum recomputes the
+// A cold run (matrix_cold.h) is v1's window as the first pass after reset; a warm run is, for each window, an
+// untimed pass of the same code, then the window (so the window's code is warm too, not only its data). Before
+// each timed pass (and each kernel iteration) the outputs are poisoned. The output is the same for every method, and workload_reference.conv2d_checksum recomputes the
 // checksum (each window's: the four outputs folded, v1's).
 #include <stdint.h>
 
@@ -104,12 +104,13 @@ static const struct aster_npu2_job job = {image, kernel, output, 1u, 1u, 4u, CON
                                           CONV_OW, CONV_W, CONV_K, CONV_W};
 #endif
 
-static void npu_finish(void) {                         // the job's end, and its outcome
-    const uint32_t status = aster_npu2_wait();
+static void npu_outcome(uint32_t status) {             // a job's outcome noted, and acknowledged
     v12_note_npu_job(status);
     aster_npu2_ack();
     if ((status & (ASTER_NPU2_DONE | ASTER_NPU2_ERROR | ASTER_NPU2_ABORTED)) != ASTER_NPU2_DONE) engine_failed = 1;
 }
+
+static uint32_t npu_status;                            // the kernel window's job: its end, noted after the window
 #endif
 
 #if WORKERS == 2
@@ -127,7 +128,8 @@ static void upper_rows(void *arg) {
 }
 #endif
 
-// the engine on inputs in place (the kernel window's; an NPU job's descriptor already written)
+// the engine on inputs in place (the kernel window's; an NPU job's descriptor already written, its outcome
+// noted after the window)
 static void engine(void) {
 #if CONV_METHOD == 1
     gemm_rows_scalar(0, CONV_M);
@@ -136,7 +138,7 @@ static void engine(void) {
     xe_dot8_gemm(&dot8_job);
 #elif NPU
     aster_npu2_go();
-    npu_finish();
+    npu_status = aster_npu2_wait();
 #elif WORKERS == 2
     matrix_release();
 #if IM2COL
@@ -158,7 +160,7 @@ static void iteration_e2e(void) {
     build_im2col(0, CONV_M);
 #endif
     aster_npu2_start(&job);
-    npu_finish();
+    npu_outcome(aster_npu2_wait());
 #elif WORKERS == 2
     __asm__ volatile ("fence rw, rw" ::: "memory");
     aster_smp_dispatch(upper_rows, (void *)1);
@@ -221,12 +223,10 @@ static void poison_all(void) {
 
 static uint32_t run_e2e(void) {
     uint32_t checksum = 0;
-    v12_work_start(0);
     for (uint32_t iteration = 0; iteration < CONV_ITERATIONS; ++iteration) {
         iteration_e2e();
         checksum = fold(checksum);
     }
-    v12_work_end(0);
     return checksum;
 }
 
@@ -244,11 +244,11 @@ static uint32_t run_kernel(void) {
         matrix_arm(upper_rows, 0);
 #endif
         matrix_open(iteration == 0);
-        matrix_stamp_start(0);
         engine();
-        v12_work_end(0);
         matrix_close();
-#if WORKERS == 2
+#if NPU
+        npu_outcome(npu_status);
+#elif WORKERS == 2
         aster_smp_join();
 #endif
         checksum = fold(checksum);
@@ -262,6 +262,7 @@ static void emit(struct v12_record *record, const char *window, uint32_t checksu
                                         "conv2d_direct_dot8", "conv2d_direct_npu"};
     static const char *const methods[] = {"", "scalar", "multicore", "dot8", "npu_im2col", "scalar", "multicore",
                                           "dot8", "npu_direct"};
+    matrix_hart0_whole(record);
     record->name = names[CONV_METHOD]; record->family = "dsp"; record->method = methods[CONV_METHOD];
     record->window = window; record->cache_state = MATRIX_CACHE_STATE;
     record->size = CONV_H * CONV_W; record->iterations = CONV_ITERATIONS; record->param = CONV_K;
@@ -286,6 +287,7 @@ int main(void) {
     v12_end(&record);
     emit(&record, "e2e", e2e);
     if (!matrix_cold) {
+        (void)run_kernel();                            // the kernel window's warm-up
         poison_all();
         matrix_stamps_clear();
         v12_prepare();

@@ -13,8 +13,8 @@
 //   kernel  an interval per layer: the engine alone, its input in place and the NPU's descriptor written
 //           (requantization, ReLU and the class outside).
 // The weights are read where they are: v1 copied fc1 into RAM only because its ROM was not the NPU's to read;
-// v2's memory is one. A cold run (matrix_cold.h) is the e2e window as the first pass after reset; a warm run is
-// an untimed pass, then the e2e window, then the kernel window; the outputs poisoned before each timed pass.
+// v2's memory is one. A cold run (matrix_cold.h) is the e2e window as the first pass after reset; a warm run is,
+// for each window, an untimed pass of the same code, then the window; the outputs poisoned before each.
 // Each record's checksum folds every logit and class (v1's), which scripts/matrix.py's oracle recomputes with
 // phase11_reference's independent model; PASS needs every logit equal to the frozen reference's.
 #include <stdint.h>
@@ -51,8 +51,7 @@ static int8_t logits[IMAGES][FC2_OUT];
 static int32_t classes[IMAGES];
 static uint32_t window_first;                          // the next interval opens the window (START)
 
-// (hart 0 works through every interval of both windows: its work interval is set to the whole window after
-// it, rather than stamped inside each of the 32 to 64 intervals)
+// (hart 0's work interval is the whole window: matrix_hart0_whole)
 static void interval_open(void) {
     matrix_open((int)window_first);
     window_first = 0;
@@ -75,8 +74,7 @@ static int8_t requant(int32_t accumulator, int32_t mult, int shift, int32_t bias
 }
 
 #if NPU
-static void npu_finish(void) {                         // the job's end, and its outcome
-    const uint32_t status = aster_npu2_wait();
+static void npu_outcome(uint32_t status) {             // a job's outcome noted, and acknowledged
     v12_note_npu_job(status);
     aster_npu2_ack();
     if ((status & (ASTER_NPU2_DONE | ASTER_NPU2_ERROR | ASTER_NPU2_ABORTED)) != ASTER_NPU2_DONE) engine_failed = 1;
@@ -112,14 +110,17 @@ void aster_secondary_main(void) {
 // a layer, C = A B: on the NPU, or the CPU's method; in the kernel window, an interval of its own
 static void layer(const struct aster_npu2_job *job, int mode) {
 #if NPU
-    if (mode == KERNEL) {
+    if (mode == KERNEL) {                              // (from START to the job's end; its outcome after)
         aster_npu2_describe(job);
         interval_open();
         aster_npu2_go();
-    } else {
-        aster_npu2_start(job);
+        const uint32_t status = aster_npu2_wait();
+        interval_close();
+        npu_outcome(status);
+        return;
     }
-    npu_finish();
+    aster_npu2_start(job);
+    npu_outcome(aster_npu2_wait());
 #else
     if (mode == KERNEL) interval_open();
     struct aster_npu_gemm gemm = {(const int8_t *)job->a, (const int8_t *)job->b, (int32_t *)job->c, job->a_stride,
@@ -237,8 +238,7 @@ static void timed_pass(struct v12_record *record, int mode) {
     v12_prepare();
     pass(mode);
     v12_end(record);
-    record->hart[0].work_start = 0;
-    record->hart[0].work_end = (uint32_t)record->hart[0].counter[ASTER_C_CYCLES];
+    matrix_hart0_whole(record);
     uint32_t checksum = 0, logits_ok = 1;
     for (uint32_t image = 0; image < IMAGES; ++image) {
         for (uint32_t o = 0; o < FC2_OUT; ++o) {
@@ -268,6 +268,7 @@ int main(void) {
     timed_pass(&record, E2E);
     int failed = !record.pass;
     if (!matrix_cold) {
+        pass(KERNEL);                                  // the kernel window's warm-up
         timed_pass(&record, KERNEL);
         failed |= !record.pass;
     }

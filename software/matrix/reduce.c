@@ -11,9 +11,9 @@
 //   kernel  the sums alone, the array in place: each iteration's array filled before its interval (v1's by
 //           hart 0; the gate's by each worker, its half), the four intervals summed. Two workers' shares are
 //           released inside it: v1's by its epoch (hart 1 waits on it), the gate's by a flag (matrix_window.h).
-// A cold run (matrix_cold.h) is the e2e window as the first pass after reset; a warm run is an untimed pass,
-// the e2e window, then the kernel window; the array and the partial sums poisoned before each. Each hart
-// stamps its work interval (its first fill or sum to its last).
+// A cold run (matrix_cold.h) is the e2e window as the first pass after reset; a warm run is, for each window, an
+// untimed pass of the same code, then the window; the array and the partial sums poisoned before each. Hart 1
+// stamps its work interval (its first fill or sum to its last); hart 0's is the window (matrix_hart0_whole).
 #include <stdint.h>
 #include <stdatomic.h>
 
@@ -85,12 +85,10 @@ static uint32_t sum_all(void) {                        // (in the window) v1's s
 static uint32_t run_e2e(void) {
     uint32_t checksum = 0;
     for (uint32_t iteration = 1; iteration <= REDUCE_ITERATIONS; ++iteration) {
-        matrix_stamp_start(0);
         fill_range(0, REDUCE_WORDS);
         __asm__ volatile ("fence rw,rw" ::: "memory");
         checksum = (checksum * 33u) ^ sum_all();
     }
-    v12_work_end(0);
     return checksum;
 }
 
@@ -99,9 +97,7 @@ static uint32_t run_kernel(void) {
     for (uint32_t iteration = 1; iteration <= REDUCE_ITERATIONS; ++iteration) {
         fill_range(0, REDUCE_WORDS);                   // (outside: v1's fill, by hart 0)
         matrix_open(iteration == 1);
-        matrix_stamp_start(0);
         const uint32_t total = sum_all();
-        v12_work_end(0);
         matrix_close();
         checksum = (checksum * 33u) ^ total;
     }
@@ -133,19 +129,16 @@ static uint32_t run_e2e(void) {
     for (uint32_t iteration = 1; iteration <= REDUCE_ITERATIONS; ++iteration) {
 #if REDUCE_WORKERS == 2
         aster_smp_dispatch(upper_half, 0);
-        matrix_stamp_start(0);
         fill_range(0, REDUCE_WORDS / 2u);
         const uint32_t left = sum_range(0, REDUCE_WORDS / 2u);
         aster_smp_join();
         const uint32_t total = left + upper_sum;
 #else
-        matrix_stamp_start(0);
         fill_range(0, REDUCE_WORDS);
         const uint32_t total = sum_range(0, REDUCE_WORDS);
 #endif
         checksum = (checksum * 33u) ^ total;
     }
-    v12_work_end(0);
     return checksum;
 }
 
@@ -158,20 +151,16 @@ static uint32_t run_kernel(void) {
         aster_smp_join();
         matrix_arm(upper_sum_only, 0);
         matrix_open(iteration == 1);
-        matrix_stamp_start(0);
         matrix_release();
         const uint32_t left = sum_range(0, REDUCE_WORDS / 2u);
         matrix_await();
         const uint32_t total = left + upper_sum;
-        v12_work_end(0);
         matrix_close();
         aster_smp_join();
 #else
         fill_range(0, REDUCE_WORDS);
         matrix_open(iteration == 1);
-        matrix_stamp_start(0);
         const uint32_t total = sum_range(0, REDUCE_WORDS);
-        v12_work_end(0);
         matrix_close();
 #endif
         checksum = (checksum * 33u) ^ total;
@@ -181,6 +170,7 @@ static uint32_t run_kernel(void) {
 #endif
 
 static void emit(struct v12_record *record, const char *window, uint32_t checksum) {
+    matrix_hart0_whole(record);
     record->name = REDUCE_VERSION == 1 ? "reduce_v1" : "reduce_fill";
     record->family = "coherence";
     record->method = REDUCE_WORKERS == 2 ? "multicore" : "scalar";
@@ -235,6 +225,7 @@ int main(void) {
     v12_end(&record);
     emit(&record, "e2e", checksum);
     if (!matrix_cold) {
+        (void)run_kernel();                            // the kernel window's warm-up
         poison();
         v12_prepare();
         const uint32_t kernel_sum = run_kernel();

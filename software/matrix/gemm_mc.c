@@ -8,8 +8,8 @@
 // lies where its packer left it), two workers' shares released by a flag inside it (matrix_window.h).
 // A (M x K) and B (K x N), signed bytes from xorshift32 seeded 0x2545F491 (A, then B), outside the windows;
 // each record's checksum is C's ((sum * 33) ^ c), which scripts/matrix.py's oracle recomputes. A cold run
-// (matrix_cold.h) is the e2e window as the first pass after reset; a warm run is an untimed pass, the e2e
-// window, then the kernel window; C (and, before the e2e window, B's packing) poisoned before each.
+// (matrix_cold.h) is the e2e window as the first pass after reset; a warm run is, for each window, an untimed
+// pass of the same code, then the window; C (and, before the e2e window, B's packing) poisoned before each.
 #include <stdint.h>
 
 #include "aster.h"
@@ -172,21 +172,17 @@ static void run(uint32_t pass) {
     pass_number = pass;
     __asm__ volatile ("fence rw, rw" ::: "memory");
     aster_smp_dispatch(hart1_half, 0);
-    v12_work_start(0);
     pack_blocks(0, BLOCKS / 2u);
     __asm__ volatile ("fence rw, rw" ::: "memory");
     packed[0] = pass;
     while (packed[1] != pass) {}
     __asm__ volatile ("fence rw, rw" ::: "memory");
     gemm_rows(0, GEMM_M / 2u);
-    v12_work_end(0);
     aster_smp_join();
 #else
     (void)pass;
-    v12_work_start(0);
     pack_blocks(0, BLOCKS);
     gemm_rows(0, GEMM_M);
-    v12_work_end(0);
 #endif
 }
 
@@ -234,20 +230,16 @@ static void run_kernel(void) {
     poison(0);
     matrix_arm(hart1_rows, 0);
     matrix_open(1);
-    v12_work_start(0);
     matrix_release();
     gemm_rows(0, GEMM_M / 2u);
     matrix_await();
-    v12_work_end(0);
     matrix_close();
     aster_smp_join();
 #else
     pack_blocks(0, BLOCKS);
     poison(0);
     matrix_open(1);
-    v12_work_start(0);
     gemm_rows(0, GEMM_M);
-    v12_work_end(0);
     matrix_close();
 #endif
 }
@@ -273,6 +265,7 @@ static void emit(struct v12_record *record, const char *window) {
         }
         *p = 0;
     }
+    matrix_hart0_whole(record);
     record->name = name;
     record->family = "coherence";
     record->method = GEMM_WORKERS == 2 ? "multicore" : "dot8";
@@ -302,6 +295,7 @@ int main(void) {
     emit(&record, "e2e");
     int failed = !record.pass;
     if (!matrix_cold) {
+        run_kernel();                                  // the kernel window's warm-up
         v12_prepare();
         run_kernel();
         v12_end(&record);
