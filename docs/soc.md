@@ -1039,3 +1039,20 @@ Milestone 20.3):
     from a held one in any one bit. A cache that drops any one kept bit
     from any of the three narrow compares is caught on every seed (`make
     l1-span-mutants`: 15 of 15).
+
+### Decided in 20.4 (the workload matrix)
+
+**Decided by the owner, 8 October 2026** (matrix.md §9):
+- **§9's matrix** crosses its axes as a reference configuration plus each
+  axis varied alone, with full crosses where a family's question is about an
+  interaction (matrix.md §3).
+- **§8's records (AsterBench v12):** a hart reads the configuration it can
+  see. The data cache's mode and the NPU's port width and strips come from
+  the build, checked against the testbench's readback of the ARM side's
+  configuration words.
+- **§9's data-cache axis:** a `DCACHE` parameter in the data cache. Off,
+  main memory is uncached, keeping its main-memory flag for lr, sc and the
+  AMOs. The default build is unchanged.
+- **§9's NPU axis:** a lane adapter on port N for the 4×4 NPU's 32-bit port,
+  in its simulation variants.
+

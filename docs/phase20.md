@@ -1023,6 +1023,31 @@ eleven builds):
 
 **Signed off by the owner, 8 October 2026** (with "proceed with 20.4").
 
+## Milestone 20.4: the workload matrix (in progress, 8 October 2026)
+
+**The plan:** [`matrix.md`](matrix.md), the matrix soc.md §9 asks for, made
+concrete, and [`asterbench-v12.md`](asterbench-v12.md), its records.
+
+**Approved by the owner, 8 October 2026,** with four decisions (matrix.md
+§9):
+- **The axes cross** as R plus each axis alone, plus named crosses where a
+  family's question is about an interaction: about 8,000 records.
+- **The records' configuration** comes from the hardware where a hart can
+  read it, and from the build, checked by the runner, where it cannot.
+- **The data cache off** is built, as a `DCACHE` parameter.
+- **The NPU's 32-bit port** is built, as a lane adapter on port N.
+
+AsterBench v12 is approved as drafted. CoreMark's official ten-second score
+is 20.5's, on the board.
+
+**The steps** (matrix.md §8):
+1. the infrastructure, proven on the CPU baseline;
+2. the v1-retained and gate workloads, with the scaling and v1 gates
+   measured;
+3. the other families;
+4. the full matrix, its manifest complete, the overlap and totals
+   reconciled, and the evidence.
+
 ## Milestones and gates
 
 | Milestone | Scope | Exit |
