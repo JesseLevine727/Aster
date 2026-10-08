@@ -261,7 +261,44 @@ def ml_family() -> list[Entry]:
     return ml_entries() + cifar_entries()
 
 
-FAMILIES = {"cpu": cpu_entries, "coherence": coherence_entries, "dsp": dsp_entries, "ml": ml_family}
+ECG_METHODS = ((0, "ecg_pipeline_v1", "pipeline", 2), (1, "ecg_scalar", "scalar", 1), (2, "ecg_dot8", "dot8", 1),
+               (3, "ecg_pipeline_overlap", "pipeline", 2))
+
+
+def ecg_entries() -> list[Entry]:
+    """matrix.md §4.8: streaming ECG (a v1-retained workload). Every case at R, warm: chunks of 16, 32, 64 and 128
+    samples x FIRs of 8, 16 and 32 taps (where the chunk is longer) x v1's model and the one with twice its
+    features, for each method; v1's case (64 samples, 16 taps, v1's model) across the axes."""
+    entries = []
+    sources = ["software/matrix/ecg.c", "software/benchmarks/xe_kernels.c", "software/drivers/aster_dma.c",
+               "software/drivers/aster_npu.c", "software/runtime/asterbench_v12.c", "software/runtime/aster_smp.c"]
+    for number, name, method, workers in ECG_METHODS:
+        configs = [(sim, cold, reason, 64, 16, 4) for sim, cold, reason in axis_configs(number in (0, 3), workers)]
+        if workers == 2:
+            configs = [(sim, cold, "the pipeline needs two harts" if sim == "soc_h1" else reason, c, t, f)
+                       for sim, cold, reason, c, t, f in configs]
+        configs += [("soc_dev", False, "", chunk, taps, features) for chunk in (16, 32, 64, 128)
+                    for taps in (8, 16, 32) for features in (4, 8)
+                    if chunk > taps and (chunk, taps, features) != (64, 16, 4)]
+        for sim, cold, reason, chunk, taps, features in configs:
+            case = name + ("_f8" if features == 8 else "")
+            ident = f"ecg/{case}/{method}/{sim}/{'cold' if cold else 'warm'}" + \
+                    ("" if (chunk, taps) == (64, 16) else f"/c{chunk}t{taps}")
+            axes = make_axes(sim, cold, workers)
+            axes.update(chunk=chunk, taps=taps, features=features)
+            e = Entry(ident, "ecg", case, method, sim, cold, [], "LITMUS_CFLAGS", [], [], "", sources,
+                      soc_variants.v12_defines(sim) + [f"-DECG_METHOD={number}", f"-DECG_CHUNK={chunk}u",
+                                                       f"-DECG_COEF={taps}u", f"-DECG_FEATURES={features}u",
+                                                       "-Isoftware/benchmarks"]
+                      + (["-DMATRIX_COLD"] if cold else []), axes, "ecg")
+            if reason:
+                e.status, e.reason = "unsupported", reason
+            entries.append(e)
+    return entries
+
+
+FAMILIES = {"cpu": cpu_entries, "coherence": coherence_entries, "dsp": dsp_entries, "ml": ml_family,
+            "ecg": ecg_entries}
 
 # v1's baseline records (Phase 17, sync1), the cases' identity the v12 record must keep
 BASELINE = run_core_tests.BASELINE
@@ -500,8 +537,88 @@ def oracle_stamps(entry: Entry, records: list[dict]) -> str:
     return f"both windows ran their 64 steps; a stamp costs {extra:.1f} cycles beyond a store"
 
 
+def ecg_model(chunk: int, taps: int, features: int, seed: int = 0x13570000) -> int:
+    """The ECG pipeline re-run (software/matrix/ecg.c's computation): the frozen segment in chunks, the FIR, v1's
+    four features (over each half of the filtered chunk for 8), the 3-class classifier, the class; v1's fold."""
+    samples = workload_reference._ecg_samples()
+    mask = 0xFFFFFFFF
+    s8 = lambda v: (v & 0xFF) - 256 if v & 0x80 else v & 0xFF
+    fout, chunks = chunk - taps + 1, len(samples) // chunk
+    coef = [s8(seed ^ ((i * 0x9E3779B9) & mask)) for i in range(taps)]
+    weights = [[s8(seed ^ ((c * 0x85EBCA6B) & mask) ^ ((f * 0x1021) & mask)) for f in range(features)] for c in range(3)]
+    clamp = lambda v: max(-128, min(127, v))
+    tdiv = lambda v, d: -(abs(v) // d) if v < 0 else v // d
+
+    def four(values):
+        peak = sum_scaled = abs_sum = previous = crossings = 0
+        for value in values:
+            scaled = value >> 8
+            sum_scaled += scaled
+            peak = max(peak, abs(scaled))
+            abs_sum += abs(scaled)
+            sign = 1 if value > 0 else (-1 if value < 0 else 0)
+            if previous and sign and sign != previous:
+                crossings += 1
+            if sign:
+                previous = sign
+        n = len(values)
+        return [clamp(peak >> 4), clamp(tdiv(abs_sum, n) >> 4), clamp(crossings), clamp(tdiv(sum_scaled, n) >> 4)]
+    checksum = 0
+    for index in range(chunks):
+        x = samples[index * chunk:(index + 1) * chunk]
+        filtered = [sum(x[r + k] * coef[k] for k in range(taps)) for r in range(fout)]
+        feats = four(filtered) if features == 4 else four(filtered[:fout // 2]) + four(filtered[fout // 2:])
+        scores = [sum(w * f for w, f in zip(weights[c], feats)) for c in range(3)]
+        best = max(range(3), key=lambda c: scores[c])
+        for v in [filtered[0], filtered[-1]]:
+            checksum = ((checksum * 33) ^ (v & mask)) & mask
+        for v in feats:
+            checksum = ((checksum * 33) ^ (v & 0xFF)) & mask
+        for v in scores:
+            checksum = ((checksum * 33) ^ (v & mask)) & mask
+        checksum = ((checksum * 33) ^ best) & mask
+    return checksum
+
+
+def oracle_ecg(entry: Entry, records: list[dict], extras: list[str]) -> str:
+    chunk, taps, features = (entry.axes[k] for k in ("chunk", "taps", "features"))
+    chunks, fout = 1024 // chunk, chunk - taps + 1
+    want = ecg_model(chunk, taps, features)
+    if features == 4 and want != workload_reference.ecg_checksum(chunk, chunks, taps, 0x13570000):
+        raise asterbench_v12.ValidationError("the ECG model disagrees with workload_reference's")
+    pipeline = entry.case.startswith("ecg_pipeline")
+    dot8 = 0 if entry.method == "scalar" else chunks * fout * (taps // 4)
+    if entry.method == "dot8":
+        dot8 += chunks * 3 * (features // 4)
+    for r in two_windows(entry, records):
+        if (r["name"], r["size"], r["iterations"], r["param"], r["seed"], r["workers"]) != \
+                (entry.case, chunk, chunks, taps, 0x13570000, entry.axes["workers"]):
+            raise asterbench_v12.ValidationError("the record's identity differs from the entry's")
+        method_evidence(entry, r, dot8=dot8, npu_jobs=chunks if pipeline else 0)
+        if pipeline and r["npu_macs"] != chunks * 3 * features:
+            raise asterbench_v12.ValidationError(f"{r['npu_macs']} NPU MACs, not {chunks * 3 * features}")
+        moved = pipeline and r["window"] == "e2e"
+        if (r["dma_jobs"], r["dma_bytes"]) != ((chunks, 1024) if moved else (0, 0)):
+            raise asterbench_v12.ValidationError(f"DMA jobs {r['dma_jobs']}, bytes {r['dma_bytes']}")
+    if want != records[0]["checksum"]:
+        raise asterbench_v12.ValidationError(f"checksum {records[0]['checksum']:#010x}, the model's {want:#010x}")
+    latency = [dict(t.split("=", 1) for t in l.split(",")[1:]) for l in extras if l.startswith("MATRIX_ECG,")]
+    if len(latency) != 1 or latency[0].get("name") != entry.case or int(latency[0]["chunks"]) != chunks:
+        raise asterbench_v12.ValidationError(f"the latency line: {extras}")
+    worst = int(latency[0]["latency_max"])
+    deadline = chunk * records[0]["clock_hz"] // 360          # the chunk's period at 360 Hz, in cycles
+    if worst > deadline:
+        raise asterbench_v12.ValidationError(f"a chunk took {worst} cycles, past its deadline {deadline}")
+    return (f"checksum {want:#010x}: the independent model's; each chunk within its deadline (worst "
+            f"{worst} cycles, mean {latency[0]['latency_mean']}, of {deadline})")
+
+
+oracle_ecg.wants_extras = True
+
+
 ORACLES = {"cpu": oracle_cpu, "reduce": oracle_reduce, "gemm": oracle_gemm, "conv2d": oracle_conv2d,
-           "mnist": oracle_mnist, "smp": oracle_smp, "cifar": oracle_cifar, "stamps": oracle_stamps}
+           "mnist": oracle_mnist, "smp": oracle_smp, "cifar": oracle_cifar, "stamps": oracle_stamps,
+           "ecg": oracle_ecg}
 
 _make_lock = threading.Lock()
 _make_cache: dict[tuple, list[str]] = {}
@@ -652,6 +769,9 @@ def do_entry(entry: Entry, out: Path, prefix: str, soc_flags: list[str]) -> dict
         fields, console = run_entry(entry, elf, symbols, out)
         result["soc"] = {k: fields[k] for k in ("status", "cycles", "npu_config", "soc_config") if k in fields}
         lines = [l + "\n" for l in console.splitlines() if l.startswith("ASTERBENCH,")]
+        extras = [l for l in console.splitlines() if l.startswith("MATRIX_")]     # (figures reported apart)
+        if extras:
+            result["extras"] = extras
         record_path = out / "records" / (entry.id.replace("/", "__") + ".record")
         record_path.parent.mkdir(parents=True, exist_ok=True)
         record_path.write_text("".join(lines))
@@ -665,7 +785,9 @@ def do_entry(entry: Entry, out: Path, prefix: str, soc_flags: list[str]) -> dict
             if record["cache_state"] != result["axes"]["cache_state"]:
                 raise asterbench_v12.ValidationError("the record's cache state differs from the entry's")
             records.append(record)
-        result["oracle"] = ORACLES[entry.oracle](entry, records)
+        oracle = ORACLES[entry.oracle]
+        result["oracle"] = oracle(entry, records, extras) if getattr(oracle, "wants_extras", False) \
+            else oracle(entry, records)
         result["lines"] = lines
         result["status"] = "captured"
     except Exception as error:                                   # (every failure recorded, none lost)

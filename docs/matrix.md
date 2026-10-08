@@ -391,9 +391,15 @@ did not settle a point; none loosens a gate.
    that word.
 4. **Between passes, each output is poisoned by the hart that writes it.**
    Without poisoning, a timed pass that wrote nothing could pass on the
-   warm-up's results. The writer poisons rather than hart 0, because hart
-   0's stores would invalidate hart 1's warm lines and make its warm run
-   colder. That cost the gate's reduction 1.7% until it was changed.
+   warm-up's results. `make matrix-poison-check` plants such a pass in
+   Conv2D and shows it caught, and uncaught with the poisoning compiled out.
+   The writer poisons rather than hart 0, because hart 0's stores would
+   invalidate hart 1's warm lines and make its warm run colder. That cost
+   the gate's reduction 1.7% until it was changed.
+
+   Two exceptions are poisoned by hart 0, a handful of lines each: MNIST's
+   two-worker rows of hart 1, and v1's reduction's partial sum. In both,
+   hart 1 runs v1's own loop, which takes no other job.
 5. **MNIST's batched NPU method batches fc2 as well as fc1** (§4.7 names
    fc1). Its weights are stored transposed at build time, as 19.3 did for
    CIFAR, in place of the original layout, which does not fit in 96 KiB
@@ -403,3 +409,25 @@ did not settle a point; none loosens a gate.
    warm-up, a kernel window ran its own code for the first time. Its data
    was warm but its code was not: a GEMM's kernel window took 66 to 76
    instruction-cache misses against its e2e window's 1 or 2.
+7. **The work intervals.** v12 asks for each hart's interval around its
+   useful work. Hart 1 stamps its first stretch's start and its last
+   stretch's end, once each. Hart 0 opens every window, so its interval
+   starts at 0, and it ends as follows:
+   - at the window's end when the window ends in hart 0's own work, such as
+     the checksum, requantization or class of a v1 window, or a one-worker
+     engine;
+   - at its last share's end, stamped, where it then waits for hart 1;
+   - 0 and 0 in an NPU kernel window, where it only starts the job and polls
+     it.
+
+   An interval holds no gaps. Where hart 0 polls the NPU between its stages
+   in an NPU e2e window, its interval spans the polls, so overlap with an
+   engine is not read from it. A stamp costs about 20 cycles (the matrix's
+   `stamp_cost` case). Hart 1's two stamps are inside every two-worker
+   window, v1-retained ones included; they count against v2.
+8. **The computation's functions are compiled out of line** (`noinline`)
+   in the matrix's own programs, so that their code is the same in every
+   caller and build. Inlined, a small change elsewhere in Conv2D's program
+   changed the code GCC generated for its hot loop: 12 more instructions an
+   output row, 7.3% more cycles on two workers. v1's kernels (`xe_kernels.c`)
+   are out of line already.

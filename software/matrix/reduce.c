@@ -39,13 +39,14 @@ _Static_assert(REDUCE_WORKERS == 1u || REDUCE_WORKERS == 2u, "workers must be 1 
 static volatile uint32_t array[REDUCE_WORDS];
 static volatile uint32_t upper_sum;                    // hart 1's partial sum
 
-static uint32_t sum_range(uint32_t begin, uint32_t end) {
+// (the computation's functions out of line, noinline, so that their code is the same in every caller and build)
+static __attribute__((noinline)) uint32_t sum_range(uint32_t begin, uint32_t end) {
     uint32_t sum = 0;
     for (uint32_t i = begin; i < end; ++i) sum += array[i];
     return sum;
 }
 
-static void fill_range(uint32_t begin, uint32_t end) {
+static __attribute__((noinline)) void fill_range(uint32_t begin, uint32_t end) {
     for (uint32_t i = begin; i < end; ++i) array[i] = REDUCE_SEED ^ (i * 0x1021u);
 }
 

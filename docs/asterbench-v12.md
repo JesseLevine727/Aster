@@ -69,7 +69,11 @@ Then:
   `dot8_retire`.
 - **The hart's work interval:** `work_start` and `work_end`, in cycles from
   the window's start, stamped by software around the hart's useful work (0
-  and 0 if it had none).
+  and 0 if it had none). It is one interval: for a hart that works in
+  stretches, from its first stretch's start to its last one's end, with the
+  gaps between inside it. In a window that sums several intervals, the
+  cycles run on across them. The matrix's reading of this for hart 0, which
+  opens every window, is in matrix.md §10.
 
 **The DMA** (ABI 5's counters at `0x3000_0100`, by index, over the window;
 `dma_jobs` counted by software)

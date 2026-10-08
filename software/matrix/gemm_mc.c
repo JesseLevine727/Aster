@@ -58,7 +58,8 @@ static uint32_t next_random(void) {
 }
 
 // B's column blocks [first, end) (four columns each) into their slots: 19.4's pack_b, for a range
-static void pack_blocks(uint32_t first, uint32_t end) {
+// (out of line, noinline, as the rows' kernel below, so that their code is the same in every caller and build)
+static __attribute__((noinline)) void pack_blocks(uint32_t first, uint32_t end) {
     const uint32_t words = GEMM_K / 4u, per_group = GROUP_COLUMNS / 4u;
     for (uint32_t blk = first; blk < end; ++blk) {
         const uint32_t j = 4u * blk;
@@ -111,7 +112,7 @@ static void pack_blocks(uint32_t first, uint32_t end) {
     DOT8("%[c03]", "t3", "a7") DOT8("%[c13]", "t4", "a7") DOT8("%[c23]", "t5", "a7") DOT8("%[c33]", "t6", "a7")
 
 // C's rows [i0, i1) (multiples of four): 19.4's gemm_fixed, for a range of rows
-static void gemm_rows(uint32_t i0, uint32_t i1) {
+static __attribute__((noinline)) void gemm_rows(uint32_t i0, uint32_t i1) {
     const uint8_t *slot = slots;
     for (uint32_t j0 = 0; j0 < GEMM_N; j0 += GROUP_COLUMNS, slot += SLOT)
         for (uint32_t i = i0; i < i1; i += 4u) {

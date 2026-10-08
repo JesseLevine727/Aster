@@ -51,13 +51,15 @@ static int8_t im2col[CONV_M * CONV_KK] __attribute__((aligned(16)));
 static int32_t output[CONV_M] __attribute__((aligned(16)));
 static volatile uint32_t engine_failed;
 
-static void build_image_and_kernel(void) {
+// (the computation's functions are compiled out of line, noinline, so that their code is the same in every
+// caller and build: inlined, a change elsewhere in the program changed a hot loop's code, matrix.md §10)
+static __attribute__((noinline)) void build_image_and_kernel(void) {
     for (uint32_t i = 0; i < CONV_H * CONV_W; ++i) image[i] = (int8_t)((CONV_SEED ^ (i * 0x1021u)) & 0xffu);
     for (uint32_t i = 0; i < CONV_KK; ++i) kernel[i] = (int8_t)((CONV_SEED ^ (i * 0x9e3779b9u)) & 0xffu);
 }
 
 #if IM2COL
-__attribute__((unused)) static void build_im2col(uint32_t row0, uint32_t row1) {
+__attribute__((unused, noinline)) static void build_im2col(uint32_t row0, uint32_t row1) {
     for (uint32_t row = row0; row < row1; ++row) {
         const uint32_t oy = row / CONV_OW, ox = row % CONV_OW;
         for (uint32_t ky = 0; ky < CONV_K; ++ky)
@@ -66,7 +68,7 @@ __attribute__((unused)) static void build_im2col(uint32_t row0, uint32_t row1) {
     }
 }
 
-__attribute__((unused)) static void gemm_rows_scalar(uint32_t row0, uint32_t row1) {   // v1's scalar path
+__attribute__((unused, noinline)) static void gemm_rows_scalar(uint32_t row0, uint32_t row1) {   // v1's scalar path
     for (uint32_t m = row0; m < row1; ++m) {
         int32_t sum = 0;
         for (uint32_t k = 0; k < CONV_KK; ++k) sum += (int32_t)im2col[m * CONV_KK + k] * (int32_t)kernel[k];
@@ -74,7 +76,7 @@ __attribute__((unused)) static void gemm_rows_scalar(uint32_t row0, uint32_t row
     }
 }
 #else
-__attribute__((unused)) static void direct_rows(uint32_t row0, uint32_t row1) {        // the 5x5 window in place
+__attribute__((unused, noinline)) static void direct_rows(uint32_t row0, uint32_t row1) {        // the 5x5 window in place
     for (uint32_t row = row0; row < row1; ++row) {
         const uint32_t oy = row / CONV_OW, ox = row % CONV_OW;
         int32_t sum = 0;
@@ -181,7 +183,7 @@ static void iteration_e2e(void) {
     __asm__ volatile ("fence rw, rw" ::: "memory");
 }
 
-static uint32_t fold(uint32_t checksum) {              // v1's: each output in turn, across the iterations
+static __attribute__((noinline)) uint32_t fold(uint32_t checksum) {              // v1's: each output in turn, across the iterations
     for (uint32_t i = 0; i < CONV_M; ++i) checksum = (checksum * 33u) ^ (uint32_t)output[i];
     return checksum;
 }
