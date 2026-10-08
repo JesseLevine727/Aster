@@ -90,7 +90,7 @@ the whole device with the Zynq PS, 10 ns):
 
 | Build | Directives | Setup (WNS) | Hold (WHS) | Worst path |
 | --- | --- | ---: | ---: | --- |
-| `g2-o5end` (the candidate) | `over=0.5;place=ExtraNetDelay_high` | **+0.375 ns** | +0.022 ns | hart 0's result into its DOT8 multiplier; only 8 endpoints within +0.45 ns |
+| `g2-o5end` (the sign-off build: the owner, 8 October 2026) | `over=0.5;place=ExtraNetDelay_high` | **+0.375 ns** | +0.022 ns | hart 0's result into its DOT8 multiplier; only 8 endpoints within +0.45 ns |
 | `g2` | default | +0.031 ns | +0.020 ns | a data cache's tag lookup into its request registers |
 
 - **Both are clean:** every net routed, no DRC error (DSP pipelining

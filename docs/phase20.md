@@ -1,8 +1,8 @@
 # Phase 20: whole-SoC workload placement and concurrency
 
-Status: **milestone 20.3 (the DMA): its exit met, awaiting the owner's sign-off and two timing
-choices: the build that signs off 20.3, and the directives later builds use.** The candidate is g2-o5end, +0.375 ns and reproducible. It
-is one placement: the median across its RTL's ten strategies is about +0.1 ns (below). 20.2 (the two-hart SoC) was signed off
+Status: **milestone 20.3 (the DMA): its exit met, its timing signed off by the owner on g2-o5end
+(8 October 2026), awaiting the owner's sign-off of the milestone.** The sign-off build, g2-o5end, has +0.375 ns and is
+reproducible. It is one placement: the median across its RTL's ten strategies is about +0.1 ns (below). 20.2 (the two-hart SoC) was signed off
 by the owner on 8 October 2026. The owner decided 20.2's timing on 7 October 2026, in three rounds (below,
 and soc.md §13):
 - the second chance is removed and the NPU's request buffer adopted;
@@ -747,7 +747,7 @@ captured twice, identically; the other suites ran once.
 
 **Signed off by the owner, 8 October 2026** (with "begin 20.3").
 
-## Milestone 20.3: the DMA (its exit met, 8 October 2026; awaiting the owner's sign-off and their choice of the timing build)
+## Milestone 20.3: the DMA (its exit met, 8 October 2026; its timing signed off on g2-o5end; awaiting the owner's sign-off)
 
 **What is built.**
 - **The engine** (`rtl/dma/aster_dma2.sv`, soc.md §6): v1's DMA ABI 1 at
@@ -951,9 +951,10 @@ eleven builds):
   - The default directives give +0.031, a thin pass.
   - So, like r19 in 20.2, the margin holds for this build and not across
     placements. Any later change to the RTL re-rolls the placement.
-  - Signing off on it means building the SoC with
-    `SOC_DIRECTIVES="over=0.5;place=ExtraNetDelay_high"`, and 20.4's and
-    20.5's builds re-checking timing as they come.
+  - It is built with
+    `SOC_DIRECTIVES="over=0.5;place=ExtraNetDelay_high"`. The owner signed
+    off on it, and later milestones re-check timing with several strategies
+    (the decisions below).
 - **The netlist guard** used to count the ARM side's 32 write-data
   registers. Those are gone, since the ports' registers are now the DMA's,
   so it counts port W's 64 data registers in their place
@@ -978,7 +979,12 @@ eleven builds):
     20.2;
   - the spread is recorded above.
 
-  Which build signs off 20.3's timing is the owner's decision.
+**Decided by the owner, 8 October 2026** (soc.md §13):
+- **20.3's timing is signed off on g2-o5end** (+0.375 ns, reproducible),
+  recorded as one placement.
+- **Later milestones re-check timing:** each builds its final RTL with
+  several strategies and signs off on its best reproducible build, with the
+  spread recorded. The default directives stay as they are.
 
 **Found and fixed on the way** (beyond the reviews' findings, all fixed):
 - **`make check` failed from 20.2 on.** Its host test of the core's
@@ -1033,7 +1039,7 @@ eleven builds):
 - [x] 20.0 as in the table above — signed off by the owner (7 October 2026)
 - [x] 20.1 as in the table above — signed off by the owner (7 October 2026), the §4.4 arbitration change approved; re-confirmed by the owner (7 October 2026) after 20.2 corrected its timing (the fabric missed 10 ns; carried by 20.2)
 - [x] 20.2 as in the table above — signed off by the owner (8 October 2026); its timing signed off on r19's build (7 October 2026)
-- [ ] 20.3 as in the table above
+- [ ] 20.3 as in the table above — its exit met; its timing signed off on g2-o5end (8 October 2026)
 - [ ] 20.4 as in the table above
 - [ ] 20.5 as in the table above
 

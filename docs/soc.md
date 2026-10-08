@@ -929,6 +929,19 @@ A round trip with an empty job takes 69–95 cycles, 72 on average.
   (§10.6: the banks' inputs registered, answers at 3 + WAIT) stays measured
   and unadopted: about +0.12 ns, at +0.73% on the CPU kernels.
 
+**Decided by the owner, 8 October 2026 (20.3's timing).**
+- **20.3's timing is signed off on the g2-o5end build.** It has +0.375 ns
+  at 10 ns in context (hold +0.022 ns), reproducible, built with `make
+  fpga-aster-soc SOC_DIRECTIVES="over=0.5;place=ExtraNetDelay_high"` from
+  the committed RTL. It needs no cycle cost and no contract change. The
+  margin holds for that build, not across placements: the same RTL gave
+  +0.031 to +0.188 ns on its nine other strategies, and the median across
+  all ten is about +0.1.
+- **Later milestones re-check timing each time.** The build's default
+  directives stay as they are. Each milestone builds its final RTL with
+  several strategies, signs off on its best reproducible build, and records
+  the spread.
+
 ### Clarifications in 20.3 (the DMA)
 
 Found necessary while building and verifying the DMA (phase20.md,
