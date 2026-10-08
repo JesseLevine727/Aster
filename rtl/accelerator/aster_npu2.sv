@@ -3,7 +3,9 @@
 // the K-split mapping for N = 1 arriving with 19.2).
 //
 // The register port takes a request (r_req_*) every cycle and answers it in
-// the next (r_rsp_*): a read with the register, a write with nothing; an access
+// the next (r_rsp_*), or with RSP_COMB in the same cycle, from the request
+// (the Phase 20 SoC registers the request in front of the port; 20.2): a read
+// with the register, a write with nothing; an access
 // that is not a whole word (r_req_be != 4'hF) is answered with r_rsp_error and
 // has no effect. Unmapped offsets and CONTROL read 0; writes to read-only or
 // unmapped offsets are ignored. Descriptor writes take effect only while not
@@ -21,7 +23,11 @@ module aster_npu2 #(
     parameter int          OUTSTANDING = 2,
     parameter int          A_STRIPS    = 1,     // 19.5: 2 loads the next A strip while the array computes
     parameter int          PORT_BYTES  = 4,     // 19.5: 8, a 64-bit memory port
-    parameter int          DIM         = 4      // 19.5: 8, the 8x8 array (with PORT_BYTES = 8)
+    parameter int          DIM         = 4,     // 19.5: 8, the 8x8 array (with PORT_BYTES = 8)
+    // 20.2: 1 answers the register port in the cycle of the request, from the request itself (a SoC
+    // that registers the request in front keeps the answer's cycle; the NPU's writes then land a
+    // cycle after the SoC's acceptance). 0: answered in the next cycle, as in Phase 19.
+    parameter bit          RSP_COMB    = 1'b0
 ) (
     input  logic        clk,
     input  logic        resetn,
@@ -133,6 +139,19 @@ module aster_npu2 #(
         endcase
     end
 
+    // The answer: registered (the next cycle), or (RSP_COMB) in the request's cycle.
+    logic        rsp_valid_q, rsp_error_q;
+    logic [31:0] rsp_rdata_q;
+    if (RSP_COMB) begin : g_rsp_now
+        assign r_rsp_valid = req;
+        assign r_rsp_error = req && !word;
+        assign r_rsp_rdata = req && word && !r_req_write ? rdata : 32'b0;
+        logic unused_rsp_q;
+        assign unused_rsp_q = ^{rsp_valid_q, rsp_error_q, rsp_rdata_q};
+    end else begin : g_rsp_next
+        assign {r_rsp_valid, r_rsp_error, r_rsp_rdata} = {rsp_valid_q, rsp_error_q, rsp_rdata_q};
+    end
+
     // The high word a low-word read latches.
     logic [31:0] hi_now;
     logic        low_word;
@@ -164,11 +183,11 @@ module aster_npu2 #(
             {total_cycles, total_active, total_macs, total_read, total_written} <= '0;
             job_tiles <= '0; total_jobs <= '0;
             hi_latch <= '0; hi_tag <= '0;
-            r_rsp_valid <= 1'b0; r_rsp_rdata <= '0; r_rsp_error <= 1'b0;
+            rsp_valid_q <= 1'b0; rsp_rdata_q <= '0; rsp_error_q <= 1'b0;
         end else begin
-            r_rsp_valid <= req;
-            r_rsp_error <= req && !word;
-            r_rsp_rdata <= req && word && !r_req_write ? rdata : 32'b0;
+            rsp_valid_q <= req;
+            rsp_error_q <= req && !word;
+            rsp_rdata_q <= req && word && !r_req_write ? rdata : 32'b0;
             if (req && word && !r_req_write) begin
                 if (low_word) begin
                     hi_latch <= hi_now;

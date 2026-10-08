@@ -287,12 +287,18 @@ module aster_core
     logic        d_valid, d_err, d_redirected;
     logic [31:0] d_pc, d_insn;
     decoded_t    d_raw, d_dec;
+    // (kept off the flip-flops' reset pins: synthesis otherwise folds decode terms into synchronous
+    // resets, whose setup is 0.45 ns longer than D's, on Decode's stall path; 20.2's timing)
+    (* extract_reset = "no" *) decoded_t d_raw_q;
     logic        d_predict;
     logic [32:0] f_predecode;       // {predict, target} of the instruction the fetch unit offers
 
     logic d_live;                   // Decode holds an instruction that is not squashed
     assign d_live   = d_valid && !squash;
-    assign d_raw    = decode(d_insn);
+    // (decoded as the instruction enters Decode and registered beside it: the same function of the same
+    // instruction, so every cycle is the same, but Decode's hazards and forwarding start from registers;
+    // 20.2's timing)
+    assign d_raw    = d_raw_q;
     assign d_dec    = d_err ? decoded_t'('0) : d_raw;     // a fetch fault carries no operation
     // jal, and a backward branch, redirect from Decode (the target must be
     // aligned). The decision and the target are predecoded as the instruction
@@ -304,7 +310,7 @@ module aster_core
     // --------------------------------------------------------------- Execute
     logic        e_valid, e_err, e_pred;
     logic [31:0] e_pc, e_insn, e_rs1v, e_rs2v;
-    decoded_t    e_dec;
+    (* extract_reset = "no" *) decoded_t e_dec;    // (off the reset pins, as d_raw_q: on the stall path)
     slot_t       m1, m2;
     logic        e_live;             // Execute holds an instruction that is not squashed
     assign e_live = e_valid && !squash;
@@ -336,7 +342,8 @@ module aster_core
     assign rs1_ready = (fsel1_n[3] || !m1.late) && (fsel1_n[2] || !m2.late);
     assign rs2_ready = (fsel2_n[3] || !m1.late) && (fsel2_n[2] || !m2.late);
 
-    logic        e_ready, e_taken, e_misaligned, e_target_misaligned, e_trap, e_access, e_mispredict;
+    logic        e_ready, e_taken, e_misaligned, e_target_misaligned, e_trap, e_trap_nb, e_trap_op, e_access;
+    logic        e_mispredict;
     logic [31:0] e_addr, e_link, e_result, e_btarget, e_jtarget, e_wdata;
     logic [1:0]  e_offset;
     logic [3:0]  e_be, e_cause;
@@ -419,6 +426,13 @@ module aster_core
     assign e_misaligned = (e_dec.load || e_dec.store) &&
                           ((e_dec.funct3[1:0] == 2'd1 && e_offset[0]) || (e_dec.funct3[1:0] == 2'd2 && e_offset != 2'd0));
     assign e_trap    = e_err || e_dec.illegal || e_dec.ecall || e_dec.ebreak || e_misaligned || e_target_misaligned;
+    // Every cause but a taken branch's misaligned target, which needs the branch's compare: the fields a
+    // trap clears below are all 0 for a branch, so they take this one and do not wait for the compare;
+    // the fields of an operation that is not an access or a jump take only the causes that need no
+    // operand (e_trap_op), the only ones that apply to it (the same values: 20.2's timing). The slot's
+    // trap itself takes e_trap.
+    assign e_trap_op = e_err || e_dec.illegal || e_dec.ecall || e_dec.ebreak;
+    assign e_trap_nb = e_trap_op || e_misaligned || (e_dec.jalr && e_jtarget[1]) || (e_dec.jal && e_btarget[1]);
     // The exception code (only one cause can apply: a fetch fault decodes as
     // nothing, an illegal encoding as no operation).
     assign e_cause   = e_err ? 4'd1 : e_dec.illegal ? 4'd2 : e_dec.ebreak ? 4'd3 : e_dec.ecall ? 4'd11
@@ -535,16 +549,16 @@ module aster_core
     assign mul_result  = m2.funct3[1:0] == 2'd0 ? mul_product[31:0] : mul_product[63:32];
 
     // ------------------------------------------------------------ Xasterdot8
-    // M1: the four products of the operands' signed bytes (in DSP blocks: in
-    // LUTs, product and sum together exceeded the cycle), summed in the fabric
+    // The four products of the operands' signed bytes (in DSP blocks: in LUTs,
+    // product and sum together exceeded the cycle), summed in M1 in the fabric
     // (a sum chained through the DSPs' cascade was slower still) from -65,024
-    // to 65,536 and sign-extended; the value enters M2 with the dot8.
+    // to 65,536 and sign-extended; the value enters M2 with the dot8. The
+    // products are formed as the operands enter M1 and registered (in the
+    // DSPs) under M1's own conditions, so they are always the products of M1's
+    // operands: every cycle is the same, and M1 holds only the sum (20.2's
+    // timing).
     (* use_dsp = "yes" *) logic signed [15:0] dot8_p0, dot8_p1, dot8_p2, dot8_p3;
     (* use_dsp = "no" *)  logic signed [17:0] dot8_sum;
-    assign dot8_p0  = $signed(m1.rs1v[7:0])   * $signed(m1.rs2v[7:0]);
-    assign dot8_p1  = $signed(m1.rs1v[15:8])  * $signed(m1.rs2v[15:8]);
-    assign dot8_p2  = $signed(m1.rs1v[23:16]) * $signed(m1.rs2v[23:16]);
-    assign dot8_p3  = $signed(m1.rs1v[31:24]) * $signed(m1.rs2v[31:24]);
     assign dot8_sum = 18'(dot8_p0) + 18'(dot8_p1) + 18'(dot8_p2) + 18'(dot8_p3);
 
     // ------------------------------------------------------------ W values
@@ -600,17 +614,17 @@ module aster_core
         e_slot           = '0;
         e_slot.valid     = 1'b1;
         e_slot.trap      = e_trap;
-        e_slot.writes_rd = e_dec.writes_rd && !e_trap;
-        e_slot.load      = e_dec.load && !e_trap;
-        e_slot.store     = e_dec.store && !e_trap;
-        e_slot.mul       = e_dec.mul && !e_trap;
-        e_slot.late      = (e_dec.load || e_dec.mul || e_dec.dot8) && !e_trap;
-        e_slot.dot8      = e_dec.dot8 && !e_trap;
+        e_slot.writes_rd = e_dec.writes_rd && !e_trap_nb;
+        e_slot.load      = e_dec.load && !e_trap_nb;
+        e_slot.store     = e_dec.store && !e_trap_nb;
+        e_slot.mul       = e_dec.mul && !e_trap_op;
+        e_slot.late      = (e_dec.load && !e_trap_nb) || ((e_dec.mul || e_dec.dot8) && !e_trap_op);
+        e_slot.dot8      = e_dec.dot8 && !e_trap_op;
         e_slot.acc       = e_access;
         e_slot.sys       = e_dec.sys;
-        e_slot.csr_rd    = e_dec.csr && !e_trap;
-        e_slot.csr_we    = (e_dec.csr_write || e_dec.mret) && !e_trap;
-        e_slot.mret      = e_dec.mret && !e_trap;
+        e_slot.csr_rd    = e_dec.csr && !e_trap_op;
+        e_slot.csr_we    = (e_dec.csr_write || e_dec.mret) && !e_trap_op;
+        e_slot.mret      = e_dec.mret && !e_trap_op;
         e_slot.intr      = intr_next;
         e_slot.cause     = e_cause;
         e_slot.csr_sel   = e_dec.csr_sel;
@@ -646,6 +660,7 @@ module aster_core
             e_valid      <= 1'b0;
             m1           <= '0;
             m2           <= '0;
+            {dot8_p0, dot8_p1, dot8_p2, dot8_p3} <= '0;
             w            <= '0;
             d_acc_last   <= 1'b0;
             m1_err_held  <= 1'b0;
@@ -670,6 +685,7 @@ module aster_core
                 d_valid      <= f_valid;
                 d_pc         <= {f_pc, 2'b00};
                 d_insn       <= f_insn;
+                d_raw_q      <= decode(f_insn);
                 d_err        <= f_error;
                 d_redirected <= 1'b0;
                 d_predict    <= f_predecode[32] && !f_error;
@@ -753,6 +769,15 @@ module aster_core
                 m1.insn    <= e_slot.insn;
             end
             m1_err_held <= m1_bus_err;
+
+            // dot8's products: loaded as M1's operands are, whenever M1 is free (a kill
+            // frees it), else kept
+            if (m1_free) begin
+                dot8_p0 <= $signed(e_slot.rs1v[7:0])   * $signed(e_slot.rs2v[7:0]);
+                dot8_p1 <= $signed(e_slot.rs1v[15:8])  * $signed(e_slot.rs2v[15:8]);
+                dot8_p2 <= $signed(e_slot.rs1v[23:16]) * $signed(e_slot.rs2v[23:16]);
+                dot8_p3 <= $signed(e_slot.rs1v[31:24]) * $signed(e_slot.rs2v[31:24]);
+            end
 
             // The multiplier's partial products, for the multiply in M1, as it moves
             // into M2. They load whenever M1 holds a multiply, not on M1's advance

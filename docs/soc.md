@@ -761,8 +761,11 @@ page, as the Phase 19 SoC did.
 answer from that register in the next cycle, as §4.1 requires. A device write
 therefore takes effect at the end of the cycle after its acceptance. No
 program can tell: each data cache's next I/O access is accepted only after
-the answer. The NPU's register port takes the request at acceptance, as in
-Phase 19, and its reset is registered beside it (it leaves reset a cycle after
+the answer. The NPU's register port takes the request from a register loaded
+at acceptance (the owner's second-round decision, below) and answers from it
+in the same cycle, so its answer keeps its cycle. Its writes, START among
+them, take effect at the end of the cycle after acceptance, like the other
+devices'. Its reset is registered beside it (it leaves reset a cycle after
 hart 0).
 
 **§7.3, the mailboxes.** As in v1: hart 0 alone writes TO_HART1 and hart 1
@@ -861,3 +864,17 @@ A round trip with an empty job takes 69–95 cycles, 72 on average.
   equivalence and regression suites), aiming at +0.3 ns or better.
 - **20.1's sign-off** is re-confirmed, with its timing correction recorded
   above. Its timing is now carried by 20.2.
+- **Second round:** 20.2 pushes on for margin, the cores' logic included. The
+  NPU's register port may be registered, at +1 cycle per NPU job: its
+  register writes, START among them, would take effect a cycle after their
+  acceptance.
+- **Done:** the register port registered (`NPU_REG_Q`, the default; the NPU
+  answers from the register in the same cycle, `aster_npu2`'s `RSP_COMB`).
+  With the request buffer, against Phase 19 on its gate programs: +120
+  cycles on the GEMM gate (+0.0035%), +264 on MNIST (+0.015%), +565 on the
+  coherence program (+0.0074%), none on the fault program. The register's
+  own share (the same build with `NPU_REG_Q` 0 and 1): none on the GEMM gate
+  (5 jobs) or MNIST (65 jobs), whose poll loops absorb the cycle, +39 cycles
+  over the coherence program's 162 jobs, none on the fault program. It
+  removed the 185 near-critical endpoints of a data cache's I/O write into
+  the NPU's registers.

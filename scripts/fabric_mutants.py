@@ -97,7 +97,7 @@ BANKED_MUTANTS: dict[str, list[tuple[str, str]]] = {
     "writes_beside_amo": [(B_ELIG_A, "&& !((k == D0 && hold[0]) || (k == D1 && hold[1]))")],
     "port_a_beside_amo_write": [("elig_a[b][i] = valid[k] && on_port_a[k] && tgt_mem[k] && bank[k] == 2'(b) && !amo_wr_now[b]",
                                  "elig_a[b][i] = valid[k] && on_port_a[k] && tgt_mem[k] && bank[k] == 2'(b)")],
-    "amo_unit_readable": [("                               && !(amo_wr_now[b] && unit[k] == amo_wr_unit[b]);", "                               ;")],
+    "amo_unit_readable": [("                               && !(amo_wr_now[b] && index[k] == amo_index[b]);", "                               ;")],
     "fixed_priority": [("if (|pick_a[b]) ptr_a[b] <= after(pick_a[b]);", ";"),
                        ("if (|take_b[b]) ptr_b[b] <= after(take_b[b]);", ";")],
     # (port B's pointer moving past a pick port A held back: equivalent at the contract — the held-back
@@ -141,7 +141,7 @@ BANKED_MUTANTS: dict[str, list[tuple[str, str]]] = {
     "sticky_winner": [("if (|pick_a[b]) ptr_a[b] <= after(pick_a[b]);", "if (|pick_a[b]) ptr_a[b] <= after(pick_a[b]) - 2'd1;")],
     "port_b_fixed_priority": [("if (|take_b[b]) ptr_b[b] <= after(take_b[b]);", ";")],
     "io_fixed_priority": [("if (io_grant[D0]) io_ptr <= 1'b1;", ";")],
-    "starvation_unmasked": [("&& !(blk_v[b] && wclass[k] && unit[k] == blk_unit[b]);", ";")],
+    "starvation_unmasked": [("&& !(blk_v[b] && wclass[k] && index[k] == blk_index[b]);", ";")],
     "wait_stages_kept_on_reset": [("for (int s = 0; s < WAIT; s++) begin wv[s][h == 0 ? I0 : I1] <= 1'b0; wv[s][h == 0 ? D0 : D1] <= 1'b0; end", ";")],
     # (20.1's second chance on port B, and its six mutants, were removed with it in 20.2)
 }

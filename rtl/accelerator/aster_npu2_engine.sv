@@ -142,11 +142,16 @@ module aster_npu2_engine #(
     logic [11:0] m_q_sel, k_q_sel;
     assign m_q_sel = m0_on ? dm_q : 12'd0;
     assign k_q_sel = k0_on ? dk_q : 12'd0;
-    logic [32:0] dm_rem, dk_rem, dm_shift, dk_shift;
+    // The remainder never exceeds the dividend's bits taken so far (M-1 and K-1 have 12), so it has 12
+    // bits and the shifted remainder 13; a divisor of 2^13 or more is never subtracted (a_m0_hi, a_k0_hi).
+    // The same quotient as a 33-bit divider, step for step, from 13-bit compares (20.2's timing).
+    logic [11:0] dm_rem, dk_rem;
+    logic [12:0] dm_shift, dk_shift;
+    logic        a_m0_hi, a_k0_hi, a_m0_nz, a_k0_nz;   // loaded with a_m0 and a_k0: >= 2^13, != 0
     logic [3:0]  dmk_i;
     // M-1 and K-1, latched at START (the dividers' inputs, from registers).
-    assign dm_shift = {dm_rem[31:0], m1[dmk_i]};
-    assign dk_shift = {dk_rem[31:0], k1[dmk_i]};
+    assign dm_shift = {dm_rem, m1[dmk_i]};
+    assign dk_shift = {dk_rem, k1[dmk_i]};
     // min(M-1, A_M0-1) and min(K-1, A_K0-1): registered in CHECK's first cycle,
     // so the extent's products start from registers.
     assign m_r = a_m0 != 0 && {20'b0, m1} >= a_m0 ? 12'(a_m0 - 32'd1) : m1;
@@ -311,6 +316,12 @@ module aster_npu2_engine #(
     logic [31:0] bank_addr [0:1];
     logic [LD:0] bank_rv [0:1], bank_cv [0:1];
     logic [18:0] bank_macs [0:1];
+    // A tile's MACs, rv * cv * K, in two steps: rv * cv as the tile is issued, then times K in the next
+    // cycle (two chained multiplies took one cycle; 20.2's timing). The count is read only as the tile's
+    // last step leaves s3, three cycles after its issue at the earliest, and a bank is issued again only
+    // after its tile is written out, so every count read is the same.
+    logic [18:0] macs_rc;
+    logic        macs_v, macs_bank;
     logic [31:0] bank_data [0:1][0:DIM*DIM-1];
     logic        ksplit;                         // the job runs the K-split mapping
     logic [12:0] ksteps;                         // steps of a tile: K, or ceil(K/DIM) in K-split
@@ -410,6 +421,7 @@ module aster_npu2_engine #(
             gp_full <= '0; g_left <= '0; gp <= '0; cols_left <= '0; panel_cols <= '0; rows_left <= '0;
             rv <= '0; b_panel <= '0; c_panel <= '0; c_strip <= '0;
             {a_m0, a_sm1, a_k0, a_sk1} <= '0; pa_m1 <= '0; pa_m0 <= '0; pa_k1 <= '0;
+            {a_m0_hi, a_k0_hi, a_m0_nz, a_k0_nz} <= '0;
             dm_rem <= '0; dk_rem <= '0; dm_q <= '0; dk_q <= '0; dmk_i <= '0;
             m_r_q <= '0; k_r_q <= '0; m0_on <= 1'b0; k0_on <= 1'b0; m1 <= '0; k1 <= '0;
             rw_addr <= '0; rw_qbase <= '0; rw_r <= '0; first_strip <= 1'b0; ld_krem <= '0; rw_wrap_q <= 1'b0;
@@ -421,6 +433,7 @@ module aster_npu2_engine #(
             ld_req <= '0; ld_pending <= '0;
             ans_valid <= 1'b0; ans_tag <= '0; ans_data <= '0;
             t_idx <= '0; kstep <= '0; bentry <= '0; tile_bank <= 1'b0; c_tile <= '0; tcols_left <= '0; cv_now <= '0;
+            macs_v <= 1'b0;
             bank_busy <= '0; bank_full <= '0;
             s1_v <= 1'b0; s2_v <= 1'b0; s3_v <= 1'b0; s1_slot <= 1'b0; s1_ahalf <= 1'b0; s1_bhalf <= 1'b0;
             wr_sel <= 1'b0; wr_fresh <= 1'b1; wr_r <= '0; wr_c <= '0; wr_row <= '0;
@@ -538,13 +551,16 @@ module aster_npu2_engine #(
             end
 
             // ---------------------------------------------- tile issue
+            macs_v <= issue && tile_start;
+            if (macs_v) bank_macs[macs_bank] <= macs_rc * 19'(k[12:0]);
             if (issue) begin
                 if (tile_start) begin
                     bank_busy[tile_bank] <= 1'b1;
                     bank_addr[tile_bank] <= c_tile;
                     bank_rv[tile_bank]   <= rv;
                     bank_cv[tile_bank]   <= cv_now;
-                    bank_macs[tile_bank] <= 19'(7'(rv) * 7'(cv_now)) * 19'(k[12:0]);
+                    macs_rc   <= 19'(7'(rv) * 7'(cv_now));
+                    macs_bank <= tile_bank;
                 end
                 if (last_step) begin
                     kstep      <= '0;
@@ -572,6 +588,8 @@ module aster_npu2_engine #(
                     a_stride <= d_a_stride; b_stride <= d_b_stride; c_stride <= d_c_stride;
                     m <= d_m; n <= d_n; k <= d_k; mode <= d_mode;
                     a_m0 <= d_a_m0; a_sm1 <= d_a_stride_m1; a_k0 <= d_a_k0; a_sk1 <= d_a_stride_k1;
+                    a_m0_hi <= d_a_m0[31:13] != 0; a_k0_hi <= d_a_k0[31:13] != 0;
+                    a_m0_nz <= d_a_m0 != 0; a_k0_nz <= d_a_k0 != 0;
                     m1 <= 12'(d_m - 32'd1); k1 <= 12'(d_k - 32'd1);
                     chk_cnt <= '0; div_rem <= '0; div_q <= '0; div_i <= 4'd12;
                     dm_rem <= '0; dk_rem <= '0; dm_q <= '0; dk_q <= '0; dmk_i <= 4'd11;
@@ -615,17 +633,17 @@ module aster_npu2_engine #(
                         default: ;
                     endcase
                     if (chk_cnt <= 5'd11) begin            // (M-1) div A_M0, (K-1) div A_K0, a bit a cycle
-                        if (dm_shift >= {1'b0, a_m0} && a_m0 != 0) begin
-                            dm_rem <= dm_shift - {1'b0, a_m0};
+                        if (!a_m0_hi && a_m0_nz && dm_shift >= a_m0[12:0]) begin
+                            dm_rem <= 12'(dm_shift - a_m0[12:0]);
                             dm_q[dmk_i] <= 1'b1;
                         end else begin
-                            dm_rem <= dm_shift;
+                            dm_rem <= 12'(dm_shift);
                         end
-                        if (dk_shift >= {1'b0, a_k0} && a_k0 != 0) begin
-                            dk_rem <= dk_shift - {1'b0, a_k0};
+                        if (!a_k0_hi && a_k0_nz && dk_shift >= a_k0[12:0]) begin
+                            dk_rem <= 12'(dk_shift - a_k0[12:0]);
                             dk_q[dmk_i] <= 1'b1;
                         end else begin
-                            dk_rem <= dk_shift;
+                            dk_rem <= 12'(dk_shift);
                         end
                         dmk_i <= dmk_i - 4'd1;
                     end
@@ -751,7 +769,7 @@ module aster_npu2_engine #(
 
     logic unused;
     assign unused = div_rem[13] ^ (^wr_q_addr[1:0]) ^ (^ld_addr[31:2]) ^ ans_tag.read ^ (^ans_twice[2*DW-1:DW])
-                  ^ (^ans_tag.wbase[15:12]) ^ (^ld_db[15:LPB]) ^ dm_rem[32] ^ dk_rem[32] ^ (^ans_tag.lanes)
+                  ^ (^ans_tag.wbase[15:12]) ^ (^ld_db[15:LPB]) ^ (^ans_tag.lanes)
                   ^ (^ans_tag.shift);
 
 `ifndef SYNTHESIS

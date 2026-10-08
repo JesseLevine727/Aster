@@ -559,6 +559,137 @@ So good margin needs more than these levers.
 
 These are recorded in soc.md §13.
 
+**After the decisions** (r6: the flags, every strategy met, +0.001 to
++0.009 ns), the design is balanced at zero. About 350 endpoints lie within
++0.3 ns, in eight classes, every one within 0.05 ns of the worst:
+
+| Class | Endpoints | Worst |
+| --- | ---: | ---: |
+| a data cache's I/O write into the NPU's registers (its CLEAR_TOTALS to 320 counter bits, its descriptor) | 185 | +0.044 ns |
+| a data cache's answer into its core's forwarding selects | 52 | +0.024 ns |
+| a data cache's request to a bank | 48 | +0.010 ns |
+| a data cache's request back into its own state | 27 | +0.035 ns |
+| the fabric's answer into a data cache | 11 | +0.100 ns |
+| a core's own decode and hazard paths | 9 | +0.006 ns |
+| inside the NPU (its tile's MAC count, two multiplies) | 7 | +0.129 ns |
+| a data cache's write holding an instruction refill (the bank rule) | 3 | +0.024 ns |
+
++0.3 ns needs every class to gain that much, the cores' own paths included,
+which met with +0.14 to +0.22 ns in lighter designs. The next levers:
+- **NPU's registers:** the NPU's register port registered, with the fabric
+  sampling the I/O bus's answer a cycle later. Answers keep their cycle, but
+  an NPU job starts a cycle later: **+1 cycle per job, which costs cycles**.
+  (As built, below, the request is registered in front of the port and the
+  NPU answers from it in the same cycle, so the fabric's sampling is
+  unchanged.)
+- **The cores:** restructured hazard and forwarding logic, proven cycle for
+  cycle by the core's lockstep suites.
+- **The bank rule's coupling:** the read-beside-write bypass (a contract
+  change, verified properly this time).
+- **Area:** less of it, for routing (the counters are about 3,400 FFs).
+
+**Decided by the owner, 7 October 2026 (second round):** push on in 20.2
+for +0.3 ns, the cores' logic included; registering the NPU's register port
+is allowed (+1 cycle per NPU job).
+
+**After the second round.** Each step builds on the one before. Results are
+the worst setup slack in context, in ns. Every step but r7 keeps every
+cycle, proven so:
+- **the core and caches:** `make core-shell-equiv`. The CPU shell from
+  8809f72 and the current one run 879 cases: 7 modes (plain, latency 1,
+  stall seeds with latency 1, with three in flight and with long stalls,
+  spliced interrupts) × the kernels and every suite, the interrupt,
+  coherence and fetch-fault programs included, plus 4 random modes × 40
+  programs. Both shells must pass and exit 0, with the same status line
+  (cycles, instructions retired), every RVFI record, and the same console
+  and signature.
+- **the caches' registered fields:** checked against their definitions
+  every cycle by assertions in every simulation, and by the L1 unit tests
+  (200 seeds each);
+- **the fabric:** `equiv_fabric` against the golden, every output every
+  cycle, in every mode; mutants 36/36 and 31/31;
+- **the devices:** `make soc-devices-equiv` (in `soc-tests`), against
+  8809f72's devices, every output every cycle, 3 million cycles of random
+  requests, commands and events. A planted off-by-one is caught.
+- **the NPU:** the NPU suites (job and total MAC counts against the
+  reference). The divider was also checked on every dividend against 10,360
+  divisors.
+- **the SoC:** `soc-tests` (the regression cycle for cycle against the CPU
+  shell, litmus, resets, the devices).
+
+| Step | Lever | Default | ASM | ASL | over 0.3 | over 0.5 | over 0.5, ASM | others |
+| --- | --- | ---: | ---: | ---: | ---: | ---: | ---: | --- |
+| r7 | the NPU's register port registered (`NPU_REG_Q`; the NPU answers from the register, `RSP_COMB`): owner-approved, +1 cycle a job | −0.294 | +0.004 | | | | | |
+| r8 | a data cache's target (cacheable, I/O) decided as stage 1 takes the request; Decode's decode registered as the instruction enters | −0.160 | +0.147 | | | | | |
+| r9 | dot8's products registered as M1 loads (in the DSPs' multiplier registers) | +0.062 | +0.037 | +0.018 | | | | |
+| r10 | Execute's trap, for the slot's fields, without a taken branch's misaligned target (a branch has none of those fields) | +0.005 | +0.004 | | | | | |
+| r11 | the operation fields' trap from the causes that need no operand; the NPU's A-extent divider at 13 bits (the remainder never exceeds the 12-bit dividend); a data cache's memory-side request (address, op, byte enables) in registers loaded on its transitions | +0.026 | +0.023 | +0.172 | | | | |
+| r12 | the fabric's unit compares on the bank's 12-bit index (both sides are always of one bank); Decode's registers kept off reset pins (`extract_reset`: R's setup is 0.45 ns longer than D's) | +0.092 | +0.121 | +0.032 | +0.201 | +0.277 | | over 0.3 ASM +0.126 |
+| r13 | dot8 back to its committed form; a data cache's refill counters off reset pins; the devices' answer selects decoded as the request is registered | +0.058 | +0.103 | | +0.070 | +0.116 | | over 0.7 +0.039 |
+| r14 | r13 with dot8's products registered again (r13 was worse on every strategy) | +0.062 | +0.102 | | +0.086 | +0.205 | +0.154 | |
+| r15 | the instruction cache's refill request from a register (next cycle's value formed both ways, the fabric's acceptance choosing) | +0.154 | +0.038 | | +0.060 | +0.146 | +0.209 | |
+| r16 | the data cache's request the same way; its main-memory flag is stage 2's (a refill's head is cacheable) | +0.056 | | | | +0.254 | +0.168 | |
+| r17 | Execute's decoded instruction (`e_dec`) kept off reset pins; the NPU's tile MAC count in two steps (rv × cv at the tile's issue, × K a cycle later: read only three cycles after issue at the earliest) | +0.164 | | | | +0.158 | +0.026 | over 0.4 +0.091; 0.6 +0.268; 0.5 ASL +0.218 |
+| r18 | the data cache's `d_req_ready` from a register (next value formed from stage 2's and the state's next values, the core's request and the acceptance last); one-hot cache states (effective in the instruction cache only: Vivado infers no FSM in the data cache, so its attribute was removed) | +0.107 | | | | +0.185 | +0.231 | over 0.4 +0.086; 0.6 +0.065; 0.5 ASL +0.159; 0.5 with route AggressiveExplore +0.185, ExtraTimingOpt +0.190, ExtraPostPlacementOpt +0.123, ExtraNetDelay_high +0.107, phys AggressiveFanoutOpt +0.074; 0.7 ASM +0.063 |
+| r19 | a cache's stage-1 freshness terms without this cycle's array write, in both caches (never as the head moves: asserted), so the fabric's acceptance stays out of stage 2's and the state's next values; the watchdog's cosmetic fixes | **+0.309** | | | | +0.103 | +0.053 | over 0.6 +0.094 |
+
+ASM and ASL are the placer's AltSpreadLogic_medium and _high. "over" is
+placement over-constrained (`over=`): setup uncertainty is added while
+placing and optimizing the placement, then removed before routing; every
+result is signed off at the real 0.154 ns.
+
+**What the table shows.** The design went from −2.4 ns (the approved
+design) to a worst path of +0.03 to +0.28 ns, depending on the strategy.
+From r11 on, each step changes which class is worst more than it moves the
+spread: run-to-run placement varies by about ±0.1 ns.
+- Over-constraining by 0.5 ns is the best strategy on most versions.
+- r19's default build is the first at +0.3 ns: +0.309. Its other
+  strategies gave +0.05 to +0.10, so the margin holds for that build, not
+  across placements. Before r19 the best was r12's +0.277.
+- dot8's registered products: r13 (reverted) was below r12 and r14 on every
+  shared strategy, though the gap (about +0.03 to +0.05 ns on average) is
+  within the noise.
+- r18's register for `d_req_ready`: the stall chain's worst endpoint was
+  +0.164 in r17 (over 0.5 with ASM) and +0.299 or better in every r18 build
+  analysed, but other classes
+  set the worst path, so the spread did not move. It is kept: an assertion
+  checks its mirrored next-state logic in every simulation.
+- After r18 (the watchdog's review): a data cache's stage-1 freshness terms
+  no longer include this cycle's array write, which can never happen as the
+  head moves (asserted). That takes the fabric's acceptance out of stage 2's
+  and the state's next values. The instruction cache gets the same change.
+  These are r19.
+
+Out of context, the core and caches went from +0.267 (r6) to +0.380 (r8)
+and +0.472 (r9). In context, r9's products sit in the DSPs' multiplier
+registers, so the multiply shares Execute's cycle with its forwarding mux,
+30 rows from the core (+0.156 in r12). It still did better overall than
+r13's revert.
+
+**A cycle-costing lever, measured for the owner:** the banks' inputs
+registered, so that answers come at 3 + WAIT instead of 2 + WAIT (soc.md
+§10.6's fallback).
+- **Timing:** as a timing-only experiment on r18's RTL (registers in front
+  of each bank's RAM, the answers left a cycle late, so not functional):
+  +0.226, and **+0.307 / +0.345** with 0.5 ns over-constraint (and with ASM),
+  against r18's +0.107, +0.185 and +0.231 on the same strategies, about
+  +0.12 ns. A real version would also move each AMO's write a cycle later,
+  which changes the contract.
+- **Cycles:** measured in the CPU shell, with answers at 3 instead of 2
+  (the shell's latency, allowed to 3 in a scratch build): +0.73% on the CPU
+  kernels (strided +3.29%, reduction +1.98%, dhrystone +1.25%, coremark
+  +0.69%, conv2d +0.12%), and +0.54% on the 99 self-checking programs.
+
+The classes left within +0.3 ns, each the worst in some build:
+- the stall chain: a data cache's state, `d_req_ready`, Execute's advance,
+  then about 200 Decode and Execute enables (fanouts of 57–164);
+- a cache's request to a bank: about 7 ns of routing on 7–10 levels;
+- a data cache's request into the NPU buffer's shift enables, through the
+  fabric's grant;
+- a store's array write on the fabric's acceptance;
+- the NPU's tile MAC count (r17 splits it);
+- the devices' answer into the fabric.
+
 ## Milestones and gates
 
 | Milestone | Scope | Exit |

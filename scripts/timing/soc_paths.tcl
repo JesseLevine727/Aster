@@ -1,13 +1,16 @@
 # The Phase 20 SoC's routed checkpoint, analysed (milestone 20.2's margin
 # work): the worst setup paths, one line each (slack, logic levels, logic and
-# route delay, start and end cells), the endpoints with negative slack grouped
-# by their block, and the hierarchical utilization. Written to <out-dir>.
+# route delay, start and end cells), the endpoints with slack below <below> ns
+# (0: the failing ones) grouped by their blocks, and the hierarchical
+# utilization. Written to <out-dir>.
 #
-#   vivado -mode batch -source soc_paths.tcl -tclargs <routed.dcp> <out-dir> ?paths?
+#   vivado -mode batch -source soc_paths.tcl -tclargs <routed.dcp> <out-dir> ?paths? ?below?
 set dcp [lindex $argv 0]
 set out [file normalize [lindex $argv 1]]
 set count 200
+set below 0
 if {$argc >= 3} { set count [lindex $argv 2] }
+if {$argc >= 4} { set below [lindex $argv 3] }
 file mkdir $out
 open_checkpoint $dcp
 set fp [open [file join $out paths.txt] w]
@@ -20,17 +23,17 @@ foreach p $paths {
         [get_property DATAPATH_LOGIC_DELAY $p] [get_property DATAPATH_NET_DELAY $p] $from $to]
 }
 close $fp
-# Failing endpoints by block (the first two levels below the SoC).
+# The endpoints below the threshold, by block (the first level below the SoC, each end).
 set fp [open [file join $out blocks.txt] w]
 array set worst {}
 array set n {}
-foreach p [get_timing_paths -setup -max_paths 20000 -nworst 1 -slack_lesser_than 0 -unique_pins] {
+foreach p [get_timing_paths -setup -max_paths 20000 -nworst 1 -slack_lesser_than $below -unique_pins] {
     set to [get_property ENDPOINT_PIN $p]
     set from [get_property STARTPOINT_PIN $p]
     regsub {.*implementation/} $to {} to_short
     regsub {.*implementation/} $from {} from_short
     set key "[lindex [split $from_short /] 0] -> [lindex [split $to_short /] 0]"
-    if {![info exists n($key)]} { set n($key) 0; set worst($key) 0 }
+    if {![info exists n($key)]} { set n($key) 0; set worst($key) $below }
     incr n($key)
     set s [get_property SLACK $p]
     if {$s < $worst($key)} { set worst($key) $s }

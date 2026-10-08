@@ -21,8 +21,11 @@
 #
 # The implementation's directives are the v1 overlay's unless a sixth
 # argument names others ("STEP=DIRECTIVE;...", the steps synth, place, phys,
-# route, post_route_phys, and retime=1 for synthesis's register retiming;
-# 20.2's margin levers), and an optional seventh is a
+# route, post_route_phys, retime=1 for synthesis's register retiming, and
+# over=NS, setup uncertainty added while placing and optimizing the placement
+# and removed before routing, so the placer works on the paths within NS of
+# failing and the routed design is signed off on the real clock; 20.2's margin
+# levers), and an optional seventh is a
 # constraints file read before implementation (pblocks; 20.2). Both are
 # recorded in summary.txt.
 #
@@ -37,7 +40,7 @@ if {$argc >= 4} { set design [lindex $argv 3] }
 if {$design ni {core npu soc}} { error "design must be core, npu or soc" }
 set params {}
 if {$argc >= 5} { set params [lindex $argv 4] }
-array set directive {synth Default retime 0 place Explore phys AggressiveExplore route Explore post_route_phys AggressiveExplore}
+array set directive {synth Default retime 0 over 0 place Explore phys AggressiveExplore route Explore post_route_phys AggressiveExplore}
 if {$argc >= 6} {
     foreach step [split [lindex $argv 5] ";"] {
         if {$step eq ""} continue
@@ -174,8 +177,10 @@ if {$design eq "soc"} {
 report_utilization -file [file join $output_dir utilization_synth.rpt]
 if {$extra_xdc ne ""} { read_xdc $extra_xdc }
 opt_design
+if {$directive(over) > 0} { set_clock_uncertainty -setup $directive(over) [all_clocks] }
 place_design -directive $directive(place)
 phys_opt_design -directive $directive(phys)
+if {$directive(over) > 0} { set_clock_uncertainty -setup 0 [all_clocks] }
 route_design -directive $directive(route)
 phys_opt_design -directive $directive(post_route_phys)
 # The routed checkpoint before signoff, so a failing build can be inspected.
@@ -184,7 +189,7 @@ source [file join $repo_root fpga/pynq_z1/signoff.tcl]
 aster_signoff $output_dir
 set worst [get_timing_paths -setup -max_paths 1 -nworst 1]
 set fp [open [file join $output_dir summary.txt] w]
-puts $fp "SUMMARY top=${board}_wrapper fclk_mhz=$fclk wns_ns=[get_property SLACK $worst] whs_ns=[get_property SLACK [get_timing_paths -hold -max_paths 1 -nworst 1]] from=[get_property STARTPOINT_PIN $worst] to=[get_property ENDPOINT_PIN $worst] directives=synth:$directive(synth),retime:$directive(retime),place:$directive(place),phys:$directive(phys),route:$directive(route),post_route_phys:$directive(post_route_phys) xdc=[expr {$extra_xdc eq "" ? "none" : [file tail $extra_xdc]}] params=[expr {$params eq "" ? "default" : $params}]"
+puts $fp "SUMMARY top=${board}_wrapper fclk_mhz=$fclk wns_ns=[get_property SLACK $worst] whs_ns=[get_property SLACK [get_timing_paths -hold -max_paths 1 -nworst 1]] from=[get_property STARTPOINT_PIN $worst] to=[get_property ENDPOINT_PIN $worst] directives=synth:$directive(synth),retime:$directive(retime),over:$directive(over),place:$directive(place),phys:$directive(phys),route:$directive(route),post_route_phys:$directive(post_route_phys) xdc=[expr {$extra_xdc eq "" ? "none" : [file tail $extra_xdc]}] params=[expr {$params eq "" ? "default" : $params}]"
 close $fp
 write_bitstream -force [file join $output_dir $name.bit]
 file copy -force $handoff [file join $output_dir $name.hwh]

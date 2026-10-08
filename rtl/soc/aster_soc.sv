@@ -42,7 +42,8 @@ module aster_soc #(
     parameter int unsigned HARTS = 2,
     parameter int unsigned SHELL_PAGE = 0,
     parameter int unsigned WAIT = 0,                    // the fabric's added answer cycles (simulation)
-    parameter int unsigned NPU_BUFFER = 1               // the NPU's requests through a two-entry buffer (soc.md §13, 20.2); 0 to measure without
+    parameter int unsigned NPU_BUFFER = 1,              // the NPU's requests through a two-entry buffer (soc.md §13, 20.2); 0 to measure without
+    parameter int unsigned NPU_REG_Q = 1                // the NPU's register port behind a request register (soc.md §13, 20.2)
 ) (
     input  logic        aclk,
     input  logic        aresetn,
@@ -218,12 +219,33 @@ module aster_soc #(
     // not from the run bit's logic (it leaves reset a cycle after hart 0, before any access can reach it).
     logic npu_rst_n;
     always_ff @(posedge aclk) npu_rst_n <= core_rst_n[0];
+    // The NPU's register port: with NPU_REG_Q, the I/O bus's request is registered and the NPU answers from
+    // the register in the next cycle (so the answer keeps its cycle, and the I/O bus's logic and the NPU's
+    // register decode meet only at this register); its writes, START among them, land a cycle later
+    // (the owner's decision, 20.2: +1 cycle a job). Without it, as in Phase 19.
+    logic        npu_q_valid, npu_q_write;
+    logic [11:0] npu_q_addr;
+    logic [31:0] npu_q_wdata;
+    logic [3:0]  npu_q_be;
+    if (NPU_REG_Q != 0) begin : g_npu_reg_q
+        always_ff @(posedge aclk) begin
+            npu_q_valid <= npu_r_valid && npu_rst_n;
+            npu_q_write <= io_op == OP_STORE;
+            npu_q_addr  <= io_addr[11:0];
+            npu_q_wdata <= io_wdata;
+            npu_q_be    <= io_be;
+        end
+    end else begin : g_npu_reg_now
+        assign {npu_q_valid, npu_q_write, npu_q_addr, npu_q_wdata, npu_q_be} =
+               {npu_r_valid, io_op == OP_STORE, io_addr[11:0], io_wdata, io_be};
+    end
     logic        n_mem_error;                                 // the error the NPU sees, the cycle after its acceptance
     aster_npu2 #(.MEM_BASE(32'h8000_0000), .MEM_BYTES(32'(MAIN_BYTES)), .OUTSTANDING(NPU_BUFFER != 0 ? 3 : 2),
+                 .RSP_COMB(NPU_REG_Q != 0),
                  .A_STRIPS(NPU_A_STRIPS), .PORT_BYTES(NPU_PORT_BYTES), .DIM(NPU_DIM)) npu (
         .clk(aclk), .resetn(npu_rst_n),
-        .r_req_valid(npu_r_valid), .r_req_ready(npu_r_ready), .r_req_write(io_op == OP_STORE),
-        .r_req_addr(io_addr[11:0]), .r_req_wdata(io_wdata), .r_req_be(io_be),
+        .r_req_valid(npu_q_valid), .r_req_ready(npu_r_ready), .r_req_write(npu_q_write),
+        .r_req_addr(npu_q_addr), .r_req_wdata(npu_q_wdata), .r_req_be(npu_q_be),
         .r_rsp_valid(npu_r_rsp_valid), .r_rsp_rdata(npu_r_rdata), .r_rsp_error(npu_r_rsp_error),
         .m_req_valid(n_req_valid), .m_req_ready(n_req_ready), .m_req_addr(n_req_addr), .m_req_we(n_req_we),
         .m_req_wdata(n_req_wdata), .m_req_be(n_req_be), .m_rsp_valid(n_rsp_valid), .m_rsp_rdata(n_rsp_rdata),
@@ -316,7 +338,12 @@ module aster_soc #(
     // ---- the I/O bus's targets: the devices (or the shell's page) and the NPU's registers ----
     logic        dev_sel;
     logic [31:0] dev_rdata;
-    always_ff @(posedge aclk) npu_sel_q <= npu_r_valid;
+    // (the NPU's answer is on its port in the cycle after acceptance either way)
+    if (NPU_REG_Q != 0) begin : g_npu_sel_q
+        assign npu_sel_q = npu_q_valid;
+    end else begin : g_npu_sel_r
+        always_ff @(posedge aclk) npu_sel_q <= npu_r_valid;
+    end
     if (SP) begin : g_page
         (* ram_style = "block" *) logic [31:0] page_ram [PAGE_WORDS];
         logic [31:0] page_q, clock, clock_q;

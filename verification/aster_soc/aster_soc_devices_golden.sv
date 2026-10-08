@@ -1,3 +1,6 @@
+// Phase 20.2: the SoC's devices as they stood before 20.2's timing restructuring (commit 8809f72), kept as
+// the golden model that equiv_devices.sv compares the restructured devices with, cycle for cycle. Not
+// synthesized.
 // The Phase 20 SoC's devices (milestone 20.2; docs/soc.md §3, §7, §8), behind
 // the fabric's I/O bus. The bus's request is registered here (io_q): a device
 // sees it in the cycle after its acceptance, takes a write at that cycle's
@@ -41,7 +44,7 @@
 // Counters count in 48 bits (soc.md §2) and read as 64; each counts its
 // event registered (a cycle late, measurement only), from START to FREEZE.
 `timescale 1 ns / 1 ps
-module aster_soc_devices #(
+module aster_soc_devices_golden #(
     parameter int unsigned CLK_HZ = 100_000_000,
     parameter int unsigned HARTS = 2,
     parameter int unsigned WAIT = 0
@@ -82,32 +85,12 @@ module aster_soc_devices #(
     // ---- the request, registered ----
     logic        q_valid, q_hart, q_write;
     logic [31:0] q_addr, q_wdata;
-    // The answer's selects, decoded from the request's address as it is registered: the same decode of
-    // the same address, so every answer is the same, but the answer's mux starts from registers (20.2's
-    // timing): the page (timer, hart control, counters, interrupts), the counter page's regions, and a
-    // fabric counter's index, (offset - 0x300) / 8, and a longest wait's, that index - 41.
-    logic [3:0]  q_pg;
-    logic        q_lt200, q_lt240, q_lt300, q_ge4f0, q_fi_lt41, q_fi_lt48;
-    logic [5:0]  q_fi;
-    logic [2:0]  q_li;
-    logic [8:0]  fi;
-    assign fi = 9'((io_addr[11:0] - 12'h300) >> 3);
     always_ff @(posedge clk) begin
         q_valid <= rst_n && io_valid && io_addr[31:12] != 20'h4_0000;    // (the NPU's page is not a device's)
         q_hart  <= io_hart;
         q_write <= io_op == OP_STORE;
         q_addr  <= io_addr;
         q_wdata <= io_wdata;
-        q_pg    <= {io_addr[31:12] == 20'h2_0004, io_addr[31:12] == 20'h2_0003,
-                    io_addr[31:12] == 20'h2_0002, io_addr[31:12] == 20'h2_0001};
-        q_lt200 <= io_addr[11:0] < 12'h200;
-        q_lt240 <= io_addr[11:0] < 12'h240;
-        q_lt300 <= io_addr[11:0] < 12'h300;
-        q_ge4f0 <= io_addr[11:0] >= 12'h4F0;
-        q_fi_lt41 <= fi < 9'd41;
-        q_fi_lt48 <= fi < 9'd48;
-        q_fi    <= fi[5:0];
-        q_li    <= 3'(fi - 9'd41);
     end
     assign io_sel = q_valid;
     logic [19:0] page;
@@ -257,7 +240,8 @@ module aster_soc_devices #(
     endfunction
     always_comb begin
         io_rdata = '0;
-        if (q_pg[0]) unique case (off)                          // the timer
+        unique case (page)
+            20'h2_0001: unique case (off)
                 12'h000: io_rdata = time_count[31:0];
                 12'h004: io_rdata = time_count[63:32];
                 12'h008: io_rdata = compare[31:0];
@@ -267,7 +251,7 @@ module aster_soc_devices #(
                 12'h01C: io_rdata = CLK_HZ;
                 default: io_rdata = '0;
             endcase
-        else if (q_pg[1]) unique case (off)                     // hart control
+            20'h2_0002: unique case (off)
                 12'h000: io_rdata = {31'b0, q_hart};
                 12'h004: io_rdata = {31'b0, secondary_run};
                 12'h008: io_rdata = HARTS;
@@ -276,8 +260,8 @@ module aster_soc_devices #(
                 12'h014: io_rdata = to_hart0;
                 default: io_rdata = '0;
             endcase
-        else if (q_pg[2]) begin                                 // the counters
-                if (q_lt200) begin                             // a hart's ABI 4 bank
+            20'h2_0003: begin
+                if (off < 12'h200) begin                       // a hart's ABI 4 bank
                     logic h;
                     logic [7:0] o;
                     h = off[8];
@@ -308,8 +292,8 @@ module aster_soc_devices #(
                         8'h9C: io_rdata = 32'd14;
                         default: io_rdata = '0;
                     endcase
-                end else if (q_lt300) begin                    // DOT8, ABI 6
-                    if (q_lt240) begin
+                end else if (off < 12'h300) begin              // DOT8, ABI 6
+                    if (off < 12'h240) begin
                         logic h;
                         logic [1:0] e;
                         h = off[5];                              // (hart * 4 + event) * 8
@@ -328,18 +312,21 @@ module aster_soc_devices #(
                         default: io_rdata = '0;
                     endcase
                 end else begin                                 // the fabric's counters, 0x300-0x4FF
-                    if (q_ge4f0) unique case (off)
+                    logic [8:0] i;
+                    i = 9'((off - 12'h300) >> 3);
+                    if (off >= 12'h4F0) unique case (off)
                         12'h4F0: io_rdata = 32'd1;                          // the fabric counters' ABI
                         12'h4F4: io_rdata = 32'd48;                         // counters
                         12'h4F8: io_rdata = {31'b0, counting};
                         default: io_rdata = '0;
                     endcase
-                    else if (q_fi_lt41) io_rdata = half(f_count[q_fi], off[2]);
-                    else if (q_fi_lt48) io_rdata = off[2] ? '0 : {16'b0, longest[q_li]};
+                    else if (i < 9'd41) io_rdata = half(f_count[i[5:0]], off[2]);
+                    else if (i >= 9'd41 && i < 9'd48) io_rdata = off[2] ? '0 : {16'b0, longest[i - 9'd41]};
                 end
-        end
-        else if (q_pg[3]) io_rdata = irq_rdata;                 // interrupts
-        // else 0: the UART, the DMA's page (20.3), others
+            end
+            20'h2_0004: io_rdata = irq_rdata;
+            default: io_rdata = '0;                            // the UART, the DMA's page (20.3), others
+        endcase
     end
 
     logic unused;

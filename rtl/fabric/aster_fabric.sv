@@ -224,10 +224,9 @@ module aster_fabric #(
     logic [1:0][31:0]    amo1_addr, amo2_addr, amo1_operand;
     logic [1:0]          hold;                       // the data cache waits for its AMO's write
     logic [BANKS-1:0]    amo_busy, amo_wr_now;       // an AMO in the bank waits for its write; writes now (a register)
-    logic [BANKS-1:0][UB-1:0] amo_wr_unit;
     // Each bank's AMO writing now, loaded the cycle before from its hart's stage 1, so the
     // write cycle's path starts at registers: whether one writes, its word's half, its op,
-    // operand, unit and index.
+    // operand and index.
     logic [BANKS-1:0]           amo_hi;
     logic [BANKS-1:0][4:0]      amo_f5;
     logic [BANKS-1:0][31:0]     amo_operand_b;
@@ -255,18 +254,20 @@ module aster_fabric #(
     end
 
     // ---- the arbiters: port A and port B of each bank, in parallel ----
-    // A write on port A holds back a read of its unit on port B (precomputed pairs).
+    // A write on port A holds back a read of its unit on port B (precomputed pairs). Every unit compared
+    // here is of one bank (two picks of a bank; a request of bank b and a unit of bank b held for it), so
+    // the units' bank bits agree and the compare takes their indices (20.2's timing: 12 bits, not 14).
     logic [3:0][3:0]            blocks;              // blocks[i][j]: port A's member i writes port B's member j's unit
     logic [BANKS-1:0][1:0]      ptr_a, ptr_b;        // the round-robin pointers
     logic [BANKS-1:0][3:0]      elig_a, elig_b, pick_a, pick_b, take_b;
     logic [BANKS-1:0]           blk_v;               // port B's pick was held back last cycle ...
-    logic [BANKS-1:0][UB-1:0]   blk_unit;            // ... by a write of this unit, which port A now refuses
+    logic [BANKS-1:0][IB-1:0]   blk_index;           // ... by a write of this unit, which port A now refuses
     logic [NREQ-1:0]            grant, io_grant;
     logic                       io_ptr;              // the data cache the I/O bus favours (0: D0)
     always_comb begin
         int k;
         for (int i = 0; i < 4; i++) begin
-            for (int j = 0; j < 4; j++) blocks[i][j] = wclass[ga[i]] && unit[ga[i]] == unit[gb[j]];
+            for (int j = 0; j < 4; j++) blocks[i][j] = wclass[ga[i]] && index[ga[i]] == index[gb[j]];
         end
         grant = '0;
         for (int b = 0; b < BANKS; b++) begin
@@ -274,10 +275,10 @@ module aster_fabric #(
                 k = ga[i];
                 elig_a[b][i] = valid[k] && on_port_a[k] && tgt_mem[k] && bank[k] == 2'(b) && !amo_wr_now[b]
                                && !((k == D0 && hold[0]) || (k == D1 && hold[1])) && !(wclass[k] && amo_busy[b])
-                               && !(blk_v[b] && wclass[k] && unit[k] == blk_unit[b]);
+                               && !(blk_v[b] && wclass[k] && index[k] == blk_index[b]);
                 k = gb[i];
                 elig_b[b][i] = valid[k] && !on_port_a[k] && tgt_mem[k] && bank[k] == 2'(b)
-                               && !(amo_wr_now[b] && unit[k] == amo_wr_unit[b]);
+                               && !(amo_wr_now[b] && index[k] == amo_index[b]);
             end
             pick_a[b] = rr4(elig_a[b], ptr_a[b]);
             pick_b[b] = rr4(elig_b[b], ptr_b[b]);
@@ -438,7 +439,7 @@ module aster_fabric #(
                 if (|take_b[b]) ptr_b[b] <= after(take_b[b]);
                 // port B's pick held back by port A's write: port A refuses writes to its unit next cycle
                 blk_v[b] <= |pick_b[b] && !(|take_b[b]);
-                for (int i = 0; i < 4; i++) if (pick_b[b][i]) blk_unit[b] <= unit[gb[i]];
+                for (int i = 0; i < 4; i++) if (pick_b[b][i]) blk_index[b] <= index[gb[i]];
             end
             if (io_grant[D0]) io_ptr <= 1'b1;
             if (io_grant[D1]) io_ptr <= 1'b0;
@@ -467,7 +468,6 @@ module aster_fabric #(
                         amo_f5[b]        <= funct5_of(amo1_op[h]);
                         amo_operand_b[b] <= amo1_operand[h];
                         amo_index[b]     <= IB'({amo1_addr[h][UB+2:6], amo1_addr[h][3]});
-                        amo_wr_unit[b]   <= amo1_addr[h][UB+2:3];
                     end
             end
             for (int h = 0; h < 2; h++) begin

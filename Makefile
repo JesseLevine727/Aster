@@ -3054,7 +3054,34 @@ $(ASTER_SOC_DIR)/soc_%: $(ASTER_SOC_RTL) $(ASTER_SOC_TB) Makefile
 	@touch $@
 .PHONY: soc-sim soc-tests
 soc-sim: $(ASTER_SOC_SIMS)
-soc-tests: $(ASTER_SOC_SIMS) $(ASTER_L1_SIM) $(ASTER_DOT8_PLUGIN)
+# 20.2: the CPU shell (the Aster core with its caches) against a golden one built from an earlier commit
+# (GOLDEN_REV, exported with git archive), on every board program: the same end, cycles, instructions,
+# windows, console and every RVFI record (scripts/compare_shells.py).
+GOLDEN_REV ?= 8809f72
+GOLDEN_DIR := $(BUILD_DIR)/golden/$(GOLDEN_REV)
+.PHONY: core-shell-equiv
+core-shell-equiv: $(ASTER_L1_SIM)
+	rm -rf $(GOLDEN_DIR) && mkdir -p $(GOLDEN_DIR)
+	git archive $(GOLDEN_REV) | tar -x -C $(GOLDEN_DIR)
+	$(MAKE) -s -C $(GOLDEN_DIR) $(GOLDEN_DIR)/build/aster_core/core_ports_aster_l1 > $(GOLDEN_DIR).log 2>&1
+	@set -o pipefail; RISCV_PREFIX=$(RISCV_PREFIX) $(PYTHON) scripts/compare_shells.py \
+		--golden $(GOLDEN_DIR)/build/aster_core/core_ports_aster_l1 --shell $(ASTER_L1_SIM) \
+		--build-dir $(ASTER_CORE_DIR)/compare_programs > $(ASTER_CORE_DIR)/compare-shells.log \
+		|| { grep -v '^PASS' $(ASTER_CORE_DIR)/compare-shells.log; exit 1; }; tail -1 $(ASTER_CORE_DIR)/compare-shells.log
+
+# 20.2: the devices restructured for timing, in lockstep with the golden ones (8809f72's).
+ASTER_DEVICES_EQUIV := $(ASTER_SOC_DIR)/equiv_devices
+$(ASTER_DEVICES_EQUIV): rtl/aster_core/aster_core_pkg.sv rtl/soc/aster_soc_devices.sv verification/aster_soc/aster_soc_devices_golden.sv verification/aster_soc/equiv_devices.sv Makefile
+	mkdir -p $(ASTER_SOC_DIR)
+	$(VERILATOR) --binary --timing -O3 --Wall --top-module equiv_devices --Mdir $(ASTER_SOC_DIR)/equiv_devices_obj -o $(abspath $@) \
+		$(ROOT)/rtl/aster_core/aster_core_pkg.sv $(ROOT)/verification/aster_soc/aster_soc_devices_golden.sv \
+		$(ROOT)/rtl/soc/aster_soc_devices.sv $(ROOT)/verification/aster_soc/equiv_devices.sv
+	@touch $@
+.PHONY: soc-devices-equiv
+soc-devices-equiv: $(ASTER_DEVICES_EQUIV)
+	@set -o pipefail; $(ASTER_DEVICES_EQUIV) | grep -E '^(PASS|FAIL)'
+soc-tests: $(ASTER_SOC_SIMS) $(ASTER_L1_SIM) $(ASTER_DOT8_PLUGIN) $(ASTER_DEVICES_EQUIV)
+	@set -o pipefail; $(ASTER_DEVICES_EQUIV) | grep -E '^(PASS|FAIL)'
 	@set -o pipefail; RISCV_PREFIX=$(RISCV_PREFIX) $(PYTHON) scripts/aster_board.py --sim $(ASTER_SOC_DIR)/soc_shell --design soc \
 		--build-dir $(ASTER_SOC_DIR)/board_programs > $(ASTER_SOC_DIR)/soc-board.log \
 		|| { grep -v '^PASS' $(ASTER_SOC_DIR)/soc-board.log; exit 1; }; \

@@ -67,7 +67,8 @@ module aster_l1i #(
     logic [31:2] s2_addr;
     logic [31:0] s2_word;
 
-    state_t      state;
+    // (one-hot: its compares feed the core's stall and the memory-side request; 20.2's timing)
+    (* fsm_encoding = "one_hot" *) state_t state;
     logic [2:0]  issued, received;    // refill words requested and answered
     logic        poisoned;            // invalidated during the refill: install nothing
     logic        fenced;              // invalidated, and the data cache's posted stores not yet answered
@@ -93,8 +94,30 @@ module aster_l1i #(
 
     // A read waiting since before an invalidation stays presented (§5): it is
     // the refill in progress's, which installs nothing; no new one goes out
-    // while fenced.
-    assign m_req_valid  = state == REFILL && issued != 3'd4 && issued - received < 3'd2 && (!fenced || m_waiting);
+    // while fenced. The request is state == REFILL && reads(issued, received,
+    // fenced, m_waiting), kept in a register (m_valid_q; checked below): next
+    // cycle's value is formed both ways from this cycle's registers, and the
+    // fabric's acceptance chooses (20.2's timing: every cycle the same, but the
+    // request leaves from a flip-flop).
+    function automatic logic reads(input logic [2:0] iss, input logic [2:0] rec, input logic fen, input logic waiting);
+        return iss != 3'd4 && iss - rec < 3'd2 && (!fen || waiting);
+    endfunction
+    logic       m_valid_q, refill_next, fenced_next, valid_if_taken, valid_if_not;
+    logic [2:0] issued_kept, received_next;
+    always_comb begin
+        fenced_next = invalidate ? data_pending : data_pending && fenced;
+        refill_next = 1'b0; issued_kept = issued; received_next = received;
+        if (state == IDLE && s2_valid && s2_cacheable && !s2_hit) begin
+            refill_next = 1'b1; issued_kept = '0; received_next = '0;
+        end else if (state == REFILL) begin
+            refill_next   = !(m_rsp_valid && received == 3'd3);
+            received_next = received + (m_rsp_valid ? 3'd1 : 3'd0);
+        end
+        // (taken: issued + 1, and nothing left waiting; not taken: a presented read waits)
+        valid_if_taken = refill_next && reads(issued_kept + 3'd1, received_next, fenced_next, 1'b0);
+        valid_if_not   = refill_next && reads(issued_kept, received_next, fenced_next, m_valid_q);
+    end
+    assign m_req_valid  = m_valid_q;
     assign m_req_addr   = {s2_addr[31:4], issued[1:0]};
 
     assign chk_lookup      = s1_move;
@@ -140,9 +163,11 @@ module aster_l1i #(
             poisoned     <= 1'b0;
             fenced       <= 1'b0;
             m_waiting    <= 1'b0;
+            m_valid_q    <= 1'b0;
             replay_wait  <= '0;
         end else begin
             m_waiting <= m_req_valid && !m_req_ready;
+            m_valid_q <= m_req_valid && m_req_ready ? valid_if_taken : valid_if_not;
             // After fence.i, refills wait for the data cache's posted stores.
             if (invalidate) fenced <= data_pending;
             else if (!data_pending) fenced <= 1'b0;
@@ -164,8 +189,9 @@ module aster_l1i #(
                 s2_addr      <= s1_addr;
                 s2_cacheable <= ({s1_addr, 2'b00} - MEM_BASE) < cacheable_bytes;
                 s2_hit       <= lookup_hit;
-                s2_now       <= s1_age == 2'd0 && !s1_stale && !refill_write;
-                s2_have      <= !s1_stale && !refill_write && (s1_have || s1_age == 2'd1);
+                // (a refill holds stage 2, so the head never moves as the array is written: checked)
+                s2_now       <= s1_age == 2'd0 && !s1_stale;
+                s2_have      <= !s1_stale && (s1_have || s1_age == 2'd1);
                 s2_word      <= s1_have ? s1_word : rd_data;
             end else begin
                 if (s2_answer) s2_valid <= 1'b0;
@@ -207,6 +233,9 @@ module aster_l1i #(
         // The cacheable main memory answers every refill without an error.
         if (refill_write) assert (!m_rsp_error) else $error("aster_l1i: a refill read failed");
         assert (issued - received <= 3'd2) else $error("aster_l1i: more than two refill reads in flight");
+        assert (!(s1_move && refill_write)) else $error("aster_l1i: the head moved as the array was written");
+        assert (m_valid_q == (state == REFILL && reads(issued, received, fenced, m_waiting)))
+            else $error("aster_l1i: the registered refill request differs from its definition");
     end
 `endif
 endmodule

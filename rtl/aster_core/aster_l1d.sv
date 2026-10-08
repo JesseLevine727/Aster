@@ -118,7 +118,7 @@ module aster_l1d #(
     // d_rsp_error reports its error); its word is on the array's output at age
     // 1, and kept (s1_word) if it waits. s1_stale: the array was written since
     // its read.
-    logic        s1_valid, s1_stale, s1_have, s1_plain;   // s1_plain: a word load or a word store
+    logic        s1_valid, s1_stale, s1_have;
     logic [1:0]  s1_age;
     logic [3:0]  s1_op, s1_be;
     logic [31:0] s1_addr, s1_wdata, s1_word;
@@ -131,7 +131,10 @@ module aster_l1d #(
     logic [31:0] s2_addr, s2_wdata, s2_word;
 
     state_t      state;
-    logic [2:0]  issued, received;    // refill words requested and answered
+    // refill words requested and answered (kept off the flip-flops' reset pins: synthesis otherwise
+    // clears them through synchronous resets on the lookup's path, whose setup is 0.45 ns longer than
+    // D's; 20.2's timing)
+    (* extract_reset = "no" *) logic [2:0] issued, received;
     logic        sent;                // the head's single memory-side access was accepted
     logic        poisoned;            // the refilling line was snooped: install nothing
     logic [1:0]  replay_wait;
@@ -145,8 +148,13 @@ module aster_l1d #(
     logic [255:0] valid_next;
     logic [31:0] rd_data;
 
-    assign s1_cacheable = s1_addr - MEM_BASE < cacheable_bytes;
-    assign s1_io        = !s1_cacheable && in_io(s1_addr) && !(in_word_only_io(s1_addr) && !s1_plain);
+    // The request's target, decided as stage 1 takes it and kept in registers beside s1_addr (20.2's
+    // timing: the same function of the same address, so every cycle is the same, but the fault and the
+    // lookup start from registers, not from a decode of s1_addr).
+    logic d_cacheable, d_io, d_plain;                    // d_plain: a word load or a word store
+    assign d_plain      = (d_req_op == OP_LOAD || d_req_op == OP_STORE) && d_req_be == 4'hF;
+    assign d_cacheable  = d_req_addr - MEM_BASE < cacheable_bytes;
+    assign d_io         = !d_cacheable && in_io(d_req_addr) && !(in_word_only_io(d_req_addr) && !d_plain);
     assign s1_error     = !s1_cacheable && !s1_io;
     assign s1_load      = s1_op == OP_LOAD;
     // A snoop of the request's own line in the cycle of its lookup: it misses.
@@ -157,9 +165,12 @@ module aster_l1d #(
     assign lookup_hit   = s1_cacheable && valid[s1_addr[11:4]] && tag_ram[s1_addr[11:4]] == s1_addr[31:12]
                           && !snoop_s1;
     // The head's word when it moves: on the array's output in its first cycle
-    // there (s1_now), or kept (s1_kept), unless the array was written since its read.
-    assign s1_now       = s1_age == 2'd0 && !s1_stale && !array_write;
-    assign s1_kept      = !s1_stale && !array_write && (s1_have || s1_age == 2'd1);
+    // there (s1_now), or kept (s1_kept), unless the array was written since its read. (Used only as the
+    // head moves, when the array is never written: a refill or an unsent access holds stage 2; checked.
+    // So this cycle's write is not a term, and the fabric's acceptance stays out of stage 2's and the
+    // state's next values; 20.2's timing.)
+    assign s1_now       = s1_age == 2'd0 && !s1_stale;
+    assign s1_kept      = !s1_stale && (s1_have || s1_age == 2'd1);
 
     assign s2_load      = s2_op == OP_LOAD;
     assign s2_error     = !s2_cacheable && !s2_io;
@@ -172,7 +183,52 @@ module aster_l1d #(
                                            && (state == IDLE || state == REPLAY)));
     assign s2_free      = !s2_valid || s2_answer;
     assign s1_move      = s1_valid && s2_free;
-    assign d_req_ready  = (!s1_valid || s1_move) && !replay_issue;
+    // d_req_ready is (!s1_valid || s1_move) && !replay_issue, kept in a register (d_ready_q; checked
+    // below): next cycle's value is formed from this cycle's registers and lookup, as the sequential
+    // block loads stage 2 and the head's service, with the core's request and the fabric's acceptance
+    // (which can only set sent) last (20.2's timing: every cycle the same, but the core's stall and
+    // stage 1's enable start at a flip-flop). It must be kept in step with the sequential block: the
+    // assertion below checks it in every simulation.
+    logic   d_ready_q, n_s2_valid, n_s2_cacheable, n_s2_io, n_s2_hit, n_s2_now, n_s2_have, n_s2_post, n_s2_load;
+    logic   n_sent, n_sent_taken, n_s2_ready, n_replay_issue, free_if_not, free_if_taken;
+    logic [1:0] n_replay_wait;
+    state_t n_state;
+    function automatic logic answer_next(input logic sent_next);
+        return n_s2_valid && ((!n_s2_cacheable && !n_s2_io) || n_state == ANSWER
+                              || (n_state == ACCESS && n_s2_post && sent_next)
+                              || (n_s2_cacheable && n_s2_load && n_s2_hit && n_s2_ready
+                                  && (n_state == IDLE || n_state == REPLAY)));
+    endfunction
+    always_comb begin
+        n_s2_valid = s2_valid; n_s2_cacheable = s2_cacheable; n_s2_io = s2_io; n_s2_hit = s2_hit;
+        n_s2_post = s2_post; n_s2_load = s2_load; n_s2_now = 1'b0; n_s2_have = s2_have || s2_now;
+        n_state = state; n_replay_wait = replay_wait; n_sent = sent;
+        if (s1_move) begin
+            n_s2_valid = 1'b1; n_s2_cacheable = s1_cacheable; n_s2_io = s1_io; n_s2_hit = lookup_hit;
+            n_s2_now = s1_now; n_s2_have = s1_kept; n_s2_post = s1_cacheable && s1_op == OP_STORE;
+            n_s2_load = s1_load;
+            if (s1_error || (s1_cacheable && s1_load && lookup_hit && (s1_now || s1_kept))) n_state = IDLE;
+            else if (s1_cacheable && s1_load && lookup_hit) begin n_state = REPLAY; n_replay_wait = '0; end
+            else if (s1_cacheable && s1_load) n_state = REFILL;
+            else begin n_state = ACCESS; n_sent = 1'b0; end
+        end else begin
+            if (s2_answer) n_s2_valid = 1'b0;
+            unique case (state)
+                IDLE: ;
+                REFILL: if (m_mine && received == 3'd3) n_state = ANSWER;
+                ACCESS: if (s2_answer) n_state = IDLE; else if (m_mine && sent) n_state = ANSWER;
+                ANSWER: n_state = IDLE;
+                REPLAY: if (replay_wait == 2'd2) n_state = IDLE; else n_replay_wait = replay_wait + 2'd1;
+                default: n_state = IDLE;
+            endcase
+        end
+        n_sent_taken   = !s1_move && state == ACCESS ? 1'b1 : n_sent;    // an acceptance in ACCESS sends
+        n_s2_ready     = n_s2_now || n_s2_have || (n_state == REPLAY && n_replay_wait == 2'd2);
+        n_replay_issue = n_state == REPLAY && n_replay_wait == 2'd0;
+        free_if_not    = !n_s2_valid || answer_next(n_sent);
+        free_if_taken  = !n_s2_valid || answer_next(n_sent_taken);
+    end
+    assign d_req_ready  = d_ready_q;
 
     // §4: the error of the request accepted at the last edge, from its registered address.
     assign d_rsp_error  = s1_valid && s1_age == 2'd0 && s1_error;
@@ -181,12 +237,39 @@ module aster_l1d #(
 
     // The memory side: a refill's four reads, or the head's one access; at most
     // two in flight. Its answers come in order, posted stores' first (dropped).
-    assign m_req_valid  = inflight != 2'd2 && (state == REFILL ? issued != 3'd4 : state == ACCESS && !sent);
-    assign m_req_op     = state == REFILL ? OP_LOAD : s2_op;
-    assign m_req_addr   = state == REFILL ? {s2_addr[31:4], issued[1:0], 2'b00} : s2_addr;
-    assign m_req_main   = state == REFILL || s2_cacheable;   // main memory's (else an I/O access), from registers
+    // The request is inflight != 2 && (state == REFILL ? issued != 4 : state ==
+    // ACCESS && !sent), kept in a register (m_valid_q; checked below): next
+    // cycle's value is formed both ways from this cycle's registers and lookup,
+    // and the fabric's acceptance chooses (20.2's timing: every cycle the same,
+    // but the request leaves from a flip-flop). A head enters stage 2 only
+    // while nothing is presented (checked), so its cycle accepts nothing.
+    logic       m_valid_q, valid_if_taken, valid_if_not;
+    logic [1:0] inflight_kept;    // next cycle's in flight, without this cycle's acceptance
+    always_comb begin
+        inflight_kept  = inflight - (m_rsp_valid ? 2'd1 : 2'd0);
+        valid_if_taken = 1'b0;
+        valid_if_not   = 1'b0;
+        if (s1_move) begin                                              // to REFILL or ACCESS: sends
+            valid_if_not = inflight_kept != 2'd2 && (refill_start || (!s1_error && !(s1_cacheable && s1_load)));
+        end else if (state == REFILL && !(m_mine && received == 3'd3)) begin    // stays in REFILL
+            valid_if_not   = inflight_kept != 2'd2 && issued != 3'd4;
+            valid_if_taken = inflight_kept + 2'd1 != 2'd2 && issued + 3'd1 != 3'd4;
+        end else if (state == ACCESS && !s2_answer && !(m_mine && sent)) begin  // stays in ACCESS (taken: sent)
+            valid_if_not = inflight_kept != 2'd2 && !sent;
+        end
+    end
+    assign m_req_valid  = m_valid_q;
+    // The request's op, address and byte enables are kept in registers (m_*_q), loaded on the transitions
+    // that change state, issued and stage 2, so they are always state == REFILL ? {the refill's word} :
+    // {stage 2's} (checked below) and the fabric's compares start from registers, not from that mux
+    // (20.2's timing: every cycle the same).
+    logic [31:0] m_addr_q;
+    logic [3:0]  m_op_q, m_be_q;
+    assign m_req_op     = m_op_q;
+    assign m_req_addr   = m_addr_q;
+    assign m_req_main   = s2_cacheable;   // main memory's (else an I/O access; a refill's head is cacheable: checked)
     assign m_req_wdata  = s2_wdata;
-    assign m_req_be     = state == REFILL ? 4'hf : s2_be;
+    assign m_req_be     = m_be_q;
     assign m_drop       = m_rsp_valid && posted != 2'd0;
     assign m_mine       = m_rsp_valid && posted == 2'd0;
     assign posted_pending = posted != 2'd0;
@@ -256,7 +339,8 @@ module aster_l1d #(
             s1_valid     <= 1'b0;
             s1_stale     <= 1'b0;
             s1_have      <= 1'b0;
-            s1_plain     <= 1'b0;
+            s1_cacheable <= 1'b0;
+            s1_io        <= 1'b0;
             s1_age       <= '0;
             s1_op        <= '0;
             s1_be        <= '0;
@@ -283,7 +367,16 @@ module aster_l1d #(
             replay_wait  <= '0;
             posted       <= '0;
             inflight     <= '0;
+            m_addr_q     <= '0;
+            m_op_q       <= '0;
+            m_be_q       <= '0;
+            m_valid_q    <= 1'b0;
+            d_ready_q    <= 1'b1;                 // (stage 1 empty)
         end else begin
+            // next cycle's s1_valid is d_req_valid if stage 1 takes it now, else s1_valid
+            d_ready_q <= !n_replay_issue && ((d_ready_q ? !d_req_valid : !s1_valid)
+                                             || (m_accept ? free_if_taken : free_if_not));
+            m_valid_q <= m_valid_q && m_req_ready ? valid_if_taken : valid_if_not;
             // Stage 1: loaded whenever it can accept (enabled by d_req_ready, not
             // the request); it holds a request when one was accepted.
             if (d_req_ready) begin
@@ -293,7 +386,8 @@ module aster_l1d #(
                 s1_stale <= array_write;
                 s1_op    <= d_req_op;
                 s1_be    <= d_req_be;
-                s1_plain <= (d_req_op == OP_LOAD || d_req_op == OP_STORE) && d_req_be == 4'hF;
+                s1_cacheable <= d_cacheable;
+                s1_io    <= d_io;
                 s1_addr  <= d_req_addr;
                 s1_wdata <= d_req_wdata;
             end else if (s1_valid) begin
@@ -366,6 +460,27 @@ module aster_l1d #(
                     default: state <= IDLE;
                 endcase
             end
+            // The request's registers: a head entering stage 2 (a refill's first word, or its own access);
+            // a refill's next word as one is accepted; the head's own fields as the refill ends.
+            if (s1_move) begin
+                if (refill_start) begin
+                    m_addr_q <= {s1_addr[31:4], 4'b0000};
+                    m_op_q   <= OP_LOAD;
+                    m_be_q   <= 4'hf;
+                end else begin
+                    m_addr_q <= s1_addr;
+                    m_op_q   <= s1_op;
+                    m_be_q   <= s1_be;
+                end
+            end else if (state == REFILL) begin
+                if (m_mine && received == 3'd3) begin
+                    m_addr_q <= s2_addr;
+                    m_op_q   <= s2_op;
+                    m_be_q   <= s2_be;
+                end else if (m_accept) begin
+                    m_addr_q[3:2] <= issued[1:0] + 2'd1;
+                end
+            end
             valid <= valid_next;
         end
     end
@@ -379,6 +494,16 @@ module aster_l1d #(
         // The memory side errs only where this cache does not (§4): never.
         if (m_error_due) assert (!m_rsp_error) else $error("aster_l1d: the memory side answered an error");
         assert (inflight <= 2'd2) else $error("aster_l1d: more than two memory-side requests in flight");
+        assert (m_addr_q == (state == REFILL ? {s2_addr[31:4], issued[1:0], 2'b00} : s2_addr)
+                && m_op_q == (state == REFILL ? OP_LOAD : s2_op) && m_be_q == (state == REFILL ? 4'hf : s2_be))
+            else $error("aster_l1d: the memory-side request's registers differ from the head's or the refill's");
+        assert (m_valid_q == (inflight != 2'd2 && (state == REFILL ? issued != 3'd4 : state == ACCESS && !sent)))
+            else $error("aster_l1d: the registered memory-side request differs from its definition");
+        assert (!(s1_move && m_valid_q)) else $error("aster_l1d: a head entered stage 2 while a request was presented");
+        assert (!(s1_move && array_write)) else $error("aster_l1d: the head moved as the array was written");
+        assert (d_ready_q == ((!s1_valid || s1_move) && !replay_issue))
+            else $error("aster_l1d: the registered d_req_ready differs from its definition");
+        assert (state != REFILL || s2_cacheable) else $error("aster_l1d: a refill's head is not cacheable");
         if (m_rsp_valid) assert (inflight != 2'd0) else $error("aster_l1d: an answer with nothing in flight");
         // A head's own access is answered only after the posted stores before it.
         if (state == ACCESS && sent && m_mine) assert (!s2_post) else $error("aster_l1d: a posted store answered twice");
