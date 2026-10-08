@@ -1,13 +1,15 @@
-// The Phase 20 SoC (milestone 20.2; docs/soc.md): two Aster cores, each with
-// its instruction and data caches (the data caches with three snoop ports),
-// the banked fabric (rtl/fabric/aster_fabric.sv) on 96 KiB of main memory at
-// 0x8000_0000, the v2 NPU (8×8, two A strips, a 64-bit port: Phase 19's) on
-// the fabric's port N, the devices (aster_soc_devices.sv) on its I/O bus, and
-// the ARM side's AXI4-Lite window of the Phase 19 SoC, clocked by FCLK0. Until
-// the DMA comes (20.3), ports R and W carry only the ARM side's accesses.
+// The Phase 20 SoC (milestones 20.2, 20.3; docs/soc.md): two Aster cores, each
+// with its instruction and data caches (the data caches with three snoop
+// ports), the banked fabric (rtl/fabric/aster_fabric.sv) on 96 KiB of main
+// memory at 0x8000_0000, the v2 NPU (8×8, two A strips, a 64-bit port: Phase
+// 19's) on the fabric's port N, the DMA (rtl/dma/aster_dma2.sv, 20.3) on ports
+// R and W and the I/O bus, the devices (aster_soc_devices.sv) on the I/O bus,
+// and the ARM side's AXI4-Lite window of the Phase 19 SoC, clocked by FCLK0.
+// Ports R and W carry the DMA's accesses while the harts run and the ARM
+// side's while they are held, both from the DMA's port registers.
 //
-// Resets: the CONTROL register's run bit releases hart 0, the NPU and the
-// devices; hart 1 also waits for the hart-control page's SECONDARY_RUN (with
+// Resets: the CONTROL register's run bit releases hart 0, the NPU, the DMA and
+// the devices; hart 1 also waits for the hart-control page's SECONDARY_RUN (with
 // HARTS = 1 it never runs). The fabric itself is reset only with the board's
 // reset, at each start and at each stop, so the ARM side can use it while the
 // harts are held: it presents its main-memory reads on port R and its writes on
@@ -184,12 +186,20 @@ module aster_soc #(
     end
 
     // ---- the ARM side's main-memory access: on the DMA's ports R (reads) and W (writes) while the harts
-    // (and, from 20.3, the DMA) are held, so that nothing is multiplexed into the data caches' requests ----
-    logic        arm_v, arm_write, arm_wait_rsp;
-    logic [31:0] arm_addr, arm_wdata;
-    logic [3:0]  arm_be;
+    // and the DMA are held, so that nothing is multiplexed into the data caches' requests. The ports'
+    // registers are the DMA's (20.3): arm_go loads the access into them; arm_v and arm_addr keep it for
+    // the AXI side's answer ----
+    logic        arm_v, arm_write, arm_wait_rsp, arm_hi;   // arm_hi: a read's word is the unit's high one
+    logic        arm_go, arm_go_write;
+    logic [31:0] arm_go_addr, arm_go_wdata;
+    logic [3:0]  arm_go_be;
     logic        r_ready, r_rsp_valid, w_ready, w_rsp_valid;
     logic [63:0] r_rsp_rdata;
+    logic        dma_r_valid, dma_w_valid, dma_sel, dma_irq, dev_window_counting, dev_window_adds;
+    logic [28:0] dma_r_addr, dma_w_addr;
+    logic [63:0] dma_w_wdata;
+    logic [7:0]  dma_w_be;
+    logic [31:0] dma_rdata;
     logic [1:0]  f_d_valid, f_d_ready, f_d_rsp_valid, f_d_rsp_error;
     logic [1:0][3:0]  f_d_op, f_d_be;
     logic [1:0][31:0] f_d_addr, f_d_wdata, f_d_rsp_rdata;
@@ -264,24 +274,28 @@ module aster_soc #(
     logic n_main;
     assign n_main = {n_req_addr, 2'b00} - 32'h8000_0000 < 32'(MAIN_BYTES);
     if (NPU_BUFFER != 0) begin : g_npu_buffer
-        logic [1:0]       count;
-        logic             full, err_q;
+        logic [1:0]       count, count_next;
+        logic             full, err_q, nz;
         logic [1:0][31:2] e_addr;
         logic [1:0]       e_we, e_main;
         logic [1:0][63:0] e_wdata;
         logic [1:0][7:0]  e_be;
         logic             enq, deq;
+        // (emptied with the fabric at a start or a stop, and taking nothing while the harts are held, so its
+        // request to the fabric is a register's: nz, the buffer not empty; 20.3's timing)
         assign n_req_ready = !full;
-        assign enq = n_req_valid && !full;
+        assign enq = n_req_valid && !full && run;
         assign deq = f_n_valid && n_ready_f;
-        assign {f_n_valid, f_n_addr, f_n_we, f_n_wdata, f_n_be, f_n_main} = {count != 2'd0, e_addr[0], e_we[0], e_wdata[0],
+        assign count_next = start || stop ? 2'd0 : count + {1'b0, enq} - {1'b0, deq};
+        assign {f_n_valid, f_n_addr, f_n_we, f_n_wdata, f_n_be, f_n_main} = {nz, e_addr[0], e_we[0], e_wdata[0],
                                                                          e_be[0], e_main[0]};
         always_ff @(posedge aclk) begin
             if (!npu_rst_n) begin
-                count <= '0; full <= 1'b0; err_q <= 1'b0;
+                count <= '0; full <= 1'b0; err_q <= 1'b0; nz <= 1'b0;
             end else begin
-                count <= count + {1'b0, enq} - {1'b0, deq};
-                full  <= count + {1'b0, enq} - {1'b0, deq} == 2'd2;
+                count <= count_next;
+                full  <= count_next == 2'd2;
+                nz    <= count_next != 2'd0;
                 err_q <= enq && !n_main;
             end
             // entry 0 is the head; a request joins behind what stays
@@ -321,13 +335,17 @@ module aster_soc #(
         .d_req_be(f_d_be),
         .d_req_ready(f_d_ready), .d_rsp_valid(f_d_rsp_valid), .d_rsp_rdata(f_d_rsp_rdata), .d_rsp_error(f_d_rsp_error),
         .snoop_valid, .snoop_line,
-        .n_req_valid(f_n_valid && core_rst_n[0]), .n_req_addr(f_n_addr), .n_req_main(f_n_main), .n_req_we(f_n_we),
+        // (the buffer's request needs no gating by the run: it is emptied at a stop; the NPU's own does)
+        .n_req_valid(NPU_BUFFER != 0 ? f_n_valid : f_n_valid && core_rst_n[0]), .n_req_addr(f_n_addr), .n_req_main(f_n_main),
+        .n_req_we(f_n_we),
         .n_req_wdata(f_n_wdata), .n_req_be(f_n_be), .n_req_ready(n_ready_f), .n_rsp_valid(n_rsp_valid),
         .n_rsp_rdata(n_rsp_rdata), .n_rsp_error(n_rsp_error),
-        .r_req_valid(arm_v && !arm_write), .r_req_addr(arm_addr[31:3]), .r_req_main(1'b1), .r_req_ready(r_ready), .r_rsp_valid,
+        // (ports R and W: the DMA's registers, carrying the DMA's accesses, or the ARM side's while held;
+        // both address only main memory)
+        .r_req_valid(dma_r_valid), .r_req_addr(dma_r_addr), .r_req_main(1'b1), .r_req_ready(r_ready), .r_rsp_valid,
         .r_rsp_rdata, .r_rsp_error(),
-        .w_req_valid(arm_v && arm_write), .w_req_addr(arm_addr[31:3]), .w_req_main(1'b1), .w_req_wdata({arm_wdata, arm_wdata}),
-        .w_req_be(arm_addr[2] ? {arm_be, 4'h0} : {4'h0, arm_be}), .w_req_ready(w_ready), .w_rsp_valid,
+        .w_req_valid(dma_w_valid), .w_req_addr(dma_w_addr), .w_req_main(1'b1), .w_req_wdata(dma_w_wdata),
+        .w_req_be(dma_w_be), .w_req_ready(w_ready), .w_rsp_valid,
         .w_rsp_error(),
         .io_req_valid(io_valid), .io_req_hart(io_hart), .io_req_op(io_op), .io_req_addr(io_addr),
         .io_req_wdata(io_wdata), .io_req_be(io_be), .io_rsp_rdata(io_rdata),
@@ -389,6 +407,8 @@ module aster_soc #(
         assign console_word_store = 1'b0;
         assign console_byte_store = '0;
         assign dev_window_start = 1'b0;
+        assign dev_window_counting = 1'b0;
+        assign dev_window_adds = 1'b0;
         assign dev_window_freeze = 1'b0;
         assign arm_page_q = page_q;
     end else begin : g_devices
@@ -402,10 +422,10 @@ module aster_soc #(
         // The fabric's requests and grants as they were in the last cycle: the counters count from these
         // copies, so their logic adds nothing after the arbiters (measurement only; a cycle later).
         always_ff @(posedge aclk) begin
-            req_valid  <= {arm_v && arm_write, arm_v && !arm_write, f_n_valid && core_rst_n[0], f_d_valid[1],
+            req_valid  <= {dma_w_valid, dma_r_valid, f_n_valid && core_rst_n[0], f_d_valid[1],
                            m_i_valid[1], f_d_valid[0], m_i_valid[0]};
             req_ready  <= {w_ready, r_ready, n_ready_f, f_d_ready[1], m_i_ready[1], f_d_ready[0], m_i_ready[0]};
-            req_bank   <= {arm_addr[5:4], arm_addr[5:4], f_n_addr[5:4], f_d_addr[1][5:4], m_i_addr[1][3:2],
+            req_bank   <= {dma_w_addr[2:1], dma_r_addr[2:1], f_n_addr[5:4], f_d_addr[1][5:4], m_i_addr[1][3:2],
                            f_d_addr[0][5:4], m_i_addr[0][3:2]};
             req_mem    <= {1'b1, 1'b1, {f_n_addr, 2'b00} - 32'h8000_0000 < 32'(MAIN_BYTES), m_d_main[1], 1'b1, m_d_main[0],
                            1'b1};
@@ -447,7 +467,8 @@ module aster_soc #(
             .clk(aclk), .rst_n(core_rst_n[0]),
             .io_valid(io_valid && run), .io_hart, .io_op, .io_addr, .io_wdata, .io_rdata(dev_rdata), .io_sel(dev_sel),
             .console_we(console_word_store), .console_byte(console_byte_store), .secondary_run, .mtime,
-            .npu_irq, .dma_irq(1'b0), .meip, .window_start(dev_window_start), .window_freeze(dev_window_freeze),
+            .npu_irq, .dma_irq, .meip, .window_start(dev_window_start), .window_freeze(dev_window_freeze),
+            .window_counting(dev_window_counting), .window_adds(dev_window_adds),
             .ev_retired, .ev_mem_txn, .ev_i_access(i_lookup), .ev_i_miss(i_lookup & ~i_lookup_hit), .ev_d_access,
             .ev_d_miss, .ev_amo_done, .ev_sc_ok, .ev_sc_fail, .ev_inval({snoop_hit_q[0][0], snoop_hit_q[1][0]}),
             .ev_dot8, .ev_backing, .ev_accept, .ev_wait, .ev_bank_read, .ev_bank_write, .ev_bank_conflict,
@@ -456,7 +477,24 @@ module aster_soc #(
         );
         assign arm_page_q = '0;
     end
-    assign io_rdata = npu_sel_q ? npu_r_rdata : dev_sel ? dev_rdata : 32'b0;
+    // ---- the DMA (soc.md §6; 20.3): v1's DMA ABI 1 at 0x3000_0000 on the I/O bus, its reset the run's (a
+    // cycle after hart 0's, as the NPU's), its ports' registers the SoC's (cleared with the fabric at a
+    // start or a stop); its writes' invalidations are the data caches' snoop hits on W's snoop port (2) ----
+    logic dma_rst_n;
+    always_ff @(posedge aclk) dma_rst_n <= core_rst_n[0];
+    aster_dma2 #(.MEM_BASE(32'h8000_0000), .MEM_BYTES(32'(MAIN_BYTES)), .WAIT(WAIT), .CLK_HZ(CLK_HZ)) dma (
+        .clk(aclk), .rst_n(aresetn), .clear(start || stop), .run, .job_rst_n(dma_rst_n),
+        .io_valid(io_valid && io_addr[31:12] == 20'h3_0000), .io_hart, .io_write(io_op == OP_STORE),
+        .io_addr(io_addr[11:0]), .io_wdata, .io_be, .io_sel(dma_sel), .io_rdata(dma_rdata),
+        .arm_go, .arm_write(arm_go_write), .arm_addr(arm_go_addr), .arm_wdata(arm_go_wdata), .arm_be(arm_go_be),
+        .r_req_valid(dma_r_valid), .r_req_addr(dma_r_addr), .r_req_ready(r_ready), .r_rsp_valid, .r_rsp_rdata,
+        .w_req_valid(dma_w_valid), .w_req_addr(dma_w_addr), .w_req_wdata(dma_w_wdata), .w_req_be(dma_w_be),
+        .w_req_ready(w_ready), .w_rsp_valid,
+        .win_start(dev_window_start), .win_add(dev_window_adds), .win_counting(dev_window_counting),
+        .ev_inval({ev_snoop_hit[1][2], ev_snoop_hit[0][2]}), .irq(dma_irq)
+    );
+    // (the I/O bus's targets answer one at a time)
+    assign io_rdata = npu_sel_q ? npu_r_rdata : dma_sel ? dma_rdata : dev_sel ? dev_rdata : 32'b0;
 
     // ---- the console ----
     logic        console_store;
@@ -501,6 +539,12 @@ module aster_soc #(
     assign write_fire    = aw_held && w_held && !s_axi_bvalid && !ar_busy && !arm_v && !arm_wait_rsp;
     assign read_fire     = s_axi_arvalid && s_axi_arready;
     assign aw_main       = aw_addr < 18'h18000;
+    // an access to main memory starting (while held): into the ports' registers, as into arm_*
+    assign arm_go        = !run && ((write_fire && aw_main) || (read_fire && s_axi_araddr < 18'h18000));
+    assign arm_go_write  = write_fire;
+    assign arm_go_addr   = write_fire ? 32'h8000_0000 + 32'(aw_addr) : 32'h8000_0000 + 32'({s_axi_araddr[17:2], 2'b00});
+    assign arm_go_wdata  = w_data;
+    assign arm_go_be     = write_fire ? w_strb : 4'hF;
     assign start         = write_fire && aw_addr == 18'h3F000 && w_data[0] && !run;
     assign stop          = write_fire && aw_addr == 18'h3F000 && !w_data[0] && run;   // (a stop also clears the fabric's queues)
     assign arm_done      = arm_v && (arm_write ? w_ready : r_ready);
@@ -580,15 +624,14 @@ module aster_soc #(
             if (write_fire) begin
                 aw_held <= 1'b0; w_held <= 1'b0;
                 if (aw_main && !run) begin
-                    arm_v <= 1'b1; arm_write <= 1'b1; arm_addr <= 32'h8000_0000 + 32'(aw_addr); arm_wdata <= w_data;
-                    arm_be <= w_strb;
+                    arm_v <= 1'b1; arm_write <= 1'b1;
                 end else s_axi_bvalid <= 1'b1;
             end
             if (arm_done) begin arm_v <= 1'b0; arm_wait_rsp <= 1'b1; end
             if (arm_wait_rsp && (arm_write ? w_rsp_valid : r_rsp_valid)) begin
                 arm_wait_rsp <= 1'b0;
                 if (arm_write) s_axi_bvalid <= 1'b1;
-                else begin s_axi_rvalid <= 1'b1; s_axi_rdata <= arm_addr[2] ? r_rsp_rdata[63:32] : r_rsp_rdata[31:0]; end
+                else begin s_axi_rvalid <= 1'b1; s_axi_rdata <= arm_hi ? r_rsp_rdata[63:32] : r_rsp_rdata[31:0]; end
             end
             if (s_axi_bvalid && s_axi_bready) s_axi_bvalid <= 1'b0;
             // A read: main memory through the fabric (while held), the others two cycles later.
@@ -596,8 +639,7 @@ module aster_soc #(
                 ar_busy <= 1'b1; ar_addr <= {s_axi_araddr[17:2], 2'b00}; ar_wait <= 2'd2;
                 ar_main <= s_axi_araddr < 18'h18000 && !run;
                 if (s_axi_araddr < 18'h18000 && !run) begin
-                    arm_v <= 1'b1; arm_write <= 1'b0; arm_addr <= 32'h8000_0000 + 32'({s_axi_araddr[17:2], 2'b00});
-                    arm_be <= 4'hF;
+                    arm_v <= 1'b1; arm_write <= 1'b0; arm_hi <= s_axi_araddr[2];
                 end
             end
             if (ar_busy && !s_axi_rvalid && !ar_main) begin
@@ -617,7 +659,7 @@ module aster_soc #(
 
     logic unused;
     // (the events each build does not count; the RVFI fields hart 1's capture does not use)
-    assign unused = ^{s_axi_awaddr[1:0], s_axi_araddr[1:0], npu_r_ready, npu_r_rsp_valid, npu_r_rsp_error, arm_addr[1:0],
+    assign unused = ^{s_axi_awaddr[1:0], s_axi_araddr[1:0], npu_r_ready, npu_r_rsp_valid, npu_r_rsp_error, dma_irq,
                       window_open_retired[1], ev_snoop_hit, i_lookup, i_lookup_hit, d_lookup, d_lookup_hit, rvfi_insn,
                       rvfi_mem_addr, rvfi_mem_wdata, d_lookup_addr, rvfi_mem_rmask, rvfi_mem_wmask, d_lookup_op, io_hart,
                       ev_resv_end};

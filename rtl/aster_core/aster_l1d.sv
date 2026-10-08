@@ -177,10 +177,16 @@ module aster_l1d #(
     assign replay_issue = state == REPLAY && replay_wait == 2'd0;
     assign s2_ready     = s2_now || s2_have || (state == REPLAY && replay_wait == 2'd2);
     assign m_accept     = m_req_valid && m_req_ready;
-    assign s2_answer    = s2_valid && (s2_error || state == ANSWER
+    // The head's answer, defined here (s2_answer_def), is kept in a register (ans_q; checked below): next
+    // cycle's value is formed with d_ready_q's, from stage 2's and the state's next values, the
+    // acceptance choosing (20.3's timing: every cycle the same, but the core's stall and stage 1's
+    // move start at a flip-flop).
+    logic s2_answer_def, ans_q;
+    assign s2_answer_def = s2_valid && (s2_error || state == ANSWER
                                        || (state == ACCESS && s2_post && sent)
                                        || (s2_cacheable && s2_load && s2_hit && s2_ready
                                            && (state == IDLE || state == REPLAY)));
+    assign s2_answer    = ans_q;
     assign s2_free      = !s2_valid || s2_answer;
     assign s1_move      = s1_valid && s2_free;
     // d_req_ready is (!s1_valid || s1_move) && !replay_issue, kept in a register (d_ready_q; checked
@@ -372,8 +378,10 @@ module aster_l1d #(
             m_be_q       <= '0;
             m_valid_q    <= 1'b0;
             d_ready_q    <= 1'b1;                 // (stage 1 empty)
+            ans_q        <= 1'b0;                 // (stage 2 empty)
         end else begin
             // next cycle's s1_valid is d_req_valid if stage 1 takes it now, else s1_valid
+            ans_q <= m_accept ? answer_next(n_sent_taken) : answer_next(n_sent);
             d_ready_q <= !n_replay_issue && ((d_ready_q ? !d_req_valid : !s1_valid)
                                              || (m_accept ? free_if_taken : free_if_not));
             m_valid_q <= m_valid_q && m_req_ready ? valid_if_taken : valid_if_not;
@@ -501,6 +509,7 @@ module aster_l1d #(
             else $error("aster_l1d: the registered memory-side request differs from its definition");
         assert (!(s1_move && m_valid_q)) else $error("aster_l1d: a head entered stage 2 while a request was presented");
         assert (!(s1_move && array_write)) else $error("aster_l1d: the head moved as the array was written");
+        assert (ans_q == s2_answer_def) else $error("aster_l1d: the registered answer differs from its definition");
         assert (d_ready_q == ((!s1_valid || s1_move) && !replay_issue))
             else $error("aster_l1d: the registered d_req_ready differs from its definition");
         assert (state != REFILL || s2_cacheable) else $error("aster_l1d: a refill's head is not cacheable");

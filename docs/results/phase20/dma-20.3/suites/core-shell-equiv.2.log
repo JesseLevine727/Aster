@@ -1,0 +1,880 @@
+PASS: plain kernel coremark: PASS cycles=517570 retired=313677 window_cycles=466606 window_retired=284865 fetch_errors=0 interrupts=0 core_d_waits=4 icache_hits=429878 icache_misses=1301 dcache_hits=58133 dcache_misses=346
+PASS: plain kernel dhrystone: PASS cycles=896225 retired=516383 window_cycles=857421 window_retired=492302 fetch_errors=0 interrupts=0 icache_hits=728641 icache_misses=268 dcache_hits=111759 dcache_misses=6144
+PASS: plain kernel sort_search: PASS cycles=707614 retired=426794 window_cycles=696877 window_retired=420942 fetch_errors=0 interrupts=0 core_d_waits=1 icache_hits=571681 icache_misses=137 dcache_hits=66830 dcache_misses=92
+PASS: plain kernel fft: PASS cycles=327138 retired=253439 window_cycles=317562 window_retired=248399 fetch_errors=0 interrupts=0 core_d_waits=4 icache_hits=284353 icache_misses=158 dcache_hits=31793 dcache_misses=324
+PASS: plain kernel strided: PASS cycles=24735 retired=15859 window_cycles=2722 window_retired=1559 fetch_errors=0 interrupts=0 icache_hits=21579 icache_misses=115 dcache_hits=632 dcache_misses=90
+PASS: plain kernel conv2d: PASS cycles=1123929 retired=711517 window_cycles=1111121 window_retired=704346 fetch_errors=0 interrupts=0 core_d_waits=1 icache_hits=962034 icache_misses=129 dcache_hits=160067 dcache_misses=339
+PASS: plain kernel conv2d_scalar_coh: PASS cycles=1530313 retired=1001123 window_cycles=1481208 window_retired=971011 fetch_errors=0 interrupts=0 core_d_waits=1 icache_hits=1247094 icache_misses=162 dcache_hits=232738 dcache_misses=6595
+PASS: plain kernel reduction: PASS cycles=94753 retired=63706 window_cycles=75234 window_retired=53305 fetch_errors=0 interrupts=0 icache_hits=84697 icache_misses=144 dcache_hits=4774 dcache_misses=303
+PASS: plain kernel conv2d_dot8: PASS cycles=1533499 retired=1175309 window_cycles=1484436 window_retired=1145218 fetch_errors=0 interrupts=0 icache_hits=1394599 icache_misses=193 dcache_hits=244067 dcache_misses=6316
+PASS: plain rv32ui/add: PASS cycles=1607 retired=472 fetch_errors=0 interrupts=0 icache_hits=475 icache_misses=95 dcache_hits=0 dcache_misses=0
+PASS: plain rv32ui/addi: PASS cycles=907 retired=249 fetch_errors=0 interrupts=0 icache_hits=237 icache_misses=56 dcache_hits=0 dcache_misses=0
+PASS: plain rv32ui/and: PASS cycles=1589 retired=492 fetch_errors=0 interrupts=0 icache_hits=499 icache_misses=91 dcache_hits=0 dcache_misses=0
+PASS: plain rv32ui/andi: PASS cycles=736 retired=205 fetch_errors=0 interrupts=0 icache_hits=204 icache_misses=45 dcache_hits=0 dcache_misses=0
+PASS: plain rv32ui/auipc: PASS cycles=296 retired=66 fetch_errors=0 interrupts=0 icache_hits=58 icache_misses=20 dcache_hits=0 dcache_misses=0
+PASS: plain rv32ui/beq: PASS cycles=1099 retired=298 fetch_errors=0 interrupts=0 icache_hits=375 icache_misses=61 dcache_hits=0 dcache_misses=0
+PASS: plain rv32ui/bge: PASS cycles=1213 retired=316 fetch_errors=0 interrupts=0 icache_hits=417 icache_misses=67 dcache_hits=0 dcache_misses=0
+PASS: plain rv32ui/bgeu: PASS cycles=1268 retired=341 fetch_errors=0 interrupts=0 icache_hits=438 icache_misses=70 dcache_hits=0 dcache_misses=0
+PASS: plain rv32ui/blt: PASS cycles=1099 retired=298 fetch_errors=0 interrupts=0 icache_hits=375 icache_misses=61 dcache_hits=0 dcache_misses=0
+PASS: plain rv32ui/bltu: PASS cycles=1154 retired=323 fetch_errors=0 interrupts=0 icache_hits=396 icache_misses=64 dcache_hits=0 dcache_misses=0
+PASS: plain rv32ui/bne: PASS cycles=1101 retired=298 fetch_errors=0 interrupts=0 icache_hits=379 icache_misses=61 dcache_hits=0 dcache_misses=0
+PASS: plain rv32ui/fence_i: PASS cycles=875 retired=296 fetch_errors=0 interrupts=0 icache_hits=487 icache_misses=33 dcache_hits=1 dcache_misses=1
+PASS: plain rv32ui/jal: PASS cycles=304 retired=62 fetch_errors=0 interrupts=0 icache_hits=50 icache_misses=22 dcache_hits=0 dcache_misses=0
+PASS: plain rv32ui/jalr: PASS cycles=518 retired=122 fetch_errors=0 interrupts=0 icache_hits=144 icache_misses=32 dcache_hits=0 dcache_misses=0
+PASS: plain rv32ui/lb: PASS cycles=905 retired=260 fetch_errors=0 interrupts=0 icache_hits=248 icache_misses=55 dcache_hits=23 dcache_misses=1
+PASS: plain rv32ui/lbu: PASS cycles=905 retired=260 fetch_errors=0 interrupts=0 icache_hits=248 icache_misses=55 dcache_hits=23 dcache_misses=1
+PASS: plain rv32ui/ld_st: PASS cycles=3682 retired=970 fetch_errors=0 interrupts=0 icache_hits=732 icache_misses=246 dcache_hits=191 dcache_misses=2
+PASS: plain rv32ui/lh: PASS cycles=952 retired=276 fetch_errors=0 interrupts=0 icache_hits=261 icache_misses=58 dcache_hits=23 dcache_misses=1
+PASS: plain rv32ui/lhu: PASS cycles=979 retired=285 fetch_errors=0 interrupts=0 icache_hits=270 icache_misses=59 dcache_hits=23 dcache_misses=1
+PASS: plain rv32ui/lui: PASS cycles=325 retired=72 fetch_errors=0 interrupts=0 icache_hits=57 icache_misses=23 dcache_hits=0 dcache_misses=0
+PASS: plain rv32ui/lw: PASS cycles=998 retired=290 fetch_errors=0 interrupts=0 icache_hits=272 icache_misses=61 dcache_hits=23 dcache_misses=1
+PASS: plain rv32ui/ma_data: PASS cycles=15140 retired=7786 fetch_errors=0 interrupts=0 icache_hits=9283 icache_misses=133 dcache_hits=2463 dcache_misses=69
+PASS: plain rv32ui/or: PASS cycles=1604 retired=495 fetch_errors=0 interrupts=0 icache_hits=498 icache_misses=93 dcache_hits=0 dcache_misses=0
+PASS: plain rv32ui/ori: PASS cycles=752 retired=212 fetch_errors=0 interrupts=0 icache_hits=209 icache_misses=46 dcache_hits=0 dcache_misses=0
+PASS: plain rv32ui/sb: PASS cycles=1561 retired=461 fetch_errors=0 interrupts=0 icache_hits=467 icache_misses=88 dcache_hits=33 dcache_misses=1
+PASS: plain rv32ui/sh: PASS cycles=1691 retired=514 fetch_errors=0 interrupts=0 icache_hits=515 icache_misses=95 dcache_hits=32 dcache_misses=2
+PASS: plain rv32ui/simple: PASS cycles=209 retired=48 fetch_errors=0 interrupts=0 icache_hits=37 icache_misses=15 dcache_hits=0 dcache_misses=0
+PASS: plain rv32ui/sll: PASS cycles=1712 retired=500 fetch_errors=0 interrupts=0 icache_hits=496 icache_misses=102 dcache_hits=0 dcache_misses=0
+PASS: plain rv32ui/slli: PASS cycles=907 retired=248 fetch_errors=0 interrupts=0 icache_hits=233 icache_misses=57 dcache_hits=0 dcache_misses=0
+PASS: plain rv32ui/slt: PASS cycles=1574 retired=466 fetch_errors=0 interrupts=0 icache_hits=472 icache_misses=92 dcache_hits=0 dcache_misses=0
+PASS: plain rv32ui/slti: PASS cycles=892 retired=244 fetch_errors=0 interrupts=0 icache_hits=230 icache_misses=56 dcache_hits=0 dcache_misses=0
+PASS: plain rv32ui/sltiu: PASS cycles=892 retired=244 fetch_errors=0 interrupts=0 icache_hits=230 icache_misses=56 dcache_hits=0 dcache_misses=0
+PASS: plain rv32ui/sltu: PASS cycles=1574 retired=466 fetch_errors=0 interrupts=0 icache_hits=472 icache_misses=92 dcache_hits=0 dcache_misses=0
+PASS: plain rv32ui/sra: PASS cycles=1773 retired=519 fetch_errors=0 interrupts=0 icache_hits=510 icache_misses=106 dcache_hits=0 dcache_misses=0
+PASS: plain rv32ui/srai: PASS cycles=954 retired=263 fetch_errors=0 interrupts=0 icache_hits=248 icache_misses=59 dcache_hits=0 dcache_misses=0
+PASS: plain rv32ui/srl: PASS cycles=1754 retired=513 fetch_errors=0 interrupts=0 icache_hits=504 icache_misses=105 dcache_hits=0 dcache_misses=0
+PASS: plain rv32ui/srli: PASS cycles=942 retired=257 fetch_errors=0 interrupts=0 icache_hits=242 icache_misses=59 dcache_hits=0 dcache_misses=0
+PASS: plain rv32ui/st_ld: PASS cycles=1882 retired=490 fetch_errors=0 interrupts=0 icache_hits=372 icache_misses=126 dcache_hits=47 dcache_misses=2
+PASS: plain rv32ui/sub: PASS cycles=1577 retired=464 fetch_errors=0 interrupts=0 icache_hits=469 icache_misses=93 dcache_hits=0 dcache_misses=0
+PASS: plain rv32ui/sw: PASS cycles=1708 retired=521 fetch_errors=0 interrupts=0 icache_hits=518 icache_misses=97 dcache_hits=31 dcache_misses=3
+PASS: plain rv32ui/xor: PASS cycles=1607 retired=494 fetch_errors=0 interrupts=0 icache_hits=499 icache_misses=93 dcache_hits=0 dcache_misses=0
+PASS: plain rv32ui/xori: PASS cycles=763 retired=214 fetch_errors=0 interrupts=0 icache_hits=209 icache_misses=47 dcache_hits=0 dcache_misses=0
+PASS: plain rv32um/div: PASS cycles=657 retired=103 fetch_errors=0 interrupts=0 icache_hits=81 icache_misses=31 dcache_hits=0 dcache_misses=0
+PASS: plain rv32um/divu: PASS cycles=652 retired=104 fetch_errors=0 interrupts=0 icache_hits=81 icache_misses=31 dcache_hits=0 dcache_misses=0
+PASS: plain rv32um/mul: PASS cycles=1577 retired=466 fetch_errors=0 interrupts=0 icache_hits=472 icache_misses=92 dcache_hits=0 dcache_misses=0
+PASS: plain rv32um/mulh: PASS cycles=1577 retired=466 fetch_errors=0 interrupts=0 icache_hits=472 icache_misses=92 dcache_hits=0 dcache_misses=0
+PASS: plain rv32um/mulhsu: PASS cycles=1577 retired=466 fetch_errors=0 interrupts=0 icache_hits=472 icache_misses=92 dcache_hits=0 dcache_misses=0
+PASS: plain rv32um/mulhu: PASS cycles=1577 retired=466 fetch_errors=0 interrupts=0 icache_hits=472 icache_misses=92 dcache_hits=0 dcache_misses=0
+PASS: plain rv32um/rem: PASS cycles=657 retired=103 fetch_errors=0 interrupts=0 icache_hits=81 icache_misses=31 dcache_hits=0 dcache_misses=0
+PASS: plain rv32um/remu: PASS cycles=657 retired=103 fetch_errors=0 interrupts=0 icache_hits=81 icache_misses=31 dcache_hits=0 dcache_misses=0
+PASS: plain rv32ua/amoadd_w: PASS cycles=322 retired=73 fetch_errors=0 interrupts=0 icache_hits=56 icache_misses=23 dcache_hits=0 dcache_misses=2
+PASS: plain rv32ua/amoand_w: PASS cycles=311 retired=71 fetch_errors=0 interrupts=0 icache_hits=56 icache_misses=22 dcache_hits=0 dcache_misses=2
+PASS: plain rv32ua/amomax_w: PASS cycles=367 retired=85 fetch_errors=0 interrupts=0 icache_hits=65 icache_misses=26 dcache_hits=0 dcache_misses=3
+PASS: plain rv32ua/amomaxu_w: PASS cycles=325 retired=72 fetch_errors=0 interrupts=0 icache_hits=57 icache_misses=23 dcache_hits=0 dcache_misses=2
+PASS: plain rv32ua/amomin_w: PASS cycles=367 retired=85 fetch_errors=0 interrupts=0 icache_hits=65 icache_misses=26 dcache_hits=0 dcache_misses=3
+PASS: plain rv32ua/amominu_w: PASS cycles=325 retired=72 fetch_errors=0 interrupts=0 icache_hits=57 icache_misses=23 dcache_hits=0 dcache_misses=2
+PASS: plain rv32ua/amoor_w: PASS cycles=311 retired=71 fetch_errors=0 interrupts=0 icache_hits=56 icache_misses=22 dcache_hits=0 dcache_misses=2
+PASS: plain rv32ua/amoswap_w: PASS cycles=311 retired=71 fetch_errors=0 interrupts=0 icache_hits=56 icache_misses=22 dcache_hits=0 dcache_misses=2
+PASS: plain rv32ua/amoxor_w: PASS cycles=326 retired=75 fetch_errors=0 interrupts=0 icache_hits=59 icache_misses=23 dcache_hits=0 dcache_misses=2
+PASS: plain rv32ua/lrsc: PASS cycles=22989 retired=6248 fetch_errors=0 interrupts=0 icache_hits=14437 icache_misses=31 dcache_hits=1 dcache_misses=3
+PASS: plain rv32mi/csr: PASS cycles=564 retired=130 fetch_errors=0 interrupts=0 icache_hits=104 icache_misses=39 dcache_hits=0 dcache_misses=0
+PASS: plain rv32mi/illegal: PASS cycles=402 retired=70 fetch_errors=0 interrupts=0 icache_hits=67 icache_misses=29 dcache_hits=0 dcache_misses=0
+PASS: plain rv32mi/instret_overflow: PASS cycles=325 retired=70 fetch_errors=0 interrupts=0 icache_hits=57 icache_misses=23 dcache_hits=0 dcache_misses=0
+PASS: plain rv32mi/lh-misaligned: PASS cycles=341 retired=69 fetch_errors=0 interrupts=0 icache_hits=69 icache_misses=23 dcache_hits=0 dcache_misses=1
+PASS: plain rv32mi/lw-misaligned: PASS cycles=474 retired=105 fetch_errors=0 interrupts=0 icache_hits=128 icache_misses=28 dcache_hits=0 dcache_misses=1
+PASS: plain rv32mi/ma_addr: PASS cycles=857 retired=171 fetch_errors=0 interrupts=0 icache_hits=333 icache_misses=43 dcache_hits=8 dcache_misses=1
+PASS: plain rv32mi/ma_fetch: PASS cycles=677 retired=151 fetch_errors=0 interrupts=0 icache_hits=243 icache_misses=36 dcache_hits=0 dcache_misses=0
+PASS: plain rv32mi/mcsr: PASS cycles=295 retired=64 fetch_errors=0 interrupts=0 icache_hits=51 icache_misses=21 dcache_hits=0 dcache_misses=0
+PASS: plain rv32mi/sbreak: PASS cycles=311 retired=59 fetch_errors=0 interrupts=0 icache_hits=64 icache_misses=21 dcache_hits=0 dcache_misses=0
+PASS: plain rv32mi/scall: PASS cycles=371 retired=74 fetch_errors=0 interrupts=0 icache_hits=79 icache_misses=25 dcache_hits=0 dcache_misses=0
+PASS: plain rv32mi/sh-misaligned: PASS cycles=373 retired=77 fetch_errors=0 interrupts=0 icache_hits=75 icache_misses=25 dcache_hits=0 dcache_misses=1
+PASS: plain rv32mi/shamt: PASS cycles=296 retired=59 fetch_errors=0 interrupts=0 icache_hits=61 icache_misses=20 dcache_hits=0 dcache_misses=0
+PASS: plain rv32mi/sw-misaligned: PASS cycles=513 retired=109 fetch_errors=0 interrupts=0 icache_hits=127 icache_misses=32 dcache_hits=0 dcache_misses=1
+PASS: plain rv32mi/zicntr: PASS cycles=472 retired=112 fetch_errors=0 interrupts=0 icache_hits=90 icache_misses=32 dcache_hits=0 dcache_misses=0
+PASS: plain directed/atomics: PASS cycles=647 retired=154 fetch_errors=0 interrupts=0 icache_hits=119 icache_misses=41 dcache_hits=0 dcache_misses=9
+PASS: plain directed/dot8: PASS cycles=855 retired=249 fetch_errors=0 interrupts=0 icache_hits=226 icache_misses=50 dcache_hits=9 dcache_misses=2
+PASS: plain directed/dot8_fields_0: PASS cycles=32789 retired=8736 fetch_errors=0 interrupts=0 icache_hits=6553 icache_misses=2187 dcache_hits=0 dcache_misses=0
+PASS: plain directed/dot8_fields_1: PASS cycles=32788 retired=8735 fetch_errors=0 interrupts=0 icache_hits=6553 icache_misses=2187 dcache_hits=0 dcache_misses=0
+PASS: plain directed/dot8_fields_2: PASS cycles=32789 retired=8736 fetch_errors=0 interrupts=0 icache_hits=6553 icache_misses=2187 dcache_hits=0 dcache_misses=0
+PASS: plain directed/dot8_fields_3: PASS cycles=32789 retired=8736 fetch_errors=0 interrupts=0 icache_hits=6553 icache_misses=2187 dcache_hits=0 dcache_misses=0
+PASS: plain directed/halfword_branch_target: PASS cycles=289 retired=83 fetch_errors=0 interrupts=0 icache_hits=82 icache_misses=18 dcache_hits=0 dcache_misses=0
+PASS: plain directed/redirect_while_waiting: PASS cycles=475 retired=136 fetch_errors=0 interrupts=0 icache_hits=164 icache_misses=26 dcache_hits=15 dcache_misses=3
+PASS: plain directed/smc: PASS cycles=2634 retired=476 fetch_errors=0 interrupts=0 icache_hits=542 icache_misses=185 dcache_hits=0 dcache_misses=1
+PASS: plain directed/wrongpath_fetch_fault: PASS cycles=356 retired=83 fetch_errors=1 interrupts=0 icache_hits=89 icache_misses=23 dcache_hits=0 dcache_misses=0
+PASS: plain directed/wrongpath_muldiv: PASS cycles=410 retired=82 fetch_errors=0 interrupts=0 icache_hits=76 icache_misses=24 dcache_hits=0 dcache_misses=0
+PASS: plain traps/csr_ordering: PASS cycles=1340 retired=339 fetch_errors=0 interrupts=0 icache_hits=321 icache_misses=82 dcache_hits=14 dcache_misses=3
+PASS: plain traps/decode_traps: PASS cycles=2311 retired=760 fetch_errors=0 interrupts=0 icache_hits=901 icache_misses=88 dcache_hits=97 dcache_misses=19
+PASS: plain traps/dot8_traps: PASS cycles=54087 retired=19013 fetch_errors=0 interrupts=0 icache_hits=33297 icache_misses=359 dcache_hits=2887 dcache_misses=272
+PASS: plain traps/execute_traps: PASS cycles=2058 retired=667 fetch_errors=0 interrupts=0 icache_hits=757 icache_misses=85 dcache_hits=78 dcache_misses=17
+PASS: plain traps/fetch_traps: PASS cycles=860 retired=252 fetch_errors=24 interrupts=0 icache_hits=237 icache_misses=44 dcache_hits=23 dcache_misses=6
+PASS: plain traps/m1_traps: PASS cycles=6174 retired=2169 fetch_errors=0 interrupts=0 core_d_waits=1 m1_error_waits=222 div_kills=31 icache_hits=2778 icache_misses=72 dcache_hits=242 dcache_misses=75
+PASS: plain interrupts/irq_enable: PASS cycles=1786 retired=589 fetch_errors=0 interrupts=5 core_d_waits=1 icache_hits=739 icache_misses=75 dcache_hits=51 dcache_misses=9
+PASS: plain interrupts/irq_lines: PASS cycles=1552 retired=548 fetch_errors=0 interrupts=6 core_d_waits=1 icache_hits=740 icache_misses=57 dcache_hits=32 dcache_misses=8
+PASS: plain interrupts/irq_sweep: PASS cycles=44402 retired=14136 fetch_errors=0 interrupts=128 core_d_waits=1 icache_hits=17798 icache_misses=48 dcache_hits=1085 dcache_misses=67
+PASS: plain interrupts/time_counter: PASS cycles=954 retired=380 fetch_errors=0 interrupts=0 icache_hits=668 icache_misses=24 dcache_hits=0 dcache_misses=0
+PASS: plain selfcheck/dot8_arith: PASS cycles=3882380 retired=2645248 fetch_errors=0 interrupts=0 icache_hits=3284263 icache_misses=33 dcache_hits=285 dcache_misses=3
+PASS: plain coherence/remote_mp: PASS cycles=26535 retired=10631 fetch_errors=0 interrupts=0 icache_hits=16031 icache_misses=20 dcache_hits=1904 dcache_misses=720
+PASS: plain coherence/remote_sb: PASS cycles=17940 retired=7784 fetch_errors=0 interrupts=0 icache_hits=13964 icache_misses=21 dcache_hits=219 dcache_misses=393
+PASS: plain c/dot8_jobs: PASS cycles=1743609 retired=1114993 fetch_errors=0 interrupts=0 core_d_waits=3 icache_hits=1631204 icache_misses=199 dcache_hits=175751 dcache_misses=394
+PASS: latency1 kernel coremark: PASS cycles=514034 retired=313677 window_cycles=464324 window_retired=284865 fetch_errors=0 interrupts=0 core_d_waits=4 icache_hits=429874 icache_misses=1301 dcache_hits=58133 dcache_misses=346
+PASS: latency1 kernel dhrystone: PASS cycles=885054 retired=516383 window_cycles=847063 window_retired=492302 fetch_errors=0 interrupts=0 icache_hits=728636 icache_misses=268 dcache_hits=111759 dcache_misses=6144
+PASS: latency1 kernel sort_search: PASS cycles=706752 retired=426794 window_cycles=696693 window_retired=420942 fetch_errors=0 interrupts=0 core_d_waits=1 icache_hits=571677 icache_misses=137 dcache_hits=66830 dcache_misses=92
+PASS: latency1 kernel fft: PASS cycles=325796 retired=253439 window_cycles=316878 window_retired=248399 fetch_errors=0 interrupts=0 core_d_waits=4 icache_hits=284349 icache_misses=158 dcache_hits=31793 dcache_misses=324
+PASS: latency1 kernel strided: PASS cycles=23921 retired=15859 window_cycles=2586 window_retired=1559 fetch_errors=0 interrupts=0 icache_hits=21575 icache_misses=115 dcache_hits=632 dcache_misses=90
+PASS: latency1 kernel conv2d: PASS cycles=1122598 retired=711517 window_cycles=1110451 window_retired=704346 fetch_errors=0 interrupts=0 core_d_waits=1 icache_hits=962031 icache_misses=129 dcache_hits=160067 dcache_misses=339
+PASS: latency1 kernel conv2d_scalar_coh: PASS cycles=1515818 retired=1001123 window_cycles=1468056 window_retired=971011 fetch_errors=0 interrupts=0 core_d_waits=1 icache_hits=1247089 icache_misses=162 dcache_hits=232738 dcache_misses=6595
+PASS: latency1 kernel reduction: PASS cycles=92875 retired=63706 window_cycles=74690 window_retired=53305 fetch_errors=0 interrupts=0 icache_hits=84691 icache_misses=144 dcache_hits=4774 dcache_misses=303
+PASS: latency1 kernel conv2d_dot8: PASS cycles=1519520 retired=1175309 window_cycles=1471794 window_retired=1145218 fetch_errors=0 interrupts=0 icache_hits=1394594 icache_misses=193 dcache_hits=244067 dcache_misses=6316
+PASS: latency1 rv32ui/add: PASS cycles=1419 retired=472 fetch_errors=0 interrupts=0 icache_hits=475 icache_misses=95 dcache_hits=0 dcache_misses=0
+PASS: latency1 rv32ui/addi: PASS cycles=795 retired=249 fetch_errors=0 interrupts=0 icache_hits=237 icache_misses=56 dcache_hits=0 dcache_misses=0
+PASS: latency1 rv32ui/and: PASS cycles=1407 retired=492 fetch_errors=0 interrupts=0 icache_hits=499 icache_misses=91 dcache_hits=0 dcache_misses=0
+PASS: latency1 rv32ui/andi: PASS cycles=648 retired=205 fetch_errors=0 interrupts=0 icache_hits=204 icache_misses=45 dcache_hits=0 dcache_misses=0
+PASS: latency1 rv32ui/auipc: PASS cycles=256 retired=66 fetch_errors=0 interrupts=0 icache_hits=58 icache_misses=20 dcache_hits=0 dcache_misses=0
+PASS: latency1 rv32ui/beq: PASS cycles=979 retired=298 fetch_errors=0 interrupts=0 icache_hits=375 icache_misses=61 dcache_hits=0 dcache_misses=0
+PASS: latency1 rv32ui/bge: PASS cycles=1081 retired=316 fetch_errors=0 interrupts=0 icache_hits=417 icache_misses=67 dcache_hits=0 dcache_misses=0
+PASS: latency1 rv32ui/bgeu: PASS cycles=1130 retired=341 fetch_errors=0 interrupts=0 icache_hits=438 icache_misses=70 dcache_hits=0 dcache_misses=0
+PASS: latency1 rv32ui/blt: PASS cycles=979 retired=298 fetch_errors=0 interrupts=0 icache_hits=375 icache_misses=61 dcache_hits=0 dcache_misses=0
+PASS: latency1 rv32ui/bltu: PASS cycles=1028 retired=323 fetch_errors=0 interrupts=0 icache_hits=396 icache_misses=64 dcache_hits=0 dcache_misses=0
+PASS: latency1 rv32ui/bne: PASS cycles=981 retired=298 fetch_errors=0 interrupts=0 icache_hits=379 icache_misses=61 dcache_hits=0 dcache_misses=0
+PASS: latency1 rv32ui/fence_i: PASS cycles=812 retired=296 fetch_errors=0 interrupts=0 icache_hits=487 icache_misses=33 dcache_hits=1 dcache_misses=1
+PASS: latency1 rv32ui/jal: PASS cycles=262 retired=62 fetch_errors=0 interrupts=0 icache_hits=50 icache_misses=22 dcache_hits=0 dcache_misses=0
+PASS: latency1 rv32ui/jalr: PASS cycles=456 retired=122 fetch_errors=0 interrupts=0 icache_hits=144 icache_misses=32 dcache_hits=0 dcache_misses=0
+PASS: latency1 rv32ui/lb: PASS cycles=797 retired=260 fetch_errors=0 interrupts=0 icache_hits=248 icache_misses=55 dcache_hits=23 dcache_misses=1
+PASS: latency1 rv32ui/lbu: PASS cycles=797 retired=260 fetch_errors=0 interrupts=0 icache_hits=248 icache_misses=55 dcache_hits=23 dcache_misses=1
+PASS: latency1 rv32ui/ld_st: PASS cycles=3190 retired=970 fetch_errors=0 interrupts=0 icache_hits=732 icache_misses=246 dcache_hits=191 dcache_misses=2
+PASS: latency1 rv32ui/lh: PASS cycles=838 retired=276 fetch_errors=0 interrupts=0 icache_hits=261 icache_misses=58 dcache_hits=23 dcache_misses=1
+PASS: latency1 rv32ui/lhu: PASS cycles=861 retired=285 fetch_errors=0 interrupts=0 icache_hits=270 icache_misses=59 dcache_hits=23 dcache_misses=1
+PASS: latency1 rv32ui/lui: PASS cycles=281 retired=72 fetch_errors=0 interrupts=0 icache_hits=57 icache_misses=23 dcache_hits=0 dcache_misses=0
+PASS: latency1 rv32ui/lw: PASS cycles=878 retired=290 fetch_errors=0 interrupts=0 icache_hits=272 icache_misses=61 dcache_hits=23 dcache_misses=1
+PASS: latency1 rv32ui/ma_data: PASS cycles=14766 retired=7786 fetch_errors=0 interrupts=0 icache_hits=9283 icache_misses=133 dcache_hits=2463 dcache_misses=69
+PASS: latency1 rv32ui/or: PASS cycles=1420 retired=495 fetch_errors=0 interrupts=0 icache_hits=498 icache_misses=93 dcache_hits=0 dcache_misses=0
+PASS: latency1 rv32ui/ori: PASS cycles=662 retired=212 fetch_errors=0 interrupts=0 icache_hits=209 icache_misses=46 dcache_hits=0 dcache_misses=0
+PASS: latency1 rv32ui/sb: PASS cycles=1387 retired=461 fetch_errors=0 interrupts=0 icache_hits=467 icache_misses=88 dcache_hits=33 dcache_misses=1
+PASS: latency1 rv32ui/sh: PASS cycles=1501 retired=514 fetch_errors=0 interrupts=0 icache_hits=515 icache_misses=95 dcache_hits=32 dcache_misses=2
+PASS: latency1 rv32ui/simple: PASS cycles=181 retired=48 fetch_errors=0 interrupts=0 icache_hits=37 icache_misses=15 dcache_hits=0 dcache_misses=0
+PASS: latency1 rv32ui/sll: PASS cycles=1510 retired=500 fetch_errors=0 interrupts=0 icache_hits=496 icache_misses=102 dcache_hits=0 dcache_misses=0
+PASS: latency1 rv32ui/slli: PASS cycles=795 retired=248 fetch_errors=0 interrupts=0 icache_hits=233 icache_misses=57 dcache_hits=0 dcache_misses=0
+PASS: latency1 rv32ui/slt: PASS cycles=1390 retired=466 fetch_errors=0 interrupts=0 icache_hits=472 icache_misses=92 dcache_hits=0 dcache_misses=0
+PASS: latency1 rv32ui/slti: PASS cycles=782 retired=244 fetch_errors=0 interrupts=0 icache_hits=230 icache_misses=56 dcache_hits=0 dcache_misses=0
+PASS: latency1 rv32ui/sltiu: PASS cycles=782 retired=244 fetch_errors=0 interrupts=0 icache_hits=230 icache_misses=56 dcache_hits=0 dcache_misses=0
+PASS: latency1 rv32ui/sltu: PASS cycles=1390 retired=466 fetch_errors=0 interrupts=0 icache_hits=472 icache_misses=92 dcache_hits=0 dcache_misses=0
+PASS: latency1 rv32ui/sra: PASS cycles=1563 retired=519 fetch_errors=0 interrupts=0 icache_hits=510 icache_misses=106 dcache_hits=0 dcache_misses=0
+PASS: latency1 rv32ui/srai: PASS cycles=836 retired=263 fetch_errors=0 interrupts=0 icache_hits=248 icache_misses=59 dcache_hits=0 dcache_misses=0
+PASS: latency1 rv32ui/srl: PASS cycles=1546 retired=513 fetch_errors=0 interrupts=0 icache_hits=504 icache_misses=105 dcache_hits=0 dcache_misses=0
+PASS: latency1 rv32ui/srli: PASS cycles=826 retired=257 fetch_errors=0 interrupts=0 icache_hits=242 icache_misses=59 dcache_hits=0 dcache_misses=0
+PASS: latency1 rv32ui/st_ld: PASS cycles=1630 retired=490 fetch_errors=0 interrupts=0 icache_hits=372 icache_misses=126 dcache_hits=47 dcache_misses=2
+PASS: latency1 rv32ui/sub: PASS cycles=1393 retired=464 fetch_errors=0 interrupts=0 icache_hits=469 icache_misses=93 dcache_hits=0 dcache_misses=0
+PASS: latency1 rv32ui/sw: PASS cycles=1516 retired=521 fetch_errors=0 interrupts=0 icache_hits=518 icache_misses=97 dcache_hits=31 dcache_misses=3
+PASS: latency1 rv32ui/xor: PASS cycles=1423 retired=494 fetch_errors=0 interrupts=0 icache_hits=499 icache_misses=93 dcache_hits=0 dcache_misses=0
+PASS: latency1 rv32ui/xori: PASS cycles=671 retired=214 fetch_errors=0 interrupts=0 icache_hits=209 icache_misses=47 dcache_hits=0 dcache_misses=0
+PASS: latency1 rv32um/div: PASS cycles=615 retired=103 fetch_errors=0 interrupts=0 icache_hits=81 icache_misses=31 dcache_hits=0 dcache_misses=0
+PASS: latency1 rv32um/divu: PASS cycles=610 retired=104 fetch_errors=0 interrupts=0 icache_hits=81 icache_misses=31 dcache_hits=0 dcache_misses=0
+PASS: latency1 rv32um/mul: PASS cycles=1393 retired=466 fetch_errors=0 interrupts=0 icache_hits=472 icache_misses=92 dcache_hits=0 dcache_misses=0
+PASS: latency1 rv32um/mulh: PASS cycles=1393 retired=466 fetch_errors=0 interrupts=0 icache_hits=472 icache_misses=92 dcache_hits=0 dcache_misses=0
+PASS: latency1 rv32um/mulhsu: PASS cycles=1393 retired=466 fetch_errors=0 interrupts=0 icache_hits=472 icache_misses=92 dcache_hits=0 dcache_misses=0
+PASS: latency1 rv32um/mulhu: PASS cycles=1393 retired=466 fetch_errors=0 interrupts=0 icache_hits=472 icache_misses=92 dcache_hits=0 dcache_misses=0
+PASS: latency1 rv32um/rem: PASS cycles=615 retired=103 fetch_errors=0 interrupts=0 icache_hits=81 icache_misses=31 dcache_hits=0 dcache_misses=0
+PASS: latency1 rv32um/remu: PASS cycles=615 retired=103 fetch_errors=0 interrupts=0 icache_hits=81 icache_misses=31 dcache_hits=0 dcache_misses=0
+PASS: latency1 rv32ua/amoadd_w: PASS cycles=278 retired=73 fetch_errors=0 interrupts=0 icache_hits=56 icache_misses=23 dcache_hits=0 dcache_misses=2
+PASS: latency1 rv32ua/amoand_w: PASS cycles=269 retired=71 fetch_errors=0 interrupts=0 icache_hits=56 icache_misses=22 dcache_hits=0 dcache_misses=2
+PASS: latency1 rv32ua/amomax_w: PASS cycles=317 retired=85 fetch_errors=0 interrupts=0 icache_hits=65 icache_misses=26 dcache_hits=0 dcache_misses=3
+PASS: latency1 rv32ua/amomaxu_w: PASS cycles=281 retired=72 fetch_errors=0 interrupts=0 icache_hits=57 icache_misses=23 dcache_hits=0 dcache_misses=2
+PASS: latency1 rv32ua/amomin_w: PASS cycles=317 retired=85 fetch_errors=0 interrupts=0 icache_hits=65 icache_misses=26 dcache_hits=0 dcache_misses=3
+PASS: latency1 rv32ua/amominu_w: PASS cycles=281 retired=72 fetch_errors=0 interrupts=0 icache_hits=57 icache_misses=23 dcache_hits=0 dcache_misses=2
+PASS: latency1 rv32ua/amoor_w: PASS cycles=269 retired=71 fetch_errors=0 interrupts=0 icache_hits=56 icache_misses=22 dcache_hits=0 dcache_misses=2
+PASS: latency1 rv32ua/amoswap_w: PASS cycles=269 retired=71 fetch_errors=0 interrupts=0 icache_hits=56 icache_misses=22 dcache_hits=0 dcache_misses=2
+PASS: latency1 rv32ua/amoxor_w: PASS cycles=282 retired=75 fetch_errors=0 interrupts=0 icache_hits=59 icache_misses=23 dcache_hits=0 dcache_misses=2
+PASS: latency1 rv32ua/lrsc: PASS cycles=20881 retired=6248 fetch_errors=0 interrupts=0 icache_hits=14437 icache_misses=31 dcache_hits=1 dcache_misses=3
+PASS: latency1 rv32mi/csr: PASS cycles=488 retired=130 fetch_errors=0 interrupts=0 icache_hits=104 icache_misses=39 dcache_hits=0 dcache_misses=0
+PASS: latency1 rv32mi/illegal: PASS cycles=346 retired=70 fetch_errors=0 interrupts=0 icache_hits=67 icache_misses=29 dcache_hits=0 dcache_misses=0
+PASS: latency1 rv32mi/instret_overflow: PASS cycles=281 retired=70 fetch_errors=0 interrupts=0 icache_hits=57 icache_misses=23 dcache_hits=0 dcache_misses=0
+PASS: latency1 rv32mi/lh-misaligned: PASS cycles=297 retired=69 fetch_errors=0 interrupts=0 icache_hits=71 icache_misses=23 dcache_hits=0 dcache_misses=1
+PASS: latency1 rv32mi/lw-misaligned: PASS cycles=418 retired=105 fetch_errors=0 interrupts=0 icache_hits=128 icache_misses=28 dcache_hits=0 dcache_misses=1
+PASS: latency1 rv32mi/ma_addr: PASS cycles=771 retired=171 fetch_errors=0 interrupts=0 icache_hits=333 icache_misses=43 dcache_hits=8 dcache_misses=1
+PASS: latency1 rv32mi/ma_fetch: PASS cycles=605 retired=151 fetch_errors=0 interrupts=0 icache_hits=243 icache_misses=36 dcache_hits=0 dcache_misses=0
+PASS: latency1 rv32mi/mcsr: PASS cycles=255 retired=64 fetch_errors=0 interrupts=0 icache_hits=51 icache_misses=21 dcache_hits=0 dcache_misses=0
+PASS: latency1 rv32mi/sbreak: PASS cycles=269 retired=59 fetch_errors=0 interrupts=0 icache_hits=64 icache_misses=21 dcache_hits=0 dcache_misses=0
+PASS: latency1 rv32mi/scall: PASS cycles=321 retired=74 fetch_errors=0 interrupts=0 icache_hits=79 icache_misses=25 dcache_hits=0 dcache_misses=0
+PASS: latency1 rv32mi/sh-misaligned: PASS cycles=323 retired=77 fetch_errors=0 interrupts=0 icache_hits=75 icache_misses=25 dcache_hits=0 dcache_misses=1
+PASS: latency1 rv32mi/shamt: PASS cycles=256 retired=59 fetch_errors=0 interrupts=0 icache_hits=61 icache_misses=20 dcache_hits=0 dcache_misses=0
+PASS: latency1 rv32mi/sw-misaligned: PASS cycles=449 retired=109 fetch_errors=0 interrupts=0 icache_hits=127 icache_misses=32 dcache_hits=0 dcache_misses=1
+PASS: latency1 rv32mi/zicntr: PASS cycles=408 retired=112 fetch_errors=0 interrupts=0 icache_hits=90 icache_misses=32 dcache_hits=0 dcache_misses=0
+PASS: latency1 directed/atomics: PASS cycles=558 retired=154 fetch_errors=0 interrupts=0 icache_hits=119 icache_misses=41 dcache_hits=0 dcache_misses=9
+PASS: latency1 directed/dot8: PASS cycles=759 retired=249 fetch_errors=0 interrupts=0 icache_hits=226 icache_misses=50 dcache_hits=9 dcache_misses=2
+PASS: latency1 directed/dot8_fields_0: PASS cycles=28417 retired=8736 fetch_errors=0 interrupts=0 icache_hits=6553 icache_misses=2187 dcache_hits=0 dcache_misses=0
+PASS: latency1 directed/dot8_fields_1: PASS cycles=28416 retired=8735 fetch_errors=0 interrupts=0 icache_hits=6553 icache_misses=2187 dcache_hits=0 dcache_misses=0
+PASS: latency1 directed/dot8_fields_2: PASS cycles=28417 retired=8736 fetch_errors=0 interrupts=0 icache_hits=6553 icache_misses=2187 dcache_hits=0 dcache_misses=0
+PASS: latency1 directed/dot8_fields_3: PASS cycles=28417 retired=8736 fetch_errors=0 interrupts=0 icache_hits=6553 icache_misses=2187 dcache_hits=0 dcache_misses=0
+PASS: latency1 directed/halfword_branch_target: PASS cycles=255 retired=83 fetch_errors=0 interrupts=0 icache_hits=82 icache_misses=18 dcache_hits=0 dcache_misses=0
+PASS: latency1 directed/redirect_while_waiting: PASS cycles=423 retired=136 fetch_errors=0 interrupts=0 icache_hits=164 icache_misses=26 dcache_hits=15 dcache_misses=3
+PASS: latency1 directed/smc: PASS cycles=2264 retired=476 fetch_errors=0 interrupts=0 icache_hits=542 icache_misses=185 dcache_hits=0 dcache_misses=1
+PASS: latency1 directed/wrongpath_fetch_fault: PASS cycles=312 retired=83 fetch_errors=1 interrupts=0 icache_hits=89 icache_misses=23 dcache_hits=0 dcache_misses=0
+PASS: latency1 directed/wrongpath_muldiv: PASS cycles=366 retired=82 fetch_errors=0 interrupts=0 icache_hits=76 icache_misses=24 dcache_hits=0 dcache_misses=0
+PASS: latency1 traps/csr_ordering: PASS cycles=1180 retired=339 fetch_errors=0 interrupts=0 icache_hits=321 icache_misses=82 dcache_hits=14 dcache_misses=3
+PASS: latency1 traps/decode_traps: PASS cycles=2135 retired=760 fetch_errors=0 interrupts=0 icache_hits=901 icache_misses=88 dcache_hits=97 dcache_misses=19
+PASS: latency1 traps/dot8_traps: PASS cycles=52831 retired=19013 fetch_errors=0 interrupts=0 icache_hits=33297 icache_misses=359 dcache_hits=2887 dcache_misses=272
+PASS: latency1 traps/execute_traps: PASS cycles=1890 retired=667 fetch_errors=0 interrupts=0 icache_hits=757 icache_misses=85 dcache_hits=78 dcache_misses=17
+PASS: latency1 traps/fetch_traps: PASS cycles=774 retired=252 fetch_errors=24 interrupts=0 icache_hits=237 icache_misses=44 dcache_hits=23 dcache_misses=6
+PASS: latency1 traps/m1_traps: PASS cycles=5910 retired=2169 fetch_errors=0 interrupts=0 core_d_waits=1 m1_error_waits=158 div_kills=31 icache_hits=2778 icache_misses=72 dcache_hits=242 dcache_misses=75
+PASS: latency1 interrupts/irq_enable: PASS cycles=1630 retired=589 fetch_errors=0 interrupts=5 core_d_waits=1 icache_hits=739 icache_misses=75 dcache_hits=51 dcache_misses=9
+PASS: latency1 interrupts/irq_lines: PASS cycles=1435 retired=548 fetch_errors=0 interrupts=6 core_d_waits=1 icache_hits=745 icache_misses=57 dcache_hits=32 dcache_misses=8
+PASS: latency1 interrupts/irq_sweep: PASS cycles=43799 retired=14136 fetch_errors=0 interrupts=128 core_d_waits=1 icache_hits=17794 icache_misses=48 dcache_hits=1085 dcache_misses=67
+PASS: latency1 interrupts/time_counter: PASS cycles=906 retired=380 fetch_errors=0 interrupts=0 icache_hits=668 icache_misses=24 dcache_hits=0 dcache_misses=0
+PASS: latency1 selfcheck/dot8_arith: PASS cycles=3882312 retired=2645248 fetch_errors=0 interrupts=0 icache_hits=3284263 icache_misses=33 dcache_hits=285 dcache_misses=3
+PASS: latency1 coherence/remote_mp: PASS cycles=26668 retired=11405 fetch_errors=0 interrupts=0 icache_hits=17201 icache_misses=20 dcache_hits=2085 dcache_misses=731
+PASS: latency1 coherence/remote_sb: PASS cycles=17116 retired=7784 fetch_errors=0 interrupts=0 icache_hits=13962 icache_misses=21 dcache_hits=219 dcache_misses=393
+PASS: latency1 c/dot8_jobs: PASS cycles=1742424 retired=1114993 fetch_errors=0 interrupts=0 core_d_waits=3 icache_hits=1631204 icache_misses=199 dcache_hits=175751 dcache_misses=394
+PASS: stall5 kernel coremark: PASS cycles=526971 retired=313677 window_cycles=473518 window_retired=284865 fetch_errors=0 interrupts=0 icache_hits=429930 icache_misses=1301 dcache_hits=58133 dcache_misses=346
+PASS: stall5 kernel dhrystone: PASS cycles=934779 retired=516383 window_cycles=894280 window_retired=492302 fetch_errors=0 interrupts=0 icache_hits=728649 icache_misses=268 dcache_hits=111759 dcache_misses=6144
+PASS: stall5 kernel sort_search: PASS cycles=714620 retired=426794 window_cycles=702790 window_retired=420942 fetch_errors=0 interrupts=0 icache_hits=571686 icache_misses=137 dcache_hits=66830 dcache_misses=92
+PASS: stall5 kernel fft: PASS cycles=336529 retired=253439 window_cycles=325869 window_retired=248399 fetch_errors=0 interrupts=0 core_d_waits=1 icache_hits=284617 icache_misses=158 dcache_hits=31793 dcache_misses=324
+PASS: stall5 kernel strided: PASS cycles=26275 retired=15859 window_cycles=2980 window_retired=1559 fetch_errors=0 interrupts=0 icache_hits=21581 icache_misses=115 dcache_hits=632 dcache_misses=90
+PASS: stall5 kernel conv2d: PASS cycles=1126939 retired=711517 window_cycles=1113021 window_retired=704346 fetch_errors=0 interrupts=0 icache_hits=962062 icache_misses=129 dcache_hits=160067 dcache_misses=339
+PASS: stall5 kernel conv2d_scalar_coh: PASS cycles=1590652 retired=1001123 window_cycles=1539002 window_retired=971011 fetch_errors=0 interrupts=0 core_d_waits=1 icache_hits=1248362 icache_misses=162 dcache_hits=232738 dcache_misses=6595
+PASS: stall5 kernel reduction: PASS cycles=98240 retired=63706 window_cycles=76616 window_retired=53305 fetch_errors=0 interrupts=0 icache_hits=84707 icache_misses=144 dcache_hits=4774 dcache_misses=303
+PASS: stall5 kernel conv2d_dot8: PASS cycles=1593742 retired=1175309 window_cycles=1542134 window_retired=1145218 fetch_errors=0 interrupts=0 icache_hits=1396734 icache_misses=193 dcache_hits=244067 dcache_misses=6316
+PASS: stall5 rv32ui/add: PASS cycles=1951 retired=472 fetch_errors=0 interrupts=0 icache_hits=475 icache_misses=95 dcache_hits=0 dcache_misses=0
+PASS: stall5 rv32ui/addi: PASS cycles=1128 retired=249 fetch_errors=0 interrupts=0 icache_hits=237 icache_misses=56 dcache_hits=0 dcache_misses=0
+PASS: stall5 rv32ui/and: PASS cycles=1943 retired=492 fetch_errors=0 interrupts=0 icache_hits=499 icache_misses=91 dcache_hits=0 dcache_misses=0
+PASS: stall5 rv32ui/andi: PASS cycles=909 retired=205 fetch_errors=0 interrupts=0 icache_hits=204 icache_misses=45 dcache_hits=0 dcache_misses=0
+PASS: stall5 rv32ui/auipc: PASS cycles=373 retired=66 fetch_errors=0 interrupts=0 icache_hits=58 icache_misses=20 dcache_hits=0 dcache_misses=0
+PASS: stall5 rv32ui/beq: PASS cycles=1336 retired=298 fetch_errors=0 interrupts=0 icache_hits=375 icache_misses=61 dcache_hits=0 dcache_misses=0
+PASS: stall5 rv32ui/bge: PASS cycles=1475 retired=316 fetch_errors=0 interrupts=0 icache_hits=417 icache_misses=67 dcache_hits=0 dcache_misses=0
+PASS: stall5 rv32ui/bgeu: PASS cycles=1551 retired=341 fetch_errors=0 interrupts=0 icache_hits=438 icache_misses=70 dcache_hits=0 dcache_misses=0
+PASS: stall5 rv32ui/blt: PASS cycles=1336 retired=298 fetch_errors=0 interrupts=0 icache_hits=375 icache_misses=61 dcache_hits=0 dcache_misses=0
+PASS: stall5 rv32ui/bltu: PASS cycles=1402 retired=323 fetch_errors=0 interrupts=0 icache_hits=396 icache_misses=64 dcache_hits=0 dcache_misses=0
+PASS: stall5 rv32ui/bne: PASS cycles=1327 retired=298 fetch_errors=0 interrupts=0 icache_hits=379 icache_misses=61 dcache_hits=0 dcache_misses=0
+PASS: stall5 rv32ui/fence_i: PASS cycles=1001 retired=296 fetch_errors=0 interrupts=0 icache_hits=487 icache_misses=33 dcache_hits=1 dcache_misses=1
+PASS: stall5 rv32ui/jal: PASS cycles=390 retired=62 fetch_errors=0 interrupts=0 icache_hits=50 icache_misses=22 dcache_hits=0 dcache_misses=0
+PASS: stall5 rv32ui/jalr: PASS cycles=628 retired=122 fetch_errors=0 interrupts=0 icache_hits=144 icache_misses=32 dcache_hits=0 dcache_misses=0
+PASS: stall5 rv32ui/lb: PASS cycles=1124 retired=260 fetch_errors=0 interrupts=0 icache_hits=248 icache_misses=55 dcache_hits=23 dcache_misses=1
+PASS: stall5 rv32ui/lbu: PASS cycles=1124 retired=260 fetch_errors=0 interrupts=0 icache_hits=248 icache_misses=55 dcache_hits=23 dcache_misses=1
+PASS: stall5 rv32ui/ld_st: PASS cycles=4628 retired=970 fetch_errors=0 interrupts=0 icache_hits=732 icache_misses=246 dcache_hits=191 dcache_misses=2
+PASS: stall5 rv32ui/lh: PASS cycles=1183 retired=276 fetch_errors=0 interrupts=0 icache_hits=261 icache_misses=58 dcache_hits=23 dcache_misses=1
+PASS: stall5 rv32ui/lhu: PASS cycles=1226 retired=285 fetch_errors=0 interrupts=0 icache_hits=270 icache_misses=59 dcache_hits=23 dcache_misses=1
+PASS: stall5 rv32ui/lui: PASS cycles=412 retired=72 fetch_errors=0 interrupts=0 icache_hits=57 icache_misses=23 dcache_hits=0 dcache_misses=0
+PASS: stall5 rv32ui/lw: PASS cycles=1248 retired=290 fetch_errors=0 interrupts=0 icache_hits=272 icache_misses=61 dcache_hits=23 dcache_misses=1
+PASS: stall5 rv32ui/ma_data: PASS cycles=17134 retired=7786 fetch_errors=0 interrupts=0 icache_hits=9284 icache_misses=133 dcache_hits=2463 dcache_misses=69
+PASS: stall5 rv32ui/or: PASS cycles=1969 retired=495 fetch_errors=0 interrupts=0 icache_hits=498 icache_misses=93 dcache_hits=0 dcache_misses=0
+PASS: stall5 rv32ui/ori: PASS cycles=915 retired=212 fetch_errors=0 interrupts=0 icache_hits=209 icache_misses=46 dcache_hits=0 dcache_misses=0
+PASS: stall5 rv32ui/sb: PASS cycles=1925 retired=461 fetch_errors=0 interrupts=0 icache_hits=467 icache_misses=88 dcache_hits=33 dcache_misses=1
+PASS: stall5 rv32ui/sh: PASS cycles=2055 retired=514 fetch_errors=0 interrupts=0 icache_hits=515 icache_misses=95 dcache_hits=32 dcache_misses=2
+PASS: stall5 rv32ui/simple: PASS cycles=271 retired=48 fetch_errors=0 interrupts=0 icache_hits=37 icache_misses=15 dcache_hits=0 dcache_misses=0
+PASS: stall5 rv32ui/sll: PASS cycles=2086 retired=500 fetch_errors=0 interrupts=0 icache_hits=496 icache_misses=102 dcache_hits=0 dcache_misses=0
+PASS: stall5 rv32ui/slli: PASS cycles=1119 retired=248 fetch_errors=0 interrupts=0 icache_hits=233 icache_misses=57 dcache_hits=0 dcache_misses=0
+PASS: stall5 rv32ui/slt: PASS cycles=1911 retired=466 fetch_errors=0 interrupts=0 icache_hits=472 icache_misses=92 dcache_hits=0 dcache_misses=0
+PASS: stall5 rv32ui/slti: PASS cycles=1110 retired=244 fetch_errors=0 interrupts=0 icache_hits=230 icache_misses=56 dcache_hits=0 dcache_misses=0
+PASS: stall5 rv32ui/sltiu: PASS cycles=1110 retired=244 fetch_errors=0 interrupts=0 icache_hits=230 icache_misses=56 dcache_hits=0 dcache_misses=0
+PASS: stall5 rv32ui/sltu: PASS cycles=1911 retired=466 fetch_errors=0 interrupts=0 icache_hits=472 icache_misses=92 dcache_hits=0 dcache_misses=0
+PASS: stall5 rv32ui/sra: PASS cycles=2171 retired=519 fetch_errors=0 interrupts=0 icache_hits=510 icache_misses=106 dcache_hits=0 dcache_misses=0
+PASS: stall5 rv32ui/srai: PASS cycles=1168 retired=263 fetch_errors=0 interrupts=0 icache_hits=249 icache_misses=59 dcache_hits=0 dcache_misses=0
+PASS: stall5 rv32ui/srl: PASS cycles=2150 retired=513 fetch_errors=0 interrupts=0 icache_hits=504 icache_misses=105 dcache_hits=0 dcache_misses=0
+PASS: stall5 rv32ui/srli: PASS cycles=1168 retired=257 fetch_errors=0 interrupts=0 icache_hits=242 icache_misses=59 dcache_hits=0 dcache_misses=0
+PASS: stall5 rv32ui/st_ld: PASS cycles=2388 retired=490 fetch_errors=0 interrupts=0 icache_hits=373 icache_misses=126 dcache_hits=47 dcache_misses=2
+PASS: stall5 rv32ui/sub: PASS cycles=1936 retired=464 fetch_errors=0 interrupts=0 icache_hits=469 icache_misses=93 dcache_hits=0 dcache_misses=0
+PASS: stall5 rv32ui/sw: PASS cycles=2093 retired=521 fetch_errors=0 interrupts=0 icache_hits=518 icache_misses=97 dcache_hits=31 dcache_misses=3
+PASS: stall5 rv32ui/xor: PASS cycles=1967 retired=494 fetch_errors=0 interrupts=0 icache_hits=499 icache_misses=93 dcache_hits=0 dcache_misses=0
+PASS: stall5 rv32ui/xori: PASS cycles=933 retired=214 fetch_errors=0 interrupts=0 icache_hits=209 icache_misses=47 dcache_hits=0 dcache_misses=0
+PASS: stall5 rv32um/div: PASS cycles=741 retired=103 fetch_errors=0 interrupts=0 icache_hits=81 icache_misses=31 dcache_hits=0 dcache_misses=0
+PASS: stall5 rv32um/divu: PASS cycles=740 retired=104 fetch_errors=0 interrupts=0 icache_hits=81 icache_misses=31 dcache_hits=0 dcache_misses=0
+PASS: stall5 rv32um/mul: PASS cycles=1931 retired=466 fetch_errors=0 interrupts=0 icache_hits=472 icache_misses=92 dcache_hits=0 dcache_misses=0
+PASS: stall5 rv32um/mulh: PASS cycles=1922 retired=466 fetch_errors=0 interrupts=0 icache_hits=472 icache_misses=92 dcache_hits=0 dcache_misses=0
+PASS: stall5 rv32um/mulhsu: PASS cycles=1922 retired=466 fetch_errors=0 interrupts=0 icache_hits=472 icache_misses=92 dcache_hits=0 dcache_misses=0
+PASS: stall5 rv32um/mulhu: PASS cycles=1922 retired=466 fetch_errors=0 interrupts=0 icache_hits=472 icache_misses=92 dcache_hits=0 dcache_misses=0
+PASS: stall5 rv32um/rem: PASS cycles=741 retired=103 fetch_errors=0 interrupts=0 icache_hits=81 icache_misses=31 dcache_hits=0 dcache_misses=0
+PASS: stall5 rv32um/remu: PASS cycles=741 retired=103 fetch_errors=0 interrupts=0 icache_hits=81 icache_misses=31 dcache_hits=0 dcache_misses=0
+PASS: stall5 rv32ua/amoadd_w: PASS cycles=411 retired=73 fetch_errors=0 interrupts=0 icache_hits=56 icache_misses=23 dcache_hits=0 dcache_misses=2
+PASS: stall5 rv32ua/amoand_w: PASS cycles=399 retired=71 fetch_errors=0 interrupts=0 icache_hits=56 icache_misses=22 dcache_hits=0 dcache_misses=2
+PASS: stall5 rv32ua/amomax_w: PASS cycles=472 retired=85 fetch_errors=0 interrupts=0 icache_hits=65 icache_misses=26 dcache_hits=0 dcache_misses=3
+PASS: stall5 rv32ua/amomaxu_w: PASS cycles=415 retired=72 fetch_errors=0 interrupts=0 icache_hits=57 icache_misses=23 dcache_hits=0 dcache_misses=2
+PASS: stall5 rv32ua/amomin_w: PASS cycles=472 retired=85 fetch_errors=0 interrupts=0 icache_hits=65 icache_misses=26 dcache_hits=0 dcache_misses=3
+PASS: stall5 rv32ua/amominu_w: PASS cycles=415 retired=72 fetch_errors=0 interrupts=0 icache_hits=57 icache_misses=23 dcache_hits=0 dcache_misses=2
+PASS: stall5 rv32ua/amoor_w: PASS cycles=399 retired=71 fetch_errors=0 interrupts=0 icache_hits=56 icache_misses=22 dcache_hits=0 dcache_misses=2
+PASS: stall5 rv32ua/amoswap_w: PASS cycles=399 retired=71 fetch_errors=0 interrupts=0 icache_hits=56 icache_misses=22 dcache_hits=0 dcache_misses=2
+PASS: stall5 rv32ua/amoxor_w: PASS cycles=415 retired=75 fetch_errors=0 interrupts=0 icache_hits=59 icache_misses=23 dcache_hits=0 dcache_misses=2
+PASS: stall5 rv32ua/lrsc: PASS cycles=25842 retired=6248 fetch_errors=0 interrupts=0 icache_hits=14439 icache_misses=31 dcache_hits=1 dcache_misses=3
+PASS: stall5 rv32mi/csr: PASS cycles=728 retired=130 fetch_errors=0 interrupts=0 icache_hits=104 icache_misses=39 dcache_hits=0 dcache_misses=0
+PASS: stall5 rv32mi/illegal: PASS cycles=518 retired=70 fetch_errors=0 interrupts=0 icache_hits=67 icache_misses=29 dcache_hits=0 dcache_misses=0
+PASS: stall5 rv32mi/instret_overflow: PASS cycles=418 retired=70 fetch_errors=0 interrupts=0 icache_hits=57 icache_misses=23 dcache_hits=0 dcache_misses=0
+PASS: stall5 rv32mi/lh-misaligned: PASS cycles=443 retired=69 fetch_errors=0 interrupts=0 icache_hits=70 icache_misses=23 dcache_hits=0 dcache_misses=1
+PASS: stall5 rv32mi/lw-misaligned: PASS cycles=597 retired=105 fetch_errors=0 interrupts=0 icache_hits=128 icache_misses=28 dcache_hits=0 dcache_misses=1
+PASS: stall5 rv32mi/ma_addr: PASS cycles=1021 retired=171 fetch_errors=0 interrupts=0 icache_hits=333 icache_misses=43 dcache_hits=8 dcache_misses=1
+PASS: stall5 rv32mi/ma_fetch: PASS cycles=821 retired=151 fetch_errors=0 interrupts=0 icache_hits=244 icache_misses=36 dcache_hits=0 dcache_misses=0
+PASS: stall5 rv32mi/mcsr: PASS cycles=378 retired=64 fetch_errors=0 interrupts=0 icache_hits=51 icache_misses=21 dcache_hits=0 dcache_misses=0
+PASS: stall5 rv32mi/sbreak: PASS cycles=405 retired=59 fetch_errors=0 interrupts=0 icache_hits=64 icache_misses=21 dcache_hits=0 dcache_misses=0
+PASS: stall5 rv32mi/scall: PASS cycles=479 retired=74 fetch_errors=0 interrupts=0 icache_hits=79 icache_misses=25 dcache_hits=0 dcache_misses=0
+PASS: stall5 rv32mi/sh-misaligned: PASS cycles=484 retired=77 fetch_errors=0 interrupts=0 icache_hits=76 icache_misses=25 dcache_hits=0 dcache_misses=1
+PASS: stall5 rv32mi/shamt: PASS cycles=382 retired=59 fetch_errors=0 interrupts=0 icache_hits=61 icache_misses=20 dcache_hits=0 dcache_misses=0
+PASS: stall5 rv32mi/sw-misaligned: PASS cycles=645 retired=109 fetch_errors=0 interrupts=0 icache_hits=127 icache_misses=32 dcache_hits=0 dcache_misses=1
+PASS: stall5 rv32mi/zicntr: PASS cycles=608 retired=112 fetch_errors=0 interrupts=0 icache_hits=90 icache_misses=32 dcache_hits=0 dcache_misses=0
+PASS: stall5 directed/atomics: PASS cycles=816 retired=154 fetch_errors=0 interrupts=0 icache_hits=120 icache_misses=41 dcache_hits=0 dcache_misses=9
+PASS: stall5 directed/dot8: PASS cycles=1050 retired=249 fetch_errors=0 interrupts=0 icache_hits=226 icache_misses=50 dcache_hits=9 dcache_misses=2
+PASS: stall5 directed/dot8_fields_0: PASS cycles=41035 retired=8736 fetch_errors=0 interrupts=0 icache_hits=6553 icache_misses=2187 dcache_hits=0 dcache_misses=0
+PASS: stall5 directed/dot8_fields_1: PASS cycles=41034 retired=8735 fetch_errors=0 interrupts=0 icache_hits=6553 icache_misses=2187 dcache_hits=0 dcache_misses=0
+PASS: stall5 directed/dot8_fields_2: PASS cycles=41035 retired=8736 fetch_errors=0 interrupts=0 icache_hits=6553 icache_misses=2187 dcache_hits=0 dcache_misses=0
+PASS: stall5 directed/dot8_fields_3: PASS cycles=41035 retired=8736 fetch_errors=0 interrupts=0 icache_hits=6553 icache_misses=2187 dcache_hits=0 dcache_misses=0
+PASS: stall5 directed/halfword_branch_target: PASS cycles=362 retired=83 fetch_errors=0 interrupts=0 icache_hits=82 icache_misses=18 dcache_hits=0 dcache_misses=0
+PASS: stall5 directed/redirect_while_waiting: PASS cycles=585 retired=136 fetch_errors=0 interrupts=0 icache_hits=164 icache_misses=26 dcache_hits=15 dcache_misses=3
+PASS: stall5 directed/smc: PASS cycles=3353 retired=476 fetch_errors=0 interrupts=0 icache_hits=544 icache_misses=186 dcache_hits=0 dcache_misses=1
+PASS: stall5 directed/wrongpath_fetch_fault: PASS cycles=444 retired=83 fetch_errors=1 interrupts=0 icache_hits=89 icache_misses=23 dcache_hits=0 dcache_misses=0
+PASS: stall5 directed/wrongpath_muldiv: PASS cycles=497 retired=82 fetch_errors=0 interrupts=0 icache_hits=76 icache_misses=24 dcache_hits=0 dcache_misses=0
+PASS: stall5 traps/csr_ordering: PASS cycles=1652 retired=339 fetch_errors=0 interrupts=0 icache_hits=321 icache_misses=82 dcache_hits=14 dcache_misses=3
+PASS: stall5 traps/decode_traps: PASS cycles=2683 retired=760 fetch_errors=0 interrupts=0 icache_hits=900 icache_misses=88 dcache_hits=97 dcache_misses=19
+PASS: stall5 traps/dot8_traps: PASS cycles=57225 retired=19013 fetch_errors=0 interrupts=0 icache_hits=33298 icache_misses=359 dcache_hits=2887 dcache_misses=272
+PASS: stall5 traps/execute_traps: PASS cycles=2438 retired=667 fetch_errors=0 interrupts=0 core_d_waits=1 icache_hits=757 icache_misses=85 dcache_hits=78 dcache_misses=17
+PASS: stall5 traps/fetch_traps: PASS cycles=1049 retired=252 fetch_errors=24 interrupts=0 icache_hits=237 icache_misses=44 dcache_hits=23 dcache_misses=6
+PASS: stall5 traps/m1_traps: PASS cycles=6820 retired=2169 fetch_errors=0 interrupts=0 m1_error_waits=361 div_kills=31 icache_hits=2778 icache_misses=72 dcache_hits=242 dcache_misses=75
+PASS: stall5 interrupts/irq_enable: PASS cycles=2106 retired=589 fetch_errors=0 interrupts=5 icache_hits=739 icache_misses=75 dcache_hits=51 dcache_misses=9
+PASS: stall5 interrupts/irq_lines: PASS cycles=1808 retired=548 fetch_errors=0 interrupts=6 core_d_waits=1 icache_hits=740 icache_misses=57 dcache_hits=32 dcache_misses=8
+PASS: stall5 interrupts/irq_sweep: PASS cycles=45783 retired=14136 fetch_errors=0 interrupts=128 core_d_waits=1 icache_hits=17801 icache_misses=48 dcache_hits=1085 dcache_misses=67
+PASS: stall5 interrupts/time_counter: PASS cycles=1059 retired=380 fetch_errors=0 interrupts=0 icache_hits=668 icache_misses=24 dcache_hits=0 dcache_misses=0
+PASS: stall5 selfcheck/dot8_arith: PASS cycles=3882519 retired=2645248 fetch_errors=0 interrupts=0 icache_hits=3284263 icache_misses=33 dcache_hits=285 dcache_misses=3
+PASS: stall5 coherence/remote_mp: PASS cycles=26927 retired=8825 fetch_errors=0 interrupts=0 icache_hits=13302 icache_misses=20 dcache_hits=1528 dcache_misses=648
+PASS: stall5 coherence/remote_sb: PASS cycles=19970 retired=7919 fetch_errors=0 interrupts=0 icache_hits=14199 icache_misses=21 dcache_hits=282 dcache_misses=394
+PASS: stall5 c/dot8_jobs: PASS cycles=1760628 retired=1114993 fetch_errors=0 interrupts=0 core_d_waits=1 icache_hits=1631738 icache_misses=199 dcache_hits=175751 dcache_misses=394
+PASS: latency1-stall9 kernel coremark: PASS cycles=523411 retired=313677 window_cycles=471136 window_retired=284865 fetch_errors=0 interrupts=0 icache_hits=429934 icache_misses=1301 dcache_hits=58133 dcache_misses=346
+PASS: latency1-stall9 kernel dhrystone: PASS cycles=920551 retired=516383 window_cycles=880877 window_retired=492302 fetch_errors=0 interrupts=0 icache_hits=728639 icache_misses=268 dcache_hits=111759 dcache_misses=6144
+PASS: latency1-stall9 kernel sort_search: PASS cycles=713660 retired=426794 window_cycles=702507 window_retired=420942 fetch_errors=0 interrupts=0 icache_hits=571686 icache_misses=137 dcache_hits=66830 dcache_misses=92
+PASS: latency1-stall9 kernel fft: PASS cycles=335170 retired=253439 window_cycles=325183 window_retired=248399 fetch_errors=0 interrupts=0 core_d_waits=2 icache_hits=284613 icache_misses=158 dcache_hits=31793 dcache_misses=324
+PASS: latency1-stall9 kernel strided: PASS cycles=25372 retired=15859 window_cycles=2864 window_retired=1559 fetch_errors=0 interrupts=0 icache_hits=21578 icache_misses=115 dcache_hits=632 dcache_misses=90
+PASS: latency1-stall9 kernel conv2d: PASS cycles=1125671 retired=711517 window_cycles=1112401 window_retired=704346 fetch_errors=0 interrupts=0 icache_hits=962071 icache_misses=129 dcache_hits=160067 dcache_misses=339
+PASS: latency1-stall9 kernel conv2d_scalar_coh: PASS cycles=1567456 retired=1001123 window_cycles=1517229 window_retired=971011 fetch_errors=0 interrupts=0 icache_hits=1247870 icache_misses=162 dcache_hits=232738 dcache_misses=6595
+PASS: latency1-stall9 kernel reduction: PASS cycles=96295 retired=63706 window_cycles=76080 window_retired=53305 fetch_errors=0 interrupts=0 icache_hits=84706 icache_misses=144 dcache_hits=4774 dcache_misses=303
+PASS: latency1-stall9 kernel conv2d_dot8: PASS cycles=1571664 retired=1175309 window_cycles=1521399 window_retired=1145218 fetch_errors=0 interrupts=0 icache_hits=1396188 icache_misses=193 dcache_hits=244067 dcache_misses=6316
+PASS: latency1-stall9 rv32ui/add: PASS cycles=1774 retired=472 fetch_errors=0 interrupts=0 icache_hits=475 icache_misses=95 dcache_hits=0 dcache_misses=0
+PASS: latency1-stall9 rv32ui/addi: PASS cycles=1004 retired=249 fetch_errors=0 interrupts=0 icache_hits=237 icache_misses=56 dcache_hits=0 dcache_misses=0
+PASS: latency1-stall9 rv32ui/and: PASS cycles=1754 retired=492 fetch_errors=0 interrupts=0 icache_hits=499 icache_misses=91 dcache_hits=0 dcache_misses=0
+PASS: latency1-stall9 rv32ui/andi: PASS cycles=800 retired=205 fetch_errors=0 interrupts=0 icache_hits=204 icache_misses=45 dcache_hits=0 dcache_misses=0
+PASS: latency1-stall9 rv32ui/auipc: PASS cycles=317 retired=66 fetch_errors=0 interrupts=0 icache_hits=58 icache_misses=20 dcache_hits=0 dcache_misses=0
+PASS: latency1-stall9 rv32ui/beq: PASS cycles=1193 retired=298 fetch_errors=0 interrupts=0 icache_hits=375 icache_misses=61 dcache_hits=0 dcache_misses=0
+PASS: latency1-stall9 rv32ui/bge: PASS cycles=1314 retired=316 fetch_errors=0 interrupts=0 icache_hits=417 icache_misses=67 dcache_hits=0 dcache_misses=0
+PASS: latency1-stall9 rv32ui/bgeu: PASS cycles=1373 retired=341 fetch_errors=0 interrupts=0 icache_hits=438 icache_misses=70 dcache_hits=0 dcache_misses=0
+PASS: latency1-stall9 rv32ui/blt: PASS cycles=1193 retired=298 fetch_errors=0 interrupts=0 icache_hits=375 icache_misses=61 dcache_hits=0 dcache_misses=0
+PASS: latency1-stall9 rv32ui/bltu: PASS cycles=1251 retired=323 fetch_errors=0 interrupts=0 icache_hits=396 icache_misses=64 dcache_hits=0 dcache_misses=0
+PASS: latency1-stall9 rv32ui/bne: PASS cycles=1210 retired=298 fetch_errors=0 interrupts=0 icache_hits=379 icache_misses=61 dcache_hits=0 dcache_misses=0
+PASS: latency1-stall9 rv32ui/fence_i: PASS cycles=923 retired=296 fetch_errors=0 interrupts=0 icache_hits=487 icache_misses=33 dcache_hits=1 dcache_misses=1
+PASS: latency1-stall9 rv32ui/jal: PASS cycles=328 retired=62 fetch_errors=0 interrupts=0 icache_hits=50 icache_misses=22 dcache_hits=0 dcache_misses=0
+PASS: latency1-stall9 rv32ui/jalr: PASS cycles=561 retired=122 fetch_errors=0 interrupts=0 icache_hits=144 icache_misses=32 dcache_hits=0 dcache_misses=0
+PASS: latency1-stall9 rv32ui/lb: PASS cycles=998 retired=260 fetch_errors=0 interrupts=0 icache_hits=248 icache_misses=55 dcache_hits=23 dcache_misses=1
+PASS: latency1-stall9 rv32ui/lbu: PASS cycles=998 retired=260 fetch_errors=0 interrupts=0 icache_hits=248 icache_misses=55 dcache_hits=23 dcache_misses=1
+PASS: latency1-stall9 rv32ui/ld_st: PASS cycles=4172 retired=970 fetch_errors=0 interrupts=0 icache_hits=732 icache_misses=246 dcache_hits=191 dcache_misses=2
+PASS: latency1-stall9 rv32ui/lh: PASS cycles=1050 retired=276 fetch_errors=0 interrupts=0 icache_hits=261 icache_misses=58 dcache_hits=23 dcache_misses=1
+PASS: latency1-stall9 rv32ui/lhu: PASS cycles=1081 retired=285 fetch_errors=0 interrupts=0 icache_hits=270 icache_misses=59 dcache_hits=23 dcache_misses=1
+PASS: latency1-stall9 rv32ui/lui: PASS cycles=348 retired=72 fetch_errors=0 interrupts=0 icache_hits=57 icache_misses=23 dcache_hits=0 dcache_misses=0
+PASS: latency1-stall9 rv32ui/lw: PASS cycles=1102 retired=290 fetch_errors=0 interrupts=0 icache_hits=272 icache_misses=61 dcache_hits=23 dcache_misses=1
+PASS: latency1-stall9 rv32ui/ma_data: PASS cycles=16271 retired=7786 fetch_errors=0 interrupts=0 icache_hits=9284 icache_misses=133 dcache_hits=2463 dcache_misses=69
+PASS: latency1-stall9 rv32ui/or: PASS cycles=1767 retired=495 fetch_errors=0 interrupts=0 icache_hits=498 icache_misses=93 dcache_hits=0 dcache_misses=0
+PASS: latency1-stall9 rv32ui/ori: PASS cycles=822 retired=212 fetch_errors=0 interrupts=0 icache_hits=209 icache_misses=46 dcache_hits=0 dcache_misses=0
+PASS: latency1-stall9 rv32ui/sb: PASS cycles=1737 retired=461 fetch_errors=0 interrupts=0 icache_hits=467 icache_misses=88 dcache_hits=33 dcache_misses=1
+PASS: latency1-stall9 rv32ui/sh: PASS cycles=1866 retired=514 fetch_errors=0 interrupts=0 icache_hits=515 icache_misses=95 dcache_hits=32 dcache_misses=2
+PASS: latency1-stall9 rv32ui/simple: PASS cycles=227 retired=48 fetch_errors=0 interrupts=0 icache_hits=37 icache_misses=15 dcache_hits=0 dcache_misses=0
+PASS: latency1-stall9 rv32ui/sll: PASS cycles=1890 retired=500 fetch_errors=0 interrupts=0 icache_hits=496 icache_misses=102 dcache_hits=0 dcache_misses=0
+PASS: latency1-stall9 rv32ui/slli: PASS cycles=1001 retired=248 fetch_errors=0 interrupts=0 icache_hits=233 icache_misses=57 dcache_hits=0 dcache_misses=0
+PASS: latency1-stall9 rv32ui/slt: PASS cycles=1746 retired=466 fetch_errors=0 interrupts=0 icache_hits=472 icache_misses=92 dcache_hits=0 dcache_misses=0
+PASS: latency1-stall9 rv32ui/slti: PASS cycles=988 retired=244 fetch_errors=0 interrupts=0 icache_hits=230 icache_misses=56 dcache_hits=0 dcache_misses=0
+PASS: latency1-stall9 rv32ui/sltiu: PASS cycles=988 retired=244 fetch_errors=0 interrupts=0 icache_hits=230 icache_misses=56 dcache_hits=0 dcache_misses=0
+PASS: latency1-stall9 rv32ui/sltu: PASS cycles=1746 retired=466 fetch_errors=0 interrupts=0 icache_hits=472 icache_misses=92 dcache_hits=0 dcache_misses=0
+PASS: latency1-stall9 rv32ui/sra: PASS cycles=1962 retired=519 fetch_errors=0 interrupts=0 icache_hits=510 icache_misses=106 dcache_hits=0 dcache_misses=0
+PASS: latency1-stall9 rv32ui/srai: PASS cycles=1063 retired=263 fetch_errors=0 interrupts=0 icache_hits=248 icache_misses=59 dcache_hits=0 dcache_misses=0
+PASS: latency1-stall9 rv32ui/srl: PASS cycles=1938 retired=513 fetch_errors=0 interrupts=0 icache_hits=504 icache_misses=105 dcache_hits=0 dcache_misses=0
+PASS: latency1-stall9 rv32ui/srli: PASS cycles=1040 retired=257 fetch_errors=0 interrupts=0 icache_hits=242 icache_misses=59 dcache_hits=0 dcache_misses=0
+PASS: latency1-stall9 rv32ui/st_ld: PASS cycles=2116 retired=490 fetch_errors=0 interrupts=0 icache_hits=372 icache_misses=126 dcache_hits=47 dcache_misses=2
+PASS: latency1-stall9 rv32ui/sub: PASS cycles=1746 retired=464 fetch_errors=0 interrupts=0 icache_hits=469 icache_misses=93 dcache_hits=0 dcache_misses=0
+PASS: latency1-stall9 rv32ui/sw: PASS cycles=1879 retired=521 fetch_errors=0 interrupts=0 icache_hits=518 icache_misses=97 dcache_hits=31 dcache_misses=3
+PASS: latency1-stall9 rv32ui/xor: PASS cycles=1772 retired=494 fetch_errors=0 interrupts=0 icache_hits=499 icache_misses=93 dcache_hits=0 dcache_misses=0
+PASS: latency1-stall9 rv32ui/xori: PASS cycles=834 retired=214 fetch_errors=0 interrupts=0 icache_hits=209 icache_misses=47 dcache_hits=0 dcache_misses=0
+PASS: latency1-stall9 rv32um/div: PASS cycles=685 retired=103 fetch_errors=0 interrupts=0 icache_hits=81 icache_misses=31 dcache_hits=0 dcache_misses=0
+PASS: latency1-stall9 rv32um/divu: PASS cycles=675 retired=104 fetch_errors=0 interrupts=0 icache_hits=81 icache_misses=31 dcache_hits=0 dcache_misses=0
+PASS: latency1-stall9 rv32um/mul: PASS cycles=1746 retired=466 fetch_errors=0 interrupts=0 icache_hits=472 icache_misses=92 dcache_hits=0 dcache_misses=0
+PASS: latency1-stall9 rv32um/mulh: PASS cycles=1745 retired=466 fetch_errors=0 interrupts=0 icache_hits=472 icache_misses=92 dcache_hits=0 dcache_misses=0
+PASS: latency1-stall9 rv32um/mulhsu: PASS cycles=1745 retired=466 fetch_errors=0 interrupts=0 icache_hits=472 icache_misses=92 dcache_hits=0 dcache_misses=0
+PASS: latency1-stall9 rv32um/mulhu: PASS cycles=1745 retired=466 fetch_errors=0 interrupts=0 icache_hits=472 icache_misses=92 dcache_hits=0 dcache_misses=0
+PASS: latency1-stall9 rv32um/rem: PASS cycles=685 retired=103 fetch_errors=0 interrupts=0 icache_hits=81 icache_misses=31 dcache_hits=0 dcache_misses=0
+PASS: latency1-stall9 rv32um/remu: PASS cycles=685 retired=103 fetch_errors=0 interrupts=0 icache_hits=81 icache_misses=31 dcache_hits=0 dcache_misses=0
+PASS: latency1-stall9 rv32ua/amoadd_w: PASS cycles=348 retired=73 fetch_errors=0 interrupts=0 icache_hits=56 icache_misses=23 dcache_hits=0 dcache_misses=2
+PASS: latency1-stall9 rv32ua/amoand_w: PASS cycles=339 retired=71 fetch_errors=0 interrupts=0 icache_hits=56 icache_misses=22 dcache_hits=0 dcache_misses=2
+PASS: latency1-stall9 rv32ua/amomax_w: PASS cycles=396 retired=85 fetch_errors=0 interrupts=0 icache_hits=65 icache_misses=26 dcache_hits=0 dcache_misses=3
+PASS: latency1-stall9 rv32ua/amomaxu_w: PASS cycles=350 retired=72 fetch_errors=0 interrupts=0 icache_hits=57 icache_misses=23 dcache_hits=0 dcache_misses=2
+PASS: latency1-stall9 rv32ua/amomin_w: PASS cycles=396 retired=85 fetch_errors=0 interrupts=0 icache_hits=65 icache_misses=26 dcache_hits=0 dcache_misses=3
+PASS: latency1-stall9 rv32ua/amominu_w: PASS cycles=350 retired=72 fetch_errors=0 interrupts=0 icache_hits=57 icache_misses=23 dcache_hits=0 dcache_misses=2
+PASS: latency1-stall9 rv32ua/amoor_w: PASS cycles=339 retired=71 fetch_errors=0 interrupts=0 icache_hits=56 icache_misses=22 dcache_hits=0 dcache_misses=2
+PASS: latency1-stall9 rv32ua/amoswap_w: PASS cycles=339 retired=71 fetch_errors=0 interrupts=0 icache_hits=56 icache_misses=22 dcache_hits=0 dcache_misses=2
+PASS: latency1-stall9 rv32ua/amoxor_w: PASS cycles=356 retired=75 fetch_errors=0 interrupts=0 icache_hits=59 icache_misses=23 dcache_hits=0 dcache_misses=2
+PASS: latency1-stall9 rv32ua/lrsc: PASS cycles=23672 retired=6248 fetch_errors=0 interrupts=0 icache_hits=14437 icache_misses=31 dcache_hits=1 dcache_misses=3
+PASS: latency1-stall9 rv32mi/csr: PASS cycles=628 retired=130 fetch_errors=0 interrupts=0 icache_hits=104 icache_misses=39 dcache_hits=0 dcache_misses=0
+PASS: latency1-stall9 rv32mi/illegal: PASS cycles=437 retired=70 fetch_errors=0 interrupts=0 icache_hits=67 icache_misses=29 dcache_hits=0 dcache_misses=0
+PASS: latency1-stall9 rv32mi/instret_overflow: PASS cycles=348 retired=70 fetch_errors=0 interrupts=0 icache_hits=57 icache_misses=23 dcache_hits=0 dcache_misses=0
+PASS: latency1-stall9 rv32mi/lh-misaligned: PASS cycles=366 retired=69 fetch_errors=0 interrupts=0 icache_hits=70 icache_misses=23 dcache_hits=0 dcache_misses=1
+PASS: latency1-stall9 rv32mi/lw-misaligned: PASS cycles=520 retired=105 fetch_errors=0 interrupts=0 icache_hits=128 icache_misses=28 dcache_hits=0 dcache_misses=1
+PASS: latency1-stall9 rv32mi/ma_addr: PASS cycles=933 retired=171 fetch_errors=0 interrupts=0 icache_hits=333 icache_misses=43 dcache_hits=8 dcache_misses=1
+PASS: latency1-stall9 rv32mi/ma_fetch: PASS cycles=736 retired=151 fetch_errors=0 interrupts=0 icache_hits=243 icache_misses=36 dcache_hits=0 dcache_misses=0
+PASS: latency1-stall9 rv32mi/mcsr: PASS cycles=316 retired=64 fetch_errors=0 interrupts=0 icache_hits=51 icache_misses=21 dcache_hits=0 dcache_misses=0
+PASS: latency1-stall9 rv32mi/sbreak: PASS cycles=337 retired=59 fetch_errors=0 interrupts=0 icache_hits=64 icache_misses=21 dcache_hits=0 dcache_misses=0
+PASS: latency1-stall9 rv32mi/scall: PASS cycles=398 retired=74 fetch_errors=0 interrupts=0 icache_hits=79 icache_misses=25 dcache_hits=0 dcache_misses=0
+PASS: latency1-stall9 rv32mi/sh-misaligned: PASS cycles=404 retired=77 fetch_errors=0 interrupts=0 icache_hits=75 icache_misses=25 dcache_hits=0 dcache_misses=1
+PASS: latency1-stall9 rv32mi/shamt: PASS cycles=325 retired=59 fetch_errors=0 interrupts=0 icache_hits=61 icache_misses=20 dcache_hits=0 dcache_misses=0
+PASS: latency1-stall9 rv32mi/sw-misaligned: PASS cycles=553 retired=109 fetch_errors=0 interrupts=0 icache_hits=127 icache_misses=32 dcache_hits=0 dcache_misses=1
+PASS: latency1-stall9 rv32mi/zicntr: PASS cycles=520 retired=112 fetch_errors=0 interrupts=0 icache_hits=90 icache_misses=32 dcache_hits=0 dcache_misses=0
+PASS: latency1-stall9 directed/atomics: PASS cycles=713 retired=154 fetch_errors=0 interrupts=0 icache_hits=119 icache_misses=41 dcache_hits=0 dcache_misses=9
+PASS: latency1-stall9 directed/dot8: PASS cycles=919 retired=249 fetch_errors=0 interrupts=0 icache_hits=226 icache_misses=50 dcache_hits=9 dcache_misses=2
+PASS: latency1-stall9 directed/dot8_fields_0: PASS cycles=36888 retired=8736 fetch_errors=0 interrupts=0 icache_hits=6553 icache_misses=2187 dcache_hits=0 dcache_misses=0
+PASS: latency1-stall9 directed/dot8_fields_1: PASS cycles=36887 retired=8735 fetch_errors=0 interrupts=0 icache_hits=6553 icache_misses=2187 dcache_hits=0 dcache_misses=0
+PASS: latency1-stall9 directed/dot8_fields_2: PASS cycles=36888 retired=8736 fetch_errors=0 interrupts=0 icache_hits=6553 icache_misses=2187 dcache_hits=0 dcache_misses=0
+PASS: latency1-stall9 directed/dot8_fields_3: PASS cycles=36888 retired=8736 fetch_errors=0 interrupts=0 icache_hits=6553 icache_misses=2187 dcache_hits=0 dcache_misses=0
+PASS: latency1-stall9 directed/halfword_branch_target: PASS cycles=310 retired=83 fetch_errors=0 interrupts=0 icache_hits=82 icache_misses=18 dcache_hits=0 dcache_misses=0
+PASS: latency1-stall9 directed/redirect_while_waiting: PASS cycles=512 retired=136 fetch_errors=0 interrupts=0 icache_hits=164 icache_misses=26 dcache_hits=15 dcache_misses=3
+PASS: latency1-stall9 directed/smc: PASS cycles=2996 retired=476 fetch_errors=0 interrupts=0 icache_hits=542 icache_misses=186 dcache_hits=0 dcache_misses=1
+PASS: latency1-stall9 directed/wrongpath_fetch_fault: PASS cycles=385 retired=83 fetch_errors=1 interrupts=0 icache_hits=89 icache_misses=23 dcache_hits=0 dcache_misses=0
+PASS: latency1-stall9 directed/wrongpath_muldiv: PASS cycles=440 retired=82 fetch_errors=0 interrupts=0 icache_hits=76 icache_misses=24 dcache_hits=0 dcache_misses=0
+PASS: latency1-stall9 traps/csr_ordering: PASS cycles=1482 retired=339 fetch_errors=0 interrupts=0 icache_hits=321 icache_misses=82 dcache_hits=14 dcache_misses=3
+PASS: latency1-stall9 traps/decode_traps: PASS cycles=2462 retired=760 fetch_errors=0 interrupts=0 icache_hits=902 icache_misses=88 dcache_hits=97 dcache_misses=19
+PASS: latency1-stall9 traps/dot8_traps: PASS cycles=55950 retired=19013 fetch_errors=0 interrupts=0 icache_hits=33297 icache_misses=359 dcache_hits=2887 dcache_misses=272
+PASS: latency1-stall9 traps/execute_traps: PASS cycles=2201 retired=667 fetch_errors=0 interrupts=0 icache_hits=757 icache_misses=85 dcache_hits=78 dcache_misses=17
+PASS: latency1-stall9 traps/fetch_traps: PASS cycles=925 retired=252 fetch_errors=24 interrupts=0 core_d_waits=1 icache_hits=237 icache_misses=44 dcache_hits=23 dcache_misses=6
+PASS: latency1-stall9 traps/m1_traps: PASS cycles=6513 retired=2169 fetch_errors=0 interrupts=0 m1_error_waits=267 div_kills=31 icache_hits=2778 icache_misses=72 dcache_hits=242 dcache_misses=75
+PASS: latency1-stall9 interrupts/irq_enable: PASS cycles=1926 retired=589 fetch_errors=0 interrupts=5 icache_hits=739 icache_misses=75 dcache_hits=51 dcache_misses=9
+PASS: latency1-stall9 interrupts/irq_lines: PASS cycles=1656 retired=548 fetch_errors=0 interrupts=6 core_d_waits=1 icache_hits=740 icache_misses=57 dcache_hits=32 dcache_misses=8
+PASS: latency1-stall9 interrupts/irq_sweep: PASS cycles=45094 retired=14136 fetch_errors=0 interrupts=128 icache_hits=17793 icache_misses=48 dcache_hits=1085 dcache_misses=67
+PASS: latency1-stall9 interrupts/time_counter: PASS cycles=985 retired=380 fetch_errors=0 interrupts=0 icache_hits=668 icache_misses=24 dcache_hits=0 dcache_misses=0
+PASS: latency1-stall9 selfcheck/dot8_arith: PASS cycles=3882428 retired=2645248 fetch_errors=0 interrupts=0 icache_hits=3284263 icache_misses=33 dcache_hits=285 dcache_misses=3
+PASS: latency1-stall9 coherence/remote_mp: PASS cycles=26394 retired=9083 fetch_errors=0 interrupts=0 icache_hits=13691 icache_misses=20 dcache_hits=1556 dcache_misses=684
+PASS: latency1-stall9 coherence/remote_sb: PASS cycles=19096 retired=7887 fetch_errors=0 interrupts=0 icache_hits=14153 icache_misses=21 dcache_hits=266 dcache_misses=396
+PASS: latency1-stall9 c/dot8_jobs: PASS cycles=1759535 retired=1114993 fetch_errors=0 interrupts=0 core_d_waits=1 icache_hits=1631728 icache_misses=199 dcache_hits=175751 dcache_misses=394
+PASS: inflight3-stall7 kernel coremark: PASS cycles=527058 retired=313677 window_cycles=473532 window_retired=284865 fetch_errors=0 interrupts=0 core_d_waits=2 icache_hits=429950 icache_misses=1301 dcache_hits=58133 dcache_misses=346
+PASS: inflight3-stall7 kernel dhrystone: PASS cycles=934795 retired=516383 window_cycles=894244 window_retired=492302 fetch_errors=0 interrupts=0 icache_hits=728639 icache_misses=268 dcache_hits=111759 dcache_misses=6144
+PASS: inflight3-stall7 kernel sort_search: PASS cycles=714360 retired=426794 window_cycles=702487 window_retired=420942 fetch_errors=0 interrupts=0 icache_hits=571687 icache_misses=137 dcache_hits=66830 dcache_misses=92
+PASS: inflight3-stall7 kernel fft: PASS cycles=336508 retired=253439 window_cycles=325933 window_retired=248399 fetch_errors=0 interrupts=0 core_d_waits=3 icache_hits=284628 icache_misses=158 dcache_hits=31793 dcache_misses=324
+PASS: inflight3-stall7 kernel strided: PASS cycles=26255 retired=15859 window_cycles=2971 window_retired=1559 fetch_errors=0 interrupts=0 icache_hits=21582 icache_misses=115 dcache_hits=632 dcache_misses=90
+PASS: inflight3-stall7 kernel conv2d: PASS cycles=1126951 retired=711517 window_cycles=1113016 window_retired=704346 fetch_errors=0 interrupts=0 icache_hits=962071 icache_misses=129 dcache_hits=160067 dcache_misses=339
+PASS: inflight3-stall7 kernel conv2d_scalar_coh: PASS cycles=1590462 retired=1001123 window_cycles=1538790 window_retired=971011 fetch_errors=0 interrupts=0 icache_hits=1248348 icache_misses=162 dcache_hits=232738 dcache_misses=6595
+PASS: inflight3-stall7 kernel reduction: PASS cycles=98217 retired=63706 window_cycles=76606 window_retired=53305 fetch_errors=0 interrupts=0 icache_hits=84708 icache_misses=144 dcache_hits=4774 dcache_misses=303
+PASS: inflight3-stall7 kernel conv2d_dot8: PASS cycles=1593401 retired=1175309 window_cycles=1541771 window_retired=1145218 fetch_errors=0 interrupts=0 icache_hits=1396651 icache_misses=193 dcache_hits=244067 dcache_misses=6316
+PASS: inflight3-stall7 rv32ui/add: PASS cycles=1983 retired=472 fetch_errors=0 interrupts=0 icache_hits=475 icache_misses=95 dcache_hits=0 dcache_misses=0
+PASS: inflight3-stall7 rv32ui/addi: PASS cycles=1123 retired=249 fetch_errors=0 interrupts=0 icache_hits=237 icache_misses=56 dcache_hits=0 dcache_misses=0
+PASS: inflight3-stall7 rv32ui/and: PASS cycles=1941 retired=492 fetch_errors=0 interrupts=0 icache_hits=499 icache_misses=91 dcache_hits=0 dcache_misses=0
+PASS: inflight3-stall7 rv32ui/andi: PASS cycles=909 retired=205 fetch_errors=0 interrupts=0 icache_hits=204 icache_misses=45 dcache_hits=0 dcache_misses=0
+PASS: inflight3-stall7 rv32ui/auipc: PASS cycles=381 retired=66 fetch_errors=0 interrupts=0 icache_hits=58 icache_misses=20 dcache_hits=0 dcache_misses=0
+PASS: inflight3-stall7 rv32ui/beq: PASS cycles=1337 retired=298 fetch_errors=0 interrupts=0 icache_hits=375 icache_misses=61 dcache_hits=0 dcache_misses=0
+PASS: inflight3-stall7 rv32ui/bge: PASS cycles=1474 retired=316 fetch_errors=0 interrupts=0 icache_hits=417 icache_misses=67 dcache_hits=0 dcache_misses=0
+PASS: inflight3-stall7 rv32ui/bgeu: PASS cycles=1535 retired=341 fetch_errors=0 interrupts=0 icache_hits=438 icache_misses=70 dcache_hits=0 dcache_misses=0
+PASS: inflight3-stall7 rv32ui/blt: PASS cycles=1337 retired=298 fetch_errors=0 interrupts=0 icache_hits=375 icache_misses=61 dcache_hits=0 dcache_misses=0
+PASS: inflight3-stall7 rv32ui/bltu: PASS cycles=1411 retired=323 fetch_errors=0 interrupts=0 icache_hits=396 icache_misses=64 dcache_hits=0 dcache_misses=0
+PASS: inflight3-stall7 rv32ui/bne: PASS cycles=1344 retired=298 fetch_errors=0 interrupts=0 icache_hits=379 icache_misses=61 dcache_hits=0 dcache_misses=0
+PASS: inflight3-stall7 rv32ui/fence_i: PASS cycles=1004 retired=296 fetch_errors=0 interrupts=0 icache_hits=487 icache_misses=33 dcache_hits=1 dcache_misses=1
+PASS: inflight3-stall7 rv32ui/jal: PASS cycles=396 retired=62 fetch_errors=0 interrupts=0 icache_hits=50 icache_misses=22 dcache_hits=0 dcache_misses=0
+PASS: inflight3-stall7 rv32ui/jalr: PASS cycles=648 retired=122 fetch_errors=0 interrupts=0 icache_hits=144 icache_misses=32 dcache_hits=0 dcache_misses=0
+PASS: inflight3-stall7 rv32ui/lb: PASS cycles=1108 retired=260 fetch_errors=0 interrupts=0 icache_hits=248 icache_misses=55 dcache_hits=23 dcache_misses=1
+PASS: inflight3-stall7 rv32ui/lbu: PASS cycles=1108 retired=260 fetch_errors=0 interrupts=0 icache_hits=248 icache_misses=55 dcache_hits=23 dcache_misses=1
+PASS: inflight3-stall7 rv32ui/ld_st: PASS cycles=4631 retired=970 fetch_errors=0 interrupts=0 icache_hits=732 icache_misses=246 dcache_hits=191 dcache_misses=2
+PASS: inflight3-stall7 rv32ui/lh: PASS cycles=1185 retired=276 fetch_errors=0 interrupts=0 icache_hits=261 icache_misses=58 dcache_hits=23 dcache_misses=1
+PASS: inflight3-stall7 rv32ui/lhu: PASS cycles=1196 retired=285 fetch_errors=0 interrupts=0 icache_hits=270 icache_misses=59 dcache_hits=23 dcache_misses=1
+PASS: inflight3-stall7 rv32ui/lui: PASS cycles=417 retired=72 fetch_errors=0 interrupts=0 icache_hits=57 icache_misses=23 dcache_hits=0 dcache_misses=0
+PASS: inflight3-stall7 rv32ui/lw: PASS cycles=1237 retired=290 fetch_errors=0 interrupts=0 icache_hits=272 icache_misses=61 dcache_hits=23 dcache_misses=1
+PASS: inflight3-stall7 rv32ui/ma_data: PASS cycles=16994 retired=7786 fetch_errors=0 interrupts=0 icache_hits=9284 icache_misses=133 dcache_hits=2463 dcache_misses=69
+PASS: inflight3-stall7 rv32ui/or: PASS cycles=1961 retired=495 fetch_errors=0 interrupts=0 icache_hits=498 icache_misses=93 dcache_hits=0 dcache_misses=0
+PASS: inflight3-stall7 rv32ui/ori: PASS cycles=927 retired=212 fetch_errors=0 interrupts=0 icache_hits=209 icache_misses=46 dcache_hits=0 dcache_misses=0
+PASS: inflight3-stall7 rv32ui/sb: PASS cycles=1902 retired=461 fetch_errors=0 interrupts=0 icache_hits=467 icache_misses=88 dcache_hits=33 dcache_misses=1
+PASS: inflight3-stall7 rv32ui/sh: PASS cycles=2061 retired=514 fetch_errors=0 interrupts=0 icache_hits=515 icache_misses=95 dcache_hits=32 dcache_misses=2
+PASS: inflight3-stall7 rv32ui/simple: PASS cycles=266 retired=48 fetch_errors=0 interrupts=0 icache_hits=37 icache_misses=15 dcache_hits=0 dcache_misses=0
+PASS: inflight3-stall7 rv32ui/sll: PASS cycles=2094 retired=500 fetch_errors=0 interrupts=0 icache_hits=496 icache_misses=102 dcache_hits=0 dcache_misses=0
+PASS: inflight3-stall7 rv32ui/slli: PASS cycles=1135 retired=248 fetch_errors=0 interrupts=0 icache_hits=233 icache_misses=57 dcache_hits=0 dcache_misses=0
+PASS: inflight3-stall7 rv32ui/slt: PASS cycles=1939 retired=466 fetch_errors=0 interrupts=0 icache_hits=472 icache_misses=92 dcache_hits=0 dcache_misses=0
+PASS: inflight3-stall7 rv32ui/slti: PASS cycles=1106 retired=244 fetch_errors=0 interrupts=0 icache_hits=230 icache_misses=56 dcache_hits=0 dcache_misses=0
+PASS: inflight3-stall7 rv32ui/sltiu: PASS cycles=1106 retired=244 fetch_errors=0 interrupts=0 icache_hits=230 icache_misses=56 dcache_hits=0 dcache_misses=0
+PASS: inflight3-stall7 rv32ui/sltu: PASS cycles=1939 retired=466 fetch_errors=0 interrupts=0 icache_hits=472 icache_misses=92 dcache_hits=0 dcache_misses=0
+PASS: inflight3-stall7 rv32ui/sra: PASS cycles=2192 retired=519 fetch_errors=0 interrupts=0 icache_hits=510 icache_misses=106 dcache_hits=0 dcache_misses=0
+PASS: inflight3-stall7 rv32ui/srai: PASS cycles=1179 retired=263 fetch_errors=0 interrupts=0 icache_hits=248 icache_misses=59 dcache_hits=0 dcache_misses=0
+PASS: inflight3-stall7 rv32ui/srl: PASS cycles=2144 retired=513 fetch_errors=0 interrupts=0 icache_hits=504 icache_misses=105 dcache_hits=0 dcache_misses=0
+PASS: inflight3-stall7 rv32ui/srli: PASS cycles=1171 retired=257 fetch_errors=0 interrupts=0 icache_hits=242 icache_misses=59 dcache_hits=0 dcache_misses=0
+PASS: inflight3-stall7 rv32ui/st_ld: PASS cycles=2357 retired=490 fetch_errors=0 interrupts=0 icache_hits=372 icache_misses=126 dcache_hits=47 dcache_misses=2
+PASS: inflight3-stall7 rv32ui/sub: PASS cycles=1927 retired=464 fetch_errors=0 interrupts=0 icache_hits=469 icache_misses=93 dcache_hits=0 dcache_misses=0
+PASS: inflight3-stall7 rv32ui/sw: PASS cycles=2071 retired=521 fetch_errors=0 interrupts=0 icache_hits=518 icache_misses=97 dcache_hits=31 dcache_misses=3
+PASS: inflight3-stall7 rv32ui/xor: PASS cycles=1961 retired=494 fetch_errors=0 interrupts=0 icache_hits=499 icache_misses=93 dcache_hits=0 dcache_misses=0
+PASS: inflight3-stall7 rv32ui/xori: PASS cycles=944 retired=214 fetch_errors=0 interrupts=0 icache_hits=209 icache_misses=47 dcache_hits=0 dcache_misses=0
+PASS: inflight3-stall7 rv32um/div: PASS cycles=746 retired=103 fetch_errors=0 interrupts=0 icache_hits=81 icache_misses=31 dcache_hits=0 dcache_misses=0
+PASS: inflight3-stall7 rv32um/divu: PASS cycles=736 retired=104 fetch_errors=0 interrupts=0 icache_hits=81 icache_misses=31 dcache_hits=0 dcache_misses=0
+PASS: inflight3-stall7 rv32um/mul: PASS cycles=1943 retired=466 fetch_errors=0 interrupts=0 icache_hits=472 icache_misses=92 dcache_hits=0 dcache_misses=0
+PASS: inflight3-stall7 rv32um/mulh: PASS cycles=1939 retired=466 fetch_errors=0 interrupts=0 icache_hits=472 icache_misses=92 dcache_hits=0 dcache_misses=0
+PASS: inflight3-stall7 rv32um/mulhsu: PASS cycles=1939 retired=466 fetch_errors=0 interrupts=0 icache_hits=472 icache_misses=92 dcache_hits=0 dcache_misses=0
+PASS: inflight3-stall7 rv32um/mulhu: PASS cycles=1939 retired=466 fetch_errors=0 interrupts=0 icache_hits=472 icache_misses=92 dcache_hits=0 dcache_misses=0
+PASS: inflight3-stall7 rv32um/rem: PASS cycles=746 retired=103 fetch_errors=0 interrupts=0 icache_hits=81 icache_misses=31 dcache_hits=0 dcache_misses=0
+PASS: inflight3-stall7 rv32um/remu: PASS cycles=746 retired=103 fetch_errors=0 interrupts=0 icache_hits=81 icache_misses=31 dcache_hits=0 dcache_misses=0
+PASS: inflight3-stall7 rv32ua/amoadd_w: PASS cycles=420 retired=73 fetch_errors=0 interrupts=0 icache_hits=56 icache_misses=23 dcache_hits=0 dcache_misses=2
+PASS: inflight3-stall7 rv32ua/amoand_w: PASS cycles=401 retired=71 fetch_errors=0 interrupts=0 icache_hits=56 icache_misses=22 dcache_hits=0 dcache_misses=2
+PASS: inflight3-stall7 rv32ua/amomax_w: PASS cycles=476 retired=85 fetch_errors=0 interrupts=0 icache_hits=65 icache_misses=26 dcache_hits=0 dcache_misses=3
+PASS: inflight3-stall7 rv32ua/amomaxu_w: PASS cycles=418 retired=72 fetch_errors=0 interrupts=0 icache_hits=57 icache_misses=23 dcache_hits=0 dcache_misses=2
+PASS: inflight3-stall7 rv32ua/amomin_w: PASS cycles=476 retired=85 fetch_errors=0 interrupts=0 icache_hits=65 icache_misses=26 dcache_hits=0 dcache_misses=3
+PASS: inflight3-stall7 rv32ua/amominu_w: PASS cycles=418 retired=72 fetch_errors=0 interrupts=0 icache_hits=57 icache_misses=23 dcache_hits=0 dcache_misses=2
+PASS: inflight3-stall7 rv32ua/amoor_w: PASS cycles=401 retired=71 fetch_errors=0 interrupts=0 icache_hits=56 icache_misses=22 dcache_hits=0 dcache_misses=2
+PASS: inflight3-stall7 rv32ua/amoswap_w: PASS cycles=401 retired=71 fetch_errors=0 interrupts=0 icache_hits=56 icache_misses=22 dcache_hits=0 dcache_misses=2
+PASS: inflight3-stall7 rv32ua/amoxor_w: PASS cycles=421 retired=75 fetch_errors=0 interrupts=0 icache_hits=59 icache_misses=23 dcache_hits=0 dcache_misses=2
+PASS: inflight3-stall7 rv32ua/lrsc: PASS cycles=25877 retired=6248 fetch_errors=0 interrupts=0 icache_hits=14437 icache_misses=31 dcache_hits=1 dcache_misses=3
+PASS: inflight3-stall7 rv32mi/csr: PASS cycles=714 retired=130 fetch_errors=0 interrupts=0 icache_hits=104 icache_misses=39 dcache_hits=0 dcache_misses=0
+PASS: inflight3-stall7 rv32mi/illegal: PASS cycles=519 retired=70 fetch_errors=0 interrupts=0 icache_hits=67 icache_misses=29 dcache_hits=0 dcache_misses=0
+PASS: inflight3-stall7 rv32mi/instret_overflow: PASS cycles=417 retired=70 fetch_errors=0 interrupts=0 icache_hits=57 icache_misses=23 dcache_hits=0 dcache_misses=0
+PASS: inflight3-stall7 rv32mi/lh-misaligned: PASS cycles=435 retired=69 fetch_errors=0 interrupts=0 icache_hits=69 icache_misses=23 dcache_hits=0 dcache_misses=1
+PASS: inflight3-stall7 rv32mi/lw-misaligned: PASS cycles=585 retired=105 fetch_errors=0 interrupts=0 icache_hits=128 icache_misses=28 dcache_hits=0 dcache_misses=1
+PASS: inflight3-stall7 rv32mi/ma_addr: PASS cycles=1039 retired=171 fetch_errors=0 interrupts=0 icache_hits=333 icache_misses=43 dcache_hits=8 dcache_misses=1
+PASS: inflight3-stall7 rv32mi/ma_fetch: PASS cycles=826 retired=151 fetch_errors=0 interrupts=0 icache_hits=243 icache_misses=36 dcache_hits=0 dcache_misses=0
+PASS: inflight3-stall7 rv32mi/mcsr: PASS cycles=376 retired=64 fetch_errors=0 interrupts=0 icache_hits=51 icache_misses=21 dcache_hits=0 dcache_misses=0
+PASS: inflight3-stall7 rv32mi/sbreak: PASS cycles=400 retired=59 fetch_errors=0 interrupts=0 icache_hits=66 icache_misses=21 dcache_hits=0 dcache_misses=0
+PASS: inflight3-stall7 rv32mi/scall: PASS cycles=476 retired=74 fetch_errors=0 interrupts=0 icache_hits=79 icache_misses=25 dcache_hits=0 dcache_misses=0
+PASS: inflight3-stall7 rv32mi/sh-misaligned: PASS cycles=469 retired=77 fetch_errors=0 interrupts=0 icache_hits=75 icache_misses=25 dcache_hits=0 dcache_misses=1
+PASS: inflight3-stall7 rv32mi/shamt: PASS cycles=373 retired=59 fetch_errors=0 interrupts=0 icache_hits=61 icache_misses=20 dcache_hits=0 dcache_misses=0
+PASS: inflight3-stall7 rv32mi/sw-misaligned: PASS cycles=637 retired=109 fetch_errors=0 interrupts=0 icache_hits=127 icache_misses=32 dcache_hits=0 dcache_misses=1
+PASS: inflight3-stall7 rv32mi/zicntr: PASS cycles=597 retired=112 fetch_errors=0 interrupts=0 icache_hits=91 icache_misses=32 dcache_hits=0 dcache_misses=0
+PASS: inflight3-stall7 directed/atomics: PASS cycles=824 retired=154 fetch_errors=0 interrupts=0 icache_hits=119 icache_misses=41 dcache_hits=0 dcache_misses=9
+PASS: inflight3-stall7 directed/dot8: PASS cycles=1033 retired=249 fetch_errors=0 interrupts=0 icache_hits=226 icache_misses=50 dcache_hits=9 dcache_misses=2
+PASS: inflight3-stall7 directed/dot8_fields_0: PASS cycles=41216 retired=8736 fetch_errors=0 interrupts=0 icache_hits=6553 icache_misses=2187 dcache_hits=0 dcache_misses=0
+PASS: inflight3-stall7 directed/dot8_fields_1: PASS cycles=41215 retired=8735 fetch_errors=0 interrupts=0 icache_hits=6553 icache_misses=2187 dcache_hits=0 dcache_misses=0
+PASS: inflight3-stall7 directed/dot8_fields_2: PASS cycles=41216 retired=8736 fetch_errors=0 interrupts=0 icache_hits=6553 icache_misses=2187 dcache_hits=0 dcache_misses=0
+PASS: inflight3-stall7 directed/dot8_fields_3: PASS cycles=41216 retired=8736 fetch_errors=0 interrupts=0 icache_hits=6553 icache_misses=2187 dcache_hits=0 dcache_misses=0
+PASS: inflight3-stall7 directed/halfword_branch_target: PASS cycles=356 retired=83 fetch_errors=0 interrupts=0 icache_hits=82 icache_misses=18 dcache_hits=0 dcache_misses=0
+PASS: inflight3-stall7 directed/redirect_while_waiting: PASS cycles=582 retired=136 fetch_errors=0 interrupts=0 icache_hits=164 icache_misses=26 dcache_hits=15 dcache_misses=3
+PASS: inflight3-stall7 directed/smc: PASS cycles=3340 retired=476 fetch_errors=0 interrupts=0 icache_hits=541 icache_misses=185 dcache_hits=0 dcache_misses=1
+PASS: inflight3-stall7 directed/wrongpath_fetch_fault: PASS cycles=444 retired=83 fetch_errors=1 interrupts=0 icache_hits=89 icache_misses=23 dcache_hits=0 dcache_misses=0
+PASS: inflight3-stall7 directed/wrongpath_muldiv: PASS cycles=501 retired=82 fetch_errors=0 interrupts=0 icache_hits=76 icache_misses=24 dcache_hits=0 dcache_misses=0
+PASS: inflight3-stall7 traps/csr_ordering: PASS cycles=1661 retired=339 fetch_errors=0 interrupts=0 icache_hits=321 icache_misses=82 dcache_hits=14 dcache_misses=3
+PASS: inflight3-stall7 traps/decode_traps: PASS cycles=2679 retired=760 fetch_errors=0 interrupts=0 icache_hits=903 icache_misses=88 dcache_hits=97 dcache_misses=19
+PASS: inflight3-stall7 traps/dot8_traps: PASS cycles=57283 retired=19013 fetch_errors=0 interrupts=0 icache_hits=33298 icache_misses=359 dcache_hits=2887 dcache_misses=272
+PASS: inflight3-stall7 traps/execute_traps: PASS cycles=2402 retired=667 fetch_errors=0 interrupts=0 icache_hits=757 icache_misses=85 dcache_hits=78 dcache_misses=17
+PASS: inflight3-stall7 traps/fetch_traps: PASS cycles=1046 retired=252 fetch_errors=24 interrupts=0 icache_hits=237 icache_misses=44 dcache_hits=23 dcache_misses=6
+PASS: inflight3-stall7 traps/m1_traps: PASS cycles=6788 retired=2169 fetch_errors=0 interrupts=0 m1_error_waits=350 div_kills=31 icache_hits=2778 icache_misses=72 dcache_hits=242 dcache_misses=75
+PASS: inflight3-stall7 interrupts/irq_enable: PASS cycles=2115 retired=589 fetch_errors=0 interrupts=5 icache_hits=739 icache_misses=75 dcache_hits=51 dcache_misses=9
+PASS: inflight3-stall7 interrupts/irq_lines: PASS cycles=1803 retired=545 fetch_errors=0 interrupts=6 icache_hits=733 icache_misses=57 dcache_hits=31 dcache_misses=8
+PASS: inflight3-stall7 interrupts/irq_sweep: PASS cycles=45656 retired=14136 fetch_errors=0 interrupts=128 core_d_waits=1 icache_hits=17802 icache_misses=48 dcache_hits=1085 dcache_misses=67
+PASS: inflight3-stall7 interrupts/time_counter: PASS cycles=1049 retired=380 fetch_errors=0 interrupts=0 icache_hits=668 icache_misses=24 dcache_hits=0 dcache_misses=0
+PASS: inflight3-stall7 selfcheck/dot8_arith: PASS cycles=3882509 retired=2645248 fetch_errors=0 interrupts=0 icache_hits=3284263 icache_misses=33 dcache_hits=285 dcache_misses=3
+PASS: inflight3-stall7 coherence/remote_mp: PASS cycles=27127 retired=8825 fetch_errors=0 interrupts=0 icache_hits=13301 icache_misses=20 dcache_hits=1520 dcache_misses=656
+PASS: inflight3-stall7 coherence/remote_sb: PASS cycles=19867 retired=7879 fetch_errors=0 interrupts=0 icache_hits=14129 icache_misses=21 dcache_hits=262 dcache_misses=395
+PASS: inflight3-stall7 c/dot8_jobs: PASS cycles=1760607 retired=1114993 fetch_errors=0 interrupts=0 icache_hits=1631792 icache_misses=199 dcache_hits=175751 dcache_misses=394
+PASS: longstall3 kernel coremark: PASS cycles=559105 retired=313677 window_cycles=497956 window_retired=284865 fetch_errors=0 interrupts=0 icache_hits=429947 icache_misses=1301 dcache_hits=58133 dcache_misses=346
+PASS: longstall3 kernel dhrystone: PASS cycles=1130177 retired=516383 window_cycles=1077751 window_retired=492302 fetch_errors=0 interrupts=0 icache_hits=728646 icache_misses=268 dcache_hits=111759 dcache_misses=6144
+PASS: longstall3 kernel sort_search: PASS cycles=800925 retired=426794 window_cycles=786159 window_retired=420942 fetch_errors=0 interrupts=0 icache_hits=571684 icache_misses=137 dcache_hits=66830 dcache_misses=92
+PASS: longstall3 kernel fft: PASS cycles=367924 retired=253439 window_cycles=354082 window_retired=248399 fetch_errors=0 interrupts=0 icache_hits=284676 icache_misses=158 dcache_hits=31793 dcache_misses=324
+PASS: longstall3 kernel strided: PASS cycles=32398 retired=15859 window_cycles=3508 window_retired=1559 fetch_errors=0 interrupts=0 icache_hits=21585 icache_misses=115 dcache_hits=632 dcache_misses=90
+PASS: longstall3 kernel conv2d: PASS cycles=1142770 retired=711517 window_cycles=1123652 window_retired=704346 fetch_errors=0 interrupts=0 core_d_waits=1 icache_hits=962073 icache_misses=129 dcache_hits=160067 dcache_misses=339
+PASS: longstall3 kernel conv2d_scalar_coh: PASS cycles=1819171 retired=1001123 window_cycles=1752309 window_retired=971011 fetch_errors=0 interrupts=0 icache_hits=1248462 icache_misses=162 dcache_hits=232738 dcache_misses=6595
+PASS: longstall3 kernel reduction: PASS cycles=112441 retired=63706 window_cycles=84321 window_retired=53305 fetch_errors=0 interrupts=0 icache_hits=84715 icache_misses=144 dcache_hits=4774 dcache_misses=303
+PASS: longstall3 kernel conv2d_dot8: PASS cycles=1831993 retired=1175309 window_cycles=1765599 window_retired=1145218 fetch_errors=0 interrupts=0 icache_hits=1396923 icache_misses=193 dcache_hits=244067 dcache_misses=6316
+PASS: longstall3 rv32ui/add: PASS cycles=2429 retired=472 fetch_errors=0 interrupts=0 icache_hits=475 icache_misses=95 dcache_hits=0 dcache_misses=0
+PASS: longstall3 rv32ui/addi: PASS cycles=1618 retired=249 fetch_errors=0 interrupts=0 icache_hits=237 icache_misses=56 dcache_hits=0 dcache_misses=0
+PASS: longstall3 rv32ui/and: PASS cycles=2841 retired=492 fetch_errors=0 interrupts=0 icache_hits=499 icache_misses=91 dcache_hits=0 dcache_misses=0
+PASS: longstall3 rv32ui/andi: PASS cycles=1092 retired=205 fetch_errors=0 interrupts=0 icache_hits=204 icache_misses=45 dcache_hits=0 dcache_misses=0
+PASS: longstall3 rv32ui/auipc: PASS cycles=496 retired=66 fetch_errors=0 interrupts=0 icache_hits=58 icache_misses=20 dcache_hits=0 dcache_misses=0
+PASS: longstall3 rv32ui/beq: PASS cycles=2013 retired=298 fetch_errors=0 interrupts=0 icache_hits=375 icache_misses=61 dcache_hits=0 dcache_misses=0
+PASS: longstall3 rv32ui/bge: PASS cycles=1991 retired=316 fetch_errors=0 interrupts=0 icache_hits=417 icache_misses=67 dcache_hits=0 dcache_misses=0
+PASS: longstall3 rv32ui/bgeu: PASS cycles=1997 retired=341 fetch_errors=0 interrupts=0 icache_hits=438 icache_misses=70 dcache_hits=0 dcache_misses=0
+PASS: longstall3 rv32ui/blt: PASS cycles=2013 retired=298 fetch_errors=0 interrupts=0 icache_hits=375 icache_misses=61 dcache_hits=0 dcache_misses=0
+PASS: longstall3 rv32ui/bltu: PASS cycles=1953 retired=323 fetch_errors=0 interrupts=0 icache_hits=396 icache_misses=64 dcache_hits=0 dcache_misses=0
+PASS: longstall3 rv32ui/bne: PASS cycles=1740 retired=298 fetch_errors=0 interrupts=0 icache_hits=379 icache_misses=61 dcache_hits=0 dcache_misses=0
+PASS: longstall3 rv32ui/fence_i: PASS cycles=1237 retired=296 fetch_errors=0 interrupts=0 icache_hits=487 icache_misses=33 dcache_hits=1 dcache_misses=1
+PASS: longstall3 rv32ui/jal: PASS cycles=514 retired=62 fetch_errors=0 interrupts=0 icache_hits=50 icache_misses=22 dcache_hits=0 dcache_misses=0
+PASS: longstall3 rv32ui/jalr: PASS cycles=788 retired=122 fetch_errors=0 interrupts=0 icache_hits=144 icache_misses=32 dcache_hits=0 dcache_misses=0
+PASS: longstall3 rv32ui/lb: PASS cycles=1454 retired=260 fetch_errors=0 interrupts=0 icache_hits=248 icache_misses=55 dcache_hits=23 dcache_misses=1
+PASS: longstall3 rv32ui/lbu: PASS cycles=1454 retired=260 fetch_errors=0 interrupts=0 icache_hits=248 icache_misses=55 dcache_hits=23 dcache_misses=1
+PASS: longstall3 rv32ui/ld_st: PASS cycles=7191 retired=970 fetch_errors=0 interrupts=0 icache_hits=732 icache_misses=246 dcache_hits=191 dcache_misses=2
+PASS: longstall3 rv32ui/lh: PASS cycles=1656 retired=276 fetch_errors=0 interrupts=0 icache_hits=261 icache_misses=58 dcache_hits=23 dcache_misses=1
+PASS: longstall3 rv32ui/lhu: PASS cycles=1890 retired=285 fetch_errors=0 interrupts=0 icache_hits=270 icache_misses=59 dcache_hits=23 dcache_misses=1
+PASS: longstall3 rv32ui/lui: PASS cycles=534 retired=72 fetch_errors=0 interrupts=0 icache_hits=57 icache_misses=23 dcache_hits=0 dcache_misses=0
+PASS: longstall3 rv32ui/lw: PASS cycles=1680 retired=290 fetch_errors=0 interrupts=0 icache_hits=272 icache_misses=61 dcache_hits=23 dcache_misses=1
+PASS: longstall3 rv32ui/ma_data: PASS cycles=24464 retired=7786 fetch_errors=0 interrupts=0 icache_hits=9285 icache_misses=133 dcache_hits=2463 dcache_misses=69
+PASS: longstall3 rv32ui/or: PASS cycles=2616 retired=495 fetch_errors=0 interrupts=0 icache_hits=498 icache_misses=93 dcache_hits=0 dcache_misses=0
+PASS: longstall3 rv32ui/ori: PASS cycles=1219 retired=212 fetch_errors=0 interrupts=0 icache_hits=209 icache_misses=46 dcache_hits=0 dcache_misses=0
+PASS: longstall3 rv32ui/sb: PASS cycles=2657 retired=461 fetch_errors=0 interrupts=0 icache_hits=467 icache_misses=88 dcache_hits=33 dcache_misses=1
+PASS: longstall3 rv32ui/sh: PASS cycles=3080 retired=514 fetch_errors=0 interrupts=0 icache_hits=515 icache_misses=95 dcache_hits=32 dcache_misses=2
+PASS: longstall3 rv32ui/simple: PASS cycles=353 retired=48 fetch_errors=0 interrupts=0 icache_hits=37 icache_misses=15 dcache_hits=0 dcache_misses=0
+PASS: longstall3 rv32ui/sll: PASS cycles=3022 retired=500 fetch_errors=0 interrupts=0 icache_hits=496 icache_misses=102 dcache_hits=0 dcache_misses=0
+PASS: longstall3 rv32ui/slli: PASS cycles=1559 retired=248 fetch_errors=0 interrupts=0 icache_hits=233 icache_misses=57 dcache_hits=0 dcache_misses=0
+PASS: longstall3 rv32ui/slt: PASS cycles=2495 retired=466 fetch_errors=0 interrupts=0 icache_hits=472 icache_misses=92 dcache_hits=0 dcache_misses=0
+PASS: longstall3 rv32ui/slti: PASS cycles=1520 retired=244 fetch_errors=0 interrupts=0 icache_hits=230 icache_misses=56 dcache_hits=0 dcache_misses=0
+PASS: longstall3 rv32ui/sltiu: PASS cycles=1520 retired=244 fetch_errors=0 interrupts=0 icache_hits=230 icache_misses=56 dcache_hits=0 dcache_misses=0
+PASS: longstall3 rv32ui/sltu: PASS cycles=2495 retired=466 fetch_errors=0 interrupts=0 icache_hits=472 icache_misses=92 dcache_hits=0 dcache_misses=0
+PASS: longstall3 rv32ui/sra: PASS cycles=3053 retired=519 fetch_errors=0 interrupts=0 icache_hits=510 icache_misses=106 dcache_hits=0 dcache_misses=0
+PASS: longstall3 rv32ui/srai: PASS cycles=1607 retired=263 fetch_errors=0 interrupts=0 icache_hits=248 icache_misses=59 dcache_hits=0 dcache_misses=0
+PASS: longstall3 rv32ui/srl: PASS cycles=2812 retired=513 fetch_errors=0 interrupts=0 icache_hits=504 icache_misses=105 dcache_hits=0 dcache_misses=0
+PASS: longstall3 rv32ui/srli: PASS cycles=1656 retired=257 fetch_errors=0 interrupts=0 icache_hits=242 icache_misses=59 dcache_hits=0 dcache_misses=0
+PASS: longstall3 rv32ui/st_ld: PASS cycles=3537 retired=490 fetch_errors=0 interrupts=0 icache_hits=372 icache_misses=126 dcache_hits=47 dcache_misses=2
+PASS: longstall3 rv32ui/sub: PASS cycles=2442 retired=464 fetch_errors=0 interrupts=0 icache_hits=469 icache_misses=93 dcache_hits=0 dcache_misses=0
+PASS: longstall3 rv32ui/sw: PASS cycles=2966 retired=521 fetch_errors=0 interrupts=0 icache_hits=518 icache_misses=97 dcache_hits=31 dcache_misses=3
+PASS: longstall3 rv32ui/xor: PASS cycles=2881 retired=494 fetch_errors=0 interrupts=0 icache_hits=499 icache_misses=93 dcache_hits=0 dcache_misses=0
+PASS: longstall3 rv32ui/xori: PASS cycles=1273 retired=214 fetch_errors=0 interrupts=0 icache_hits=209 icache_misses=47 dcache_hits=0 dcache_misses=0
+PASS: longstall3 rv32um/div: PASS cycles=974 retired=103 fetch_errors=0 interrupts=0 icache_hits=81 icache_misses=31 dcache_hits=0 dcache_misses=0
+PASS: longstall3 rv32um/divu: PASS cycles=934 retired=104 fetch_errors=0 interrupts=0 icache_hits=81 icache_misses=31 dcache_hits=0 dcache_misses=0
+PASS: longstall3 rv32um/mul: PASS cycles=2463 retired=466 fetch_errors=0 interrupts=0 icache_hits=472 icache_misses=92 dcache_hits=0 dcache_misses=0
+PASS: longstall3 rv32um/mulh: PASS cycles=2513 retired=466 fetch_errors=0 interrupts=0 icache_hits=473 icache_misses=92 dcache_hits=0 dcache_misses=0
+PASS: longstall3 rv32um/mulhsu: PASS cycles=2513 retired=466 fetch_errors=0 interrupts=0 icache_hits=473 icache_misses=92 dcache_hits=0 dcache_misses=0
+PASS: longstall3 rv32um/mulhu: PASS cycles=2513 retired=466 fetch_errors=0 interrupts=0 icache_hits=473 icache_misses=92 dcache_hits=0 dcache_misses=0
+PASS: longstall3 rv32um/rem: PASS cycles=974 retired=103 fetch_errors=0 interrupts=0 icache_hits=81 icache_misses=31 dcache_hits=0 dcache_misses=0
+PASS: longstall3 rv32um/remu: PASS cycles=974 retired=103 fetch_errors=0 interrupts=0 icache_hits=81 icache_misses=31 dcache_hits=0 dcache_misses=0
+PASS: longstall3 rv32ua/amoadd_w: PASS cycles=520 retired=73 fetch_errors=0 interrupts=0 icache_hits=56 icache_misses=23 dcache_hits=0 dcache_misses=2
+PASS: longstall3 rv32ua/amoand_w: PASS cycles=504 retired=71 fetch_errors=0 interrupts=0 icache_hits=56 icache_misses=22 dcache_hits=0 dcache_misses=2
+PASS: longstall3 rv32ua/amomax_w: PASS cycles=621 retired=85 fetch_errors=0 interrupts=0 icache_hits=65 icache_misses=26 dcache_hits=0 dcache_misses=3
+PASS: longstall3 rv32ua/amomaxu_w: PASS cycles=527 retired=72 fetch_errors=0 interrupts=0 icache_hits=57 icache_misses=23 dcache_hits=0 dcache_misses=2
+PASS: longstall3 rv32ua/amomin_w: PASS cycles=621 retired=85 fetch_errors=0 interrupts=0 icache_hits=65 icache_misses=26 dcache_hits=0 dcache_misses=3
+PASS: longstall3 rv32ua/amominu_w: PASS cycles=527 retired=72 fetch_errors=0 interrupts=0 icache_hits=57 icache_misses=23 dcache_hits=0 dcache_misses=2
+PASS: longstall3 rv32ua/amoor_w: PASS cycles=504 retired=71 fetch_errors=0 interrupts=0 icache_hits=56 icache_misses=22 dcache_hits=0 dcache_misses=2
+PASS: longstall3 rv32ua/amoswap_w: PASS cycles=504 retired=71 fetch_errors=0 interrupts=0 icache_hits=56 icache_misses=22 dcache_hits=0 dcache_misses=2
+PASS: longstall3 rv32ua/amoxor_w: PASS cycles=559 retired=75 fetch_errors=0 interrupts=0 icache_hits=60 icache_misses=24 dcache_hits=0 dcache_misses=2
+PASS: longstall3 rv32ua/lrsc: PASS cycles=31638 retired=6248 fetch_errors=0 interrupts=0 icache_hits=14439 icache_misses=31 dcache_hits=1 dcache_misses=3
+PASS: longstall3 rv32mi/csr: PASS cycles=1020 retired=130 fetch_errors=0 interrupts=0 icache_hits=104 icache_misses=39 dcache_hits=0 dcache_misses=0
+PASS: longstall3 rv32mi/illegal: PASS cycles=746 retired=70 fetch_errors=0 interrupts=0 icache_hits=67 icache_misses=29 dcache_hits=0 dcache_misses=0
+PASS: longstall3 rv32mi/instret_overflow: PASS cycles=665 retired=70 fetch_errors=0 interrupts=0 icache_hits=57 icache_misses=23 dcache_hits=0 dcache_misses=0
+PASS: longstall3 rv32mi/lh-misaligned: PASS cycles=633 retired=69 fetch_errors=0 interrupts=0 icache_hits=70 icache_misses=23 dcache_hits=0 dcache_misses=1
+PASS: longstall3 rv32mi/lw-misaligned: PASS cycles=794 retired=105 fetch_errors=0 interrupts=0 icache_hits=128 icache_misses=28 dcache_hits=0 dcache_misses=1
+PASS: longstall3 rv32mi/ma_addr: PASS cycles=1387 retired=171 fetch_errors=0 interrupts=0 icache_hits=335 icache_misses=43 dcache_hits=8 dcache_misses=1
+PASS: longstall3 rv32mi/ma_fetch: PASS cycles=1077 retired=151 fetch_errors=0 interrupts=0 icache_hits=243 icache_misses=36 dcache_hits=0 dcache_misses=0
+PASS: longstall3 rv32mi/mcsr: PASS cycles=498 retired=64 fetch_errors=0 interrupts=0 icache_hits=51 icache_misses=21 dcache_hits=0 dcache_misses=0
+PASS: longstall3 rv32mi/sbreak: PASS cycles=545 retired=59 fetch_errors=0 interrupts=0 icache_hits=64 icache_misses=21 dcache_hits=0 dcache_misses=0
+PASS: longstall3 rv32mi/scall: PASS cycles=678 retired=74 fetch_errors=0 interrupts=0 icache_hits=80 icache_misses=25 dcache_hits=0 dcache_misses=0
+PASS: longstall3 rv32mi/sh-misaligned: PASS cycles=632 retired=77 fetch_errors=0 interrupts=0 icache_hits=76 icache_misses=25 dcache_hits=0 dcache_misses=1
+PASS: longstall3 rv32mi/shamt: PASS cycles=580 retired=59 fetch_errors=0 interrupts=0 icache_hits=64 icache_misses=20 dcache_hits=0 dcache_misses=0
+PASS: longstall3 rv32mi/sw-misaligned: PASS cycles=796 retired=109 fetch_errors=0 interrupts=0 icache_hits=127 icache_misses=32 dcache_hits=0 dcache_misses=1
+PASS: longstall3 rv32mi/zicntr: PASS cycles=948 retired=112 fetch_errors=0 interrupts=0 icache_hits=90 icache_misses=32 dcache_hits=0 dcache_misses=0
+PASS: longstall3 directed/atomics: PASS cycles=1059 retired=154 fetch_errors=0 interrupts=0 icache_hits=120 icache_misses=41 dcache_hits=0 dcache_misses=9
+PASS: longstall3 directed/dot8: PASS cycles=1490 retired=249 fetch_errors=0 interrupts=0 icache_hits=226 icache_misses=50 dcache_hits=9 dcache_misses=2
+PASS: longstall3 directed/dot8_fields_0: PASS cycles=60880 retired=8736 fetch_errors=0 interrupts=0 icache_hits=6553 icache_misses=2187 dcache_hits=0 dcache_misses=0
+PASS: longstall3 directed/dot8_fields_1: PASS cycles=60879 retired=8735 fetch_errors=0 interrupts=0 icache_hits=6553 icache_misses=2187 dcache_hits=0 dcache_misses=0
+PASS: longstall3 directed/dot8_fields_2: PASS cycles=60880 retired=8736 fetch_errors=0 interrupts=0 icache_hits=6553 icache_misses=2187 dcache_hits=0 dcache_misses=0
+PASS: longstall3 directed/dot8_fields_3: PASS cycles=60880 retired=8736 fetch_errors=0 interrupts=0 icache_hits=6553 icache_misses=2187 dcache_hits=0 dcache_misses=0
+PASS: longstall3 directed/halfword_branch_target: PASS cycles=447 retired=83 fetch_errors=0 interrupts=0 icache_hits=82 icache_misses=18 dcache_hits=0 dcache_misses=0
+PASS: longstall3 directed/redirect_while_waiting: PASS cycles=725 retired=136 fetch_errors=0 interrupts=0 icache_hits=164 icache_misses=26 dcache_hits=15 dcache_misses=3
+PASS: longstall3 directed/smc: PASS cycles=5190 retired=476 fetch_errors=0 interrupts=0 icache_hits=541 icache_misses=185 dcache_hits=0 dcache_misses=1
+PASS: longstall3 directed/wrongpath_fetch_fault: PASS cycles=533 retired=83 fetch_errors=1 interrupts=0 icache_hits=89 icache_misses=23 dcache_hits=0 dcache_misses=0
+PASS: longstall3 directed/wrongpath_muldiv: PASS cycles=586 retired=82 fetch_errors=0 interrupts=0 icache_hits=76 icache_misses=24 dcache_hits=0 dcache_misses=0
+PASS: longstall3 traps/csr_ordering: PASS cycles=2153 retired=339 fetch_errors=0 interrupts=0 icache_hits=321 icache_misses=82 dcache_hits=14 dcache_misses=3
+PASS: longstall3 traps/decode_traps: PASS cycles=3597 retired=760 fetch_errors=0 interrupts=0 icache_hits=903 icache_misses=88 dcache_hits=97 dcache_misses=19
+PASS: longstall3 traps/dot8_traps: PASS cycles=64702 retired=19013 fetch_errors=0 interrupts=0 icache_hits=33297 icache_misses=359 dcache_hits=2887 dcache_misses=272
+PASS: longstall3 traps/execute_traps: PASS cycles=4071 retired=667 fetch_errors=0 interrupts=0 icache_hits=759 icache_misses=85 dcache_hits=78 dcache_misses=17
+PASS: longstall3 traps/fetch_traps: PASS cycles=1516 retired=252 fetch_errors=24 interrupts=0 icache_hits=239 icache_misses=44 dcache_hits=23 dcache_misses=6
+PASS: longstall3 traps/m1_traps: PASS cycles=8931 retired=2169 fetch_errors=0 interrupts=0 div_waits=277 m1_error_waits=920 div_kills=31 icache_hits=2782 icache_misses=72 dcache_hits=242 dcache_misses=75
+PASS: longstall3 interrupts/irq_enable: PASS cycles=2912 retired=589 fetch_errors=0 interrupts=5 icache_hits=739 icache_misses=75 dcache_hits=51 dcache_misses=9
+PASS: longstall3 interrupts/irq_lines: PASS cycles=2424 retired=545 fetch_errors=0 interrupts=6 icache_hits=733 icache_misses=57 dcache_hits=31 dcache_misses=8
+PASS: longstall3 interrupts/irq_sweep: PASS cycles=49620 retired=14136 fetch_errors=0 interrupts=128 icache_hits=17800 icache_misses=48 dcache_hits=1085 dcache_misses=67
+PASS: longstall3 interrupts/time_counter: PASS cycles=1220 retired=380 fetch_errors=0 interrupts=0 icache_hits=668 icache_misses=24 dcache_hits=0 dcache_misses=0
+PASS: longstall3 selfcheck/dot8_arith: PASS cycles=3882872 retired=2645248 fetch_errors=0 interrupts=0 icache_hits=3284263 icache_misses=33 dcache_hits=285 dcache_misses=3
+PASS: longstall3 coherence/remote_mp: PASS cycles=28711 retired=7406 fetch_errors=0 interrupts=0 icache_hits=11156 icache_misses=20 dcache_hits=1231 dcache_misses=593
+PASS: longstall3 coherence/remote_sb: PASS cycles=24602 retired=7866 fetch_errors=0 interrupts=0 icache_hits=14118 icache_misses=21 dcache_hits=254 dcache_misses=398
+PASS: longstall3 c/dot8_jobs: PASS cycles=1869713 retired=1114993 fetch_errors=0 interrupts=0 icache_hits=1631851 icache_misses=199 dcache_hits=175751 dcache_misses=394
+PASS: irq7 rv32ui/add: PASS cycles=7728 retired=2478 fetch_errors=0 interrupts=143 icache_hits=4246 icache_misses=101 dcache_hits=427 dcache_misses=2
+PASS: irq7 rv32ui/addi: PASS cycles=4183 retired=1317 fetch_errors=0 interrupts=76 icache_hits=2241 icache_misses=62 dcache_hits=226 dcache_misses=2
+PASS: irq7 rv32ui/and: PASS cycles=8038 retired=2610 fetch_errors=0 interrupts=151 icache_hits=4476 icache_misses=97 dcache_hits=451 dcache_misses=2
+PASS: irq7 rv32ui/andi: PASS cycles=3477 retired=1091 fetch_errors=0 interrupts=63 icache_hits=1875 icache_misses=51 dcache_hits=187 dcache_misses=2
+PASS: irq7 rv32ui/auipc: PASS cycles=820 retired=224 fetch_errors=0 interrupts=11 icache_hits=350 icache_misses=26 dcache_hits=31 dcache_misses=2
+PASS: irq7 rv32ui/beq: PASS cycles=5373 retired=1702 fetch_errors=0 interrupts=100 icache_hits=2987 icache_misses=67 dcache_hits=298 dcache_misses=2
+PASS: irq7 rv32ui/bge: PASS cycles=6330 retired=2000 fetch_errors=0 interrupts=120 icache_hits=3552 icache_misses=73 dcache_hits=358 dcache_misses=2
+PASS: irq7 rv32ui/bgeu: PASS cycles=6386 retired=2025 fetch_errors=0 interrupts=120 icache_hits=3575 icache_misses=76 dcache_hits=358 dcache_misses=2
+PASS: irq7 rv32ui/blt: PASS cycles=5373 retired=1702 fetch_errors=0 interrupts=100 icache_hits=2987 icache_misses=67 dcache_hits=298 dcache_misses=2
+PASS: irq7 rv32ui/bltu: PASS cycles=6251 retired=1993 fetch_errors=0 interrupts=119 icache_hits=3528 icache_misses=70 dcache_hits=355 dcache_misses=2
+PASS: irq7 rv32ui/bne: PASS cycles=5372 retired=1702 fetch_errors=0 interrupts=100 icache_hits=2986 icache_misses=67 dcache_hits=298 dcache_misses=2
+PASS: irq7 rv32ui/fence_i: PASS cycles=5687 retired=1838 fetch_errors=0 interrupts=109 icache_hits=3311 icache_misses=58 dcache_hits=326 dcache_misses=3
+PASS: irq7 rv32ui/jal: PASS cycles=774 retired=206 fetch_errors=0 interrupts=10 icache_hits=301 icache_misses=28 dcache_hits=28 dcache_misses=2
+PASS: irq7 rv32ui/jalr: PASS cycles=2237 retired=672 fetch_errors=0 interrupts=39 icache_hits=1178 icache_misses=38 dcache_hits=115 dcache_misses=2
+PASS: irq7 rv32ui/lb: PASS cycles=4478 retired=1426 fetch_errors=0 interrupts=83 icache_hits=2428 icache_misses=62 dcache_hits=270 dcache_misses=3
+PASS: irq7 rv32ui/lbu: PASS cycles=4478 retired=1426 fetch_errors=0 interrupts=83 icache_hits=2428 icache_misses=62 dcache_hits=270 dcache_misses=3
+PASS: irq7 rv32ui/ld_st: PASS cycles=16965 retired=5258 fetch_errors=0 interrupts=306 icache_hits=8711 icache_misses=287 dcache_hits=1107 dcache_misses=4
+PASS: irq7 rv32ui/lh: PASS cycles=4797 retired=1526 fetch_errors=0 interrupts=89 icache_hits=2616 icache_misses=65 dcache_hits=288 dcache_misses=3
+PASS: irq7 rv32ui/lhu: PASS cycles=4865 retired=1549 fetch_errors=0 interrupts=90 icache_hits=2659 icache_misses=65 dcache_hits=291 dcache_misses=3
+PASS: irq7 rv32ui/lui: PASS cycles=980 retired=272 fetch_errors=0 interrupts=14 icache_hits=426 icache_misses=29 dcache_hits=40 dcache_misses=2
+PASS: irq7 rv32ui/lw: PASS cycles=4908 retired=1568 fetch_errors=0 interrupts=91 icache_hits=2668 icache_misses=67 dcache_hits=294 dcache_misses=3
+PASS: irq7 rv32ui/ma_data: PASS cycles=22478 retired=10142 fetch_errors=0 interrupts=168 icache_hits=13869 icache_misses=136 dcache_hits=2966 dcache_misses=70
+PASS: irq7 rv32ui/or: PASS cycles=8066 retired=2613 fetch_errors=0 interrupts=151 icache_hits=4485 icache_misses=99 dcache_hits=451 dcache_misses=2
+PASS: irq7 rv32ui/ori: PASS cycles=3683 retired=1168 fetch_errors=0 interrupts=68 icache_hits=1989 icache_misses=52 dcache_hits=202 dcache_misses=2
+PASS: irq7 rv32ui/sb: PASS cycles=7648 retired=2467 fetch_errors=0 interrupts=143 icache_hits=4223 icache_misses=94 dcache_hits=460 dcache_misses=3
+PASS: irq7 rv32ui/sh: PASS cycles=8144 retired=2632 fetch_errors=0 interrupts=151 icache_hits=4508 icache_misses=101 dcache_hits=483 dcache_misses=4
+PASS: irq7 rv32ui/simple: PASS cycles=527 retired=136 fetch_errors=0 interrupts=6 icache_hits=197 icache_misses=21 dcache_hits=16 dcache_misses=2
+PASS: irq7 rv32ui/sll: PASS cycles=8114 retired=2604 fetch_errors=0 interrupts=150 icache_hits=4436 icache_misses=108 dcache_hits=448 dcache_misses=2
+PASS: irq7 rv32ui/slli: PASS cycles=4183 retired=1316 fetch_errors=0 interrupts=76 icache_hits=2234 icache_misses=63 dcache_hits=226 dcache_misses=2
+PASS: irq7 rv32ui/slt: PASS cycles=7689 retired=2472 fetch_errors=0 interrupts=143 icache_hits=4243 icache_misses=98 dcache_hits=427 dcache_misses=2
+PASS: irq7 rv32ui/slti: PASS cycles=4172 retired=1312 fetch_errors=0 interrupts=76 icache_hits=2235 icache_misses=62 dcache_hits=226 dcache_misses=2
+PASS: irq7 rv32ui/sltiu: PASS cycles=4172 retired=1312 fetch_errors=0 interrupts=76 icache_hits=2235 icache_misses=62 dcache_hits=226 dcache_misses=2
+PASS: irq7 rv32ui/sltu: PASS cycles=7689 retired=2472 fetch_errors=0 interrupts=143 icache_hits=4243 icache_misses=98 dcache_hits=427 dcache_misses=2
+PASS: irq7 rv32ui/sra: PASS cycles=8224 retired=2637 fetch_errors=0 interrupts=151 icache_hits=4480 icache_misses=113 dcache_hits=451 dcache_misses=2
+PASS: irq7 rv32ui/srai: PASS cycles=4403 retired=1387 fetch_errors=0 interrupts=80 icache_hits=2361 icache_misses=65 dcache_hits=238 dcache_misses=2
+PASS: irq7 rv32ui/srl: PASS cycles=8390 retired=2687 fetch_errors=0 interrupts=155 icache_hits=4599 icache_misses=111 dcache_hits=463 dcache_misses=2
+PASS: irq7 rv32ui/srli: PASS cycles=4470 retired=1409 fetch_errors=0 interrupts=82 icache_hits=2396 icache_misses=65 dcache_hits=244 dcache_misses=2
+PASS: irq7 rv32ui/st_ld: PASS cycles=8403 retired=2636 fetch_errors=0 interrupts=153 icache_hits=4401 icache_misses=132 dcache_hits=504 dcache_misses=4
+PASS: irq7 rv32ui/sub: PASS cycles=7701 retired=2470 fetch_errors=0 interrupts=143 icache_hits=4243 icache_misses=99 dcache_hits=427 dcache_misses=2
+PASS: irq7 rv32ui/sw: PASS cycles=8242 retired=2667 fetch_errors=0 interrupts=153 icache_hits=4552 icache_misses=103 dcache_hits=488 dcache_misses=5
+PASS: irq7 rv32ui/xor: PASS cycles=8047 retired=2612 fetch_errors=0 interrupts=151 icache_hits=4467 icache_misses=99 dcache_hits=451 dcache_misses=2
+PASS: irq7 rv32ui/xori: PASS cycles=3796 retired=1198 fetch_errors=0 interrupts=70 icache_hits=2058 icache_misses=53 dcache_hits=208 dcache_misses=2
+PASS: irq7 rv32um/div: PASS cycles=2252 retired=597 fetch_errors=0 interrupts=35 icache_hits=1013 icache_misses=37 dcache_hits=103 dcache_misses=2
+PASS: irq7 rv32um/divu: PASS cycles=2242 retired=598 fetch_errors=0 interrupts=35 icache_hits=1013 icache_misses=37 dcache_hits=103 dcache_misses=2
+PASS: irq7 rv32um/mul: PASS cycles=7689 retired=2472 fetch_errors=0 interrupts=143 icache_hits=4239 icache_misses=98 dcache_hits=427 dcache_misses=2
+PASS: irq7 rv32um/mulh: PASS cycles=7695 retired=2472 fetch_errors=0 interrupts=143 icache_hits=4244 icache_misses=98 dcache_hits=427 dcache_misses=2
+PASS: irq7 rv32um/mulhsu: PASS cycles=7695 retired=2472 fetch_errors=0 interrupts=143 icache_hits=4244 icache_misses=98 dcache_hits=427 dcache_misses=2
+PASS: irq7 rv32um/mulhu: PASS cycles=7695 retired=2472 fetch_errors=0 interrupts=143 icache_hits=4244 icache_misses=98 dcache_hits=427 dcache_misses=2
+PASS: irq7 rv32um/rem: PASS cycles=2252 retired=597 fetch_errors=0 interrupts=35 icache_hits=1013 icache_misses=37 dcache_hits=103 dcache_misses=2
+PASS: irq7 rv32um/remu: PASS cycles=2252 retired=597 fetch_errors=0 interrupts=35 icache_hits=1013 icache_misses=37 dcache_hits=103 dcache_misses=2
+PASS: irq7 rv32ua/amoadd_w: PASS cycles=972 retired=273 fetch_errors=0 interrupts=14 icache_hits=423 icache_misses=29 dcache_hits=40 dcache_misses=4
+PASS: irq7 rv32ua/amoand_w: PASS cycles=968 retired=271 fetch_errors=0 interrupts=14 icache_hits=419 icache_misses=28 dcache_hits=40 dcache_misses=4
+PASS: irq7 rv32ua/amomax_w: PASS cycles=1366 retired=397 fetch_errors=0 interrupts=22 icache_hits=646 icache_misses=32 dcache_hits=64 dcache_misses=5
+PASS: irq7 rv32ua/amomaxu_w: PASS cycles=973 retired=272 fetch_errors=0 interrupts=14 icache_hits=422 icache_misses=29 dcache_hits=40 dcache_misses=4
+PASS: irq7 rv32ua/amomin_w: PASS cycles=1366 retired=397 fetch_errors=0 interrupts=22 icache_hits=646 icache_misses=32 dcache_hits=64 dcache_misses=5
+PASS: irq7 rv32ua/amominu_w: PASS cycles=973 retired=272 fetch_errors=0 interrupts=14 icache_hits=422 icache_misses=29 dcache_hits=40 dcache_misses=4
+PASS: irq7 rv32ua/amoor_w: PASS cycles=968 retired=271 fetch_errors=0 interrupts=14 icache_hits=419 icache_misses=28 dcache_hits=40 dcache_misses=4
+PASS: irq7 rv32ua/amoswap_w: PASS cycles=968 retired=271 fetch_errors=0 interrupts=14 icache_hits=419 icache_misses=28 dcache_hits=40 dcache_misses=4
+PASS: irq7 rv32ua/amoxor_w: PASS cycles=1023 retired=289 fetch_errors=0 interrupts=15 icache_hits=448 icache_misses=30 dcache_hits=43 dcache_misses=4
+PASS: irq7 rv32ua/lrsc: PASS cycles=109460 retired=36072 fetch_errors=0 interrupts=2130 icache_hits=68894 icache_misses=38 dcache_hits=6389 dcache_misses=5
+PASS: irq7 directed/atomics: PASS cycles=3280 retired=998 fetch_errors=0 interrupts=60 icache_hits=1709 icache_misses=47 dcache_hits=178 dcache_misses=11
+PASS: irq7 directed/dot8: PASS cycles=4162 retired=1317 fetch_errors=0 interrupts=76 icache_hits=2226 icache_misses=56 dcache_hits=235 dcache_misses=4
+PASS: irq7 directed/dot8_fields_0: PASS cycles=139551 retired=43488 fetch_errors=0 interrupts=2482 icache_hits=70937 icache_misses=2449 dcache_hits=7444 dcache_misses=2
+PASS: irq7 directed/dot8_fields_1: PASS cycles=138892 retired=43291 fetch_errors=0 interrupts=2468 icache_hits=70580 icache_misses=2435 dcache_hits=7402 dcache_misses=2
+PASS: irq7 directed/dot8_fields_2: PASS cycles=139099 retired=43362 fetch_errors=0 interrupts=2473 icache_hits=70697 icache_misses=2441 dcache_hits=7417 dcache_misses=2
+PASS: irq7 directed/dot8_fields_3: PASS cycles=139892 retired=43488 fetch_errors=0 interrupts=2482 icache_hits=70899 icache_misses=2481 dcache_hits=7444 dcache_misses=2
+PASS: irq7 directed/halfword_branch_target: PASS cycles=938 retired=283 fetch_errors=0 interrupts=14 icache_hits=451 icache_misses=24 dcache_hits=40 dcache_misses=2
+PASS: irq7 directed/redirect_while_waiting: PASS cycles=2327 retired=728 fetch_errors=0 interrupts=42 icache_hits=1283 icache_misses=32 dcache_hits=139 dcache_misses=5
+PASS: irq7 directed/smc: PASS cycles=13046 retired=3280 fetch_errors=0 interrupts=200 icache_hits=5278 icache_misses=472 dcache_hits=598 dcache_misses=3
+PASS: irq7 directed/wrongpath_fetch_fault: PASS cycles=1677 retired=465 fetch_errors=2 interrupts=27 icache_hits=768 icache_misses=44 dcache_hits=79 dcache_misses=2
+PASS: irq7 directed/wrongpath_muldiv: PASS cycles=1327 retired=366 fetch_errors=0 interrupts=20 icache_hits=606 icache_misses=30 dcache_hits=58 dcache_misses=2
+PASS: random seed 1: PASS cycles=21016 retired=4418 fetch_errors=0 interrupts=0 icache_hits=4615 icache_misses=1106 dcache_hits=158 dcache_misses=164
+PASS: random seed 2: PASS cycles=21373 retired=4468 fetch_errors=0 interrupts=0 icache_hits=4626 icache_misses=1119 dcache_hits=163 dcache_misses=190
+PASS: random seed 3: PASS cycles=20093 retired=4410 fetch_errors=0 interrupts=0 icache_hits=4665 icache_misses=1089 dcache_hits=178 dcache_misses=204
+PASS: random seed 4: PASS cycles=19964 retired=4337 fetch_errors=0 interrupts=0 icache_hits=4439 icache_misses=1108 dcache_hits=166 dcache_misses=177
+PASS: random seed 5: PASS cycles=22927 retired=5078 fetch_errors=0 interrupts=0 icache_hits=5370 icache_misses=1176 dcache_hits=213 dcache_misses=196
+PASS: random seed 6: PASS cycles=22369 retired=4747 fetch_errors=0 interrupts=0 icache_hits=5036 icache_misses=1123 dcache_hits=218 dcache_misses=178
+PASS: random seed 7: PASS cycles=21944 retired=4976 fetch_errors=0 interrupts=0 icache_hits=5516 icache_misses=1067 dcache_hits=230 dcache_misses=196
+PASS: random seed 8: PASS cycles=22204 retired=4641 fetch_errors=0 interrupts=0 icache_hits=4857 icache_misses=1182 dcache_hits=201 dcache_misses=178
+PASS: random seed 9: PASS cycles=23208 retired=5393 fetch_errors=0 interrupts=0 icache_hits=5811 icache_misses=1145 dcache_hits=306 dcache_misses=190
+PASS: random seed 10: PASS cycles=22497 retired=4690 fetch_errors=0 interrupts=0 icache_hits=4964 icache_misses=1159 dcache_hits=190 dcache_misses=189
+PASS: random seed 11: PASS cycles=22880 retired=4760 fetch_errors=0 interrupts=0 icache_hits=5020 icache_misses=1194 dcache_hits=182 dcache_misses=185
+PASS: random seed 12: PASS cycles=23884 retired=5155 fetch_errors=0 interrupts=0 icache_hits=5625 icache_misses=1236 dcache_hits=258 dcache_misses=215
+PASS: random seed 13: PASS cycles=21716 retired=4491 fetch_errors=0 interrupts=0 icache_hits=4717 icache_misses=1149 dcache_hits=177 dcache_misses=163
+PASS: random seed 14: PASS cycles=23935 retired=5067 fetch_errors=0 interrupts=0 icache_hits=5697 icache_misses=1210 dcache_hits=224 dcache_misses=182
+PASS: random seed 15: PASS cycles=22762 retired=4951 fetch_errors=0 interrupts=0 icache_hits=5267 icache_misses=1132 dcache_hits=179 dcache_misses=164
+PASS: random seed 16: PASS cycles=22253 retired=4822 fetch_errors=0 interrupts=0 icache_hits=5098 icache_misses=1167 dcache_hits=220 dcache_misses=180
+PASS: random seed 17: PASS cycles=21495 retired=4638 fetch_errors=0 interrupts=0 icache_hits=4978 icache_misses=1118 dcache_hits=212 dcache_misses=183
+PASS: random seed 18: PASS cycles=23449 retired=5040 fetch_errors=0 interrupts=0 icache_hits=5556 icache_misses=1157 dcache_hits=228 dcache_misses=190
+PASS: random seed 19: PASS cycles=21472 retired=4656 fetch_errors=0 interrupts=0 icache_hits=4994 icache_misses=1100 dcache_hits=195 dcache_misses=177
+PASS: random seed 20: PASS cycles=22257 retired=4904 fetch_errors=0 interrupts=0 icache_hits=5244 icache_misses=1204 dcache_hits=246 dcache_misses=195
+PASS: random seed 21: PASS cycles=21955 retired=4788 fetch_errors=0 interrupts=0 icache_hits=5248 icache_misses=1159 dcache_hits=183 dcache_misses=194
+PASS: random seed 22: PASS cycles=22106 retired=4941 fetch_errors=0 interrupts=0 core_d_waits=1 icache_hits=5446 icache_misses=1093 dcache_hits=215 dcache_misses=185
+PASS: random seed 23: PASS cycles=21779 retired=4467 fetch_errors=0 interrupts=0 icache_hits=4606 icache_misses=1188 dcache_hits=170 dcache_misses=179
+PASS: random seed 24: PASS cycles=20966 retired=4400 fetch_errors=0 interrupts=0 icache_hits=4664 icache_misses=1124 dcache_hits=178 dcache_misses=165
+PASS: random seed 25: PASS cycles=21152 retired=4410 fetch_errors=0 interrupts=0 icache_hits=4687 icache_misses=1081 dcache_hits=180 dcache_misses=170
+PASS: random seed 26: PASS cycles=21856 retired=4716 fetch_errors=0 interrupts=0 icache_hits=4937 icache_misses=1131 dcache_hits=170 dcache_misses=190
+PASS: random seed 27: PASS cycles=21292 retired=4555 fetch_errors=0 interrupts=0 icache_hits=4909 icache_misses=1109 dcache_hits=198 dcache_misses=167
+PASS: random seed 28: PASS cycles=22259 retired=4869 fetch_errors=0 interrupts=0 icache_hits=5299 icache_misses=1122 dcache_hits=212 dcache_misses=201
+PASS: random seed 29: PASS cycles=22328 retired=4720 fetch_errors=0 interrupts=0 icache_hits=4985 icache_misses=1128 dcache_hits=192 dcache_misses=183
+PASS: random seed 30: PASS cycles=23606 retired=5066 fetch_errors=0 interrupts=0 icache_hits=5407 icache_misses=1195 dcache_hits=206 dcache_misses=184
+PASS: random seed 31: PASS cycles=21510 retired=4587 fetch_errors=0 interrupts=0 icache_hits=5100 icache_misses=1124 dcache_hits=209 dcache_misses=166
+PASS: random seed 32: PASS cycles=21515 retired=4737 fetch_errors=0 interrupts=0 icache_hits=4966 icache_misses=1106 dcache_hits=206 dcache_misses=201
+PASS: random seed 33: PASS cycles=20944 retired=4536 fetch_errors=0 interrupts=0 icache_hits=4671 icache_misses=1102 dcache_hits=169 dcache_misses=178
+PASS: random seed 34: PASS cycles=23604 retired=4999 fetch_errors=0 interrupts=0 icache_hits=5248 icache_misses=1229 dcache_hits=198 dcache_misses=198
+PASS: random seed 35: PASS cycles=22354 retired=4764 fetch_errors=0 interrupts=0 icache_hits=5201 icache_misses=1124 dcache_hits=206 dcache_misses=184
+PASS: random seed 36: PASS cycles=21494 retired=4474 fetch_errors=0 interrupts=0 icache_hits=4658 icache_misses=1148 dcache_hits=201 dcache_misses=173
+PASS: random seed 37: PASS cycles=22243 retired=4861 fetch_errors=0 interrupts=0 icache_hits=5158 icache_misses=1121 dcache_hits=174 dcache_misses=174
+PASS: random seed 38: PASS cycles=24611 retired=5431 fetch_errors=0 interrupts=0 div_kills=1 icache_hits=5979 icache_misses=1229 dcache_hits=242 dcache_misses=183
+PASS: random seed 39: PASS cycles=24076 retired=5126 fetch_errors=0 interrupts=0 icache_hits=5538 icache_misses=1210 dcache_hits=231 dcache_misses=189
+PASS: random seed 40: PASS cycles=21841 retired=4660 fetch_errors=0 interrupts=0 icache_hits=4818 icache_misses=1147 dcache_hits=157 dcache_misses=188
+PASS: random-stall11 seed 101: PASS cycles=26905 retired=5009 fetch_errors=0 interrupts=0 icache_hits=5332 icache_misses=1177 dcache_hits=211 dcache_misses=192
+PASS: random-stall11 seed 102: PASS cycles=27784 retired=5107 fetch_errors=0 interrupts=0 core_d_waits=1 icache_hits=5504 icache_misses=1178 dcache_hits=213 dcache_misses=176
+PASS: random-stall11 seed 103: PASS cycles=24842 retired=4559 fetch_errors=0 interrupts=0 icache_hits=4770 icache_misses=1065 dcache_hits=194 dcache_misses=153
+PASS: random-stall11 seed 104: PASS cycles=25902 retired=4758 fetch_errors=0 interrupts=0 core_d_waits=1 icache_hits=4997 icache_misses=1121 dcache_hits=191 dcache_misses=168
+PASS: random-stall11 seed 105: PASS cycles=24555 retired=4309 fetch_errors=0 interrupts=0 icache_hits=4388 icache_misses=1102 dcache_hits=160 dcache_misses=169
+PASS: random-stall11 seed 106: PASS cycles=26770 retired=4745 fetch_errors=0 interrupts=0 icache_hits=5141 icache_misses=1189 dcache_hits=209 dcache_misses=184
+PASS: random-stall11 seed 107: PASS cycles=24476 retired=4538 fetch_errors=0 interrupts=0 icache_hits=4780 icache_misses=1097 dcache_hits=200 dcache_misses=187
+PASS: random-stall11 seed 108: PASS cycles=24159 retired=4322 fetch_errors=0 interrupts=0 icache_hits=4483 icache_misses=1091 dcache_hits=171 dcache_misses=191
+PASS: random-stall11 seed 109: PASS cycles=26696 retired=4956 fetch_errors=0 interrupts=0 icache_hits=5364 icache_misses=1120 dcache_hits=208 dcache_misses=186
+PASS: random-stall11 seed 110: PASS cycles=24983 retired=4505 fetch_errors=0 interrupts=0 icache_hits=4766 icache_misses=1115 dcache_hits=189 dcache_misses=177
+PASS: random-stall11 seed 111: PASS cycles=28808 retired=4969 fetch_errors=0 interrupts=0 icache_hits=5208 icache_misses=1304 dcache_hits=205 dcache_misses=177
+PASS: random-stall11 seed 112: PASS cycles=25093 retired=4644 fetch_errors=0 interrupts=0 icache_hits=4845 icache_misses=1114 dcache_hits=183 dcache_misses=201
+PASS: random-stall11 seed 113: PASS cycles=27139 retired=4940 fetch_errors=0 interrupts=0 icache_hits=5138 icache_misses=1175 dcache_hits=215 dcache_misses=193
+PASS: random-stall11 seed 114: PASS cycles=25354 retired=4647 fetch_errors=0 interrupts=0 core_d_waits=1 icache_hits=4961 icache_misses=1121 dcache_hits=183 dcache_misses=171
+PASS: random-stall11 seed 115: PASS cycles=26929 retired=4670 fetch_errors=0 interrupts=0 icache_hits=4789 icache_misses=1218 dcache_hits=181 dcache_misses=188
+PASS: random-stall11 seed 116: PASS cycles=25633 retired=4682 fetch_errors=0 interrupts=0 icache_hits=5052 icache_misses=1119 dcache_hits=178 dcache_misses=193
+PASS: random-stall11 seed 117: PASS cycles=27530 retired=4956 fetch_errors=0 interrupts=0 icache_hits=5271 icache_misses=1193 dcache_hits=198 dcache_misses=162
+PASS: random-stall11 seed 118: PASS cycles=27255 retired=4709 fetch_errors=0 interrupts=0 icache_hits=5063 icache_misses=1204 dcache_hits=167 dcache_misses=188
+PASS: random-stall11 seed 119: PASS cycles=25893 retired=4786 fetch_errors=0 interrupts=0 icache_hits=5037 icache_misses=1165 dcache_hits=214 dcache_misses=178
+PASS: random-stall11 seed 120: PASS cycles=25444 retired=4592 fetch_errors=0 interrupts=0 icache_hits=4815 icache_misses=1151 dcache_hits=185 dcache_misses=177
+PASS: random-stall11 seed 121: PASS cycles=25326 retired=4628 fetch_errors=0 interrupts=0 icache_hits=4872 icache_misses=1108 dcache_hits=149 dcache_misses=163
+PASS: random-stall11 seed 122: PASS cycles=26126 retired=4604 fetch_errors=0 interrupts=0 icache_hits=4865 icache_misses=1155 dcache_hits=164 dcache_misses=172
+PASS: random-stall11 seed 123: PASS cycles=29651 retired=5103 fetch_errors=0 interrupts=0 icache_hits=5524 icache_misses=1261 dcache_hits=209 dcache_misses=194
+PASS: random-stall11 seed 124: PASS cycles=24596 retired=4417 fetch_errors=0 interrupts=0 icache_hits=4795 icache_misses=1057 dcache_hits=154 dcache_misses=185
+PASS: random-stall11 seed 125: PASS cycles=25758 retired=4565 fetch_errors=0 interrupts=0 icache_hits=4814 icache_misses=1162 dcache_hits=209 dcache_misses=182
+PASS: random-stall11 seed 126: PASS cycles=27125 retired=4910 fetch_errors=0 interrupts=0 icache_hits=5402 icache_misses=1128 dcache_hits=197 dcache_misses=181
+PASS: random-stall11 seed 127: PASS cycles=25658 retired=4698 fetch_errors=0 interrupts=0 icache_hits=5039 icache_misses=1114 dcache_hits=188 dcache_misses=177
+PASS: random-stall11 seed 128: PASS cycles=25092 retired=4792 fetch_errors=0 interrupts=0 icache_hits=5079 icache_misses=1061 dcache_hits=221 dcache_misses=180
+PASS: random-stall11 seed 129: PASS cycles=25229 retired=4577 fetch_errors=0 interrupts=0 icache_hits=4806 icache_misses=1136 dcache_hits=201 dcache_misses=190
+PASS: random-stall11 seed 130: PASS cycles=25735 retired=4769 fetch_errors=0 interrupts=0 icache_hits=5113 icache_misses=1129 dcache_hits=228 dcache_misses=173
+PASS: random-stall11 seed 131: PASS cycles=27129 retired=4762 fetch_errors=0 interrupts=0 icache_hits=5081 icache_misses=1151 dcache_hits=192 dcache_misses=170
+PASS: random-stall11 seed 132: PASS cycles=25120 retired=4561 fetch_errors=0 interrupts=0 icache_hits=4779 icache_misses=1099 dcache_hits=161 dcache_misses=160
+PASS: random-stall11 seed 133: PASS cycles=26935 retired=4900 fetch_errors=0 interrupts=0 icache_hits=5235 icache_misses=1171 dcache_hits=212 dcache_misses=189
+PASS: random-stall11 seed 134: PASS cycles=27062 retired=4809 fetch_errors=0 interrupts=0 icache_hits=5182 icache_misses=1176 dcache_hits=227 dcache_misses=189
+PASS: random-stall11 seed 135: PASS cycles=25270 retired=4425 fetch_errors=0 interrupts=0 icache_hits=4642 icache_misses=1101 dcache_hits=182 dcache_misses=189
+PASS: random-stall11 seed 136: PASS cycles=25041 retired=4350 fetch_errors=0 interrupts=0 icache_hits=4452 icache_misses=1100 dcache_hits=154 dcache_misses=196
+PASS: random-stall11 seed 137: PASS cycles=26842 retired=5135 fetch_errors=0 interrupts=0 icache_hits=5652 icache_misses=1114 dcache_hits=177 dcache_misses=173
+PASS: random-stall11 seed 138: PASS cycles=27194 retired=5209 fetch_errors=0 interrupts=0 icache_hits=5608 icache_misses=1155 dcache_hits=216 dcache_misses=190
+PASS: random-stall11 seed 139: PASS cycles=23695 retired=4317 fetch_errors=0 interrupts=0 icache_hits=4466 icache_misses=1030 dcache_hits=155 dcache_misses=172
+PASS: random-stall11 seed 140: PASS cycles=27520 retired=4756 fetch_errors=0 interrupts=0 icache_hits=5076 icache_misses=1177 dcache_hits=197 dcache_misses=196
+PASS: random-irq7 seed 301: PASS cycles=83278 retired=23955 fetch_errors=0 interrupts=1384 icache_hits=40347 icache_misses=1475 dcache_hits=4287 dcache_misses=208
+PASS: random-irq7 seed 302: PASS cycles=85840 retired=24541 fetch_errors=0 interrupts=1405 icache_hits=40734 icache_misses=1660 dcache_hits=4370 dcache_misses=204
+PASS: random-irq7 seed 303: PASS cycles=82015 retired=23602 fetch_errors=0 interrupts=1347 icache_hits=39440 icache_misses=1498 dcache_hits=4197 dcache_misses=175
+PASS: random-irq7 seed 304: PASS cycles=86975 retired=24840 fetch_errors=0 interrupts=1444 icache_hits=41573 icache_misses=1650 dcache_hits=4439 dcache_misses=181
+PASS: random-irq7 seed 305: PASS cycles=96618 retired=27779 fetch_errors=0 interrupts=1625 icache_hits=46799 icache_misses=1719 dcache_hits=5003 dcache_misses=179
+PASS: random-irq7 seed 306: PASS cycles=82128 retired=23864 fetch_errors=0 interrupts=1369 icache_hits=39997 icache_misses=1478 dcache_hits=4232 dcache_misses=189
+PASS: random-irq7 seed 307: PASS cycles=86038 retired=24862 fetch_errors=0 interrupts=1444 icache_hits=41688 icache_misses=1548 dcache_hits=4470 dcache_misses=217
+PASS: random-irq7 seed 308: PASS cycles=81561 retired=23551 fetch_errors=0 interrupts=1364 icache_hits=39550 icache_misses=1473 dcache_hits=4209 dcache_misses=173
+PASS: random-irq7 seed 309: PASS cycles=82967 retired=23709 fetch_errors=0 interrupts=1364 icache_hits=39667 icache_misses=1561 dcache_hits=4253 dcache_misses=203
+PASS: random-irq7 seed 310: PASS cycles=84431 retired=23870 fetch_errors=0 interrupts=1372 icache_hits=39452 icache_misses=1728 dcache_hits=4234 dcache_misses=208
+PASS: random-irq7 seed 311: PASS cycles=85682 retired=24797 fetch_errors=0 interrupts=1419 icache_hits=41249 icache_misses=1636 dcache_hits=4408 dcache_misses=177
+PASS: random-irq7 seed 312: PASS cycles=84728 retired=24556 fetch_errors=0 interrupts=1415 icache_hits=41188 icache_misses=1501 dcache_hits=4383 dcache_misses=206
+PASS: random-irq7 seed 313: PASS cycles=83174 retired=24004 fetch_errors=0 interrupts=1399 icache_hits=40347 icache_misses=1508 dcache_hits=4338 dcache_misses=180
+PASS: random-irq7 seed 314: PASS cycles=82438 retired=23934 fetch_errors=0 interrupts=1374 icache_hits=40047 icache_misses=1470 dcache_hits=4247 dcache_misses=176
+PASS: random-irq7 seed 315: PASS cycles=85934 retired=24963 fetch_errors=0 interrupts=1444 core_d_waits=1 icache_hits=41928 icache_misses=1529 dcache_hits=4474 dcache_misses=199
+PASS: random-irq7 seed 316: PASS cycles=82292 retired=23154 fetch_errors=0 interrupts=1300 icache_hits=38233 icache_misses=1663 dcache_hits=4047 dcache_misses=187
+PASS: random-irq7 seed 317: PASS cycles=86217 retired=24786 fetch_errors=0 interrupts=1429 icache_hits=41482 icache_misses=1573 dcache_hits=4434 dcache_misses=195
+PASS: random-irq7 seed 318: PASS cycles=80890 retired=23221 fetch_errors=0 interrupts=1319 icache_hits=38673 icache_misses=1565 dcache_hits=4113 dcache_misses=197
+PASS: random-irq7 seed 319: PASS cycles=80589 retired=23132 fetch_errors=0 interrupts=1329 icache_hits=38502 icache_misses=1583 dcache_hits=4121 dcache_misses=193
+PASS: random-irq7 seed 320: PASS cycles=87700 retired=25231 fetch_errors=0 interrupts=1458 icache_hits=42327 icache_misses=1598 dcache_hits=4512 dcache_misses=204
+PASS: random-irq7 seed 321: PASS cycles=83636 retired=24109 fetch_errors=0 interrupts=1393 icache_hits=40384 icache_misses=1557 dcache_hits=4318 dcache_misses=185
+PASS: random-irq7 seed 322: PASS cycles=89260 retired=26100 fetch_errors=0 interrupts=1508 icache_hits=43723 icache_misses=1586 dcache_hits=4660 dcache_misses=177
+PASS: random-irq7 seed 323: PASS cycles=86157 retired=25004 fetch_errors=0 interrupts=1440 icache_hits=41865 icache_misses=1591 dcache_hits=4479 dcache_misses=205
+PASS: random-irq7 seed 324: PASS cycles=85108 retired=24725 fetch_errors=0 interrupts=1417 icache_hits=41351 icache_misses=1503 dcache_hits=4412 dcache_misses=211
+PASS: random-irq7 seed 325: PASS cycles=79613 retired=22932 fetch_errors=0 interrupts=1334 icache_hits=38316 icache_misses=1485 dcache_hits=4107 dcache_misses=182
+PASS: random-irq7 seed 326: PASS cycles=88113 retired=25336 fetch_errors=0 interrupts=1467 icache_hits=42541 icache_misses=1617 dcache_hits=4521 dcache_misses=193
+PASS: random-irq7 seed 327: PASS cycles=87268 retired=24999 fetch_errors=0 interrupts=1438 icache_hits=41907 icache_misses=1564 dcache_hits=4460 dcache_misses=186
+PASS: random-irq7 seed 328: PASS cycles=88746 retired=25562 fetch_errors=0 interrupts=1481 icache_hits=42825 icache_misses=1572 dcache_hits=4569 dcache_misses=173
+PASS: random-irq7 seed 329: PASS cycles=87150 retired=25073 fetch_errors=0 interrupts=1444 icache_hits=41813 icache_misses=1700 dcache_hits=4483 dcache_misses=199
+PASS: random-irq7 seed 330: PASS cycles=85416 retired=24601 fetch_errors=0 interrupts=1430 icache_hits=41279 icache_misses=1547 dcache_hits=4398 dcache_misses=184
+PASS: random-irq7 seed 331: PASS cycles=86051 retired=24706 fetch_errors=0 interrupts=1419 icache_hits=41223 icache_misses=1630 dcache_hits=4383 dcache_misses=199
+PASS: random-irq7 seed 332: PASS cycles=86230 retired=24929 fetch_errors=0 interrupts=1437 icache_hits=41791 icache_misses=1552 dcache_hits=4486 dcache_misses=198
+PASS: random-irq7 seed 333: PASS cycles=82226 retired=23580 fetch_errors=0 interrupts=1364 icache_hits=39395 icache_misses=1555 dcache_hits=4205 dcache_misses=195
+PASS: random-irq7 seed 334: PASS cycles=88814 retired=25843 fetch_errors=0 interrupts=1500 icache_hits=43426 icache_misses=1539 dcache_hits=4641 dcache_misses=198
+PASS: random-irq7 seed 335: PASS cycles=84905 retired=24592 fetch_errors=0 interrupts=1421 icache_hits=41374 icache_misses=1496 dcache_hits=4369 dcache_misses=189
+PASS: random-irq7 seed 336: PASS cycles=82484 retired=23852 fetch_errors=0 interrupts=1380 icache_hits=39919 icache_misses=1529 dcache_hits=4287 dcache_misses=191
+PASS: random-irq7 seed 337: PASS cycles=97640 retired=28138 fetch_errors=0 interrupts=1644 icache_hits=47448 icache_misses=1701 dcache_hits=5082 dcache_misses=198
+PASS: random-irq7 seed 338: PASS cycles=89695 retired=25494 fetch_errors=0 interrupts=1474 icache_hits=42678 icache_misses=1719 dcache_hits=4541 dcache_misses=175
+PASS: random-irq7 seed 339: PASS cycles=82079 retired=23463 fetch_errors=0 interrupts=1345 core_d_waits=1 icache_hits=39057 icache_misses=1552 dcache_hits=4177 dcache_misses=195
+PASS: random-irq7 seed 340: PASS cycles=91517 retired=26081 fetch_errors=0 interrupts=1506 icache_hits=43761 icache_misses=1646 dcache_hits=4666 dcache_misses=197
+PASS: random-irq7-stall13 seed 401: PASS cycles=104629 retired=27404 fetch_errors=0 interrupts=1631 icache_hits=46271 icache_misses=1654 dcache_hits=5039 dcache_misses=177
+PASS: random-irq7-stall13 seed 402: PASS cycles=99669 retired=26338 fetch_errors=0 interrupts=1546 icache_hits=44419 icache_misses=1529 dcache_hits=4771 dcache_misses=204
+PASS: random-irq7-stall13 seed 403: PASS cycles=98599 retired=26014 fetch_errors=0 interrupts=1533 icache_hits=44111 icache_misses=1489 dcache_hits=4706 dcache_misses=186
+PASS: random-irq7-stall13 seed 404: PASS cycles=108697 retired=28441 fetch_errors=0 interrupts=1689 icache_hits=48106 icache_misses=1734 dcache_hits=5202 dcache_misses=176
+PASS: random-irq7-stall13 seed 405: PASS cycles=99811 retired=26124 fetch_errors=0 interrupts=1553 icache_hits=44179 icache_misses=1559 dcache_hits=4774 dcache_misses=170
+PASS: random-irq7-stall13 seed 406: PASS cycles=99261 retired=26074 fetch_errors=0 interrupts=1524 core_d_waits=1 icache_hits=43943 icache_misses=1544 dcache_hits=4699 dcache_misses=191
+PASS: random-irq7-stall13 seed 407: PASS cycles=101795 retired=26423 fetch_errors=0 interrupts=1568 icache_hits=44530 icache_misses=1650 dcache_hits=4818 dcache_misses=187
+PASS: random-irq7-stall13 seed 408: PASS cycles=104914 retired=28001 fetch_errors=0 interrupts=1626 icache_hits=47390 icache_misses=1592 dcache_hits=5041 dcache_misses=210
+PASS: random-irq7-stall13 seed 409: PASS cycles=106753 retired=28004 fetch_errors=0 interrupts=1654 icache_hits=47395 icache_misses=1615 dcache_hits=5109 dcache_misses=207
+PASS: random-irq7-stall13 seed 410: PASS cycles=102256 retired=26682 fetch_errors=0 interrupts=1551 icache_hits=44664 icache_misses=1678 dcache_hits=4788 dcache_misses=190
+PASS: random-irq7-stall13 seed 411: PASS cycles=92608 retired=24250 fetch_errors=0 interrupts=1401 icache_hits=40841 icache_misses=1451 dcache_hits=4336 dcache_misses=202
+PASS: random-irq7-stall13 seed 412: PASS cycles=110082 retired=28700 fetch_errors=0 interrupts=1696 icache_hits=48611 icache_misses=1711 dcache_hits=5237 dcache_misses=198
+PASS: random-irq7-stall13 seed 413: PASS cycles=98656 retired=25800 fetch_errors=0 interrupts=1508 icache_hits=43615 icache_misses=1526 dcache_hits=4691 dcache_misses=182
+PASS: random-irq7-stall13 seed 414: PASS cycles=106578 retired=27919 fetch_errors=0 interrupts=1650 icache_hits=47279 icache_misses=1660 dcache_hits=5104 dcache_misses=194
+PASS: random-irq7-stall13 seed 415: PASS cycles=109721 retired=28947 fetch_errors=0 interrupts=1709 icache_hits=48957 icache_misses=1711 dcache_hits=5292 dcache_misses=189
+PASS: random-irq7-stall13 seed 416: PASS cycles=94878 retired=24932 fetch_errors=0 interrupts=1432 icache_hits=41949 icache_misses=1465 dcache_hits=4415 dcache_misses=182
+PASS: random-irq7-stall13 seed 417: PASS cycles=97467 retired=25433 fetch_errors=0 interrupts=1501 icache_hits=43117 icache_misses=1523 dcache_hits=4602 dcache_misses=184
+PASS: random-irq7-stall13 seed 418: PASS cycles=89573 retired=23360 fetch_errors=0 interrupts=1369 icache_hits=39270 icache_misses=1457 dcache_hits=4216 dcache_misses=189
+PASS: random-irq7-stall13 seed 419: PASS cycles=97915 retired=25644 fetch_errors=0 interrupts=1522 icache_hits=43386 icache_misses=1509 dcache_hits=4653 dcache_misses=169
+PASS: random-irq7-stall13 seed 420: PASS cycles=107112 retired=27769 fetch_errors=0 interrupts=1631 icache_hits=46770 icache_misses=1729 dcache_hits=5062 dcache_misses=210
+PASS: random-irq7-stall13 seed 421: PASS cycles=106595 retired=28557 fetch_errors=0 interrupts=1674 icache_hits=48454 icache_misses=1514 dcache_hits=5188 dcache_misses=194
+PASS: random-irq7-stall13 seed 422: PASS cycles=106379 retired=28036 fetch_errors=0 interrupts=1674 icache_hits=47830 icache_misses=1579 dcache_hits=5152 dcache_misses=198
+PASS: random-irq7-stall13 seed 423: PASS cycles=93205 retired=24888 fetch_errors=0 interrupts=1439 icache_hits=41908 icache_misses=1411 dcache_hits=4458 dcache_misses=188
+PASS: random-irq7-stall13 seed 424: PASS cycles=104743 retired=27728 fetch_errors=0 interrupts=1631 icache_hits=47109 icache_misses=1541 dcache_hits=5024 dcache_misses=190
+PASS: random-irq7-stall13 seed 425: PASS cycles=102166 retired=26300 fetch_errors=0 interrupts=1561 icache_hits=44453 icache_misses=1668 dcache_hits=4793 dcache_misses=195
+PASS: random-irq7-stall13 seed 426: PASS cycles=93493 retired=23919 fetch_errors=0 interrupts=1380 icache_hits=39865 icache_misses=1645 dcache_hits=4289 dcache_misses=187
+PASS: random-irq7-stall13 seed 427: PASS cycles=98814 retired=25975 fetch_errors=0 interrupts=1527 icache_hits=43942 icache_misses=1504 dcache_hits=4737 dcache_misses=196
+PASS: random-irq7-stall13 seed 428: PASS cycles=95911 retired=24828 fetch_errors=0 interrupts=1473 icache_hits=42127 icache_misses=1518 dcache_hits=4529 dcache_misses=194
+PASS: random-irq7-stall13 seed 429: PASS cycles=90248 retired=23363 fetch_errors=0 interrupts=1334 icache_hits=39048 icache_misses=1446 dcache_hits=4131 dcache_misses=188
+PASS: random-irq7-stall13 seed 430: PASS cycles=111772 retired=29312 fetch_errors=0 interrupts=1734 icache_hits=49721 icache_misses=1650 dcache_hits=5347 dcache_misses=203
+PASS: random-irq7-stall13 seed 431: PASS cycles=102725 retired=26734 fetch_errors=0 interrupts=1584 icache_hits=45234 icache_misses=1616 dcache_hits=4864 dcache_misses=187
+PASS: random-irq7-stall13 seed 432: PASS cycles=90263 retired=23816 fetch_errors=0 interrupts=1380 icache_hits=39964 icache_misses=1449 dcache_hits=4279 dcache_misses=187
+PASS: random-irq7-stall13 seed 433: PASS cycles=103194 retired=27310 fetch_errors=0 interrupts=1617 icache_hits=46253 icache_misses=1535 dcache_hits=5012 dcache_misses=204
+PASS: random-irq7-stall13 seed 434: PASS cycles=90898 retired=23497 fetch_errors=0 interrupts=1369 icache_hits=39424 icache_misses=1490 dcache_hits=4245 dcache_misses=197
+PASS: random-irq7-stall13 seed 435: PASS cycles=96756 retired=25562 fetch_errors=0 interrupts=1509 icache_hits=43224 icache_misses=1483 dcache_hits=4676 dcache_misses=189
+PASS: random-irq7-stall13 seed 436: PASS cycles=91686 retired=23600 fetch_errors=0 interrupts=1361 icache_hits=39403 icache_misses=1573 dcache_hits=4210 dcache_misses=175
+PASS: random-irq7-stall13 seed 437: PASS cycles=101123 retired=26181 fetch_errors=0 interrupts=1527 icache_hits=43876 icache_misses=1672 dcache_hits=4723 dcache_misses=188
+PASS: random-irq7-stall13 seed 438: PASS cycles=105968 retired=28565 fetch_errors=0 interrupts=1684 icache_hits=48507 icache_misses=1520 dcache_hits=5206 dcache_misses=202
+PASS: random-irq7-stall13 seed 439: PASS cycles=98791 retired=25871 fetch_errors=0 interrupts=1523 icache_hits=43849 icache_misses=1506 dcache_hits=4706 dcache_misses=178
+PASS: random-irq7-stall13 seed 440: PASS cycles=105637 retired=27729 fetch_errors=0 interrupts=1644 icache_hits=46980 icache_misses=1644 dcache_hits=5052 dcache_misses=209
+PASS: 879/879 runs end the same in both shells (7 modes x the kernels and every suite, 4 random modes x 40 programs), cycle for cycle and RVFI record for record

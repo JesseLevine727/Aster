@@ -2085,7 +2085,7 @@ parallel-workloads:
 
 test: smoke phase1 hello bench cache uart fpga-sim linux-sim counters retirement npu-pe npu-array npu-engine npu-regs npu-driver npu-runtime npu-stop npu-bench-validate arbiter shared-fabric multicore-runtime parallel
 
-check: tools smoke phase1 hello bench cache uart fpga-sim linux-sim linux-dual-sim linux-coherent-sim counters retirement pcpi-probe dot8-unit npu-pe npu-array npu-engine npu-regs device-arbiter dma-counters l2-unit npu-driver npu-runtime npu-stop npu-bench-validate xe-bench-validate phase11-infer-validate workloads atomic-fabric atomic-runtime atomic-faults coherent-cache warm-stop coherent-counters coherent-soc timer-unit timer-firmware irq-unit timer-interrupt sram-unit sram-lint freeze-interfaces coherent-bench riscv-reference riscv-reference-negative coherent-litmus arbiter shared-fabric multicore-runtime multicore-adversarial parallel phase17-baseline-audit core-riscv-tests core-riscv-tests-stall core-arch-tests core-random-lockstep core-lockstep-selftest core-ports-tests core-kernels core-aster-fetch core-aster-tests core-aster-kernels core-aster-act4 core-aster-l1-unit core-aster-l1-tests core-aster-firmware core-performance-gate aster-board-sim npu-v1-tests npu-tests npu-options-tests npu-im2col-cost npu-soc-tests fabric-tests fabric-checker-tests litmus-tests soc-tests
+check: tools smoke phase1 hello bench cache uart fpga-sim linux-sim linux-dual-sim linux-coherent-sim counters retirement pcpi-probe dot8-unit npu-pe npu-array npu-engine npu-regs device-arbiter dma-counters l2-unit npu-driver npu-runtime npu-stop npu-bench-validate xe-bench-validate phase11-infer-validate workloads atomic-fabric atomic-runtime atomic-faults coherent-cache warm-stop coherent-counters coherent-soc timer-unit timer-firmware irq-unit timer-interrupt sram-unit sram-lint freeze-interfaces coherent-bench riscv-reference riscv-reference-negative coherent-litmus arbiter shared-fabric multicore-runtime multicore-adversarial parallel phase17-baseline-audit core-riscv-tests core-riscv-tests-stall core-arch-tests core-random-lockstep core-lockstep-selftest core-ports-tests core-kernels core-aster-fetch core-aster-tests core-aster-kernels core-aster-act4 core-aster-l1-unit core-aster-l1-tests core-aster-firmware core-performance-gate aster-board-sim npu-v1-tests npu-tests npu-options-tests npu-im2col-cost npu-soc-tests fabric-tests fabric-checker-tests litmus-tests dma-tests soc-tests
 
 # Phase 18 CPU shell: one CPU with a synchronous SRAM at 0x8000_0000 and an
 # RVFI trace for lockstep against Spike (docs/phase18.md).
@@ -3038,9 +3038,10 @@ litmus-tests: $(LITMUS_DIR)/litmus_v2.elf
 # cycle for cycle and record for record (scripts/aster_board.py --design soc),
 # and scripts/soc_tests.py's two-hart programs on the device builds: the
 # litmus shapes (classified by scripts/litmus.py), hart 1's reset stress, the
-# runtime's dispatch and join, and the devices.
+# runtime's dispatch and join, the devices, and the DMA through v1's driver
+# (20.3); first, soc-gates and the devices' lockstep.
 ASTER_SOC_DIR := $(BUILD_DIR)/aster_soc
-ASTER_SOC_RTL := $(ASTER_CORE_RTL) $(ASTER_L1_RTL) $(NPU_V2_RTL) rtl/fabric/aster_fabric_bank.sv rtl/fabric/aster_fabric.sv \
+ASTER_SOC_RTL := $(ASTER_CORE_RTL) $(ASTER_L1_RTL) $(NPU_V2_RTL) rtl/fabric/aster_fabric_bank.sv rtl/fabric/aster_fabric.sv rtl/dma/aster_dma2.sv \
 	rtl/soc/aster_soc_devices.sv rtl/soc/aster_soc.sv
 ASTER_SOC_TB := verification/aster_soc/sim_soc.sv verification/aster_soc/tb_soc.cpp verification/fabric/mem_checker.h \
 	verification/fabric/fabric_ref.h verification/npu/npu_model.h
@@ -3057,6 +3058,32 @@ $(ASTER_SOC_DIR)/soc_%: $(ASTER_SOC_RTL) $(ASTER_SOC_TB) Makefile
 	@touch $@
 .PHONY: soc-sim soc-tests
 soc-sim: $(ASTER_SOC_SIMS)
+# 20.3: the DMA (rtl/dma/aster_dma2.sv; docs/soc.md §6, §10.5) alone in its shell (verification/dma): its
+# ports answered as the fabric answers them, at WAIT 0, 1 and 3; four seeds of every mode (every length
+# and alignment pair, the exact cycle model, back-pressure, errors and rejections, abort, reset, mixed);
+# each job against an oracle of the whole memory, the counters against the events and per-job sums.
+# dma-mutants: planted bugs, each caught (not in make check).
+DMA_DIR := $(BUILD_DIR)/dma
+DMA_WAITS := 0 1 3
+DMA_SHELLS := $(foreach w,$(DMA_WAITS),$(DMA_DIR)/dma_shell_w$(w))
+$(DMA_DIR)/dma_shell_w%: rtl/dma/aster_dma2.sv verification/dma/tb_dma.cpp verification/dma/dma_model.h Makefile
+	mkdir -p $(DMA_DIR)
+	$(VERILATOR) --cc --exe --build -O3 --assert --Wall -Wno-UNUSEDSIGNAL --public-flat-rw --top-module aster_dma2 -GWAIT=$* \
+		-CFLAGS "-O2 -DWAIT_CYCLES=$* -I$(ROOT)/verification/dma" --Mdir $(DMA_DIR)/obj_w$* -o $(abspath $@) \
+		$(ROOT)/rtl/dma/aster_dma2.sv $(ROOT)/verification/dma/tb_dma.cpp
+	@touch $@
+.PHONY: dma-tests dma-mutants
+dma-tests: $(DMA_SHELLS)
+	@set -o pipefail; rm -f $(DMA_DIR)/dma-tests.log; for w in $(DMA_WAITS); do for seed in 1 2 3 4; do \
+		for mode in sweep ontime stall errors abort reset stop mix; do \
+			$(DMA_DIR)/dma_shell_w$$w +seed=$$seed +mode=$$mode +jobs=300 >> $(DMA_DIR)/dma-tests.log 2>&1 \
+				|| { tail -3 $(DMA_DIR)/dma-tests.log; exit 1; }; done; done; done; \
+		echo "PASS: the DMA in its shell: $$(grep -c '^PASS' $(DMA_DIR)/dma-tests.log) runs (WAIT $(DMA_WAITS), 4 seeds, 8 modes), every job against the oracle"
+dma-mutants:
+	@mkdir -p $(DMA_DIR)
+	@$(PYTHON) scripts/dma_mutants.py --build-dir $(DMA_DIR)/mutants > $(DMA_DIR)/mutants.log || { cat $(DMA_DIR)/mutants.log; exit 1; }; \
+		tail -1 $(DMA_DIR)/mutants.log
+
 # 20.2: the CPU shell (the Aster core with its caches) against a golden one built from an earlier commit
 # (GOLDEN_REV, exported with git archive), on every board program: the same end, cycles, instructions,
 # windows, console and every RVFI record (scripts/compare_shells.py).

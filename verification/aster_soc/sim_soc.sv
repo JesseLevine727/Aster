@@ -63,6 +63,13 @@ module sim_soc #(
     output logic [1:0]      chk_f_hold,
     output logic        chk_w_accept,
     output logic [31:0] chk_w_addr,
+    // port R (the DMA's reads, or the ARM side's while held): each read's acceptance and its answer
+    output logic        chk_r_accept, chk_r_rsp_valid,
+    // the DMA's copy in progress and its ranges, the ARM side's access in progress
+    output logic        chk_dma_running, chk_arm_v,
+    output logic [31:0] chk_dma_src, chk_dma_dst, chk_dma_len,
+    output logic [31:0] chk_r_addr,
+    output logic [63:0] chk_r_rsp_rdata,
     output logic [7:0]  chk_w_be,
     output logic [63:0] chk_w_wdata,
     output logic [1:0][2:0]       chk_snoop_valid,
@@ -109,10 +116,19 @@ module sim_soc #(
            {soc.fabric.elig_a, soc.fabric.pick_a, soc.fabric.elig_b, soc.fabric.pick_b, soc.fabric.take_b};
     assign {chk_f_amo_wr_now, chk_f_amo_busy, chk_f_blk_v} = {soc.fabric.amo_wr_now, soc.fabric.amo_busy, soc.fabric.blk_v};
     assign {chk_f_blk_index, chk_f_hold} = {soc.fabric.blk_index, soc.fabric.hold};
-    assign chk_w_accept = soc.arm_v && soc.arm_write && soc.w_ready;
-    assign chk_w_addr   = soc.arm_addr;
-    assign chk_w_be     = soc.arm_addr[2] ? {soc.arm_be, 4'h0} : {4'h0, soc.arm_be};
-    assign chk_w_wdata  = {soc.arm_wdata, soc.arm_wdata};
+    // (ports R and W as the fabric sees them: the DMA's registers, which carry the ARM side's accesses
+    // while the harts are held; 20.3)
+    assign chk_w_accept = soc.dma_w_valid && soc.w_ready;
+    assign chk_w_addr   = {soc.dma_w_addr, 3'b000};
+    assign chk_w_be     = soc.dma_w_be;
+    assign chk_w_wdata  = soc.dma_w_wdata;
+    assign chk_r_accept = soc.dma_r_valid && soc.r_ready;
+    assign chk_r_addr   = {soc.dma_r_addr, 3'b000};
+    assign chk_r_rsp_valid = soc.r_rsp_valid;
+    assign chk_r_rsp_rdata = soc.r_rsp_rdata;
+    assign {chk_dma_running, chk_dma_src, chk_dma_dst, chk_dma_len} =
+           {soc.dma.running, soc.dma.source, soc.dma.destination, soc.dma.length};
+    assign chk_arm_v = soc.arm_v;
     assign {chk_snoop_valid, chk_snoop_line} = {soc.snoop_valid, soc.snoop_line};
     assign chk_npu_start   = soc.npu.start;
     assign chk_npu_finish  = soc.npu.finish;

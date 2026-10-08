@@ -1,0 +1,75 @@
+PASS: v2 NPU option s2 (-GA_STRIPS=2) in the NPU shell, plain: 1 seed x 1,000 jobs and the edge jobs as the reference, every coverage bin, every job as the cycle model
+PASS: v2 NPU option s2 (-GA_STRIPS=2) in the NPU shell, latency1: 1 seed x 1,000 jobs and the edge jobs as the reference, every coverage bin, every job as the cycle model
+PASS: v2 NPU option s2 (-GA_STRIPS=2) in the NPU shell, stall: 1 seed x 1,000 jobs and the edge jobs as the reference, every coverage bin
+PASS: v2 NPU option s2 (-GA_STRIPS=2) in the NPU shell, latency1-stall: 1 seed x 1,000 jobs and the edge jobs as the reference, every coverage bin
+PASS: v2 NPU option s2 (-GA_STRIPS=2) in the NPU shell, long-stall: 1 seed x 1,000 jobs and the edge jobs as the reference, every coverage bin
+PASS: v2 NPU option s2 (-GA_STRIPS=2) in the NPU shell, inflight3: 1 seed x 1,000 jobs and the edge jobs as the reference, every coverage bin
+PASS: v2 NPU option s2, two-cycle memory: profile=v2 case=64x64x64 job_cycles=17536 array_steps=16384 macs=262144 utilization=93.4307%
+PASS: v2 NPU option s2, two-cycle memory: profile=v2 case=96x96x96 job_cycles=57768 array_steps=55296 macs=884736 utilization=95.7208%
+PASS: v2 NPU option s2, two-cycle memory: profile=v2 case=128x64x128 job_cycles=67792 array_steps=65536 macs=1048576 utilization=96.6722%
+PASS: v2 NPU option s2, two-cycle memory: profile=v2 case=32x1x784 job_cycles=6757 array_steps=1568 macs=25088 utilization=23.2056%
+PASS: v2 NPU option s2, two-cycle memory: profile=v2 case=784x1x25 job_cycles=7099 array_steps=1372 macs=19600 utilization=17.2560%
+PASS: v2 NPU option s2, two-cycle memory: profile=v2 case=10x1x32 job_cycles=147 array_steps=24 macs=320 utilization=13.6054%
+PASS: v2 NPU option s2, convolution direct and im2col: profile=v2 conv=32x32x1 kernel=5x5 n=1 m=784 k=25 direct_cycles=9451 direct_utilization=12.9616% im2col_cycles=7099 im2col_utilization=17.2560% im2col_bytes=19600
+PASS: v2 NPU option s2, convolution direct and im2col: profile=v2 conv=16x16x3 kernel=3x3 n=16 m=196 k=27 direct_cycles=5533 direct_utilization=95.6443% im2col_cycles=5527 im2col_utilization=95.7481% im2col_bytes=5292
+PASS: v2 NPU option s2, convolution direct and im2col: profile=v2 conv=7x7x16 kernel=3x3 n=32 m=25 k=144 direct_cycles=9403 direct_utilization=76.5713% im2col_cycles=9403 im2col_utilization=76.5713% im2col_bytes=3600
+PASS: v2 NPU option p8 (-GPORT_BYTES=8) in the NPU shell, plain: 1 seed x 1,000 jobs and the edge jobs as the reference, every coverage bin, every job as the cycle model
+PASS: v2 NPU option p8 (-GPORT_BYTES=8) in the NPU shell, latency1: 1 seed x 1,000 jobs and the edge jobs as the reference, every coverage bin, every job as the cycle model
+PASS: v2 NPU option p8 (-GPORT_BYTES=8) in the NPU shell, stall: 1 seed x 1,000 jobs and the edge jobs as the reference, every coverage bin
+PASS: v2 NPU option p8 (-GPORT_BYTES=8) in the NPU shell, latency1-stall: 1 seed x 1,000 jobs and the edge jobs as the reference, every coverage bin
+PASS: v2 NPU option p8 (-GPORT_BYTES=8) in the NPU shell, long-stall: 1 seed x 1,000 jobs and the edge jobs as the reference, every coverage bin
+PASS: v2 NPU option p8 (-GPORT_BYTES=8) in the NPU shell, inflight3: 1 seed x 1,000 jobs and the edge jobs as the reference, every coverage bin
+PASS: v2 NPU option p8, two-cycle memory: profile=v2 case=64x64x64 job_cycles=17847 array_steps=16384 macs=262144 utilization=91.8025%
+PASS: v2 NPU option p8, two-cycle memory: profile=v2 case=96x96x96 job_cycles=58247 array_steps=55296 macs=884736 utilization=94.9336%
+PASS: v2 NPU option p8, two-cycle memory: profile=v2 case=128x64x128 job_cycles=69463 array_steps=65536 macs=1048576 utilization=94.3466%
+PASS: v2 NPU option p8, two-cycle memory: profile=v2 case=32x1x784 job_cycles=4937 array_steps=1568 macs=25088 utilization=31.7602%
+PASS: v2 NPU option p8, two-cycle memory: profile=v2 case=784x1x25 job_cycles=7279 array_steps=1372 macs=19600 utilization=16.8292%
+PASS: v2 NPU option p8, two-cycle memory: profile=v2 case=10x1x32 job_cycles=131 array_steps=24 macs=320 utilization=15.2672%
+PASS: v2 NPU option p8, convolution direct and im2col: profile=v2 conv=32x32x1 kernel=5x5 n=1 m=784 k=25 direct_cycles=9743 direct_utilization=12.5731% im2col_cycles=7279 im2col_utilization=16.8292% im2col_bytes=19600
+PASS: v2 NPU option p8, convolution direct and im2col: profile=v2 conv=16x16x3 kernel=3x3 n=16 m=196 k=27 direct_cycles=7819 direct_utilization=67.6813% im2col_cycles=7476 im2col_utilization=70.7865% im2col_bytes=5292
+PASS: v2 NPU option p8, convolution direct and im2col: profile=v2 conv=7x7x16 kernel=3x3 n=32 m=25 k=144 direct_cycles=9283 direct_utilization=77.5611% im2col_cycles=9283 im2col_utilization=77.5611% im2col_bytes=3600
+PASS: v2 NPU option s2p8 (-GA_STRIPS=2 -GPORT_BYTES=8) in the NPU shell, plain: 1 seed x 1,000 jobs and the edge jobs as the reference, every coverage bin, every job as the cycle model
+PASS: v2 NPU option s2p8 (-GA_STRIPS=2 -GPORT_BYTES=8) in the NPU shell, latency1: 1 seed x 1,000 jobs and the edge jobs as the reference, every coverage bin, every job as the cycle model
+PASS: v2 NPU option s2p8 (-GA_STRIPS=2 -GPORT_BYTES=8) in the NPU shell, stall: 1 seed x 1,000 jobs and the edge jobs as the reference, every coverage bin
+PASS: v2 NPU option s2p8 (-GA_STRIPS=2 -GPORT_BYTES=8) in the NPU shell, latency1-stall: 1 seed x 1,000 jobs and the edge jobs as the reference, every coverage bin
+PASS: v2 NPU option s2p8 (-GA_STRIPS=2 -GPORT_BYTES=8) in the NPU shell, long-stall: 1 seed x 1,000 jobs and the edge jobs as the reference, every coverage bin
+PASS: v2 NPU option s2p8 (-GA_STRIPS=2 -GPORT_BYTES=8) in the NPU shell, inflight3: 1 seed x 1,000 jobs and the edge jobs as the reference, every coverage bin
+PASS: v2 NPU option s2p8, two-cycle memory: profile=v2 case=64x64x64 job_cycles=16992 array_steps=16384 macs=262144 utilization=96.4218%
+PASS: v2 NPU option s2p8, two-cycle memory: profile=v2 case=96x96x96 job_cycles=56568 array_steps=55296 macs=884736 utilization=97.7514%
+PASS: v2 NPU option s2p8, two-cycle memory: profile=v2 case=128x64x128 job_cycles=66704 array_steps=65536 macs=1048576 utilization=98.2490%
+PASS: v2 NPU option s2p8, two-cycle memory: profile=v2 case=32x1x784 job_cycles=3523 array_steps=1568 macs=25088 utilization=44.5075%
+PASS: v2 NPU option s2p8, two-cycle memory: profile=v2 case=784x1x25 job_cycles=4744 array_steps=1372 macs=19600 utilization=25.8221%
+PASS: v2 NPU option s2p8, two-cycle memory: profile=v2 case=10x1x32 job_cycles=99 array_steps=24 macs=320 utilization=20.2020%
+PASS: v2 NPU option s2p8, convolution direct and im2col: profile=v2 conv=32x32x1 kernel=5x5 n=1 m=784 k=25 direct_cycles=7208 direct_utilization=16.9950% im2col_cycles=4744 im2col_utilization=25.8221% im2col_bytes=19600
+PASS: v2 NPU option s2p8, convolution direct and im2col: profile=v2 conv=16x16x3 kernel=3x3 n=16 m=196 k=27 direct_cycles=5467 direct_utilization=96.7990% im2col_cycles=5460 im2col_utilization=96.9231% im2col_bytes=5292
+PASS: v2 NPU option s2p8, convolution direct and im2col: profile=v2 conv=7x7x16 kernel=3x3 n=32 m=25 k=144 direct_cycles=8755 direct_utilization=82.2387% im2col_cycles=8755 im2col_utilization=82.2387% im2col_bytes=3600
+PASS: v2 NPU option d8 (-GPORT_BYTES=8 -GDIM=8) in the NPU shell, plain: 1 seed x 1,000 jobs and the edge jobs as the reference, every coverage bin, every job as the cycle model
+PASS: v2 NPU option d8 (-GPORT_BYTES=8 -GDIM=8) in the NPU shell, latency1: 1 seed x 1,000 jobs and the edge jobs as the reference, every coverage bin, every job as the cycle model
+PASS: v2 NPU option d8 (-GPORT_BYTES=8 -GDIM=8) in the NPU shell, stall: 1 seed x 1,000 jobs and the edge jobs as the reference, every coverage bin
+PASS: v2 NPU option d8 (-GPORT_BYTES=8 -GDIM=8) in the NPU shell, latency1-stall: 1 seed x 1,000 jobs and the edge jobs as the reference, every coverage bin
+PASS: v2 NPU option d8 (-GPORT_BYTES=8 -GDIM=8) in the NPU shell, long-stall: 1 seed x 1,000 jobs and the edge jobs as the reference, every coverage bin
+PASS: v2 NPU option d8 (-GPORT_BYTES=8 -GDIM=8) in the NPU shell, inflight3: 1 seed x 1,000 jobs and the edge jobs as the reference, every coverage bin
+PASS: v2 NPU option d8, two-cycle memory: profile=v2 case=64x64x64 job_cycles=5807 array_steps=4096 macs=262144 utilization=70.5356%
+PASS: v2 NPU option d8, two-cycle memory: profile=v2 case=96x96x96 job_cycles=17039 array_steps=13824 macs=884736 utilization=81.1315%
+PASS: v2 NPU option d8, two-cycle memory: profile=v2 case=128x64x128 job_cycles=20663 array_steps=16384 macs=1048576 utilization=79.2915%
+PASS: v2 NPU option d8, two-cycle memory: profile=v2 case=32x1x784 job_cycles=3721 array_steps=392 macs=25088 utilization=10.5348%
+PASS: v2 NPU option d8, two-cycle memory: profile=v2 case=784x1x25 job_cycles=5319 array_steps=392 macs=19600 utilization=5.7577%
+PASS: v2 NPU option d8, two-cycle memory: profile=v2 case=10x1x32 job_cycles=105 array_steps=8 macs=320 utilization=4.7619%
+PASS: v2 NPU option d8, convolution direct and im2col: profile=v2 conv=32x32x1 kernel=5x5 n=1 m=784 k=25 direct_cycles=7783 direct_utilization=3.9349% im2col_cycles=5319 im2col_utilization=5.7577% im2col_bytes=19600
+PASS: v2 NPU option d8, convolution direct and im2col: profile=v2 conv=16x16x3 kernel=3x3 n=16 m=196 k=27 direct_cycles=5314 direct_utilization=24.8965% im2col_cycles=4971 im2col_utilization=26.6144% im2col_bytes=5292
+PASS: v2 NPU option d8, convolution direct and im2col: profile=v2 conv=7x7x16 kernel=3x3 n=32 m=25 k=144 direct_cycles=3593 direct_utilization=50.0974% im2col_cycles=3593 im2col_utilization=50.0974% im2col_bytes=3600
+PASS: v2 NPU option s2p8d8 (-GA_STRIPS=2 -GPORT_BYTES=8 -GDIM=8) in the NPU shell, plain: 4 seeds x 1,000 jobs and the edge jobs as the reference, every coverage bin, every job as the cycle model
+PASS: v2 NPU option s2p8d8 (-GA_STRIPS=2 -GPORT_BYTES=8 -GDIM=8) in the NPU shell, latency1: 4 seeds x 1,000 jobs and the edge jobs as the reference, every coverage bin, every job as the cycle model
+PASS: v2 NPU option s2p8d8 (-GA_STRIPS=2 -GPORT_BYTES=8 -GDIM=8) in the NPU shell, stall: 4 seeds x 1,000 jobs and the edge jobs as the reference, every coverage bin
+PASS: v2 NPU option s2p8d8 (-GA_STRIPS=2 -GPORT_BYTES=8 -GDIM=8) in the NPU shell, latency1-stall: 4 seeds x 1,000 jobs and the edge jobs as the reference, every coverage bin
+PASS: v2 NPU option s2p8d8 (-GA_STRIPS=2 -GPORT_BYTES=8 -GDIM=8) in the NPU shell, long-stall: 4 seeds x 1,000 jobs and the edge jobs as the reference, every coverage bin
+PASS: v2 NPU option s2p8d8 (-GA_STRIPS=2 -GPORT_BYTES=8 -GDIM=8) in the NPU shell, inflight3: 4 seeds x 1,000 jobs and the edge jobs as the reference, every coverage bin
+PASS: v2 NPU option s2p8d8, two-cycle memory (gate 50%): profile=v2 case=64x64x64 job_cycles=5225 array_steps=4096 macs=262144 utilization=78.3923%
+PASS: v2 NPU option s2p8d8, two-cycle memory (gate 50%): profile=v2 case=96x96x96 job_cycles=15180 array_steps=13824 macs=884736 utilization=91.0672%
+PASS: v2 NPU option s2p8d8, two-cycle memory (gate 50%): profile=v2 case=128x64x128 job_cycles=17648 array_steps=16384 macs=1048576 utilization=92.8377%
+PASS: v2 NPU option s2p8d8, two-cycle memory: profile=v2 case=32x1x784 job_cycles=3409 array_steps=392 macs=25088 utilization=11.4990%
+PASS: v2 NPU option s2p8d8, two-cycle memory: profile=v2 case=784x1x25 job_cycles=4349 array_steps=392 macs=19600 utilization=7.0418%
+PASS: v2 NPU option s2p8d8, two-cycle memory: profile=v2 case=10x1x32 job_cycles=87 array_steps=8 macs=320 utilization=5.7471%
+PASS: v2 NPU option s2p8d8, convolution direct and im2col: profile=v2 conv=32x32x1 kernel=5x5 n=1 m=784 k=25 direct_cycles=6813 direct_utilization=4.4951% im2col_cycles=4349 im2col_utilization=7.0418% im2col_bytes=19600
+PASS: v2 NPU option s2p8d8, convolution direct and im2col: profile=v2 conv=16x16x3 kernel=3x3 n=16 m=196 k=27 direct_cycles=4494 direct_utilization=29.4393% im2col_cycles=4158 im2col_utilization=31.8182% im2col_bytes=5292
+PASS: v2 NPU option s2p8d8, convolution direct and im2col: profile=v2 conv=7x7x16 kernel=3x3 n=32 m=25 k=144 direct_cycles=3068 direct_utilization=58.6701% im2col_cycles=3068 im2col_utilization=58.6701% im2col_bytes=3600

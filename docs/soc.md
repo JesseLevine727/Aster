@@ -928,3 +928,64 @@ A round trip with an empty job takes 69–95 cycles, 72 on average.
   re-checked when 20.3's DMA adds its paths. The cycle-costing fallback
   (§10.6: the banks' inputs registered, answers at 3 + WAIT) stays measured
   and unadopted: about +0.12 ns, at +0.73% on the CPU kernels.
+
+### Clarifications in 20.3 (the DMA)
+
+Found necessary while building and verifying the DMA (phase20.md,
+Milestone 20.3):
+- **§6 and §4.1, the ports R and W:** their registers are the DMA's. While
+  the harts are held, they carry the ARM side's main-memory accesses (loaded
+  as each access starts). While the harts run, they carry the engine's.
+  Nothing is multiplexed after the registers, so the fabric still sees
+  requests that leave from flip-flops. A start or a stop resets the fabric
+  and drops the ports' requests with it, so no request of the engine's
+  outlives its run into the ARM side's.
+- **§6, the engine's reset:** the run's, a cycle after hart 0's, as the
+  NPU's. The DMA is present in both builds. In the regression build, which
+  has the shell's page in place of the devices, its counters never count
+  (that build has no counter window) and its interrupt goes nowhere (no
+  interrupt controller).
+- **§6, the answers:** the engine relies on the fabric answering each read
+  exactly 2 + WAIT cycles after its acceptance (§4.3), and asserts it. A read
+  can then go out in the cycle an answer comes back, so two in flight
+  sustain one read a cycle at WAIT 0. BYTES_DONE counts the writes answered,
+  which in order are the destination's completed prefix.
+- **§6, the descriptor's checks** are registered from the registers every
+  cycle. A START is processed at least two cycles after a configuration
+  write, because each data cache makes one I/O access at a time, the next
+  after the answer; this is asserted.
+- **§8, the DMA's counters (ABI 5):** v1's order and meanings, read for two
+  ports:
+  - the offered-request wait cycles count each port's (0–2 a cycle);
+  - completed reads and writes are answers, backing reads and writes are
+    acceptances;
+  - payload bytes are each accepted write's byte enables (up to 8 a cycle);
+  - invalidated lines are both data caches' snoop hits on W's snoop port.
+
+  They count as the fabric counters do, whose events reach the devices
+  through two registers. An event of cycle t counts if the counters add in
+  cycle t + 2. They add while the window is open, but not in START's,
+  FREEZE's or RESUME's cycle. That rule is v1's, its DMA counters' too
+  (`aster_dma_perf.sv`), so a RESUME while already counting drops that
+  cycle's events from every counter. The devices export the rule as one
+  signal (`window_adds`), which the DMA counts on; START clears them.
+
+  So over any window:
+  - the DMA's reads and writes accepted equal the fabric counters' R and W;
+  - its stalls equal their waits on R and W;
+  - its invalidated lines equal their snoop hits on W's port.
+
+  The SoC's DMA program checks all three exactly, under contention and with
+  RESUMEs during a job.
+- **§4.1, the NPU's request buffer (20.3's timing):** it is emptied with the
+  fabric at a start or a stop and takes nothing while the harts are held. So
+  its request to the fabric is a register's (the buffer not empty), with no
+  gating by the run. While the board's reset is high, the fabric sees the
+  same requests of N in every cycle. In the board reset's first cycle the
+  fabric may take the buffer's head, as it may take any port's registered
+  request.
+- **The data caches' answer (20.3's timing):** the head's answer to the core
+  is kept in a register, formed with the stage-1 ready's from the next
+  state. It is asserted equal to its definition in every cycle. The core's
+  cycles are unchanged: `make core-shell-equiv` runs 879 programs the same,
+  cycle for cycle, as 20.2's.

@@ -15,7 +15,10 @@ Each run must end with tohost = 1 and the testbench's PASS:
   before its write, a refill and a reservation;
 - smp_runtime.c, the runtime's dispatch and join (its round trip printed);
 - soc_devices.c, the devices (hart control, timer, interrupts, counters,
-  word-only pages, the NPU and its interrupt).
+  word-only pages, the NPU and its interrupt);
+- soc_dma.c (20.3), the DMA through v1's driver, unchanged: against CPU
+  copies at every size and alignment, its errors, ABORT, its completion
+  interrupt, its counters and hart 1's writes ignored.
 
 Each hart's RVFI trace (the reset stress's first seed, the dispatch and join,
 the devices, and litmus at 200 trials) is checked for internal consistency as
@@ -189,6 +192,20 @@ def main() -> int:
             ok = fields["status"] == "PASS" and "SOC DEVICES PASS" in console
             report(ok, f"the devices {where}: hart control, timer, interrupts, counters, word-only pages, the NPU"
                        f" ({fields.get('npu_jobs')} job checked); {note}" + ("" if ok else f"; {fields} {console.strip()}"))
+        if wanted("dma"):
+            elf, symbols = build("soc_dma", ["software/drivers/aster_dma.c", "software/runtime/aster_smp.c",
+                                             "software/tests/soc_dma.c"], [], out, args.cflags, prefix)
+            fields, console = run(sim, elf, symbols, [])
+            # (and the testbench's checks of ports R and W not vacuous)
+            ok = (fields["status"] == "PASS" and "SOC DMA PASS" in console
+                  and int(fields.get("dma_reads", "0")) > 0 and int(fields.get("dma_writes", "0")) > 0)
+            line = next((l for l in console.splitlines() if l.startswith("DMA SWEEP")), "(no record)")
+            copies = [l for l in console.splitlines() if l.startswith("DMA COPY")]
+            (out / f"dma.{sim_name}.log").write_text(console)
+            line += f"; {len(copies)} timed copies against the CPU's ({out}/dma.{sim_name}.log)"
+            report(ok, f"the DMA {where} through v1's driver: {line}; port R's answers checked {fields.get('dma_reads')}, "
+                       f"port W's writes {fields.get('dma_writes')}, loads checked {fields.get('loads')}"
+                       + ("" if ok else f"; {fields} {console.strip()[-300:]}"))
     print(f"{'PASS' if not failures else 'FAIL'}: the Phase 20 SoC's two-hart programs"
           + (f" ({len(failures)} failed)" if failures else ""))
     return 1 if failures else 0

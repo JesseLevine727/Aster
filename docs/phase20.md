@@ -1,6 +1,8 @@
 # Phase 20: whole-SoC workload placement and concurrency
 
-Status: **milestone 20.3 (the DMA) in progress.** 20.2 (the two-hart SoC) was signed off
+Status: **milestone 20.3 (the DMA) in progress: its exit's three parts are met, but its timing
+margin, +0.270 ns at best and +0.010 ns on the default build, is short of the +0.3 ns the owner set
+in 20.2.** So restructuring that keeps every cycle continues before the sign-off (below). 20.2 (the two-hart SoC) was signed off
 by the owner on 8 October 2026. The owner decided 20.2's timing on 7 October 2026, in three rounds (below,
 and soc.md §13):
 - the second chance is removed and the NPU's request buffer adopted;
@@ -744,6 +746,199 @@ captured twice, identically; the other suites ran once.
   placements (other strategies +0.05 to +0.10 ns), as the owner decided.
 
 **Signed off by the owner, 8 October 2026** (with "begin 20.3").
+
+## Milestone 20.3: the DMA (in progress, 8 October 2026: the exit's parts met, the margin short)
+
+**What is built.**
+- **The engine** (`rtl/dma/aster_dma2.sv`, soc.md §6): v1's DMA ABI 1 at
+  `0x3000_0000`, unchanged, so v1's driver (`software/drivers/aster_dma.c`,
+  untouched) runs as it is. Its counters are v1's counter ABI 5 at `0x100`,
+  in v1's order, with their metadata at `0x180`, on the window of the command
+  word at `0x2000_3080`, aligned with the fabric counters.
+- **The copy:**
+  - The source's 8-byte units are read in order on port R, two in flight,
+    into a four-unit read buffer.
+  - A funnel forms each destination unit from the two source units it
+    spans, so every write on port W is one destination unit, with partial
+    byte enables only at the ends.
+  - Writes go out through a two-entry buffer whose head is the port.
+  - At most 8 bytes move a cycle.
+- **The ports' requests leave from registers.** The read's valid is formed
+  both ways, the fabric's acceptance choosing. The engine relies on the
+  fabric answering a read exactly 2 + WAIT cycles after its acceptance
+  (asserted), so a read can go out in the cycle an answer comes back.
+- **The ports are shared with the ARM side.** While the harts are held, they
+  carry the ARM side's main-memory accesses (`arm_go`), so nothing is
+  multiplexed after the ports' registers. A start or a stop clears them with
+  the fabric.
+- **ABORT is cooperative, as in v1.** BYTES_DONE is the prefix whose writes
+  were answered.
+- **In the SoC:**
+  - the engine's reset is the run's, a cycle after hart 0's, as the NPU's;
+  - its completion is the interrupt controller's source 1;
+  - its invalidated lines are the data caches' snoop hits on W's port;
+  - the devices no longer answer its page.
+
+  The decisions this took are in soc.md §13, "Clarifications in 20.3".
+
+**The DMA's shell** (`verification/dma/`, `make dma-tests`, in `make
+check`): the engine alone, its ports answered as the fabric answers them, at
+WAIT 0, 1 and 3, four seeds of eight modes (96 runs):
+- every length 0–80 at every alignment pair, on time and under back-pressure;
+- random jobs on time, each request's acceptance cycle and JOB_CYCLES
+  against a cycle model (`dma_model.h`);
+- back-pressure;
+- range, wrap and overlap errors at their boundaries, LENGTH 0 with a bad
+  descriptor, each rejection alone, and hart 1's writes;
+- ABORT, the engine's reset, and the SoC's STOP at random points, with the
+  ARM side's accesses on the ports while held;
+- a mixed mode, which also freezes, resumes and restarts the counters'
+  window.
+
+In every run:
+- **the oracle:** every job is checked against an oracle of the whole
+  memory;
+- **offered requests:** none is withdrawn or changed before it is taken, and
+  none is newly offered once an ABORT takes effect;
+- **JOB_CYCLES** is the job's length as the shell sees it;
+- **BYTES_DONE,** read during jobs, is the answered prefix;
+- **the counters** equal the shell's own count of each event, with per-job
+  sums on some jobs.
+
+`make dma-mutants`: 38 planted bugs, each caught. The 14 added after the
+first review are ones the shell missed then; each is now caught.
+
+**In the SoC** (`make soc-tests`):
+- **The DMA program** (`software/tests/soc_dma.c`, through v1's driver), on
+  both device builds:
+  - 3,392 copies, each against a CPU copy of the same source: every length
+    0–40 and twelve larger sizes up to 4 KiB, all at every alignment pair;
+  - copies at the limits, which pass: from LIMIT_LO, and a source and a
+    destination each ending exactly at LIMIT_HI;
+  - the errors through the driver, ABORT's prefix, and the completion
+    interrupt;
+  - the counters, exactly: each job's tallies, and their accepted reads and
+    writes, stalls and invalidated lines against the fabric counters'
+    independent counts;
+  - hart 1, refused by the driver and its writes ignored;
+  - hart 1's cache seeing the DMA's writes: all 64 lines it held were
+    invalidated;
+  - **contention:**
+    - Copies run while hart 1 streams through 8 KiB of its own memory,
+      checking every load.
+    - A 4 KiB job then runs while the NPU also runs a 32 × 32 × 64 GEMM. The
+      NPU is still busy when the job ends, and its result is checked whole.
+    - The DMA waited for the others: 110 stalls at WAIT 0 and 43 at WAIT 3,
+      against about 1,500 NPU and 43,000 hart-1 accesses.
+    - Twelve RESUMEs during that job each dropped their cycle's events from
+      every counter. 12 reads were dropped at WAIT 0 and 6 at WAIT 3, and the
+      cross-checks stayed exact.
+  - no exception taken.
+- **The testbench** checks every port R answer against memory at its
+  acceptance (about 95,000 a build), with the bank rule. Every port W write
+  goes through the memory checker and the snoop checks (about 92,000). The
+  DMA's accesses must stay inside its job's ranges, and while the harts are
+  held the ports may carry only the ARM side's.
+- **The rest of `soc-tests` is unchanged:** the 99 regression programs,
+  cycle for cycle (each loaded through the DMA's ports), the gate programs
+  with their traced cycles, litmus, the reset stress, the devices and their
+  lockstep.
+
+**The DMA against the CPU copy, in cycles.** Each entry is DMA end to end
+through the driver (the job alone) / the CPU copy.
+- The CPU's copy is a word loop with a byte prefix and tail, so a byte loop
+  when the alignments differ.
+- Misaligned means the source at offset 3 and the destination at offset 6.
+- The table's second pass is the one recorded, with warm instruction caches
+  and an untimed 8-byte copy before each timed one (the driver's stack back
+  in the data cache). The CPU copy's source may also be in its data cache
+  from the first pass.
+
+| Bytes | WAIT 0, aligned | WAIT 0, misaligned | WAIT 3, aligned | WAIT 3, misaligned |
+| ---: | ---: | ---: | ---: | ---: |
+| 16 | 160 (8) / 79 | 153 (9) / 192 | 193 (14) / 91 | 180 (18) / 192 |
+| 64 | 153 (14) / 151 | 153 (15) / 720 | 180 (29) / 151 | 180 (33) / 720 |
+| 256 | 153 (38) / 487 | 153 (39) / 2,832 | 260 (89) / 487 | 260 (93) / 2,832 |
+| 1,024 | 264 (134) / 1,831 | 264 (135) / 11,280 | 500 (329) / 1,831 | 500 (333) / 11,280 |
+| 4,096 | 641 (518) / 7,249 | 641 (519) / 45,105 | 1,473 (1,289) / 7,291 | 1,473 (1,293) / 45,135 |
+
+- **Throughput:** at WAIT 0 the job moves 8 bytes a cycle. At WAIT 3 it is
+  limited by two reads in flight against a five-cycle answer, so a unit
+  takes 2.5 cycles.
+- **Overhead:** the driver's register accesses and polls add 114–152
+  cycles (mean 131) at WAIT 0, and 147–184 (mean 168) at WAIT 3. The polls
+  come every few tens of cycles, so the end-to-end figure moves in steps.
+- **Where the DMA wins:**
+  - aligned: from 256 bytes, at both waits. At 64 bytes the two are even at
+    WAIT 0 (153 against 151), and the CPU wins at WAIT 3 (180 against 151);
+  - misaligned: from 16 bytes.
+
+  This is a starting point for 20.5's DMA thresholds.
+
+**Timing in context** (the board design, 10 ns; three placement strategies
+of each RTL revision, as in 20.2):
+- default;
+- o5: placement over-constrained by 0.5 ns;
+- o5 ASM: the same with the AltSpreadLogic_medium placer.
+
+| Revision | Default | o5 | o5 ASM | What changed |
+| --- | ---: | ---: | ---: | --- |
+| d1 | +0.109 | +0.059 | +0.047 | the DMA integrated |
+| d2 | +0.028 | +0.190 | +0.138 | the NPU buffer's request from a register; the engine's unit counts narrowed to 15 bits |
+| d3 | +0.191 | +0.142 | +0.171 | the data caches' answer kept in a register |
+| f1 (final) | **+0.010** | **+0.162** | **+0.270** | the counters' window as one signal from the devices |
+
+- **No cycle changed.** Each change keeps every cycle the same:
+  - The NPU buffer is emptied at a start or a stop. While the board's reset
+    is high, the fabric sees the same requests of N in every cycle.
+  - The data cache's registered answer is asserted equal to its definition
+    in every cycle. `make core-shell-equiv` runs 879 programs the same,
+    cycle for cycle, as 20.2's golden.
+  - The window signal changes only the DMA's counters.
+- **The limit moves with placement:**
+  - In d1 the limit was the run's reset into the NPU buffer, and hart 1's
+    data cache into the DMA.
+  - In d2 it was the data cache's answer into the core.
+  - In f1's default build it is hart 1's data cache into a fabric bank's
+    write enable: 7 levels, 7.3 ns of it route.
+- **Every final build closes 10 ns,** with hold met (WHS +0.021 to +0.034
+  ns).
+- **The spread is wide.** Across d2, d3 and f1, the over-constrained
+  strategies stayed between +0.138 and +0.270 ns, while the default swung
+  from +0.010 to +0.191.
+- **Utilization** (f1, default): 34,731 LUTs (65%), 23,713 flip-flops, 77
+  block RAM tiles, 27 DSPs. That is 1,046 LUTs and 1,587 flip-flops more
+  than 20.2's r19. Most of the flip-flops are the DMA's counters: 12 of its
+  14 count 64 bits (768). The other two, forwards and write-backs, are
+  constant 0 and removed.
+- **The netlist guard** used to count the ARM side's 32 write-data
+  registers. Those are gone, since the ports' registers are now the DMA's,
+  so it counts port W's 64 data registers in their place
+  (`ASTER_NETLIST npu_rams=40 npu_wdata_regs=32 w_wdata_regs=64`).
+- **Reproducibility:** f1 and f1-o5 ASM were each built twice from the same
+  sources. The configuration data is identical, and so is the slack;
+  `fpga/reproducibility.txt` has the details.
+- **Against the margin the owner set in 20.2 (+0.3 ns or better), no final
+  build qualifies.** The best is +0.270 ns (o5 ASM). The default, which
+  `make fpga-aster-soc` builds, is +0.010 ns, a thin pass. 20.2 signed off
+  at +0.309 on its default build. The DMA's 1,046 LUTs shifted placement
+  enough to take most of that margin on the default strategy. Signing off on
+  an over-constrained strategy would also mean setting `SOC_DIRECTIVES` in
+  20.4's and 20.5's builds.
+
+**20.3's exit: its three parts met; the margin short** (evidence: `docs/results/phase20/dma-20.3/`):
+- **soc.md §10.5:**
+  - the DMA in its shell (96 runs, 38 of 38 mutants caught);
+  - in the SoC, through v1's driver unchanged, on both device builds;
+  - the rest of `soc-tests` unchanged and cycle-exact, run twice with
+    identical output.
+- **Against CPU copies at every size and alignment in the SoC:** 3,392
+  copies against CPU copies (every length 0–40 at all 64 alignment pairs,
+  and 12 larger sizes up to 4 KiB at all 64), plus the timing table above.
+- **10 ns in context:** all three placement strategies of the final RTL
+  close: +0.010, +0.162 and +0.270 ns, with hold met. None reaches the
+  +0.3 ns margin the owner set in 20.2, so 20.3 continues with restructuring
+  that keeps every cycle before its sign-off.
 
 ## Milestones and gates
 

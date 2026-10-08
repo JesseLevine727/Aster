@@ -66,6 +66,8 @@ module aster_soc_devices #(
     output logic [1:0]  meip,
     output logic        window_start,           // the counters' command
     output logic        window_freeze,
+    output logic        window_counting,        // the counters count (for the DMA's counters, 20.3)
+    output logic        window_adds,            // the counters add this cycle's events (the DMA's, 20.3)
     // events, each cycle (per hart unless noted)
     input  logic [1:0]       ev_retired, ev_mem_txn, ev_i_access, ev_i_miss, ev_d_access, ev_d_miss,
     input  logic [1:0]       ev_amo_done, ev_sc_ok, ev_sc_fail, ev_inval, ev_dot8,
@@ -93,7 +95,7 @@ module aster_soc_devices #(
     logic [8:0]  fi;
     assign fi = 9'((io_addr[11:0] - 12'h300) >> 3);
     always_ff @(posedge clk) begin
-        q_valid <= rst_n && io_valid && io_addr[31:12] != 20'h4_0000;    // (the NPU's page is not a device's)
+        q_valid <= rst_n && io_valid && io_addr[31:12] != 20'h4_0000 && io_addr[31:12] != 20'h3_0000;   // (nor the NPU's nor the DMA's)
         q_hart  <= io_hart;
         q_write <= io_op == OP_STORE;
         q_addr  <= io_addr;
@@ -191,11 +193,14 @@ module aster_soc_devices #(
 
     // ---- the counters: the common command, the events registered ----
     logic counting;
+    assign window_counting = counting;
     logic command, resume;
     assign command       = wr && page == 20'h2_0003 && off == 12'h080 && !q_hart;
     assign window_start  = command && q_wdata[7:0] == 8'd1;
     assign window_freeze = command && q_wdata[7:0] == 8'd2;
     assign resume        = command && q_wdata[7:0] == 8'd4;
+    // (the counters' block below adds in its last branch: not START's, FREEZE's or RESUME's cycle)
+    assign window_adds   = rst_n && !window_start && !window_freeze && !resume && counting;
     // per hart: 14 ABI 4 counters (11 counting), 4 DOT8 (one counting); the fabric's 41
     localparam int NH = 12;                     // counted a hart: the 11 ABI 4 events and dot8
     localparam int NF = 41;                     // the fabric's counted events (the longest wait apart)

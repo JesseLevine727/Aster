@@ -34,7 +34,9 @@
 //       loads=<n> sc=<n> sc_failed=<n> amos=<n> retired1=<n> resets=<n> resets_owed=<n> resets_amo=<n>
 //       resets_refill=<n> resets_resv=<n> releases_early=<n> npu_waits=<n> npu_waits_irefill=<n>
 //       npu_waits_daccess=<n> npu_waits_amo=<n> npu_waits_blk=<n> npu_waits_other=<n> hart_waits_npu=<n>
-//       npu_config=<n> soc_config=<n>
+//       dma_reads=<n> dma_writes=<n> npu_config=<n> soc_config=<n>
+// (dma_reads: port R's answers checked against memory at their acceptance; dma_writes: port W's writes
+// while the harts run, each through the memory checker and snooped)
 // (cycles: hart 0's release to its tohost store; loads: the loads the memory
 // checker checked; sc, sc_failed, amos: those to main memory; retired1: hart
 // 1's instructions retired; resets: hart 1's resets while hart 0 ran, and
@@ -113,6 +115,8 @@ std::uint64_t hart1_due = 0;                 // the last answer owed to hart 1 w
 std::uint64_t resets = 0, resets_owed = 0, resets_amo = 0, resets_refill = 0, resets_resv = 0, releases_early = 0;
 std::uint64_t npu_waits = 0, npu_waits_irefill = 0, npu_waits_dwrite = 0, npu_waits_amo = 0, npu_waits_blk = 0;
 std::uint64_t npu_waits_other = 0, hart_waits_npu = 0;
+std::uint64_t dma_reads = 0, dma_writes = 0;          // port R's answers checked; port W's writes while running
+std::deque<std::uint64_t> r_expect;                    // port R's reads owed: memory at their acceptance
 int blk_owner[4] = {-1, -1, -1, -1};    // each bank's port-B member held back last cycle (its unit now refused)
 std::deque<Owed> owed[2];
 bool miss_due[2] = {false, false};           // a load missed: performed at its word's refill read
@@ -315,11 +319,48 @@ void cycle() {
             mark = 1;
         }
     }
-    // ---- the ARM side's writes on port W (the harts held) ----
+    // ---- port W's writes (the DMA's while the harts run, the ARM side's while held): each takes effect at
+    // its acceptance, and is snooped as the NPU's are (20.3) ----
+    // While the harts run, port W carries only the engine's writes, each inside its copy's destination;
+    // while they are held, only the ARM side's.
     if (fabric_up && dut->chk_w_accept) {
-        if (running) fail("ARM_ACCESS", "a write on port W while the harts run");
         writes.push_back({kW, std::uint32_t(dut->chk_w_addr) & ~7u, std::uint8_t(dut->chk_w_be), std::uint64_t(dut->chk_w_wdata)});
+        if (running) {
+            ++dma_writes;
+            const std::uint64_t a = std::uint32_t(dut->chk_w_addr) & ~7u, dst = std::uint32_t(dut->chk_dma_dst),
+                                end = dst + std::uint32_t(dut->chk_dma_len);
+            if (!dut->chk_dma_running) fail("DMA_STRAY", "a write on port W with no copy in progress");
+            for (int b = 0; b < 8; ++b)
+                if (((dut->chk_w_be >> b) & 1) && (a + b < dst || a + b >= end)) { fail("DMA_STRAY", "a DMA write outside its destination"); break; }
+        } else if (!dut->chk_arm_v) fail("ARM_ACCESS", "a write on port W while held that the ARM side did not make");
     }
+    // ---- port R's reads: each sees main memory as it stands at its acceptance (a write to its unit is
+    // never taken in the same cycle), checked when its answer comes, in order ----
+    if (fabric_up) {
+        if (dut->chk_r_rsp_valid) {
+            if (r_expect.empty()) fail("DMA_READ", "port R answered with nothing owed");
+            else {
+                const std::uint64_t want = r_expect.front();
+                r_expect.pop_front();
+                if (std::uint64_t(dut->chk_r_rsp_rdata) != want)
+                    fail("DMA_READ", "port R's answer is not memory as it stood at its acceptance");
+                ++dma_reads;
+            }
+        }
+        if (dut->chk_r_accept) {
+            const std::uint32_t a = std::uint32_t(dut->chk_r_addr) & ~7u;
+            r_expect.push_back(std::uint64_t(checker.memory.word(a)) | (std::uint64_t(checker.memory.word(a + 4)) << 32));
+            // the bank rule: no write to its unit taken in the same cycle (so memory at its acceptance is exact)
+            for (const auto& w : writes) if ((w.unit_addr & ~7u) == a) { fail("BANK_RULE", "a read on port R taken with a write of its unit"); break; }
+            // the engine's reads inside its copy's source while the harts run; the ARM side's while held
+            if (running) {
+                const std::uint64_t src = std::uint32_t(dut->chk_dma_src), end = src + std::uint32_t(dut->chk_dma_len);
+                if (!dut->chk_dma_running || a + 8 <= src || a >= end) fail("DMA_STRAY", "a DMA read outside its source");
+            } else if (!dut->chk_arm_v) fail("ARM_ACCESS", "a read on port R while held that the ARM side did not make");
+        }
+    }
+    // (the fabric's reset, at each start and stop, drops the answers owed)
+    if (!fabric_up || !dut->chk_fabric_rst_n) r_expect.clear();
     // ---- the NPU's waits, by cause, and the harts' waits behind the NPU, from the fabric's own
     // arbitration (each bank's members: port A D0 D1 N W, port B I0 I1 R N) ----
     if (fabric_up && running) {
@@ -617,11 +658,13 @@ int main(int argc, char** argv) {
         }
     }
     if (!plusarg("console").empty()) std::ofstream(plusarg("console")) << console;
+    if (!failure.empty() && result == "PASS") result = failure;     // (a failure in the readback after the stop)
     if (!board) std::printf("SOC %s cycles=%llu tohost=%x npu_jobs=%llu npu_unfinished=%llu cpu_checks=%llu "
                             "snoops=%llu loads=%llu sc=%llu sc_failed=%llu amos=%llu retired1=%llu resets=%llu "
                             "resets_owed=%llu resets_amo=%llu resets_refill=%llu resets_resv=%llu releases_early=%llu "
                             "npu_waits=%llu npu_waits_irefill=%llu npu_waits_daccess=%llu npu_waits_amo=%llu "
-                            "npu_waits_blk=%llu npu_waits_other=%llu hart_waits_npu=%llu npu_config=%u soc_config=%u\n", result.c_str(), (unsigned long long)cycles, value,
+                            "npu_waits_blk=%llu npu_waits_other=%llu hart_waits_npu=%llu dma_reads=%llu dma_writes=%llu "
+                            "npu_config=%u soc_config=%u\n", result.c_str(), (unsigned long long)cycles, value,
                             (unsigned long long)npu_jobs, (unsigned long long)npu_unfinished,
                             (unsigned long long)cpu_checks, (unsigned long long)snoops,
                             (unsigned long long)checker.checked, (unsigned long long)sc_count,
@@ -632,7 +675,8 @@ int main(int argc, char** argv) {
                             (unsigned long long)npu_waits, (unsigned long long)npu_waits_irefill,
                             (unsigned long long)npu_waits_dwrite, (unsigned long long)npu_waits_amo,
                             (unsigned long long)npu_waits_blk, (unsigned long long)npu_waits_other,
-                            (unsigned long long)hart_waits_npu, npu_config, soc_config);
+                            (unsigned long long)hart_waits_npu, (unsigned long long)dma_reads,
+                            (unsigned long long)dma_writes, npu_config, soc_config);
     for (std::FILE* f : trace) if (f) std::fclose(f);
     delete dut;
     return result == "PASS" ? 0 : 1;

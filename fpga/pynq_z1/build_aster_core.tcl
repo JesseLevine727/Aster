@@ -66,7 +66,7 @@ if {$design eq "core"} {
 } else {
     set board aster_soc_board; set name aster_soc; set shim aster_soc_ip
     set top_rtl [list rtl/accelerator/aster_npu2_ram.sv rtl/accelerator/aster_npu2_engine.sv \
-        rtl/accelerator/aster_npu2.sv rtl/fabric/aster_fabric_bank.sv rtl/fabric/aster_fabric.sv \
+        rtl/accelerator/aster_npu2.sv rtl/fabric/aster_fabric_bank.sv rtl/fabric/aster_fabric.sv rtl/dma/aster_dma2.sv \
         rtl/soc/aster_soc_devices.sv rtl/soc/aster_soc.sv]
 }
 create_project $board $output_dir -part $part -force
@@ -162,16 +162,16 @@ write_checkpoint -force [file join $output_dir ${name}_synth.dcp]
 # side's write data. A size cast that Vivado reads as signed once made the fabric's arbiters grant only
 # their first two members, and synthesis then removed the NPU's datapath without an error. The checks
 # count what synthesis would remove if a port's data went unused (the hierarchy's port pins themselves
-# are not kept): the NPU's block RAMs, its writer's data registers, and the ARM side's write-data
-# registers, which only port W reads.
+# are not kept): the NPU's block RAMs, its writer's data registers, and port W's data registers (the
+# DMA's, which carry its writes and the ARM side's; 20.3), which only port W reads.
 if {$design eq "soc"} {
     set npu_rams [llength [get_cells -hier -quiet -filter {REF_NAME =~ RAMB* && NAME =~ */implementation/npu/*}]]
     set npu_wdata [llength [get_cells -hier -quiet -filter {REF_NAME =~ FD* && NAME =~ */implementation/npu/engine/wr_q_data_reg*}]]
-    set arm_wdata [llength [get_cells -hier -quiet -filter {REF_NAME =~ FD* && NAME =~ */implementation/arm_wdata_reg*}]]
-    if {$npu_rams < 16 || $npu_wdata < 32 || $arm_wdata < 32} {
-        error "aster_soc: the synthesized netlist lost a datapath: NPU block RAMs $npu_rams, NPU write-data registers $npu_wdata, ARM write-data registers $arm_wdata"
+    set w_wdata [llength [get_cells -hier -quiet -filter {REF_NAME =~ FD* && NAME =~ */implementation/dma/w_req_wdata_reg*}]]
+    if {$npu_rams < 16 || $npu_wdata < 32 || $w_wdata < 64} {
+        error "aster_soc: the synthesized netlist lost a datapath: NPU block RAMs $npu_rams, NPU write-data registers $npu_wdata, port W's data registers $w_wdata"
     }
-    puts "ASTER_NETLIST npu_rams=$npu_rams npu_wdata_regs=$npu_wdata arm_wdata_regs=$arm_wdata"
+    puts "ASTER_NETLIST npu_rams=$npu_rams npu_wdata_regs=$npu_wdata w_wdata_regs=$w_wdata"
 }
 
 report_utilization -file [file join $output_dir utilization_synth.rpt]

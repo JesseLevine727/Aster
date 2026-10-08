@@ -1,0 +1,348 @@
+Copyright 1986-2022 Xilinx, Inc. All Rights Reserved. Copyright 2022-2025 Advanced Micro Devices, Inc. All Rights Reserved.
+---------------------------------------------------------------------------------------------------------------------------------------------
+| Tool Version : Vivado v.2025.1 (lin64) Build 6140274 Wed May 21 22:58:25 MDT 2025
+| Date         : Thu Oct  8 10:51:59 2026
+| Host         : gondor running 64-bit Ubuntu 24.04.5 LTS
+| Command      : report_drc -file build/fpga/pynq_z1/aster_soc-f1/drc.rpt
+| Design       : aster_soc_board_wrapper
+| Device       : xc7z020clg400-1
+| Speed File   : -1
+| Design State : Fully Routed
+---------------------------------------------------------------------------------------------------------------------------------------------
+
+Report DRC
+
+Table of Contents
+-----------------
+1. REPORT SUMMARY
+2. REPORT DETAILS
+
+1. REPORT SUMMARY
+-----------------
+            Netlist: netlist
+          Floorplan: design_1
+      Design limits: <entire design considered>
+           Ruledeck: default
+             Max checks: <unlimited>
+             Checks found: 62
++--------+----------+------------------------+--------+
+| Rule   | Severity | Description            | Checks |
++--------+----------+------------------------+--------+
+| DPIP-1 | Warning  | Input pipelining       | 29     |
+| DPOP-1 | Warning  | PREG Output pipelining | 6      |
+| DPOP-2 | Warning  | MREG Output pipelining | 27     |
++--------+----------+------------------------+--------+
+
+2. REPORT DETAILS
+-----------------
+DPIP-1#1 Warning
+Input pipelining  
+DSP aster_soc_board_i/aster/inst/implementation/g_hart[0].core/dot8_p0_reg input aster_soc_board_i/aster/inst/implementation/g_hart[0].core/dot8_p0_reg/A[29:0] is not pipelined. Pipelining DSP48 input will improve performance.
+Related violations: <none>
+
+DPIP-1#2 Warning
+Input pipelining  
+DSP aster_soc_board_i/aster/inst/implementation/g_hart[0].core/dot8_p0_reg input aster_soc_board_i/aster/inst/implementation/g_hart[0].core/dot8_p0_reg/B[17:0] is not pipelined. Pipelining DSP48 input will improve performance.
+Related violations: <none>
+
+DPIP-1#3 Warning
+Input pipelining  
+DSP aster_soc_board_i/aster/inst/implementation/g_hart[0].core/dot8_p1_reg input aster_soc_board_i/aster/inst/implementation/g_hart[0].core/dot8_p1_reg/A[29:0] is not pipelined. Pipelining DSP48 input will improve performance.
+Related violations: <none>
+
+DPIP-1#4 Warning
+Input pipelining  
+DSP aster_soc_board_i/aster/inst/implementation/g_hart[0].core/dot8_p1_reg input aster_soc_board_i/aster/inst/implementation/g_hart[0].core/dot8_p1_reg/B[17:0] is not pipelined. Pipelining DSP48 input will improve performance.
+Related violations: <none>
+
+DPIP-1#5 Warning
+Input pipelining  
+DSP aster_soc_board_i/aster/inst/implementation/g_hart[0].core/dot8_p2_reg input aster_soc_board_i/aster/inst/implementation/g_hart[0].core/dot8_p2_reg/A[29:0] is not pipelined. Pipelining DSP48 input will improve performance.
+Related violations: <none>
+
+DPIP-1#6 Warning
+Input pipelining  
+DSP aster_soc_board_i/aster/inst/implementation/g_hart[0].core/dot8_p2_reg input aster_soc_board_i/aster/inst/implementation/g_hart[0].core/dot8_p2_reg/B[17:0] is not pipelined. Pipelining DSP48 input will improve performance.
+Related violations: <none>
+
+DPIP-1#7 Warning
+Input pipelining  
+DSP aster_soc_board_i/aster/inst/implementation/g_hart[0].core/dot8_p3_reg input aster_soc_board_i/aster/inst/implementation/g_hart[0].core/dot8_p3_reg/A[29:0] is not pipelined. Pipelining DSP48 input will improve performance.
+Related violations: <none>
+
+DPIP-1#8 Warning
+Input pipelining  
+DSP aster_soc_board_i/aster/inst/implementation/g_hart[0].core/dot8_p3_reg input aster_soc_board_i/aster/inst/implementation/g_hart[0].core/dot8_p3_reg/B[17:0] is not pipelined. Pipelining DSP48 input will improve performance.
+Related violations: <none>
+
+DPIP-1#9 Warning
+Input pipelining  
+DSP aster_soc_board_i/aster/inst/implementation/g_hart[0].core/pp_hh_reg input aster_soc_board_i/aster/inst/implementation/g_hart[0].core/pp_hh_reg/A[29:0] is not pipelined. Pipelining DSP48 input will improve performance.
+Related violations: <none>
+
+DPIP-1#10 Warning
+Input pipelining  
+DSP aster_soc_board_i/aster/inst/implementation/g_hart[0].core/pp_hh_reg input aster_soc_board_i/aster/inst/implementation/g_hart[0].core/pp_hh_reg/B[17:0] is not pipelined. Pipelining DSP48 input will improve performance.
+Related violations: <none>
+
+DPIP-1#11 Warning
+Input pipelining  
+DSP aster_soc_board_i/aster/inst/implementation/g_hart[0].core/pp_hl_reg input aster_soc_board_i/aster/inst/implementation/g_hart[0].core/pp_hl_reg/A[29:0] is not pipelined. Pipelining DSP48 input will improve performance.
+Related violations: <none>
+
+DPIP-1#12 Warning
+Input pipelining  
+DSP aster_soc_board_i/aster/inst/implementation/g_hart[0].core/pp_lh_reg input aster_soc_board_i/aster/inst/implementation/g_hart[0].core/pp_lh_reg/B[17:0] is not pipelined. Pipelining DSP48 input will improve performance.
+Related violations: <none>
+
+DPIP-1#13 Warning
+Input pipelining  
+DSP aster_soc_board_i/aster/inst/implementation/g_hart[1].core/dot8_p0_reg input aster_soc_board_i/aster/inst/implementation/g_hart[1].core/dot8_p0_reg/A[29:0] is not pipelined. Pipelining DSP48 input will improve performance.
+Related violations: <none>
+
+DPIP-1#14 Warning
+Input pipelining  
+DSP aster_soc_board_i/aster/inst/implementation/g_hart[1].core/dot8_p0_reg input aster_soc_board_i/aster/inst/implementation/g_hart[1].core/dot8_p0_reg/B[17:0] is not pipelined. Pipelining DSP48 input will improve performance.
+Related violations: <none>
+
+DPIP-1#15 Warning
+Input pipelining  
+DSP aster_soc_board_i/aster/inst/implementation/g_hart[1].core/dot8_p1_reg input aster_soc_board_i/aster/inst/implementation/g_hart[1].core/dot8_p1_reg/A[29:0] is not pipelined. Pipelining DSP48 input will improve performance.
+Related violations: <none>
+
+DPIP-1#16 Warning
+Input pipelining  
+DSP aster_soc_board_i/aster/inst/implementation/g_hart[1].core/dot8_p1_reg input aster_soc_board_i/aster/inst/implementation/g_hart[1].core/dot8_p1_reg/B[17:0] is not pipelined. Pipelining DSP48 input will improve performance.
+Related violations: <none>
+
+DPIP-1#17 Warning
+Input pipelining  
+DSP aster_soc_board_i/aster/inst/implementation/g_hart[1].core/dot8_p2_reg input aster_soc_board_i/aster/inst/implementation/g_hart[1].core/dot8_p2_reg/A[29:0] is not pipelined. Pipelining DSP48 input will improve performance.
+Related violations: <none>
+
+DPIP-1#18 Warning
+Input pipelining  
+DSP aster_soc_board_i/aster/inst/implementation/g_hart[1].core/dot8_p2_reg input aster_soc_board_i/aster/inst/implementation/g_hart[1].core/dot8_p2_reg/B[17:0] is not pipelined. Pipelining DSP48 input will improve performance.
+Related violations: <none>
+
+DPIP-1#19 Warning
+Input pipelining  
+DSP aster_soc_board_i/aster/inst/implementation/g_hart[1].core/dot8_p3_reg input aster_soc_board_i/aster/inst/implementation/g_hart[1].core/dot8_p3_reg/A[29:0] is not pipelined. Pipelining DSP48 input will improve performance.
+Related violations: <none>
+
+DPIP-1#20 Warning
+Input pipelining  
+DSP aster_soc_board_i/aster/inst/implementation/g_hart[1].core/dot8_p3_reg input aster_soc_board_i/aster/inst/implementation/g_hart[1].core/dot8_p3_reg/B[17:0] is not pipelined. Pipelining DSP48 input will improve performance.
+Related violations: <none>
+
+DPIP-1#21 Warning
+Input pipelining  
+DSP aster_soc_board_i/aster/inst/implementation/g_hart[1].core/pp_hh_reg input aster_soc_board_i/aster/inst/implementation/g_hart[1].core/pp_hh_reg/A[29:0] is not pipelined. Pipelining DSP48 input will improve performance.
+Related violations: <none>
+
+DPIP-1#22 Warning
+Input pipelining  
+DSP aster_soc_board_i/aster/inst/implementation/g_hart[1].core/pp_hh_reg input aster_soc_board_i/aster/inst/implementation/g_hart[1].core/pp_hh_reg/B[17:0] is not pipelined. Pipelining DSP48 input will improve performance.
+Related violations: <none>
+
+DPIP-1#23 Warning
+Input pipelining  
+DSP aster_soc_board_i/aster/inst/implementation/g_hart[1].core/pp_hl_reg input aster_soc_board_i/aster/inst/implementation/g_hart[1].core/pp_hl_reg/A[29:0] is not pipelined. Pipelining DSP48 input will improve performance.
+Related violations: <none>
+
+DPIP-1#24 Warning
+Input pipelining  
+DSP aster_soc_board_i/aster/inst/implementation/g_hart[1].core/pp_lh_reg input aster_soc_board_i/aster/inst/implementation/g_hart[1].core/pp_lh_reg/B[17:0] is not pipelined. Pipelining DSP48 input will improve performance.
+Related violations: <none>
+
+DPIP-1#25 Warning
+Input pipelining  
+DSP aster_soc_board_i/aster/inst/implementation/npu/engine/pa_k10 input aster_soc_board_i/aster/inst/implementation/npu/engine/pa_k10/B[17:0] is not pipelined. Pipelining DSP48 input will improve performance.
+Related violations: <none>
+
+DPIP-1#26 Warning
+Input pipelining  
+DSP aster_soc_board_i/aster/inst/implementation/npu/engine/pa_m00 input aster_soc_board_i/aster/inst/implementation/npu/engine/pa_m00/B[17:0] is not pipelined. Pipelining DSP48 input will improve performance.
+Related violations: <none>
+
+DPIP-1#27 Warning
+Input pipelining  
+DSP aster_soc_board_i/aster/inst/implementation/npu/engine/pa_m10 input aster_soc_board_i/aster/inst/implementation/npu/engine/pa_m10/B[17:0] is not pipelined. Pipelining DSP48 input will improve performance.
+Related violations: <none>
+
+DPIP-1#28 Warning
+Input pipelining  
+DSP aster_soc_board_i/aster/inst/implementation/npu/engine/prod_b0 input aster_soc_board_i/aster/inst/implementation/npu/engine/prod_b0/B[17:0] is not pipelined. Pipelining DSP48 input will improve performance.
+Related violations: <none>
+
+DPIP-1#29 Warning
+Input pipelining  
+DSP aster_soc_board_i/aster/inst/implementation/npu/engine/prod_c0 input aster_soc_board_i/aster/inst/implementation/npu/engine/prod_c0/B[17:0] is not pipelined. Pipelining DSP48 input will improve performance.
+Related violations: <none>
+
+DPOP-1#1 Warning
+PREG Output pipelining  
+DSP aster_soc_board_i/aster/inst/implementation/npu/engine/p_1_in output aster_soc_board_i/aster/inst/implementation/npu/engine/p_1_in/P[47:0] is not pipelined (PREG=0). Pipelining the DSP48 output will improve performance and often saves power so it is suggested whenever possible to fully pipeline this function.  If this DSP48 function was inferred, it is suggested to describe an additional register stage after this function.  If the DSP48 was instantiated in the design, it is suggested to set the PREG attribute to 1.
+Related violations: <none>
+
+DPOP-1#2 Warning
+PREG Output pipelining  
+DSP aster_soc_board_i/aster/inst/implementation/npu/engine/pa_k10 output aster_soc_board_i/aster/inst/implementation/npu/engine/pa_k10/P[47:0] is not pipelined (PREG=0). Pipelining the DSP48 output will improve performance and often saves power so it is suggested whenever possible to fully pipeline this function.  If this DSP48 function was inferred, it is suggested to describe an additional register stage after this function.  If the DSP48 was instantiated in the design, it is suggested to set the PREG attribute to 1.
+Related violations: <none>
+
+DPOP-1#3 Warning
+PREG Output pipelining  
+DSP aster_soc_board_i/aster/inst/implementation/npu/engine/pa_m00 output aster_soc_board_i/aster/inst/implementation/npu/engine/pa_m00/P[47:0] is not pipelined (PREG=0). Pipelining the DSP48 output will improve performance and often saves power so it is suggested whenever possible to fully pipeline this function.  If this DSP48 function was inferred, it is suggested to describe an additional register stage after this function.  If the DSP48 was instantiated in the design, it is suggested to set the PREG attribute to 1.
+Related violations: <none>
+
+DPOP-1#4 Warning
+PREG Output pipelining  
+DSP aster_soc_board_i/aster/inst/implementation/npu/engine/pa_m10 output aster_soc_board_i/aster/inst/implementation/npu/engine/pa_m10/P[47:0] is not pipelined (PREG=0). Pipelining the DSP48 output will improve performance and often saves power so it is suggested whenever possible to fully pipeline this function.  If this DSP48 function was inferred, it is suggested to describe an additional register stage after this function.  If the DSP48 was instantiated in the design, it is suggested to set the PREG attribute to 1.
+Related violations: <none>
+
+DPOP-1#5 Warning
+PREG Output pipelining  
+DSP aster_soc_board_i/aster/inst/implementation/npu/engine/prod_b0 output aster_soc_board_i/aster/inst/implementation/npu/engine/prod_b0/P[47:0] is not pipelined (PREG=0). Pipelining the DSP48 output will improve performance and often saves power so it is suggested whenever possible to fully pipeline this function.  If this DSP48 function was inferred, it is suggested to describe an additional register stage after this function.  If the DSP48 was instantiated in the design, it is suggested to set the PREG attribute to 1.
+Related violations: <none>
+
+DPOP-1#6 Warning
+PREG Output pipelining  
+DSP aster_soc_board_i/aster/inst/implementation/npu/engine/prod_c0 output aster_soc_board_i/aster/inst/implementation/npu/engine/prod_c0/P[47:0] is not pipelined (PREG=0). Pipelining the DSP48 output will improve performance and often saves power so it is suggested whenever possible to fully pipeline this function.  If this DSP48 function was inferred, it is suggested to describe an additional register stage after this function.  If the DSP48 was instantiated in the design, it is suggested to set the PREG attribute to 1.
+Related violations: <none>
+
+DPOP-2#1 Warning
+MREG Output pipelining  
+DSP aster_soc_board_i/aster/inst/implementation/g_hart[0].core/dot8_p0_reg multiplier stage aster_soc_board_i/aster/inst/implementation/g_hart[0].core/dot8_p0_reg/P[47:0] is not pipelined (MREG=0). Pipelining the multiplier function will improve performance and will save significant power so it is suggested whenever possible to fully pipeline this function.  If this multiplier was inferred, it is suggested to describe an additional register stage after this function.  If there is no registered adder/accumulator following the multiply function, two pipeline stages are suggested to allow both the MREG and PREG registers to be used.  If the DSP48 was instantiated in the design, it is suggested to set both the MREG and PREG attributes to 1 when performing multiply functions.
+Related violations: <none>
+
+DPOP-2#2 Warning
+MREG Output pipelining  
+DSP aster_soc_board_i/aster/inst/implementation/g_hart[0].core/dot8_p1_reg multiplier stage aster_soc_board_i/aster/inst/implementation/g_hart[0].core/dot8_p1_reg/P[47:0] is not pipelined (MREG=0). Pipelining the multiplier function will improve performance and will save significant power so it is suggested whenever possible to fully pipeline this function.  If this multiplier was inferred, it is suggested to describe an additional register stage after this function.  If there is no registered adder/accumulator following the multiply function, two pipeline stages are suggested to allow both the MREG and PREG registers to be used.  If the DSP48 was instantiated in the design, it is suggested to set both the MREG and PREG attributes to 1 when performing multiply functions.
+Related violations: <none>
+
+DPOP-2#3 Warning
+MREG Output pipelining  
+DSP aster_soc_board_i/aster/inst/implementation/g_hart[0].core/dot8_p2_reg multiplier stage aster_soc_board_i/aster/inst/implementation/g_hart[0].core/dot8_p2_reg/P[47:0] is not pipelined (MREG=0). Pipelining the multiplier function will improve performance and will save significant power so it is suggested whenever possible to fully pipeline this function.  If this multiplier was inferred, it is suggested to describe an additional register stage after this function.  If there is no registered adder/accumulator following the multiply function, two pipeline stages are suggested to allow both the MREG and PREG registers to be used.  If the DSP48 was instantiated in the design, it is suggested to set both the MREG and PREG attributes to 1 when performing multiply functions.
+Related violations: <none>
+
+DPOP-2#4 Warning
+MREG Output pipelining  
+DSP aster_soc_board_i/aster/inst/implementation/g_hart[0].core/dot8_p3_reg multiplier stage aster_soc_board_i/aster/inst/implementation/g_hart[0].core/dot8_p3_reg/P[47:0] is not pipelined (MREG=0). Pipelining the multiplier function will improve performance and will save significant power so it is suggested whenever possible to fully pipeline this function.  If this multiplier was inferred, it is suggested to describe an additional register stage after this function.  If there is no registered adder/accumulator following the multiply function, two pipeline stages are suggested to allow both the MREG and PREG registers to be used.  If the DSP48 was instantiated in the design, it is suggested to set both the MREG and PREG attributes to 1 when performing multiply functions.
+Related violations: <none>
+
+DPOP-2#5 Warning
+MREG Output pipelining  
+DSP aster_soc_board_i/aster/inst/implementation/g_hart[0].core/pp_hh_reg multiplier stage aster_soc_board_i/aster/inst/implementation/g_hart[0].core/pp_hh_reg/P[47:0] is not pipelined (MREG=0). Pipelining the multiplier function will improve performance and will save significant power so it is suggested whenever possible to fully pipeline this function.  If this multiplier was inferred, it is suggested to describe an additional register stage after this function.  If there is no registered adder/accumulator following the multiply function, two pipeline stages are suggested to allow both the MREG and PREG registers to be used.  If the DSP48 was instantiated in the design, it is suggested to set both the MREG and PREG attributes to 1 when performing multiply functions.
+Related violations: <none>
+
+DPOP-2#6 Warning
+MREG Output pipelining  
+DSP aster_soc_board_i/aster/inst/implementation/g_hart[0].core/pp_hl_reg multiplier stage aster_soc_board_i/aster/inst/implementation/g_hart[0].core/pp_hl_reg/P[47:0] is not pipelined (MREG=0). Pipelining the multiplier function will improve performance and will save significant power so it is suggested whenever possible to fully pipeline this function.  If this multiplier was inferred, it is suggested to describe an additional register stage after this function.  If there is no registered adder/accumulator following the multiply function, two pipeline stages are suggested to allow both the MREG and PREG registers to be used.  If the DSP48 was instantiated in the design, it is suggested to set both the MREG and PREG attributes to 1 when performing multiply functions.
+Related violations: <none>
+
+DPOP-2#7 Warning
+MREG Output pipelining  
+DSP aster_soc_board_i/aster/inst/implementation/g_hart[0].core/pp_lh_reg multiplier stage aster_soc_board_i/aster/inst/implementation/g_hart[0].core/pp_lh_reg/P[47:0] is not pipelined (MREG=0). Pipelining the multiplier function will improve performance and will save significant power so it is suggested whenever possible to fully pipeline this function.  If this multiplier was inferred, it is suggested to describe an additional register stage after this function.  If there is no registered adder/accumulator following the multiply function, two pipeline stages are suggested to allow both the MREG and PREG registers to be used.  If the DSP48 was instantiated in the design, it is suggested to set both the MREG and PREG attributes to 1 when performing multiply functions.
+Related violations: <none>
+
+DPOP-2#8 Warning
+MREG Output pipelining  
+DSP aster_soc_board_i/aster/inst/implementation/g_hart[0].core/pp_ll_reg multiplier stage aster_soc_board_i/aster/inst/implementation/g_hart[0].core/pp_ll_reg/P[47:0] is not pipelined (MREG=0). Pipelining the multiplier function will improve performance and will save significant power so it is suggested whenever possible to fully pipeline this function.  If this multiplier was inferred, it is suggested to describe an additional register stage after this function.  If there is no registered adder/accumulator following the multiply function, two pipeline stages are suggested to allow both the MREG and PREG registers to be used.  If the DSP48 was instantiated in the design, it is suggested to set both the MREG and PREG attributes to 1 when performing multiply functions.
+Related violations: <none>
+
+DPOP-2#9 Warning
+MREG Output pipelining  
+DSP aster_soc_board_i/aster/inst/implementation/g_hart[1].core/dot8_p0_reg multiplier stage aster_soc_board_i/aster/inst/implementation/g_hart[1].core/dot8_p0_reg/P[47:0] is not pipelined (MREG=0). Pipelining the multiplier function will improve performance and will save significant power so it is suggested whenever possible to fully pipeline this function.  If this multiplier was inferred, it is suggested to describe an additional register stage after this function.  If there is no registered adder/accumulator following the multiply function, two pipeline stages are suggested to allow both the MREG and PREG registers to be used.  If the DSP48 was instantiated in the design, it is suggested to set both the MREG and PREG attributes to 1 when performing multiply functions.
+Related violations: <none>
+
+DPOP-2#10 Warning
+MREG Output pipelining  
+DSP aster_soc_board_i/aster/inst/implementation/g_hart[1].core/dot8_p1_reg multiplier stage aster_soc_board_i/aster/inst/implementation/g_hart[1].core/dot8_p1_reg/P[47:0] is not pipelined (MREG=0). Pipelining the multiplier function will improve performance and will save significant power so it is suggested whenever possible to fully pipeline this function.  If this multiplier was inferred, it is suggested to describe an additional register stage after this function.  If there is no registered adder/accumulator following the multiply function, two pipeline stages are suggested to allow both the MREG and PREG registers to be used.  If the DSP48 was instantiated in the design, it is suggested to set both the MREG and PREG attributes to 1 when performing multiply functions.
+Related violations: <none>
+
+DPOP-2#11 Warning
+MREG Output pipelining  
+DSP aster_soc_board_i/aster/inst/implementation/g_hart[1].core/dot8_p2_reg multiplier stage aster_soc_board_i/aster/inst/implementation/g_hart[1].core/dot8_p2_reg/P[47:0] is not pipelined (MREG=0). Pipelining the multiplier function will improve performance and will save significant power so it is suggested whenever possible to fully pipeline this function.  If this multiplier was inferred, it is suggested to describe an additional register stage after this function.  If there is no registered adder/accumulator following the multiply function, two pipeline stages are suggested to allow both the MREG and PREG registers to be used.  If the DSP48 was instantiated in the design, it is suggested to set both the MREG and PREG attributes to 1 when performing multiply functions.
+Related violations: <none>
+
+DPOP-2#12 Warning
+MREG Output pipelining  
+DSP aster_soc_board_i/aster/inst/implementation/g_hart[1].core/dot8_p3_reg multiplier stage aster_soc_board_i/aster/inst/implementation/g_hart[1].core/dot8_p3_reg/P[47:0] is not pipelined (MREG=0). Pipelining the multiplier function will improve performance and will save significant power so it is suggested whenever possible to fully pipeline this function.  If this multiplier was inferred, it is suggested to describe an additional register stage after this function.  If there is no registered adder/accumulator following the multiply function, two pipeline stages are suggested to allow both the MREG and PREG registers to be used.  If the DSP48 was instantiated in the design, it is suggested to set both the MREG and PREG attributes to 1 when performing multiply functions.
+Related violations: <none>
+
+DPOP-2#13 Warning
+MREG Output pipelining  
+DSP aster_soc_board_i/aster/inst/implementation/g_hart[1].core/pp_hh_reg multiplier stage aster_soc_board_i/aster/inst/implementation/g_hart[1].core/pp_hh_reg/P[47:0] is not pipelined (MREG=0). Pipelining the multiplier function will improve performance and will save significant power so it is suggested whenever possible to fully pipeline this function.  If this multiplier was inferred, it is suggested to describe an additional register stage after this function.  If there is no registered adder/accumulator following the multiply function, two pipeline stages are suggested to allow both the MREG and PREG registers to be used.  If the DSP48 was instantiated in the design, it is suggested to set both the MREG and PREG attributes to 1 when performing multiply functions.
+Related violations: <none>
+
+DPOP-2#14 Warning
+MREG Output pipelining  
+DSP aster_soc_board_i/aster/inst/implementation/g_hart[1].core/pp_hl_reg multiplier stage aster_soc_board_i/aster/inst/implementation/g_hart[1].core/pp_hl_reg/P[47:0] is not pipelined (MREG=0). Pipelining the multiplier function will improve performance and will save significant power so it is suggested whenever possible to fully pipeline this function.  If this multiplier was inferred, it is suggested to describe an additional register stage after this function.  If there is no registered adder/accumulator following the multiply function, two pipeline stages are suggested to allow both the MREG and PREG registers to be used.  If the DSP48 was instantiated in the design, it is suggested to set both the MREG and PREG attributes to 1 when performing multiply functions.
+Related violations: <none>
+
+DPOP-2#15 Warning
+MREG Output pipelining  
+DSP aster_soc_board_i/aster/inst/implementation/g_hart[1].core/pp_lh_reg multiplier stage aster_soc_board_i/aster/inst/implementation/g_hart[1].core/pp_lh_reg/P[47:0] is not pipelined (MREG=0). Pipelining the multiplier function will improve performance and will save significant power so it is suggested whenever possible to fully pipeline this function.  If this multiplier was inferred, it is suggested to describe an additional register stage after this function.  If there is no registered adder/accumulator following the multiply function, two pipeline stages are suggested to allow both the MREG and PREG registers to be used.  If the DSP48 was instantiated in the design, it is suggested to set both the MREG and PREG attributes to 1 when performing multiply functions.
+Related violations: <none>
+
+DPOP-2#16 Warning
+MREG Output pipelining  
+DSP aster_soc_board_i/aster/inst/implementation/g_hart[1].core/pp_ll_reg multiplier stage aster_soc_board_i/aster/inst/implementation/g_hart[1].core/pp_ll_reg/P[47:0] is not pipelined (MREG=0). Pipelining the multiplier function will improve performance and will save significant power so it is suggested whenever possible to fully pipeline this function.  If this multiplier was inferred, it is suggested to describe an additional register stage after this function.  If there is no registered adder/accumulator following the multiply function, two pipeline stages are suggested to allow both the MREG and PREG registers to be used.  If the DSP48 was instantiated in the design, it is suggested to set both the MREG and PREG attributes to 1 when performing multiply functions.
+Related violations: <none>
+
+DPOP-2#17 Warning
+MREG Output pipelining  
+DSP aster_soc_board_i/aster/inst/implementation/npu/engine/p_1_in multiplier stage aster_soc_board_i/aster/inst/implementation/npu/engine/p_1_in/P[47:0] is not pipelined (MREG=0). Pipelining the multiplier function will improve performance and will save significant power so it is suggested whenever possible to fully pipeline this function.  If this multiplier was inferred, it is suggested to describe an additional register stage after this function.  If there is no registered adder/accumulator following the multiply function, two pipeline stages are suggested to allow both the MREG and PREG registers to be used.  If the DSP48 was instantiated in the design, it is suggested to set both the MREG and PREG attributes to 1 when performing multiply functions.
+Related violations: <none>
+
+DPOP-2#18 Warning
+MREG Output pipelining  
+DSP aster_soc_board_i/aster/inst/implementation/npu/engine/pa_k10 multiplier stage aster_soc_board_i/aster/inst/implementation/npu/engine/pa_k10/P[47:0] is not pipelined (MREG=0). Pipelining the multiplier function will improve performance and will save significant power so it is suggested whenever possible to fully pipeline this function.  If this multiplier was inferred, it is suggested to describe an additional register stage after this function.  If there is no registered adder/accumulator following the multiply function, two pipeline stages are suggested to allow both the MREG and PREG registers to be used.  If the DSP48 was instantiated in the design, it is suggested to set both the MREG and PREG attributes to 1 when performing multiply functions.
+Related violations: <none>
+
+DPOP-2#19 Warning
+MREG Output pipelining  
+DSP aster_soc_board_i/aster/inst/implementation/npu/engine/pa_k1_reg multiplier stage aster_soc_board_i/aster/inst/implementation/npu/engine/pa_k1_reg/P[47:0] is not pipelined (MREG=0). Pipelining the multiplier function will improve performance and will save significant power so it is suggested whenever possible to fully pipeline this function.  If this multiplier was inferred, it is suggested to describe an additional register stage after this function.  If there is no registered adder/accumulator following the multiply function, two pipeline stages are suggested to allow both the MREG and PREG registers to be used.  If the DSP48 was instantiated in the design, it is suggested to set both the MREG and PREG attributes to 1 when performing multiply functions.
+Related violations: <none>
+
+DPOP-2#20 Warning
+MREG Output pipelining  
+DSP aster_soc_board_i/aster/inst/implementation/npu/engine/pa_m00 multiplier stage aster_soc_board_i/aster/inst/implementation/npu/engine/pa_m00/P[47:0] is not pipelined (MREG=0). Pipelining the multiplier function will improve performance and will save significant power so it is suggested whenever possible to fully pipeline this function.  If this multiplier was inferred, it is suggested to describe an additional register stage after this function.  If there is no registered adder/accumulator following the multiply function, two pipeline stages are suggested to allow both the MREG and PREG registers to be used.  If the DSP48 was instantiated in the design, it is suggested to set both the MREG and PREG attributes to 1 when performing multiply functions.
+Related violations: <none>
+
+DPOP-2#21 Warning
+MREG Output pipelining  
+DSP aster_soc_board_i/aster/inst/implementation/npu/engine/pa_m0_reg multiplier stage aster_soc_board_i/aster/inst/implementation/npu/engine/pa_m0_reg/P[47:0] is not pipelined (MREG=0). Pipelining the multiplier function will improve performance and will save significant power so it is suggested whenever possible to fully pipeline this function.  If this multiplier was inferred, it is suggested to describe an additional register stage after this function.  If there is no registered adder/accumulator following the multiply function, two pipeline stages are suggested to allow both the MREG and PREG registers to be used.  If the DSP48 was instantiated in the design, it is suggested to set both the MREG and PREG attributes to 1 when performing multiply functions.
+Related violations: <none>
+
+DPOP-2#22 Warning
+MREG Output pipelining  
+DSP aster_soc_board_i/aster/inst/implementation/npu/engine/pa_m10 multiplier stage aster_soc_board_i/aster/inst/implementation/npu/engine/pa_m10/P[47:0] is not pipelined (MREG=0). Pipelining the multiplier function will improve performance and will save significant power so it is suggested whenever possible to fully pipeline this function.  If this multiplier was inferred, it is suggested to describe an additional register stage after this function.  If there is no registered adder/accumulator following the multiply function, two pipeline stages are suggested to allow both the MREG and PREG registers to be used.  If the DSP48 was instantiated in the design, it is suggested to set both the MREG and PREG attributes to 1 when performing multiply functions.
+Related violations: <none>
+
+DPOP-2#23 Warning
+MREG Output pipelining  
+DSP aster_soc_board_i/aster/inst/implementation/npu/engine/pa_m1_reg multiplier stage aster_soc_board_i/aster/inst/implementation/npu/engine/pa_m1_reg/P[47:0] is not pipelined (MREG=0). Pipelining the multiplier function will improve performance and will save significant power so it is suggested whenever possible to fully pipeline this function.  If this multiplier was inferred, it is suggested to describe an additional register stage after this function.  If there is no registered adder/accumulator following the multiply function, two pipeline stages are suggested to allow both the MREG and PREG registers to be used.  If the DSP48 was instantiated in the design, it is suggested to set both the MREG and PREG attributes to 1 when performing multiply functions.
+Related violations: <none>
+
+DPOP-2#24 Warning
+MREG Output pipelining  
+DSP aster_soc_board_i/aster/inst/implementation/npu/engine/prod_b0 multiplier stage aster_soc_board_i/aster/inst/implementation/npu/engine/prod_b0/P[47:0] is not pipelined (MREG=0). Pipelining the multiplier function will improve performance and will save significant power so it is suggested whenever possible to fully pipeline this function.  If this multiplier was inferred, it is suggested to describe an additional register stage after this function.  If there is no registered adder/accumulator following the multiply function, two pipeline stages are suggested to allow both the MREG and PREG registers to be used.  If the DSP48 was instantiated in the design, it is suggested to set both the MREG and PREG attributes to 1 when performing multiply functions.
+Related violations: <none>
+
+DPOP-2#25 Warning
+MREG Output pipelining  
+DSP aster_soc_board_i/aster/inst/implementation/npu/engine/prod_b_reg multiplier stage aster_soc_board_i/aster/inst/implementation/npu/engine/prod_b_reg/P[47:0] is not pipelined (MREG=0). Pipelining the multiplier function will improve performance and will save significant power so it is suggested whenever possible to fully pipeline this function.  If this multiplier was inferred, it is suggested to describe an additional register stage after this function.  If there is no registered adder/accumulator following the multiply function, two pipeline stages are suggested to allow both the MREG and PREG registers to be used.  If the DSP48 was instantiated in the design, it is suggested to set both the MREG and PREG attributes to 1 when performing multiply functions.
+Related violations: <none>
+
+DPOP-2#26 Warning
+MREG Output pipelining  
+DSP aster_soc_board_i/aster/inst/implementation/npu/engine/prod_c0 multiplier stage aster_soc_board_i/aster/inst/implementation/npu/engine/prod_c0/P[47:0] is not pipelined (MREG=0). Pipelining the multiplier function will improve performance and will save significant power so it is suggested whenever possible to fully pipeline this function.  If this multiplier was inferred, it is suggested to describe an additional register stage after this function.  If there is no registered adder/accumulator following the multiply function, two pipeline stages are suggested to allow both the MREG and PREG registers to be used.  If the DSP48 was instantiated in the design, it is suggested to set both the MREG and PREG attributes to 1 when performing multiply functions.
+Related violations: <none>
+
+DPOP-2#27 Warning
+MREG Output pipelining  
+DSP aster_soc_board_i/aster/inst/implementation/npu/engine/prod_c_reg multiplier stage aster_soc_board_i/aster/inst/implementation/npu/engine/prod_c_reg/P[47:0] is not pipelined (MREG=0). Pipelining the multiplier function will improve performance and will save significant power so it is suggested whenever possible to fully pipeline this function.  If this multiplier was inferred, it is suggested to describe an additional register stage after this function.  If there is no registered adder/accumulator following the multiply function, two pipeline stages are suggested to allow both the MREG and PREG registers to be used.  If the DSP48 was instantiated in the design, it is suggested to set both the MREG and PREG attributes to 1 when performing multiply functions.
+Related violations: <none>
+
+

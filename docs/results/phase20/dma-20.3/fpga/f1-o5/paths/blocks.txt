@@ -1,0 +1,12 @@
+    1   0.328 aster_soc_board_i -> fabric
+    1   0.343 dma -> fabric
+    2   0.162 fabric -> g_hart[0].dcache
+    1   0.325 g_devices.req_valid_reg[0] -> g_devices.devices
+    8   0.296 g_hart[0].core -> g_hart[0].core
+    4   0.217 g_hart[0].dcache -> g_hart[1].dcache
+    3   0.253 g_hart[1].dcache -> fabric
+    1   0.265 g_hart[1].dcache -> g_hart[1].dcache
+    1   0.278 g_hart[1].dcache -> g_npu_buffer.e_wdata_reg[0][37]
+    1   0.342 g_hart[1].dcache -> g_npu_buffer.e_wdata_reg[0][38]
+    1   0.278 g_hart[1].dcache -> g_npu_buffer.e_wdata_reg[0][41]
+    1   0.278 g_hart[1].dcache -> g_npu_buffer.e_wdata_reg[0][50]

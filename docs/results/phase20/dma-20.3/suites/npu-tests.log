@@ -1,0 +1,24 @@
+mkdir -p build/npu
+verilator --cc --exe --build -O3 --assert --Wall --top-module shell_npu_v2 --prefix Vnpu_shell \
+	--Mdir build/npu/v2_obj -o build/npu/npu_shell_v2 \
+	rtl/accelerator/aster_npu2_ram.sv rtl/accelerator/aster_npu2_engine.sv rtl/accelerator/aster_npu2.sv verification/npu/shell_npu_v2.sv verification/npu/tb_npu.cpp
+make[1]: Entering directory 'build/npu/v2_obj'
+make[1]: Nothing to be done for 'default'.
+make[1]: Leaving directory 'build/npu/v2_obj'
+PASS: v2 NPU in the NPU shell, plain: 4 seeds x 1,000 jobs and the 42 edge jobs as the reference, every coverage bin, every job as the cycle model
+PASS: v2 NPU in the NPU shell, latency1: 4 seeds x 1,000 jobs and the 42 edge jobs as the reference, every coverage bin, every job as the cycle model
+PASS: v2 NPU in the NPU shell, stall: 4 seeds x 1,000 jobs and the 42 edge jobs as the reference, every coverage bin
+PASS: v2 NPU in the NPU shell, latency1-stall: 4 seeds x 1,000 jobs and the 42 edge jobs as the reference, every coverage bin
+PASS: v2 NPU in the NPU shell, long-stall: 4 seeds x 1,000 jobs and the 42 edge jobs as the reference, every coverage bin
+PASS: v2 NPU in the NPU shell, inflight3: 4 seeds x 1,000 jobs and the 42 edge jobs as the reference, every coverage bin
+PASS: the stepped cycle model (19.5) equals 19.1's by phases on 19.4's NPU: seed=1 compared=40000
+PASS: the NPU shell's own self-tests through ABI 2's checks (corrupted result, wrong counter)
+PASS: v2 NPU gate case, two-cycle memory: NPU PASS profile=v2 case=64x64x64 job_cycles=18871 array_steps=16384 macs=262144 utilization=86.8210%
+PASS: v2 NPU gate case, two-cycle memory: NPU PASS profile=v2 case=96x96x96 job_cycles=60551 array_steps=55296 macs=884736 utilization=91.3214%
+PASS: v2 NPU gate case, two-cycle memory: NPU PASS profile=v2 case=128x64x128 job_cycles=72535 array_steps=65536 macs=1048576 utilization=90.3509%
+PASS: v2 NPU N=1 case (K-split, measured), two-cycle memory: NPU PASS profile=v2 case=32x1x784 job_cycles=8171 array_steps=1568 macs=25088 utilization=19.1898%
+PASS: v2 NPU N=1 case (K-split, measured), two-cycle memory: NPU PASS profile=v2 case=784x1x25 job_cycles=9634 array_steps=1372 macs=19600 utilization=12.7154%
+PASS: v2 NPU N=1 case (K-split, measured), two-cycle memory: NPU PASS profile=v2 case=10x1x32 job_cycles=175 array_steps=24 macs=320 utilization=11.4286%
+PASS: v2 NPU convolution, direct and im2col, the same result, two-cycle memory: profile=v2 conv=32x32x1 kernel=5x5 n=1 m=784 k=25 direct_cycles=11986 direct_utilization=10.2203% im2col_cycles=9634 im2col_utilization=12.7154% im2col_bytes=19600
+PASS: v2 NPU convolution, direct and im2col, the same result, two-cycle memory: profile=v2 conv=16x16x3 kernel=3x3 n=16 m=196 k=27 direct_cycles=8461 direct_utilization=62.5458% im2col_cycles=8167 im2col_utilization=64.7974% im2col_bytes=5292
+PASS: v2 NPU convolution, direct and im2col, the same result, two-cycle memory: profile=v2 conv=7x7x16 kernel=3x3 n=32 m=25 k=144 direct_cycles=10309 direct_utilization=69.8419% im2col_cycles=10309 im2col_utilization=69.8419% im2col_bytes=3600

@@ -1,0 +1,12 @@
+DMA SWEEP jobs=3392 abort_prefix=3205 hart1_lines=64 contention: dma_stalls=110 npu_accepted=1524 hart1_accepted=43163 hart1_passes=11 resume_dropped_reads=12
+DMA COPY bytes=16 aligned dma_cycles=160 dma_job_cycles=8 cpu_cycles=79
+DMA COPY bytes=16 misaligned dma_cycles=153 dma_job_cycles=9 cpu_cycles=192
+DMA COPY bytes=64 aligned dma_cycles=153 dma_job_cycles=14 cpu_cycles=151
+DMA COPY bytes=64 misaligned dma_cycles=153 dma_job_cycles=15 cpu_cycles=720
+DMA COPY bytes=256 aligned dma_cycles=153 dma_job_cycles=38 cpu_cycles=487
+DMA COPY bytes=256 misaligned dma_cycles=153 dma_job_cycles=39 cpu_cycles=2832
+DMA COPY bytes=1024 aligned dma_cycles=264 dma_job_cycles=134 cpu_cycles=1831
+DMA COPY bytes=1024 misaligned dma_cycles=264 dma_job_cycles=135 cpu_cycles=11280
+DMA COPY bytes=4096 aligned dma_cycles=641 dma_job_cycles=518 cpu_cycles=7249
+DMA COPY bytes=4096 misaligned dma_cycles=641 dma_job_cycles=519 cpu_cycles=45105
+SOC DMA PASS

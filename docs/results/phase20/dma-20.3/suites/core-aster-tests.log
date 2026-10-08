@@ -1,0 +1,26 @@
+mkdir -p build/aster_core
+verilator --cc --exe --build --assert --Wall --top-module shell_aster_ports --prefix Vcore_ports \
+	--Mdir build/aster_core/ports_obj -o build/aster_core/core_ports_aster \
+	rtl/aster_core/aster_core_pkg.sv rtl/aster_core/aster_core_fetch.sv rtl/aster_core/aster_core.sv verification/core/shell_aster_ports.sv \
+	verification/core/tb_core_ports.cpp
+make[1]: Entering directory 'build/aster_core/ports_obj'
+make[1]: Nothing to be done for 'default'.
+make[1]: Leaving directory 'build/aster_core/ports_obj'
+PASS: aster 99/99 tests pass in lockstep and by signature (7 self-checking programs in the shell alone) with Spike (2 skipped); 3888525 instructions in 5824158 cycles
+PASS: aster 99/99 tests pass in lockstep and by signature (7 self-checking programs in the shell alone) with Spike (2 skipped); 3888525 instructions in 5824158 cycles
+PASS: aster 99/99 tests pass in lockstep and by signature (7 self-checking programs in the shell alone) with Spike (2 skipped, stall seed 5); 3884736 instructions in 9140090 cycles
+PASS: aster 99/99 tests pass in lockstep and by signature (7 self-checking programs in the shell alone) with Spike (2 skipped, stall seed 9); 3886173 instructions in 7638349 cycles
+PASS: aster 99/99 tests pass in lockstep and by signature (7 self-checking programs in the shell alone) with Spike (2 skipped, stall seed 7); 3885251 instructions in 8341089 cycles
+PASS: aster 99/99 tests pass in lockstep and by signature (7 self-checking programs in the shell alone) with Spike (2 skipped, stall seed 7); 3885254 instructions in 8320955 cycles
+PASS: aster 72/72 riscv-arch-test programs pass in lockstep and by signature with Spike (0 skipped); 125214 instructions in 255796 cycles
+PASS: aster 72/72 riscv-arch-test programs pass in lockstep and by signature with Spike (0 skipped); 125214 instructions in 255796 cycles
+PASS: aster 20/20 random programs pass in lockstep with Spike (seeds 1-20); 95642 instructions in 232670 cycles
+PASS: aster 20/20 random programs pass in lockstep with Spike (seeds 201-220); 97743 instructions in 242607 cycles
+PASS: aster 20/20 random programs pass in lockstep with Spike (seeds 101-120, stall seed 11); 94403 instructions in 300008 cycles
+PASS: aster 71/71 tests pass in lockstep and by signature with Spike (0 skipped, random interrupts seed 7); 197474 instructions in 411848 cycles
+PASS: aster 20/20 random programs pass in lockstep with Spike (seeds 301-320); 326639 instructions in 791026 cycles
+PASS: aster 20/20 random programs pass in lockstep with Spike (seeds 401-420, stall seed 13); 461517 instructions in 1582375 cycles
+PASS: aster 20/20 random programs pass in lockstep with Spike (seeds 501-520); 323073 instructions in 782665 cycles
+PASS: 31/31 injected faults detected on traps/decode_traps
+PASS: rv32ui/lw with +duplicate_read=3: shell reported 'LOAD_MISMATCH cycles=93 retired=76 fetch_errors=0 interrupts=0', expected LOAD_MISMATCH
+PASS: directed/atomics with +sc_outcomes=build/core_tests/aster-selftest/all_succeed.sc: shell reported 'SC_MISMATCH cycles=200 retired=118 fetch_errors=0 interrupts=0', expected SC_MISMATCH
