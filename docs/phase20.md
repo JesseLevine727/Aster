@@ -1122,29 +1122,35 @@ layer.
 - `--repeat-every N` runs a sample again and requires byte-identical
   records.
 
-**The CPU family** (`build/matrix/cpu-2`): 108 entries, 108 captured, in 44 s. That is memory × data cache ×
-cache state for each of the six kernels, plus one hart.
+**The CPU family**, as re-captured in step 2 from 325d18b (`build/matrix/s3-cpu`; the first capture,
+`cpu-2`, predates the cold word): 108 entries, 108 captured, in 37 s. That is memory × data cache × cache
+state for each of the six kernels, plus one hart.
 - **The oracle:** each record matches v1's baseline record's identity and the independent checksum model.
 - **Determinism:** 18 entries run again give byte-identical records.
+- **Cold and warm:** each of the 54 pairs runs binaries that differ only in the cold word (step 2).
 
-| Kernel | Warm, R | Cold, R | Cache off, warm | Cache off, +4 waits, cold | v1's aster_minimal | v1 / v2 |
+| Kernel | Warm, R | Cold, R | Cache off, warm | Cache off, +4 waits, cold | v1's aster_minimal | v1 / v2 (cold) |
 | --- | ---: | ---: | ---: | ---: | ---: | ---: |
-| CoreMark (CRC run) | 466,200 | 466,607 | 610,996 | 837,249 | 1,922,272 | 4.12× |
-| Dhrystone | 858,154 | 859,414 | 1,113,446 | 1,608,308 | 3,128,553 | 3.65× |
-| sort/search | 696,146 | 696,883 | 894,749 | 1,159,997 | 2,183,301 | 3.14× |
-| FFT | 314,754 | 316,491 | 407,694 | 542,237 | 3,057,473 | 9.71× |
-| strided | 2,377 | 2,732 | 2,626 | 3,746 | 9,087 | 3.82× |
-| Conv2D | 1,109,067 | 1,111,066 | 1,588,381 | 2,228,542 | 5,820,652 | 5.25× |
+| CoreMark (CRC run) | 466,330 | 466,975 | 610,939 | 837,270 | 1,922,272 | 4.12× |
+| Dhrystone | 858,191 | 859,399 | 1,113,474 | 1,608,313 | 3,128,553 | 3.64× |
+| sort/search | 696,154 | 696,891 | 894,757 | 1,160,013 | 2,183,301 | 3.13× |
+| FFT | 314,745 | 316,491 | 407,694 | 542,237 | 3,057,473 | 9.66× |
+| strided | 2,377 | 2,732 | 2,626 | 3,746 | 9,087 | 3.33× |
+| Conv2D | 1,109,074 | 1,111,066 | 1,588,381 | 2,228,542 | 5,820,652 | 5.24× |
 
-- **One hart** gives the same cycles as two, since hart 1 is idle.
-- **Against 18.7's figures** (measured with the CPU shell's testbench window and layout):
-  - within a few cycles: CoreMark 466,607 against 466,606 (+1), sort/search +6, strided +10, Conv2D −55;
-  - further off: Dhrystone +1,993 and FFT −1,071. The matrix's layout differs from 18.7's; the cause is not
-    investigated further.
+- **v1 / v2 divides by the cold figure:** v1's programs START once after reset, so its figures are first
+  passes. This table's first version divided by the warm figure (strided read 3.82× there).
+- **One hart** gives the same cycles as two, warm and cold, since hart 1 is idle.
+- **Against 18.7's figures** (measured with the CPU shell's testbench window and layout), cold:
+  - within a few cycles: sort/search +14, strided +10, Conv2D −55;
+  - further off: CoreMark +369, Dhrystone +1,978, FFT −1,071.
+  - The cold word gave the cold builds the warm builds' layout, which moved CoreMark's cold figure by 368
+    cycles (it was +1 against 18.7 in `cpu-2`). These kernels move by up to about 0.2% with the layout of
+    their code and data (the data cache is direct-mapped); the cause of each delta is not investigated
+    further.
 - **The review's measurement:** the first run's window held the harness's own calls on the kernels that use
   aster_perf_clear (about 80 cycles of strided's 2,498), until the shadow's START and FREEZE became v1's inline
-  stores. The second run also moved to the matrix's layout, so its other changes are the layout's too
-  (CoreMark warm +368).
+  stores.
 
 **Two fixes to 20.3's DMA program,** whose checks rested on coincidences
 that a slower build broke:
@@ -1160,68 +1166,136 @@ that a slower build broke:
 
 ### Step 2: the v1-retained and gate workloads (in progress)
 
-**The scaling gate's workloads**, in the matrix's coherence family
-(`software/matrix/reduce.c`, `gemm_mc.c`):
-- **The reduction,** two versions:
-  - **v1's:** its computation and window, hart 0 refilling the array inside
-    it, and hart 1 released just before START, as v1 did.
-  - **The gate's** (the owner, 7 October 2026): each worker fills and sums
-    its own half through the runtime's dispatch and join, with hart 1 ready
-    before the window opens.
-- **The multicore GEMM with DOT8:** npu.md §7's three cases, on 19.4's
-  hand-scheduled kernel. The harts split B's packing by column block, meet
-  at a barrier, then split C's rows.
-- **The oracles:** every record's checksum is an independent model's: the
-  reduction's in `workload_reference`, and for the GEMM all of C,
-  recomputed from the same seeded inputs.
-- **Determinism:** six entries run again give identical records.
+**Captured from 325d18b:** `build/matrix/s3-coh`, `s3-dsp` and `s3-ml`; the CPU family is step 1's table.
+All 347 records equal the working tree's run before that commit, record for record.
 
-**70 entries, all captured** (`build/matrix/coh-1`, `coh-2`). Each case and
-worker count was crossed with the four memory waits, and also run on the
-one-hart build, cold, and with the cache off. Warm cycles on R:
+**Two windows.** Every warm run outside the CPU family records two windows (matrix.md §4):
+- its end-to-end window: the case's own, which is v1's for a v1-retained case;
+- its kernel window: the computation alone, its data in place.
 
-| Workload | 1 worker | 2 workers | Speedup (gate: 1.8×) |
-| --- | ---: | ---: | ---: |
-| reduction, the gate's (fill and sum in parallel) | 74,010 | 37,616 | **1.968×** |
-| reduction, v1's (fill on hart 0) | 74,023 | 58,444 | 1.267× (v1: 1.29×) |
-| GEMM 64×64×64, DOT8 | 214,692 | 109,107 | **1.968×** |
-| GEMM 96×96×96, DOT8 | 702,367 | 353,543 | **1.987×** |
-| GEMM 128×64×128 (M×N×K), DOT8 | 842,296 | 432,521 | **1.947×** |
+A cold run records the end-to-end window. matrix.md §10 lists six readings of the plan found here, for the
+owner's review.
 
-- **Across the axes,** the gate cases scale 1.947× to 1.998×, at every
-  memory wait and with the data cache off. Each hart retires exactly half
-  the DOT8s.
-- **Against v1:** the reduction's best v2 time, 37,616 cycles, is 6.2× v1's
-  best (two workers, 233,112).
+**How the matrix measures.** Two reviews and a check of my own changed the method; every figure below is from
+the method as it now stands.
+- **Cold and warm are one binary:** cold or warm is one data word. A compile-time switch had moved code and
+  data, and MNIST's cold windows came out up to 0.24% faster than its warm ones. The runner checks every pair
+  byte by byte: 85 across the four families.
+- **Each warm window has its own warm-up pass** of the same code. With one warm-up, a kernel window ran its
+  code for the first time: a GEMM's kernel window took 66 to 76 instruction misses on hart 0, and now takes
+  none (hart 1 takes up to 6).
+- **Outputs are poisoned between passes, each by the hart that writes it.** A planted pass that skipped its
+  engine failed as it should. Poisoning from hart 0 alone had invalidated hart 1's warm lines: the gate's
+  reduction took 38,245 cycles instead of 37,623.
+- **Hart 0's work interval is the whole window,** set after it. It opens and closes every window and works
+  throughout. Hart 1 stamps its own, from its first stamp; Conv2D's had kept its last iteration's (453,452
+  of 596,130 cycles). A stamp is a call and a counter read, about 20 cycles (64 in a window: 1,535 cycles
+  against 311 for 64 stores).
+- **An NPU kernel interval** runs from the job's START to its end. The job's accounting comes after.
+- **The oracles** check both windows' identity and checksum, and the method's evidence:
+  - DOT8's exact count: M·N·K/4 for the GEMM; 18,816 and 15,680 for Conv2D's im2col and direct; 203,264
+    for MNIST's;
+  - the NPU's jobs and MACs;
+  - hart 1 idle with one worker and busy with two.
 
-**Conv2D 32×32, K = 5** (a v1-retained workload; the matrix's dsp family,
-`software/matrix/conv2d.c`):
-- **The window:** v1's inputs, computation and window: four iterations of
-  building the inputs (with the im2col matrix for an im2col method), the
-  engine, and the checksum.
-- **The methods:** im2col and direct, each scalar, two workers, DOT8 (v1's
-  kernel for im2col) and the NPU (19.3's two-level addressing for direct).
-- **The runs:** 66 planned. 64 are captured, each one's checksum the
-  independent model's and each NPU method's MACs exactly 4 × 784 × 25. The
-  other 2, two workers on the one-hart build, are unsupported. Eight entries
-  run again give identical records.
+**The coherence family** (`s3-coh`): 92 planned. 91 are captured; dispatch and join on the one-hart build is
+unsupported. Determinism 12/12, and the 16 cold/warm pairs differ only in the cold word.
+- **The cases:** the two reductions and the three GEMMs, on one worker and on two.
+- **§3's harts and workers × memory cross:** one hart, two harts with one worker, and two with two, at each
+  of the four memory waits. The one-hart build now has a variant at each wait, each passing its test
+  program.
+- **One at a time:** cold, and the cache off.
+- **Dispatch and join.**
 
-| Method (warm, R) | Cycles | Against v1's best (NPU, 4,837,408) |
-| --- | ---: | ---: |
-| im2col, scalar | 1,508,345 | 3.21× |
-| im2col, two workers | 782,930 | 6.18× |
-| im2col, DOT8 | 1,511,672 | 3.20× |
-| im2col, NPU | 575,203 | 8.41× |
-| direct, scalar | 1,136,729 | 4.26× |
-| direct, two workers | 596,130 | 8.11× |
-| direct, DOT8 | 673,405 | 7.18× |
-| direct, NPU | **84,312** | **57.4×** |
+| Workload (warm, R) | e2e, 1 worker | e2e, 2 workers | Speedup (gate: 1.8×) | Kernel, 1 | Kernel, 2 | Speedup |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: |
+| reduction, the gate's (fill and sum in parallel) | 73,878 | 37,577 | **1.966×** | 36,952 | 19,208 | 1.924× |
+| reduction, v1's (fill on hart 0) | 73,842 | 58,461 | 1.263× | 36,912 | 21,490 | 1.718× |
+| GEMM 64×64×64, DOT8 | 215,179 | 109,020 | **1.974×** | 201,216 | 101,843 | 1.976× |
+| GEMM 96×96×96, DOT8 | 703,738 | 354,566 | **1.985×** | 672,610 | 338,935 | 1.984× |
+| GEMM 128×64×128 (M×N×K), DOT8 | 843,637 | 432,933 | **1.949×** | 805,386 | 404,287 | 1.992× |
 
-- **The NPU's geometry** matters little here: direct on a 4×4 NPU with a
-  32-bit port and one strip takes 105,400 cycles. Building the inputs,
-  inside v1's window, dominates.
-- **Direct beats im2col on every engine,** since the im2col copy is inside
-  the window.
+- **The scaling gate, measured:** across every wait, cold and the cache off, the four gate cases scale 1.945×
+  (GEMM 128×64×128, cold) to 1.998× end to end. It is required in 20.5.
+- **The one-hart build** gives exactly the one-worker cycles at every wait.
+- **v1's reduction** scales 1.18× to 1.35× across the axes, as v1's own 1.29×: hart 0's fill inside the
+  window is serial.
+- **Against v1** (v1's inputs and window, and like v1's figures the first pass after reset): v1's best
+  reduction is two workers, 233,112 cycles. v2's best in that window is v1's version on two workers, cold:
+  58,724 cycles, **3.97×**. (The gate's version, 38,459 cold, has a different window.)
+
+**Dispatch and join** (`smp_overhead.c`), warm. The round trip is 64 empty jobs. The handoff is one job with
+its four moments stamped, and each difference holds about one stamp.
+
+| Memory | Round trip, a job | Dispatch | Job | Join |
+| --- | ---: | ---: | ---: | ---: |
+| R | 88.1 | 70 | 33 | 39 |
+| +1 wait | 95.2 | 75 | 36 | 42 |
+| +2 waits | 102.2 | 79 | 39 | 46 |
+| +4 waits | 116.2 | 88 | 45 | 53 |
+| the cache off | 78.2 | 65 | 32 | 34 |
+
+- **The cache off is faster:** each flag is then read from memory directly, rather than invalidated and
+  refilled.
+- **Cold,** the round trip is 89.1 cycles a job.
+
+**Conv2D 32×32, K = 5** (`s3-dsp`): 82 planned. 80 are captured: the eight methods across the axes, and
+three seeds at R. Two workers on the one-hart build are unsupported. Determinism 10/10; 8/8 pairs.
+
+| Method | e2e, warm | e2e, cold | Kernel, warm | v1's best (NPU, 4,837,408) ÷ cold |
+| --- | ---: | ---: | ---: | ---: |
+| im2col, scalar | 1,507,654 | 1,507,875 | 950,844 | 3.21× |
+| im2col, two workers | 782,932 | 783,189 | 476,248 | 6.18× |
+| im2col, DOT8 | 1,511,627 | 1,512,120 | 954,912 | 3.20× |
+| im2col, NPU | 575,135 | 575,559 | 17,940 | 8.40× |
+| direct, scalar | 1,136,701 | 1,137,839 | 1,084,372 | 4.25× |
+| direct, two workers | 596,121 | 597,133 | 542,904 | 8.10× |
+| direct, DOT8 | 673,385 | 674,577 | 621,056 | 7.17× |
+| direct, NPU | **84,214** | **84,552** | 27,840 | **57.2×** |
+
+- **Against v1:** direct NPU, cold in v1's window, is 57.2× v1's best.
+- **The direct NPU's window** is mostly not the NPU. Its kernel window, the job from START to its end, is
+  27,840 of the e2e window's 84,214 cycles. Building the inputs and the checksum, both inside v1's window,
+  are the rest.
+- **im2col's NPU kernel** is 17,940 cycles, against direct's 27,840. Its e2e window is 6.8× direct's,
+  because the im2col copy is inside v1's window.
+- **The NPU's geometry:** the direct method takes 86,198 to 105,302 cycles across the five other geometries
+  (the 4×4, 32-bit, one-strip NPU slowest).
+- **The seeds:** the kernel windows agree within 72 cycles across the three. The other two seeds' e2e
+  windows take about 4,196 cycles more: one more instruction for each generated input, to form their
+  constant.
+
+**The MNIST MLP** (`s3-ml`): 69 planned. 68 are captured; two workers on the one-hart build are unsupported.
+Determinism 9/9; 7/7 pairs.
+- **The oracle:** every logit and class equals the independent model's (checksum 0x601191ed). The model
+  classifies 30 of the 32 images correctly.
+
+| Method | e2e, warm | A image | Cold, a image | v1's best (NPU, 433,903 an image) ÷ cold | Kernel, warm | NPU busy |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: |
+| scalar | 9,637,462 | 301,171 | 301,194 | 1.4× | 9,574,126 | — |
+| two workers | 5,186,201 | 162,069 | 162,086 | 2.7× | 5,120,889 | — |
+| DOT8 | 6,525,140 | 203,911 | 203,941 | 2.1× | 6,462,018 | — |
+| NPU, an image at a time | **189,418** | **5,919** | **5,930** | **73.2×** | 114,176 | 59.2% |
+| NPU, batches of 4 | 115,105 | 3,597 | 3,611 | (120×) | 55,808 | 48.1% |
+| NPU, batches of 8 | 87,084 | 2,721 | 2,735 | (159×) | 29,824 | 34.0% |
+| NPU, batches of 32 | 72,900 | 2,278 | 2,290 | (189×) | 17,208 | 23.5% |
+
+- **Against v1:** the NPU an image at a time, in v1's per-image window and cold, is 73.2× v1's best.
+  Batched figures are throughput, not v1's per-image latency, and are shown in parentheses.
+- **The batch crossover:** batching trades latency for throughput. An image's result waits for its batch:
+  5,919 cycles alone, 14,388 in a batch of 4, 21,771 in 8, 72,900 in 32. Throughput rises from 5,919 cycles
+  an image to 2,278.
+- **The NPU's busy time** falls as batches grow, because the requantization, ReLU and argmax on the CPU
+  stay per image.
+- **A batch of 4 half-fills the 8×8 array:** an 8-row strip with 4 rows used. It takes 25,600 active
+  cycles, against 12,800 for batches of 8 and 32. On a 4×4 NPU, batches of 4 fill the array.
+- **Two workers are sensitive to placement.** Across this step's builds of the same code, the method took
+  4.88 M to 5.19 M cycles. Hart 0's data-cache misses ranged from 37,868 to 84,943 and its instruction
+  misses from 9 to 775, while hart 1's misses stayed near 35,000. Both caches are direct-mapped, and hart
+  0's input vector and code conflict with its weight stream by address. Choosing placements is tuning,
+  20.5's.
+
+**Still to do in step 2:** CIFAR in every method, and ECG ported. Then the step's watchdog review and push.
 
 ## Milestones and gates
 

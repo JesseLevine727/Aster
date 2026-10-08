@@ -365,3 +365,41 @@ Each step has its watchdog review before it is pushed.
 5. **AsterBench v12 as drafted** ([`asterbench-v12.md`](asterbench-v12.md)).
 6. **CoreMark:** the CRC test's cycles in 20.4, and the official, ten-second
    score on the board in 20.5.
+
+## 10. Clarifications found in 20.4, for the owner's review
+
+Found while building step 2. Each is how the plan above was read where it
+did not settle a point; none loosens a gate.
+
+1. **A v1-retained case's end-to-end window is v1's own.** §4 keeps input
+   generation outside both windows, but the v1 gate (§5) needs "v1's inputs
+   and window", and v1's Conv2D window builds its inputs inside it. So the
+   e2e record of a v1-retained case is v1's window, as §4.7 already says for
+   MNIST. The kernel window beside it follows §4: the computation alone, its
+   inputs in place.
+2. **A two-worker kernel window** cannot leave out the hand-over, since the
+   window is common to both harts. Hart 1 is dispatched before the window
+   and waits at a release flag. Hart 0 opens the window, sets the flag, does
+   its share, waits for hart 1's done flag, and closes it. The window holds
+   the two shares and the two flags' hand-over, not the runtime's dispatch
+   and join, which the dispatch-and-join case measures on its own (§4.4's
+   output).
+3. **Cold and warm builds are one binary:** cold or warm is one data word
+   (`software/matrix/matrix_cold.h`). A compile-time switch had moved code
+   and data, and MNIST's cold windows came out up to 0.24% faster than its
+   warm ones. The runner checks that each warm and cold pair differs only in
+   that word.
+4. **Between passes, each output is poisoned by the hart that writes it.**
+   Without poisoning, a timed pass that wrote nothing could pass on the
+   warm-up's results. The writer poisons rather than hart 0, because hart
+   0's stores would invalidate hart 1's warm lines and make its warm run
+   colder. That cost the gate's reduction 1.7% until it was changed.
+5. **MNIST's batched NPU method batches fc2 as well as fc1** (§4.7 names
+   fc1). Its weights are stored transposed at build time, as 19.3 did for
+   CIFAR, in place of the original layout, which does not fit in 96 KiB
+   beside them.
+6. **Each warm window has its own warm-up pass,** the same code untimed just
+   before it, where §4 has one warm-up before both windows. With one
+   warm-up, a kernel window ran its own code for the first time. Its data
+   was warm but its code was not: a GEMM's kernel window took 66 to 76
+   instruction-cache misses against its e2e window's 1 or 2.
