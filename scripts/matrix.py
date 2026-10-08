@@ -91,7 +91,45 @@ def cpu_entries() -> list[Entry]:
     return entries
 
 
-FAMILIES = {"cpu": cpu_entries}
+def coherence_entries() -> list[Entry]:
+    """matrix.md §4.4, so far the reduction: v1's version and the gate's (each worker filling and summing its
+    half), with one and two workers, crossed harts and workers × memory; the one-hart build; cold and the data
+    cache off, one at a time."""
+    entries = []
+    sources = ["software/matrix/reduce.c", "software/runtime/asterbench_v12.c", "software/runtime/aster_smp.c"]
+    configs = [(w, 1, False, VARIANT_OF[(w, 1)], workers) for w in (0, 1, 2, 4) for workers in (1, 2)]
+    configs += [(0, 1, False, "soc_h1", 1), (0, 1, True, "soc_h1", 1)]
+    configs += [(0, 1, True, "soc_dev", workers) for workers in (1, 2)]
+    configs += [(0, 0, False, "soc_dc0", workers) for workers in (1, 2)]
+    for version, name in ((1, "reduce_v1"), (2, "reduce_fill")):
+        for wait, dcache, cold, sim, workers in configs:
+            harts = soc_variants.VARIANTS[sim]["HARTS"]
+            method = "multicore" if workers == 2 else "scalar"
+            axes = dict(memory_wait=wait, dcache=dcache, cache_state="cold" if cold else "warm", harts=harts,
+                        workers=workers)
+            ident = f"coherence/{name}/{method}/{sim}/{'cold' if cold else 'warm'}"
+            entries.append(Entry(ident, "coherence", name, method, sim, cold, [], "LITMUS_CFLAGS", [], [], "", sources,
+                                 soc_variants.v12_defines(sim) + [f"-DREDUCE_VERSION={version}",
+                                                                  f"-DREDUCE_WORKERS={workers}u"]
+                                 + (["-DMATRIX_COLD"] if cold else []), axes, "reduce"))
+    # the multicore GEMM with DOT8 (the scaling gate's): npu.md §7's cases, one firmware each
+    gemm_sources = ["software/matrix/gemm_mc.c", "software/runtime/asterbench_v12.c", "software/runtime/aster_smp.c"]
+    for m, n, k in ((64, 64, 64), (96, 96, 96), (128, 64, 128)):
+        name = f"gemm_dot8_{m}x{n}x{k}"
+        for wait, dcache, cold, sim, workers in configs:
+            harts = soc_variants.VARIANTS[sim]["HARTS"]
+            method = "multicore" if workers == 2 else "dot8"
+            axes = dict(memory_wait=wait, dcache=dcache, cache_state="cold" if cold else "warm", harts=harts,
+                        workers=workers, m=m, n=n, k=k)
+            ident = f"coherence/{name}/{method}/{sim}/{'cold' if cold else 'warm'}"
+            entries.append(Entry(ident, "coherence", name, method, sim, cold, [], "LITMUS_CFLAGS", [], [], "",
+                                 gemm_sources, soc_variants.v12_defines(sim)
+                                 + [f"-DGEMM_M={m}u", f"-DGEMM_N={n}u", f"-DGEMM_K={k}u", f"-DGEMM_WORKERS={workers}u"]
+                                 + (["-DMATRIX_COLD"] if cold else []), axes, "gemm"))
+    return entries
+
+
+FAMILIES = {"cpu": cpu_entries, "coherence": coherence_entries}
 
 # v1's baseline records (Phase 17, sync1), the cases' identity the v12 record must keep
 BASELINE = run_core_tests.BASELINE
@@ -118,7 +156,64 @@ def oracle_cpu(entry: Entry, records: list[dict]) -> str:
     return f"checksum {want:#010x}: the independent model's and v1's record's"
 
 
-ORACLES = {"cpu": oracle_cpu}
+def oracle_reduce(entry: Entry, records: list[dict]) -> str:
+    if len(records) != 1:
+        raise asterbench_v12.ValidationError(f"{len(records)} records, not 1")
+    r = records[0]
+    workers = entry.axes["workers"]
+    if (r["name"], r["size"], r["iterations"], r["param"], r["seed"], r["workers"]) != \
+            (entry.case, 4096, 4, workers, 0x13570000, workers):
+        raise asterbench_v12.ValidationError("the record's identity differs from the entry's")
+    want = workload_reference.reduce_checksum(r["size"], r["iterations"], r["param"], r["seed"])
+    if want != r["checksum"]:
+        raise asterbench_v12.ValidationError(f"checksum {r['checksum']:#010x}, the oracle's {want:#010x}")
+    if workers == 2 and not (r["h1_work_end"] > r["h1_work_start"] and r["h0_work_end"] > r["h0_work_start"]):
+        raise asterbench_v12.ValidationError("a worker's interval is empty")
+    return f"checksum {want:#010x}: the independent model's"
+
+
+_gemm_cache: dict[tuple, int] = {}
+
+
+def gemm_checksum(m: int, n: int, k: int, seed: int) -> int:
+    """C = A x B of the firmware's inputs (xorshift32: A, then B, signed bytes), and ((sum * 33) ^ c) over C."""
+    key = (m, n, k, seed)
+    if key not in _gemm_cache:
+        state = seed
+        def nxt():
+            nonlocal state
+            state ^= (state << 13) & 0xFFFFFFFF; state ^= state >> 17; state ^= (state << 5) & 0xFFFFFFFF
+            return state
+        sbyte = lambda v: (v & 0xFF) - 256 if v & 0x80 else v & 0xFF
+        a = [sbyte(nxt()) for _ in range(m * k)]
+        b = [sbyte(nxt()) for _ in range(k * n)]
+        bt = [[b[kk * n + j] for kk in range(k)] for j in range(n)]
+        total = 0
+        for i in range(m):
+            row = a[i * k:(i + 1) * k]
+            for j in range(n):
+                cij = sum(x * y for x, y in zip(row, bt[j])) & 0xFFFFFFFF
+                total = ((total * 33) ^ cij) & 0xFFFFFFFF
+        _gemm_cache[key] = total
+    return _gemm_cache[key]
+
+
+def oracle_gemm(entry: Entry, records: list[dict]) -> str:
+    if len(records) != 1:
+        raise asterbench_v12.ValidationError(f"{len(records)} records, not 1")
+    r = records[0]
+    m, n, k, workers = (entry.axes[x] for x in ("m", "n", "k", "workers"))
+    if (r["name"], r["size"], r["param"], r["workers"]) != (entry.case, m * n, k, workers):
+        raise asterbench_v12.ValidationError("the record's identity differs from the entry's")
+    want = gemm_checksum(m, n, k, r["seed"])
+    if want != r["checksum"]:
+        raise asterbench_v12.ValidationError(f"C's checksum {r['checksum']:#010x}, the oracle's {want:#010x}")
+    if r["h0_dot8_retire"] == 0 or (workers == 2 and r["h1_dot8_retire"] == 0):
+        raise asterbench_v12.ValidationError("a worker ran no dot8")
+    return f"C's checksum {want:#010x}: the independent model's, over every element"
+
+
+ORACLES = {"cpu": oracle_cpu, "reduce": oracle_reduce, "gemm": oracle_gemm}
 
 _make_lock = threading.Lock()
 _make_cache: dict[tuple, list[str]] = {}

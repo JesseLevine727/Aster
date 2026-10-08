@@ -1154,6 +1154,42 @@ that a slower build broke:
 - **The poll loop is bounded,** so a hung job fails check 65 rather than timing out.
 
 
+### Step 2: the v1-retained and gate workloads (in progress)
+
+**The scaling gate's workloads**, in the matrix's coherence family
+(`software/matrix/reduce.c`, `gemm_mc.c`):
+- **The reduction,** two versions:
+  - **v1's:** its computation and window, hart 0 refilling the array inside
+    it, and hart 1 released just before START, as v1 did.
+  - **The gate's** (the owner, 7 October 2026): each worker fills and sums
+    its own half through the runtime's dispatch and join, with hart 1 ready
+    before the window opens.
+- **The multicore GEMM with DOT8:** npu.md §7's three cases, on 19.4's
+  hand-scheduled kernel. The harts split B's packing by column block, meet
+  at a barrier, then split C's rows.
+- **The oracles:** every record's checksum is an independent model's: the
+  reduction's in `workload_reference`, and for the GEMM all of C,
+  recomputed from the same seeded inputs.
+- **Determinism:** six entries run again give identical records.
+
+**70 entries, all captured** (`build/matrix/coh-1`, `coh-2`). Each case and
+worker count was crossed with the four memory waits, and also run on the
+one-hart build, cold, and with the cache off. Warm cycles on R:
+
+| Workload | 1 worker | 2 workers | Speedup (gate: 1.8×) |
+| --- | ---: | ---: | ---: |
+| reduction, the gate's (fill and sum in parallel) | 74,010 | 37,616 | **1.968×** |
+| reduction, v1's (fill on hart 0) | 74,023 | 58,444 | 1.267× (v1: 1.29×) |
+| GEMM 64×64×64, DOT8 | 214,692 | 109,107 | **1.968×** |
+| GEMM 96×96×96, DOT8 | 702,367 | 353,543 | **1.987×** |
+| GEMM 128×64×128 (M×N×K), DOT8 | 842,296 | 432,521 | **1.947×** |
+
+- **Across the axes,** the gate cases scale 1.947× to 1.998×, at every
+  memory wait and with the data cache off. Each hart retires exactly half
+  the DOT8s.
+- **Against v1:** the reduction's best v2 time, 37,616 cycles, is 6.2× v1's
+  best (two workers, 233,112).
+
 ## Milestones and gates
 
 | Milestone | Scope | Exit |
