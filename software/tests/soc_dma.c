@@ -29,7 +29,7 @@
 //         hart 1 streams through its own buffer (every load checked), then a
 //         4 KiB job while the NPU runs a GEMM (checked whole, sampled busy
 //         while the job runs) as well; the fabric counters showing the DMA
-//         waited; and RESUMEs while counting during that job, whose cycles
+//         waited (71: the NPU busy while the DMA was, sampled); and RESUMEs while counting during that job, whose cycles
 //         no counter adds (the devices' rule), the counters' cross-checks
 //         again exact;
 // 70      the timing table's copies (they must succeed);
@@ -292,10 +292,13 @@ int main(void) {
     const struct aster_npu2_job gemm = {na, nb, nc, 64, 32, 128, 32, 32, 64, 0, 0, 0, 0, 0};
     aster_npu2_start(&gemm);
     check(aster_dma_submit(dst, src, 4096) == ASTER_DMA_PENDING, 65);
-    // As the job starts: a burst of 24 RESUMEs, 0 to 3 nops apart in turn, so their phase against the reads
-    // sweeps every offset and some lands two cycles after a read's acceptance, at any memory wait and with
-    // the data caches on or off. Then, while the job runs, both engines sampled: the NPU busy while the DMA
-    // is, in some sample, is their overlap.
+    // Both engines sampled at once, here (the NPU started first, on a job of well over a thousand cycles; the
+    // DMA has just taken its START) and while the job runs: the NPU busy while the DMA is, in some sample,
+    // is their overlap. Then, as the job starts: a burst of 24 RESUMEs, 0 to 3 nops apart in turn, so their
+    // phase against the reads sweeps every offset and some lands two cycles after a read's acceptance, at any
+    // memory wait and with the data caches on or off.
+    uint32_t npu_overlapped = (aster_dma_status() & ASTER_DMA_BUSY)
+                              && (ASTER_NPU2_REG(ASTER_NPU2_STATUS) & ASTER_NPU2_BUSY) ? 1u : 0u;
     for (uint32_t i = 0; i < 24; ++i) {
         PERF_COMMAND = 4;
         switch (i % 4u) {
@@ -305,12 +308,12 @@ int main(void) {
             default: break;
         }
     }
-    uint32_t npu_overlapped = 0, polls = 0;
+    uint32_t polls = 0;
     enum aster_dma_result dma_now;
     while ((dma_now = aster_dma_poll()) == ASTER_DMA_PENDING && ++polls < POLLS)   // (a hung job fails check 65)
         if (ASTER_NPU2_REG(ASTER_NPU2_STATUS) & ASTER_NPU2_BUSY) ++npu_overlapped;
     check(dma_now == ASTER_DMA_OK, 65);
-    check(npu_overlapped != 0u, 69);                            // (the NPU ran while the DMA did)
+    check(npu_overlapped != 0u, 71);                            // (the NPU ran while the DMA did)
     window_reads += 4096 / 8;
     for (uint32_t i = 0; i < 4096; ++i) if (dst[i] != src[i]) { check(0, 65); break; }
     const uint32_t npu_status = aster_npu2_wait();
@@ -348,6 +351,7 @@ int main(void) {
     aster_puts(" hart1_accepted="); aster_put_u32(h1_accepted);
     aster_puts(" hart1_passes="); aster_put_u32(traffic_out[1]);
     aster_puts(" resume_dropped_reads="); aster_put_u32(resume_dropped);
+    aster_puts(" npu_overlap_samples="); aster_put_u32(npu_overlapped);
     aster_puts("\n");
     static const uint32_t sizes[] = {16, 64, 256, 1024, 4096};
     static uint32_t timed[5][2][3];

@@ -1048,7 +1048,7 @@ is 20.5's, on the board.
 4. the full matrix, its manifest complete, the overlap and totals
    reconciled, and the evidence.
 
-### Step 1: the infrastructure (in progress)
+### Step 1: the infrastructure
 
 **AsterBench v12:**
 - **The record:** one console line of 133 fields
@@ -1122,30 +1122,36 @@ layer.
 - `--repeat-every N` runs a sample again and requires byte-identical
   records.
 
-**The CPU family's first run:** 108 entries, 108 captured, in 54 s. That is
-memory × data cache × cache state for each of the six kernels, plus one hart.
-Each record matches v1's baseline record's identity and the independent
-checksum model.
+**The CPU family** (`build/matrix/cpu-2`): 108 entries, 108 captured, in 44 s. That is memory × data cache ×
+cache state for each of the six kernels, plus one hart.
+- **The oracle:** each record matches v1's baseline record's identity and the independent checksum model.
+- **Determinism:** 18 entries run again give byte-identical records.
 
 | Kernel | Warm, R | Cold, R | Cache off, warm | Cache off, +4 waits, cold | v1's aster_minimal | v1 / v2 |
 | --- | ---: | ---: | ---: | ---: | ---: | ---: |
-| CoreMark (CRC run) | 465,832 | 466,420 | 610,953 | 837,206 | 1,922,272 | 4.13× |
-| Dhrystone | 858,225 | 859,392 | 1,113,530 | 1,608,323 | 3,128,553 | 3.65× |
-| sort/search | 696,264 | 697,097 | 894,866 | 1,160,315 | 2,183,301 | 3.14× |
-| FFT | 314,908 | 316,772 | 407,795 | 542,583 | 3,057,473 | 9.71× |
-| strided | 2,498 | 2,964 | 2,746 | 4,098 | 9,087 | 3.64× |
-| Conv2D | 1,109,169 | 1,111,298 | 1,588,493 | 2,228,894 | 5,820,652 | 5.25× |
+| CoreMark (CRC run) | 466,200 | 466,607 | 610,996 | 837,249 | 1,922,272 | 4.12× |
+| Dhrystone | 858,154 | 859,414 | 1,113,446 | 1,608,308 | 3,128,553 | 3.65× |
+| sort/search | 696,146 | 696,883 | 894,749 | 1,159,997 | 2,183,301 | 3.14× |
+| FFT | 314,754 | 316,491 | 407,694 | 542,237 | 3,057,473 | 9.71× |
+| strided | 2,377 | 2,732 | 2,626 | 3,746 | 9,087 | 3.82× |
+| Conv2D | 1,109,067 | 1,111,066 | 1,588,381 | 2,228,542 | 5,820,652 | 5.25× |
 
-One hart gives the same cycles as two, since hart 1 is idle. The cold column
-agrees with 18.7's figures within each window's edges.
+- **One hart** gives the same cycles as two, since hart 1 is idle.
+- **The cold column** is 18.7's within a few cycles: CoreMark 466,607 against 466,606, strided 2,732 against
+  2,722. The window is now exactly v1's.
+- **The review's measurement:** the first run's window held about 80 cycles of the harness's own work on
+  strided (3%), until the shadow's START and FREEZE became v1's inline stores.
 
 **Two fixes to 20.3's DMA program,** whose checks rested on coincidences
 that a slower build broke:
 - **The RESUMEs** are now a burst at the job's start, 0 to 3 `nop`s apart
   in turn, so their phase sweeps every offset against the reads. They drop
   7 to 21 reads on every build.
-- **The NPU's overlap** is now sampled while the DMA is busy, rather than
-  required to outlast it.
+- **The NPU's overlap** is now both engines' busy flags sampled at one instant: right after the DMA's submit,
+  and while it runs (check 71). It is no longer required to outlast the job. Under contention the RESUMEs'
+  I/O stores take long enough that the job can end before polling begins, so a sample taken only while
+  polling was itself a coincidence.
+- **The poll loop is bounded,** so a hung job fails check 65 rather than timing out.
 
 
 ## Milestones and gates
