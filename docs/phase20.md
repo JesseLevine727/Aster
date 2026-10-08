@@ -1190,6 +1190,35 @@ one-hart build, cold, and with the cache off. Warm cycles on R:
 - **Against v1:** the reduction's best v2 time, 37,616 cycles, is 6.2× v1's
   best (two workers, 233,112).
 
+**Conv2D 32×32, K = 5** (a v1-retained workload; the matrix's dsp family,
+`software/matrix/conv2d.c`):
+- **The window:** v1's inputs, computation and window: four iterations of
+  building the inputs (with the im2col matrix for an im2col method), the
+  engine, and the checksum.
+- **The methods:** im2col and direct, each scalar, two workers, DOT8 (v1's
+  kernel for im2col) and the NPU (19.3's two-level addressing for direct).
+- **The runs:** 66 planned. 64 are captured, each one's checksum the
+  independent model's and each NPU method's MACs exactly 4 × 784 × 25. The
+  other 2, two workers on the one-hart build, are unsupported. Eight entries
+  run again give identical records.
+
+| Method (warm, R) | Cycles | Against v1's best (NPU, 4,837,408) |
+| --- | ---: | ---: |
+| im2col, scalar | 1,508,345 | 3.21× |
+| im2col, two workers | 782,930 | 6.18× |
+| im2col, DOT8 | 1,511,672 | 3.20× |
+| im2col, NPU | 575,203 | 8.41× |
+| direct, scalar | 1,136,729 | 4.26× |
+| direct, two workers | 596,130 | 8.11× |
+| direct, DOT8 | 673,405 | 7.18× |
+| direct, NPU | **84,312** | **57.4×** |
+
+- **The NPU's geometry** matters little here: direct on a 4×4 NPU with a
+  32-bit port and one strip takes 105,400 cycles. Building the inputs,
+  inside v1's window, dominates.
+- **Direct beats im2col on every engine,** since the im2col copy is inside
+  the window.
+
 ## Milestones and gates
 
 | Milestone | Scope | Exit |

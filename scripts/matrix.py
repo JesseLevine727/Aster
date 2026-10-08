@@ -129,7 +129,49 @@ def coherence_entries() -> list[Entry]:
     return entries
 
 
-FAMILIES = {"cpu": cpu_entries, "coherence": coherence_entries}
+NPU_SIMS = ("soc_n8s1", "soc_n4p8s2", "soc_n4p8s1", "soc_n4p4s2", "soc_n4p4s1")
+
+
+def axis_configs(npu: bool, workers: int) -> list[tuple]:
+    """matrix.md §3's crossing for a case and method: R (warm and cold), each other memory wait, the data cache
+    off, the one-hart build, and for an NPU method each other NPU geometry: (sim, cold, unsupported reason)."""
+    out = [("soc_dev", False, ""), ("soc_dev", True, ""), ("soc_w1", False, ""), ("soc_w2", False, ""),
+           ("soc_w4", False, ""), ("soc_dc0", False, "")]
+    out.append(("soc_h1", False, "two workers need two harts" if workers == 2 else ""))
+    if npu:
+        out += [(sim, False, "") for sim in NPU_SIMS]
+    return out
+
+
+def make_axes(sim: str, cold: bool, workers: int) -> dict:
+    v = soc_variants.VARIANTS[sim]
+    return dict(memory_wait=v["WAIT"], dcache=v["DCACHE"], cache_state="cold" if cold else "warm", harts=v["HARTS"],
+                workers=workers, npu=f"{v['NPU_DIM']}x{v['NPU_DIM']}/{8 * v['NPU_PORT_BYTES']}b/{v['NPU_A_STRIPS']}s")
+
+
+def dsp_entries() -> list[Entry]:
+    """matrix.md §4.5, so far Conv2D 32x32 K=5 (a v1-retained workload): im2col and direct, each scalar, two
+    workers, DOT8 and the NPU, in v1's window."""
+    entries = []
+    methods = {1: ("conv2d_im2col_scalar", "scalar", 1), 2: ("conv2d_im2col_multicore", "multicore", 2),
+               3: ("conv2d_im2col_dot8", "dot8", 1), 4: ("conv2d_im2col_npu", "npu_im2col", 1),
+               5: ("conv2d_direct_scalar", "scalar", 1), 6: ("conv2d_direct_multicore", "multicore", 2),
+               7: ("conv2d_direct_dot8", "dot8", 1), 8: ("conv2d_direct_npu", "npu_direct", 1)}
+    sources = ["software/matrix/conv2d.c", "software/benchmarks/xe_kernels.c", "software/drivers/aster_npu.c",
+               "software/runtime/asterbench_v12.c", "software/runtime/aster_smp.c"]
+    for number, (name, method, workers) in methods.items():
+        for sim, cold, reason in axis_configs(method.startswith("npu"), workers):
+            ident = f"dsp/{name}/{method}/{sim}/{'cold' if cold else 'warm'}"
+            e = Entry(ident, "dsp", name, method, sim, cold, [], "LITMUS_CFLAGS", [], [], "", sources,
+                      soc_variants.v12_defines(sim) + [f"-DCONV_METHOD={number}", "-Isoftware/benchmarks"]
+                      + (["-DMATRIX_COLD"] if cold else []), make_axes(sim, cold, workers), "conv2d")
+            if reason:
+                e.status, e.reason = "unsupported", reason
+            entries.append(e)
+    return entries
+
+
+FAMILIES = {"cpu": cpu_entries, "coherence": coherence_entries, "dsp": dsp_entries}
 
 # v1's baseline records (Phase 17, sync1), the cases' identity the v12 record must keep
 BASELINE = run_core_tests.BASELINE
@@ -213,7 +255,24 @@ def oracle_gemm(entry: Entry, records: list[dict]) -> str:
     return f"C's checksum {want:#010x}: the independent model's, over every element"
 
 
-ORACLES = {"cpu": oracle_cpu, "reduce": oracle_reduce, "gemm": oracle_gemm}
+def oracle_conv2d(entry: Entry, records: list[dict]) -> str:
+    if len(records) != 1:
+        raise asterbench_v12.ValidationError(f"{len(records)} records, not 1")
+    r = records[0]
+    if (r["name"], r["size"], r["iterations"], r["param"], r["seed"], r["workers"]) != \
+            (entry.case, 1024, 4, 5, 0x13570000, entry.axes["workers"]):
+        raise asterbench_v12.ValidationError("the record's identity differs from the entry's")
+    want = workload_reference.conv2d_checksum(r["size"], r["iterations"], r["param"], r["seed"])
+    if want != r["checksum"]:
+        raise asterbench_v12.ValidationError(f"checksum {r['checksum']:#010x}, the oracle's {want:#010x}")
+    if entry.method.startswith("npu") and r["npu_jobs"] != 4:
+        raise asterbench_v12.ValidationError(f"{r['npu_jobs']} NPU jobs, not 4")
+    if entry.method.startswith("npu") and r["npu_macs"] != 4 * 784 * 25:
+        raise asterbench_v12.ValidationError(f"{r['npu_macs']} NPU MACs, not 4 x 784 x 25")
+    return f"checksum {want:#010x}: the independent model's"
+
+
+ORACLES = {"cpu": oracle_cpu, "reduce": oracle_reduce, "gemm": oracle_gemm, "conv2d": oracle_conv2d}
 
 _make_lock = threading.Lock()
 _make_cache: dict[tuple, list[str]] = {}
@@ -425,12 +484,17 @@ def main() -> int:
     soc_flags = make_variable("LITMUS_CFLAGS", [])
     started = time.time()
     results = []
+    unsupported = [e for e in entries if e.status == "unsupported"]
+    entries_to_run = [e for e in entries if e.status != "unsupported"]
+    for e in unsupported:
+        results.append(dict(id=e.id, family=e.family, case=e.case, method=e.method, sim=e.sim, axes=e.axes,
+                            status="unsupported", reason=e.reason))
     with concurrent.futures.ThreadPoolExecutor(args.jobs) as pool:
-        futures = [pool.submit(do_entry, e, out, prefix, soc_flags) for e in entries]
+        futures = [pool.submit(do_entry, e, out, prefix, soc_flags) for e in entries_to_run]
         for i, future in enumerate(concurrent.futures.as_completed(futures), 1):
             r = future.result()
             results.append(r)
-            print(f"[{i}/{len(entries)}] {r['status']:8} {r['id']}" + (f": {r['failure'][:200]}" if r["status"] == "failed" else ""),
+            print(f"[{i}/{len(entries_to_run)}] {r['status']:8} {r['id']}" + (f": {r['failure'][:200]}" if r["status"] == "failed" else ""),
                   flush=True)
     # the C++ validator over every captured record, in one call
     captured = [r for r in results if r["status"] == "captured"]
