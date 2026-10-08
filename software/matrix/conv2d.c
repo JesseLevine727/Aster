@@ -124,7 +124,7 @@ static void upper_rows(void *arg) {
     (void)arg;
     direct_rows(CONV_M / 2u, CONV_M);
 #endif
-    v12_work_end(1);
+    matrix_stamp_end(1);
 }
 #endif
 
@@ -146,6 +146,7 @@ static void engine(void) {
 #else
     direct_rows(0, CONV_M / 2u);
 #endif
+    matrix_stamp_end(0);                               // (hart 0's last share ends; it waits)
     matrix_await();
 #else
     direct_rows(0, CONV_M);
@@ -224,6 +225,7 @@ static void poison_all(void) {
 static uint32_t run_e2e(void) {
     uint32_t checksum = 0;
     for (uint32_t iteration = 0; iteration < CONV_ITERATIONS; ++iteration) {
+        matrix_last = iteration == CONV_ITERATIONS - 1u;
         iteration_e2e();
         checksum = fold(checksum);
     }
@@ -238,6 +240,7 @@ static uint32_t run_kernel(void) {
         build_im2col(0, CONV_M);
 #endif
         poison_outputs(0);
+        matrix_last = iteration == CONV_ITERATIONS - 1u;
 #if NPU
         aster_npu2_describe(&job);
 #elif WORKERS == 2
@@ -262,7 +265,6 @@ static void emit(struct v12_record *record, const char *window, uint32_t checksu
                                         "conv2d_direct_dot8", "conv2d_direct_npu"};
     static const char *const methods[] = {"", "scalar", "multicore", "dot8", "npu_im2col", "scalar", "multicore",
                                           "dot8", "npu_direct"};
-    matrix_hart0_whole(record);
     record->name = names[CONV_METHOD]; record->family = "dsp"; record->method = methods[CONV_METHOD];
     record->window = window; record->cache_state = MATRIX_CACHE_STATE;
     record->size = CONV_H * CONV_W; record->iterations = CONV_ITERATIONS; record->param = CONV_K;
@@ -285,6 +287,7 @@ int main(void) {
     const uint32_t e2e = run_e2e();
     *(volatile uint32_t *)(uintptr_t)ASTER_ABI4_COMMAND = ASTER_ABI4_FREEZE;
     v12_end(&record);
+    matrix_hart0_whole(&record);                       // (v1's window ends in hart 0's checksum)
     emit(&record, "e2e", e2e);
     if (!matrix_cold) {
         (void)run_kernel();                            // the kernel window's warm-up
@@ -293,6 +296,11 @@ int main(void) {
         v12_prepare();
         const uint32_t kernel_sum = run_kernel();
         v12_end(&record);
+#if NPU
+        matrix_hart0_none(&record);                    // (hart 0 only starts the job and polls it)
+#elif WORKERS == 1
+        matrix_hart0_whole(&record);                   // (the engine is hart 0's, to the interval's end)
+#endif
         emit(&record, "kernel", kernel_sum);
     }
     return engine_failed;

@@ -51,7 +51,7 @@ static int8_t logits[IMAGES][FC2_OUT];
 static int32_t classes[IMAGES];
 static uint32_t window_first;                          // the next interval opens the window (START)
 
-// (hart 0's work interval is the whole window: matrix_hart0_whole)
+// (hart 0's work interval: matrix_window.h)
 static void interval_open(void) {
     matrix_open((int)window_first);
     window_first = 0;
@@ -100,7 +100,7 @@ void aster_secondary_main(void) {
             job.c = (int32_t *)((uint8_t *)job.c + (uint64_t)split * job.c_stride);
             job.m = job.m - split;
             xe_scalar_gemm(&job);
-            v12_work_end(1);
+            matrix_stamp_end(1);
             atomic_store_explicit(&done, e, memory_order_release);
         }
     }
@@ -138,6 +138,7 @@ static void layer(const struct aster_npu2_job *job, int mode) {
     struct aster_npu_gemm local = gemm;
     local.m = split;
     xe_scalar_gemm(&local);
+    if (mode == KERNEL) matrix_stamp_end(0);           // (the kernel window's last share ends; hart 0 waits)
     while (atomic_load_explicit(&done, memory_order_acquire) != next_epoch) {}
     __asm__ volatile ("fence iorw,iorw" ::: "memory");
 #endif
@@ -162,12 +163,14 @@ static void infer(uint32_t image, int mode) {
     __asm__ volatile ("fence iorw,iorw" ::: "memory");
     if (mode == E2E) interval_open();
     const struct aster_npu2_job fc1 = {w1, io.input, io.acc1, FC1_IN, 1u, 4u, FC1_OUT, 1u, FC1_IN, 0, 0, 0, 0, 0};
+    matrix_last = 0;
     layer(&fc1, mode);
     for (uint32_t o = 0; o < FC1_OUT; ++o) {
         const int8_t value = requant(io.acc1[o], PHASE11_FC1_MULT, PHASE11_FC1_SHIFT, phase11_fc1_bias_q[o]);
         io.hidden[o] = value > 0 ? value : 0;
     }
     const struct aster_npu2_job fc2 = {w2, io.hidden, io.acc2, FC2_IN, 1u, 4u, FC2_OUT, 1u, FC2_IN, 0, 0, 0, 0, 0};
+    matrix_last = image == IMAGES - 1u;                // (the window's last stretch: hart 1's end stamp)
     layer(&fc2, mode);
     int best = 0;
     for (uint32_t o = 0; o < FC2_OUT; ++o) {
@@ -238,7 +241,12 @@ static void timed_pass(struct v12_record *record, int mode) {
     v12_prepare();
     pass(mode);
     v12_end(record);
-    matrix_hart0_whole(record);
+    if (mode == E2E) matrix_hart0_whole(record);       // (v1's window ends in hart 0's class)
+#if NPU
+    else matrix_hart0_none(record);                    // (hart 0 only starts each job and polls it)
+#elif MNIST_METHOD != 1
+    else matrix_hart0_whole(record);                   // (each interval is hart 0's engine)
+#endif
     uint32_t checksum = 0, logits_ok = 1;
     for (uint32_t image = 0; image < IMAGES; ++image) {
         for (uint32_t o = 0; o < FC2_OUT; ++o) {
@@ -263,7 +271,7 @@ int main(void) {
 #if MNIST_METHOD == 1
     *(volatile uint32_t *)0x20002004u = 1u;            // v1's: the secondary released once, before any window
 #endif
-    if (!matrix_cold) pass(UNTIMED);                   // the warm-up pass
+    if (!matrix_cold) pass(E2E);                       // the e2e window's warm-up (the same code)
     engine_failed = 0;
     timed_pass(&record, E2E);
     int failed = !record.pass;

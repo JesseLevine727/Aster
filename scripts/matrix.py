@@ -146,6 +146,12 @@ def coherence_entries() -> list[Entry]:
         entries.append(Entry(ident, "coherence", "smp_overhead", "multicore", sim, cold, [], "LITMUS_CFLAGS", [], [],
                              "", smp_sources, soc_variants.v12_defines(sim) + (["-DMATRIX_COLD"] if cold else []),
                              axes, "smp"))
+    for sim in ("soc_dev", "soc_w4"):                  # a work stamp's cost (the figure phase20.md quotes)
+        entries.append(Entry(f"coherence/stamp_cost/scalar/{sim}/warm", "coherence", "stamp_cost", "scalar", sim, False,
+                             [], "LITMUS_CFLAGS", [], [], "", ["software/matrix/stamp_cost.c",
+                                                               "software/runtime/asterbench_v12.c",
+                                                               "software/runtime/aster_smp.c"],
+                             soc_variants.v12_defines(sim), make_axes(sim, False, 1), "stamps"))
     e = Entry("coherence/smp_overhead/multicore/soc_h1/warm", "coherence", "smp_overhead", "multicore", "soc_h1",
               False, [], "LITMUS_CFLAGS", [], [], "", smp_sources, soc_variants.v12_defines("soc_h1"),
               dict(memory_wait=0, dcache=1, cache_state="warm", harts=1, workers=2), "smp")
@@ -207,13 +213,14 @@ def dsp_entries() -> list[Entry]:
 
 
 def ml_entries() -> list[Entry]:
-    """matrix.md §4.7, so far the MNIST MLP (a v1-retained workload): v1's four methods in v1's window, and the NPU
-    batched by 4, 8 and 32 images."""
+    """matrix.md §4.7: the MNIST MLP (a v1-retained workload): v1's four methods in v1's window, and the NPU
+    batched by 1, 4, 8 and 32 images (the tile mapping, the images in place; batch 1 is not v1's method 3, which
+    runs N = 1 through the K-split mapping on an image copied in)."""
     entries = []
     sources = ["software/matrix/mnist.c", "software/benchmarks/xe_kernels.c", "software/drivers/aster_npu.c",
                "software/runtime/asterbench_v12.c", "software/runtime/aster_smp.c"]
     methods = [(0, 1, "scalar", 1), (1, 1, "multicore", 2), (2, 1, "dot8", 1), (3, 1, "npu", 1),
-               (4, 4, "npu", 1), (4, 8, "npu", 1), (4, 32, "npu", 1)]
+               (4, 1, "npu", 1), (4, 4, "npu", 1), (4, 8, "npu", 1), (4, 32, "npu", 1)]
     for number, batch, method, workers in methods:
         name = "mnist_mlp_npu_batched" if number == 4 else f"mnist_mlp_{method}"
         for sim, cold, reason in axis_configs(method == "npu", workers):
@@ -230,7 +237,31 @@ def ml_entries() -> list[Entry]:
     return entries
 
 
-FAMILIES = {"cpu": cpu_entries, "coherence": coherence_entries, "dsp": dsp_entries, "ml": ml_entries}
+def cifar_entries() -> list[Entry]:
+    """matrix.md §4.7: the CIFAR-10 CNN (a v1-retained workload): scalar, two workers, DOT8, the NPU through
+    im2col (v1's) and directly (channels last), in v1's window and the kernel window."""
+    entries = []
+    sources = ["software/matrix/cifar.c", "software/benchmarks/xe_kernels.c", "software/drivers/aster_npu.c",
+               "software/runtime/asterbench_v12.c", "software/runtime/aster_smp.c"]
+    for number, (method, workers) in enumerate((("scalar", 1), ("multicore", 2), ("dot8", 1), ("npu_im2col", 1),
+                                                 ("npu_direct", 1))):
+        name = f"cifar_cnn_{method}"
+        for sim, cold, reason in axis_configs(method.startswith("npu"), workers):
+            ident = f"ml/{name}/{method}/{sim}/{'cold' if cold else 'warm'}"
+            e = Entry(ident, "ml", name, method, sim, cold, [], "LITMUS_CFLAGS", [], [], "", sources,
+                      soc_variants.v12_defines(sim) + [f"-DCIFAR_METHOD={number}", "-Isoftware/benchmarks"]
+                      + (["-DMATRIX_COLD"] if cold else []), make_axes(sim, cold, workers), "cifar")
+            if reason:
+                e.status, e.reason = "unsupported", reason
+            entries.append(e)
+    return entries
+
+
+def ml_family() -> list[Entry]:
+    return ml_entries() + cifar_entries()
+
+
+FAMILIES = {"cpu": cpu_entries, "coherence": coherence_entries, "dsp": dsp_entries, "ml": ml_family}
 
 # v1's baseline records (Phase 17, sync1), the cases' identity the v12 record must keep
 BASELINE = run_core_tests.BASELINE
@@ -415,8 +446,62 @@ def oracle_mnist(entry: Entry, records: list[dict]) -> str:
             f"accuracy {ref['correct']}/{ref['images']} against the labels")
 
 
+_cifar_cache: dict = {}
+
+
+def cifar_reference_fold() -> dict:
+    """The frozen CIFAR model's logits and classes for its 20 test images, by cifar_reference's independent
+    model (which also requires them equal to the artifact's), folded as the firmware folds them; the accuracy
+    against the labels."""
+    if not _cifar_cache:
+        import cifar_reference
+        path = ROOT / "docs/results/workloads/cifar_model.json"
+        model = cifar_reference.load_model(path)
+        summary = cifar_reference.reference(path)
+        test, n = model["test"], 3 * 16 * 16
+        checksum = 0
+        for index in range(len(test["labels"])):
+            logits = cifar_reference.infer(model, test["images"][index * n:(index + 1) * n])
+            best = max(range(len(logits)), key=logits.__getitem__)
+            for v in logits:
+                checksum = ((checksum * 33) ^ (v & 0xFF)) & 0xFFFFFFFF
+            checksum = ((checksum * 33) ^ best) & 0xFFFFFFFF
+        _cifar_cache.update(checksum=checksum, correct=summary["correct"], images=summary["images"])
+    return _cifar_cache
+
+
+def oracle_cifar(entry: Entry, records: list[dict]) -> str:
+    ref = cifar_reference_fold()
+    npu = entry.method.startswith("npu")
+    # MACs an image: conv1 196 x 16 x 27, conv2 25 x 32 x 144, fc 10 x 128; DOT8s: floor(K/4) an output
+    macs = ref["images"] * (196 * 16 * 27 + 25 * 32 * 144 + 10 * 128)
+    dot8 = ref["images"] * (196 * 16 * 6 + 25 * 32 * 36 + 10 * 32) if entry.method == "dot8" else 0
+    for r in two_windows(entry, records):
+        if (r["name"], r["size"], r["iterations"], r["param"], r["seed"], r["workers"]) != \
+                (entry.case, 768, ref["images"], 16, 0, entry.axes["workers"]):
+            raise asterbench_v12.ValidationError("the record's identity differs from the entry's")
+        method_evidence(entry, r, dot8=dot8, npu_jobs=3 * ref["images"] if npu else 0)
+        if npu and r["npu_macs"] != macs:
+            raise asterbench_v12.ValidationError(f"{r['npu_macs']} NPU MACs, not {macs}")
+    if ref["checksum"] != records[0]["checksum"]:
+        raise asterbench_v12.ValidationError(
+            f"checksum {records[0]['checksum']:#010x}, the model's {ref['checksum']:#010x}")
+    return (f"every logit and class the independent model's (checksum {ref['checksum']:#010x}); "
+            f"accuracy {ref['correct']}/{ref['images']} against the labels")
+
+
+def oracle_stamps(entry: Entry, records: list[dict]) -> str:
+    """software/matrix/stamp_cost.c: 64 stores, then 64 stamps, each window counting its steps."""
+    if [(r["name"], r["checksum"]) for r in records] != [("stamp_cost_stores", 64), ("stamp_cost_stamps", 64)]:
+        raise asterbench_v12.ValidationError(f"records {[(r['name'], r['checksum']) for r in records]}")
+    for r in records:
+        method_evidence(entry, r, dot8=0)
+    extra = (records[1]["h0_cycles"] - records[0]["h0_cycles"]) / 64
+    return f"both windows ran their 64 steps; a stamp costs {extra:.1f} cycles beyond a store"
+
+
 ORACLES = {"cpu": oracle_cpu, "reduce": oracle_reduce, "gemm": oracle_gemm, "conv2d": oracle_conv2d,
-           "mnist": oracle_mnist, "smp": oracle_smp}
+           "mnist": oracle_mnist, "smp": oracle_smp, "cifar": oracle_cifar, "stamps": oracle_stamps}
 
 _make_lock = threading.Lock()
 _make_cache: dict[tuple, list[str]] = {}

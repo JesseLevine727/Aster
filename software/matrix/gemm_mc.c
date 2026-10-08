@@ -178,6 +178,7 @@ static void run(uint32_t pass) {
     while (packed[1] != pass) {}
     __asm__ volatile ("fence rw, rw" ::: "memory");
     gemm_rows(0, GEMM_M / 2u);
+    v12_work_end(0);                                   // (hart 0's share ends; it waits)
     aster_smp_join();
 #else
     (void)pass;
@@ -232,6 +233,7 @@ static void run_kernel(void) {
     matrix_open(1);
     matrix_release();
     gemm_rows(0, GEMM_M / 2u);
+    v12_work_end(0);                                   // (hart 0's share ends; it waits)
     matrix_await();
     matrix_close();
     aster_smp_join();
@@ -265,7 +267,7 @@ static void emit(struct v12_record *record, const char *window) {
         }
         *p = 0;
     }
-    matrix_hart0_whole(record);
+    if (GEMM_WORKERS == 1) matrix_hart0_whole(record);   // (two workers: hart 0's share end stamped)
     record->name = name;
     record->family = "coherence";
     record->method = GEMM_WORKERS == 2 ? "multicore" : "dot8";

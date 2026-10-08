@@ -10,8 +10,13 @@
 //   matrix_stamp_start(h)    hart h's work interval begun, once a window (matrix_stamps_clear() before it):
 //                            a hart that works in several stretches keeps its first start (v12_work_start
 //                            overwrites). A stamp is a call and a counter read, about 20 cycles.
-//   matrix_hart0_whole(r)    hart 0 opens and closes every window and works throughout it: its interval is
-//                            the whole window, set after it rather than stamped inside it.
+//   matrix_stamp_end(h)      hart h's work interval ended, in the window's last stretch only (hart 0 sets
+//                            matrix_last before it hands that stretch out): one stamp a window, not one a stretch.
+//   Hart 0's interval (matrix.md §10): it opens the window, so it starts at 0; it ends at the window's end when the
+//   window ends in hart 0's own work (matrix_hart0_whole, set after the window), else at the end of its last
+//   share (matrix_stamp_end(0) before it waits); 0 and 0 where hart 0 only starts an engine and polls it
+//   (matrix_hart0_none). One interval holds no gaps: where hart 0 polls between its stages, its interval spans
+//   the polls.
 //   The two-worker kernel window: the computation alone, without the runtime's dispatch and join. Hart 1 is
 //   dispatched before the window and waits at a release flag (matrix_arm); hart 0 opens the window, releases
 //   it (matrix_release), runs its own share, waits for hart 1's done flag (matrix_await) and closes the window;
@@ -44,16 +49,25 @@ static inline void matrix_poison(void *p, uint32_t bytes) {
 
 static volatile uint32_t matrix_stamped[2];
 
+static volatile uint32_t matrix_last;                 // the window's last stretch is in hand
+
 static inline void matrix_hart0_whole(struct v12_record *record) {
     record->hart[0].work_start = 0;
     record->hart[0].work_end = (uint32_t)record->hart[0].counter[ASTER_C_CYCLES];
 }
 
-static inline void matrix_stamps_clear(void) { matrix_stamped[0] = matrix_stamped[1] = 0; }
+static inline void matrix_hart0_none(struct v12_record *record) {
+    record->hart[0].work_start = 0;
+    record->hart[0].work_end = 0;
+}
+
+static inline void matrix_stamps_clear(void) { matrix_stamped[0] = matrix_stamped[1] = 0; matrix_last = 0; }
 
 static inline void matrix_stamp_start(uint32_t hart) {
     if (!matrix_stamped[hart & 1u]) { matrix_stamped[hart & 1u] = 1; v12_work_start(hart); }
 }
+
+static inline void matrix_stamp_end(uint32_t hart) { if (matrix_last) v12_work_end(hart); }
 
 struct matrix_armed_line { volatile uint32_t word; uint32_t pad[3]; } __attribute__((aligned(16)));
 static struct matrix_armed_line matrix_go, matrix_done;    // (each in its own line, as the runtime's words)

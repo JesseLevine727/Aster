@@ -3106,8 +3106,13 @@ ASTER_SOC_MATRIX_BUILDS := soc_h1:-GSHELL_PAGE=0,-GHARTS=1 soc_h1_w1:-GSHELL_PAG
 ASTER_SOC_BUILDS += $(ASTER_SOC_MATRIX_BUILDS)
 ASTER_SOC_MATRIX_SIMS := $(foreach b,$(ASTER_SOC_MATRIX_BUILDS),$(ASTER_SOC_DIR)/$(firstword $(subst :, ,$(b))))
 ASTER_SOC_SIMS := $(filter-out $(ASTER_SOC_MATRIX_SIMS),$(foreach b,$(ASTER_SOC_BUILDS),$(ASTER_SOC_DIR)/$(firstword $(subst :, ,$(b)))))
-.PHONY: matrix-sims matrix-sims-tests
+.PHONY: matrix-sims matrix-sims-tests matrix-poison-check
 matrix-sims: $(ASTER_SOC_MATRIX_SIMS)
+# The matrix's poisoning checked (scripts/matrix_poison_check.py; docs/matrix.md §10): copies of Conv2D whose timed
+# e2e or kernel pass skips its engine must fail the runner's checks, and the unplanted firmware pass. Runs on the
+# soc_dev simulation (make soc-sim first).
+matrix-poison-check:
+	@RISCV_PREFIX=$(RISCV_PREFIX) $(PYTHON) scripts/matrix_poison_check.py --prefix $(RISCV_PREFIX)
 matrix-sims-tests: matrix-sims $(ASTER_L1_SIM) $(ASTER_DOT8_PLUGIN)
 	@set -o pipefail; RISCV_PREFIX=$(RISCV_PREFIX) $(PYTHON) scripts/soc_tests.py --sim-dir $(ASTER_SOC_DIR) \
 		--build-dir $(ASTER_SOC_DIR)/programs --cflags "$(LITMUS_CFLAGS)" \
