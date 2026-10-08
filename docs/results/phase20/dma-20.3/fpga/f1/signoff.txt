@@ -1,3 +1,0 @@
-ASTER_NETLIST npu_rams=40 npu_wdata_regs=32 w_wdata_regs=64
-ASTER_SIGNOFF min slack=0.024 ns
-ASTER_SIGNOFF max slack=0.010 ns

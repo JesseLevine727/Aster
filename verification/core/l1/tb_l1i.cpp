@@ -28,7 +28,16 @@ int main(int argc, char** argv) {
     uint64_t ncycles = argc > 2 ? std::stoull(argv[2]) : 200000;
     std::mt19937 rng(seed);
     Vaster_l1i d;
+#ifdef L1I_SPAN17
+    // main memory's tag span (TAG_SPAN 17): 96 KiB cacheable; the fetched pages set each kept tag bit
+    // (12-16) in some page
+    const uint32_t bytes = 0x18000;
+    static const uint32_t pages[] = {0, 1, 2, 4, 8, 16};
+#else
     const uint32_t bytes = 0x10000;
+    static const uint32_t pages[] = {0, 1};
+#endif
+    const uint32_t npages = sizeof pages / sizeof pages[0];
     d.cacheable_bytes = bytes; d.invalidate = 0; d.data_pending = 0;
     d.clk = 0; d.rst_n = 0; d.eval(); d.clk = 1; d.eval(); d.clk = 0; d.eval(); d.clk = 1; d.eval(); d.clk = 0; d.rst_n = 1; d.eval();
     // memory: per word history of (cycle performed, value)
@@ -61,7 +70,7 @@ int main(int argc, char** argv) {
     for (uint64_t cyc = 0; cyc < ncycles; ++cyc) {
         // a "store" performs, then a fence.i pulse some cycles later
         if (!pulse_pending && rng() % 200 == 0) {
-            uint32_t a = 0x80000000u + (rng() % 2) * 4096 + (rng() % 4) * 16 + (rng() % 4) * 4;
+            uint32_t a = 0x80000000u + pages[rng() % npages] * 4096 + (rng() % 4) * 16 + (rng() % 4) * 4;
             hist[a].push_back({cyc, rng()});
             pulse_pending = true; pulse_at = cyc + 1 + rng() % 8;
         }
@@ -71,10 +80,10 @@ int main(int argc, char** argv) {
         if (rng() % 10 == 0) d.data_pending = rng() % 3 == 0;   // spans of posted stores
         if (!pv && rng() % 100 < 80) {
             uint32_t r = rng() % 100;
-            paddr = r < 95 ? 0x80000000u + (rng() % 2) * 4096 + (rng() % 4) * 16 + (rng() % 4) * 4 : 0x20000000u + (rng() % 4) * 4;
+            paddr = r < 95 ? 0x80000000u + pages[rng() % npages] * 4096 + (rng() % 4) * 16 + (rng() % 4) * 4 : 0x20000000u + (rng() % 4) * 4;
             pv = true;
         } else if (pv && rng() % 100 < 5) {   // a redirect replaces it
-            paddr = 0x80000000u + (rng() % 2) * 4096 + (rng() % 4) * 16 + (rng() % 4) * 4;
+            paddr = 0x80000000u + pages[rng() % npages] * 4096 + (rng() % 4) * 16 + (rng() % 4) * 4;
         }
         d.i_req_valid = pv; d.i_req_addr = paddr >> 2;
         bool mready = int(mq.size()) < max_inflight;

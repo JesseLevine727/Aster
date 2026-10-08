@@ -989,3 +989,40 @@ Milestone 20.3):
   state. It is asserted equal to its definition in every cycle. The core's
   cycles are unchanged: `make core-shell-equiv` runs 879 programs the same,
   cycle for cycle, as 20.2's.
+- **§4.5, the fabric's reservations (20.3's timing):** only an lr a bank
+  takes sets a reservation, so the reserved word is always one of main
+  memory's. The fabric keeps it, and compares it with an sc's address and
+  with each write's, as its offset in main memory: 15 bits, not 30. Each
+  request's main-memory flag agrees with its address (asserted), and the
+  comparisons count only for requests of main memory. So the outcome is the
+  same in every cycle. `equiv_fabric` runs the fabric against 20.2's golden
+  in every mode, and the fabric shell now also aims store-conditionals at a
+  word 64 KiB from the reservation's, required in three modes. A fabric that
+  ignores the offset's top bit is one of the fabric mutants (37, each
+  caught).
+- **The caches' tags (20.3's timing):** a parameter, `TAG_SPAN`, states
+  that the cacheable range lies within MEM_BASE's aligned 2^TAG_SPAN bytes.
+  - A tag then keeps only bits [TAG_SPAN-1:12]. In the SoC, TAG_SPAN is 17
+    (96 KiB of main memory), so that is 5 bits instead of 20, in both caches
+    of both harts.
+  - Only cacheable lines are ever valid, so a lookup is exact. The
+    instruction cache compares a fetch's upper bits with MEM_BASE's as the
+    fetch enters stage 1 (a register beside its address). The data cache's
+    lookup is already gated by its registered cacheable flag.
+  - A snoop must carry a line of that span to hit, and in the SoC every
+    snooped write is main memory's.
+  - Every simulation keeps full tags beside the narrow ones, and asserts
+    each cycle that every lookup and snoop hit is the same. The L1 unit
+    tests run both caches at TAG_SPAN 17 too.
+  - The default, 32, keeps every tag bit, so the CPU shell and the earlier
+    SoCs behave exactly as before. The instruction cache's in-span flag is
+    still a flip-flop there: it resets to 0 and loads 1 with the first
+    fetch, before any line can be valid, so their netlists gain one term
+    but not one cycle. `make core-shell-equiv` runs the CPU shell against
+    20.2's.
+  - The L1 unit tests' TAG_SPAN 17 builds take their pages from {0, 1, 2,
+    4, 8, 16} × 4 KiB, so some page sets each kept tag bit. The data
+    cache's remote pages are 3, 7, 11 and 19, so a snooped line can differ
+    from a held one in any one bit. A cache that drops any one kept bit
+    from any of the three narrow compares is caught on every seed (`make
+    l1-span-mutants`: 15 of 15).

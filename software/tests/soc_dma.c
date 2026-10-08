@@ -12,6 +12,8 @@
 //         outside main memory, a 33-bit end; LENGTH 0; and copies at the
 //         limits, which pass: a source from LIMIT_LO, a source and a
 //         destination ending at LIMIT_HI (hart 1's stack, before it runs);
+//         a 16,000-byte copy, misaligned (into hart 1's memory, before it
+//         runs);
 // 30-39   ABORT through the driver: BYTES_DONE a prefix of the source, the
 //         rest of the destination unchanged;
 // 40-49   the completion interrupt (source 1) to hart 0;
@@ -172,6 +174,14 @@ int main(void) {
     for (uint32_t i = 0; i < 37; ++i) if (last[i] != (uint8_t)mix(i + 1234)) { check(0, 27); break; }   // the rest kept
     check(aster_dma_copy(dst, (const void *)0x80000000u, 100, POLLS) == ASTER_DMA_OK, 28);   // from LIMIT_LO
     for (uint32_t i = 0; i < 100; ++i) if (dst[i] != ((const uint8_t *)0x80000000u)[i]) { check(0, 28); break; }
+    // a large copy (2,001 source units): the program's image to hart 1's memory, its guards unchanged
+    volatile uint8_t *const big_dst = (volatile uint8_t *)0x80014000u;
+    const uint8_t *const big_src = (const uint8_t *)0x80000003u;
+    for (uint32_t i = 0; i < 16016; ++i) big_dst[i] = 0x3C;
+    check(aster_dma_copy((void *)(big_dst + 5), big_src, 16000, POLLS) == ASTER_DMA_OK
+          && aster_dma_bytes_done() == 16000u, 29);
+    for (uint32_t i = 0; i < 16016; ++i)
+        if (big_dst[i] != (i < 5 || i >= 16005 ? 0x3C : big_src[i - 5])) { check(0, 29); break; }
 
     // 30-39 ABORT: a long copy, aborted after a few polls
     for (uint32_t i = 0; i < 4096; ++i) { src[i] = (uint8_t)mix(i + 99); dst[i] = 0xA5; }

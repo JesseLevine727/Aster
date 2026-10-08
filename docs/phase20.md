@@ -1,8 +1,8 @@
 # Phase 20: whole-SoC workload placement and concurrency
 
-Status: **milestone 20.3 (the DMA) in progress: its exit's three parts are met, but its timing
-margin, +0.270 ns at best and +0.010 ns on the default build, is short of the +0.3 ns the owner set
-in 20.2.** So restructuring that keeps every cycle continues before the sign-off (below). 20.2 (the two-hart SoC) was signed off
+Status: **milestone 20.3 (the DMA): its exit met, awaiting the owner's sign-off and two timing
+choices: the build that signs off 20.3, and the directives later builds use.** The candidate is g2-o5end, +0.375 ns and reproducible. It
+is one placement: the median across its RTL's ten strategies is about +0.1 ns (below). 20.2 (the two-hart SoC) was signed off
 by the owner on 8 October 2026. The owner decided 20.2's timing on 7 October 2026, in three rounds (below,
 and soc.md §13):
 - the second chance is removed and the NPU's request buffer adopted;
@@ -747,7 +747,7 @@ captured twice, identically; the other suites ran once.
 
 **Signed off by the owner, 8 October 2026** (with "begin 20.3").
 
-## Milestone 20.3: the DMA (in progress, 8 October 2026: the exit's parts met, the margin short)
+## Milestone 20.3: the DMA (its exit met, 8 October 2026; awaiting the owner's sign-off and their choice of the timing build)
 
 **What is built.**
 - **The engine** (`rtl/dma/aster_dma2.sv`, soc.md §6): v1's DMA ABI 1 at
@@ -786,8 +786,10 @@ check`): the engine alone, its ports answered as the fabric answers them, at
 WAIT 0, 1 and 3, four seeds of eight modes (96 runs):
 - every length 0–80 at every alignment pair, on time and under back-pressure;
 - random jobs on time, each request's acceptance cycle and JOB_CYCLES
-  against a cycle model (`dma_model.h`);
-- back-pressure;
+  against a cycle model (`dma_model.h`). They are up to 4 KiB, but every
+  16th is 8 KiB to about 47 KiB, near a legal copy's widest (the longest run
+  is 48,119 bytes);
+- back-pressure, with the same large jobs;
 - range, wrap and overlap errors at their boundaries, LENGTH 0 with a bad
   descriptor, each rejection alone, and hart 1's writes;
 - ABORT, the engine's reset, and the SoC's STOP at random points, with the
@@ -805,8 +807,10 @@ In every run:
 - **the counters** equal the shell's own count of each event, with per-job
   sums on some jobs.
 
-`make dma-mutants`: 38 planted bugs, each caught. The 14 added after the
-first review are ones the shell missed then; each is now caught.
+`make dma-mutants`: 39 planted bugs, each caught:
+- the 14 added after the first review are ones the shell missed then;
+- the 39th cuts the engine's unit counts to 12 bits, which only a job over
+  32 KiB breaks.
 
 **In the SoC** (`make soc-tests`):
 - **The DMA program** (`software/tests/soc_dma.c`, through v1's driver), on
@@ -815,6 +819,7 @@ first review are ones the shell missed then; each is now caught.
     0–40 and twelve larger sizes up to 4 KiB, all at every alignment pair;
   - copies at the limits, which pass: from LIMIT_LO, and a source and a
     destination each ending exactly at LIMIT_HI;
+  - a 16,000-byte copy, misaligned, with its guards;
   - the errors through the driver, ABORT's prefix, and the completion
     interrupt;
   - the counters, exactly: each job's tallies, and their accepted reads and
@@ -828,15 +833,15 @@ first review are ones the shell missed then; each is now caught.
       checking every load.
     - A 4 KiB job then runs while the NPU also runs a 32 × 32 × 64 GEMM. The
       NPU is still busy when the job ends, and its result is checked whole.
-    - The DMA waited for the others: 110 stalls at WAIT 0 and 43 at WAIT 3,
-      against about 1,500 NPU and 43,000 hart-1 accesses.
+    - The DMA waited for the others: 140 stalls at WAIT 0 and 47 at WAIT 3,
+      against about 1,500 NPU and 43,000–44,000 hart-1 accesses.
     - Twelve RESUMEs during that job each dropped their cycle's events from
       every counter. 12 reads were dropped at WAIT 0 and 6 at WAIT 3, and the
       cross-checks stayed exact.
   - no exception taken.
 - **The testbench** checks every port R answer against memory at its
-  acceptance (about 95,000 a build), with the bank rule. Every port W write
-  goes through the memory checker and the snoop checks (about 92,000). The
+  acceptance (about 97,000 a build), with the bank rule. Every port W write
+  goes through the memory checker and the snoop checks (about 94,000). The
   DMA's accesses must stay inside its job's ranges, and while the harts are
   held the ports may carry only the ARM side's.
 - **The rest of `soc-tests` is unchanged:** the 99 regression programs,
@@ -858,15 +863,15 @@ through the driver (the job alone) / the CPU copy.
 | ---: | ---: | ---: | ---: | ---: |
 | 16 | 160 (8) / 79 | 153 (9) / 192 | 193 (14) / 91 | 180 (18) / 192 |
 | 64 | 153 (14) / 151 | 153 (15) / 720 | 180 (29) / 151 | 180 (33) / 720 |
-| 256 | 153 (38) / 487 | 153 (39) / 2,832 | 260 (89) / 487 | 260 (93) / 2,832 |
-| 1,024 | 264 (134) / 1,831 | 264 (135) / 11,280 | 500 (329) / 1,831 | 500 (333) / 11,280 |
-| 4,096 | 641 (518) / 7,249 | 641 (519) / 45,105 | 1,473 (1,289) / 7,291 | 1,473 (1,293) / 45,135 |
+| 256 | 153 (38) / 494 | 160 (39) / 2,839 | 260 (89) / 501 | 273 (93) / 2,845 |
+| 1,024 | 271 (134) / 1,838 | 271 (135) / 11,287 | 513 (329) / 1,845 | 513 (333) / 11,293 |
+| 4,096 | 641 (518) / 7,242 | 641 (519) / 45,105 | 1,473 (1,289) / 7,277 | 1,473 (1,293) / 45,135 |
 
 - **Throughput:** at WAIT 0 the job moves 8 bytes a cycle. At WAIT 3 it is
   limited by two reads in flight against a five-cycle answer, so a unit
   takes 2.5 cycles.
-- **Overhead:** the driver's register accesses and polls add 114–152
-  cycles (mean 131) at WAIT 0, and 147–184 (mean 168) at WAIT 3. The polls
+- **Overhead:** the driver's register accesses and polls add 115–152
+  cycles (mean 133) at WAIT 0, and 147–184 (mean 172) at WAIT 3. The polls
   come every few tens of cycles, so the end-to-end figure moves in steps.
 - **Where the DMA wins:**
   - aligned: from 256 bytes, at both waits. At 64 bytes the two are even at
@@ -875,8 +880,8 @@ through the driver (the job alone) / the CPU copy.
 
   This is a starting point for 20.5's DMA thresholds.
 
-**Timing in context** (the board design, 10 ns; three placement strategies
-of each RTL revision, as in 20.2):
+**Timing in context** (the board design, 10 ns). Each RTL revision is
+built with three placement strategies, as in 20.2:
 - default;
 - o5: placement over-constrained by 0.5 ns;
 - o5 ASM: the same with the AltSpreadLogic_medium placer.
@@ -886,7 +891,9 @@ of each RTL revision, as in 20.2):
 | d1 | +0.109 | +0.059 | +0.047 | the DMA integrated |
 | d2 | +0.028 | +0.190 | +0.138 | the NPU buffer's request from a register; the engine's unit counts narrowed to 15 bits |
 | d3 | +0.191 | +0.142 | +0.171 | the data caches' answer kept in a register |
-| f1 (final) | **+0.010** | **+0.162** | **+0.270** | the counters' window as one signal from the devices |
+| f1 | +0.010 | +0.162 | +0.270 | the counters' window as one signal from the devices (99ef503) |
+| g1 | +0.098 | +0.027 | +0.121 | the fabric's reservation compared as its offset in main memory (15 bits, not 30) |
+| g2 (final) | +0.031 | +0.118 | +0.168 | both caches' tags narrowed to main memory's span (5 bits, not 20; TAG_SPAN) |
 
 - **No cycle changed.** Each change keeps every cycle the same:
   - The NPU buffer is emptied at a start or a stop. While the board's reset
@@ -895,50 +902,118 @@ of each RTL revision, as in 20.2):
     in every cycle. `make core-shell-equiv` runs 879 programs the same,
     cycle for cycle, as 20.2's golden.
   - The window signal changes only the DMA's counters.
-- **The limit moves with placement:**
-  - In d1 the limit was the run's reset into the NPU buffer, and hart 1's
-    data cache into the DMA.
-  - In d2 it was the data cache's answer into the core.
-  - In f1's default build it is hart 1's data cache into a fabric bank's
-    write enable: 7 levels, 7.3 ns of it route.
-- **Every final build closes 10 ns,** with hold met (WHS +0.021 to +0.034
-  ns).
-- **The spread is wide.** Across d2, d3 and f1, the over-constrained
-  strategies stayed between +0.138 and +0.270 ns, while the default swung
-  from +0.010 to +0.191.
-- **Utilization** (f1, default): 34,731 LUTs (65%), 23,713 flip-flops, 77
-  block RAM tiles, 27 DSPs. That is 1,046 LUTs and 1,587 flip-flops more
-  than 20.2's r19. Most of the flip-flops are the DMA's counters: 12 of its
-  14 count 64 bits (768). The other two, forwards and write-backs, are
-  constant 0 and removed.
+  - The reservation is checked by `equiv_fabric` against 20.2's golden
+    fabric every cycle, in every mode.
+  - The narrow tags are asserted equal to full ones every cycle (soc.md
+    §13).
+
+  The SoC's hart-side figures are 20.2's exactly: litmus, the reset stress,
+  dispatch, the gate programs' traced cycles, and the 99 regression
+  programs, cycle for cycle.
+- **The limits are placement, not logic.** Every limiting path is a
+  requester's registered address, through the fabric's arbitration, into a
+  requester's next state, and about 7.3 ns of its ~9.3 ns is route:
+  - hart 1's data cache into a bank's write enable;
+  - a data cache's tag lookup into its request registers;
+  - the data caches into the NPU buffer's enables;
+  - R's grant into the DMA.
+
+  The narrowing removed 865 LUTs (g2: 33,866) and shortened those paths'
+  logic, but across these revisions the default build swung from +0.010 to
+  +0.191 ns and the others moved as much. Taking the fabric's arbitration
+  off these paths would mean registering its bank inputs, which costs
+  cycles. The owner declined that in 20.2.
+
+**Strategies on g2's RTL** (the cycle-preserving lever left: placement;
+eleven builds):
+
+| Strategy | Setup | Strategy | Setup |
+| --- | ---: | --- | ---: |
+| default | +0.031 | o5, ExtraTimingOpt placer | +0.043 |
+| o5 | +0.118 | o5, AltSpreadLogic_high placer | +0.188 |
+| o5 ASM | +0.168 | o5, AggressiveExplore router | +0.118 |
+| o6 | +0.092 | **o5, ExtraNetDelay_high placer (o5 END)** | **+0.375** |
+| ExtraNetDelay_high placer alone | +0.072 | o3, ExtraNetDelay_high placer | +0.035 |
+| o5 END, rebuilt | +0.375 | | |
+
+- **g2-o5end is the one build of 20.3 with good margin:**
+  - setup +0.375 ns, hold +0.022 ns;
+  - only 8 endpoints within +0.45 ns;
+  - every net routed, no DRC error, and the netlist guard met;
+  - its worst path is hart 0's own result into its DOT8 multiplier;
+  - 33,975 LUTs (63.9%), 23,677 flip-flops, 77 block RAM tiles, 27 DSPs.
+- **It is reproducible.** A rebuild from the same sources gives the same
+  configuration data and the same slack.
+- **It is one placement, not the strategy's property.** The same placer
+  gives +0.072 without the over-constraint and +0.035 at 0.3 ns, and on
+  f1's RTL o5 END gives +0.109.
+  - Across g2's ten strategies, the median is about +0.1 ns (+0.105).
+  - The default directives give +0.031, a thin pass.
+  - So, like r19 in 20.2, the margin holds for this build and not across
+    placements. Any later change to the RTL re-rolls the placement.
+  - Signing off on it means building the SoC with
+    `SOC_DIRECTIVES="over=0.5;place=ExtraNetDelay_high"`, and 20.4's and
+    20.5's builds re-checking timing as they come.
 - **The netlist guard** used to count the ARM side's 32 write-data
   registers. Those are gone, since the ports' registers are now the DMA's,
   so it counts port W's 64 data registers in their place
   (`ASTER_NETLIST npu_rams=40 npu_wdata_regs=32 w_wdata_regs=64`).
-- **Reproducibility:** f1 and f1-o5 ASM were each built twice from the same
-  sources. The configuration data is identical, and so is the slack;
-  `fpga/reproducibility.txt` has the details.
-- **Against the margin the owner set in 20.2 (+0.3 ns or better), no final
-  build qualifies.** The best is +0.270 ns (o5 ASM). The default, which
-  `make fpga-aster-soc` builds, is +0.010 ns, a thin pass. 20.2 signed off
-  at +0.309 on its default build. The DMA's 1,046 LUTs shifted placement
-  enough to take most of that margin on the default strategy. Signing off on
-  an over-constrained strategy would also mean setting `SOC_DIRECTIVES` in
-  20.4's and 20.5's builds.
+- **Most of the DMA's flip-flops are its counters:** 12 of its 14 count 64
+  bits (768). The other two, forwards and write-backs, are constant 0 and
+  removed.
 
-**20.3's exit: its three parts met; the margin short** (evidence: `docs/results/phase20/dma-20.3/`):
+**20.3's exit, met** (evidence: `docs/results/phase20/dma-20.3/`):
 - **soc.md §10.5:**
-  - the DMA in its shell (96 runs, 38 of 38 mutants caught);
+  - the DMA in its shell (96 runs, 39 of 39 mutants caught);
   - in the SoC, through v1's driver unchanged, on both device builds;
   - the rest of `soc-tests` unchanged and cycle-exact, run twice with
     identical output.
 - **Against CPU copies at every size and alignment in the SoC:** 3,392
   copies against CPU copies (every length 0–40 at all 64 alignment pairs,
-  and 12 larger sizes up to 4 KiB at all 64), plus the timing table above.
-- **10 ns in context:** all three placement strategies of the final RTL
-  close: +0.010, +0.162 and +0.270 ns, with hold met. None reaches the
-  +0.3 ns margin the owner set in 20.2, so 20.3 continues with restructuring
-  that keeps every cycle before its sign-off.
+  and 12 larger sizes up to 4 KiB at all 64), a 16,000-byte copy, and the
+  timing table above. In the shell, jobs reach about 47 KiB.
+- **10 ns in context:**
+  - every build of the final RTL closes;
+  - g2-o5end, reproducible, has +0.375 ns, the good margin the owner set in
+    20.2;
+  - the spread is recorded above.
+
+  Which build signs off 20.3's timing is the owner's decision.
+
+**Found and fixed on the way** (beyond the reviews' findings, all fixed):
+- **`make check` failed from 20.2 on.** Its host test of the core's
+  planted-bug campaign (`scripts/mutation_campaign.py`) found eight anchors
+  that 20.2's restructuring had made stale; 20.3's tag change made two more.
+  - All ten are re-anchored to their counterparts in the current RTL.
+  - `make host-tests` passes again (355 tests).
+- **The campaign itself (`make core-aster-mutants`)** had not run since 20.2
+  restructured the core. On the current RTL it catches 109 of its 114:
+  - the ten re-anchored ones, nine caught;
+  - the rest as before.
+
+  The five not caught are exactly Phase 18's accepted ones, unchanged:
+  - 18.3's four, equivalent or unobservable (phase18.md):
+    - Execute advancing in an interrupt's cycle;
+    - a CSR write gated by its trap;
+    - the CSR write repeated in M1;
+    - a trap record's RVFI mstatus, which Spike's log says nothing of. The
+      mstatus a trap leaves is checked through the handlers' reads.
+  - 18.6's `sys-retire-at-commit`, equivalent under its serialization.
+
+  The arguments still hold on the current core (a fetch fault decodes as
+  nothing, `aster_core.sv:302`; a serializing instruction enters M1 only
+  with M2 empty, asserted), so none of the five tells anything new.
+- **The fabric shell's store-conditionals** never landed 64 KiB from their
+  reservation. They do now (a required bin), and a mutant that ignores the
+  offset's top bit is caught (37 of 37).
+- **The L1 unit tests' span builds** didn't vary every kept tag bit.
+  - Their pages now set each one.
+  - The data cache's remote pages are 3, 7, 11 and 19, so a snoop can
+    differ from a held line in any one bit.
+  - A new campaign, `make l1-span-mutants` (`scripts/l1_span_mutants.py`),
+    drops each kept bit from each narrow compare. All 15 are caught on every
+    seed. Its first run found the snoop compare's bits 14 and 15 untested,
+    which led to the remote pages.
 
 ## Milestones and gates
 

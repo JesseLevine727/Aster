@@ -1,0 +1,121 @@
+PASS: aster 102/102 ACT4 programs pass (self-checking, expected values from Sail); 755349 instructions in 1337282 cycles
+PASS: aster 102/102 ACT4 programs pass (self-checking, expected values from Sail); 755345 instructions in 1337274 cycles
+PASS: aster 102/102 ACT4 programs pass (self-checking, expected values from Sail); 755353 instructions in 2026355 cycles
+PASS: aster 102/102 ACT4 programs pass (self-checking, expected values from Sail); 755349 instructions in 1720319 cycles
+PASS: aster 102/102 ACT4 programs pass (self-checking, expected values from Sail); 755357 instructions in 1910560 cycles
+PASS: aster 102/102 ACT4 programs pass (self-checking, expected values from Sail); 755357 instructions in 1908666 cycles
+mepc-exception-next-pc: CAUGHT by suites cpi: FAIL: rv32ui/ma_data FAIL test=46 cycles=2351 retired=1628 fetch_errors=0 interrupts=0; lockstep: rejected while parsing: Spike's log has no store to tohost 0x80001000; a
+mepc-interrupt-own-pc: CAUGHT by suites cpi: FAIL: interrupts/irq_enable FAIL test=2 cycles=301 retired=178 fetch_errors=0 interrupts=1; lockstep: self-checking, 1 interrupts (at least 5 required); no Spike run
+mpie-not-saved: CAUGHT by suites cpi: FAIL: rv32ui/ma_data PASS cycles=11061 retired=7786 fetch_errors=0 interrupts=0; lockstep: mismatch at retired instruction 149 in csrs; 96 signature words match
+mie-not-cleared-on-trap: CAUGHT by suites cpi: FAIL: interrupts/irq_enable TIMEOUT cycles=200000 retired=42931 fetch_errors=0 interrupts=14272; lockstep: self-checking, 14272 interrupts (at least 5 required); no Spike
+mcause-interrupt-bit-missing: CAUGHT by suites cpi: FAIL: interrupts/irq_enable TIMEOUT cycles=200000 retired=50408 fetch_errors=0 interrupts=15; lockstep: self-checking, 15 interrupts (at least 5 required); no Spike run
+mtval-interrupt-garbage: CAUGHT by suites cpi: FAIL: interrupts/irq_enable FAIL test=2 cycles=308 retired=181 fetch_errors=0 interrupts=1; lockstep: self-checking, 1 interrupts (at least 5 required); no Spike run
+tval-illegal-zero: CAUGHT by suites cpi: FAIL: rv32mi/shamt PASS cycles=94 retired=59 fetch_errors=0 interrupts=0; lockstep: mismatch at retired instruction 48 in csrs; no signature region
+tval-target-is-pc: CAUGHT by suites cpi: FAIL: rv32mi/ma_fetch FAIL test=2 cycles=111 retired=66 fetch_errors=0 interrupts=0; lockstep: mismatch at retired instruction 46 in csrs; no signature region
+tval-access-is-pc: CAUGHT by suites cpi: FAIL: rv32ui/ma_data FAIL test=1 cycles=220 retired=157 fetch_errors=0 interrupts=0; lockstep: rejected while parsing: Spike's log has no store to tohost 0x80001000; a si
+bus-error-cause-swapped: CAUGHT by suites cpi: FAIL: traps/m1_traps FAIL test=3 cycles=4066 retired=1622 fetch_errors=0 interrupts=0; lockstep: mismatch at retired instruction 56 in csrs; a signature was not written
+ecall-ebreak-codes-swapped: CAUGHT by suites cpi: FAIL: rv32mi/sbreak FAIL test=2 cycles=91 retired=56 fetch_errors=0 interrupts=0; lockstep: mismatch at retired instruction 43 in csrs; no signature region
+trap-record-next-pc: CAUGHT by suites cpi: FAIL: rv32ui/ma_data PC_WDATA_MISMATCH cycles=71 retired=48 fetch_errors=0 interrupts=0; lockstep: rejected while parsing: Spike's log has no store to tohost 0x80001000; 
+16bit-insn-full-word: CAUGHT by suites cpi: FAIL: traps/decode_traps FAIL test=3 cycles=1106 retired=588 fetch_errors=0 interrupts=0; lockstep: mismatch at retired instruction 116 in insn, csrs; a signature was not
+trap-does-not-redirect: CAUGHT by suites cpi: FAIL: rv32ui/ma_data PC_WDATA_MISMATCH cycles=69 retired=48 fetch_errors=0 interrupts=0; lockstep: rejected while parsing: Spike's log has no store to tohost 0x80001000; 
+interrupt-target-wrong: CAUGHT by suites cpi: FAIL: interrupts/irq_enable TIMEOUT cycles=200000 retired=119994 fetch_errors=0 interrupts=1; lockstep: self-checking, 1 interrupts (at least 5 required); no Spike run
+kill-without-advance: CAUGHT by suites stall: FAIL: traps/m1_traps PASS cycles=6560 retired=2169 fetch_errors=0 interrupts=12 m1_error_waits=12; lockstep: record 56 is marked as a trap handler's first (rvfi_intr) wit
+decode-survives-kill: CAUGHT by suites cpi: FAIL: rv32ui/ma_data PC_WDATA_MISMATCH cycles=68 retired=48 fetch_errors=0 interrupts=0; lockstep: rejected while parsing: Spike's log has no store to tohost 0x80001000; 
+fetch-loses-trap-while-presented: CAUGHT by suites cpi: FAIL: rv32mi/ma_fetch PC_WDATA_MISMATCH cycles=71 retired=46 fetch_errors=0 interrupts=0; lockstep: mismatch at retired instruction 47 in pc, insn, trap, rd, csrs; no sig
+mret-no-redirect: CAUGHT by suites cpi: FAIL: rv32ui/ma_data PC_WDATA_MISMATCH cycles=205 retired=150 fetch_errors=0 interrupts=0; lockstep: rejected while parsing: Spike's log has no store to tohost 0x80001000
+mret-wrong-target: CAUGHT by suites cpi: FAIL: rv32ui/ma_data PC_WDATA_MISMATCH cycles=209 retired=150 fetch_errors=0 interrupts=0; lockstep: rejected while parsing: Spike's log has no store to tohost 0x80001000
+mret-mpie-not-set: CAUGHT by suites cpi: FAIL: rv32ui/ma_data PASS cycles=11061 retired=7786 fetch_errors=0 interrupts=0; lockstep: mismatch at retired instruction 149 in csrs; 96 signature words match
+irq-ignores-mie-bit: CAUGHT by suites cpi: FAIL: interrupts/irq_enable TIMEOUT cycles=200000 retired=42931 fetch_errors=0 interrupts=14272; lockstep: self-checking, 14272 interrupts (at least 5 required); no Spike
+irq-priority-msi-first: CAUGHT by suites cpi: FAIL: interrupts/irq_lines FAIL test=5 cycles=949 retired=553 fetch_errors=0 interrupts=6; lockstep: self-checking, 6 interrupts (at least 6 required); no Spike run
+irq-after-csr: CAUGHT by suites cpi: FAIL: interrupts/irq_sweep FAIL test=2 cycles=799 retired=325 fetch_errors=0 interrupts=3; lockstep: self-checking, 3 interrupts (at least 128 required); no Spike run
+irq-lines-swapped: CAUGHT by suites cpi: FAIL: interrupts/irq_enable TIMEOUT cycles=200000 retired=119997 fetch_errors=0 interrupts=0; lockstep: self-checking, 0 interrupts (at least 5 required); no Spike run
+request-not-gated-by-irq: CAUGHT by suites cpi: FAIL: interrupts/irq_lines LOAD_MISMATCH cycles=835 retired=489 fetch_errors=0 interrupts=5; lockstep: self-checking, 5 interrupts (at least 6 required); no Spike run
+execute-not-gated-by-irq: MISSED
+exception-loses-to-irq: CAUGHT by suites cpi: FAIL: interrupts/irq_enable FAIL test=5 cycles=767 retired=442 fetch_errors=0 interrupts=3; lockstep: self-checking, 3 interrupts (at least 5 required); no Spike run
+no-intr-mark: CAUGHT by suites cpi: FAIL: rv32ui/ma_data PASS cycles=11061 retired=7786 fetch_errors=0 interrupts=0; lockstep: record 48 is not marked as a trap handler's first (rvfi_intr) after a trap reco
+no-serialization: CAUGHT by suites cpi: FAIL: rv32ui/add PASS cycles=575 retired=472 fetch_errors=0 interrupts=0; lockstep: 472 retired instructions match Spike; no signature region; cycles differ from the CPI 
+serialization-m1-only: CAUGHT by suites cpi: FAIL: rv32ui/add PASS cycles=579 retired=472 fetch_errors=0 interrupts=0; lockstep: 472 retired instructions match Spike; no signature region; cycles differ from the CPI 
+read-only-csr-writable: CAUGHT by suites cpi: FAIL: traps/decode_traps FAIL test=3 cycles=893 retired=465 fetch_errors=0 interrupts=0; lockstep: mismatch at retired instruction 210 in trap, csrs; a signature was not 
+csr-read-always-writes: CAUGHT by suites cpi: FAIL: rv32ui/ma_data PASS cycles=11061 retired=7786 fetch_errors=0 interrupts=0; lockstep: mismatch at retired instruction 51 in csrs; 96 signature words match
+csr-set-clear-swapped: CAUGHT by suites cpi: FAIL: rv32mi/csr FAIL test=22 cycles=99 retired=64 fetch_errors=0 interrupts=0; lockstep: mismatch at retired instruction 53 in csrs; a signature was not written
+csr-imm-uses-register: CAUGHT by suites cpi: FAIL: rv32mi/csr FAIL test=22 cycles=99 retired=64 fetch_errors=0 interrupts=0; lockstep: mismatch at retired instruction 49 in csrs; a signature was not written
+mstatus-mpie-from-bit3: CAUGHT by suites cpi: FAIL: rv32mi/illegal PASS cycles=131 retired=70 fetch_errors=0 interrupts=0; lockstep: mismatch at retired instruction 59 in csrs; no signature region
+mie-mtie-from-bit3: CAUGHT by suites cpi: FAIL: interrupts/irq_sweep FAIL test=2 cycles=163 retired=105 fetch_errors=0 interrupts=1; lockstep: self-checking, 1 interrupts (at least 128 required); no Spike run
+mepc-read-bit0: CAUGHT by suites cpi: FAIL: rv32ui/ma_data FAIL test=1337 cycles=149 retired=102 fetch_errors=0 interrupts=0; lockstep: rejected while parsing: Spike's log has no store to tohost 0x80001000; a
+minstret-counts-traps: CAUGHT by suites cpi: FAIL: traps/csr_ordering PASS cycles=648 retired=339 fetch_errors=0 interrupts=0; lockstep: mismatch at retired instruction 156 in rd; 264 signature words match
+csr-write-every-m1-cycle: MISSED
+sys-retire-at-commit: MISSED
+trap-rvfi-tval-not-carried: CAUGHT by suites cpi: FAIL: rv32ui/ma_data PASS cycles=11061 retired=7786 fetch_errors=0 interrupts=0; lockstep: mismatch at retired instruction 47 in csrs; 96 signature words match
+trap-rvfi-mpie-not-carried: MISSED
+mip-layout-swapped: CAUGHT by suites cpi: FAIL: interrupts/irq_lines FAIL test=6 cycles=417 retired=258 fetch_errors=0 interrupts=3; lockstep: self-checking, 3 interrupts (at least 6 required); no Spike run
+minstret-write-loses-to-increment: CAUGHT by suites cpi: FAIL: rv32mi/instret_overflow FAIL test=3 cycles=106 retired=67 fetch_errors=0 interrupts=0; lockstep: mismatch at retired instruction 57 in rd; no signature region
+time-stuck: CAUGHT by suites cpi: FAIL: interrupts/time_counter FAIL test=2 cycles=483 retired=256 fetch_errors=0 interrupts=0; lockstep: self-checking, 0 interrupts (at least 0 required); no Spike run
+timeh-reads-low: CAUGHT by suites cpi: FAIL: interrupts/time_counter FAIL test=4 cycles=731 retired=382 fetch_errors=0 interrupts=0; lockstep: self-checking, 0 interrupts (at least 0 required); no Spike run
+time-obeys-cy: CAUGHT by suites cpi: FAIL: interrupts/time_counter FAIL test=3 cycles=710 retired=371 fetch_errors=0 interrupts=0; lockstep: self-checking, 0 interrupts (at least 0 required); no Spike run
+time-reads-mcycle: CAUGHT by suites cpi: FAIL: interrupts/time_counter FAIL test=3 cycles=710 retired=371 fetch_errors=0 interrupts=0; lockstep: self-checking, 0 interrupts (at least 0 required); no Spike run
+fencei-no-redirect: CAUGHT by suites cpi: FAIL: rv32ui/fence_i PASS cycles=539 retired=296 fetch_errors=0 interrupts=0; lockstep: 296 retired instructions match Spike; 8 signature words match; cycles differ from 
+fencei-target-wrong: CAUGHT by suites cpi: FAIL: rv32ui/fence_i PC_WDATA_MISMATCH cycles=78 retired=55 fetch_errors=0 interrupts=0; lockstep: mismatch at retired instruction 54 in pc, insn, rd; a signature was not
+fencei-no-drain: CAUGHT by suites cpi: FAIL: rv32ui/fence_i PASS cycles=543 retired=296 fetch_errors=0 interrupts=0; lockstep: 296 retired instructions match Spike; 8 signature words match; cycles differ from 
+fencei-drain-m1-only: CAUGHT by suites cpi: FAIL: rv32ui/fence_i PASS cycles=545 retired=296 fetch_errors=0 interrupts=0; lockstep: 296 retired instructions match Spike; 8 signature words match; cycles differ from 
+fencei-illegal: CAUGHT by suites cpi: FAIL: rv32ui/fence_i FAIL test=1337 cycles=94 retired=69 fetch_errors=0 interrupts=0; lockstep: mismatch at retired instruction 53 in trap, csrs; a signature was not writ
+amo-min-is-max: CAUGHT by suites cpi: FAIL: rv32ua/amomin_w STORE_MISMATCH cycles=67 retired=50 fetch_errors=0 interrupts=0; lockstep: DUT trace ended after 50 records; Spike retired 85 up to its tohost store
+lr-rs2-legal: CAUGHT by suites cpi: FAIL: traps/decode_traps FAIL test=3 cycles=1005 retired=523 fetch_errors=0 interrupts=0; lockstep: mismatch at retired instruction 492 in trap, rd, mem, csrs; a signatur
+lr-is-store: CAUGHT by suites cpi: FAIL: rv32ua/lrsc STORE_MISMATCH cycles=99 retired=69 fetch_errors=0 interrupts=0; lockstep: mismatch at retired instruction 68 in store; a signature was not written
+atomic-not-load: CAUGHT by suites cpi: FAIL: rv32ua/amoadd_w FAIL test=2 cycles=80 retired=59 fetch_errors=0 interrupts=0; lockstep: mismatch at retired instruction 49 in rd; no signature region
+sc-failure-reports-store: CAUGHT by suites cpi: FAIL: rv32ua/lrsc STORE_MISMATCH cycles=85 retired=57 fetch_errors=0 interrupts=0; lockstep: mismatch at retired instruction 56 in mem, store; a signature was not written
+amo-rvfi-add-wrong: CAUGHT by suites cpi: FAIL: rv32ua/amoadd_w STORE_MISMATCH cycles=67 retired=50 fetch_errors=0 interrupts=0; lockstep: mismatch at retired instruction 49 in store; no signature region
+misa-no-a: CAUGHT by suites cpi: FAIL: rv32mi/csr PASS cycles=195 retired=130 fetch_errors=0 interrupts=0; lockstep: mismatch at retired instruction 118 in rd; 4 signature words match
+dot8-not-late-in-m1: CAUGHT by suites stall: FAIL: directed/dot8 FAIL test=7 cycles=444 retired=204 fetch_errors=0 interrupts=0; lockstep: mismatch at retired instruction 192 in rd; a signature was not written
+dot8-no-decode-interlock: CAUGHT by random cpi: FAIL: random seed 1 PASS cycles=11037 retired=4418 fetch_errors=0 interrupts=0; lockstep: 4474 retired instructions match Spike; 1024 signature words match; cycles differ
+dot8-interlock-in-m1: CAUGHT by suites cpi: FAIL: directed/dot8 PASS cycles=402 retired=249 fetch_errors=0 interrupts=0; lockstep: 249 retired instructions match Spike; 4 signature words match; cycles differ from t
+dot8-late-in-m2: CAUGHT by suites cpi: FAIL: directed/dot8 PASS cycles=402 retired=249 fetch_errors=0 interrupts=0; lockstep: 249 retired instructions match Spike; 4 signature words match; cycles differ from t
+dot8-result-not-to-m2: CAUGHT by suites cpi: FAIL: directed/dot8 FAIL test=2 cycles=79 retired=58 fetch_errors=0 interrupts=0; lockstep: mismatch at retired instruction 48 in rd; a signature was not written
+dot8-lane0-unsigned: CAUGHT by suites cpi: FAIL: directed/dot8 FAIL test=2 cycles=85 retired=64 fetch_errors=0 interrupts=0; lockstep: mismatch at retired instruction 53 in rd; a signature was not written
+dot8-sum-17-bits: CAUGHT by suites cpi: FAIL: directed/dot8 FAIL test=2 cycles=79 retired=58 fetch_errors=0 interrupts=0; lockstep: mismatch at retired instruction 48 in rd; a signature was not written
+dot8-lane-swap: CAUGHT by suites cpi: FAIL: directed/dot8 FAIL test=2 cycles=92 retired=71 fetch_errors=0 interrupts=0; lockstep: mismatch at retired instruction 61 in rd; a signature was not written
+dot8-ignores-funct7: CAUGHT by suites cpi: FAIL: traps/dot8_traps TIMEOUT cycles=200000 retired=48654 fetch_errors=0 interrupts=0; lockstep: rejected while parsing: Spike's log has no store to tohost 0x80002000; n
+dot8-ignores-funct3: CAUGHT by suites cpi: FAIL: traps/dot8_traps TIMEOUT cycles=200000 retired=49662 fetch_errors=0 interrupts=0; lockstep: mismatch at retired instruction 45 in trap, rd, csrs; no signature regio
+dot8-sum-zero-extended: CAUGHT by suites cpi: FAIL: directed/dot8 FAIL test=2 cycles=85 retired=64 fetch_errors=0 interrupts=0; lockstep: mismatch at retired instruction 53 in rd; a signature was not written
+dot8-lane3-dropped: CAUGHT by suites cpi: FAIL: directed/dot8 FAIL test=2 cycles=79 retired=58 fetch_errors=0 interrupts=0; lockstep: mismatch at retired instruction 48 in rd; a signature was not written
+misa-no-x: CAUGHT by suites cpi: FAIL: rv32mi/csr PASS cycles=195 retired=130 fetch_errors=0 interrupts=0; lockstep: mismatch at retired instruction 118 in rd; 4 signature words match
+hpm-events-illegal: CAUGHT by suites cpi: FAIL: traps/csr_ordering FAIL test=5 cycles=650 retired=334 fetch_errors=0 interrupts=0; lockstep: mismatch at retired instruction 263 in trap, csrs; a signature was not 
+minstret-ignores-inhibit: CAUGHT by suites cpi: FAIL: traps/csr_ordering FAIL test=5 cycles=326 retired=170 fetch_errors=0 interrupts=0; lockstep: mismatch at retired instruction 161 in rd; a signature was not written
+minstret-write-not-suppressing: CAUGHT by suites cpi: FAIL: rv32mi/instret_overflow FAIL test=3 cycles=106 retired=67 fetch_errors=0 interrupts=0; lockstep: mismatch at retired instruction 57 in rd; no signature region
+fencei-no-invalidate: CAUGHT by suites: FAIL: rv32ui/fence_i FAIL test=3 cycles=844 retired=297 fetch_errors=0 interrupts=0 icache_hits=492 icache_misses=30 dcache_hits=1 dcache_misses=1; lockstep: mismatch at 
+l1i-hit-ignores-valid: CAUGHT by suites: FAIL: rv32ui/fence_i CACHE_MISMATCH cycles=231 retired=53 fetch_errors=0 interrupts=0 icache_hits=41 icache_misses=17 dcache_hits=1 dcache_misses=1; lockstep: DUT trace e
+l1i-tag-drops-bit12: CAUGHT by suites: FAIL: rv32ui/ld_st CACHE_MISMATCH cycles=3323 retired=877 fetch_errors=0 interrupts=0 icache_hits=661 icache_misses=223 dcache_hits=172 dcache_misses=2; lockstep: DUT tra
+l1i-fencei-ignored: CAUGHT by suites: FAIL: rv32ui/fence_i CACHE_MISMATCH cycles=231 retired=53 fetch_errors=0 interrupts=0 icache_hits=41 icache_misses=17 dcache_hits=1 dcache_misses=1; lockstep: DUT trace e
+l1i-refill-not-poisoned: CAUGHT by suites: FAIL: rv32ui/fence_i CACHE_MISMATCH cycles=729 retired=268 fetch_errors=0 interrupts=0 icache_hits=458 icache_misses=24 dcache_hits=1 dcache_misses=1; lockstep: DUT trace
+l1i-waiting-fetch-not-stale: CAUGHT by suites: FAIL: rv32ui/add TIMEOUT cycles=200000 retired=1 fetch_errors=199977 interrupts=0 icache_hits=4 icache_misses=2 dcache_hits=0 dcache_misses=0; lockstep: mismatch at retir
+l1i-miss-answers-word0: CAUGHT by suites: FAIL: rv32ui/add TIMEOUT cycles=200000 retired=28808 fetch_errors=0 interrupts=0 icache_hits=198862 icache_misses=95 dcache_hits=0 dcache_misses=0; lockstep: mismatch at 
+l1i-kept-word-ignored: CAUGHT by suites: FAIL: rv32ui/add FAIL test=1337 cycles=284 retired=76 fetch_errors=0 interrupts=0 icache_hits=74 icache_misses=17 dcache_hits=0 dcache_misses=0; lockstep: mismatch at ret
+l1i-refill-writes-issued-slot: CAUGHT by suites: FAIL: rv32ui/add TIMEOUT cycles=200000 retired=1 fetch_errors=199971 interrupts=0 icache_hits=4 icache_misses=2 dcache_hits=0 dcache_misses=0; lockstep: mismatch at retir
+l1d-store-hit-not-written: CAUGHT by suites: FAIL: rv32ui/ld_st FAIL test=1337 cycles=303 retired=73 fetch_errors=0 interrupts=0 icache_hits=59 icache_misses=21 dcache_hits=2 dcache_misses=1; lockstep: mismatch at r
+l1d-store-miss-written: CAUGHT by suites: FAIL: c/dot8_jobs TIMEOUT cycles=6000000 retired=330349 fetch_errors=5504021 interrupts=0 icache_hits=468308 icache_misses=115 dcache_hits=46976 dcache_misses=364; lockst
+l1d-store-all-bytes: CAUGHT by suites: FAIL: rv32ui/ma_data FAIL test=46 cycles=3933 retired=1864 fetch_errors=0 interrupts=0 icache_hits=2163 icache_misses=68 dcache_hits=566 dcache_misses=29; lockstep: rejec
+l1d-amo-keeps-line: CAUGHT by suites: FAIL: rv32ua/amoadd_w CACHE_MISMATCH cycles=266 retired=62 fetch_errors=0 interrupts=0 icache_hits=49 icache_misses=19 dcache_hits=0 dcache_misses=2; lockstep: DUT trace 
+l1d-lr-invalidates: CAUGHT by suites: FAIL: rv32ua/lrsc CACHE_MISMATCH cycles=309 retired=70 fetch_errors=0 interrupts=0 icache_hits=63 icache_misses=21 dcache_hits=0 dcache_misses=2; lockstep: DUT trace ende
+l1d-io-load-refills: CAUGHT by suites: FAIL: interrupts/irq_enable CACHE_MISMATCH cycles=492 retired=145 fetch_errors=0 interrupts=1 icache_hits=189 icache_misses=26 dcache_hits=1 dcache_misses=1; lockstep: se
+l1d-error-a-cycle-late: CAUGHT by suites: FAIL: traps/m1_traps LOAD_MISMATCH cycles=256 retired=57 fetch_errors=0 interrupts=0 icache_hits=46 icache_misses=18 dcache_hits=0 dcache_misses=1; lockstep: mismatch at 
+l1d-now-ignores-stale: CAUGHT by suites stall: FAIL: rv32ui/ld_st FAIL test=1337 cycles=3807 retired=793 fetch_errors=0 interrupts=0 icache_hits=609 icache_misses=202 dcache_hits=141 dcache_misses=4; lockstep: mismatc
+l1d-waiting-load-not-stale: CAUGHT by suites: FAIL: rv32ui/ld_st FAIL test=1337 cycles=303 retired=73 fetch_errors=0 interrupts=0 icache_hits=59 icache_misses=21 dcache_hits=2 dcache_misses=1; lockstep: mismatch at r
+l1d-accepted-during-write-not-stale: CAUGHT by suites stall: FAIL: rv32ui/ld_st FAIL test=1337 cycles=3807 retired=793 fetch_errors=0 interrupts=0 icache_hits=609 icache_misses=202 dcache_hits=141 dcache_misses=4; lockstep: mismatc
+l1d-miss-answers-word0: CAUGHT by suites: FAIL: rv32ui/ma_data FAIL test=67305985 cycles=682 retired=160 fetch_errors=0 interrupts=0 icache_hits=139 icache_misses=46 dcache_hits=26 dcache_misses=10; lockstep: rej
+l1d-refill-writes-issued-slot: CAUGHT by suites: FAIL: rv32ui/fence_i FAIL test=2 cycles=339 retired=70 fetch_errors=0 interrupts=0 icache_hits=59 icache_misses=24 dcache_hits=1 dcache_misses=1; lockstep: mismatch at re
+l1d-kept-word-ignored: CAUGHT by suites stall: FAIL: traps/fetch_traps PASS cycles=1049 retired=252 fetch_errors=24 interrupts=0 icache_hits=237 icache_misses=44 dcache_hits=23 dcache_misses=6; lockstep: mismatch at r
+l1d-everything-posted: CAUGHT by suites: FAIL: rv32ua/amoadd_w STORE_MISMATCH cycles=219 retired=50 fetch_errors=0 interrupts=0 icache_hits=40 icache_misses=16 dcache_hits=0 dcache_misses=0; lockstep: mismatch a
+l1d-io-store-posted: CAUGHT by act4: FAIL: act4/priv/Sm/Sm_mcsr_cntr-00 FAIL test=1 cycles=17960 retired=5357 fetch_errors=0 interrupts=0 icache_hits=6429 icache_misses=880 dcache_hits=578 dcache_misses=101
+l1d-posted-answers-not-dropped: CAUGHT by suites: FAIL: rv32ui/ld_st FAIL test=2 cycles=267 retired=60 fetch_errors=0 interrupts=0 icache_hits=47 icache_misses=19 dcache_hits=1 dcache_misses=1; lockstep: mismatch at reti
+l1d-inflight-unlimited: CAUGHT by suites inflight4: FAIL: rv32ui/ld_st D_INFLIGHT cycles=2163 retired=453 fetch_errors=0 interrupts=0 icache_hits=343 icache_misses=117 dcache_hits=87 dcache_misses=2; lockstep: DUT trace en
+l1d-snoop-not-invalidating: CAUGHT by suites: FAIL: coherence/remote_mp CACHE_MISMATCH cycles=392 retired=113 fetch_errors=0 interrupts=0 icache_hits=134 icache_misses=18 dcache_hits=11 dcache_misses=6; lockstep: sel
+l1d-snoop-port0-only-invalidates: CAUGHT by l1 unit, three snoop ports: FAIL seed 1 cyc 186: remote load 80003044 rdata 189ebec3 older than its lookup (cycle 185)
+l1d-snoop-refill-ignores-port2: CAUGHT by l1 unit, three snoop ports: FAIL seed 1 cyc 212493: remote load 80003004 rdata 5bc06876 older than its lookup (cycle 212492)
+l1d-snoop-lookup-ignores-port1: CAUGHT by l1 unit, three snoop ports: FAIL seed 1 cyc 853435: remote load 80003014 rdata d52e2116 older than its lookup (cycle 853434)
+l1d-snoop-no-bypass: CAUGHT by suites: FAIL: coherence/remote_mp CACHE_MISMATCH cycles=623 retired=206 fetch_errors=0 interrupts=0 icache_hits=272 icache_misses=19 dcache_hits=29 dcache_misses=11; lockstep: se
+l1d-refill-not-poisoned-by-snoop: CAUGHT by suites: FAIL: coherence/remote_mp CACHE_MISMATCH cycles=745 retired=249 fetch_errors=0 interrupts=0 icache_hits=337 icache_misses=19 dcache_hits=35 dcache_misses=16; lockstep: se
+l1d-refill-keeps-replaced-line: CAUGHT by l1 unit: FAIL seed 1 cyc 42762: remote load 8000305c rdata ae54958d older than its lookup (cycle 42761)
+l1d-snooped-last-word-installed: CAUGHT by suites: FAIL: coherence/remote_mp CACHE_MISMATCH cycles=1542 retired=559 fetch_errors=0 interrupts=0 icache_hits=805 icache_misses=19 dcache_hits=87 dcache_misses=41; lockstep: s
+l1i-no-hold-after-fencei: CAUGHT by suites long stall: FAIL: directed/smc FAIL test=3 cycles=4726 retired=467 fetch_errors=0 interrupts=0 icache_hits=533 icache_misses=185 dcache_hits=0 dcache_misses=0; lockstep: mismatch at 
+l1i-hold-withdraws-waiting: CAUGHT by random long stall: FAIL: random seed 701 I_REQ_UNSTABLE cycles=20601 retired=2693 fetch_errors=0 interrupts=0 div_waits=18 icache_hits=2921 icache_misses=616 dcache_hits=103 dcache_misses=1
+109 of 113 planted bugs caught
+exit=0

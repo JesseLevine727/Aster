@@ -36,6 +36,8 @@ MUTANTS: dict[str, list[tuple[str, str]]] = {
     "answer_credit_a_cycle_early": [("assign ans_next = acc_hist[HIST - 2];", "assign ans_next = acc_hist[HIST - 1];")],
     "read_buffer_one_too_many": [("&& out_base + 3'd1 < 3'd4;", "&& out_base + 3'd1 < 3'd5;")],
     "last_read_skipped": [("assign rd_more_taken = rd_left > UW'(1);", "assign rd_more_taken = rd_left > UW'(2);")],
+    "unit_counts_too_narrow": [("localparam int unsigned UW = $clog2(MEM_BYTES / 8 + 2) + 1;",
+                                "localparam int unsigned UW = $clog2(MEM_BYTES / 8 + 2) - 2;")],
     # the funnel
     "shift_off_by_one": [("desc_shift <= s > d ? 4'(s - d) : 4'(4'd8 + 4'(s) - 4'(d));",
                           "desc_shift <= s > d ? 4'(s - d + 1) : 4'(4'd8 + 4'(s) - 4'(d));")],

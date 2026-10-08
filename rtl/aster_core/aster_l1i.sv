@@ -23,7 +23,13 @@
 // only.
 `timescale 1 ns / 1 ps
 module aster_l1i #(
-    parameter logic [31:0] MEM_BASE = 32'h8000_0000
+    parameter logic [31:0] MEM_BASE = 32'h8000_0000,
+    // The cacheable range (MEM_BASE, cacheable_bytes) lies in MEM_BASE's aligned 2^TAG_SPAN bytes, so a
+    // line's tag keeps only its address bits [TAG_SPAN-1:12] (32: all of them), and a fetch's other
+    // address bits are compared with MEM_BASE's as it enters stage 1, beside its address (s1_span).
+    // Only cacheable lines are valid, so the lookup is exact (checked against full tags in simulation;
+    // 20.3's timing: the Phase 20 SoC's main memory, 17).
+    parameter int unsigned TAG_SPAN = 32
 ) (
     input  logic        clk,
     input  logic        rst_n,
@@ -51,8 +57,11 @@ module aster_l1i #(
 );
     typedef enum logic [1:0] {IDLE, REFILL, ANSWER, REPLAY} state_t;
 
-    logic [19:0]  tag_ram [256];
-    logic [255:0] valid;
+    localparam int unsigned TB = TAG_SPAN - 12;   // a tag's bits
+    localparam logic [31:0] SPAN_MASK = TAG_SPAN >= 32 ? 32'h0 : ~((32'h1 << TAG_SPAN) - 32'h1);
+    logic [TB-1:0] tag_ram [256];
+    logic [255:0]  valid;
+    logic          s1_span;                       // stage 1's fetch is in TAG_SPAN's span
 
     // Stage 1: s1_age counts the cycles since acceptance (0: the first); its
     // word is on the array's output at age 1, and kept (s1_word) if it waits.
@@ -86,7 +95,7 @@ module aster_l1i #(
     assign s2_free      = !s2_valid || s2_answer;
     assign s1_move      = s1_valid && s2_free;
     assign i_req_ready  = (!s1_valid || s1_move) && state != REFILL && !replay_issue;
-    assign lookup_hit   = valid[s1_addr[11:4]] && tag_ram[s1_addr[11:4]] == s1_addr[31:12];
+    assign lookup_hit   = valid[s1_addr[11:4]] && s1_span && tag_ram[s1_addr[11:4]] == s1_addr[TAG_SPAN-1:12];
 
     assign i_rsp_valid  = s2_answer;
     assign i_rsp_error  = !s2_cacheable;
@@ -138,8 +147,21 @@ module aster_l1i #(
     );
 
     always_ff @(posedge clk) begin
-        if (refill_write && received == 3'd3) tag_ram[s2_addr[11:4]] <= s2_addr[31:12];
+        if (refill_write && received == 3'd3) tag_ram[s2_addr[11:4]] <= s2_addr[TAG_SPAN-1:12];
     end
+`ifndef SYNTHESIS
+    // TAG_SPAN's tags against full ones: the same lookups in every cycle
+    logic [19:0] tag_full [256];
+    always_ff @(posedge clk) begin
+        if (refill_write && received == 3'd3) tag_full[s2_addr[11:4]] <= s2_addr[31:12];
+        if (rst_n) begin
+            assert (TAG_SPAN >= 32 || (MEM_BASE[TAG_SPAN-1:0] == '0 && 33'(cacheable_bytes) <= 33'(1) << TAG_SPAN))
+                else $error("aster_l1i: the cacheable range is not inside TAG_SPAN's aligned span");
+            assert (lookup_hit == (valid[s1_addr[11:4]] && tag_full[s1_addr[11:4]] == s1_addr[31:12]))
+                else $error("aster_l1i: a TAG_SPAN lookup differs from the full tag's");
+        end
+    end
+`endif
 
     always_ff @(posedge clk) begin
         if (!rst_n) begin
@@ -149,6 +171,7 @@ module aster_l1i #(
             s1_have      <= 1'b0;
             s1_age       <= '0;
             s1_addr      <= '0;
+            s1_span      <= 1'b0;
             s1_word      <= '0;
             s2_valid     <= 1'b0;
             s2_hit       <= 1'b0;
@@ -178,6 +201,7 @@ module aster_l1i #(
                 s1_have  <= 1'b0;
                 s1_stale <= refill_write;
                 s1_addr  <= i_req_addr;
+                s1_span  <= (({i_req_addr, 2'b00} ^ MEM_BASE) & SPAN_MASK) == 32'h0;
             end else if (s1_valid) begin
                 if (s1_age != 2'd2) s1_age <= s1_age + 2'd1;
                 if (s1_age == 2'd1) begin s1_word <= rd_data; s1_have <= 1'b1; end

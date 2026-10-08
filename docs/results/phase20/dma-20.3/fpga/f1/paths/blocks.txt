@@ -1,9 +1,0 @@
-    3   0.213 dma -> g_devices.devices
-    2   0.212 fabric -> fabric
-    8   0.229 g_hart[0].core -> g_hart[0].core
-   13   0.181 g_hart[0].dcache -> g_hart[0].dcache
-    2   0.168 g_hart[1].dcache -> dma
-    9   0.010 g_hart[1].dcache -> fabric
-    7   0.051 g_hart[1].dcache -> g_hart[1].dcache
-    1   0.274 g_npu_buffer.e_addr_reg[0][13] -> g_hart[1].dcache
-    1   0.320 npu -> npu

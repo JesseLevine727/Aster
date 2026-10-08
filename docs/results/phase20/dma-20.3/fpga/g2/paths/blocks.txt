@@ -1,0 +1,3 @@
+    3   0.128 g_hart[0].dcache -> fabric
+    2   0.131 g_hart[0].dcache -> g_hart[0].dcache
+    9   0.031 g_hart[1].dcache -> g_hart[1].dcache

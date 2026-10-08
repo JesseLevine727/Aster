@@ -297,6 +297,10 @@ void Shell::new_request(int k) {
             else if (size == 1) { p.addr |= 2u * std::uint32_t(rng() % 2); p.be = std::uint8_t(3u << (p.addr & 2u)); }
         }
         if (p.op == fabric::SC && uni() < 0.75) p.addr = last_lr[h];
+        // (an sc 64 KiB from the last lr's word, in main memory too: equal in the offset's low bits, so it
+        // fails only if the offset's top bit is compared; 20.3's narrowed reservation)
+        else if (p.op == fabric::SC && uni() < 0.4 && ((last_lr[h] ^ 0x10000u) - MEM_BASE) < MEM_BYTES)
+            p.addr = last_lr[h] ^ 0x10000u;
         if (p.op == fabric::LR) last_lr[h] = p.addr;
         break;
     }
@@ -664,6 +668,7 @@ void Shell::take_effect() {
                     const bool ok = resv[h].valid && resv[h].word == (p.addr >> 2);
                     o.check = SC_RESULT; o.data = ok ? 0 : 1;
                     hit(ok ? "sc_success" : "sc_fail");
+                    if (resv[h].valid && (resv[h].word ^ (p.addr >> 2)) == (0x10000u >> 2)) hit("sc_far_alias");
                     if (ok) { writes.push_back(store); writes.back().kind = fabric::BY_SC; }
                     sc_end[h] = true;
                 } else {                        // an AMO: its old value now, its write two edges on
@@ -930,6 +935,7 @@ int Shell::run() {
     if (mode == "reset") for (const char* b : {"resv_end:exception", "resv_end:reset", "reset:owed", "reset:amo",
                                                "reset:quick"}) required.push_back(b);
     if (mode == "errors") for (const char* b : {"error:I", "error:N", "error:R", "error:W"}) required.push_back(b);
+    if (mode == "mix" || mode == "hot" || mode == "dense") required.push_back("sc_far_alias");
     const int writers[] = {D0, D1, N, W};
     for (int a : writers)
         for (int b : writers)

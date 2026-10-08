@@ -1,0 +1,11 @@
+csr-write-on-trap: MISSED
+dot8-not-late-in-m1: CAUGHT by suites stall: FAIL: directed/dot8 FAIL test=7 cycles=444 retired=204 fetch_errors=0 interrupts=0; lockstep: mismatch at retired instruction 192 in rd; a signature was not written
+dot8-lane0-unsigned: CAUGHT by suites cpi: FAIL: directed/dot8 FAIL test=2 cycles=85 retired=64 fetch_errors=0 interrupts=0; lockstep: mismatch at retired instruction 53 in rd; a signature was not written
+dot8-lane-swap: CAUGHT by suites cpi: FAIL: directed/dot8 FAIL test=2 cycles=92 retired=71 fetch_errors=0 interrupts=0; lockstep: mismatch at retired instruction 61 in rd; a signature was not written
+l1i-hit-ignores-valid: CAUGHT by suites: FAIL: rv32ui/fence_i CACHE_MISMATCH cycles=231 retired=53 fetch_errors=0 interrupts=0 icache_hits=41 icache_misses=17 dcache_hits=1 dcache_misses=1; lockstep: DUT trace e
+l1i-tag-drops-bit12: CAUGHT by suites: FAIL: rv32ui/ld_st CACHE_MISMATCH cycles=3323 retired=877 fetch_errors=0 interrupts=0 icache_hits=661 icache_misses=223 dcache_hits=172 dcache_misses=2; lockstep: DUT tra
+l1d-now-ignores-stale: CAUGHT by suites stall: FAIL: rv32ui/ld_st FAIL test=1337 cycles=3807 retired=793 fetch_errors=0 interrupts=0 icache_hits=609 icache_misses=202 dcache_hits=141 dcache_misses=4; lockstep: mismatc
+l1d-inflight-unlimited: CAUGHT by suites inflight4: FAIL: rv32ui/ld_st D_INFLIGHT cycles=2163 retired=453 fetch_errors=0 interrupts=0 icache_hits=343 icache_misses=117 dcache_hits=87 dcache_misses=2; lockstep: DUT trace en
+l1i-no-hold-after-fencei: CAUGHT by suites long stall: FAIL: directed/smc FAIL test=3 cycles=4726 retired=467 fetch_errors=0 interrupts=0 icache_hits=533 icache_misses=185 dcache_hits=0 dcache_misses=0; lockstep: mismatch at 
+l1i-hold-withdraws-waiting: CAUGHT by random long stall: FAIL: random seed 701 I_REQ_UNSTABLE cycles=20601 retired=2693 fetch_errors=0 interrupts=0 div_waits=18 icache_hits=2921 icache_misses=616 dcache_hits=103 dcache_misses=1
+exit=0

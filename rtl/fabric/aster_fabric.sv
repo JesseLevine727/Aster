@@ -238,13 +238,17 @@ module aster_fabric #(
     end
 
     // ---- reservations, and whether each sc writes ----
-    logic [1:0]        resv;
-    logic [1:0][29:0]  resv_word;
-    logic [NREQ-1:0]   sc_ok;
+    // A reservation is set only by an lr a bank takes, so it holds a word of main memory; and an sc's
+    // success (like a write touching the word) matters only for a request of main memory, whose address
+    // main memory's offset bits distinguish (main_hint agrees with the address: asserted below). So the
+    // reserved word is kept, and compared, as its offset in main memory (20.3's timing: 15 bits, not 30).
+    logic [1:0]           resv;
+    logic [1:0][AB-3:0]   resv_word;
+    logic [NREQ-1:0]      sc_ok;
     always_comb begin
         sc_ok = '0;
         for (int h = 0; h < 2; h++)
-            sc_ok[h == 0 ? D0 : D1] = resv[h] && resv_word[h] == d_req_addr[h][31:2];
+            sc_ok[h == 0 ? D0 : D1] = resv[h] && resv_word[h] == d_req_addr[h][AB-1:2];
         // what each request writes if it is taken: a store, a successful sc, an NPU or DMA write
         eff_write = '0;
         for (int h = 0; h < 2; h++)
@@ -425,7 +429,7 @@ module aster_fabric #(
     always_comb
         for (int h = 0; h < 2; h++)
             for (int w = 0; w < 4; w++)
-                touches_resv[h][w] = wr_addr[w][31:3] == resv_word[h][29:1]
+                touches_resv[h][w] = wr_addr[w][AB-1:3] == resv_word[h][AB-3:1]
                                      && (resv_word[h][0] ? |wr_be[w][7:4] : |wr_be[w][3:0]);
 
     always_ff @(posedge clk) begin
@@ -493,7 +497,7 @@ module aster_fabric #(
                 ev_resv_end[h] <= resv[h] && !lr_now && !sc_now && touched;
                 if (lr_now) begin
                     resv[h] <= 1'b1;
-                    resv_word[h] <= d_req_addr[h][31:2];
+                    resv_word[h] <= d_req_addr[h][AB-1:2];
                 end else if (sc_now || touched) resv[h] <= 1'b0;
                 if (hart_exception[h] || !hart_rst_n[h]) resv[h] <= 1'b0;
             end

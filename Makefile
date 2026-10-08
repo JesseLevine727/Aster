@@ -2264,12 +2264,41 @@ $(L1D3_UNIT_SIM): rtl/aster_core/aster_core_pkg.sv $(ASTER_L1_RTL) verification/
 		-CFLAGS -DL1D_SNOOPS=3
 	@touch $@
 
-core-aster-l1-unit: $(L1D_UNIT_SIM) $(L1I_UNIT_SIM) $(L1D3_UNIT_SIM)
+# The data cache with three snoop ports and main memory's tag span (the Phase 20 SoC's, 20.3), its
+# lookups and snoop hits asserted equal to full tags' in every cycle.
+L1D17_UNIT_SIM := $(L1_UNIT_DIR)/l1d_unit_span17
+$(L1D17_UNIT_SIM): rtl/aster_core/aster_core_pkg.sv $(ASTER_L1_RTL) verification/core/l1/l1d_unit.sv verification/core/l1/tb_l1d.cpp Makefile
+	mkdir -p $(L1_UNIT_DIR)
+	$(VERILATOR) --cc --exe --build --assert --Wall --top-module l1d_unit --prefix Vl1d_unit -GSNOOPS=3 -GTAG_SPAN=17 \
+		--Mdir $(L1_UNIT_DIR)/d17_obj -o $(abspath $@) $(ROOT)/rtl/aster_core/aster_core_pkg.sv \
+		$(addprefix $(ROOT)/,$(ASTER_L1_RTL)) $(ROOT)/verification/core/l1/l1d_unit.sv $(ROOT)/verification/core/l1/tb_l1d.cpp \
+		-CFLAGS -DL1D_SNOOPS=3 -CFLAGS -DL1D_SPAN17
+	@touch $@
+
+L1I17_UNIT_SIM := $(L1_UNIT_DIR)/l1i_unit_span17
+$(L1I17_UNIT_SIM): $(ASTER_L1_RTL) verification/core/l1/tb_l1i.cpp Makefile
+	mkdir -p $(L1_UNIT_DIR)
+	$(VERILATOR) --cc --exe --build --assert --Wall --top-module aster_l1i --prefix Vaster_l1i -GTAG_SPAN=17 \
+		--Mdir $(L1_UNIT_DIR)/i17_obj -o $(abspath $@) $(ROOT)/rtl/aster_core/aster_l1_ram.sv \
+		$(ROOT)/rtl/aster_core/aster_l1i.sv $(ROOT)/verification/core/l1/tb_l1i.cpp -CFLAGS -DL1I_SPAN17
+	@touch $@
+
+core-aster-l1-unit: $(L1D_UNIT_SIM) $(L1I_UNIT_SIM) $(L1D3_UNIT_SIM) $(L1D17_UNIT_SIM) $(L1I17_UNIT_SIM)
 	@for seed in $$(seq 1 $(L1_UNIT_SEEDS)); do \
 		$(L1D_UNIT_SIM) $$seed 1000000 > /dev/null || { $(L1D_UNIT_SIM) $$seed 1000000; exit 1; }; \
 		$(L1I_UNIT_SIM) $$seed 1000000 > /dev/null || { $(L1I_UNIT_SIM) $$seed 1000000; exit 1; }; \
 		$(L1D3_UNIT_SIM) $$seed 1000000 > /dev/null || { $(L1D3_UNIT_SIM) $$seed 1000000; exit 1; }; \
-	done; echo "PASS: the L1 data and instruction caches pass $(L1_UNIT_SEEDS) random unit-test seeds each; the data cache with three snoop ports (20.1) too, snoops on two ports or more in one cycle and a refill snooped on each port in every seed"
+		$(L1D17_UNIT_SIM) $$seed 1000000 > /dev/null || { $(L1D17_UNIT_SIM) $$seed 1000000; exit 1; }; \
+		$(L1I17_UNIT_SIM) $$seed 1000000 > /dev/null || { $(L1I17_UNIT_SIM) $$seed 1000000; exit 1; }; \
+	done; echo "PASS: the L1 data and instruction caches pass $(L1_UNIT_SEEDS) random unit-test seeds each; the data cache with three snoop ports (20.1) too, snoops on two ports or more in one cycle and a refill snooped on each port in every seed; and both with main memory's tag span (20.3), every lookup and snoop hit as full tags'"
+
+# Planted bugs in the caches' narrow tags (20.3, scripts/l1_span_mutants.py): each kept tag bit dropped from
+# each narrow compare (the data cache's lookup and snoop hit, the instruction cache's lookup), caught on every
+# seed by the TAG_SPAN 17 unit tests, which the unmutated caches pass. Not in make check: it builds 17 tests.
+.PHONY: l1-span-mutants
+l1-span-mutants:
+	@mkdir -p $(L1_UNIT_DIR)
+	@set -o pipefail; $(PYTHON) scripts/l1_span_mutants.py $(L1_UNIT_DIR)/span-mutants | tee $(L1_UNIT_DIR)/span-mutants.log
 
 core-aster-sim: $(ASTER_PORTS_SIM) $(ASTER_L1_SIM)
 core-aster-tests: $(ASTER_PORTS_SIM) $(ASTER_DOT8_PLUGIN)

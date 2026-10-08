@@ -1,12 +1,12 @@
-DMA SWEEP jobs=3392 abort_prefix=1485 hart1_lines=64 contention: dma_stalls=43 npu_accepted=1530 hart1_accepted=44462 hart1_passes=11 resume_dropped_reads=6
+DMA SWEEP jobs=3392 abort_prefix=1485 hart1_lines=64 contention: dma_stalls=47 npu_accepted=1534 hart1_accepted=44453 hart1_passes=11 resume_dropped_reads=6
 DMA COPY bytes=16 aligned dma_cycles=193 dma_job_cycles=14 cpu_cycles=91
 DMA COPY bytes=16 misaligned dma_cycles=180 dma_job_cycles=18 cpu_cycles=192
 DMA COPY bytes=64 aligned dma_cycles=180 dma_job_cycles=29 cpu_cycles=151
 DMA COPY bytes=64 misaligned dma_cycles=180 dma_job_cycles=33 cpu_cycles=720
-DMA COPY bytes=256 aligned dma_cycles=260 dma_job_cycles=89 cpu_cycles=487
-DMA COPY bytes=256 misaligned dma_cycles=260 dma_job_cycles=93 cpu_cycles=2832
-DMA COPY bytes=1024 aligned dma_cycles=500 dma_job_cycles=329 cpu_cycles=1831
-DMA COPY bytes=1024 misaligned dma_cycles=500 dma_job_cycles=333 cpu_cycles=11280
-DMA COPY bytes=4096 aligned dma_cycles=1473 dma_job_cycles=1289 cpu_cycles=7291
+DMA COPY bytes=256 aligned dma_cycles=260 dma_job_cycles=89 cpu_cycles=501
+DMA COPY bytes=256 misaligned dma_cycles=273 dma_job_cycles=93 cpu_cycles=2845
+DMA COPY bytes=1024 aligned dma_cycles=513 dma_job_cycles=329 cpu_cycles=1845
+DMA COPY bytes=1024 misaligned dma_cycles=513 dma_job_cycles=333 cpu_cycles=11293
+DMA COPY bytes=4096 aligned dma_cycles=1473 dma_job_cycles=1289 cpu_cycles=7277
 DMA COPY bytes=4096 misaligned dma_cycles=1473 dma_job_cycles=1293 cpu_cycles=45135
 SOC DMA PASS

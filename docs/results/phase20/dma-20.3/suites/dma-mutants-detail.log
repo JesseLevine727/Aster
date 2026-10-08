@@ -2,6 +2,7 @@ CAUGHT: three_reads_in_flight (WAIT 3, sweep: Assertion failed in TOP.aster_dma2
 CAUGHT: answer_credit_a_cycle_early (WAIT 0, sweep: cycle 48409: JOB_CYCLES 10, the model's 9 (src 7 dst 0 len 10))
 CAUGHT: read_buffer_one_too_many (WAIT 0, sweep: Assertion failed in TOP.aster_dma2: aster_dma2: the read buffer overflowed)
 CAUGHT: last_read_skipped (WAIT 0, sweep: cycle 11629: JOB_CYCLES 9, the model's 8 (src 7 dst 0 len 2))
+CAUGHT: unit_counts_too_narrow (WAIT 0, ontime: cycle 3129: JOB_CYCLES 354, the shell saw 0)
 CAUGHT: shift_off_by_one (WAIT 0, sweep: cycle 3117: memory differs at 0x2147520512 (the destination))
 CAUGHT: lag_on_equal_offsets (WAIT 0, sweep: cycle 2478: memory differs at 0x2147520512 (the destination))
 CAUGHT: no_prime (WAIT 0, sweep: cycle 4003103: status 1 after a copy)
@@ -36,4 +37,4 @@ CAUGHT: abort_counts_as_success (WAIT 0, abort: cycle 324: the job added 1 to co
 CAUGHT: stop_keeps_requests (WAIT 0, stop: cycle 30: a request on the ports while held that the ARM side did not make)
 CAUGHT: counts_on_freeze (WAIT 0, mix: cycle 241212: counter 9 is 24, the events 22)
 CAUGHT: window_a_cycle_early (WAIT 0, mix: cycle 241063: counter 9 is 10, the events 12)
-PASS: planted bugs in aster_dma2: 38 of 38 caught by the DMA shell
+PASS: planted bugs in aster_dma2: 39 of 39 caught by the DMA shell

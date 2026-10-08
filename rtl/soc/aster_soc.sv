@@ -159,7 +159,7 @@ module aster_soc #(
             .rvfi_csr_mcycle_rmask(), .rvfi_csr_mcycle_wmask(), .rvfi_csr_mcycle_rdata(), .rvfi_csr_mcycle_wdata(),
             .rvfi_csr_minstret_rmask(), .rvfi_csr_minstret_wmask(), .rvfi_csr_minstret_rdata(), .rvfi_csr_minstret_wdata()
         );
-        aster_l1i icache (
+        aster_l1i #(.TAG_SPAN($clog2(MAIN_BYTES))) icache (   // (tags of main memory's span: 20.3's timing)
             .clk(aclk), .rst_n(core_rst_n[h]), .cacheable_bytes(32'(MAIN_BYTES)), .invalidate(fencei_inval),
             .data_pending(posted_pending[h]),
             .i_req_valid(c_i_req_valid), .i_req_addr(c_i_req_addr), .i_req_ready(c_i_req_ready),
@@ -169,7 +169,9 @@ module aster_soc #(
             .chk_lookup(i_lookup[h]), .chk_lookup_addr(), .chk_lookup_hit(i_lookup_hit[h])
         );
         assign m_i_addr[h] = i_addr;
-        aster_l1d #(.IO_WINDOWS(4), .IO_BASE(IO_BASE), .IO_MASK(IO_MASK), .IO_WORD_ONLY(IO_WORD_ONLY), .SNOOPS(3)) dcache (
+        // (tags of main memory's span: 20.3's timing)
+        aster_l1d #(.IO_WINDOWS(4), .IO_BASE(IO_BASE), .IO_MASK(IO_MASK), .IO_WORD_ONLY(IO_WORD_ONLY), .SNOOPS(3),
+                    .TAG_SPAN($clog2(MAIN_BYTES))) dcache (
             .clk(aclk), .rst_n(core_rst_n[h]), .cacheable_bytes(32'(MAIN_BYTES)),
             .d_req_valid(c_d_req_valid), .d_req_op(c_d_req_op), .d_req_addr(c_d_req_addr),
             .d_req_wdata(c_d_req_wdata), .d_req_be(c_d_req_be), .d_req_ready(c_d_req_ready),

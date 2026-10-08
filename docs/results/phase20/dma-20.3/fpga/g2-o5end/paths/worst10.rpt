@@ -1,0 +1,683 @@
+Copyright 1986-2022 Xilinx, Inc. All Rights Reserved. Copyright 2022-2025 Advanced Micro Devices, Inc. All Rights Reserved.
+-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+| Tool Version : Vivado v.2025.1 (lin64) Build 6140274 Wed May 21 22:58:25 MDT 2025
+| Date         : Thu Oct  8 12:43:56 2026
+| Host         : gondor running 64-bit Ubuntu 24.04.5 LTS
+| Command      : report_timing -max_paths 10 -nworst 1 -delay_type max -path_type full -input_pins -file build/fpga/pynq_z1/aster_soc-g2-o5end/paths045/worst10.rpt
+| Design       : aster_soc_board_wrapper
+| Device       : 7z020-clg400
+| Speed File   : -1  PRODUCTION 1.12 2019-11-22
+| Design State : Physopt postRoute
+-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+Timing Report
+
+Slack (MET) :             0.375ns  (required time - arrival time)
+  Source:                 aster_soc_board_i/aster/inst/implementation/g_hart[0].core/m2_reg[result][1]/C
+                            (rising edge-triggered cell FDRE clocked by clk_fpga_0  {rise@0.000ns fall@5.000ns period=10.000ns})
+  Destination:            aster_soc_board_i/aster/inst/implementation/g_hart[0].core/dot8_p0_reg/A[1]
+                            (rising edge-triggered cell DSP48E1 clocked by clk_fpga_0  {rise@0.000ns fall@5.000ns period=10.000ns})
+  Path Group:             clk_fpga_0
+  Path Type:              Setup (Max at Slow Process Corner)
+  Requirement:            10.000ns  (clk_fpga_0 rise@10.000ns - clk_fpga_0 rise@0.000ns)
+  Data Path Delay:        5.444ns  (logic 0.966ns (17.745%)  route 4.478ns (82.255%))
+  Logic Levels:           3  (LUT2=1 LUT4=1 LUT5=1)
+  Clock Path Skew:        -0.305ns (DCD - SCD + CPR)
+    Destination Clock Delay (DCD):    2.733ns = ( 12.733 - 10.000 ) 
+    Source Clock Delay      (SCD):    3.167ns
+    Clock Pessimism Removal (CPR):    0.129ns
+  Clock Uncertainty:      0.154ns  ((TSJ^2 + TIJ^2)^1/2 + DJ) / 2 + PE + UU
+    Total System Jitter     (TSJ):    0.071ns
+    Total Input Jitter      (TIJ):    0.300ns
+    Discrete Jitter          (DJ):    0.000ns
+    Phase Error              (PE):    0.000ns
+    User Uncertainty         (UU):    0.000ns
+
+    Location             Delay type                Incr(ns)  Path(ns)    Netlist Resource(s)
+  -------------------------------------------------------------------    -------------------
+                         (clock clk_fpga_0 rise edge)
+                                                      0.000     0.000 r  
+                         propagated clock network latency
+                                                      3.167     3.167    
+    SLICE_X28Y123        FDRE                         0.000     3.167 r  aster_soc_board_i/aster/inst/implementation/g_hart[0].core/m2_reg[result][1]/C
+    SLICE_X28Y123        FDRE (Prop_fdre_C_Q)         0.419     3.586 r  aster_soc_board_i/aster/inst/implementation/g_hart[0].core/m2_reg[result][1]/Q
+                         net (fo=4, routed)           1.262     4.848    aster_soc_board_i/aster/inst/implementation/g_hart[0].core/fetch/s1_wdata[31]_i_2_0[1]
+    SLICE_X32Y125                                                     r  aster_soc_board_i/aster/inst/implementation/g_hart[0].core/fetch/e_rs1v[1]_i_3/I2
+    SLICE_X32Y125        LUT4 (Prop_lut4_I2_O)        0.299     5.147 r  aster_soc_board_i/aster/inst/implementation/g_hart[0].core/fetch/e_rs1v[1]_i_3/O
+                         net (fo=1, routed)           0.423     5.570    aster_soc_board_i/aster/inst/implementation/g_hart[0].core/fetch/e_rs1v[1]_i_3_n_0
+    SLICE_X32Y126                                                     r  aster_soc_board_i/aster/inst/implementation/g_hart[0].core/fetch/e_rs1v[1]_i_2/I4
+    SLICE_X32Y126        LUT5 (Prop_lut5_I4_O)        0.124     5.694 r  aster_soc_board_i/aster/inst/implementation/g_hart[0].core/fetch/e_rs1v[1]_i_2/O
+                         net (fo=34, routed)          0.663     6.356    aster_soc_board_i/aster/inst/implementation/g_hart[0].core/fetch_n_132
+    SLICE_X34Y127                                                     r  aster_soc_board_i/aster/inst/implementation/g_hart[0].core/dot8_p0_reg_i_15/I1
+    SLICE_X34Y127        LUT2 (Prop_lut2_I1_O)        0.124     6.480 r  aster_soc_board_i/aster/inst/implementation/g_hart[0].core/dot8_p0_reg_i_15/O
+                         net (fo=1, routed)           2.130     8.611    aster_soc_board_i/aster/inst/implementation/g_hart[0].core/dot8_p0_reg_i_15_n_0
+    DSP48_X2Y29          DSP48E1                                      r  aster_soc_board_i/aster/inst/implementation/g_hart[0].core/dot8_p0_reg/A[1]
+  -------------------------------------------------------------------    -------------------
+
+                         (clock clk_fpga_0 rise edge)
+                                                     10.000    10.000 r  
+                         propagated clock network latency
+                                                      2.733    12.733    
+                         clock pessimism              0.129    12.862    
+                         clock uncertainty           -0.154    12.708    
+    DSP48_X2Y29          DSP48E1 (Setup_dsp48e1_CLK_A[1])
+                                                     -3.722     8.986    aster_soc_board_i/aster/inst/implementation/g_hart[0].core/dot8_p0_reg
+  -------------------------------------------------------------------
+                         required time                          8.986    
+                         arrival time                          -8.611    
+  -------------------------------------------------------------------
+                         slack                                  0.375    
+
+Slack (MET) :             0.377ns  (required time - arrival time)
+  Source:                 aster_soc_board_i/aster/inst/implementation/g_hart[0].dcache/s1_addr_reg[5]/C
+                            (rising edge-triggered cell FDRE clocked by clk_fpga_0  {rise@0.000ns fall@5.000ns period=10.000ns})
+  Destination:            aster_soc_board_i/aster/inst/implementation/g_hart[0].dcache/m_addr_q_reg[3]/D
+                            (rising edge-triggered cell FDRE clocked by clk_fpga_0  {rise@0.000ns fall@5.000ns period=10.000ns})
+  Path Group:             clk_fpga_0
+  Path Type:              Setup (Max at Slow Process Corner)
+  Requirement:            10.000ns  (clk_fpga_0 rise@10.000ns - clk_fpga_0 rise@0.000ns)
+  Data Path Delay:        9.221ns  (logic 1.619ns (17.558%)  route 7.602ns (82.442%))
+  Logic Levels:           7  (LUT2=1 LUT6=5 MUXF7=1)
+  Clock Path Skew:        -0.329ns (DCD - SCD + CPR)
+    Destination Clock Delay (DCD):    2.653ns = ( 12.653 - 10.000 ) 
+    Source Clock Delay      (SCD):    3.111ns
+    Clock Pessimism Removal (CPR):    0.129ns
+  Clock Uncertainty:      0.154ns  ((TSJ^2 + TIJ^2)^1/2 + DJ) / 2 + PE + UU
+    Total System Jitter     (TSJ):    0.071ns
+    Total Input Jitter      (TIJ):    0.300ns
+    Discrete Jitter          (DJ):    0.000ns
+    Phase Error              (PE):    0.000ns
+    User Uncertainty         (UU):    0.000ns
+
+    Location             Delay type                Incr(ns)  Path(ns)    Netlist Resource(s)
+  -------------------------------------------------------------------    -------------------
+                         (clock clk_fpga_0 rise edge)
+                                                      0.000     0.000 r  
+                         propagated clock network latency
+                                                      3.111     3.111    
+    SLICE_X53Y128        FDRE                         0.000     3.111 r  aster_soc_board_i/aster/inst/implementation/g_hart[0].dcache/s1_addr_reg[5]/C
+    SLICE_X53Y128        FDRE (Prop_fdre_C_Q)         0.456     3.567 r  aster_soc_board_i/aster/inst/implementation/g_hart[0].dcache/s1_addr_reg[5]/Q
+                         net (fo=113, routed)         1.555     5.122    aster_soc_board_i/aster/inst/implementation/g_hart[0].dcache/s1_addr_reg[5]_0
+    SLICE_X59Y134                                                     r  aster_soc_board_i/aster/inst/implementation/g_hart[0].dcache/s2_hit_i_59__0/I2
+    SLICE_X59Y134        LUT6 (Prop_lut6_I2_O)        0.124     5.246 r  aster_soc_board_i/aster/inst/implementation/g_hart[0].dcache/s2_hit_i_59__0/O
+                         net (fo=1, routed)           0.637     5.883    aster_soc_board_i/aster/inst/implementation/g_hart[0].dcache/s2_hit_i_59__0_n_0
+    SLICE_X59Y135                                                     r  aster_soc_board_i/aster/inst/implementation/g_hart[0].dcache/s2_hit_i_19__0/I0
+    SLICE_X59Y135        LUT6 (Prop_lut6_I0_O)        0.124     6.007 f  aster_soc_board_i/aster/inst/implementation/g_hart[0].dcache/s2_hit_i_19__0/O
+                         net (fo=1, routed)           1.233     7.240    aster_soc_board_i/aster/inst/implementation/g_hart[0].dcache/s2_hit_i_19__0_n_0
+    SLICE_X55Y121                                                     f  aster_soc_board_i/aster/inst/implementation/g_hart[0].dcache/s2_hit_i_6__0/I4
+    SLICE_X55Y121        LUT6 (Prop_lut6_I4_O)        0.124     7.364 r  aster_soc_board_i/aster/inst/implementation/g_hart[0].dcache/s2_hit_i_6__0/O
+                         net (fo=1, routed)           0.000     7.364    aster_soc_board_i/aster/inst/implementation/g_hart[0].dcache/s2_hit_i_6__0_n_0
+    SLICE_X55Y121                                                     r  aster_soc_board_i/aster/inst/implementation/g_hart[0].dcache/s2_hit_reg_i_2/I1
+    SLICE_X55Y121        MUXF7 (Prop_muxf7_I1_O)      0.245     7.609 r  aster_soc_board_i/aster/inst/implementation/g_hart[0].dcache/s2_hit_reg_i_2/O
+                         net (fo=3, routed)           1.408     9.017    aster_soc_board_i/aster/inst/implementation/g_hart[0].dcache/s2_hit_reg_i_2_n_0
+    SLICE_X57Y103                                                     r  aster_soc_board_i/aster/inst/implementation/g_hart[0].dcache/m_op_q[3]_i_4/I1
+    SLICE_X57Y103        LUT6 (Prop_lut6_I1_O)        0.298     9.315 r  aster_soc_board_i/aster/inst/implementation/g_hart[0].dcache/m_op_q[3]_i_4/O
+                         net (fo=269, routed)         1.216    10.531    aster_soc_board_i/aster/inst/implementation/g_hart[0].dcache/m_op_q[3]_i_4_n_0
+    SLICE_X51Y81                                                      r  aster_soc_board_i/aster/inst/implementation/g_hart[0].dcache/m_op_q[3]_i_1__0/I1
+    SLICE_X51Y81         LUT2 (Prop_lut2_I1_O)        0.124    10.655 f  aster_soc_board_i/aster/inst/implementation/g_hart[0].dcache/m_op_q[3]_i_1__0/O
+                         net (fo=15, routed)          1.552    12.208    aster_soc_board_i/aster/inst/implementation/g_hart[0].dcache/m_op_q[3]_i_1__0_n_0
+    SLICE_X46Y62                                                      f  aster_soc_board_i/aster/inst/implementation/g_hart[0].dcache/m_addr_q[3]_i_1__0/I5
+    SLICE_X46Y62         LUT6 (Prop_lut6_I5_O)        0.124    12.332 r  aster_soc_board_i/aster/inst/implementation/g_hart[0].dcache/m_addr_q[3]_i_1__0/O
+                         net (fo=1, routed)           0.000    12.332    aster_soc_board_i/aster/inst/implementation/g_hart[0].dcache/m_addr_q[3]_i_1__0_n_0
+    SLICE_X46Y62         FDRE                                         r  aster_soc_board_i/aster/inst/implementation/g_hart[0].dcache/m_addr_q_reg[3]/D
+  -------------------------------------------------------------------    -------------------
+
+                         (clock clk_fpga_0 rise edge)
+                                                     10.000    10.000 r  
+                         propagated clock network latency
+                                                      2.653    12.653    
+                         clock pessimism              0.129    12.782    
+                         clock uncertainty           -0.154    12.628    
+    SLICE_X46Y62         FDRE (Setup_fdre_C_D)        0.081    12.709    aster_soc_board_i/aster/inst/implementation/g_hart[0].dcache/m_addr_q_reg[3]
+  -------------------------------------------------------------------
+                         required time                         12.709    
+                         arrival time                         -12.332    
+  -------------------------------------------------------------------
+                         slack                                  0.377    
+
+Slack (MET) :             0.377ns  (required time - arrival time)
+  Source:                 aster_soc_board_i/aster/inst/implementation/dma/q_be_reg[0]/C
+                            (rising edge-triggered cell FDRE clocked by clk_fpga_0  {rise@0.000ns fall@5.000ns period=10.000ns})
+  Destination:            aster_soc_board_i/aster/inst/implementation/npu/engine/state_reg[0]_rep__0/D
+                            (rising edge-triggered cell FDRE clocked by clk_fpga_0  {rise@0.000ns fall@5.000ns period=10.000ns})
+  Path Group:             clk_fpga_0
+  Path Type:              Setup (Max at Slow Process Corner)
+  Requirement:            10.000ns  (clk_fpga_0 rise@10.000ns - clk_fpga_0 rise@0.000ns)
+  Data Path Delay:        9.153ns  (logic 1.386ns (15.143%)  route 7.767ns (84.857%))
+  Logic Levels:           7  (LUT2=2 LUT5=1 LUT6=4)
+  Clock Path Skew:        -0.285ns (DCD - SCD + CPR)
+    Destination Clock Delay (DCD):    2.787ns = ( 12.787 - 10.000 ) 
+    Source Clock Delay      (SCD):    3.201ns
+    Clock Pessimism Removal (CPR):    0.129ns
+  Clock Uncertainty:      0.154ns  ((TSJ^2 + TIJ^2)^1/2 + DJ) / 2 + PE + UU
+    Total System Jitter     (TSJ):    0.071ns
+    Total Input Jitter      (TIJ):    0.300ns
+    Discrete Jitter          (DJ):    0.000ns
+    Phase Error              (PE):    0.000ns
+    User Uncertainty         (UU):    0.000ns
+
+    Location             Delay type                Incr(ns)  Path(ns)    Netlist Resource(s)
+  -------------------------------------------------------------------    -------------------
+                         (clock clk_fpga_0 rise edge)
+                                                      0.000     0.000 r  
+                         propagated clock network latency
+                                                      3.201     3.201    
+    SLICE_X66Y103        FDRE                         0.000     3.201 r  aster_soc_board_i/aster/inst/implementation/dma/q_be_reg[0]/C
+    SLICE_X66Y103        FDRE (Prop_fdre_C_Q)         0.518     3.719 r  aster_soc_board_i/aster/inst/implementation/dma/q_be_reg[0]/Q
+                         net (fo=6, routed)           1.339     5.058    aster_soc_board_i/aster/inst/implementation/dma/q_be_reg_n_0_[0]
+    SLICE_X63Y93                                                      r  aster_soc_board_i/aster/inst/implementation/dma/hi_tag[11]_i_4/I3
+    SLICE_X63Y93         LUT6 (Prop_lut6_I3_O)        0.124     5.182 f  aster_soc_board_i/aster/inst/implementation/dma/hi_tag[11]_i_4/O
+                         net (fo=5, routed)           0.651     5.833    aster_soc_board_i/aster/inst/implementation/dma/npu_rst_n_reg
+    SLICE_X63Y94                                                      f  aster_soc_board_i/aster/inst/implementation/dma/abort_pending_i_2/I4
+    SLICE_X63Y94         LUT6 (Prop_lut6_I4_O)        0.124     5.957 r  aster_soc_board_i/aster/inst/implementation/dma/abort_pending_i_2/O
+                         net (fo=2, routed)           1.213     7.171    aster_soc_board_i/aster/inst/implementation/npu/engine/abort_pending_reg_0
+    SLICE_X98Y94                                                      r  aster_soc_board_i/aster/inst/implementation/npu/engine/job_cycles[0]_i_4/I1
+    SLICE_X98Y94         LUT2 (Prop_lut2_I1_O)        0.124     7.295 f  aster_soc_board_i/aster/inst/implementation/npu/engine/job_cycles[0]_i_4/O
+                         net (fo=6, routed)           0.413     7.708    aster_soc_board_i/aster/inst/implementation/npu/engine/job_cycles[0]_i_4_n_0
+    SLICE_X101Y94                                                     f  aster_soc_board_i/aster/inst/implementation/npu/engine/abort_pending_i_3/I1
+    SLICE_X101Y94        LUT2 (Prop_lut2_I1_O)        0.124     7.832 r  aster_soc_board_i/aster/inst/implementation/npu/engine/abort_pending_i_3/O
+                         net (fo=7, routed)           1.915     9.747    aster_soc_board_i/aster/inst/implementation/npu/engine/start
+    SLICE_X107Y53                                                     r  aster_soc_board_i/aster/inst/implementation/npu/engine/state[3]_i_6/I4
+    SLICE_X107Y53        LUT6 (Prop_lut6_I4_O)        0.124     9.871 r  aster_soc_board_i/aster/inst/implementation/npu/engine/state[3]_i_6/O
+                         net (fo=1, routed)           0.772    10.643    aster_soc_board_i/aster/inst/implementation/npu/engine/state[3]_i_6_n_0
+    SLICE_X107Y49                                                     r  aster_soc_board_i/aster/inst/implementation/npu/engine/state[3]_i_3/I0
+    SLICE_X107Y49        LUT5 (Prop_lut5_I0_O)        0.124    10.767 r  aster_soc_board_i/aster/inst/implementation/npu/engine/state[3]_i_3/O
+                         net (fo=9, routed)           1.084    11.850    aster_soc_board_i/aster/inst/implementation/npu/engine/state[3]_i_3_n_0
+    SLICE_X105Y57                                                     r  aster_soc_board_i/aster/inst/implementation/npu/engine/state[0]_rep__0_i_1/I1
+    SLICE_X105Y57        LUT6 (Prop_lut6_I1_O)        0.124    11.974 r  aster_soc_board_i/aster/inst/implementation/npu/engine/state[0]_rep__0_i_1/O
+                         net (fo=1, routed)           0.379    12.354    aster_soc_board_i/aster/inst/implementation/npu/engine/state[0]_rep__0_i_1_n_0
+    SLICE_X104Y57        FDRE                                         r  aster_soc_board_i/aster/inst/implementation/npu/engine/state_reg[0]_rep__0/D
+  -------------------------------------------------------------------    -------------------
+
+                         (clock clk_fpga_0 rise edge)
+                                                     10.000    10.000 r  
+                         propagated clock network latency
+                                                      2.787    12.787    
+                         clock pessimism              0.129    12.916    
+                         clock uncertainty           -0.154    12.762    
+    SLICE_X104Y57        FDRE (Setup_fdre_C_D)       -0.031    12.731    aster_soc_board_i/aster/inst/implementation/npu/engine/state_reg[0]_rep__0
+  -------------------------------------------------------------------
+                         required time                         12.731    
+                         arrival time                         -12.354    
+  -------------------------------------------------------------------
+                         slack                                  0.377    
+
+Slack (MET) :             0.383ns  (required time - arrival time)
+  Source:                 aster_soc_board_i/aster/inst/implementation/g_hart[0].dcache/ans_q_reg/C
+                            (rising edge-triggered cell FDRE clocked by clk_fpga_0  {rise@0.000ns fall@5.000ns period=10.000ns})
+  Destination:            aster_soc_board_i/aster/inst/implementation/g_hart[0].core/d_raw_q_reg[fencei]/D
+                            (rising edge-triggered cell FDRE clocked by clk_fpga_0  {rise@0.000ns fall@5.000ns period=10.000ns})
+  Path Group:             clk_fpga_0
+  Path Type:              Setup (Max at Slow Process Corner)
+  Requirement:            10.000ns  (clk_fpga_0 rise@10.000ns - clk_fpga_0 rise@0.000ns)
+  Data Path Delay:        9.438ns  (logic 1.523ns (16.138%)  route 7.915ns (83.862%))
+  Logic Levels:           7  (LUT3=1 LUT4=2 LUT5=1 LUT6=3)
+  Clock Path Skew:        -0.057ns (DCD - SCD + CPR)
+    Destination Clock Delay (DCD):    2.658ns = ( 12.658 - 10.000 ) 
+    Source Clock Delay      (SCD):    2.944ns
+    Clock Pessimism Removal (CPR):    0.229ns
+  Clock Uncertainty:      0.154ns  ((TSJ^2 + TIJ^2)^1/2 + DJ) / 2 + PE + UU
+    Total System Jitter     (TSJ):    0.071ns
+    Total Input Jitter      (TIJ):    0.300ns
+    Discrete Jitter          (DJ):    0.000ns
+    Phase Error              (PE):    0.000ns
+    User Uncertainty         (UU):    0.000ns
+
+    Location             Delay type                Incr(ns)  Path(ns)    Netlist Resource(s)
+  -------------------------------------------------------------------    -------------------
+                         (clock clk_fpga_0 rise edge)
+                                                      0.000     0.000 r  
+                         propagated clock network latency
+                                                      2.944     2.944    
+    SLICE_X47Y91         FDRE                         0.000     2.944 r  aster_soc_board_i/aster/inst/implementation/g_hart[0].dcache/ans_q_reg/C
+    SLICE_X47Y91         FDRE (Prop_fdre_C_Q)         0.456     3.400 f  aster_soc_board_i/aster/inst/implementation/g_hart[0].dcache/ans_q_reg/Q
+                         net (fo=55, routed)          2.007     5.407    aster_soc_board_i/aster/inst/implementation/g_hart[0].core/g_hart[0].c_d_rsp_valid
+    SLICE_X42Y134                                                     f  aster_soc_board_i/aster/inst/implementation/g_hart[0].core/m1[acc]_i_4/I3
+    SLICE_X42Y134        LUT5 (Prop_lut5_I3_O)        0.124     5.531 r  aster_soc_board_i/aster/inst/implementation/g_hart[0].core/m1[acc]_i_4/O
+                         net (fo=14, routed)          1.097     6.628    aster_soc_board_i/aster/inst/implementation/g_hart[0].core/m1[acc]_i_4_n_0
+    SLICE_X40Y129                                                     r  aster_soc_board_i/aster/inst/implementation/g_hart[0].core/s1_valid_i_3/I3
+    SLICE_X40Y129        LUT4 (Prop_lut4_I3_O)        0.124     6.752 r  aster_soc_board_i/aster/inst/implementation/g_hart[0].core/s1_valid_i_3/O
+                         net (fo=4, routed)           0.604     7.356    aster_soc_board_i/aster/inst/implementation/g_hart[0].core/fetch/e_pending_reg_0
+    SLICE_X40Y127                                                     r  aster_soc_board_i/aster/inst/implementation/g_hart[0].core/fetch/e_pending_i_3/I0
+    SLICE_X40Y127        LUT6 (Prop_lut6_I0_O)        0.124     7.480 f  aster_soc_board_i/aster/inst/implementation/g_hart[0].core/fetch/e_pending_i_3/O
+                         net (fo=17, routed)          0.937     8.417    aster_soc_board_i/aster/inst/implementation/g_hart[0].core/fetch/e_dec_reg[store]
+    SLICE_X39Y120                                                     f  aster_soc_board_i/aster/inst/implementation/g_hart[0].core/fetch/d_err_i_3/I4
+    SLICE_X39Y120        LUT6 (Prop_lut6_I4_O)        0.124     8.541 r  aster_soc_board_i/aster/inst/implementation/g_hart[0].core/fetch/d_err_i_3/O
+                         net (fo=16, routed)          0.662     9.203    aster_soc_board_i/aster/inst/implementation/g_hart[0].core/fetch_n_35
+    SLICE_X39Y113                                                     r  aster_soc_board_i/aster/inst/implementation/g_hart[0].core/d_err_i_1/I2
+    SLICE_X39Y113        LUT3 (Prop_lut3_I2_O)        0.120     9.323 f  aster_soc_board_i/aster/inst/implementation/g_hart[0].core/d_err_i_1/O
+                         net (fo=180, routed)         1.564    10.887    aster_soc_board_i/aster/inst/implementation/g_hart[0].icache/data/d_raw_q
+    SLICE_X32Y88                                                      f  aster_soc_board_i/aster/inst/implementation/g_hart[0].icache/data/d_raw_q[branch]_i_3/I5
+    SLICE_X32Y88         LUT6 (Prop_lut6_I5_O)        0.327    11.214 f  aster_soc_board_i/aster/inst/implementation/g_hart[0].icache/data/d_raw_q[branch]_i_3/O
+                         net (fo=51, routed)          1.043    12.258    aster_soc_board_i/aster/inst/implementation/g_hart[0].core/d_raw_q_reg[res][imm]_0
+    SLICE_X37Y96                                                      f  aster_soc_board_i/aster/inst/implementation/g_hart[0].core/d_raw_q[fencei]_i_1/I3
+    SLICE_X37Y96         LUT4 (Prop_lut4_I3_O)        0.124    12.382 r  aster_soc_board_i/aster/inst/implementation/g_hart[0].core/d_raw_q[fencei]_i_1/O
+                         net (fo=1, routed)           0.000    12.382    aster_soc_board_i/aster/inst/implementation/g_hart[0].core/d_raw_q[fencei]_i_1_n_0
+    SLICE_X37Y96         FDRE                                         r  aster_soc_board_i/aster/inst/implementation/g_hart[0].core/d_raw_q_reg[fencei]/D
+  -------------------------------------------------------------------    -------------------
+
+                         (clock clk_fpga_0 rise edge)
+                                                     10.000    10.000 r  
+                         propagated clock network latency
+                                                      2.658    12.658    
+                         clock pessimism              0.229    12.887    
+                         clock uncertainty           -0.154    12.733    
+    SLICE_X37Y96         FDRE (Setup_fdre_C_D)        0.032    12.765    aster_soc_board_i/aster/inst/implementation/g_hart[0].core/d_raw_q_reg[fencei]
+  -------------------------------------------------------------------
+                         required time                         12.765    
+                         arrival time                         -12.382    
+  -------------------------------------------------------------------
+                         slack                                  0.383    
+
+Slack (MET) :             0.387ns  (required time - arrival time)
+  Source:                 aster_soc_board_i/aster/inst/implementation/g_hart[0].dcache/ans_q_reg/C
+                            (rising edge-triggered cell FDRE clocked by clk_fpga_0  {rise@0.000ns fall@5.000ns period=10.000ns})
+  Destination:            aster_soc_board_i/aster/inst/implementation/g_hart[0].core/d_raw_q_reg[res][slt]/D
+                            (rising edge-triggered cell FDRE clocked by clk_fpga_0  {rise@0.000ns fall@5.000ns period=10.000ns})
+  Path Group:             clk_fpga_0
+  Path Type:              Setup (Max at Slow Process Corner)
+  Requirement:            10.000ns  (clk_fpga_0 rise@10.000ns - clk_fpga_0 rise@0.000ns)
+  Data Path Delay:        9.433ns  (logic 1.523ns (16.146%)  route 7.910ns (83.854%))
+  Logic Levels:           7  (LUT3=1 LUT4=1 LUT5=1 LUT6=4)
+  Clock Path Skew:        -0.057ns (DCD - SCD + CPR)
+    Destination Clock Delay (DCD):    2.658ns = ( 12.658 - 10.000 ) 
+    Source Clock Delay      (SCD):    2.944ns
+    Clock Pessimism Removal (CPR):    0.229ns
+  Clock Uncertainty:      0.154ns  ((TSJ^2 + TIJ^2)^1/2 + DJ) / 2 + PE + UU
+    Total System Jitter     (TSJ):    0.071ns
+    Total Input Jitter      (TIJ):    0.300ns
+    Discrete Jitter          (DJ):    0.000ns
+    Phase Error              (PE):    0.000ns
+    User Uncertainty         (UU):    0.000ns
+
+    Location             Delay type                Incr(ns)  Path(ns)    Netlist Resource(s)
+  -------------------------------------------------------------------    -------------------
+                         (clock clk_fpga_0 rise edge)
+                                                      0.000     0.000 r  
+                         propagated clock network latency
+                                                      2.944     2.944    
+    SLICE_X47Y91         FDRE                         0.000     2.944 r  aster_soc_board_i/aster/inst/implementation/g_hart[0].dcache/ans_q_reg/C
+    SLICE_X47Y91         FDRE (Prop_fdre_C_Q)         0.456     3.400 f  aster_soc_board_i/aster/inst/implementation/g_hart[0].dcache/ans_q_reg/Q
+                         net (fo=55, routed)          2.007     5.407    aster_soc_board_i/aster/inst/implementation/g_hart[0].core/g_hart[0].c_d_rsp_valid
+    SLICE_X42Y134                                                     f  aster_soc_board_i/aster/inst/implementation/g_hart[0].core/m1[acc]_i_4/I3
+    SLICE_X42Y134        LUT5 (Prop_lut5_I3_O)        0.124     5.531 r  aster_soc_board_i/aster/inst/implementation/g_hart[0].core/m1[acc]_i_4/O
+                         net (fo=14, routed)          1.097     6.628    aster_soc_board_i/aster/inst/implementation/g_hart[0].core/m1[acc]_i_4_n_0
+    SLICE_X40Y129                                                     r  aster_soc_board_i/aster/inst/implementation/g_hart[0].core/s1_valid_i_3/I3
+    SLICE_X40Y129        LUT4 (Prop_lut4_I3_O)        0.124     6.752 r  aster_soc_board_i/aster/inst/implementation/g_hart[0].core/s1_valid_i_3/O
+                         net (fo=4, routed)           0.604     7.356    aster_soc_board_i/aster/inst/implementation/g_hart[0].core/fetch/e_pending_reg_0
+    SLICE_X40Y127                                                     r  aster_soc_board_i/aster/inst/implementation/g_hart[0].core/fetch/e_pending_i_3/I0
+    SLICE_X40Y127        LUT6 (Prop_lut6_I0_O)        0.124     7.480 f  aster_soc_board_i/aster/inst/implementation/g_hart[0].core/fetch/e_pending_i_3/O
+                         net (fo=17, routed)          0.937     8.417    aster_soc_board_i/aster/inst/implementation/g_hart[0].core/fetch/e_dec_reg[store]
+    SLICE_X39Y120                                                     f  aster_soc_board_i/aster/inst/implementation/g_hart[0].core/fetch/d_err_i_3/I4
+    SLICE_X39Y120        LUT6 (Prop_lut6_I4_O)        0.124     8.541 r  aster_soc_board_i/aster/inst/implementation/g_hart[0].core/fetch/d_err_i_3/O
+                         net (fo=16, routed)          0.662     9.203    aster_soc_board_i/aster/inst/implementation/g_hart[0].core/fetch_n_35
+    SLICE_X39Y113                                                     r  aster_soc_board_i/aster/inst/implementation/g_hart[0].core/d_err_i_1/I2
+    SLICE_X39Y113        LUT3 (Prop_lut3_I2_O)        0.120     9.323 f  aster_soc_board_i/aster/inst/implementation/g_hart[0].core/d_err_i_1/O
+                         net (fo=180, routed)         1.564    10.887    aster_soc_board_i/aster/inst/implementation/g_hart[0].icache/data/d_raw_q
+    SLICE_X32Y88                                                      f  aster_soc_board_i/aster/inst/implementation/g_hart[0].icache/data/d_raw_q[branch]_i_3/I5
+    SLICE_X32Y88         LUT6 (Prop_lut6_I5_O)        0.327    11.214 f  aster_soc_board_i/aster/inst/implementation/g_hart[0].icache/data/d_raw_q[branch]_i_3/O
+                         net (fo=51, routed)          1.038    12.253    aster_soc_board_i/aster/inst/implementation/g_hart[0].icache/data/s2_word_reg[3]
+    SLICE_X37Y96                                                      f  aster_soc_board_i/aster/inst/implementation/g_hart[0].icache/data/d_raw_q[res][slt]_i_1/I5
+    SLICE_X37Y96         LUT6 (Prop_lut6_I5_O)        0.124    12.377 r  aster_soc_board_i/aster/inst/implementation/g_hart[0].icache/data/d_raw_q[res][slt]_i_1/O
+                         net (fo=1, routed)           0.000    12.377    aster_soc_board_i/aster/inst/implementation/g_hart[0].core/d_raw_q_reg[res][slt]_0
+    SLICE_X37Y96         FDRE                                         r  aster_soc_board_i/aster/inst/implementation/g_hart[0].core/d_raw_q_reg[res][slt]/D
+  -------------------------------------------------------------------    -------------------
+
+                         (clock clk_fpga_0 rise edge)
+                                                     10.000    10.000 r  
+                         propagated clock network latency
+                                                      2.658    12.658    
+                         clock pessimism              0.229    12.887    
+                         clock uncertainty           -0.154    12.733    
+    SLICE_X37Y96         FDRE (Setup_fdre_C_D)        0.031    12.764    aster_soc_board_i/aster/inst/implementation/g_hart[0].core/d_raw_q_reg[res][slt]
+  -------------------------------------------------------------------
+                         required time                         12.764    
+                         arrival time                         -12.377    
+  -------------------------------------------------------------------
+                         slack                                  0.387    
+
+Slack (MET) :             0.396ns  (required time - arrival time)
+  Source:                 aster_soc_board_i/aster/inst/implementation/g_npu_buffer.e_addr_reg[0][7]/C
+                            (rising edge-triggered cell FDRE clocked by clk_fpga_0  {rise@0.000ns fall@5.000ns period=10.000ns})
+  Destination:            aster_soc_board_i/aster/inst/implementation/fabric/g_bank[0].mem/ram_reg_3/DIADI[4]
+                            (rising edge-triggered cell RAMB36E1 clocked by clk_fpga_0  {rise@0.000ns fall@5.000ns period=10.000ns})
+  Path Group:             clk_fpga_0
+  Path Type:              Setup (Max at Slow Process Corner)
+  Requirement:            10.000ns  (clk_fpga_0 rise@10.000ns - clk_fpga_0 rise@0.000ns)
+  Data Path Delay:        9.115ns  (logic 1.856ns (20.363%)  route 7.259ns (79.637%))
+  Logic Levels:           8  (CARRY4=1 LUT2=1 LUT3=1 LUT5=2 LUT6=3)
+  Clock Path Skew:        -0.094ns (DCD - SCD + CPR)
+    Destination Clock Delay (DCD):    2.792ns = ( 12.792 - 10.000 ) 
+    Source Clock Delay      (SCD):    3.001ns
+    Clock Pessimism Removal (CPR):    0.115ns
+  Clock Uncertainty:      0.154ns  ((TSJ^2 + TIJ^2)^1/2 + DJ) / 2 + PE + UU
+    Total System Jitter     (TSJ):    0.071ns
+    Total Input Jitter      (TIJ):    0.300ns
+    Discrete Jitter          (DJ):    0.000ns
+    Phase Error              (PE):    0.000ns
+    User Uncertainty         (UU):    0.000ns
+
+    Location             Delay type                Incr(ns)  Path(ns)    Netlist Resource(s)
+  -------------------------------------------------------------------    -------------------
+                         (clock clk_fpga_0 rise edge)
+                                                      0.000     0.000 r  
+                         propagated clock network latency
+                                                      3.001     3.001    
+    SLICE_X59Y63         FDRE                         0.000     3.001 r  aster_soc_board_i/aster/inst/implementation/g_npu_buffer.e_addr_reg[0][7]/C
+    SLICE_X59Y63         FDRE (Prop_fdre_C_Q)         0.456     3.457 r  aster_soc_board_i/aster/inst/implementation/g_npu_buffer.e_addr_reg[0][7]/Q
+                         net (fo=29, routed)          1.692     5.149    aster_soc_board_i/aster/inst/implementation/fabric/g_bank[0].mem/ram_reg_0_11[4]
+    SLICE_X44Y61                                                      r  aster_soc_board_i/aster/inst/implementation/fabric/g_bank[0].mem/i___1_i_75/I2
+    SLICE_X44Y61         LUT6 (Prop_lut6_I2_O)        0.124     5.273 r  aster_soc_board_i/aster/inst/implementation/fabric/g_bank[0].mem/i___1_i_75/O
+                         net (fo=1, routed)           0.000     5.273    aster_soc_board_i/aster/inst/implementation/fabric/g_bank[0].mem/i___1_i_75_n_0
+    SLICE_X44Y61                                                      r  aster_soc_board_i/aster/inst/implementation/fabric/g_bank[0].mem/i___1_i_38/S[0]
+    SLICE_X44Y61         CARRY4 (Prop_carry4_S[0]_CO[3])
+                                                      0.532     5.805 r  aster_soc_board_i/aster/inst/implementation/fabric/g_bank[0].mem/i___1_i_38/CO[3]
+                         net (fo=1, routed)           0.747     6.552    aster_soc_board_i/aster/inst/implementation/fabric/g_bank[0].mem/(null)[0].g535_out
+    SLICE_X43Y61                                                      r  aster_soc_board_i/aster/inst/implementation/fabric/g_bank[0].mem/i___1_i_21/I1
+    SLICE_X43Y61         LUT5 (Prop_lut5_I1_O)        0.124     6.676 r  aster_soc_board_i/aster/inst/implementation/fabric/g_bank[0].mem/i___1_i_21/O
+                         net (fo=5, routed)           0.800     7.476    aster_soc_board_i/aster/inst/implementation/fabric/g_bank[0].mem/i___1_i_21_n_0
+    SLICE_X43Y59                                                      r  aster_soc_board_i/aster/inst/implementation/fabric/g_bank[0].mem/ram_reg_0_i_84__1/I1
+    SLICE_X43Y59         LUT6 (Prop_lut6_I1_O)        0.124     7.600 r  aster_soc_board_i/aster/inst/implementation/fabric/g_bank[0].mem/ram_reg_0_i_84__1/O
+                         net (fo=11, routed)          0.637     8.237    aster_soc_board_i/aster/inst/implementation/fabric/g_bank[0].mem/ptr_a_reg[0][1]
+    SLICE_X37Y54                                                      r  aster_soc_board_i/aster/inst/implementation/fabric/g_bank[0].mem/ptr_a[0][0]_i_2/I0
+    SLICE_X37Y54         LUT2 (Prop_lut2_I0_O)        0.124     8.361 r  aster_soc_board_i/aster/inst/implementation/fabric/g_bank[0].mem/ptr_a[0][0]_i_2/O
+                         net (fo=73, routed)          1.208     9.569    aster_soc_board_i/aster/inst/implementation/g_hart[1].dcache/ram_reg_7_i_12
+    SLICE_X28Y48                                                      r  aster_soc_board_i/aster/inst/implementation/g_hart[1].dcache/ram_reg_3_i_37/I1
+    SLICE_X28Y48         LUT3 (Prop_lut3_I1_O)        0.124     9.693 r  aster_soc_board_i/aster/inst/implementation/g_hart[1].dcache/ram_reg_3_i_37/O
+                         net (fo=2, routed)           0.756    10.450    aster_soc_board_i/aster/inst/implementation/fabric/g_bank[0].mem/ram_reg_3_6
+    SLICE_X32Y44                                                      r  aster_soc_board_i/aster/inst/implementation/fabric/g_bank[0].mem/ram_reg_3_i_17/I0
+    SLICE_X32Y44         LUT6 (Prop_lut6_I0_O)        0.124    10.574 r  aster_soc_board_i/aster/inst/implementation/fabric/g_bank[0].mem/ram_reg_3_i_17/O
+                         net (fo=1, routed)           0.884    11.457    aster_soc_board_i/aster/inst/implementation/fabric/g_bank[0].mem/ram_reg_3_i_17_n_0
+    SLICE_X25Y36                                                      r  aster_soc_board_i/aster/inst/implementation/fabric/g_bank[0].mem/ram_reg_3_i_4__1/I4
+    SLICE_X25Y36         LUT5 (Prop_lut5_I4_O)        0.124    11.581 r  aster_soc_board_i/aster/inst/implementation/fabric/g_bank[0].mem/ram_reg_3_i_4__1/O
+                         net (fo=1, routed)           0.534    12.116    aster_soc_board_i/aster/inst/implementation/fabric/g_bank[0].mem/din_a[0]__0[28]
+    RAMB36_X1Y7          RAMB36E1                                     r  aster_soc_board_i/aster/inst/implementation/fabric/g_bank[0].mem/ram_reg_3/DIADI[4]
+  -------------------------------------------------------------------    -------------------
+
+                         (clock clk_fpga_0 rise edge)
+                                                     10.000    10.000 r  
+                         propagated clock network latency
+                                                      2.792    12.792    
+                         clock pessimism              0.115    12.907    
+                         clock uncertainty           -0.154    12.753    
+    RAMB36_X1Y7          RAMB36E1 (Setup_ramb36e1_CLKARDCLK_DIADI[4])
+                                                     -0.241    12.512    aster_soc_board_i/aster/inst/implementation/fabric/g_bank[0].mem/ram_reg_3
+  -------------------------------------------------------------------
+                         required time                         12.512    
+                         arrival time                         -12.116    
+  -------------------------------------------------------------------
+                         slack                                  0.396    
+
+Slack (MET) :             0.411ns  (required time - arrival time)
+  Source:                 aster_soc_board_i/aster/inst/implementation/g_hart[0].dcache/ans_q_reg/C
+                            (rising edge-triggered cell FDRE clocked by clk_fpga_0  {rise@0.000ns fall@5.000ns period=10.000ns})
+  Destination:            aster_soc_board_i/aster/inst/implementation/g_hart[0].core/d_raw_q_reg[atomic]/D
+                            (rising edge-triggered cell FDRE clocked by clk_fpga_0  {rise@0.000ns fall@5.000ns period=10.000ns})
+  Path Group:             clk_fpga_0
+  Path Type:              Setup (Max at Slow Process Corner)
+  Requirement:            10.000ns  (clk_fpga_0 rise@10.000ns - clk_fpga_0 rise@0.000ns)
+  Data Path Delay:        9.457ns  (logic 1.523ns (16.105%)  route 7.934ns (83.895%))
+  Logic Levels:           7  (LUT3=1 LUT4=2 LUT5=1 LUT6=3)
+  Clock Path Skew:        -0.057ns (DCD - SCD + CPR)
+    Destination Clock Delay (DCD):    2.658ns = ( 12.658 - 10.000 ) 
+    Source Clock Delay      (SCD):    2.944ns
+    Clock Pessimism Removal (CPR):    0.229ns
+  Clock Uncertainty:      0.154ns  ((TSJ^2 + TIJ^2)^1/2 + DJ) / 2 + PE + UU
+    Total System Jitter     (TSJ):    0.071ns
+    Total Input Jitter      (TIJ):    0.300ns
+    Discrete Jitter          (DJ):    0.000ns
+    Phase Error              (PE):    0.000ns
+    User Uncertainty         (UU):    0.000ns
+
+    Location             Delay type                Incr(ns)  Path(ns)    Netlist Resource(s)
+  -------------------------------------------------------------------    -------------------
+                         (clock clk_fpga_0 rise edge)
+                                                      0.000     0.000 r  
+                         propagated clock network latency
+                                                      2.944     2.944    
+    SLICE_X47Y91         FDRE                         0.000     2.944 r  aster_soc_board_i/aster/inst/implementation/g_hart[0].dcache/ans_q_reg/C
+    SLICE_X47Y91         FDRE (Prop_fdre_C_Q)         0.456     3.400 f  aster_soc_board_i/aster/inst/implementation/g_hart[0].dcache/ans_q_reg/Q
+                         net (fo=55, routed)          2.007     5.407    aster_soc_board_i/aster/inst/implementation/g_hart[0].core/g_hart[0].c_d_rsp_valid
+    SLICE_X42Y134                                                     f  aster_soc_board_i/aster/inst/implementation/g_hart[0].core/m1[acc]_i_4/I3
+    SLICE_X42Y134        LUT5 (Prop_lut5_I3_O)        0.124     5.531 r  aster_soc_board_i/aster/inst/implementation/g_hart[0].core/m1[acc]_i_4/O
+                         net (fo=14, routed)          1.097     6.628    aster_soc_board_i/aster/inst/implementation/g_hart[0].core/m1[acc]_i_4_n_0
+    SLICE_X40Y129                                                     r  aster_soc_board_i/aster/inst/implementation/g_hart[0].core/s1_valid_i_3/I3
+    SLICE_X40Y129        LUT4 (Prop_lut4_I3_O)        0.124     6.752 r  aster_soc_board_i/aster/inst/implementation/g_hart[0].core/s1_valid_i_3/O
+                         net (fo=4, routed)           0.604     7.356    aster_soc_board_i/aster/inst/implementation/g_hart[0].core/fetch/e_pending_reg_0
+    SLICE_X40Y127                                                     r  aster_soc_board_i/aster/inst/implementation/g_hart[0].core/fetch/e_pending_i_3/I0
+    SLICE_X40Y127        LUT6 (Prop_lut6_I0_O)        0.124     7.480 f  aster_soc_board_i/aster/inst/implementation/g_hart[0].core/fetch/e_pending_i_3/O
+                         net (fo=17, routed)          0.937     8.417    aster_soc_board_i/aster/inst/implementation/g_hart[0].core/fetch/e_dec_reg[store]
+    SLICE_X39Y120                                                     f  aster_soc_board_i/aster/inst/implementation/g_hart[0].core/fetch/d_err_i_3/I4
+    SLICE_X39Y120        LUT6 (Prop_lut6_I4_O)        0.124     8.541 r  aster_soc_board_i/aster/inst/implementation/g_hart[0].core/fetch/d_err_i_3/O
+                         net (fo=16, routed)          0.662     9.203    aster_soc_board_i/aster/inst/implementation/g_hart[0].core/fetch_n_35
+    SLICE_X39Y113                                                     r  aster_soc_board_i/aster/inst/implementation/g_hart[0].core/d_err_i_1/I2
+    SLICE_X39Y113        LUT3 (Prop_lut3_I2_O)        0.120     9.323 f  aster_soc_board_i/aster/inst/implementation/g_hart[0].core/d_err_i_1/O
+                         net (fo=180, routed)         1.564    10.887    aster_soc_board_i/aster/inst/implementation/g_hart[0].icache/data/d_raw_q
+    SLICE_X32Y88                                                      f  aster_soc_board_i/aster/inst/implementation/g_hart[0].icache/data/d_raw_q[branch]_i_3/I5
+    SLICE_X32Y88         LUT6 (Prop_lut6_I5_O)        0.327    11.214 f  aster_soc_board_i/aster/inst/implementation/g_hart[0].icache/data/d_raw_q[branch]_i_3/O
+                         net (fo=51, routed)          1.062    12.277    aster_soc_board_i/aster/inst/implementation/g_hart[0].core/d_raw_q_reg[res][imm]_0
+    SLICE_X36Y96                                                      f  aster_soc_board_i/aster/inst/implementation/g_hart[0].core/d_raw_q[atomic]_i_1/I3
+    SLICE_X36Y96         LUT4 (Prop_lut4_I3_O)        0.124    12.401 r  aster_soc_board_i/aster/inst/implementation/g_hart[0].core/d_raw_q[atomic]_i_1/O
+                         net (fo=1, routed)           0.000    12.401    aster_soc_board_i/aster/inst/implementation/g_hart[0].core/d_raw_q[atomic]_i_1_n_0
+    SLICE_X36Y96         FDRE                                         r  aster_soc_board_i/aster/inst/implementation/g_hart[0].core/d_raw_q_reg[atomic]/D
+  -------------------------------------------------------------------    -------------------
+
+                         (clock clk_fpga_0 rise edge)
+                                                     10.000    10.000 r  
+                         propagated clock network latency
+                                                      2.658    12.658    
+                         clock pessimism              0.229    12.887    
+                         clock uncertainty           -0.154    12.733    
+    SLICE_X36Y96         FDRE (Setup_fdre_C_D)        0.079    12.812    aster_soc_board_i/aster/inst/implementation/g_hart[0].core/d_raw_q_reg[atomic]
+  -------------------------------------------------------------------
+                         required time                         12.812    
+                         arrival time                         -12.401    
+  -------------------------------------------------------------------
+                         slack                                  0.411    
+
+Slack (MET) :             0.421ns  (required time - arrival time)
+  Source:                 aster_soc_board_i/aster/inst/implementation/g_hart[0].dcache/ans_q_reg/C
+                            (rising edge-triggered cell FDRE clocked by clk_fpga_0  {rise@0.000ns fall@5.000ns period=10.000ns})
+  Destination:            aster_soc_board_i/aster/inst/implementation/g_hart[0].core/d_raw_q_reg[csr_sel][mie]/D
+                            (rising edge-triggered cell FDRE clocked by clk_fpga_0  {rise@0.000ns fall@5.000ns period=10.000ns})
+  Path Group:             clk_fpga_0
+  Path Type:              Setup (Max at Slow Process Corner)
+  Requirement:            10.000ns  (clk_fpga_0 rise@10.000ns - clk_fpga_0 rise@0.000ns)
+  Data Path Delay:        9.447ns  (logic 1.523ns (16.122%)  route 7.924ns (83.878%))
+  Logic Levels:           7  (LUT3=1 LUT4=1 LUT5=2 LUT6=3)
+  Clock Path Skew:        -0.057ns (DCD - SCD + CPR)
+    Destination Clock Delay (DCD):    2.658ns = ( 12.658 - 10.000 ) 
+    Source Clock Delay      (SCD):    2.944ns
+    Clock Pessimism Removal (CPR):    0.229ns
+  Clock Uncertainty:      0.154ns  ((TSJ^2 + TIJ^2)^1/2 + DJ) / 2 + PE + UU
+    Total System Jitter     (TSJ):    0.071ns
+    Total Input Jitter      (TIJ):    0.300ns
+    Discrete Jitter          (DJ):    0.000ns
+    Phase Error              (PE):    0.000ns
+    User Uncertainty         (UU):    0.000ns
+
+    Location             Delay type                Incr(ns)  Path(ns)    Netlist Resource(s)
+  -------------------------------------------------------------------    -------------------
+                         (clock clk_fpga_0 rise edge)
+                                                      0.000     0.000 r  
+                         propagated clock network latency
+                                                      2.944     2.944    
+    SLICE_X47Y91         FDRE                         0.000     2.944 r  aster_soc_board_i/aster/inst/implementation/g_hart[0].dcache/ans_q_reg/C
+    SLICE_X47Y91         FDRE (Prop_fdre_C_Q)         0.456     3.400 f  aster_soc_board_i/aster/inst/implementation/g_hart[0].dcache/ans_q_reg/Q
+                         net (fo=55, routed)          2.007     5.407    aster_soc_board_i/aster/inst/implementation/g_hart[0].core/g_hart[0].c_d_rsp_valid
+    SLICE_X42Y134                                                     f  aster_soc_board_i/aster/inst/implementation/g_hart[0].core/m1[acc]_i_4/I3
+    SLICE_X42Y134        LUT5 (Prop_lut5_I3_O)        0.124     5.531 r  aster_soc_board_i/aster/inst/implementation/g_hart[0].core/m1[acc]_i_4/O
+                         net (fo=14, routed)          1.097     6.628    aster_soc_board_i/aster/inst/implementation/g_hart[0].core/m1[acc]_i_4_n_0
+    SLICE_X40Y129                                                     r  aster_soc_board_i/aster/inst/implementation/g_hart[0].core/s1_valid_i_3/I3
+    SLICE_X40Y129        LUT4 (Prop_lut4_I3_O)        0.124     6.752 r  aster_soc_board_i/aster/inst/implementation/g_hart[0].core/s1_valid_i_3/O
+                         net (fo=4, routed)           0.604     7.356    aster_soc_board_i/aster/inst/implementation/g_hart[0].core/fetch/e_pending_reg_0
+    SLICE_X40Y127                                                     r  aster_soc_board_i/aster/inst/implementation/g_hart[0].core/fetch/e_pending_i_3/I0
+    SLICE_X40Y127        LUT6 (Prop_lut6_I0_O)        0.124     7.480 f  aster_soc_board_i/aster/inst/implementation/g_hart[0].core/fetch/e_pending_i_3/O
+                         net (fo=17, routed)          0.937     8.417    aster_soc_board_i/aster/inst/implementation/g_hart[0].core/fetch/e_dec_reg[store]
+    SLICE_X39Y120                                                     f  aster_soc_board_i/aster/inst/implementation/g_hart[0].core/fetch/d_err_i_3/I4
+    SLICE_X39Y120        LUT6 (Prop_lut6_I4_O)        0.124     8.541 r  aster_soc_board_i/aster/inst/implementation/g_hart[0].core/fetch/d_err_i_3/O
+                         net (fo=16, routed)          0.662     9.203    aster_soc_board_i/aster/inst/implementation/g_hart[0].core/fetch_n_35
+    SLICE_X39Y113                                                     r  aster_soc_board_i/aster/inst/implementation/g_hart[0].core/d_err_i_1/I2
+    SLICE_X39Y113        LUT3 (Prop_lut3_I2_O)        0.120     9.323 f  aster_soc_board_i/aster/inst/implementation/g_hart[0].core/d_err_i_1/O
+                         net (fo=180, routed)         1.564    10.887    aster_soc_board_i/aster/inst/implementation/g_hart[0].icache/data/d_raw_q
+    SLICE_X32Y88                                                      f  aster_soc_board_i/aster/inst/implementation/g_hart[0].icache/data/d_raw_q[branch]_i_3/I5
+    SLICE_X32Y88         LUT6 (Prop_lut6_I5_O)        0.327    11.214 f  aster_soc_board_i/aster/inst/implementation/g_hart[0].icache/data/d_raw_q[branch]_i_3/O
+                         net (fo=51, routed)          1.052    12.267    aster_soc_board_i/aster/inst/implementation/g_hart[0].icache/data/s2_word_reg[3]
+    SLICE_X36Y96                                                      f  aster_soc_board_i/aster/inst/implementation/g_hart[0].icache/data/d_raw_q[csr_sel][mie]_i_1/I4
+    SLICE_X36Y96         LUT5 (Prop_lut5_I4_O)        0.124    12.391 r  aster_soc_board_i/aster/inst/implementation/g_hart[0].icache/data/d_raw_q[csr_sel][mie]_i_1/O
+                         net (fo=1, routed)           0.000    12.391    aster_soc_board_i/aster/inst/implementation/g_hart[0].core/d_raw_q_reg[csr_sel][mie]_0
+    SLICE_X36Y96         FDRE                                         r  aster_soc_board_i/aster/inst/implementation/g_hart[0].core/d_raw_q_reg[csr_sel][mie]/D
+  -------------------------------------------------------------------    -------------------
+
+                         (clock clk_fpga_0 rise edge)
+                                                     10.000    10.000 r  
+                         propagated clock network latency
+                                                      2.658    12.658    
+                         clock pessimism              0.229    12.887    
+                         clock uncertainty           -0.154    12.733    
+    SLICE_X36Y96         FDRE (Setup_fdre_C_D)        0.079    12.812    aster_soc_board_i/aster/inst/implementation/g_hart[0].core/d_raw_q_reg[csr_sel][mie]
+  -------------------------------------------------------------------
+                         required time                         12.812    
+                         arrival time                         -12.391    
+  -------------------------------------------------------------------
+                         slack                                  0.421    
+
+Slack (MET) :             0.459ns  (required time - arrival time)
+  Source:                 aster_soc_board_i/aster/inst/implementation/g_npu_buffer.e_addr_reg[0][7]/C
+                            (rising edge-triggered cell FDRE clocked by clk_fpga_0  {rise@0.000ns fall@5.000ns period=10.000ns})
+  Destination:            aster_soc_board_i/aster/inst/implementation/fabric/g_bank[0].mem/ram_reg_3/WEA[0]
+                            (rising edge-triggered cell RAMB36E1 clocked by clk_fpga_0  {rise@0.000ns fall@5.000ns period=10.000ns})
+  Path Group:             clk_fpga_0
+  Path Type:              Setup (Max at Slow Process Corner)
+  Requirement:            10.000ns  (clk_fpga_0 rise@10.000ns - clk_fpga_0 rise@0.000ns)
+  Data Path Delay:        8.761ns  (logic 1.732ns (19.770%)  route 7.029ns (80.230%))
+  Logic Levels:           7  (CARRY4=1 LUT2=1 LUT5=2 LUT6=3)
+  Clock Path Skew:        -0.094ns (DCD - SCD + CPR)
+    Destination Clock Delay (DCD):    2.792ns = ( 12.792 - 10.000 ) 
+    Source Clock Delay      (SCD):    3.001ns
+    Clock Pessimism Removal (CPR):    0.115ns
+  Clock Uncertainty:      0.154ns  ((TSJ^2 + TIJ^2)^1/2 + DJ) / 2 + PE + UU
+    Total System Jitter     (TSJ):    0.071ns
+    Total Input Jitter      (TIJ):    0.300ns
+    Discrete Jitter          (DJ):    0.000ns
+    Phase Error              (PE):    0.000ns
+    User Uncertainty         (UU):    0.000ns
+
+    Location             Delay type                Incr(ns)  Path(ns)    Netlist Resource(s)
+  -------------------------------------------------------------------    -------------------
+                         (clock clk_fpga_0 rise edge)
+                                                      0.000     0.000 r  
+                         propagated clock network latency
+                                                      3.001     3.001    
+    SLICE_X59Y63         FDRE                         0.000     3.001 r  aster_soc_board_i/aster/inst/implementation/g_npu_buffer.e_addr_reg[0][7]/C
+    SLICE_X59Y63         FDRE (Prop_fdre_C_Q)         0.456     3.457 r  aster_soc_board_i/aster/inst/implementation/g_npu_buffer.e_addr_reg[0][7]/Q
+                         net (fo=29, routed)          1.692     5.149    aster_soc_board_i/aster/inst/implementation/fabric/g_bank[0].mem/ram_reg_0_11[4]
+    SLICE_X44Y61                                                      r  aster_soc_board_i/aster/inst/implementation/fabric/g_bank[0].mem/i___1_i_75/I2
+    SLICE_X44Y61         LUT6 (Prop_lut6_I2_O)        0.124     5.273 r  aster_soc_board_i/aster/inst/implementation/fabric/g_bank[0].mem/i___1_i_75/O
+                         net (fo=1, routed)           0.000     5.273    aster_soc_board_i/aster/inst/implementation/fabric/g_bank[0].mem/i___1_i_75_n_0
+    SLICE_X44Y61                                                      r  aster_soc_board_i/aster/inst/implementation/fabric/g_bank[0].mem/i___1_i_38/S[0]
+    SLICE_X44Y61         CARRY4 (Prop_carry4_S[0]_CO[3])
+                                                      0.532     5.805 f  aster_soc_board_i/aster/inst/implementation/fabric/g_bank[0].mem/i___1_i_38/CO[3]
+                         net (fo=1, routed)           0.747     6.552    aster_soc_board_i/aster/inst/implementation/fabric/g_bank[0].mem/(null)[0].g535_out
+    SLICE_X43Y61                                                      f  aster_soc_board_i/aster/inst/implementation/fabric/g_bank[0].mem/i___1_i_21/I1
+    SLICE_X43Y61         LUT5 (Prop_lut5_I1_O)        0.124     6.676 f  aster_soc_board_i/aster/inst/implementation/fabric/g_bank[0].mem/i___1_i_21/O
+                         net (fo=5, routed)           0.758     7.434    aster_soc_board_i/aster/inst/implementation/fabric/g_bank[0].mem/i___1_i_21_n_0
+    SLICE_X45Y63                                                      f  aster_soc_board_i/aster/inst/implementation/fabric/g_bank[0].mem/ram_reg_0_i_85/I1
+    SLICE_X45Y63         LUT6 (Prop_lut6_I1_O)        0.124     7.558 f  aster_soc_board_i/aster/inst/implementation/fabric/g_bank[0].mem/ram_reg_0_i_85/O
+                         net (fo=2, routed)           0.509     8.067    aster_soc_board_i/aster/inst/implementation/fabric/g_bank[0].mem/ptr_a_reg[0][1]_6
+    SLICE_X40Y58                                                      f  aster_soc_board_i/aster/inst/implementation/fabric/g_bank[0].mem/ram_reg_0_i_36__1/I1
+    SLICE_X40Y58         LUT2 (Prop_lut2_I1_O)        0.124     8.191 r  aster_soc_board_i/aster/inst/implementation/fabric/g_bank[0].mem/ram_reg_0_i_36__1/O
+                         net (fo=65, routed)          1.730     9.921    aster_soc_board_i/aster/inst/implementation/fabric/g_bank[0].mem/ptr_a_reg[0][1]_5
+    SLICE_X28Y48                                                      r  aster_soc_board_i/aster/inst/implementation/fabric/g_bank[0].mem/ram_reg_3_i_26__1/I1
+    SLICE_X28Y48         LUT6 (Prop_lut6_I1_O)        0.124    10.045 r  aster_soc_board_i/aster/inst/implementation/fabric/g_bank[0].mem/ram_reg_3_i_26__1/O
+                         net (fo=1, routed)           0.572    10.616    aster_soc_board_i/aster/inst/implementation/fabric/g_bank[0].mem/ram_reg_3_i_26__1_n_0
+    SLICE_X25Y47                                                      r  aster_soc_board_i/aster/inst/implementation/fabric/g_bank[0].mem/ram_reg_3_i_9__1/I4
+    SLICE_X25Y47         LUT5 (Prop_lut5_I4_O)        0.124    10.740 r  aster_soc_board_i/aster/inst/implementation/fabric/g_bank[0].mem/ram_reg_3_i_9__1/O
+                         net (fo=1, routed)           1.022    11.762    aster_soc_board_i/aster/inst/implementation/fabric/g_bank[0].mem/ram_reg_3_i_9__1_n_0
+    RAMB36_X1Y7          RAMB36E1                                     r  aster_soc_board_i/aster/inst/implementation/fabric/g_bank[0].mem/ram_reg_3/WEA[0]
+  -------------------------------------------------------------------    -------------------
+
+                         (clock clk_fpga_0 rise edge)
+                                                     10.000    10.000 r  
+                         propagated clock network latency
+                                                      2.792    12.792    
+                         clock pessimism              0.115    12.907    
+                         clock uncertainty           -0.154    12.753    
+    RAMB36_X1Y7          RAMB36E1 (Setup_ramb36e1_CLKARDCLK_WEA[0])
+                                                     -0.532    12.221    aster_soc_board_i/aster/inst/implementation/fabric/g_bank[0].mem/ram_reg_3
+  -------------------------------------------------------------------
+                         required time                         12.221    
+                         arrival time                         -11.762    
+  -------------------------------------------------------------------
+                         slack                                  0.459    
+
+Slack (MET) :             0.473ns  (required time - arrival time)
+  Source:                 aster_soc_board_i/aster/inst/implementation/g_hart[0].dcache/ans_q_reg/C
+                            (rising edge-triggered cell FDRE clocked by clk_fpga_0  {rise@0.000ns fall@5.000ns period=10.000ns})
+  Destination:            aster_soc_board_i/aster/inst/implementation/g_hart[0].core/d_raw_q_reg[sys]/D
+                            (rising edge-triggered cell FDRE clocked by clk_fpga_0  {rise@0.000ns fall@5.000ns period=10.000ns})
+  Path Group:             clk_fpga_0
+  Path Type:              Setup (Max at Slow Process Corner)
+  Requirement:            10.000ns  (clk_fpga_0 rise@10.000ns - clk_fpga_0 rise@0.000ns)
+  Data Path Delay:        9.393ns  (logic 1.523ns (16.214%)  route 7.870ns (83.786%))
+  Logic Levels:           7  (LUT3=1 LUT4=1 LUT5=2 LUT6=3)
+  Clock Path Skew:        -0.057ns (DCD - SCD + CPR)
+    Destination Clock Delay (DCD):    2.658ns = ( 12.658 - 10.000 ) 
+    Source Clock Delay      (SCD):    2.944ns
+    Clock Pessimism Removal (CPR):    0.229ns
+  Clock Uncertainty:      0.154ns  ((TSJ^2 + TIJ^2)^1/2 + DJ) / 2 + PE + UU
+    Total System Jitter     (TSJ):    0.071ns
+    Total Input Jitter      (TIJ):    0.300ns
+    Discrete Jitter          (DJ):    0.000ns
+    Phase Error              (PE):    0.000ns
+    User Uncertainty         (UU):    0.000ns
+
+    Location             Delay type                Incr(ns)  Path(ns)    Netlist Resource(s)
+  -------------------------------------------------------------------    -------------------
+                         (clock clk_fpga_0 rise edge)
+                                                      0.000     0.000 r  
+                         propagated clock network latency
+                                                      2.944     2.944    
+    SLICE_X47Y91         FDRE                         0.000     2.944 r  aster_soc_board_i/aster/inst/implementation/g_hart[0].dcache/ans_q_reg/C
+    SLICE_X47Y91         FDRE (Prop_fdre_C_Q)         0.456     3.400 f  aster_soc_board_i/aster/inst/implementation/g_hart[0].dcache/ans_q_reg/Q
+                         net (fo=55, routed)          2.007     5.407    aster_soc_board_i/aster/inst/implementation/g_hart[0].core/g_hart[0].c_d_rsp_valid
+    SLICE_X42Y134                                                     f  aster_soc_board_i/aster/inst/implementation/g_hart[0].core/m1[acc]_i_4/I3
+    SLICE_X42Y134        LUT5 (Prop_lut5_I3_O)        0.124     5.531 r  aster_soc_board_i/aster/inst/implementation/g_hart[0].core/m1[acc]_i_4/O
+                         net (fo=14, routed)          1.097     6.628    aster_soc_board_i/aster/inst/implementation/g_hart[0].core/m1[acc]_i_4_n_0
+    SLICE_X40Y129                                                     r  aster_soc_board_i/aster/inst/implementation/g_hart[0].core/s1_valid_i_3/I3
+    SLICE_X40Y129        LUT4 (Prop_lut4_I3_O)        0.124     6.752 r  aster_soc_board_i/aster/inst/implementation/g_hart[0].core/s1_valid_i_3/O
+                         net (fo=4, routed)           0.604     7.356    aster_soc_board_i/aster/inst/implementation/g_hart[0].core/fetch/e_pending_reg_0
+    SLICE_X40Y127                                                     r  aster_soc_board_i/aster/inst/implementation/g_hart[0].core/fetch/e_pending_i_3/I0
+    SLICE_X40Y127        LUT6 (Prop_lut6_I0_O)        0.124     7.480 f  aster_soc_board_i/aster/inst/implementation/g_hart[0].core/fetch/e_pending_i_3/O
+                         net (fo=17, routed)          0.937     8.417    aster_soc_board_i/aster/inst/implementation/g_hart[0].core/fetch/e_dec_reg[store]
+    SLICE_X39Y120                                                     f  aster_soc_board_i/aster/inst/implementation/g_hart[0].core/fetch/d_err_i_3/I4
+    SLICE_X39Y120        LUT6 (Prop_lut6_I4_O)        0.124     8.541 r  aster_soc_board_i/aster/inst/implementation/g_hart[0].core/fetch/d_err_i_3/O
+                         net (fo=16, routed)          0.662     9.203    aster_soc_board_i/aster/inst/implementation/g_hart[0].core/fetch_n_35
+    SLICE_X39Y113                                                     r  aster_soc_board_i/aster/inst/implementation/g_hart[0].core/d_err_i_1/I2
+    SLICE_X39Y113        LUT3 (Prop_lut3_I2_O)        0.120     9.323 f  aster_soc_board_i/aster/inst/implementation/g_hart[0].core/d_err_i_1/O
+                         net (fo=180, routed)         1.564    10.887    aster_soc_board_i/aster/inst/implementation/g_hart[0].icache/data/d_raw_q
+    SLICE_X32Y88                                                      f  aster_soc_board_i/aster/inst/implementation/g_hart[0].icache/data/d_raw_q[branch]_i_3/I5
+    SLICE_X32Y88         LUT6 (Prop_lut6_I5_O)        0.327    11.214 f  aster_soc_board_i/aster/inst/implementation/g_hart[0].icache/data/d_raw_q[branch]_i_3/O
+                         net (fo=51, routed)          0.999    12.213    aster_soc_board_i/aster/inst/implementation/g_hart[0].icache/data/s2_word_reg[3]
+    SLICE_X36Y95                                                      f  aster_soc_board_i/aster/inst/implementation/g_hart[0].icache/data/d_raw_q[sys]_i_1/I4
+    SLICE_X36Y95         LUT5 (Prop_lut5_I4_O)        0.124    12.337 r  aster_soc_board_i/aster/inst/implementation/g_hart[0].icache/data/d_raw_q[sys]_i_1/O
+                         net (fo=1, routed)           0.000    12.337    aster_soc_board_i/aster/inst/implementation/g_hart[0].core/d_raw_q_reg[sys]_0
+    SLICE_X36Y95         FDRE                                         r  aster_soc_board_i/aster/inst/implementation/g_hart[0].core/d_raw_q_reg[sys]/D
+  -------------------------------------------------------------------    -------------------
+
+                         (clock clk_fpga_0 rise edge)
+                                                     10.000    10.000 r  
+                         propagated clock network latency
+                                                      2.658    12.658    
+                         clock pessimism              0.229    12.887    
+                         clock uncertainty           -0.154    12.733    
+    SLICE_X36Y95         FDRE (Setup_fdre_C_D)        0.077    12.810    aster_soc_board_i/aster/inst/implementation/g_hart[0].core/d_raw_q_reg[sys]
+  -------------------------------------------------------------------
+                         required time                         12.810    
+                         arrival time                         -12.337    
+  -------------------------------------------------------------------
+                         slack                                  0.473    
+
+
+
+

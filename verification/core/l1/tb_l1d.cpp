@@ -81,7 +81,19 @@ int main(int argc, char** argv) {
     uint64_t ncycles = argc > 2 ? std::stoull(argv[2]) : 200000;
     std::mt19937 rng(seed);
     Vl1d_unit d;
+#ifdef L1D_SPAN17
+    // main memory's tag span (TAG_SPAN 17): 96 KiB cacheable; the core's pages set each kept tag bit
+    // (12-16) in some page, and the remote region's pages are 3, 7, 11 and 19 (snooped lines that differ
+    // from held ones in bit 14, 15 or 16 alone, as pages 1 and 2 do in bits 13 and 12)
+    const uint32_t bytes = 0x18000;
+    static const uint32_t pages[] = {0, 1, 2, 4, 8, 16};
+    static const uint32_t remote_pages[] = {0, 0x4000, 0x8000, 0x10000};
+#else
     const uint32_t bytes = 0x10000;
+    static const uint32_t pages[] = {0, 1, 2};
+    static const uint32_t remote_pages[] = {0};
+#endif
+    const uint32_t npages = sizeof pages / sizeof pages[0], nremote = sizeof remote_pages / sizeof remote_pages[0];
     d.cacheable_bytes = bytes;
     d.clk = 0; d.rst_n = 0; d.eval(); d.clk = 1; d.eval(); d.clk = 0; d.eval(); d.clk = 1; d.eval(); d.clk = 0; d.rst_n = 1; d.eval();
     Mem mem, ref;
@@ -96,7 +108,10 @@ int main(int argc, char** argv) {
     struct Held { uint64_t cycle; uint32_t value, own; uint64_t seen; };   // seen: when the cache must see it
     std::map<uint32_t, std::vector<Held>> hist;
     std::map<uint32_t, uint32_t> own_issued, own_done;
-    auto remote_region = [](uint32_t a) { return (a & ~0xFFFu) == 0x80003000u; };
+    auto remote_region = [&](uint32_t a) {
+        for (uint32_t r = 0; r < nremote; ++r) if ((a & ~0xFFFu) == 0x80003000u + remote_pages[r]) return true;
+        return false;
+    };
     // A load looked up at `lookup`, after the core's `own`-th store to the word:
     // the value memory held at its lookup or later, and not before that store.
     auto allowed = [&](uint32_t a, uint64_t lookup, uint32_t own, uint32_t v) {
@@ -130,9 +145,9 @@ int main(int argc, char** argv) {
     auto gen = [&]() {
         uint32_t r = rng() % 100;
         uint32_t a;
-        if (r < 70) a = 0x80000000u + (rng() % 3) * 4096 + (rng() % 6) * 16 + (rng() % 4) * 4;
+        if (r < 70) a = 0x80000000u + pages[rng() % npages] * 4096 + (rng() % 6) * 16 + (rng() % 4) * 4;
         else if (r < 80) {                  // a word of the remote region: a load or a store
-            pop = rng() % 5 < 2 ? 1 : 0; paddr = 0x80003000u + (rng() % 6) * 16 + (rng() % 4) * 4; pdata = rng(); pbe = 0xf;
+            pop = rng() % 5 < 2 ? 1 : 0; paddr = 0x80003000u + (nremote > 1 ? remote_pages[rng() % nremote] : 0) + (rng() % 6) * 16 + (rng() % 4) * 4; pdata = rng(); pbe = 0xf;
             if (pop == 1 && rng() % 2) { uint32_t b = rng() % 4; pbe = 1u << b; paddr += b; }
             pv = true;
             return;
@@ -168,7 +183,7 @@ int main(int argc, char** argv) {
         std::vector<uint32_t> units;
         for (int port = 0; port < L1D_SNOOPS; ++port) {
             if (rng() % (L1D_SNOOPS == 1 ? 30 : 20) != 0) continue;
-            const uint32_t a = 0x80003000u + (rng() % 6) * 16 + (rng() % 4) * 4, v = rng();
+            const uint32_t a = 0x80003000u + (nremote > 1 ? remote_pages[rng() % nremote] : 0) + (rng() % 6) * 16 + (rng() % 4) * 4, v = rng();
             if (std::find(units.begin(), units.end(), a >> 3) != units.end()) continue;
             units.push_back(a >> 3);
             mem.wr(a, v, 0xf);

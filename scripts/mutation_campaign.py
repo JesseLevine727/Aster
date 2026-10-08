@@ -77,7 +77,7 @@ MUTANTS = {
  # CSRs
  "no-serialization": (C, " && (!e_dec.sys || (!m1.valid && !m2.valid))\n", "\n"),
  "serialization-m1-only": (C, "(!e_dec.sys || (!m1.valid && !m2.valid))", "(!e_dec.sys || !m1.valid)"),
- "csr-write-on-trap": (C, "e_slot.csr_we    = (e_dec.csr_write || e_dec.mret) && !e_trap;", "e_slot.csr_we    = (e_dec.csr_write || e_dec.mret);"),
+ "csr-write-on-trap": (C, "e_slot.csr_we    = (e_dec.csr_write || e_dec.mret) && !e_trap_op;", "e_slot.csr_we    = (e_dec.csr_write || e_dec.mret);"),
  "read-only-csr-writable": (P, "d.illegal   = d.csr_sel == '0 || (d.csr_write && insn[31:30] == 2'b11);", "d.illegal   = d.csr_sel == '0;"),
  "csr-read-always-writes": (P, "d.csr_write = funct3[1:0] == 2'd1 || insn[19:15] != 5'd0;", "d.csr_write = 1'b1;"),
  "csr-set-clear-swapped": (C, ": e_dec.funct3[1:0] == 2'd2 ? csr_rdata | csr_src : csr_rdata & ~csr_src;", ": e_dec.funct3[1:0] == 2'd2 ? csr_rdata & ~csr_src : csr_rdata | csr_src;"),
@@ -110,14 +110,14 @@ MUTANTS = {
  "sc-failure-reports-store": (C, "rvfi_mem_wmask <= w.store && (!w_sc || w.rdata == 32'b0) ? w.be : 4'b0;", "rvfi_mem_wmask <= w.store ? w.be : 4'b0;"),
  "amo-rvfi-add-wrong": (P, "5'b00000: return old + operand;", "5'b00000: return old - operand;"),
  "misa-no-a": (C, "localparam logic [31:0] MISA = 32'h4080_1101;", "localparam logic [31:0] MISA = 32'h4080_1100;"),
- "dot8-not-late-in-m1": (C, "e_slot.late      = (e_dec.load || e_dec.mul || e_dec.dot8) && !e_trap;", "e_slot.late      = (e_dec.load || e_dec.mul) && !e_trap;"),
+ "dot8-not-late-in-m1": (C, "e_slot.late      = (e_dec.load && !e_trap_nb) || ((e_dec.mul || e_dec.dot8) && !e_trap_op);", "e_slot.late      = (e_dec.load && !e_trap_nb) || (e_dec.mul && !e_trap_op);"),
  "dot8-no-decode-interlock": (C, "return e_dec.load || e_dec.mul || e_dec.dot8;", "return e_dec.load || e_dec.mul;"),
  "dot8-interlock-in-m1": (C, "m1.late && !m1.dot8;", "m1.late;"),
  "dot8-late-in-m2": (C, "m2.late      <= m1.late && !m1.dot8 && !m1_bus_err;", "m2.late      <= m1.late && !m1_bus_err;"),
  "dot8-result-not-to-m2": (C, "if (m1.dot8) m2.result <= 32'($signed(dot8_sum));", ""),
- "dot8-lane0-unsigned": (C, "assign dot8_p0  = $signed(m1.rs1v[7:0])   * $signed(m1.rs2v[7:0]);", "assign dot8_p0  = 16'(m1.rs1v[7:0] * m1.rs2v[7:0]);"),
+ "dot8-lane0-unsigned": (C, "dot8_p0 <= $signed(e_slot.rs1v[7:0])   * $signed(e_slot.rs2v[7:0]);", "dot8_p0 <= 16'(e_slot.rs1v[7:0] * e_slot.rs2v[7:0]);"),
  "dot8-sum-17-bits": (C, "if (m1.dot8) m2.result <= 32'($signed(dot8_sum));", "if (m1.dot8) m2.result <= 32'($signed(dot8_sum[16:0]));"),
- "dot8-lane-swap": (C, "assign dot8_p0  = $signed(m1.rs1v[7:0])   * $signed(m1.rs2v[7:0]);", "assign dot8_p0  = $signed(m1.rs1v[7:0])   * $signed(m1.rs2v[31:24]);"),
+ "dot8-lane-swap": (C, "dot8_p0 <= $signed(e_slot.rs1v[7:0])   * $signed(e_slot.rs2v[7:0]);", "dot8_p0 <= $signed(e_slot.rs1v[7:0])   * $signed(e_slot.rs2v[31:24]);"),
  "dot8-ignores-funct7": (P, "5'b00010: if (funct3 == 3'd0 && funct7 == 7'h00) begin", "5'b00010: if (funct3 == 3'd0) begin"),
  "dot8-ignores-funct3": (P, "5'b00010: if (funct3 == 3'd0 && funct7 == 7'h00) begin", "5'b00010: if (funct7 == 7'h00) begin"),
  "dot8-sum-zero-extended": (C, "if (m1.dot8) m2.result <= 32'($signed(dot8_sum));", "if (m1.dot8) m2.result <= {14'b0, dot8_sum};"),
@@ -130,8 +130,8 @@ MUTANTS = {
  # 18.6: the core's side of the caches
  "fencei-no-invalidate": (C, "fencei_inval <= e_advance && e_dec.fencei;", "fencei_inval <= 1'b0;"),
  # 18.6: the instruction cache
- "l1i-hit-ignores-valid": (I, "assign lookup_hit   = valid[s1_addr[11:4]] && tag_ram", "assign lookup_hit   = tag_ram"),
- "l1i-tag-drops-bit12": (I, "tag_ram[s1_addr[11:4]] == s1_addr[31:12];", "tag_ram[s1_addr[11:4]][19:1] == s1_addr[31:13];"),
+ "l1i-hit-ignores-valid": (I, "assign lookup_hit   = valid[s1_addr[11:4]] && s1_span && tag_ram", "assign lookup_hit   = s1_span && tag_ram"),
+ "l1i-tag-drops-bit12": (I, "tag_ram[s1_addr[11:4]] == s1_addr[TAG_SPAN-1:12];", "tag_ram[s1_addr[11:4]][TB-1:1] == s1_addr[TAG_SPAN-1:13];"),
  "l1i-fencei-ignored": (I, "            if (invalidate) valid <= '0;", "            if (1'b0) valid <= '0;"),
  "l1i-refill-not-poisoned": (I, "received == 3'd3 && !poisoned) valid", "received == 3'd3) valid"),
  "l1i-waiting-fetch-not-stale": (I, "                if (refill_write) s1_stale <= 1'b1;\n", ""),
@@ -146,7 +146,7 @@ MUTANTS = {
  "l1d-lr-invalidates": (D, "s2_op != OP_STORE && s2_op != OP_LR && s2_op != OP_LOAD;", "s2_op != OP_STORE && s2_op != OP_LOAD;"),
  "l1d-io-load-refills": (D, "end else if (s1_cacheable && s1_load) begin", "end else if (s1_load) begin"),
  "l1d-error-a-cycle-late": (D, "assign d_rsp_error  = s1_valid && s1_age == 2'd0 && s1_error;", "assign d_rsp_error  = s1_valid && s1_age == 2'd1 && s1_error;"),
- "l1d-now-ignores-stale": (D, "assign s1_now       = s1_age == 2'd0 && !s1_stale && !array_write;", "assign s1_now       = s1_age == 2'd0 && !array_write;"),
+ "l1d-now-ignores-stale": (D, "assign s1_now       = s1_age == 2'd0 && !s1_stale;", "assign s1_now       = s1_age == 2'd0;"),
  "l1d-waiting-load-not-stale": (D, "                if (array_write) s1_stale <= 1'b1;\n", ""),
  "l1d-accepted-during-write-not-stale": (D, "                s1_stale <= array_write;", "                s1_stale <= 1'b0;"),
  "l1d-miss-answers-word0": (D, "if (received[1:0] == s2_addr[3:2]) s2_word <= m_rsp_rdata;", "if (received[1:0] == 2'd0) s2_word <= m_rsp_rdata;"),
@@ -155,7 +155,7 @@ MUTANTS = {
  "l1d-everything-posted": (D, "s2_post      <= s1_cacheable && s1_op == OP_STORE;", "s2_post      <= 1'b1;"),
  "l1d-io-store-posted": (D, "s2_post      <= s1_cacheable && s1_op == OP_STORE;", "s2_post      <= s1_op == OP_STORE;"),
  "l1d-posted-answers-not-dropped": (D, "posted   <= posted + (m_accept && state == ACCESS && s2_post ? 2'd1 : 2'd0) - (m_drop ? 2'd1 : 2'd0);", "posted   <= '0;"),
- "l1d-inflight-unlimited": (D, "assign m_req_valid  = inflight != 2'd2 && (", "assign m_req_valid  = ("),
+ "l1d-inflight-unlimited": (D, "inflight_kept  = inflight - (m_rsp_valid ? 2'd1 : 2'd0);", "inflight_kept  = 2'd0;"),
  "l1d-snoop-not-invalidating": (D, "snoop_hit[p] = snoop_valid[p] &&", "snoop_hit[p] = 1'b0 && snoop_valid[p] &&"),
  # the data cache's three snoop ports (20.1), seen only by the three-port unit test
  "l1d-snoop-port0-only-invalidates": (D, "for (int unsigned p = 0; p < SNOOPS; p++) if (snoop_hit[p]) valid_next",
@@ -168,8 +168,8 @@ MUTANTS = {
  "l1d-refill-not-poisoned-by-snoop": (D, "if (snoop_s2) poisoned <= 1'b1;", ""),
  "l1d-refill-keeps-replaced-line": (D, "if (refill_start) valid_next[s1_addr[11:4]] = 1'b0;", ""),
  "l1d-snooped-last-word-installed": (D, "&& !poisoned && !snoop_s2;", "&& !poisoned;"),
- "l1i-no-hold-after-fencei": (I, "&& (!fenced || m_waiting);", ";"),
- "l1i-hold-withdraws-waiting": (I, "(!fenced || m_waiting)", "!fenced"),
+ "l1i-no-hold-after-fencei": (I, "return iss != 3'd4 && iss - rec < 3'd2 && (!fen || waiting);", "return iss != 3'd4 && iss - rec < 3'd2;"),
+ "l1i-hold-withdraws-waiting": (I, "(!fen || waiting)", "!fen"),
 }
 # The core's mutants that only the caches' timing exposes: run on the cached core.
 CACHED = {"fencei-no-invalidate"}

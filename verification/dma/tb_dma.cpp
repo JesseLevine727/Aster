@@ -77,6 +77,7 @@ std::deque<ArmAccess> arm_expect;                          // the ARM side's acc
 std::uint64_t arm_seen = 0;
 
 // coverage
+std::uint64_t longest_job = 0;
 std::uint64_t jobs_done = 0, jobs_aborted = 0, jobs_reset = 0, jobs_stopped = 0, errors_seen[4] = {}, rejects_seen = 0,
               stalls = 0, bytes_copied = 0, hart1_writes = 0, cycle_checks = 0, job_audits = 0, abort_checks = 0,
               bytes_reads = 0, job_cycle_checks = 0, holds_checked = 0, window_changes = 0;
@@ -383,7 +384,7 @@ void run_job(const Job& job, const Plan& plan) {
         }
         ++job_audits;
     }
-    if (aborted) ++jobs_aborted; else { ++jobs_done; bytes_copied += job.len; }
+    if (aborted) ++jobs_aborted; else { ++jobs_done; bytes_copied += job.len; longest_job = std::max<std::uint64_t>(longest_job, job.len); }
     pairs_seen[job.src & 7][job.dst & 7] = true;
     if (plan.exact && !aborted && job.len != 0) {
         const dma::Schedule want = dma::schedule(job.src, job.dst, job.len, WAIT_CYCLES);
@@ -431,6 +432,18 @@ Job random_job(std::uint32_t max_len) {
         if (j.len && j.src < j.dst + j.len && j.dst < j.src + j.len) continue;   // overlapping: not a copy
         return j;
     }
+}
+
+// a large job, 8 KiB up to half the memory below the ARM side's area (about 47 KiB): the engine's unit
+// counts near their widest; the source in one half and the destination in the other
+Job big_job() {
+    const std::uint32_t half = (kBytes - 0x800) / 2;
+    Job j;
+    j.len = 8192 + std::uint32_t(rng() % (half - 8192 + 1));
+    const std::uint32_t a = kBase + std::uint32_t(rng() % (half - j.len + 1));
+    const std::uint32_t b = kBase + half + std::uint32_t(rng() % (half - j.len + 1));
+    if (rng() % 2) { j.src = a; j.dst = b; } else { j.src = b; j.dst = a; }
+    return j;
 }
 
 void audit_counters() {
@@ -571,10 +584,10 @@ int main(int argc, char** argv) {
         }
     } else if (mode == "ontime") {
         stall_pct = 0;
-        for (unsigned i = 0; i < jobs && !failed; ++i) { Plan p; p.exact = true; run_job(random_job(4096), p); }
+        for (unsigned i = 0; i < jobs && !failed; ++i) { Plan p; p.exact = true; run_job(i % 16 == 15 ? big_job() : random_job(4096), p); }
     } else if (mode == "stall") {
         stall_pct = stall;
-        for (unsigned i = 0; i < jobs && !failed; ++i) run_job(random_job(4096), Plan{});
+        for (unsigned i = 0; i < jobs && !failed; ++i) run_job(i % 16 == 15 ? big_job() : random_job(4096), Plan{});
     } else if (mode == "errors") {
         error_tests(jobs);
     } else if (mode == "abort") {
@@ -606,13 +619,13 @@ int main(int argc, char** argv) {
     if (!failed) audit_counters();
     unsigned pairs = 0;
     for (auto& row : pairs_seen) for (bool p : row) pairs += p;
-    std::printf("%s: aster_dma2 (WAIT %u) %s seed %u: %llu copies (%llu bytes), %llu aborted, %llu reset, %llu stopped "
+    std::printf("%s: aster_dma2 (WAIT %u) %s seed %u: %llu copies (%llu bytes, the longest %llu), %llu aborted, %llu reset, %llu stopped "
                 "(%llu ARM-side accesses), errors 1/2/3 %llu/%llu/%llu, LENGTH 0 %llu, %llu rejections, %llu cycle-exact "
                 "against the model, %llu JOB_CYCLES checked, %llu BYTES_DONE reads, %llu holds, %u/64 alignment pairs, "
                 "%llu stalled cycles, %llu jobs' counter sums, %llu aborts offering nothing new, %llu window changes, "
                 "counters audited%s%s\n",
                 failed ? "FAIL" : "PASS", WAIT_CYCLES, mode.c_str(), seed, (unsigned long long)jobs_done,
-                (unsigned long long)bytes_copied, (unsigned long long)jobs_aborted, (unsigned long long)jobs_reset,
+                (unsigned long long)bytes_copied, (unsigned long long)longest_job, (unsigned long long)jobs_aborted, (unsigned long long)jobs_reset,
                 (unsigned long long)jobs_stopped, (unsigned long long)arm_seen,
                 (unsigned long long)errors_seen[1], (unsigned long long)errors_seen[2], (unsigned long long)errors_seen[3],
                 (unsigned long long)errors_seen[0], (unsigned long long)rejects_seen, (unsigned long long)cycle_checks,

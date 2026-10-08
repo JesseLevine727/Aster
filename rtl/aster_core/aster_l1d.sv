@@ -57,7 +57,12 @@ module aster_l1d #(
     // Windows that take only word loads and word stores (bit i: window i).
     parameter logic [IO_WINDOWS-1:0] IO_WORD_ONLY = '0,
     // Snoop ports (soc.md §4.6): any of them may carry a line in a cycle.
-    parameter int unsigned SNOOPS = 1
+    parameter int unsigned SNOOPS = 1,
+    // The cacheable range (MEM_BASE, cacheable_bytes) lies in MEM_BASE's aligned 2^TAG_SPAN bytes, so a
+    // line's tag keeps only its address bits [TAG_SPAN-1:12] (32: all of them). Only cacheable lines are
+    // installed and valid, so the compare is exact (checked against full tags in simulation); a snoop
+    // must carry a line of that span to hit (20.3's timing: the Phase 20 SoC's main memory, 17).
+    parameter int unsigned TAG_SPAN = 32
 ) (
     input  logic        clk,
     input  logic        rst_n,
@@ -111,8 +116,9 @@ module aster_l1d #(
         return 1'b0;
     endfunction
 
-    logic [19:0]  tag_ram [256];
-    logic [255:0] valid;
+    localparam int unsigned TB = TAG_SPAN - 12;   // a tag's bits
+    logic [TB-1:0] tag_ram [256];
+    logic [255:0]  valid;
 
     // Stage 1: s1_age counts the cycles since acceptance (0: the first, when
     // d_rsp_error reports its error); its word is on the array's output at age
@@ -162,7 +168,7 @@ module aster_l1d #(
         snoop_s1 = 1'b0;
         for (int unsigned p = 0; p < SNOOPS; p++) if (snoop_valid[p] && snoop_line[p] == s1_addr[31:4]) snoop_s1 = 1'b1;
     end
-    assign lookup_hit   = s1_cacheable && valid[s1_addr[11:4]] && tag_ram[s1_addr[11:4]] == s1_addr[31:12]
+    assign lookup_hit   = s1_cacheable && valid[s1_addr[11:4]] && tag_ram[s1_addr[11:4]] == s1_addr[TAG_SPAN-1:12]
                           && !snoop_s1;
     // The head's word when it moves: on the array's output in its first cycle
     // there (s1_now), or kept (s1_kept), unless the array was written since its read. (Used only as the
@@ -317,7 +323,8 @@ module aster_l1d #(
         snoop_s2 = 1'b0;
         for (int unsigned p = 0; p < SNOOPS; p++) begin
             if (snoop_valid[p] && snoop_line[p] == s2_addr[31:4]) snoop_s2 = 1'b1;
-            snoop_hit[p] = snoop_valid[p] && valid[snoop_line[p][11:4]] && tag_ram[snoop_line[p][11:4]] == snoop_line[p][31:12];
+            snoop_hit[p] = snoop_valid[p] && valid[snoop_line[p][11:4]]
+                           && tag_ram[snoop_line[p][11:4]] == snoop_line[p][TAG_SPAN-1:12];
         end
     end
     assign install   = refill_write && received == 3'd3 && !poisoned && !snoop_s2;
@@ -336,8 +343,26 @@ module aster_l1d #(
     end
 
     always_ff @(posedge clk) begin
-        if (refill_write && received == 3'd3) tag_ram[s2_addr[11:4]] <= s2_addr[31:12];
+        if (refill_write && received == 3'd3) tag_ram[s2_addr[11:4]] <= s2_addr[TAG_SPAN-1:12];
     end
+`ifndef SYNTHESIS
+    // TAG_SPAN's tags against full ones: the same lookups and snoop hits in every cycle
+    logic [19:0] tag_full [256];
+    always_ff @(posedge clk) begin
+        if (refill_write && received == 3'd3) tag_full[s2_addr[11:4]] <= s2_addr[31:12];
+        if (rst_n) begin
+            assert (TAG_SPAN == 32 || (MEM_BASE[TAG_SPAN-1:0] == '0 && 33'(cacheable_bytes) <= 33'(1) << TAG_SPAN))
+                else $error("aster_l1d: the cacheable range is not inside TAG_SPAN's aligned span");
+            assert (lookup_hit == (s1_cacheable && valid[s1_addr[11:4]] && tag_full[s1_addr[11:4]] == s1_addr[31:12]
+                                   && !snoop_s1))
+                else $error("aster_l1d: a TAG_SPAN lookup differs from the full tag's");
+            for (int unsigned p = 0; p < SNOOPS; p++)
+                assert (snoop_hit[p] == (snoop_valid[p] && valid[snoop_line[p][11:4]]
+                                         && tag_full[snoop_line[p][11:4]] == snoop_line[p][31:12]))
+                    else $error("aster_l1d: a TAG_SPAN snoop hit differs from the full tag's");
+        end
+    end
+`endif
 
     always_ff @(posedge clk) begin
         if (!rst_n) begin

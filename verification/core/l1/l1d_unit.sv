@@ -2,7 +2,7 @@
 // two I/O windows, the register page and the interrupt device's word. SNOOPS
 // snoop ports (1, or 3 as on the Phase 20 fabric, 20.1).
 `timescale 1 ns / 1 ps
-module l1d_unit #(parameter int unsigned SNOOPS = 1) (
+module l1d_unit #(parameter int unsigned SNOOPS = 1, parameter int unsigned TAG_SPAN = 32) (
     input  logic        clk, rst_n,
     input  logic [31:0] cacheable_bytes,
     input  logic        d_req_valid,
@@ -27,7 +27,7 @@ module l1d_unit #(parameter int unsigned SNOOPS = 1) (
     localparam logic [2*32-1:0] IO_BASE = {32'h3000_0000, 32'h2000_0000};
     localparam logic [2*32-1:0] IO_MASK = {32'h0000_0003, 32'h0000_FFFF};
     /* verilator lint_off PINCONNECTEMPTY */
-    aster_l1d #(.IO_WINDOWS(2), .IO_BASE(IO_BASE), .IO_MASK(IO_MASK), .SNOOPS(SNOOPS)) dut (
+    aster_l1d #(.IO_WINDOWS(2), .IO_BASE(IO_BASE), .IO_MASK(IO_MASK), .SNOOPS(SNOOPS), .TAG_SPAN(TAG_SPAN)) dut (
         .clk, .rst_n, .cacheable_bytes, .d_req_valid, .d_req_op, .d_req_addr, .d_req_wdata, .d_req_be,
         .d_req_ready, .d_rsp_valid, .d_rsp_rdata, .d_rsp_error,
         .m_req_valid, .m_req_op, .m_req_addr, .m_req_wdata, .m_req_be, .m_req_ready,
