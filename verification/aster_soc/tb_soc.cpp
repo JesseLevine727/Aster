@@ -33,19 +33,27 @@
 //   SOC <PASS|status> cycles=<n> tohost=<hex> npu_jobs=<n> npu_unfinished=<n> cpu_checks=<n> snoops=<n>
 //       loads=<n> sc=<n> sc_failed=<n> amos=<n> retired1=<n> resets=<n> resets_owed=<n> resets_amo=<n>
 //       resets_refill=<n> resets_resv=<n> releases_early=<n> npu_waits=<n> npu_waits_irefill=<n>
-//       npu_waits_daccess=<n> npu_waits_other=<n> npu_config=<n> soc_config=<n>
+//       npu_waits_daccess=<n> npu_waits_amo=<n> npu_waits_blk=<n> npu_waits_other=<n> hart_waits_npu=<n>
+//       npu_config=<n> soc_config=<n>
 // (cycles: hart 0's release to its tohost store; loads: the loads the memory
 // checker checked; sc, sc_failed, amos: those to main memory; retired1: hart
 // 1's instructions retired; resets: hart 1's resets while hart 0 ran, and
 // those that caught answers owed to it, its AMO before its write, its data
 // cache refilling, its reservation held; releases_early: its releases while
 // answers owed before its reset were still due, which the fabric must drop;
-// npu_waits: the cycles the NPU's request waited, and of them those where, in
-// the same bank, an instruction cache's refill read was taken (an NPU read
-// shares port B with the refills) or a data cache's access on port A (an NPU
-// write shares port A with the data caches) — the bank conflicts between the
-// harts and the NPU that soc.md §10.4 expects to change a Phase 19 program's
-// cycles; other: neither (an AMO's hold, a held-back unit)).
+// npu_waits: the cycles the NPU's request waited, each by its cause in the
+// fabric's own arbitration (its bank's eligible members, picks and port B's
+// takes): an instruction cache's refill picked on port B (irefill: an NPU
+// read shares port B with the refills); a data cache's access picked on port
+// A, or its write holding back the NPU's read of its unit (daccess: an NPU
+// write shares port A with the data caches); an AMO in the bank (amo); a unit
+// held back for a port-B read (blk); other: none of these; hart_waits_npu:
+// the cycles a hart waited behind the NPU, each hart once a cycle (its data
+// cache eligible while the NPU's write was picked, or its write refused for
+// the unit of the NPU's read held back the cycle before; its refill eligible
+// while the NPU's read was picked, or held back by its write) — the bank conflicts
+// between the harts and the NPU that soc.md §10.4 expects to change a Phase
+// 19 program's cycles).
 //
 // With +board, the status line is instead 18.7's board simulation's, as
 // tb_npu_soc.cpp prints it, for scripts/aster_board.py --design soc:
@@ -103,7 +111,9 @@ unsigned wait_cycles = 0;                    // the SoC's WAIT (its configuratio
 bool hart1_was_up = false;
 std::uint64_t hart1_due = 0;                 // the last answer owed to hart 1 when it was reset: due before this cycle
 std::uint64_t resets = 0, resets_owed = 0, resets_amo = 0, resets_refill = 0, resets_resv = 0, releases_early = 0;
-std::uint64_t npu_waits = 0, npu_waits_irefill = 0, npu_waits_dwrite = 0, npu_waits_other = 0;
+std::uint64_t npu_waits = 0, npu_waits_irefill = 0, npu_waits_dwrite = 0, npu_waits_amo = 0, npu_waits_blk = 0;
+std::uint64_t npu_waits_other = 0, hart_waits_npu = 0;
+int blk_owner[4] = {-1, -1, -1, -1};    // each bank's port-B member held back last cycle (its unit now refused)
 std::deque<Owed> owed[2];
 bool miss_due[2] = {false, false};           // a load missed: performed at its word's refill read
 std::uint32_t miss_word[2] = {0, 0};
@@ -310,24 +320,61 @@ void cycle() {
         if (running) fail("ARM_ACCESS", "a write on port W while the harts run");
         writes.push_back({kW, std::uint32_t(dut->chk_w_addr) & ~7u, std::uint8_t(dut->chk_w_be), std::uint64_t(dut->chk_w_wdata)});
     }
-    // ---- the NPU's waits, by cause ----
-    if (fabric_up && running && dut->chk_n_valid && !dut->chk_n_ready) {
-        ++npu_waits;
-        const unsigned bank = (std::uint32_t(dut->chk_n_addr) >> 2) & 3u;      // byte address bits 5:4
-        bool irefill = false, dwrite = false;
-        for (int h = 0; h < 2; ++h) {
-            // (a refill shares port B only with the NPU's reads; a data cache's access counts on port A,
-            // where the NPU's writes go, unless the fabric gave it port B's second chance)
-            if (!dut->chk_n_we && part(dut->chk_i_valid, h, 1) && part(dut->chk_i_ready, h, 1)
-                && ((std::uint32_t(part(dut->chk_i_addr, h, 30)) >> 2) & 3u) == bank) irefill = true;
-            // a data cache's access taken on port A (its load may instead take an idle port B: not then)
-            if (dut->chk_n_we && part(dut->chk_d_valid, h, 1) && part(dut->chk_d_ready, h, 1)
-                && part(dut->chk_d_main, h, 1) && ((std::uint32_t(part(dut->chk_d_addr, h, 32)) >> 4) & 3u) == bank)
-                dwrite = true;
+    // ---- the NPU's waits, by cause, and the harts' waits behind the NPU, from the fabric's own
+    // arbitration (each bank's members: port A D0 D1 N W, port B I0 I1 R N) ----
+    if (fabric_up && running) {
+        const std::uint64_t ea = dut->chk_f_elig_a, pa = dut->chk_f_pick_a, eb = dut->chk_f_elig_b,
+                            pb = dut->chk_f_pick_b, tb = dut->chk_f_take_b;
+        const auto bit = [](std::uint64_t v, unsigned bank, unsigned member) { return ((v >> (4 * bank + member)) & 1u) != 0; };
+        if (dut->chk_n_valid && !dut->chk_n_ready) {
+            ++npu_waits;
+            const unsigned b = (std::uint32_t(dut->chk_n_addr) >> 2) & 3u;     // byte address bits 5:4
+            const bool d_picked = bit(pa, b, 0) || bit(pa, b, 1);
+            if (dut->chk_n_we) {                                              // port A, member 2
+                if (!bit(ea, b, 2)) {
+                    if (part(dut->chk_f_amo_wr_now, b, 1) || part(dut->chk_f_amo_busy, b, 1)) ++npu_waits_amo;
+                    else if (part(dut->chk_f_blk_v, b, 1)) ++npu_waits_blk;
+                    else ++npu_waits_other;
+                } else if (d_picked) ++npu_waits_dwrite;
+                else ++npu_waits_other;
+            } else {                                                          // port B, member 3
+                if (!bit(eb, b, 3)) {
+                    if (part(dut->chk_f_amo_wr_now, b, 1)) ++npu_waits_amo; else ++npu_waits_other;
+                } else if (bit(pb, b, 0) || bit(pb, b, 1)) ++npu_waits_irefill;
+                else if (bit(pb, b, 3) && !bit(tb, b, 3) && d_picked) ++npu_waits_dwrite;  // the bank rule
+                else ++npu_waits_other;
+            }
         }
-        if (irefill) ++npu_waits_irefill;
-        else if (dwrite) ++npu_waits_dwrite;
-        else ++npu_waits_other;
+        // each hart counts once a cycle: its data cache eligible while the NPU's write was picked, or its
+        // write refused for the unit of the NPU's read held back last cycle (the starvation rule); its refill
+        // eligible while the NPU's read was picked, or picked and held back by the NPU's write of its unit
+        for (int h = 0; h < 2; ++h) {
+            if (!core_up[h]) continue;                 // (a hart in reset: the fabric ignores its requests)
+            bool behind = false;
+            if (part(dut->chk_d_valid, h, 1) && !part(dut->chk_d_ready, h, 1) && part(dut->chk_d_main, h, 1)) {
+                const std::uint32_t a = std::uint32_t(part(dut->chk_d_addr, h, 32));
+                const unsigned b = (a >> 4) & 3u, op = unsigned(part(dut->chk_d_op, h, 4));
+                const std::uint32_t index = (((a >> 6) & 0x7FFu) << 1) | ((a >> 3) & 1u);
+                if (bit(ea, b, unsigned(h)) && bit(pa, b, 2)) behind = true;
+                else if (!bit(ea, b, unsigned(h)) && part(dut->chk_f_blk_v, b, 1) && blk_owner[b] == 3
+                         && op != 0 && op != 2 && index == std::uint32_t(part(dut->chk_f_blk_index, b, 12))
+                         && !part(dut->chk_f_amo_busy, b, 1) && !part(dut->chk_f_hold, h, 1)) behind = true;
+            }
+            if (part(dut->chk_i_valid, h, 1) && !part(dut->chk_i_ready, h, 1)) {
+                const unsigned b = (std::uint32_t(part(dut->chk_i_addr, h, 30)) >> 2) & 3u;
+                if ((bit(eb, b, unsigned(h)) && bit(pb, b, 3))
+                    || (bit(pb, b, unsigned(h)) && !bit(tb, b, unsigned(h)) && bit(pa, b, 2))) behind = true;
+            }
+            if (behind) ++hart_waits_npu;
+        }
+    }
+    // (the member each bank's port B held back this cycle, whose unit port A refuses in the next)
+    for (unsigned b = 0; b < 4; ++b) {
+        blk_owner[b] = -1;
+        if (fabric_up)
+            for (unsigned m = 0; m < 4; ++m)
+                if (((std::uint64_t(dut->chk_f_pick_b) >> (4 * b + m)) & 1u) && !((std::uint64_t(dut->chk_f_take_b) >> (4 * b + m)) & 1u))
+                    blk_owner[b] = int(m);
     }
     // ---- the answers: each owed; an I/O read performed with its value ----
     for (int h = 0; h < 2; ++h)
@@ -573,8 +620,8 @@ int main(int argc, char** argv) {
     if (!board) std::printf("SOC %s cycles=%llu tohost=%x npu_jobs=%llu npu_unfinished=%llu cpu_checks=%llu "
                             "snoops=%llu loads=%llu sc=%llu sc_failed=%llu amos=%llu retired1=%llu resets=%llu "
                             "resets_owed=%llu resets_amo=%llu resets_refill=%llu resets_resv=%llu releases_early=%llu "
-                            "npu_waits=%llu npu_waits_irefill=%llu npu_waits_daccess=%llu npu_waits_other=%llu "
-                            "npu_config=%u soc_config=%u\n", result.c_str(), (unsigned long long)cycles, value,
+                            "npu_waits=%llu npu_waits_irefill=%llu npu_waits_daccess=%llu npu_waits_amo=%llu "
+                            "npu_waits_blk=%llu npu_waits_other=%llu hart_waits_npu=%llu npu_config=%u soc_config=%u\n", result.c_str(), (unsigned long long)cycles, value,
                             (unsigned long long)npu_jobs, (unsigned long long)npu_unfinished,
                             (unsigned long long)cpu_checks, (unsigned long long)snoops,
                             (unsigned long long)checker.checked, (unsigned long long)sc_count,
@@ -583,8 +630,9 @@ int main(int argc, char** argv) {
                             (unsigned long long)resets_amo, (unsigned long long)resets_refill,
                             (unsigned long long)resets_resv, (unsigned long long)releases_early,
                             (unsigned long long)npu_waits, (unsigned long long)npu_waits_irefill,
-                            (unsigned long long)npu_waits_dwrite, (unsigned long long)npu_waits_other, npu_config,
-                            soc_config);
+                            (unsigned long long)npu_waits_dwrite, (unsigned long long)npu_waits_amo,
+                            (unsigned long long)npu_waits_blk, (unsigned long long)npu_waits_other,
+                            (unsigned long long)hart_waits_npu, npu_config, soc_config);
     for (std::FILE* f : trace) if (f) std::fclose(f);
     delete dut;
     return result == "PASS" ? 0 : 1;

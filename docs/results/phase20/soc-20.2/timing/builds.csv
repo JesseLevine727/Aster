@@ -1,0 +1,99 @@
+build,wns_ns,whs_ns,directives,xdc,params,signoff
+base,-1.919,,,,,failed sign-off
+base-eto,-2.420,,,,,failed sign-off
+base-end,-2.613,,,,,failed sign-off
+base-ebp,-1.784,,,,,failed sign-off
+r1,-10.283,,,,,failed sign-off
+r1-ebp,-11.352,,,,,failed sign-off
+r2-nodonb,-1.076,,,,,failed sign-off
+r2,-2.619,,,,,failed sign-off
+r2-bypass,-0.982,,,,,failed sign-off
+r2-nb,-1.072,,,,,failed sign-off
+r2-bypass-nodonb,-0.001,,,,,failed sign-off
+r2-bypass-nb,-0.185,,,,,failed sign-off
+r2-fp,-2.743,,,,,failed sign-off
+r3-nb-nodonb,0.002,0.026,"place:Explore,phys:AggressiveExplore,route:Explore,post_route_phys:AggressiveExplore",none,NPU_BUFFER=1;FABRIC_D_ON_B=0,met
+r3-all-fp,-0.069,,,,,failed sign-off
+r3-bnb-fp,-0.703,,,,,failed sign-off
+r3-nb-nodonb-fp,-0.024,,,,,failed sign-off
+r3-all,-0.006,,,,,failed sign-off
+cand-s6,0.007,0.037,"synth:Default,retime:1,place:Explore,phys:AggressiveExplore,route:Explore,post_route_phys:AggressiveExplore",none,NPU_BUFFER=1;FABRIC_D_ON_B=0,met
+cand-s5,0.007,0.037,"synth:PerformanceOptimized,retime:0,place:Explore,phys:AggressiveExplore,route:Explore,post_route_phys:AggressiveExplore",none,NPU_BUFFER=1;FABRIC_D_ON_B=0,met
+cand-s4,0.018,0.030,"synth:Default,retime:0,place:AltSpreadLogic_high,phys:AggressiveExplore,route:Explore,post_route_phys:AggressiveExplore",none,NPU_BUFFER=1;FABRIC_D_ON_B=0,met
+cand-s3,0.006,0.024,"synth:Default,retime:0,place:EarlyBlockPlacement,phys:AggressiveExplore,route:Explore,post_route_phys:AggressiveExplore",none,NPU_BUFFER=1;FABRIC_D_ON_B=0,met
+cand-s1,-0.009,,,,,failed sign-off
+cand-s2,-0.060,,,,,failed sign-off
+cand2,-0.070,,,,,failed sign-off
+r4,-2.428,,,,,failed sign-off
+r4-fp,-3.005,,,,,failed sign-off
+cand2-fp,-0.159,,,,,failed sign-off
+r5,-0.070,,,,,failed sign-off
+r5-asm,0.059,0.032,"synth:Default,retime:0,place:AltSpreadLogic_medium,phys:AggressiveExplore,route:Explore,post_route_phys:AggressiveExplore",none,default,met
+r5-retime,-0.102,,,,,failed sign-off
+r5-epp,-0.234,,,,,failed sign-off
+r5-asl,0.002,0.017,"synth:Default,retime:0,place:AltSpreadLogic_high,phys:AggressiveExplore,route:Explore,post_route_phys:AggressiveExplore",none,default,met
+r5-hfp,-0.086,,,,,failed sign-off
+r6-asm,0.009,0.022,"synth:Default,retime:0,place:AltSpreadLogic_medium,phys:AggressiveExplore,route:Explore,post_route_phys:AggressiveExplore",none,default,met
+r6,0.006,0.023,"synth:Default,retime:0,place:Explore,phys:AggressiveExplore,route:Explore,post_route_phys:AggressiveExplore",none,default,met
+r6-asl,0.001,0.032,"synth:Default,retime:0,place:AltSpreadLogic_high,phys:AggressiveExplore,route:Explore,post_route_phys:AggressiveExplore",none,default,met
+r7-asm,0.004,0.021,"synth:Default,retime:0,place:AltSpreadLogic_medium,phys:AggressiveExplore,route:Explore,post_route_phys:AggressiveExplore",none,default,met
+r7,-0.294,,,,,failed sign-off
+r8-asm,0.147,0.027,"synth:Default,retime:0,place:AltSpreadLogic_medium,phys:AggressiveExplore,route:Explore,post_route_phys:AggressiveExplore",none,default,met
+r8,-0.160,,,,,failed sign-off
+r9-asl,0.018,0.021,"synth:Default,retime:0,place:AltSpreadLogic_high,phys:AggressiveExplore,route:Explore,post_route_phys:AggressiveExplore",none,default,met
+r9-asm,0.037,0.012,"synth:Default,retime:0,place:AltSpreadLogic_medium,phys:AggressiveExplore,route:Explore,post_route_phys:AggressiveExplore",none,default,met
+r9,0.062,0.035,"synth:Default,retime:0,place:Explore,phys:AggressiveExplore,route:Explore,post_route_phys:AggressiveExplore",none,default,met
+r10-asm,0.004,0.004,"synth:Default,retime:0,place:AltSpreadLogic_medium,phys:AggressiveExplore,route:Explore,post_route_phys:AggressiveExplore",none,default,met
+r10,0.005,0.032,"synth:Default,retime:0,place:Explore,phys:AggressiveExplore,route:Explore,post_route_phys:AggressiveExplore",none,default,met
+r11-asm,0.023,0.020,"synth:Default,retime:0,place:AltSpreadLogic_medium,phys:AggressiveExplore,route:Explore,post_route_phys:AggressiveExplore",none,default,met
+r11-asl,0.172,0.024,"synth:Default,retime:0,place:AltSpreadLogic_high,phys:AggressiveExplore,route:Explore,post_route_phys:AggressiveExplore",none,default,met
+r11,0.026,0.045,"synth:Default,retime:0,place:Explore,phys:AggressiveExplore,route:Explore,post_route_phys:AggressiveExplore",none,default,met
+r12-asm,0.121,0.034,"synth:Default,retime:0,place:AltSpreadLogic_medium,phys:AggressiveExplore,route:Explore,post_route_phys:AggressiveExplore",none,default,met
+r12-asl,0.032,0.036,"synth:Default,retime:0,place:AltSpreadLogic_high,phys:AggressiveExplore,route:Explore,post_route_phys:AggressiveExplore",none,default,met
+r12,0.092,0.025,"synth:Default,retime:0,place:Explore,phys:AggressiveExplore,route:Explore,post_route_phys:AggressiveExplore",none,default,met
+r12-o5,0.277,0.024,"synth:Default,retime:0,over:0.5,place:Explore,phys:AggressiveExplore,route:Explore,post_route_phys:AggressiveExplore",none,default,met
+r12-o3asm,0.126,0.032,"synth:Default,retime:0,over:0.3,place:AltSpreadLogic_medium,phys:AggressiveExplore,route:Explore,post_route_phys:AggressiveExplore",none,default,met
+r12-o3,0.201,0.035,"synth:Default,retime:0,over:0.3,place:Explore,phys:AggressiveExplore,route:Explore,post_route_phys:AggressiveExplore",none,default,met
+r13-asm,0.103,0.007,"synth:Default,retime:0,over:0,place:AltSpreadLogic_medium,phys:AggressiveExplore,route:Explore,post_route_phys:AggressiveExplore",none,default,met
+r13-o3,0.070,0.031,"synth:Default,retime:0,over:0.3,place:Explore,phys:AggressiveExplore,route:Explore,post_route_phys:AggressiveExplore",none,default,met
+r13-o5,0.116,0.034,"synth:Default,retime:0,over:0.5,place:Explore,phys:AggressiveExplore,route:Explore,post_route_phys:AggressiveExplore",none,default,met
+r13-o7,0.039,0.022,"synth:Default,retime:0,over:0.7,place:Explore,phys:AggressiveExplore,route:Explore,post_route_phys:AggressiveExplore",none,default,met
+r13,0.058,0.015,"synth:Default,retime:0,over:0,place:Explore,phys:AggressiveExplore,route:Explore,post_route_phys:AggressiveExplore",none,default,met
+r14,0.062,0.034,"synth:Default,retime:0,over:0,place:Explore,phys:AggressiveExplore,route:Explore,post_route_phys:AggressiveExplore",none,default,met
+r14-asm,0.102,0.029,"synth:Default,retime:0,over:0,place:AltSpreadLogic_medium,phys:AggressiveExplore,route:Explore,post_route_phys:AggressiveExplore",none,default,met
+r14-o5asm,0.154,0.034,"synth:Default,retime:0,over:0.5,place:AltSpreadLogic_medium,phys:AggressiveExplore,route:Explore,post_route_phys:AggressiveExplore",none,default,met
+r14-o5,0.205,0.034,"synth:Default,retime:0,over:0.5,place:Explore,phys:AggressiveExplore,route:Explore,post_route_phys:AggressiveExplore",none,default,met
+r14-o3,0.086,0.024,"synth:Default,retime:0,over:0.3,place:Explore,phys:AggressiveExplore,route:Explore,post_route_phys:AggressiveExplore",none,default,met
+r15-asm,0.038,0.016,"synth:Default,retime:0,over:0,place:AltSpreadLogic_medium,phys:AggressiveExplore,route:Explore,post_route_phys:AggressiveExplore",none,default,met
+r15-o3,0.060,0.024,"synth:Default,retime:0,over:0.3,place:Explore,phys:AggressiveExplore,route:Explore,post_route_phys:AggressiveExplore",none,default,met
+r15-o5,0.146,0.025,"synth:Default,retime:0,over:0.5,place:Explore,phys:AggressiveExplore,route:Explore,post_route_phys:AggressiveExplore",none,default,met
+r15,0.154,0.019,"synth:Default,retime:0,over:0,place:Explore,phys:AggressiveExplore,route:Explore,post_route_phys:AggressiveExplore",none,default,met
+r15-o5asm,0.209,0.021,"synth:Default,retime:0,over:0.5,place:AltSpreadLogic_medium,phys:AggressiveExplore,route:Explore,post_route_phys:AggressiveExplore",none,default,met
+r16-o5,0.254,0.034,"synth:Default,retime:0,over:0.5,place:Explore,phys:AggressiveExplore,route:Explore,post_route_phys:AggressiveExplore",none,default,met
+r16-o5asm,0.168,0.018,"synth:Default,retime:0,over:0.5,place:AltSpreadLogic_medium,phys:AggressiveExplore,route:Explore,post_route_phys:AggressiveExplore",none,default,met
+r16,0.056,0.025,"synth:Default,retime:0,over:0,place:Explore,phys:AggressiveExplore,route:Explore,post_route_phys:AggressiveExplore",none,default,met
+r17,0.164,0.024,"synth:Default,retime:0,over:0,place:Explore,phys:AggressiveExplore,route:Explore,post_route_phys:AggressiveExplore",none,default,met
+r17-o5,0.158,0.033,"synth:Default,retime:0,over:0.5,place:Explore,phys:AggressiveExplore,route:Explore,post_route_phys:AggressiveExplore",none,default,met
+r17-o6,0.268,0.026,"synth:Default,retime:0,over:0.6,place:Explore,phys:AggressiveExplore,route:Explore,post_route_phys:AggressiveExplore",none,default,met
+r17-o5asm,0.026,0.034,"synth:Default,retime:0,over:0.5,place:AltSpreadLogic_medium,phys:AggressiveExplore,route:Explore,post_route_phys:AggressiveExplore",none,default,met
+r17-o4,0.091,0.034,"synth:Default,retime:0,over:0.4,place:Explore,phys:AggressiveExplore,route:Explore,post_route_phys:AggressiveExplore",none,default,met
+r17-o5asl,0.218,0.026,"synth:Default,retime:0,over:0.5,place:AltSpreadLogic_high,phys:AggressiveExplore,route:Explore,post_route_phys:AggressiveExplore",none,default,met
+r18,0.107,0.034,"synth:Default,retime:0,over:0,place:Explore,phys:AggressiveExplore,route:Explore,post_route_phys:AggressiveExplore",none,default,met
+r18-o4,0.086,0.034,"synth:Default,retime:0,over:0.4,place:Explore,phys:AggressiveExplore,route:Explore,post_route_phys:AggressiveExplore",none,default,met
+r18-o6,0.065,0.022,"synth:Default,retime:0,over:0.6,place:Explore,phys:AggressiveExplore,route:Explore,post_route_phys:AggressiveExplore",none,default,met
+r18-o5,0.185,0.032,"synth:Default,retime:0,over:0.5,place:Explore,phys:AggressiveExplore,route:Explore,post_route_phys:AggressiveExplore",none,default,met
+r18-o5asm,0.231,0.023,"synth:Default,retime:0,over:0.5,place:AltSpreadLogic_medium,phys:AggressiveExplore,route:Explore,post_route_phys:AggressiveExplore",none,default,met
+r18-o5asl,0.159,0.016,"synth:Default,retime:0,over:0.5,place:AltSpreadLogic_high,phys:AggressiveExplore,route:Explore,post_route_phys:AggressiveExplore",none,default,met
+r18-o5eto,0.190,0.031,"synth:Default,retime:0,over:0.5,place:ExtraTimingOpt,phys:AggressiveExplore,route:Explore,post_route_phys:AggressiveExplore",none,default,met
+r18-o7asm,0.063,0.034,"synth:Default,retime:0,over:0.7,place:AltSpreadLogic_medium,phys:AggressiveExplore,route:Explore,post_route_phys:AggressiveExplore",none,default,met
+r18-o5rae,0.185,0.032,"synth:Default,retime:0,over:0.5,place:Explore,phys:AggressiveExplore,route:AggressiveExplore,post_route_phys:AggressiveExplore",none,default,met
+r18-o5fan,0.074,0.022,"synth:Default,retime:0,over:0.5,place:Explore,phys:AggressiveFanoutOpt,route:Explore,post_route_phys:AggressiveExplore",none,default,met
+r18-o5epp,0.123,0.020,"synth:Default,retime:0,over:0.5,place:ExtraPostPlacementOpt,phys:AggressiveExplore,route:Explore,post_route_phys:AggressiveExplore",none,default,met
+r18-o5nd,0.107,0.022,"synth:Default,retime:0,over:0.5,place:ExtraNetDelay_high,phys:AggressiveExplore,route:Explore,post_route_phys:AggressiveExplore",none,default,met
+experiment-bank-inputs-registered-bq-o5 (timing only; not functional),0.307,0.034,"synth:Default,retime:0,over:0.5,place:Explore,phys:AggressiveExplore,route:Explore,post_route_phys:AggressiveExplore",none,default,met
+experiment-bank-inputs-registered-bq-o5asm (timing only; not functional),0.345,0.034,"synth:Default,retime:0,over:0.5,place:AltSpreadLogic_medium,phys:AggressiveExplore,route:Explore,post_route_phys:AggressiveExplore",none,default,met
+experiment-bank-inputs-registered-bq (timing only; not functional),0.226,0.053,"synth:Default,retime:0,over:0,place:Explore,phys:AggressiveExplore,route:Explore,post_route_phys:AggressiveExplore",none,default,met
+r19-o5,0.103,0.025,"synth:Default,retime:0,over:0.5,place:Explore,phys:AggressiveExplore,route:Explore,post_route_phys:AggressiveExplore",none,default,met
+r19,0.309,0.024,"synth:Default,retime:0,over:0,place:Explore,phys:AggressiveExplore,route:Explore,post_route_phys:AggressiveExplore",none,default,met
+r19-o5asm,0.053,0.022,"synth:Default,retime:0,over:0.5,place:AltSpreadLogic_medium,phys:AggressiveExplore,route:Explore,post_route_phys:AggressiveExplore",none,default,met
+r19-o6,0.094,0.020,"synth:Default,retime:0,over:0.6,place:Explore,phys:AggressiveExplore,route:Explore,post_route_phys:AggressiveExplore",none,default,met

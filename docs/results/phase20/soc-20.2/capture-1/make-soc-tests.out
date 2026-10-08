@@ -1,0 +1,25 @@
+PASS: npu2_gemm_gate: the same results in the Phase 19 SoC and the Phase 20 SoC (5 NPU jobs, 0 ended by an error or abort, 3 CPU results; every record the same but its cycles)
+PASS: npu2_gemm_gate, Phase 20 without the buffer and register stage: 3,451,511 cycles against Phase 19's 3,451,507 (+4); the CPU's own cycles (3 measured) the same; the NPU waited 4 cycles (refill 4, data access 0, AMO 0, held-back unit 0, unexplained 0), a hart behind the NPU 4
+PASS: npu2_gemm_gate, Phase 20 as built: 3,451,627 cycles against Phase 19's 3,451,507 (+120); the CPU's own cycles (3 measured) the same; the NPU waited 0 cycles (refill 0, data access 0, AMO 0, held-back unit 0, unexplained 0), a hart behind the NPU 0
+PASS: npu2_mnist_gate: the same results in the Phase 19 SoC and the Phase 20 SoC (65 NPU jobs, 0 ended by an error or abort, 0 CPU results; every record the same but its cycles)
+PASS: npu2_mnist_gate, Phase 20 without the buffer and register stage: 1,759,680 cycles against Phase 19's 1,759,680 (+0); the CPU's own cycles (1 measured) the same; the NPU waited 0 cycles (refill 0, data access 0, AMO 0, held-back unit 0, unexplained 0), a hart behind the NPU 0
+PASS: npu2_mnist_gate, Phase 20 as built: 1,759,944 cycles against Phase 19's 1,759,680 (+264); the CPU's own cycles (1 measured) the same; the NPU waited 0 cycles (refill 0, data access 0, AMO 0, held-back unit 0, unexplained 0), a hart behind the NPU 0
+PASS: npu2_coherence: the same results in the Phase 19 SoC and the Phase 20 SoC (162 NPU jobs, 4 ended by an error or abort, 0 CPU results; every record the same but its cycles)
+PASS: npu2_coherence, Phase 20 without the buffer and register stage: 7,591,418 cycles against Phase 19's 7,591,212 (+206); no CPU measurement; the NPU waited 406 cycles (refill 3, data access 403, AMO 0, held-back unit 0, unexplained 0), a hart behind the NPU 348
+PASS: npu2_coherence, Phase 20 as built: 7,591,777 cycles against Phase 19's 7,591,212 (+565); no CPU measurement; the NPU waited 418 cycles (refill 4, data access 412, AMO 2, held-back unit 0, unexplained 0), a hart behind the NPU 370
+PASS: npu2_faults: the same results in the Phase 19 SoC and the Phase 20 SoC (0 NPU jobs, 0 ended by an error or abort, 0 CPU results; every record the same but its cycles)
+PASS: npu2_faults, Phase 20 without the buffer and register stage: 1,207 cycles against Phase 19's 1,207 (+0); no CPU measurement; the NPU waited 0 cycles (refill 0, data access 0, AMO 0, held-back unit 0, unexplained 0), a hart behind the NPU 0
+PASS: npu2_faults, Phase 20 as built: 1,207 cycles against Phase 19's 1,207 (+0); no CPU measurement; the NPU waited 0 cycles (refill 0, data access 0, AMO 0, held-back unit 0, unexplained 0), a hart behind the NPU 0
+PASS: Phase 19's gates (utilization, speedup, MNIST, the coherence and fault programs' checks) on the Phase 20 SoC as built (scripts/npu_soc.py)
+PASS: Phase 19's gate programs on the Phase 20 SoC: results as in the Phase 19 SoC, every cycle that differs traced
+PASS: the restructured devices and the golden ones (8809f72), 3000000 cycles in lockstep: every output the same (233238 answers nonzero, 226995 in the fabric counters' region); 0 mismatches
+PASS: 99/99 programs (18.7's board programs) on the Phase 20 SoC's regression build in simulation end as in the CPU shell, cycle for cycle, every RVFI record as the shell's
+PASS: litmus on soc_dev: 26 shapes x 2000 trials, nothing forbidden (/home/elfo/Documents/Aster/build/aster_soc/programs/soc_dev/litmus.soc_dev.log); loads checked 2642894, sc 125902 (29902 failed), AMOs 64000, snoops 1073899; at 200 trials RVFI consistent: 1257307 + 1309138 records
+PASS: hart 1's reset stress on soc_dev: 4 seeds x 1,000 rounds, 5334 resets (caught: answers owed 520, an AMO before its write 69, a refill 37, a reservation 315; released with answers due 0), 368068 loads checked, 41256 sc, 46138 AMOs; seed 1 RVFI consistent: 553851 + 312138 records
+PASS: the runtime's dispatch and join on soc_dev: a round trip 69-95 cycles, mean 72; RVFI consistent: 998832 + 866589 records
+PASS: the devices on soc_dev: hart control, timer, interrupts, counters, word-only pages, the NPU (1 job checked); RVFI consistent: 8209 + 4511 records
+PASS: litmus on soc_dev_w3: 26 shapes x 2000 trials, nothing forbidden (/home/elfo/Documents/Aster/build/aster_soc/programs/soc_dev_w3/litmus.soc_dev_w3.log); loads checked 2844626, sc 132176 (36176 failed), AMOs 64000, snoops 1073899; at 200 trials RVFI consistent: 1285834 + 1364919 records
+PASS: hart 1's reset stress on soc_dev_w3: 4 seeds x 1,000 rounds, 5334 resets (caught: answers owed 1041, an AMO before its write 55, a refill 36, a reservation 350; released with answers due 0), 353854 loads checked, 38581 sc, 42220 AMOs; seed 1 RVFI consistent: 560766 + 261140 records
+PASS: the runtime's dispatch and join on soc_dev_w3: a round trip 87-123 cycles, mean 90; RVFI consistent: 1000679 + 893135 records
+PASS: the devices on soc_dev_w3: hart control, timer, interrupts, counters, word-only pages, the NPU (1 job checked); RVFI consistent: 7976 + 5585 records
+PASS: the Phase 20 SoC's two-hart programs

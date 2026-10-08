@@ -54,6 +54,13 @@ module sim_soc #(
     output logic [31:2] chk_n_addr,
     output logic [7:0]  chk_n_be,
     output logic [63:0] chk_n_wdata,
+    // the fabric's arbitration, each bank's (port A: D0 D1 N W; port B: I0 I1 R N): the eligible members,
+    // the picks, port B's takes; an AMO writing, an AMO in flight, a held-back unit (20.2: why the NPU
+    // waits, and the harts' waits behind it)
+    output logic [3:0][3:0] chk_f_elig_a, chk_f_pick_a, chk_f_elig_b, chk_f_pick_b, chk_f_take_b,
+    output logic [3:0]      chk_f_amo_wr_now, chk_f_amo_busy, chk_f_blk_v,
+    output logic [3:0][11:0] chk_f_blk_index,
+    output logic [1:0]      chk_f_hold,
     output logic        chk_w_accept,
     output logic [31:0] chk_w_addr,
     output logic [7:0]  chk_w_be,
@@ -98,6 +105,10 @@ module sim_soc #(
     assign chk_n_ready  = soc.n_ready_f;
     assign chk_n_accept = soc.f_n_valid && soc.core_rst_n[0] && soc.n_ready_f;
     assign {chk_n_we, chk_n_addr, chk_n_be, chk_n_wdata} = {soc.f_n_we, soc.f_n_addr, soc.f_n_be, soc.f_n_wdata};
+    assign {chk_f_elig_a, chk_f_pick_a, chk_f_elig_b, chk_f_pick_b, chk_f_take_b} =
+           {soc.fabric.elig_a, soc.fabric.pick_a, soc.fabric.elig_b, soc.fabric.pick_b, soc.fabric.take_b};
+    assign {chk_f_amo_wr_now, chk_f_amo_busy, chk_f_blk_v} = {soc.fabric.amo_wr_now, soc.fabric.amo_busy, soc.fabric.blk_v};
+    assign {chk_f_blk_index, chk_f_hold} = {soc.fabric.blk_index, soc.fabric.hold};
     assign chk_w_accept = soc.arm_v && soc.arm_write && soc.w_ready;
     assign chk_w_addr   = soc.arm_addr;
     assign chk_w_be     = soc.arm_addr[2] ? {soc.arm_be, 4'h0} : {4'h0, soc.arm_be};

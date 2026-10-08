@@ -1,0 +1,32 @@
+CAUGHT: no_amo_hold (mix, seed 1, WAIT 0): AMO_RULE 60 D1 accepted in its AMO's write cycle
+CAUGHT: amo_hold_one_cycle (mix, seed 1, WAIT 0): AMO_RULE 60 D1 accepted in its AMO's write cycle
+CAUGHT: unit_rule_off (mix, seed 1, WAIT 0): SAME_UNIT 22087 R's read and D1's write of unit 0x80015208 in one cycle
+CAUGHT: unit_rule_read_side (mix, seed 1, WAIT 0): SAME_UNIT 22087 R's read and D1's write of unit 0x80015208 in one cycle
+CAUGHT: amo_write_unit_readable (mix, seed 1, WAIT 0): SAME_UNIT 50702 R's read and D0's write of unit 0x80006e70 in one cycle
+CAUGHT: write_beside_amo_write (mix, seed 1, WAIT 0): AMO_RULE 10 N wrote in an AMO's bank in its write's cycle
+CAUGHT: amo_beside_amo_write (mix, seed 1, WAIT 0): AMO_RULE 22 D1's AMO accepted in another AMO's write cycle
+CAUGHT: snoop_late (mix, seed 1, WAIT 0): SNOOP_MISMATCH 1 D0 port 2: none, expected line 0x800043e0
+CAUGHT: snoop_wrong_port (mix, seed 1, WAIT 0): SNOOP_MISMATCH 2 D0 port 0: none, expected line 0x80010e60
+CAUGHT: snoop_to_writer (mix, seed 1, WAIT 0): SNOOP_MISMATCH 2 D1 port 0: line 0x80010e60, expected none
+CAUGHT: snoop_wrong_line (mix, seed 1, WAIT 0): SNOOP_MISMATCH 1 D0 port 2: line 0x800043f0, expected line 0x800043e0
+CAUGHT: own_store_ends_reservation (hot, seed 1, WAIT 0): EVENT_MISMATCH 928 hart 1's reservation-ended event 0, expected 1
+CAUGHT: own_amo_ends_reservation (hot, seed 1, WAIT 0): SNOOP_MISMATCH 1577 D1 port 0: none, expected line 0x800059a0
+CAUGHT: write_ends_old_word (mix, seed 1, WAIT 0): SNOOP_MISMATCH 60866 D1 port 0: none, expected line 0x800092e0
+CAUGHT: reservation_by_unit (hot, seed 1, WAIT 0): EVENT_MISMATCH 766 hart 0's reservation-ended event 1, expected 0
+CAUGHT: sc_by_unit (hot, seed 1, WAIT 0): SNOOP_MISMATCH 11509 D1 port 0: line 0x80011b40, expected none
+CAUGHT: exception_keeps_reservation (reset, seed 1, WAIT 0): SNOOP_MISMATCH 1418 D0 port 0: line 0x80004270, expected none
+CAUGHT: reset_keeps_reservation (reset, seed 1, WAIT 0): SNOOP_MISMATCH 6115 D0 port 0: line 0x8000b030, expected none
+CAUGHT: lr_beats_exception (reset, seed 1, WAIT 0): SNOOP_MISMATCH 30964 D0 port 0: line 0x8000f380, expected none
+CAUGHT: reset_keeps_answers (reset, seed 1, WAIT 0): ANSWER_TIMING 2814 I1 answered with nothing due (accepted -)
+CAUGHT: held_hart_accepted (reset, seed 1, WAIT 0): SNOOP_MISMATCH 1957 D0 port 0: line 0x80011100, expected none
+CAUGHT: fixed_priority (mix, seed 1, WAIT 0): UNFAIR 26403 D0 accepted ahead of waiting W 17 times
+CAUGHT: io_answer_early (mix, seed 1, WAIT 0): DATA_MISMATCH 4 D0 answered 0x5120dcc6, expected 0x0 (accepted 2)
+CAUGHT: io_wrong_hart (mix, seed 1, WAIT 0): IO_MISMATCH 0 D1's I/O access presented wrongly
+CAUGHT: two_io_a_cycle (mix, seed 1, WAIT 0): IO_MISMATCH 527 two I/O accesses accepted in one cycle
+CAUGHT: error_late (errors, seed 1, WAIT 0): ERROR_MISMATCH 3 I0 error 0 in the cycle after acceptance, expected 1
+CAUGHT: error_has_effect (errors, seed 1, WAIT 0): ERROR_MISMATCH 4 W error 0 in the cycle after acceptance, expected 1
+CAUGHT: lr_no_reservation (mix, seed 1, WAIT 0): SNOOP_MISMATCH 8 D1 port 0: none, expected line 0x80002fc0
+CAUGHT: sc_keeps_reservation (mix, seed 1, WAIT 0): SNOOP_MISMATCH 74 D0 port 0: line 0x800014a0, expected none
+CAUGHT: amo_wrong_op (mix, seed 1, WAIT 0): DATA_MISMATCH 6702 N answered 0x476e7759, expected 0x48717859 (accepted 6700)
+CAUGHT: solo_i_behind_d_read (solo, seed 1, WAIT 0): SOLO_SLOWED 12986 I0 waited with its hart alone
+PASS: planted bugs in ref_fabric: 31 of 31 caught by the fabric shell

@@ -1,0 +1,6 @@
+r19's build (make fpga-aster-soc, the default directives) built twice from the same sources (345a302's RTL):
+the configuration data after the .bit header is the same; the header's date and time differ.
+r19: header aster_soc_board_wrapper;UserID=0XFFFFFFFF;Version=2025.1;SW_CRC=089c4012 7z020clg400 2026/10/07 19:59:03; payload 4045564 bytes sha256 47c0e40b3289770310e45519cbac68b8913c13344ea551995b22ee7de97ef85b; whole file sha256 8aab01731cfab785cd923d1ab016aafe192c131e52f618565108b1e90eef69ef
+  SUMMARY top=aster_soc_board_wrapper fclk_mhz=100 wns_ns=0.309 whs_ns=0.024 from=aster_soc_board_i/aster/inst/implementation/g_hart[1].dcache/m_addr_q_reg[11]/C to=aster_soc_board_i/aster/inst/implementation/fabric/g_bank[1].mem/ram_reg_3/ENBWREN
+r19-repeat: header aster_soc_board_wrapper;UserID=0XFFFFFFFF;Version=2025.1;SW_CRC=089c4012 7z020clg400 2026/10/07 21:44:22; payload 4045564 bytes sha256 47c0e40b3289770310e45519cbac68b8913c13344ea551995b22ee7de97ef85b; whole file sha256 3e1f31a1ec914cd5fba5a89163ee2f36c539bdf5781306d0c3dd9394c0ef8721
+  SUMMARY top=aster_soc_board_wrapper fclk_mhz=100 wns_ns=0.309 whs_ns=0.024 from=aster_soc_board_i/aster/inst/implementation/g_hart[1].dcache/m_addr_q_reg[11]/C to=aster_soc_board_i/aster/inst/implementation/fabric/g_bank[1].mem/ram_reg_3/ENBWREN

@@ -810,28 +810,64 @@ when it stopped hart 1).
   and every counter resets at each start. So a program prints its records
   before it stores to tohost, as v1's and Phase 19's do.
 
-**§10.3, hart 1's resets.** The reset tests hold hart 1 at random points:
-- 5,334 resets over four seeds;
-- they caught 562 answers owed, 86 AMOs before their write, 43 refills and
-  297 reservations.
+**§10.3, hart 1's resets.** The reset tests hold hart 1 at random points,
+5,334 times over four seeds on each device build:
+
+| What a reset caught | Without the added waits | With three added waits |
+| --- | ---: | ---: |
+| Answers owed | 520 | 1,041 |
+| An AMO before its write | 69 | 55 |
+| A refill | 37 | 36 |
+| A reservation | 315 | 350 |
 
 A release before the answers owed at the hold are due cannot happen from
 software: each store to SECONDARY_RUN waits for its answer, so the release
 comes at least three cycles after the last of them, with any WAIT. That case
 of §7.3 is covered by the fabric shell's reset mode (20.1).
 
-**§10.4, Phase 19's gate programs on the regression build.** Their results
-are the same and every NPU job checks against the reference. Their cycles:
-- MNIST and the faults program: the same as in the Phase 19 SoC.
-- The GEMM gate: 4 more (3,451,511). Each is a cycle the NPU waited while an
-  instruction cache's refill read its bank. Since 20.1 an NPU read shares
-  port B with the refills. So `job_cycles` is one higher on 4 of its 5 jobs,
-  and its console differs in those numbers.
-- The coherence program: 46 fewer (7,591,166). Its 244 NPU waits are 3
-  refills and 241 data-cache accesses to the same bank on port A. In
-  Phase 19 the NPU always gave way to the data cache.
+**§10.4, Phase 19's gate programs on the regression build** (`make
+soc-gates`, in `soc-tests`). Their results and console records are the same
+as in the Phase 19 SoC, apart from their cycles, and every NPU job checks
+against the reference.
 
-The testbench attributes every NPU wait; none is left unexplained.
+Phase 19 had one memory: its refills on a port of their own, its data cache
+always ahead of the NPU on the other. In Phase 20's banks:
+- the NPU waits behind refills in its bank;
+- a hart can wait behind the NPU;
+- the NPU no longer waits behind data accesses in other banks.
+
+The testbench attributes every NPU wait, and counts the harts' waits behind
+the NPU, from the fabric's own arbitration. Without the NPU's request buffer
+and register stage:
+
+| Program | Cycles against Phase 19 | NPU waits | Hart waits behind the NPU |
+| --- | --- | --- | ---: |
+| MNIST | the same | none | 0 |
+| Faults | the same | none | 0 |
+| GEMM gate | +4 (3,451,511) | 4, behind refills | 4 |
+| Coherence (it races the hart against the NPU) | +206 (7,591,418) | 406: 403 behind data accesses, 3 behind refills | 348 |
+
+As built, with the buffer and register stage:
+
+| Program | Cycles against Phase 19 | NPU waits | Hart waits behind the NPU |
+| --- | --- | --- | ---: |
+| MNIST | +264 | none | 0 |
+| Faults | the same | none | 0 |
+| GEMM gate | +120 | none | 0 |
+| Coherence | +565 | 418: 412 behind data accesses, 4 behind refills, 2 behind an AMO | 370 |
+
+On the final RTL, against the build without them, the buffer alone
+accounts for MNIST +264, the GEMM gate +116 and the coherence program +320,
+and the register stage for the coherence program's +39; neither changes the
+fault program. In every case:
+- where a program measures the CPU's own code (the GEMM gate's CPU GEMMs,
+  MNIST's CPU inference), those cycles are Phase 19's;
+- no NPU wait is unexplained.
+
+`scripts/soc_gates.py` checks all of this and pins each program's difference
+and conflict counts to these traced values, so any change must be traced
+again. Phase 19's own gates (utilization, speedup, MNIST) pass on the Phase
+20 SoC as built.
 
 **The runtime's dispatch and join** (`software/runtime/aster_smp.h`): a job
 (a function and its argument) is published in coherent shared memory and a
@@ -855,13 +891,18 @@ A round trip with an empty job takes 69–95 cycles, 72 on average.
   NPU keeps three accesses in flight. The buffer answers an access outside
   main memory with the error itself, in the cycle after taking it, as the
   NPU expects; the NPU never makes one, since it checks its descriptors
-  first. Each access takes a cycle more: 2–6 cycles per NPU job, which is
-  +0.003% to +0.015% on Phase 19's gate programs. It removed about 1.9 ns of
+  first. Each access's answer comes a cycle later. Per job that is a few
+  cycles on the dense GEMMs and up to +100 on a job of many short reads
+  (N = 1, 784×1×25). On Phase 19's gate programs, on the final RTL and
+  against the same build without it: the GEMM gate +116 cycles (5 jobs),
+  MNIST +264 (65 jobs), the coherence program +320 (+0.003% to +0.015%);
+  with the register stage too, +116, +264 and +359. It removed about 1.9 ns of
   NPU paths through the fabric's grant.
 - **Timing margin:** the owner asked for good margin, not a thin pass. With
-  these two decisions the SoC sits at about 0 ns in context. 20.2 continues
-  with restructuring that keeps every cycle (each proven by the lockstep
-  equivalence and regression suites), aiming at +0.3 ns or better.
+  these two decisions the SoC sat at about 0 ns in context, and 20.2
+  continued with restructuring that keeps every cycle (each proven by the
+  lockstep equivalence and regression suites), aiming at +0.3 ns or better
+  (the outcome: the third round, below).
 - **20.1's sign-off** is re-confirmed, with its timing correction recorded
   above. Its timing is now carried by 20.2.
 - **Second round:** 20.2 pushes on for margin, the cores' logic included. The
@@ -873,8 +914,17 @@ A round trip with an empty job takes 69–95 cycles, 72 on average.
   With the request buffer, against Phase 19 on its gate programs: +120
   cycles on the GEMM gate (+0.0035%), +264 on MNIST (+0.015%), +565 on the
   coherence program (+0.0074%), none on the fault program. The register's
-  own share (the same build with `NPU_REG_Q` 0 and 1): none on the GEMM gate
+  own share (the same build with `NPU_REG_Q` 0 and 1; the same on the final
+  RTL): none on the GEMM gate
   (5 jobs) or MNIST (65 jobs), whose poll loops absorb the cycle, +39 cycles
   over the coherence program's 162 jobs, none on the fault program. It
   removed the 185 near-critical endpoints of a data cache's I/O write into
   the NPU's registers.
+- **Third round (the owner, 7 October 2026): 20.2's timing is signed off on
+  r19's build.** It has +0.309 ns at 10 ns in context, built with
+  `make fpga-aster-soc` (the default directives), with no cycle cost and no
+  contract change. The margin holds for that build, not across placements:
+  the same RTL gave +0.05 to +0.10 ns on other strategies. Timing is to be
+  re-checked when 20.3's DMA adds its paths. The cycle-costing fallback
+  (§10.6: the banks' inputs registered, answers at 3 + WAIT) stays measured
+  and unadopted: about +0.12 ns, at +0.73% on the CPU kernels.

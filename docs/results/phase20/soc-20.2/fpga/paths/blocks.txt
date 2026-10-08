@@ -1,0 +1,1 @@
+    2   0.309 g_hart[1].dcache -> fabric

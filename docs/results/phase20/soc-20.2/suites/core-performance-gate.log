@@ -1,0 +1,61 @@
+mkdir -p /home/elfo/Documents/Aster/build/core_shell_picorv32
+verilator --cc --exe --build --Wall --Wno-fatal -DRISCV_FORMAL --Wno-DECLFILENAME --Wno-GENUNNAMED --Wno-UNUSEDSIGNAL --Wno-BLKSEQ \
+	--top-module shell_picorv32 --Mdir /home/elfo/Documents/Aster/build/core_shell_picorv32/obj -o /home/elfo/Documents/Aster/build/core_shell_picorv32/core_shell_picorv32 \
+	/home/elfo/Documents/Aster/vendor/picorv32/picorv32.v /home/elfo/Documents/Aster/verification/core/shell_picorv32.sv \
+	/home/elfo/Documents/Aster/verification/core/tb_core_shell.cpp
+make[1]: Entering directory '/home/elfo/Documents/Aster/build/core_shell_picorv32/obj'
+make[1]: Nothing to be done for 'default'.
+make[1]: Leaving directory '/home/elfo/Documents/Aster/build/core_shell_picorv32/obj'
+mkdir -p /home/elfo/Documents/Aster/build/core_ports_picorv32
+verilator --cc --exe --build --Wall --Wno-fatal -DRISCV_FORMAL --Wno-DECLFILENAME --Wno-GENUNNAMED --Wno-UNUSEDSIGNAL --Wno-BLKSEQ \
+	--top-module shell_picorv32_ports --prefix Vcore_ports --Mdir /home/elfo/Documents/Aster/build/core_ports_picorv32/obj -o /home/elfo/Documents/Aster/build/core_ports_picorv32/core_ports_picorv32 \
+	/home/elfo/Documents/Aster/vendor/picorv32/picorv32.v /home/elfo/Documents/Aster/verification/core/shell_picorv32_ports.sv \
+	/home/elfo/Documents/Aster/verification/core/tb_core_ports.cpp
+make[1]: Entering directory '/home/elfo/Documents/Aster/build/core_ports_picorv32/obj'
+make[1]: Nothing to be done for 'default'.
+make[1]: Leaving directory '/home/elfo/Documents/Aster/build/core_ports_picorv32/obj'
+PASS: kernel reduction PASS cycles=260454 retired=63706 window_cycles=217275 window_retired=53305; lockstep: 63706 retired instructions match Spike
+  kernel             instructions  picorv32 CPI 7-stage model  speedup 5-stage model
+  coremark                 284865         5.249         1.567    3.35x         1.303
+  dhrystone                492302         4.237         1.591    2.66x         1.326
+  sort_search              420942         4.277         1.654    2.59x         1.332
+  fft                      248399        11.144         1.199    9.29x         1.143
+  strided                    1559         4.151         1.508    2.75x         1.172
+  conv2d                   704346         7.850         1.574    4.99x         1.398  (not in the gate)
+  conv2d_scalar_coh        971011         7.358         1.397    5.27x         1.279
+  reduction                 53305         4.076         1.385    2.94x         1.154
+  projected §7 gate (model, not a measurement): geometric mean 3.681x, lowest sort_search 2.586x
+PASS: picorv32 8/8 CPU kernels pass in lockstep with Spike and match the Phase 17 baseline
+PASS: kernel coremark PASS cycles=2003263 retired=313677 window_cycles=1843289 window_retired=284865 fetch_errors=0 interrupts=0; lockstep: 313677 retired instructions match Spike
+PASS: kernel dhrystone PASS cycles=2941160 retired=516383 window_cycles=2821249 window_retired=492302 fetch_errors=0 interrupts=0; lockstep: 516383 retired instructions match Spike
+PASS: kernel sort_search PASS cycles=2443733 retired=426794 window_cycles=2411685 window_retired=420942 fetch_errors=0 interrupts=0; lockstep: 426794 retired instructions match Spike
+PASS: kernel fft PASS cycles=3036024 retired=253439 window_cycles=3008073 window_retired=248399 fetch_errors=0 interrupts=0; lockstep: 253439 retired instructions match Spike
+PASS: kernel strided PASS cycles=83007 retired=15859 window_cycles=8287 window_retired=1559 fetch_errors=0 interrupts=0; lockstep: 15859 retired instructions match Spike
+PASS: kernel conv2d PASS cycles=6443051 retired=711517 window_cycles=6405107 window_retired=704346 fetch_errors=0 interrupts=0; lockstep: 711517 retired instructions match Spike
+PASS: kernel conv2d_scalar_coh PASS cycles=8516290 retired=1001123 window_cycles=8365506 window_retired=971011 fetch_errors=0 interrupts=0; lockstep: 1001123 retired instructions match Spike
+PASS: kernel reduction PASS cycles=335887 retired=63706 window_cycles=278770 window_retired=53305 fetch_errors=0 interrupts=0; lockstep: 63706 retired instructions match Spike
+PASS: picorv32 8/8 CPU kernels pass in lockstep with Spike and match the Phase 17 baseline
+PASS: kernel conv2d_scalar_coh PASS cycles=1401368 retired=1001123 window_cycles=1356221 window_retired=971011 fetch_errors=0 interrupts=0; lockstep: 1001123 retired instructions match Spike
+PASS: kernel reduction PASS cycles=89393 retired=63706 window_cycles=73811 window_retired=53305 fetch_errors=0 interrupts=0; lockstep: 63706 retired instructions match Spike
+PASS: kernel conv2d_dot8 PASS cycles=1410941 retired=1175309 window_cycles=1365828 window_retired=1145218 fetch_errors=0 interrupts=0; lockstep: 1175309 retired instructions match Spike
+  kernel             instructions     aster CPI 7-stage model
+  coremark                 284865         1.567         1.567
+  dhrystone                492302         1.591         1.591
+  sort_search              420942         1.654         1.654
+  fft                      248399         1.199         1.199
+  strided                    1559         1.508         1.508
+  conv2d                   704346         1.574         1.574  (not in the gate)
+  conv2d_scalar_coh        971011         1.397         1.397
+  reduction                 53305         1.385         1.385
+  conv2d_dot8             1145218         1.193         1.193  (not in the gate)
+PASS: aster 9/9 CPU kernels pass in lockstep with Spike and match the Phase 17 baseline
+  kernel               instructions  PicoRV32 cycles  Aster cycles   speedup
+  coremark                   284865          1495136        446348    3.350x
+  dhrystone                  492302          2085683        783326    2.663x
+  sort_search                420942          1800445        696118    2.586x
+  fft                        248399          2768064        297863    9.293x
+  strided                      1559             6472          2351    2.753x
+  conv2d_scalar_coh          971011          7144621       1356221    5.268x
+  reduction                   53305           217275         73811    2.944x
+  conv2d                     704346          5529285       1108394    4.989x  (not in the gate)
+PASS: the §7 performance gate — geometric mean 3.681x (at least 2.0x), lowest sort_search 2.586x (at least 1.5x), over the 7 gate kernels

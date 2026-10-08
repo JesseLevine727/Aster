@@ -3028,10 +3028,12 @@ litmus-tests: $(LITMUS_DIR)/litmus_v2.elf
 # The Phase 20 SoC (milestone 20.2; rtl/soc/aster_soc.sv: two Aster cores, the
 # banked fabric, the NPU and the devices) in simulation, driven through its
 # AXI4-Lite port as on the board (verification/aster_soc/tb_soc.cpp: the
-# memory checker, the reservation model, the snoop and NPU checks). Three
+# memory checker, the reservation model, the snoop and NPU checks). Four
 # builds: soc_shell, the regression build (SHELL_PAGE = 1: hart 1 held, the
-# CPU shell's register page); soc_dev, the two-hart device build; and
-# soc_dev_w3, the device build with three added answer cycles (WAIT = 3).
+# CPU shell's register page); soc_dev, the two-hart device build; soc_dev_w3,
+# the device build with three added answer cycles (WAIT = 3); and
+# soc_shell_p19, the regression build without the NPU's request buffer and
+# register stage, for soc-gates' comparison with the Phase 19 SoC.
 # soc-tests runs 18.7's 99 programs on soc_shell, each as in the CPU shell,
 # cycle for cycle and record for record (scripts/aster_board.py --design soc),
 # and scripts/soc_tests.py's two-hart programs on the device builds: the
@@ -3042,7 +3044,8 @@ ASTER_SOC_RTL := $(ASTER_CORE_RTL) $(ASTER_L1_RTL) $(NPU_V2_RTL) rtl/fabric/aste
 	rtl/soc/aster_soc_devices.sv rtl/soc/aster_soc.sv
 ASTER_SOC_TB := verification/aster_soc/sim_soc.sv verification/aster_soc/tb_soc.cpp verification/fabric/mem_checker.h \
 	verification/fabric/fabric_ref.h verification/npu/npu_model.h
-ASTER_SOC_BUILDS := soc_shell:-GSHELL_PAGE=1 soc_dev:-GSHELL_PAGE=0 soc_dev_w3:-GSHELL_PAGE=0,-GWAIT=3
+ASTER_SOC_BUILDS := soc_shell:-GSHELL_PAGE=1 soc_dev:-GSHELL_PAGE=0 soc_dev_w3:-GSHELL_PAGE=0,-GWAIT=3 \
+	soc_shell_p19:-GSHELL_PAGE=1,-GNPU_BUFFER=0,-GNPU_REG_Q=0
 ASTER_SOC_SIMS := $(foreach b,$(ASTER_SOC_BUILDS),$(ASTER_SOC_DIR)/$(firstword $(subst :, ,$(b))))
 $(ASTER_SOC_DIR)/soc_%: $(ASTER_SOC_RTL) $(ASTER_SOC_TB) Makefile
 	mkdir -p $(ASTER_SOC_DIR)
@@ -3080,7 +3083,13 @@ $(ASTER_DEVICES_EQUIV): rtl/aster_core/aster_core_pkg.sv rtl/soc/aster_soc_devic
 .PHONY: soc-devices-equiv
 soc-devices-equiv: $(ASTER_DEVICES_EQUIV)
 	@set -o pipefail; $(ASTER_DEVICES_EQUIV) | grep -E '^(PASS|FAIL)'
-soc-tests: $(ASTER_SOC_SIMS) $(ASTER_L1_SIM) $(ASTER_DOT8_PLUGIN) $(ASTER_DEVICES_EQUIV)
+# 20.2 (soc.md §10.4): Phase 19's gate programs on the Phase 20 SoC, against the Phase 19 SoC's simulation.
+.PHONY: soc-gates
+soc-gates: $(ASTER_SOC_SIMS) $(NPU_SOC_SIM)
+	@set -o pipefail; RISCV_PREFIX=$(RISCV_PREFIX) $(PYTHON) scripts/soc_gates.py --p19 $(NPU_SOC_SIM) \
+		--p20-base $(ASTER_SOC_DIR)/soc_shell_p19 --p20 $(ASTER_SOC_DIR)/soc_shell --build-dir $(ASTER_SOC_DIR)/gates \
+		| tee $(ASTER_SOC_DIR)/soc-gates.log
+soc-tests: $(ASTER_SOC_SIMS) $(ASTER_L1_SIM) $(ASTER_DOT8_PLUGIN) $(ASTER_DEVICES_EQUIV) soc-gates
 	@set -o pipefail; $(ASTER_DEVICES_EQUIV) | grep -E '^(PASS|FAIL)'
 	@set -o pipefail; RISCV_PREFIX=$(RISCV_PREFIX) $(PYTHON) scripts/aster_board.py --sim $(ASTER_SOC_DIR)/soc_shell --design soc \
 		--build-dir $(ASTER_SOC_DIR)/board_programs > $(ASTER_SOC_DIR)/soc-board.log \

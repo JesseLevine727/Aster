@@ -1,0 +1,16 @@
+mkdir -p /home/elfo/Documents/Aster/build/spike/
+g++ -std=c++17 -O2 -shared -fPIC -I/home/elfo/tools/spike/include -o /home/elfo/Documents/Aster/build/spike/libaster_clock.so verification/core/spike/aster_clock.cc
+PASS: kernel conv2d_scalar_coh PASS cycles=1401368 retired=1001123 window_cycles=1356221 window_retired=971011 fetch_errors=0 interrupts=0; lockstep: 1001123 retired instructions match Spike
+PASS: kernel reduction PASS cycles=89393 retired=63706 window_cycles=73811 window_retired=53305 fetch_errors=0 interrupts=0; lockstep: 63706 retired instructions match Spike
+PASS: kernel conv2d_dot8 PASS cycles=1410941 retired=1175309 window_cycles=1365828 window_retired=1145218 fetch_errors=0 interrupts=0; lockstep: 1175309 retired instructions match Spike
+  kernel             instructions     aster CPI 7-stage model
+  coremark                 284865         1.567         1.567
+  dhrystone                492302         1.591         1.591
+  sort_search              420942         1.654         1.654
+  fft                      248399         1.199         1.199
+  strided                    1559         1.508         1.508
+  conv2d                   704346         1.574         1.574  (not in the gate)
+  conv2d_scalar_coh        971011         1.397         1.397
+  reduction                 53305         1.385         1.385
+  conv2d_dot8             1145218         1.193         1.193  (not in the gate)
+PASS: aster 9/9 CPU kernels pass in lockstep with Spike and match the Phase 17 baseline

@@ -1,0 +1,6 @@
+PASS: aster 102/102 ACT4 programs pass (self-checking, expected values from Sail); 755349 instructions in 1337282 cycles
+PASS: aster 102/102 ACT4 programs pass (self-checking, expected values from Sail); 755345 instructions in 1337274 cycles
+PASS: aster 102/102 ACT4 programs pass (self-checking, expected values from Sail); 755353 instructions in 2026355 cycles
+PASS: aster 102/102 ACT4 programs pass (self-checking, expected values from Sail); 755349 instructions in 1720319 cycles
+PASS: aster 102/102 ACT4 programs pass (self-checking, expected values from Sail); 755357 instructions in 1910560 cycles
+PASS: aster 102/102 ACT4 programs pass (self-checking, expected values from Sail); 755357 instructions in 1908666 cycles

@@ -1,9 +1,14 @@
 # Phase 20: whole-SoC workload placement and concurrency
 
-Status: **milestone 20.2 (the two-hart SoC) in progress.** The owner decided 20.2's
-timing levers on 7 October 2026 (below, and soc.md §13): the second chance is removed,
-the NPU's request buffer is adopted, and 20.1's sign-off is re-confirmed with its timing
-correction. Work continues on margin with restructuring that keeps every cycle. 20.0 (the fabric
+Status: **milestone 20.2 (the two-hart SoC): its exit met, awaiting the owner's
+sign-off.** The owner decided 20.2's timing on 7 October 2026, in three rounds (below,
+and soc.md §13):
+- the second chance is removed and the NPU's request buffer adopted;
+- 20.1's sign-off is re-confirmed with its timing correction;
+- the NPU's register port is registered;
+- the timing is signed off on r19's build (+0.309 ns), with its spread recorded.
+
+20.0 (the fabric
 shell) and 20.1 (the banked fabric, with its arbitration change to soc.md
 §4.4) were signed off and approved by the owner on 7 October 2026. For 20.2
 the owner asked for good timing margin, not a thin pass, without sacrificing
@@ -428,7 +433,7 @@ path is prepared and recorded, not adopted, with the levers for the others
   - mutants missing for the I/O bus, the answer-delay stages and the snoop
     ports.
 
-## Milestone 20.2: the two-hart SoC (in progress, 7 October 2026)
+## Milestone 20.2: the two-hart SoC (7 October 2026)
 
 **What is built.**
 - **The SoC** (`rtl/soc/aster_soc.sv`): two Aster cores, each with its
@@ -462,19 +467,41 @@ path is prepared and recorded, not adopted, with the levers for the others
   each as in the CPU shell, cycle for cycle and RVFI record for record.
 - **Litmus:** 26 shapes × 2,000 trials on two harts, nothing forbidden. Run
   without and with three added memory waits:
-  - 2.64 million loads checked;
-  - 124,807 sc's, of which 28,807 failed;
-  - 64,000 AMOs.
-- **Hart 1's reset stress:** four seeds × 1,000 holds, 5,334 resets. They
-  caught answers owed (562), an AMO before its write (86), a refill (43) and a
-  reservation (297).
+  - 2.64 and 2.84 million loads checked;
+  - 125,902 and 132,176 sc's, of which 29,902 and 36,176 failed;
+  - 64,000 AMOs each.
+- **Hart 1's reset stress:** four seeds × 1,000 holds, 5,334 resets each.
+  Without the added waits they caught answers owed (520), an AMO before its
+  write (69), a refill (37) and a reservation (315). With them: 1,041, 55,
+  36 and 350.
 - **The devices:** exact counts of AMOs, sc's and dot8s; the timer's and the
   software interrupt; word-only and unmapped pages faulting; the NPU's job and
   its interrupt.
 - **Each hart's trace** is consistent, as lockstep.py checks one.
-- **Phase 19's gate programs** on the regression build: the same results.
-  Cycles differ by bank conflicts between the harts and the NPU, each one
-  traced (soc.md §13, 20.2).
+- **Phase 19's gate programs** on the regression build (`make soc-gates`,
+  in `soc-tests`): the same results and records as in the Phase 19 SoC.
+  - **Why cycles differ:** Phase 19's refills had a port of their own and
+    its data cache always went ahead of the NPU. In Phase 20's banks the NPU
+    waits behind refills in its bank, a hart can wait behind the NPU, and
+    the NPU no longer waits behind data accesses in other banks. The
+    testbench attributes every NPU wait, and counts the harts' waits behind
+    the NPU, from the fabric's own arbitration.
+  - **Without the NPU's buffer and register stage:**
+    - MNIST and faults: Phase 19's cycles exactly, with no conflict.
+    - GEMM gate: +4, with 4 NPU waits behind refills and 4 hart waits behind
+      the NPU.
+    - Coherence: +206, with 406 NPU waits (403 behind data accesses, 3
+      behind refills) and 348 hart waits behind the NPU.
+  - **As built,** with the two owner-approved levers: GEMM gate +120
+    (no conflict), MNIST +264 (none), coherence +565 (418 NPU waits: 4 behind
+    refills, 412 behind data accesses, 2 behind an AMO; 370 hart waits
+    behind the NPU), faults 0. Of the levers' share on the final RTL
+    (against the build without them), the buffer alone gives the GEMM gate
+    +116, MNIST +264 and coherence +320, and the register stage coherence's
+    +39; neither changes faults.
+  - **Always:** where a program measures the CPU's own code (the GEMM gate,
+    MNIST), those cycles are Phase 19's; no NPU wait is unexplained. `scripts/soc_gates.py` checks this and pins each traced
+    difference. Phase 19's own gates pass on the Phase 20 SoC.
 
 **A defect in 20.1's fabric, found here** (soc.md §13, 20.2). The round
 robins indexed members 2 and 3 with a signed size cast. Vivado follows
@@ -527,10 +554,14 @@ restructuring to keep every cycle.
     18,549 (0.03%) (`software/tests/soc_twin.c`);
   - in the fabric shell's twin traffic, up to 16% fewer accepted requests.
 - **The NPU's request buffer** (two entries between the NPU and port N,
-  readiness from a register; the NPU keeps three accesses in flight): 2–6
-  cycles per NPU job. On Phase 19's gate programs: +116 cycles on the GEMM
-  gate (+0.003%), +264 on MNIST (+0.015%), +335 on the coherence program
-  (+0.004%).
+  readiness from a register; the NPU keeps three accesses in flight): each
+  access's answer a cycle later. Per job that is a few cycles on the dense
+  GEMMs and up to +100 on a job of many short reads (N = 1, 784×1×25),
+  all of it the buffer's. On Phase 19's gate programs, as measured then
+  (on 20.2's earlier fabric): +116 cycles on the GEMM gate (+0.003%), +264
+  on MNIST (+0.015%), +335 on the coherence program (+0.004%). On the final
+  RTL, against the same build without it: the GEMM gate +116, MNIST +264,
+  coherence +320.
 - **The read-beside-write bypass** (measured, then removed): a port-B read
   beside a port-A write of the same 8-byte unit would take the unit's old
   value from port A's read-first output instead of waiting. It would have
@@ -579,6 +610,8 @@ which met with +0.14 to +0.22 ns in lighter designs. The next levers:
 - **NPU's registers:** the NPU's register port registered, with the fabric
   sampling the I/O bus's answer a cycle later. Answers keep their cycle, but
   an NPU job starts a cycle later: **+1 cycle per job, which costs cycles**.
+  (Measured once built: none on the GEMM gate or MNIST, whose poll loops
+  absorb it, and +39 over the coherence program's 162 jobs.)
   (As built, below, the request is registered in front of the port and the
   NPU answers from it in the same cycle, so the fabric's sampling is
   unchanged.)
@@ -680,6 +713,11 @@ registered, so that answers come at 3 + WAIT instead of 2 + WAIT (soc.md
   kernels (strided +3.29%, reduction +1.98%, dhrystone +1.25%, coremark
   +0.69%, conv2d +0.12%), and +0.54% on the 99 self-checking programs.
 
+**Decided by the owner, 7 October 2026 (third round):** 20.2's timing is
+signed off on r19's default build, +0.309 ns, with the spread recorded. The
+cycle-costing fallback is not adopted, and timing is re-checked in 20.3.
+Recorded in soc.md §13.
+
 The classes left within +0.3 ns, each the worst in some build:
 - the stall chain: a data cache's state, `d_req_ready`, Execute's advance,
   then about 200 Decode and Execute enables (fanouts of 57–164);
@@ -689,6 +727,23 @@ The classes left within +0.3 ns, each the worst in some build:
 - a store's array write on the fabric's acceptance;
 - the NPU's tile MAC count (r17 splits it);
 - the devices' answer into the fabric.
+
+**20.2's exit, met** (evidence in `docs/results/phase20/soc-20.2/`). The
+release-critical simulations (`make soc-tests`, `make core-shell-equiv`) were
+captured twice, identically; the other suites ran once.
+- **soc.md §10.4's regression:**
+  - the 99 programs, cycle for cycle against the CPU shell;
+  - the gate programs against the Phase 19 SoC, every difference traced to
+    counted bank conflicts or to the owner-approved levers, and pinned;
+  - determinism.
+- **Two harts:** litmus, the memory checker and the reset stress, on both
+  device builds.
+- **10 ns in context:** r19, +0.309 ns setup and +0.024 ns hold, no failing
+  endpoint. It was built twice from the same sources with identical
+  configuration data. The margin holds for that build, not across
+  placements (other strategies +0.05 to +0.10 ns), as the owner decided.
+
+**Awaiting the owner's sign-off.**
 
 ## Milestones and gates
 

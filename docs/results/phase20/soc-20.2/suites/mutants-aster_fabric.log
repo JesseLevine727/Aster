@@ -1,0 +1,37 @@
+CAUGHT: no_amo_hold (mix, seed 1, WAIT 0): AMO_RULE 19 D0 accepted in its AMO's write cycle
+CAUGHT: amo_hold_one_cycle (mix, seed 1, WAIT 0): AMO_RULE 19 D0 accepted in its AMO's write cycle
+CAUGHT: io_ignores_amo_hold (mix, seed 1, WAIT 0): AMO_RULE 19 D0 accepted in its AMO's write cycle
+CAUGHT: port_b_read_beside_write (mix, seed 1, WAIT 0): SAME_UNIT 2982 R's read and W's write of unit 0x800114d0 in one cycle
+CAUGHT: writes_beside_amo (mix, seed 1, WAIT 0): AMO_RULE 14 W wrote in the bank of an AMO waiting for its write
+CAUGHT: port_a_beside_amo_write (mix, seed 1, WAIT 0): BANK_RULE 78 3 accesses in bank 1
+CAUGHT: amo_unit_readable (mix, seed 1, WAIT 0): SAME_UNIT 474 I1's read and D0's write of unit 0x8000ae88 in one cycle
+CAUGHT: fixed_priority (hot, seed 2, WAIT 0): UNFAIR 80290 I0 accepted ahead of waiting N 13 times
+CAUGHT: npu_write_on_port_b (mix, seed 1, WAIT 0): BANK_RULE 59 2 writes in bank 2
+CAUGHT: answer_wrong_port (mix, seed 1, WAIT 0): DATA_MISMATCH 108 R answered 0x0, expected 0x4d2a0000 (accepted 106)
+CAUGHT: answer_wrong_half (mix, seed 1, WAIT 0): DATA_MISMATCH 140 I1 answered 0x95380099, expected 0x89460200 (accepted 138)
+CAUGHT: bank_index_aliased (mix, seed 1, WAIT 0): DATA_MISMATCH 121 N answered 0x22980000, expected 0x0 (accepted 119)
+CAUGHT: amo_writes_wrong_half (mix, seed 1, WAIT 0): DATA_MISMATCH 274 I0 answered 0x67e33fa9, expected 0x0 (accepted 272)
+CAUGHT: amo_old_wrong_half (mix, seed 1, WAIT 0): DATA_MISMATCH 2148 I1 answered 0x78300804, expected 0x10364821 (accepted 2146)
+CAUGHT: amo_wrong_op (mix, seed 1, WAIT 0): DATA_MISMATCH 310 I0 answered 0xbdf820f2, expected 0x0 (accepted 308)
+CAUGHT: byte_enables_ignored (mix, seed 1, WAIT 0): DATA_MISMATCH 108 R answered 0x4d2a1aa04d2a1aa0, expected 0x4d2a0000 (accepted 106)
+CAUGHT: sc_without_reservation (mix, seed 1, WAIT 0): SNOOP_MISMATCH 96 D0 port 0: line 0x8000e290, expected none
+CAUGHT: sc_by_unit (hot, seed 1, WAIT 0): SNOOP_MISMATCH 36643 D0 port 0: line 0x80007380, expected none
+CAUGHT: sc_keeps_reservation (mix, seed 1, WAIT 0): SNOOP_MISMATCH 96 D0 port 0: line 0x8000e290, expected none
+CAUGHT: writes_never_end_reservations (mix, seed 1, WAIT 0): SNOOP_MISMATCH 23354 D0 port 0: line 0x80005b80, expected none
+CAUGHT: own_writes_end_reservation (hot, seed 1, WAIT 0): EVENT_MISMATCH 464 hart 0's reservation-ended event 1, expected 0
+CAUGHT: exception_keeps_reservation (reset, seed 1, WAIT 0): SNOOP_MISMATCH 903 D1 port 0: line 0x80017520, expected none
+CAUGHT: reservation_event_lost (mix, seed 1, WAIT 0): EVENT_MISMATCH 13046 hart 1's reservation-ended event 0, expected 1
+CAUGHT: snoop_to_writer (mix, seed 1, WAIT 0): SNOOP_MISMATCH 2 D0 port 0: none, expected line 0x80010e60
+CAUGHT: snoop_wrong_port (mix, seed 1, WAIT 0): SNOOP_MISMATCH 1 D0 port 1: line 0x0, expected none
+CAUGHT: snoop_wrong_line (mix, seed 1, WAIT 0): SNOOP_MISMATCH 7 D0 port 1: line 0x80011590, expected line 0x800115d0
+CAUGHT: held_hart_accepted (reset, seed 1, WAIT 0): SNOOP_MISMATCH 1376 D0 port 0: line 0x800161b0, expected none
+CAUGHT: reset_keeps_answers (reset, seed 1, WAIT 0): ANSWER_TIMING 2507 D1 answered with nothing due (accepted -)
+CAUGHT: error_has_effect (errors, seed 1, WAIT 0): ERROR_MISMATCH 122 W error 0 in the cycle after acceptance, expected 1
+CAUGHT: npu_error_has_effect (errors, seed 1, WAIT 0): ERROR_MISMATCH 22 N error 0 in the cycle after acceptance, expected 1
+CAUGHT: two_io_a_cycle (mix, seed 1, WAIT 0): IO_MISMATCH 649 two I/O accesses accepted in one cycle
+CAUGHT: sticky_winner (hammer, seed 1, WAIT 0): UNFAIR 32 D0 accepted ahead of waiting D1 13 times
+CAUGHT: port_b_fixed_priority (dense, seed 1, WAIT 0): UNFAIR 12840 I0 accepted ahead of waiting N 13 times
+CAUGHT: io_fixed_priority (edges, seed 1, WAIT 0): UNFAIR 2244 D0 taken on the I/O bus ahead of waiting D1 13 times
+CAUGHT: starvation_unmasked (edges, seed 1, WAIT 0): UNFAIR 1085 D1 accepted ahead of waiting I1 13 times
+CAUGHT: wait_stages_kept_on_reset (reset, seed 2, WAIT 2): ANSWER_TIMING 1457 I1 answered with nothing due (accepted -)
+PASS: planted bugs in aster_fabric: 36 of 36 caught by the fabric shell

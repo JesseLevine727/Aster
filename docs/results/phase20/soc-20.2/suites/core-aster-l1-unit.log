@@ -1,0 +1,23 @@
+mkdir -p /home/elfo/Documents/Aster/build/aster_core/l1_unit
+verilator --cc --exe --build --assert --Wall --top-module l1d_unit --prefix Vl1d_unit \
+	--Mdir /home/elfo/Documents/Aster/build/aster_core/l1_unit/d_obj -o /home/elfo/Documents/Aster/build/aster_core/l1_unit/l1d_unit /home/elfo/Documents/Aster/rtl/aster_core/aster_core_pkg.sv \
+	/home/elfo/Documents/Aster/rtl/aster_core/aster_l1_ram.sv /home/elfo/Documents/Aster/rtl/aster_core/aster_l1i.sv /home/elfo/Documents/Aster/rtl/aster_core/aster_l1d.sv /home/elfo/Documents/Aster/verification/core/l1/l1d_unit.sv /home/elfo/Documents/Aster/verification/core/l1/tb_l1d.cpp
+make[1]: Entering directory '/home/elfo/Documents/Aster/build/aster_core/l1_unit/d_obj'
+make[1]: Nothing to be done for 'default'.
+make[1]: Leaving directory '/home/elfo/Documents/Aster/build/aster_core/l1_unit/d_obj'
+mkdir -p /home/elfo/Documents/Aster/build/aster_core/l1_unit
+verilator --cc --exe --build --assert --Wall --top-module aster_l1i --prefix Vaster_l1i \
+	--Mdir /home/elfo/Documents/Aster/build/aster_core/l1_unit/i_obj -o /home/elfo/Documents/Aster/build/aster_core/l1_unit/l1i_unit /home/elfo/Documents/Aster/rtl/aster_core/aster_l1_ram.sv \
+	/home/elfo/Documents/Aster/rtl/aster_core/aster_l1i.sv /home/elfo/Documents/Aster/verification/core/l1/tb_l1i.cpp
+make[1]: Entering directory '/home/elfo/Documents/Aster/build/aster_core/l1_unit/i_obj'
+make[1]: Nothing to be done for 'default'.
+make[1]: Leaving directory '/home/elfo/Documents/Aster/build/aster_core/l1_unit/i_obj'
+mkdir -p /home/elfo/Documents/Aster/build/aster_core/l1_unit
+verilator --cc --exe --build --assert --Wall --top-module l1d_unit --prefix Vl1d_unit -GSNOOPS=3 \
+	--Mdir /home/elfo/Documents/Aster/build/aster_core/l1_unit/d3_obj -o /home/elfo/Documents/Aster/build/aster_core/l1_unit/l1d_unit_snoops3 /home/elfo/Documents/Aster/rtl/aster_core/aster_core_pkg.sv \
+	/home/elfo/Documents/Aster/rtl/aster_core/aster_l1_ram.sv /home/elfo/Documents/Aster/rtl/aster_core/aster_l1i.sv /home/elfo/Documents/Aster/rtl/aster_core/aster_l1d.sv /home/elfo/Documents/Aster/verification/core/l1/l1d_unit.sv /home/elfo/Documents/Aster/verification/core/l1/tb_l1d.cpp \
+	-CFLAGS -DL1D_SNOOPS=3
+make[1]: Entering directory '/home/elfo/Documents/Aster/build/aster_core/l1_unit/d3_obj'
+make[1]: Nothing to be done for 'default'.
+make[1]: Leaving directory '/home/elfo/Documents/Aster/build/aster_core/l1_unit/d3_obj'
+PASS: the L1 data and instruction caches pass 200 random unit-test seeds each; the data cache with three snoop ports (20.1) too, snoops on two ports or more in one cycle and a refill snooped on each port in every seed
