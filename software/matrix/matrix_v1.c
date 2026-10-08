@@ -1,6 +1,6 @@
 // 20.4's matrix: the harness around a v1 CPU kernel (software/matrix/compat/workload.h). The kernel's own
 // main is compiled as v1_main (-Dmain=v1_main on its sources only); this main runs it once for a cold
-// record (MATRIX_COLD), or twice for a warm one. A warm run's first pass is the warm-up: its record is
+// record (MATRIX_COLD, as one data word: matrix_cold.h), or twice for a warm one. A warm run's first pass is the warm-up: its record is
 // dropped, .data and .bss are restored as at reset, and main is taken again, so the timed pass differs
 // from the first only in its warm caches. The harness's own state lives in .private0, which the restore
 // leaves alone. v1's kernels end in a loop after their record; the record's emit leaves for the return.
@@ -15,6 +15,7 @@
 
 #include "aster.h"
 #include "asterbench_v12.h"
+#include "matrix_cold.h"
 
 #ifndef MATRIX_FAMILY
 #define MATRIX_FAMILY "cpu"
@@ -56,15 +57,9 @@ void matrix_window_end(void) {
 void matrix_v1_emit(const char *name, const char *category, uint32_t size, uint32_t iterations, uint32_t param,
                     uint32_t seed, uint32_t checksum, uint32_t pass) {
     (void)category;
-#ifndef MATRIX_COLD
-    if (pass_number == 0) { jump_reason = 1; __builtin_longjmp(restart, 1); }   // the warm-up: the timed pass next
-#endif
+    if (!matrix_cold && pass_number == 0) { jump_reason = 1; __builtin_longjmp(restart, 1); }   // the warm-up
     record.name = name; record.family = MATRIX_FAMILY; record.method = MATRIX_METHOD; record.window = "e2e";
-#ifdef MATRIX_COLD
-    record.cache_state = "cold";
-#else
-    record.cache_state = "warm";
-#endif
+    record.cache_state = MATRIX_CACHE_STATE;
     record.size = size; record.iterations = iterations; record.param = param; record.seed = seed;
     record.checksum = checksum; record.workers = 1; record.pass = (int)pass;
     v12_emit(&record);

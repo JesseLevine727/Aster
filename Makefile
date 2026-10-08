@@ -3087,12 +3087,14 @@ ASTER_SOC_TB := verification/aster_soc/sim_soc.sv verification/aster_soc/tb_soc.
 	verification/fabric/fabric_ref.h verification/npu/npu_model.h
 ASTER_SOC_BUILDS := soc_shell:-GSHELL_PAGE=1 soc_dev:-GSHELL_PAGE=0 soc_dev_w3:-GSHELL_PAGE=0,-GWAIT=3 \
 	soc_shell_p19:-GSHELL_PAGE=1,-GNPU_BUFFER=0,-GNPU_REG_Q=0
-# 20.4's matrix variants (docs/matrix.md §2): one hart; +1, +2 and +4 memory waits; the NPU's geometries
+# 20.4's matrix variants (docs/matrix.md §2): one hart, at each memory wait (§3's harts and workers x memory
+# cross); +1, +2 and +4 memory waits; the NPU's geometries
 # (8x8 with one strip; 4x4 on a 64- or 32-bit port, with two strips or one); the data caches off, alone and
 # with each memory wait. Built by matrix-sims (not by soc-sim). matrix-sims-tests runs soc-tests' two-hart
 # programs on each two-hart variant, and on the one-hart build (which cannot run them: they wait for hart 1)
 # its own program, software/tests/soc_h1.c: the hart count, SECONDARY_RUN ignored, hart 1 silent.
-ASTER_SOC_MATRIX_BUILDS := soc_h1:-GSHELL_PAGE=0,-GHARTS=1 soc_w1:-GSHELL_PAGE=0,-GWAIT=1 \
+ASTER_SOC_MATRIX_BUILDS := soc_h1:-GSHELL_PAGE=0,-GHARTS=1 soc_h1_w1:-GSHELL_PAGE=0,-GHARTS=1,-GWAIT=1 \
+	soc_h1_w2:-GSHELL_PAGE=0,-GHARTS=1,-GWAIT=2 soc_h1_w4:-GSHELL_PAGE=0,-GHARTS=1,-GWAIT=4 soc_w1:-GSHELL_PAGE=0,-GWAIT=1 \
 	soc_w2:-GSHELL_PAGE=0,-GWAIT=2 soc_w4:-GSHELL_PAGE=0,-GWAIT=4 \
 	soc_n8s1:-GSHELL_PAGE=0,-GNPU_A_STRIPS=1 \
 	soc_n4p8s2:-GSHELL_PAGE=0,-GNPU_DIM=4,-GNPU_PORT_BYTES=8,-GNPU_A_STRIPS=2 \

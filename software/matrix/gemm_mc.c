@@ -3,15 +3,20 @@
 // The CPU code is 19.4's (software/npu2/npu2_gemm_gate.c): B packed in blocks of four columns into 4 KiB
 // slots, then the hand-scheduled 4x4 DOT8 blocks. With two workers (soc.md §9) the harts split B's packing
 // (half of its column blocks each), meet at a barrier, then each computes half of C's rows. Packing,
-// barrier, dispatch and join are all in the window, as the one-worker run's packing is.
-// A (M x K) and B (K x N), signed bytes from xorshift32 seeded 0x2545F491 (A, then B), outside the window;
-// the record's checksum is C's ((sum * 33) ^ c), which scripts/matrix.py's oracle recomputes. A warm run's
-// untimed pass first (the same computation); a cold run's first pass is timed.
+// barrier, dispatch and join are all in the e2e window, as the one-worker run's packing is. The kernel window
+// (matrix.md §4.6) is the compute alone: A in place and B packed before it (by the same split, so each half
+// lies where its packer left it), two workers' shares released by a flag inside it (matrix_window.h).
+// A (M x K) and B (K x N), signed bytes from xorshift32 seeded 0x2545F491 (A, then B), outside the windows;
+// each record's checksum is C's ((sum * 33) ^ c), which scripts/matrix.py's oracle recomputes. A cold run
+// (matrix_cold.h) is the e2e window as the first pass after reset; a warm run is an untimed pass, the e2e
+// window, then the kernel window; C (and, before the e2e window, B's packing) poisoned before each.
 #include <stdint.h>
 
 #include "aster.h"
 #include "aster_smp.h"
 #include "asterbench_v12.h"
+#include "matrix_cold.h"
+#include "matrix_window.h"
 
 #ifndef GEMM_M
 #define GEMM_M 64u
@@ -185,22 +190,69 @@ static void run(uint32_t pass) {
 #endif
 }
 
-int main(void) {
-    static struct v12_record record;
-    carve();
-    for (uint32_t i = 0; i < GEMM_M * GEMM_K; ++i) a[i] = (int8_t)next_random();
-    for (uint32_t i = 0; i < GEMM_K * GEMM_N; ++i) b[i] = (int8_t)next_random();
+// B's packed column blocks [first, end) and C's rows [i0, i1) poisoned, by the hart that writes them
+static void poison_part(uint32_t first, uint32_t end, uint32_t i0, uint32_t i1) {
+    const uint32_t words = GEMM_K / 4u, per_group = GROUP_COLUMNS / 4u;
+    for (uint32_t blk = first; blk < end; ++blk)
+        matrix_poison(slots + (blk / per_group) * SLOT + (blk % per_group) * 16u * words, 16u * words);
+    matrix_poison(c + i0 * GEMM_N, 4u * (i1 - i0) * GEMM_N);
+}
+
 #if GEMM_WORKERS == 2
-    aster_smp_start();                                 // (released and ready before the window)
+static void hart1_poison(void *packing) {
+    poison_part(packing ? BLOCKS / 2u : 0, packing ? BLOCKS : 0, GEMM_M / 2u, GEMM_M);
+}
 #endif
-#ifndef MATRIX_COLD
-    run(1);                                            // the warm-up pass
+
+static void poison(int packing) {                      // (matrix_window.h: each hart its own lines)
+#if GEMM_WORKERS == 2
+    aster_smp_dispatch(hart1_poison, (void *)(uintptr_t)packing);
+    poison_part(0, packing ? BLOCKS / 2u : 0, 0, GEMM_M / 2u);
+    aster_smp_join();
+#else
+    poison_part(0, packing ? BLOCKS : 0, 0, GEMM_M);
 #endif
-    v12_prepare();
-    *(volatile uint32_t *)(uintptr_t)ASTER_ABI4_COMMAND = ASTER_ABI4_START;
-    run(2);
-    *(volatile uint32_t *)(uintptr_t)ASTER_ABI4_COMMAND = ASTER_ABI4_FREEZE;
-    v12_end(&record);
+}
+
+// the kernel window's: B packed outside it, by the e2e window's split
+#if GEMM_WORKERS == 2
+static void hart1_pack(void *arg) { (void)arg; pack_blocks(BLOCKS / 2u, BLOCKS); }
+
+static void hart1_rows(void *arg) {
+    (void)arg;
+    v12_work_start(1);
+    gemm_rows(GEMM_M / 2u, GEMM_M);
+    v12_work_end(1);
+}
+#endif
+
+static void run_kernel(void) {
+#if GEMM_WORKERS == 2
+    aster_smp_dispatch(hart1_pack, 0);
+    pack_blocks(0, BLOCKS / 2u);
+    aster_smp_join();
+    poison(0);
+    matrix_arm(hart1_rows, 0);
+    matrix_open(1);
+    v12_work_start(0);
+    matrix_release();
+    gemm_rows(0, GEMM_M / 2u);
+    matrix_await();
+    v12_work_end(0);
+    matrix_close();
+    aster_smp_join();
+#else
+    pack_blocks(0, BLOCKS);
+    poison(0);
+    matrix_open(1);
+    v12_work_start(0);
+    gemm_rows(0, GEMM_M);
+    v12_work_end(0);
+    matrix_close();
+#endif
+}
+
+static void emit(struct v12_record *record, const char *window) {
     uint32_t sum = 0;
     for (uint32_t i = 0; i < GEMM_M * GEMM_N; ++i) sum = (sum * 33u) ^ (uint32_t)c[i];
     // a spot check in the firmware (the oracle checks all of C): C's first and last element
@@ -210,7 +262,7 @@ int main(void) {
         last += (int32_t)a[(GEMM_M - 1u) * GEMM_K + k] * (int32_t)b[k * GEMM_N + GEMM_N - 1u];
     }
     static char name[32] = "gemm_dot8_";
-    {   // gemm_dot8_<M>x<N>x<K>
+    if (!name[10]) {   // gemm_dot8_<M>x<N>x<K>
         char *p = name + 10;
         const uint32_t dims[3] = {GEMM_M, GEMM_N, GEMM_K};
         for (int d = 0; d < 3; ++d) {
@@ -221,18 +273,40 @@ int main(void) {
         }
         *p = 0;
     }
-    record.name = name;
-    record.family = "coherence";
-    record.method = GEMM_WORKERS == 2 ? "multicore" : "dot8";
-    record.window = "e2e";
-#ifdef MATRIX_COLD
-    record.cache_state = "cold";
-#else
-    record.cache_state = "warm";
+    record->name = name;
+    record->family = "coherence";
+    record->method = GEMM_WORKERS == 2 ? "multicore" : "dot8";
+    record->window = window;
+    record->cache_state = MATRIX_CACHE_STATE;
+    record->size = GEMM_M * GEMM_N; record->iterations = 1; record->param = GEMM_K;
+    record->seed = 0x2545F491u; record->checksum = sum; record->workers = GEMM_WORKERS;
+    record->pass = c[0] == first && c[GEMM_M * GEMM_N - 1u] == last;
+    v12_emit(record);
+}
+
+int main(void) {
+    static struct v12_record record;
+    carve();
+    for (uint32_t i = 0; i < GEMM_M * GEMM_K; ++i) a[i] = (int8_t)next_random();
+    for (uint32_t i = 0; i < GEMM_K * GEMM_N; ++i) b[i] = (int8_t)next_random();
+#if GEMM_WORKERS == 2
+    aster_smp_start();                                 // (released and ready before the window)
 #endif
-    record.size = GEMM_M * GEMM_N; record.iterations = 1; record.param = GEMM_K;
-    record.seed = 0x2545F491u; record.checksum = sum; record.workers = GEMM_WORKERS;
-    record.pass = c[0] == first && c[GEMM_M * GEMM_N - 1u] == last;
-    v12_emit(&record);
-    return record.pass ? 0 : 1;
+    if (!matrix_cold) run(1);                          // the warm-up pass
+    poison(1);
+    v12_prepare();
+    *(volatile uint32_t *)(uintptr_t)ASTER_ABI4_COMMAND = ASTER_ABI4_START;
+    run(2);
+    *(volatile uint32_t *)(uintptr_t)ASTER_ABI4_COMMAND = ASTER_ABI4_FREEZE;
+    v12_end(&record);
+    emit(&record, "e2e");
+    int failed = !record.pass;
+    if (!matrix_cold) {
+        v12_prepare();
+        run_kernel();
+        v12_end(&record);
+        emit(&record, "kernel");
+        failed |= !record.pass;
+    }
+    return failed;
 }

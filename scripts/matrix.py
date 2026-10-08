@@ -12,7 +12,14 @@ For each planned entry (a family's case and method in one configuration):
   matrix.py plan [--family F]          list the planned entries
   matrix.py run --out DIR [--family F] [--jobs N] [--only ID-PREFIX]
 
-Families so far: cpu (matrix.md §4.1, v1's CPU kernels through software/matrix's compatibility layer).
+Families so far:
+  cpu        matrix.md §4.1: v1's CPU kernels, through software/matrix's compatibility layer;
+  coherence  §4.4: the reductions (v1's and the gate's), the multicore DOT8 GEMM, dispatch and join;
+  dsp        §4.5: Conv2D, im2col and direct;
+  ml         §4.7: the MNIST MLP.
+Every family but cpu (§4.1: v1's one window) records two windows a warm run (e2e, then kernel) and the e2e
+window a cold run; each warm and cold pair's binaries differ only in the cold word (software/matrix/
+matrix_cold.h).
 """
 
 from __future__ import annotations
@@ -91,14 +98,18 @@ def cpu_entries() -> list[Entry]:
     return entries
 
 
+H1_OF = {0: "soc_h1", 1: "soc_h1_w1", 2: "soc_h1_w2", 4: "soc_h1_w4"}
+
+
 def coherence_entries() -> list[Entry]:
-    """matrix.md §4.4, so far the reduction: v1's version and the gate's (each worker filling and summing its
-    half), with one and two workers, crossed harts and workers × memory; the one-hart build; cold and the data
-    cache off, one at a time."""
+    """matrix.md §4.4, so far: the reductions, v1's version and the gate's (each worker filling and summing its
+    half), and the multicore DOT8 GEMM, each with one and two workers, crossed harts and workers × memory (§3:
+    one hart, two harts with one worker, two with two; each memory wait); cold and the data cache off, one at a
+    time; and the runtime's dispatch and join (two harts) across the waits, cold and the data cache off."""
     entries = []
     sources = ["software/matrix/reduce.c", "software/runtime/asterbench_v12.c", "software/runtime/aster_smp.c"]
     configs = [(w, 1, False, VARIANT_OF[(w, 1)], workers) for w in (0, 1, 2, 4) for workers in (1, 2)]
-    configs += [(0, 1, False, "soc_h1", 1), (0, 1, True, "soc_h1", 1)]
+    configs += [(w, 1, False, H1_OF[w], 1) for w in (0, 1, 2, 4)] + [(0, 1, True, "soc_h1", 1)]
     configs += [(0, 1, True, "soc_dev", workers) for workers in (1, 2)]
     configs += [(0, 0, False, "soc_dc0", workers) for workers in (1, 2)]
     for version, name in ((1, "reduce_v1"), (2, "reduce_fill")):
@@ -126,6 +137,20 @@ def coherence_entries() -> list[Entry]:
                                  gemm_sources, soc_variants.v12_defines(sim)
                                  + [f"-DGEMM_M={m}u", f"-DGEMM_N={n}u", f"-DGEMM_K={k}u", f"-DGEMM_WORKERS={workers}u"]
                                  + (["-DMATRIX_COLD"] if cold else []), axes, "gemm"))
+    smp_sources = ["software/matrix/smp_overhead.c", "software/runtime/asterbench_v12.c", "software/runtime/aster_smp.c"]
+    smp_configs = [(w, 1, False, VARIANT_OF[(w, 1)]) for w in (0, 1, 2, 4)]
+    smp_configs += [(0, 1, True, "soc_dev"), (0, 0, False, "soc_dc0")]
+    for wait, dcache, cold, sim in smp_configs:
+        axes = dict(memory_wait=wait, dcache=dcache, cache_state="cold" if cold else "warm", harts=2, workers=2)
+        ident = f"coherence/smp_overhead/multicore/{sim}/{'cold' if cold else 'warm'}"
+        entries.append(Entry(ident, "coherence", "smp_overhead", "multicore", sim, cold, [], "LITMUS_CFLAGS", [], [],
+                             "", smp_sources, soc_variants.v12_defines(sim) + (["-DMATRIX_COLD"] if cold else []),
+                             axes, "smp"))
+    e = Entry("coherence/smp_overhead/multicore/soc_h1/warm", "coherence", "smp_overhead", "multicore", "soc_h1",
+              False, [], "LITMUS_CFLAGS", [], [], "", smp_sources, soc_variants.v12_defines("soc_h1"),
+              dict(memory_wait=0, dcache=1, cache_state="warm", harts=1, workers=2), "smp")
+    e.status, e.reason = "unsupported", "dispatch and join need two harts"
+    entries.append(e)
     return entries
 
 
@@ -149,6 +174,9 @@ def make_axes(sim: str, cold: bool, workers: int) -> dict:
                 workers=workers, npu=f"{v['NPU_DIM']}x{v['NPU_DIM']}/{8 * v['NPU_PORT_BYTES']}b/{v['NPU_A_STRIPS']}s")
 
 
+CONV_SEEDS = (0x13570000, 0x2468ACE0, 0x9E3779B9)   # v1's, then two more (matrix.md §3: three seeds at R)
+
+
 def dsp_entries() -> list[Entry]:
     """matrix.md §4.5, so far Conv2D 32x32 K=5 (a v1-retained workload): im2col and direct, each scalar, two
     workers, DOT8 and the NPU, in v1's window."""
@@ -160,18 +188,49 @@ def dsp_entries() -> list[Entry]:
     sources = ["software/matrix/conv2d.c", "software/benchmarks/xe_kernels.c", "software/drivers/aster_npu.c",
                "software/runtime/asterbench_v12.c", "software/runtime/aster_smp.c"]
     for number, (name, method, workers) in methods.items():
-        for sim, cold, reason in axis_configs(method.startswith("npu"), workers):
-            ident = f"dsp/{name}/{method}/{sim}/{'cold' if cold else 'warm'}"
+        configs = [(sim, cold, reason, CONV_SEEDS[0]) for sim, cold, reason in
+                   axis_configs(method.startswith("npu"), workers)]
+        configs += [("soc_dev", False, "", seed) for seed in CONV_SEEDS[1:]]     # §3: three seeds at R
+        for sim, cold, reason, seed in configs:
+            ident = f"dsp/{name}/{method}/{sim}/{'cold' if cold else 'warm'}" + \
+                    ("" if seed == CONV_SEEDS[0] else f"/seed{seed:08x}")
+            axes = make_axes(sim, cold, workers)
+            axes["seed"] = seed
             e = Entry(ident, "dsp", name, method, sim, cold, [], "LITMUS_CFLAGS", [], [], "", sources,
-                      soc_variants.v12_defines(sim) + [f"-DCONV_METHOD={number}", "-Isoftware/benchmarks"]
-                      + (["-DMATRIX_COLD"] if cold else []), make_axes(sim, cold, workers), "conv2d")
+                      soc_variants.v12_defines(sim) + [f"-DCONV_METHOD={number}", f"-DCONV_SEED={seed:#010x}u",
+                                                       "-Isoftware/benchmarks"]
+                      + (["-DMATRIX_COLD"] if cold else []), axes, "conv2d")
             if reason:
                 e.status, e.reason = "unsupported", reason
             entries.append(e)
     return entries
 
 
-FAMILIES = {"cpu": cpu_entries, "coherence": coherence_entries, "dsp": dsp_entries}
+def ml_entries() -> list[Entry]:
+    """matrix.md §4.7, so far the MNIST MLP (a v1-retained workload): v1's four methods in v1's window, and the NPU
+    batched by 4, 8 and 32 images."""
+    entries = []
+    sources = ["software/matrix/mnist.c", "software/benchmarks/xe_kernels.c", "software/drivers/aster_npu.c",
+               "software/runtime/asterbench_v12.c", "software/runtime/aster_smp.c"]
+    methods = [(0, 1, "scalar", 1), (1, 1, "multicore", 2), (2, 1, "dot8", 1), (3, 1, "npu", 1),
+               (4, 4, "npu", 1), (4, 8, "npu", 1), (4, 32, "npu", 1)]
+    for number, batch, method, workers in methods:
+        name = "mnist_mlp_npu_batched" if number == 4 else f"mnist_mlp_{method}"
+        for sim, cold, reason in axis_configs(method == "npu", workers):
+            ident = f"ml/{name}{batch if number == 4 else ''}/{method}/{sim}/{'cold' if cold else 'warm'}"
+            axes = make_axes(sim, cold, workers)
+            axes["batch"] = batch
+            e = Entry(ident, "ml", name, method, sim, cold, [], "LITMUS_CFLAGS", [], [], "", sources,
+                      soc_variants.v12_defines(sim) + [f"-DMNIST_METHOD={number}", f"-DMNIST_BATCH={batch}u",
+                                                       "-Isoftware/benchmarks"]
+                      + (["-DMATRIX_COLD"] if cold else []), axes, "mnist")
+            if reason:
+                e.status, e.reason = "unsupported", reason
+            entries.append(e)
+    return entries
+
+
+FAMILIES = {"cpu": cpu_entries, "coherence": coherence_entries, "dsp": dsp_entries, "ml": ml_entries}
 
 # v1's baseline records (Phase 17, sync1), the cases' identity the v12 record must keep
 BASELINE = run_core_tests.BASELINE
@@ -198,20 +257,61 @@ def oracle_cpu(entry: Entry, records: list[dict]) -> str:
     return f"checksum {want:#010x}: the independent model's and v1's record's"
 
 
-def oracle_reduce(entry: Entry, records: list[dict]) -> str:
-    if len(records) != 1:
-        raise asterbench_v12.ValidationError(f"{len(records)} records, not 1")
-    r = records[0]
+IDENTITY = ("name", "size", "iterations", "param", "seed", "workers", "checksum")
+
+
+def two_windows(entry: Entry, records: list[dict]) -> list[dict]:
+    """matrix.md §4: a warm run's e2e and kernel windows (in that order), a cold run's e2e alone; one identity
+    and one checksum for both (the same computation)."""
+    want = ["e2e"] if entry.cold else ["e2e", "kernel"]
+    if [r["window"] for r in records] != want:
+        raise asterbench_v12.ValidationError(f"windows {[r['window'] for r in records]}, not {want}")
+    if any(tuple(r[k] for k in IDENTITY) != tuple(records[0][k] for k in IDENTITY) for r in records):
+        raise asterbench_v12.ValidationError("the windows' identities or checksums differ")
+    return records
+
+
+def method_evidence(entry: Entry, r: dict, dot8: int | None = None, npu_jobs: int = 0) -> None:
+    """The record shows the method it names: one worker leaves hart 1 idle; two give each hart work; DOT8's
+    count (when given, exactly) and the NPU's jobs."""
     workers = entry.axes["workers"]
-    if (r["name"], r["size"], r["iterations"], r["param"], r["seed"], r["workers"]) != \
-            (entry.case, 4096, 4, workers, 0x13570000, workers):
-        raise asterbench_v12.ValidationError("the record's identity differs from the entry's")
-    want = workload_reference.reduce_checksum(r["size"], r["iterations"], r["param"], r["seed"])
-    if want != r["checksum"]:
-        raise asterbench_v12.ValidationError(f"checksum {r['checksum']:#010x}, the oracle's {want:#010x}")
-    if workers == 2 and not (r["h1_work_end"] > r["h1_work_start"] and r["h0_work_end"] > r["h0_work_start"]):
-        raise asterbench_v12.ValidationError("a worker's interval is empty")
-    return f"checksum {want:#010x}: the independent model's"
+    if workers == 1 and r["h1_retired"] != 0:
+        raise asterbench_v12.ValidationError(f"one worker, but hart 1 retired {r['h1_retired']}")
+    if workers == 2 and not (r["h1_retired"] > 0 and r["h0_work_end"] > r["h0_work_start"]
+                             and r["h1_work_end"] > r["h1_work_start"]):
+        raise asterbench_v12.ValidationError("two workers, but a hart did no work")
+    total = r["h0_dot8_retire"] + r["h1_dot8_retire"]
+    if dot8 is not None and total != dot8:
+        raise asterbench_v12.ValidationError(f"{total} DOT8s, not {dot8}")
+    if r["npu_jobs"] != npu_jobs:
+        raise asterbench_v12.ValidationError(f"{r['npu_jobs']} NPU jobs, not {npu_jobs}")
+
+
+def oracle_reduce(entry: Entry, records: list[dict]) -> str:
+    workers = entry.axes["workers"]
+    for r in two_windows(entry, records):
+        if (r["name"], r["size"], r["iterations"], r["param"], r["seed"], r["workers"]) != \
+                (entry.case, 4096, 4, workers, 0x13570000, workers):
+            raise asterbench_v12.ValidationError("the record's identity differs from the entry's")
+        method_evidence(entry, r, dot8=0)
+    want = workload_reference.reduce_checksum(4096, 4, workers, 0x13570000)
+    if want != records[0]["checksum"]:
+        raise asterbench_v12.ValidationError(f"checksum {records[0]['checksum']:#010x}, the oracle's {want:#010x}")
+    return f"checksum {want:#010x}: the independent model's ({len(records)} windows)"
+
+
+def oracle_smp(entry: Entry, records: list[dict]) -> str:
+    """software/matrix/smp_overhead.c: the round trip (64 trips), and when warm one stamped handoff."""
+    want = [("smp_round_trip", 64)] + ([] if entry.cold else [("smp_handoff", 1)])
+    if [(r["name"], r["checksum"]) for r in records] != want:
+        raise asterbench_v12.ValidationError(f"records {[(r['name'], r['checksum']) for r in records]}, not {want}")
+    for r in records:
+        method_evidence(entry, r, dot8=0)
+    if not entry.cold:
+        h = records[1]
+        if not (h["h0_work_start"] < h["h1_work_start"] < h["h1_work_end"] < h["h0_work_end"]):
+            raise asterbench_v12.ValidationError("the handoff's stamps are out of order")
+    return "every job ran once in its window (64 round trips" + ("" if entry.cold else "; one stamped handoff") + ")"
 
 
 _gemm_cache: dict[tuple, int] = {}
@@ -241,38 +341,82 @@ def gemm_checksum(m: int, n: int, k: int, seed: int) -> int:
 
 
 def oracle_gemm(entry: Entry, records: list[dict]) -> str:
-    if len(records) != 1:
-        raise asterbench_v12.ValidationError(f"{len(records)} records, not 1")
-    r = records[0]
     m, n, k, workers = (entry.axes[x] for x in ("m", "n", "k", "workers"))
-    if (r["name"], r["size"], r["param"], r["workers"]) != (entry.case, m * n, k, workers):
-        raise asterbench_v12.ValidationError("the record's identity differs from the entry's")
-    want = gemm_checksum(m, n, k, r["seed"])
-    if want != r["checksum"]:
-        raise asterbench_v12.ValidationError(f"C's checksum {r['checksum']:#010x}, the oracle's {want:#010x}")
-    if r["h0_dot8_retire"] == 0 or (workers == 2 and r["h1_dot8_retire"] == 0):
-        raise asterbench_v12.ValidationError("a worker ran no dot8")
-    return f"C's checksum {want:#010x}: the independent model's, over every element"
+    for r in two_windows(entry, records):
+        if (r["name"], r["size"], r["iterations"], r["param"], r["seed"], r["workers"]) != \
+                (entry.case, m * n, 1, k, 0x2545F491, workers):
+            raise asterbench_v12.ValidationError("the record's identity differs from the entry's")
+        method_evidence(entry, r, dot8=m * n * k // 4)
+        if workers == 2 and r["h0_dot8_retire"] != r["h1_dot8_retire"]:
+            raise asterbench_v12.ValidationError("the workers' DOT8 counts differ (half the rows each)")
+    want = gemm_checksum(m, n, k, 0x2545F491)
+    if want != records[0]["checksum"]:
+        raise asterbench_v12.ValidationError(f"C's checksum {records[0]['checksum']:#010x}, the oracle's {want:#010x}")
+    return f"C's checksum {want:#010x}: the independent model's, over every element ({len(records)} windows)"
 
 
 def oracle_conv2d(entry: Entry, records: list[dict]) -> str:
-    if len(records) != 1:
-        raise asterbench_v12.ValidationError(f"{len(records)} records, not 1")
+    seed = entry.axes["seed"]
+    # DOT8s: im2col's xe_dot8_gemm floor(25/4) = 6 an output, direct's 5 (a kernel row each); four iterations
+    dot8 = {"conv2d_im2col_dot8": 4 * 784 * 6, "conv2d_direct_dot8": 4 * 784 * 5}.get(entry.case, 0)
+    npu = entry.method.startswith("npu")
+    for r in two_windows(entry, records):
+        if (r["name"], r["size"], r["iterations"], r["param"], r["seed"], r["workers"]) != \
+                (entry.case, 1024, 4, 5, seed, entry.axes["workers"]):
+            raise asterbench_v12.ValidationError("the record's identity differs from the entry's")
+        method_evidence(entry, r, dot8=dot8, npu_jobs=4 if npu else 0)
+        if npu and r["npu_macs"] != 4 * 784 * 25:
+            raise asterbench_v12.ValidationError(f"{r['npu_macs']} NPU MACs, not 4 x 784 x 25")
+    want = workload_reference.conv2d_checksum(1024, 4, 5, seed)
+    if want != records[0]["checksum"]:
+        raise asterbench_v12.ValidationError(f"checksum {records[0]['checksum']:#010x}, the oracle's {want:#010x}")
+    return f"checksum {want:#010x}: the independent model's ({len(records)} windows)"
+
+
+_mnist_cache: dict = {}
+
+
+def mnist_reference() -> dict:
+    """The frozen model's logits and classes for its 32 test images, by phase11_reference's independent model,
+    folded as the firmware folds them, and the accuracy against the labels."""
+    if not _mnist_cache:
+        import phase11_reference
+        model = json.loads((ROOT / "docs/results/phase11/model.json").read_text())
+        test, n = model["test"], model["layers"][0]["in"]
+        checksum, correct = 0, 0
+        for index, label in enumerate(test["labels"]):
+            logits = phase11_reference.infer(model, test["images"][index * n:(index + 1) * n])
+            best = max(range(len(logits)), key=logits.__getitem__)
+            for v in logits:
+                checksum = ((checksum * 33) ^ (v & 0xFF)) & 0xFFFFFFFF
+            checksum = ((checksum * 33) ^ best) & 0xFFFFFFFF
+            correct += best == label
+        _mnist_cache.update(checksum=checksum, correct=correct, images=len(test["labels"]))
+    return _mnist_cache
+
+
+def oracle_mnist(entry: Entry, records: list[dict]) -> str:
+    ref = mnist_reference()
+    npu = entry.method == "npu"
+    jobs = 2 * ref["images"] // entry.axes["batch"] if npu else 0
+    # DOT8s: xe_dot8_gemm's floor(K/4) an output: fc1 32 x 196, fc2 10 x 8, an image
+    dot8 = ref["images"] * (32 * 196 + 10 * 8) if entry.method == "dot8" else 0
+    for r in two_windows(entry, records):
+        if (r["name"], r["size"], r["iterations"], r["param"], r["seed"], r["workers"]) != \
+                (entry.case, 784, ref["images"], entry.axes["batch"], 0, entry.axes["workers"]):
+            raise asterbench_v12.ValidationError("the record's identity differs from the entry's")
+        method_evidence(entry, r, dot8=dot8, npu_jobs=jobs)
+        if npu and r["npu_macs"] != ref["images"] * (784 * 32 + 32 * 10):
+            raise asterbench_v12.ValidationError(f"{r['npu_macs']} NPU MACs, not the model's")
     r = records[0]
-    if (r["name"], r["size"], r["iterations"], r["param"], r["seed"], r["workers"]) != \
-            (entry.case, 1024, 4, 5, 0x13570000, entry.axes["workers"]):
-        raise asterbench_v12.ValidationError("the record's identity differs from the entry's")
-    want = workload_reference.conv2d_checksum(r["size"], r["iterations"], r["param"], r["seed"])
-    if want != r["checksum"]:
-        raise asterbench_v12.ValidationError(f"checksum {r['checksum']:#010x}, the oracle's {want:#010x}")
-    if entry.method.startswith("npu") and r["npu_jobs"] != 4:
-        raise asterbench_v12.ValidationError(f"{r['npu_jobs']} NPU jobs, not 4")
-    if entry.method.startswith("npu") and r["npu_macs"] != 4 * 784 * 25:
-        raise asterbench_v12.ValidationError(f"{r['npu_macs']} NPU MACs, not 4 x 784 x 25")
-    return f"checksum {want:#010x}: the independent model's"
+    if ref["checksum"] != r["checksum"]:
+        raise asterbench_v12.ValidationError(f"checksum {r['checksum']:#010x}, the model's {ref['checksum']:#010x}")
+    return (f"every logit and class the independent model's (checksum {ref['checksum']:#010x}); "
+            f"accuracy {ref['correct']}/{ref['images']} against the labels")
 
 
-ORACLES = {"cpu": oracle_cpu, "reduce": oracle_reduce, "gemm": oracle_gemm, "conv2d": oracle_conv2d}
+ORACLES = {"cpu": oracle_cpu, "reduce": oracle_reduce, "gemm": oracle_gemm, "conv2d": oracle_conv2d,
+           "mnist": oracle_mnist, "smp": oracle_smp}
 
 _make_lock = threading.Lock()
 _make_cache: dict[tuple, list[str]] = {}
@@ -416,6 +560,8 @@ def do_entry(entry: Entry, out: Path, prefix: str, soc_flags: list[str]) -> dict
             raise RuntimeError(f"the simulation build {entry.sim} is missing (make matrix-sims)")
         elf, symbols, fw_hash = build_firmware(entry, out / "firmware", prefix, soc_flags)
         result["firmware_sha256"] = fw_hash
+        result["firmware_bin"] = str(elf.with_suffix(".bin").relative_to(out))
+        result["cold_word"] = None if "matrix_cold" not in symbols else symbols["matrix_cold"] - symbols["_start"]
         result["footprint"] = footprint(elf, prefix)
         result["sim_sha256"] = sha256(SIM_DIR / entry.sim)
         fields, console = run_entry(entry, elf, symbols, out)
@@ -532,25 +678,56 @@ def main() -> int:
                 if rr.get("status") != "captured":
                     differ.append(r["id"])
                     r["status"] = "failed"
-                    r["failure"] = f"its second run failed: {rr.get('failure', '')}"[-1500:]
+                    r["failure"] = f"its second run failed: {rr.get('failure', '')[-1400:]}"
                 elif rr.get("lines") != r["lines"] or rr.get("firmware_sha256") != r.get("firmware_sha256"):
                     differ.append(r["id"])
                     r["status"] = "failed"
                     r["failure"] = "not deterministic: a second run's firmware or records differ"
         determinism = dict(checked=len(sample), identical=len(sample) - len(differ), differ=differ)
+    pairs = cold_warm_pairs(results, out)
     for r in results:
         r.pop("lines", None)
     results.sort(key=lambda r: r["id"])
     counts = {s: sum(r["status"] == s for r in results) for s in ("captured", "failed", "unsupported", "planned")}
     manifest = dict(schema=SCHEMA, created=time.strftime("%Y-%m-%dT%H:%M:%S%z"), source=source_tree_hash(),
                     toolchain=toolchain(prefix), families=args.family or sorted(FAMILIES), counts=counts,
-                    determinism=determinism, seconds=round(time.time() - started), entries=results)
+                    determinism=determinism, cold_warm_pairs=pairs, seconds=round(time.time() - started), entries=results)
     (out / "manifest.json").write_text(json.dumps(manifest, indent=1) + "\n")
     print(f"{'PASS' if counts['failed'] == 0 else 'FAIL'}: the matrix ({', '.join(manifest['families'])}): "
           f"{counts['captured']} captured, {counts['failed']} failed, of {len(results)} planned, "
           f"in {manifest['seconds']} s" + (f"; determinism {determinism['identical']}/{determinism['checked']} "
-                                           f"identical" if determinism else "") + f" ({out / 'manifest.json'})")
+                                           f"identical" if determinism else "")
+          + f"; cold/warm pairs {pairs['identical']}/{pairs['checked']} differing only in the cold word"
+          + f" ({out / 'manifest.json'})")
     return 0 if counts["failed"] == 0 else 1
+
+
+def cold_warm_pairs(results: list[dict], out: Path) -> dict:
+    """matrix_cold.h: a cold entry and its warm twin (the same case, method, build and axes) must run binaries
+    that differ only in the cold word, so that a cold-against-warm difference is the warm-up's alone. A pair
+    that differs anywhere else fails both entries."""
+    twins: dict = {}
+    for r in results:
+        if r["status"] == "captured":
+            axes = {k: v for k, v in r["axes"].items() if k != "cache_state"}
+            key = (r["family"], r["case"], r["method"], r["sim"], json.dumps(axes, sort_keys=True))
+            twins.setdefault(key, {})[r["axes"]["cache_state"]] = r
+    checked, differ = 0, []
+    for pair in twins.values():
+        if set(pair) != {"warm", "cold"}:
+            continue
+        checked += 1
+        warm, cold = pair["warm"], pair["cold"]
+        bw, bc = (out / warm["firmware_bin"]).read_bytes(), (out / cold["firmware_bin"]).read_bytes()
+        word = cold["cold_word"]
+        diff = [i for i in range(len(bw)) if bw[i] != bc[i]] if len(bw) == len(bc) else None
+        if word is None or word != warm["cold_word"] or not diff or any(not word <= i < word + 4 for i in diff):
+            differ.append(cold["id"])
+            for r in (warm, cold):
+                r["status"] = "failed"
+                r["failure"] = ("its cold and warm binaries differ beyond the cold word "
+                                f"({'sizes differ' if diff is None else f'{len(diff)} bytes'})")
+    return dict(checked=checked, identical=checked - len(differ), differ=differ)
 
 
 if __name__ == "__main__":

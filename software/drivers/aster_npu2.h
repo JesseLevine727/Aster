@@ -36,7 +36,9 @@ struct aster_npu2_job {
 
 static inline void aster_npu2_fence(void) { __asm__ volatile ("fence iorw, iorw" ::: "memory"); }
 
-static inline void aster_npu2_start(const struct aster_npu2_job *job) {
+// The descriptor written (aster_npu2_describe), then the job started (aster_npu2_go): aster_npu2_start is the
+// two in turn. Split so that a measurement window can open with the descriptor already written.
+static inline void aster_npu2_describe(const struct aster_npu2_job *job) {
     aster_npu2_fence();
     ASTER_NPU2_REG(ASTER_NPU2_A_BASE) = (uint32_t)(uintptr_t)job->a;
     ASTER_NPU2_REG(ASTER_NPU2_B_BASE) = (uint32_t)(uintptr_t)job->b;
@@ -52,7 +54,13 @@ static inline void aster_npu2_start(const struct aster_npu2_job *job) {
     ASTER_NPU2_REG(ASTER_NPU2_A_STRIDE_M1) = job->a_stride_m1;
     ASTER_NPU2_REG(ASTER_NPU2_A_K0) = job->a_k0;
     ASTER_NPU2_REG(ASTER_NPU2_A_STRIDE_K1) = job->a_stride_k1;
-    ASTER_NPU2_REG(ASTER_NPU2_CONTROL) = ASTER_NPU2_START;
+}
+
+static inline void aster_npu2_go(void) { ASTER_NPU2_REG(ASTER_NPU2_CONTROL) = ASTER_NPU2_START; }
+
+static inline void aster_npu2_start(const struct aster_npu2_job *job) {
+    aster_npu2_describe(job);
+    aster_npu2_go();
 }
 
 // Wait for the job's end; returns STATUS (DONE, ERROR or ABORTED set).
