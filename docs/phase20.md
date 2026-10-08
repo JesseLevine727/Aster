@@ -1,8 +1,8 @@
 # Phase 20: whole-SoC workload placement and concurrency
 
-Status: **milestone 20.3 (the DMA): its exit met, its timing signed off by the owner on g2-o5end
-(8 October 2026), awaiting the owner's sign-off of the milestone.** The sign-off build, g2-o5end, has +0.375 ns and is
-reproducible. It is one placement: the median across its RTL's ten strategies is about +0.1 ns (below). 20.2 (the two-hart SoC) was signed off
+Status: **milestone 20.4 (the workload matrix) in progress.** 20.3 (the DMA) was signed off by the
+owner on 8 October 2026, its timing on the g2-o5end build (+0.375 ns, reproducible; one placement: the
+median across its RTL's ten strategies is about +0.1 ns). 20.2 (the two-hart SoC) was signed off
 by the owner on 8 October 2026. The owner decided 20.2's timing on 7 October 2026, in three rounds (below,
 and soc.md §13):
 - the second chance is removed and the NPU's request buffer adopted;
@@ -747,7 +747,7 @@ captured twice, identically; the other suites ran once.
 
 **Signed off by the owner, 8 October 2026** (with "begin 20.3").
 
-## Milestone 20.3: the DMA (its exit met, 8 October 2026; its timing signed off on g2-o5end; awaiting the owner's sign-off)
+## Milestone 20.3: the DMA (signed off by the owner, 8 October 2026)
 
 **What is built.**
 - **The engine** (`rtl/dma/aster_dma2.sv`, soc.md §6): v1's DMA ABI 1 at
@@ -1021,6 +1021,8 @@ eleven builds):
     seed. Its first run found the snoop compare's bits 14 and 15 untested,
     which led to the remote pages.
 
+**Signed off by the owner, 8 October 2026** (with "proceed with 20.4").
+
 ## Milestones and gates
 
 | Milestone | Scope | Exit |
@@ -1039,7 +1041,7 @@ eleven builds):
 - [x] 20.0 as in the table above — signed off by the owner (7 October 2026)
 - [x] 20.1 as in the table above — signed off by the owner (7 October 2026), the §4.4 arbitration change approved; re-confirmed by the owner (7 October 2026) after 20.2 corrected its timing (the fabric missed 10 ns; carried by 20.2)
 - [x] 20.2 as in the table above — signed off by the owner (8 October 2026); its timing signed off on r19's build (7 October 2026)
-- [ ] 20.3 as in the table above — its exit met; its timing signed off on g2-o5end (8 October 2026)
+- [x] 20.3 as in the table above — signed off by the owner (8 October 2026); its timing signed off on g2-o5end (8 October 2026)
 - [ ] 20.4 as in the table above
 - [ ] 20.5 as in the table above
 
