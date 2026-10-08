@@ -1,7 +1,7 @@
 # Phase 20: whole-SoC workload placement and concurrency
 
-Status: **milestone 20.2 (the two-hart SoC): its exit met, awaiting the owner's
-sign-off.** The owner decided 20.2's timing on 7 October 2026, in three rounds (below,
+Status: **milestone 20.3 (the DMA) in progress.** 20.2 (the two-hart SoC) was signed off
+by the owner on 8 October 2026. The owner decided 20.2's timing on 7 October 2026, in three rounds (below,
 and soc.md §13):
 - the second chance is removed and the NPU's request buffer adopted;
 - 20.1's sign-off is re-confirmed with its timing correction;
@@ -743,7 +743,7 @@ captured twice, identically; the other suites ran once.
   configuration data. The margin holds for that build, not across
   placements (other strategies +0.05 to +0.10 ns), as the owner decided.
 
-**Awaiting the owner's sign-off.**
+**Signed off by the owner, 8 October 2026** (with "begin 20.3").
 
 ## Milestones and gates
 
@@ -762,7 +762,7 @@ captured twice, identically; the other suites ran once.
 - [x] soc.md approved by the owner (7 October 2026)
 - [x] 20.0 as in the table above — signed off by the owner (7 October 2026)
 - [x] 20.1 as in the table above — signed off by the owner (7 October 2026), the §4.4 arbitration change approved; re-confirmed by the owner (7 October 2026) after 20.2 corrected its timing (the fabric missed 10 ns; carried by 20.2)
-- [ ] 20.2 as in the table above
+- [x] 20.2 as in the table above — signed off by the owner (8 October 2026); its timing signed off on r19's build (7 October 2026)
 - [ ] 20.3 as in the table above
 - [ ] 20.4 as in the table above
 - [ ] 20.5 as in the table above
