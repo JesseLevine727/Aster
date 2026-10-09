@@ -495,11 +495,18 @@ did not settle a point; none loosens a gate.
         where both loops are four instructions.
       - shared_mix's hart 1 resets its own half before the kernel window
         (item 4).
-12. **Hart 1's poisoning can leave a few of its instruction lines cold.**
-    Hart 1 poisons its own outputs (item 4) between a window's warm-up and
-    the window, and that code can evict some of its kernel's lines from its
-    direct-mapped instruction cache. Up to about ten lines start cold, about
-    80 cycles, counted against v2. It shows only in windows of a few
-    thousand cycles or less: the dot product's two-worker kernel window at
-    K ≤ 64 comes out longer than its e2e window (424 against 356 cycles at
-    K = 8, with 10 instruction misses on hart 1 against 2).
+12. **The armed hand-over can leave a few of hart 1's instruction lines cold.**
+    Just before a two-worker kernel window, hart 1 spins in the armed
+    worker (matrix_window.h). That code can share direct-mapped
+    instruction-cache lines with hart 1's kernel and evict them. About
+    eight lines then miss inside the window, roughly 70 cycles, counted
+    against v2.
+    - It is a cost of the armed hand-over itself, not of poisoning: the
+      e2e window's two misses are the poisoning code's.
+    - It shows wherever the kernel window is short. The dot product's
+      two-worker kernel window exceeds its e2e window at every K from 7 to
+      1,024 (424 against 356 cycles at K = 8, 6,010 against 5,948 at
+      1,024), as does the 4-tap FIR's.
+13. **The FIR's "256 samples"** (§4.5) is read as 256 outputs, each a K-tap
+    dot over 256 + K − 1 input samples. The NPU runs it as a 256 × 1 × K
+    job whose A rows overlap (A_STRIDE 1), with no Toeplitz copy.
