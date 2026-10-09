@@ -1378,6 +1378,171 @@ unsupported. Determinism 33/33; 72/72 pairs.
 **Step 2 is complete:** every workload of matrix.md §8's step 2 is in the matrix, and the scaling and v1
 gates are measured. Next come the step's watchdog review and the push, then step 3.
 
+### Step 3: the other families (done; awaiting its review)
+
+**Captured from c8aea66,** a clean tree: `build/matrix/s3-mem`, `s3-dma`, `s3c-coh`, `s3-dsp` and `s3-ng`.
+- **The runs:** 14,946 entries captured, 214 unsupported, 17,481 records. The coherence and DSP runs include
+  step 2's cases there, now on the fixed method.
+- **Every record** passes both validators and its family's independent oracle.
+- **Determinism:** 201 entries run again give byte-identical records and firmware.
+- **Cold and warm:** each of the 5,761 pairs differs only in the cold word.
+
+**The method, after three reviews in the step:**
+- **Each window's START and FREEZE** are now in the code the warm-up runs too. Where the warm-up called the
+  work from elsewhere, the window's own last line was fetched cold inside it. That biased small DMA copies:
+  the aligned crossover read 255 bytes, and reads 127 now.
+- **The armed hand-over** returns only once hart 1 waits at its flag. About 25 cycles of the dispatch had
+  fallen inside two-worker kernel windows.
+- **Poisoning by the writer** extends to the new cases. shared_mix's hart 1 now resets its own half, and the
+  first version's hart 1 had taken 149 data misses against 21.
+- **The oracles' new exact checks:**
+  - the DMA's reads, writes and invalidations;
+  - the AMO and sc counts;
+  - the rings' links;
+  - every byte and guard of each copy.
+- **Three new readings of the plan** are in matrix.md §10, for the owner's review:
+  - 10: one window for one-hart microbenchmarks and for the DMA;
+  - 11: the memory family's details;
+  - 12: hart 1's poisoning can leave a few of its instruction lines cold.
+
+**The memory hierarchy** (`s3-mem`, §4.2): 1,050 planned, 1,034 captured. The two-hart streams on the one-hart
+build are unsupported. Determinism 35/35; 464/464 pairs.
+
+| Cycles a read (warm / cold) | R | +4 waits | Cache off | Cache off, +4 |
+| --- | ---: | ---: | ---: | ---: |
+| sequential ring, ≤ 4 KiB | 9.0 / 9.3 | 9.0 / 9.8 | 10.0 / 10.0 | 14.0 / 14.0 |
+| sequential ring, 32 KiB | 10.25 | 12.25 | 10.0 | 14.0 |
+| random ring, 32 KiB | 13.5 | 20.7 | 10.0 | 14.0 |
+| strided, 1 word | 8.25 | 10.26 | 8.0 | 12.0 |
+| strided, 4 words or more | 12.0–12.2 | 20.0–20.2 | 8.0–8.2 | 12.0–12.2 |
+| working set, ≤ 4 KiB | 7.0 | 7.0 | 8.0 | 12.0 |
+| working set, ≥ 8 KiB | 8.25 | 10.25 | 8.0 | 12.0 |
+
+- **The working set's knee** is the 4 KiB data cache.
+- **Beyond the cache, the cache off is faster for scattered reads:** a line refill costs more than one
+  uncached word, by 3.5 cycles at R and 6.7 at +4 waits.
+- **memcpy,** v1's fair copy, in bytes a cycle at R, warm:
+  - aligned or at the same offset: 0.72 at 4 KiB, 0.55 to 0.57 beyond the cache;
+  - at different offsets: 0.08, v1's byte path.
+- **Two harts streaming** (16 KiB halves, a bank's lines each, hart 1's start swept over 8 staggers), against
+  one hart alone at 21,583 cycles:
+  - **in one bank:** 21,715 to 23,749 cycles (median 21,752), 6 to 6,056 bank conflicts. The collisions
+    depend on the harts' phase: from nothing to +9.4%;
+  - **in different banks:** 21,725 to 21,748, at most 3 conflicts;
+  - **with the cache off,** under 9 conflicts in either: an uncached word holds its bank briefly.
+
+**The DMA** (`s3-dma`, §4.3): 11,232 entries, all captured, through v1's driver against v1's fair CPU copy.
+The points:
+- **sizes:** 25, from 0 bytes to 32 KiB, v1's own included;
+- **alignments:** 6, including v1's (1, 1) and (1, 2);
+- **the destination** cached or not;
+- **the overlap cases.**
+
+Determinism 75/75; 4,992/4,992 pairs.
+
+| R, warm, aligned | DMA cycles | Bytes a cycle | DMA busy | CPU copy | Bytes a cycle |
+| --- | ---: | ---: | ---: | ---: | ---: |
+| 256 B | 184 | 1.39 | 38 | 424 | 0.60 |
+| 1 KiB | 315 | 3.25 | 135 | 1,480 | 0.69 |
+| 4 KiB | 662 | 6.19 | 518 | 5,718 | 0.72 |
+| 32 KiB | 4,251 | **7.71** | 4,102 | 59,471 | 0.55 |
+
+- **The crossover:** the DMA beats the CPU copy for every size from:
+  - 127 bytes when aligned, 63 to 127 at the same offset, and 15 to 31 at different offsets, warm or cold, at R
+    and with the cache off;
+  - 255 bytes aligned at +4 waits.
+- **A cached destination** costs the DMA invalidations: exactly one a line up to 1 KiB, 247 at 4 KiB, where
+  the 4 KiB cache aliases. Its time moves by 21 cycles or less at 64 bytes, 1 KiB and 4 KiB.
+- **The overlap:**
+  - The copy disappears behind unrelated work when the work is at least as long. A 16 KiB copy beside a 1 KiB
+    checksum takes 2,319 cycles, against 4,342 one after the other.
+  - The saving is nearly all the DMA's busy time, on hart 0 and on hart 1: a 16 KiB copy saves 1,980 to
+    2,066 of its 2,055 to 2,107 busy cycles.
+  - Polling is not counted as work (matrix.md §10.10).
+
+**The coherence cases** (`s3c-coh`, §4.4): v1's nine kernels and a new producer/consumer, at 2, 129 and 1,024
+items, across the harts and workers × memory cross. With step 2's cases, 645 planned; 504 captured, 141
+unsupported. Determinism 26/26; 88/88 pairs.
+
+| 1,024 items, R, warm | 1 worker | 2 workers, e2e | 2 workers, kernel | Kernel, a item |
+| --- | ---: | ---: | ---: | ---: |
+| atomic add | 9,257 | 5,128 | 4,835 | 4.7 |
+| lr/sc counter | 23,592 | 12,337 | 19,097 | 18.6 |
+| CAS by lr/sc | 44,063 | 22,605 | 31,913 | 31.2 |
+| lock-protected sum | 30,772 | 39,470 | 39,516 | 38.6 |
+| false sharing | 8,235 | 4,618 | 4,342 | 4.2 |
+| padded control | 9,258 | 4,631 | 4,330 | 4.2 |
+| ping-pong | — | 116,258 | 115,933 | 113.2 |
+| SPSC queue | — | 62,948 | 62,527 | 61.1 |
+| shared mix | 99,487 | 51,185 | 50,006 | 48.8 |
+| producer/consumer (4 rounds) | — | 97,670 | 97,619 | 95.3 |
+
+- **False sharing costs nothing here.** The false-shared and padded counters take the same cycles on two
+  workers, with no invalidations between them. AMOs are done at the memory, and the write-through caches
+  never hold a line exclusively. That would not hold for plain stores to a line the other hart reads.
+- **On one worker** the two differ by 12%, from code generation alone (matrix.md §10.11).
+- **Contention depends on the harts' phase.** v1's e2e window starts hart 1 from reset about 250 cycles
+  late; the kernel window releases both within about 100. In the kernel window the lr/sc counter's harts
+  break each other's reservations once an increment (1,013 sc failures against 3), and the CAS counter is
+  41% slower than in e2e.
+- **The lock-protected sum** is slower on two workers than on one.
+- **The scaling gate's workloads** on the fixed method:
+  - the gate's reduction, 1.962×;
+  - the GEMMs: 1.974×, 1.986× and 1.965×.
+
+**DSP** (`s3-dsp`, §4.5): the dot product, the FIR and v1's FFT beside Conv2D. 674 planned, 657 captured;
+two workers on the one-hart build are unsupported. Determinism 27/27; 66/66 pairs.
+
+| Kernel window, R, warm | Scalar | Two workers | DOT8 (v1's) | NPU |
+| --- | ---: | ---: | ---: | ---: |
+| dot, K = 8 | 187 | 424 | 204 | 76 |
+| dot, K = 256 | 2,999 | 1,783 | 2,088 | 164 |
+| dot, K = 4,096 | 48,778 | 24,610 | 33,982 | **1,597** |
+| FIR, 256 outputs, 4 taps | 29,222 | 14,915 | 29,702 | 823 |
+| FIR, 32 taps | 108,088 | 54,305 | 85,716 | 1,725 |
+| FIR, 256 taps | 738,872 | 369,682 | 533,727 | **8,949** |
+
+- **The NPU** runs the FIR as one job whose A rows overlap (A_STRIDE 1), with no Toeplitz copy. It is 36× to
+  83× scalar on the FIR, and 31× on the 4,096-long dot.
+- **Two workers** halve the FIR and the long dots. Under K = 64 the hand-over outweighs the work, and the
+  two-worker kernel window can exceed its e2e window (matrix.md §10.12).
+- **The FFT** takes 610,583 cycles on one worker and 341,126 on two (1.79×) in v1's window, and 580,564 and
+  309,368 for the transforms alone.
+
+**The NPU GEMM sweep** (`s3-ng`, §4.6):
+- **The shapes:** 41 of them: v1's twelve study shapes, npu.md §7's three, the N sweep, every partial-tile
+  pair of M and N, and N = 1 at a large K.
+- **The methods:** the NPU, v1's DOT8 kernel on one and two workers, and scalar under 32³.
+- **The runs:** 1,559 planned, 1,519 captured. Determinism 38/38; 151/151 pairs.
+
+| NPU, R, warm | Kernel | e2e | PE utilization (MACs ÷ 64 × job cycles) | Tiles | Bytes a MAC |
+| --- | ---: | ---: | ---: | ---: | ---: |
+| 1×1×1 | 69 | 130 | 0.0% | 1 | 20.0 |
+| 8×8×31 | 229 | 320 | 15.5% | 1 | 0.41 |
+| 32×32×32 | 1,349 | 1,420 | 38.6% | 16 | 0.19 |
+| 64×64×64 | 5,253 | 5,329 | 78.3% | 64 | 0.09 |
+| 96×96×96 | 15,205 | 15,283 | **91.0%** | 144 | 0.06 |
+| 128×64×128 | 17,677 | 17,749 | **92.8%** | 128 | 0.05 |
+| 64×128×64 | 9,925 | 9,997 | 82.8% | 128 | 0.09 |
+| 33×33×32 | 1,597 | 1,681 | 34.6% | 25 | 0.19 |
+| 784×1×25 | 4,477 | 4,558 | 6.9% | 98 | 1.44 |
+
+- **The set-up** (the descriptor, e2e less kernel) costs 61 to 101 cycles a job.
+- **Against the best DOT8 code** (19.4's, the coherence family's GEMM), npu.md §7's three cases: the NPU is
+  38× to 46× one worker and 19× to 23× two. v1's generic DOT8 kernel, the sweep's DOT8 method for every
+  shape, is far slower: up to 890× on 128×64×128. Those ratios are against that kernel, not the best code.
+- **The NPU's geometry:** the 8×8 array is 3.2× to 4.1× the 4×4 builds on §7's cases. The second strip saves 10% to
+  15% (64×64×64: 5,253 against 5,845 on one strip).
+
+**Still to do:** step 3's watchdog review and the push; then step 4, the full matrix (matrix.md §8):
+- the manifest complete;
+- the overlap and the totals reconciled;
+- the evidence bundle in `docs/results/phase20/matrix-20.4/`;
+- timing in context for the RTL changes, by the owner's rule.
+
+Step 4 also re-captures step 2's families on the method as it now stands, since every two-worker kernel
+window has changed.
+
 ## Milestones and gates
 
 | Milestone | Scope | Exit |
