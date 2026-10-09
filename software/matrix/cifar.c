@@ -83,8 +83,9 @@ static int8_t requant(int32_t accumulator, int32_t mult, int shift, int32_t bias
 
 #if !DIRECT
 // v1's im2col over C planes of H x W, for output rows [row0, row1) of an out_w-wide output
-static void build_im2col(const int8_t *planes, uint32_t channels, uint32_t height, uint32_t width, uint32_t out_w,
-                         uint32_t row0, uint32_t row1) {
+// (the computation's functions out of line, noinline, so that their code is the same in every caller and build)
+static __attribute__((noinline)) void build_im2col(const int8_t *planes, uint32_t channels, uint32_t height,
+                                                   uint32_t width, uint32_t out_w, uint32_t row0, uint32_t row1) {
     for (uint32_t row = row0; row < row1; ++row) {
         const uint32_t oy = row / out_w, ox = row % out_w;
         for (uint32_t c = 0; c < channels; ++c)
@@ -96,7 +97,7 @@ static void build_im2col(const int8_t *planes, uint32_t channels, uint32_t heigh
 }
 
 // a layer's im2col rows [row0, row1): 1 conv1's, 2 conv2's, 0 none
-static void build_layer_rows(int layer, uint32_t row0, uint32_t row1) {
+static __attribute__((noinline)) void build_layer_rows(int layer, uint32_t row0, uint32_t row1) {
     if (layer == 1) build_im2col(image, 3u, CIFAR_H, CIFAR_H, C1_OH, row0, row1);
     else if (layer == 2) build_im2col(pool1, CIFAR_CONV1_OUT, 7u, 7u, C2_OH, row0, row1);
 }
@@ -129,7 +130,7 @@ static void upper_rows(void *layer) {                  // (layer: its im2col row
 // one layer, C = A B, on the method's engine (layer: whose im2col rows the e2e window builds with it, 1 or 2;
 // 0 for fc). In the kernel window, an interval of its own: the im2col matrix built and the descriptor written
 // before it, two workers' shares released inside it.
-static void run_layer(const struct aster_npu2_job *job, int layer, int mode) {
+static __attribute__((noinline)) void run_layer(const struct aster_npu2_job *job, int layer, int mode) {
 #if NPU
 #if DIRECT
     (void)layer;
@@ -190,7 +191,9 @@ static void run_layer(const struct aster_npu2_job *job, int layer, int mode) {
 #endif
 }
 
-static void infer(uint32_t item, int mode) {
+static uint32_t checksum, mismatches;                 // v1's, folded in its window as each image ends
+
+static __attribute__((noinline)) void infer(uint32_t item, int mode) {
 #if DIRECT
     const int8_t *source = &cifar_test_images_hwc[item * IMAGE_BYTES];
 #else
@@ -276,10 +279,15 @@ static void infer(uint32_t item, int mode) {
         if (logits[item][o] > logits[item][best]) best = (int)o;
     }
     classes[item] = best;
+    if ((uint32_t)best != cifar_test_classes[item]) ++mismatches;
+    for (uint32_t o = 0; o < CIFAR_FC_OUT; ++o) checksum = (checksum * 33u) ^ (uint32_t)(uint8_t)logits[item][o];
+    checksum = (checksum * 33u) ^ (uint32_t)best;
 }
 
 static void pass(int mode) {
     window_first = 1;
+    checksum = 0;
+    mismatches = 0;
     if (mode == E2E) matrix_open(1);
     for (uint32_t item = 0; item < IMAGES; ++item) infer(item, mode);
     if (mode == E2E) matrix_close();
@@ -298,21 +306,18 @@ static int timed_pass(struct v12_record *record, int mode) {
 #elif WORKERS == 1
     else matrix_hart0_whole(record);                   // (each interval is hart 0's engine)
 #endif
-    uint32_t checksum = 0, logits_ok = 1;
-    for (uint32_t item = 0; item < IMAGES; ++item) {
-        for (uint32_t o = 0; o < CIFAR_FC_OUT; ++o) {
-            checksum = (checksum * 33u) ^ (uint32_t)(uint8_t)logits[item][o];
+    uint32_t logits_ok = 1;                            // (the checksum is the pass's, folded in its window)
+    for (uint32_t item = 0; item < IMAGES; ++item)
+        for (uint32_t o = 0; o < CIFAR_FC_OUT; ++o)
             if (logits[item][o] != cifar_test_logits[item * CIFAR_FC_OUT + o]) logits_ok = 0;
-        }
-        checksum = (checksum * 33u) ^ (uint32_t)classes[item];
-    }
     static const char *const names[] = {"cifar_cnn_scalar", "cifar_cnn_multicore", "cifar_cnn_dot8",
                                         "cifar_cnn_npu_im2col", "cifar_cnn_npu_direct"};
     static const char *const methods[] = {"scalar", "multicore", "dot8", "npu_im2col", "npu_direct"};
     record->name = names[CIFAR_METHOD]; record->family = "ml"; record->method = methods[CIFAR_METHOD];
     record->window = mode == KERNEL ? "kernel" : "e2e"; record->cache_state = MATRIX_CACHE_STATE;
     record->size = IMAGE_BYTES; record->iterations = IMAGES; record->param = CIFAR_CONV1_OUT; record->seed = 0;
-    record->checksum = checksum; record->workers = WORKERS; record->pass = logits_ok && !engine_failed;
+    record->checksum = checksum; record->workers = WORKERS;
+    record->pass = logits_ok && mismatches == 0 && !engine_failed;     // (v1's: every class the reference's)
     v12_emit(record);
     return !record->pass;
 }

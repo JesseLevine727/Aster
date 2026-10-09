@@ -383,7 +383,9 @@ did not settle a point; none loosens a gate.
    its share, waits for hart 1's done flag, and closes it. The window holds
    the two shares and the two flags' hand-over, not the runtime's dispatch
    and join, which the dispatch-and-join case measures on its own (§4.4's
-   output).
+   output). The two-hart ECG pipeline is the exception: being a pipeline,
+   it hands each chunk to hart 1 through the runtime's dispatch and join in
+   both its windows.
 3. **Cold and warm builds are one binary:** cold or warm is one data word
    (`software/matrix/matrix_cold.h`). A compile-time switch had moved code
    and data, and MNIST's cold windows came out up to 0.24% faster than its
@@ -413,21 +415,31 @@ did not settle a point; none loosens a gate.
    useful work. Hart 1 stamps its first stretch's start and its last
    stretch's end, once each. Hart 0 opens every window, so its interval
    starts at 0, and it ends as follows:
-   - at the window's end when the window ends in hart 0's own work, such as
-     the checksum, requantization or class of a v1 window, or a one-worker
-     engine;
-   - at its last share's end, stamped, where it then waits for hart 1;
+   - at the window's end when hart 0 works after its last wait, such as the
+     checksum, requantization or class of a v1 window, a reduction's add of
+     the two halves, or a one-worker engine;
+   - at its last share's end, stamped, where it only waits after it;
    - 0 and 0 in an NPU kernel window, where it only starts the job and polls
      it.
 
    An interval holds no gaps. Where hart 0 polls the NPU between its stages
    in an NPU e2e window, its interval spans the polls, so overlap with an
    engine is not read from it. A stamp costs about 20 cycles (the matrix's
-   `stamp_cost` case). Hart 1's two stamps are inside every two-worker
-   window, v1-retained ones included; they count against v2.
+   `stamp_cost` case). Hart 1's two stamps, and hart 0's end stamp where it
+   has one, are inside every two-worker window, v1-retained ones included;
+   they count against v2.
 8. **The computation's functions are compiled out of line** (`noinline`)
-   in the matrix's own programs, so that their code is the same in every
-   caller and build. Inlined, a small change elsewhere in Conv2D's program
+   in every one of the matrix's own programs, so that their code is the
+   same in every caller and build. Inlined, a small change elsewhere in Conv2D's program
    changed the code GCC generated for its hot loop: 12 more instructions an
    output row, 7.3% more cycles on two workers. v1's kernels (`xe_kernels.c`)
    are out of line already.
+9. **Two small additions inside v1's windows.**
+   - ECG reads hart 0's cycle CSR at each end of a chunk, and stores the
+     chunk's latency, for the deadline (§4.8: "reported apart").
+   - The work stamps of item 7.
+
+   Each is a few instructions a chunk or a window, and counts against v2.
+   Otherwise each v1-retained window holds v1's code, its checksum
+   included (CIFAR's is folded and its classes checked inside the window,
+   as v1 did).

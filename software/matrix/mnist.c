@@ -107,8 +107,9 @@ void aster_secondary_main(void) {
 }
 #endif
 
-// a layer, C = A B: on the NPU, or the CPU's method; in the kernel window, an interval of its own
-static void layer(const struct aster_npu2_job *job, int mode) {
+// a layer, C = A B: on the NPU, or the CPU's method; in the kernel window, an interval of its own (the
+// computation's functions out of line, noinline, so that their code is the same in every caller and build)
+static __attribute__((noinline)) void layer(const struct aster_npu2_job *job, int mode) {
 #if NPU
     if (mode == KERNEL) {                              // (from START to the job's end; its outcome after)
         aster_npu2_describe(job);
@@ -158,7 +159,7 @@ struct io {
 } __attribute__((aligned(64)));
 static struct io io __attribute__((aligned(64)));
 
-static void infer(uint32_t image, int mode) {
+static __attribute__((noinline)) void infer(uint32_t image, int mode) {
     for (uint32_t i = 0; i < FC1_IN; ++i) io.input[i] = phase11_test_images[image * FC1_IN + i];
     __asm__ volatile ("fence iorw,iorw" ::: "memory");
     if (mode == E2E) interval_open();
@@ -194,7 +195,7 @@ static int32_t acc1[MNIST_BATCH * FC1_OUT] __attribute__((aligned(64)));
 static int8_t hidden[MNIST_BATCH * FC1_OUT] __attribute__((aligned(16)));
 static int32_t acc2[MNIST_BATCH * FC2_OUT] __attribute__((aligned(16)));
 
-static void infer_batch(uint32_t first, int mode) {
+static __attribute__((noinline)) void infer_batch(uint32_t first, int mode) {
     if (mode == E2E) interval_open();
     // fc1: (batch x 784) images in place x W1^T (784 x 32)
     const struct aster_npu2_job fc1 = {&phase11_test_images[first * FC1_IN], phase11_fc1_weights_t, acc1, FC1_IN,

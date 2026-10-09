@@ -79,8 +79,9 @@ static int8_t clamp8(int32_t value) {
     return (int8_t)value;
 }
 
+// (the computation's functions out of line, noinline, so that their code is the same in every caller and build)
 // the FIR, C(r) = sum_k x(r + k) coef(k): on the method's engine
-static void fir(const int8_t *x, int32_t *out) {
+static __attribute__((noinline)) void fir(const int8_t *x, int32_t *out) {
 #if ECG_METHOD == 1
     for (uint32_t r = 0; r < ECG_FOUT; ++r) {
         int32_t sum = 0;
@@ -94,7 +95,7 @@ static void fir(const int8_t *x, int32_t *out) {
 }
 
 // v1's four features over filtered[begin, end), into feat_q[at .. at + 3]
-static void features_of(const int32_t *f, uint32_t begin, uint32_t end, uint32_t at) {
+static __attribute__((noinline)) void features_of(const int32_t *f, uint32_t begin, uint32_t end, uint32_t at) {
     int32_t peak = 0, sum_scaled = 0, abs_sum = 0, previous_sign = 0;
     uint32_t zero_crossings = 0;
     for (uint32_t r = begin; r < end; ++r) {
@@ -116,7 +117,7 @@ static void features_of(const int32_t *f, uint32_t begin, uint32_t end, uint32_t
 }
 
 // a chunk's features, classifier and class, its results folded into the checksum
-static uint32_t classify(uint32_t chunk, const int32_t *f, uint32_t checksum) {
+static __attribute__((noinline)) uint32_t classify(uint32_t chunk, const int32_t *f, uint32_t checksum) {
 #if ECG_FEATURES == 4
     features_of(f, 0, ECG_FOUT, 0);
 #else
@@ -152,7 +153,7 @@ static uint32_t classify(uint32_t chunk, const int32_t *f, uint32_t checksum) {
 }
 
 // a chunk staged and moved into moved[slot] (e2e), its samples' address returned; the kernel window's are in place
-static const int8_t *bring(uint32_t chunk, uint32_t slot, int mode) {
+static __attribute__((noinline)) const int8_t *bring(uint32_t chunk, uint32_t slot, int mode) {
     if (mode == KERNEL) return &stream[chunk * ECG_CHUNK];
     for (uint32_t i = 0; i < ECG_CHUNK; ++i) raw[i] = ecg_samples[chunk * ECG_CHUNK + i];      // the staging
     __asm__ volatile ("fence rw,rw" ::: "memory");

@@ -266,20 +266,17 @@ ECG_METHODS = ((0, "ecg_pipeline_v1", "pipeline", 2), (1, "ecg_scalar", "scalar"
 
 
 def ecg_entries() -> list[Entry]:
-    """matrix.md §4.8: streaming ECG (a v1-retained workload). Every case at R, warm: chunks of 16, 32, 64 and 128
-    samples x FIRs of 8, 16 and 32 taps (where the chunk is longer) x v1's model and the one with twice its
-    features, for each method; v1's case (64 samples, 16 taps, v1's model) across the axes."""
+    """matrix.md §4.8: streaming ECG (a v1-retained workload). Every case (chunks of 16, 32, 64 and 128 samples x
+    FIRs of 8, 16 and 32 taps, where the chunk is longer, x v1's model and the one with twice its features) and
+    method, at R and across each axis alone (§3)."""
     entries = []
     sources = ["software/matrix/ecg.c", "software/benchmarks/xe_kernels.c", "software/drivers/aster_dma.c",
                "software/drivers/aster_npu.c", "software/runtime/asterbench_v12.c", "software/runtime/aster_smp.c"]
     for number, name, method, workers in ECG_METHODS:
-        configs = [(sim, cold, reason, 64, 16, 4) for sim, cold, reason in axis_configs(number in (0, 3), workers)]
-        if workers == 2:
-            configs = [(sim, cold, "the pipeline needs two harts" if sim == "soc_h1" else reason, c, t, f)
-                       for sim, cold, reason, c, t, f in configs]
-        configs += [("soc_dev", False, "", chunk, taps, features) for chunk in (16, 32, 64, 128)
-                    for taps in (8, 16, 32) for features in (4, 8)
-                    if chunk > taps and (chunk, taps, features) != (64, 16, 4)]
+        configs = [(sim, cold, "the pipeline needs two harts" if workers == 2 and sim == "soc_h1" else reason,
+                    chunk, taps, features)
+                   for chunk in (16, 32, 64, 128) for taps in (8, 16, 32) for features in (4, 8) if chunk > taps
+                   for sim, cold, reason in axis_configs(number in (0, 3), workers)]
         for sim, cold, reason, chunk, taps, features in configs:
             case = name + ("_f8" if features == 8 else "")
             ident = f"ecg/{case}/{method}/{sim}/{'cold' if cold else 'warm'}" + \
