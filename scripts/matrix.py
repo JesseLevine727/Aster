@@ -325,7 +325,7 @@ def memory_points() -> list[tuple]:
     """matrix.md §4.2's cases and their points: (case number, name, method, workers, tag, defines, axes)."""
     points = []
     for size in (64, 256, 1024, 4096, 16384, 32768):
-        for src, dst in ((0, 0), (3, 3), (1, 0)):          # v1's dma.c: aligned, the same offset, different offsets
+        for src, dst in ((0, 0), (1, 1), (1, 2)):          # v1's dma.c: aligned, the same offset, different offsets
             points.append((1, "memcpy", "cpu_copy", 1, f"b{size}s{src}d{dst}",
                            [f"-DMEM_BYTES={size}u", f"-DMEM_SRC_OFF={src}u", f"-DMEM_DST_OFF={dst}u"],
                            dict(bytes=size, src_off=src, dst_off=dst)))
@@ -337,9 +337,11 @@ def memory_points() -> list[tuple]:
         points.append((4, "walk_random", "scalar", 1, f"b{size}", [f"-DMEM_BYTES={size}u"], dict(bytes=size)))
     for size in (512, 1024, 2048, 4096, 8192, 16384, 32768, 49152):
         points.append((5, "working_set", "scalar", 1, f"b{size}", [f"-DMEM_BYTES={size}u"], dict(bytes=size)))
-    for pattern, name in ((0, "stream_one_hart"), (1, "stream_same_bank"), (2, "stream_diff_banks")):
-        points.append((6, name, "multicore" if pattern else "scalar", 2 if pattern else 1, "",
-                       [f"-DMEM_PATTERN={pattern}u"], dict(pattern=pattern)))
+    points.append((6, "stream_one_hart", "scalar", 1, "", ["-DMEM_PATTERN=0u"], dict(pattern=0, stagger=0)))
+    for pattern, name in ((1, "stream_same_bank"), (2, "stream_diff_banks")):
+        for stagger in range(0, 24, 3):                  # hart 1's start over a line's period (about 21 cycles)
+            points.append((6, name, "multicore", 2, f"g{stagger}", [f"-DMEM_PATTERN={pattern}u", f"-DMEM_STAGGER={stagger}"],
+                           dict(pattern=pattern, stagger=stagger)))
     return points
 
 
@@ -351,16 +353,23 @@ def memory_entries() -> list[Entry]:
     for number, name, method, workers, tag, defines, point in memory_points():
         configs = [(wait, dcache, cold, MEMORY_SEEDS[0]) for wait in (0, 1, 2, 4) for dcache in (1, 0)
                    for cold in (False, True)]
-        configs += [(0, 1, False, seed) for seed in MEMORY_SEEDS[1:]]
+        if name != "read_sequential":                   # (its ring is its indices: no seed to vary)
+            configs += [(0, 1, False, seed) for seed in MEMORY_SEEDS[1:]]
+        if workers == 2:
+            configs += [(0, 1, False, None)]                 # the one-hart build: unsupported
         for wait, dcache, cold, seed in configs:
-            sim = VARIANT_OF[(wait, dcache)]
+            sim = VARIANT_OF[(wait, dcache)] if seed is not None else "soc_h1"
+            seed = MEMORY_SEEDS[0] if seed is None else seed
             ident = f"memory/{name}/{method}/{sim}/{'cold' if cold else 'warm'}" + (f"/{tag}" if tag else "") + \
                     ("" if seed == MEMORY_SEEDS[0] else f"/seed{seed:08x}")
             axes = make_axes(sim, cold, workers)
             axes.update(point, seed=seed)
-            entries.append(Entry(ident, "memory", name, method, sim, cold, [], "LITMUS_CFLAGS", [], [], "", sources,
-                                 soc_variants.v12_defines(sim) + [f"-DMEM_CASE={number}", f"-DMEM_SEED={seed:#010x}u"]
-                                 + defines + (["-DMATRIX_COLD"] if cold else []), axes, "memory"))
+            e = Entry(ident, "memory", name, method, sim, cold, [], "LITMUS_CFLAGS", [], [], "", sources,
+                      soc_variants.v12_defines(sim) + [f"-DMEM_CASE={number}", f"-DMEM_SEED={seed:#010x}u"]
+                      + defines + (["-DMATRIX_COLD"] if cold else []), axes, "memory")
+            if sim == "soc_h1":
+                e.status, e.reason = "unsupported", "two streaming harts need two harts"
+            entries.append(e)
     return entries
 
 
@@ -723,14 +732,29 @@ def memory_model(case: str, axes: dict) -> int:
     """software/matrix/memory.c's computation, re-run: the checksum each case's record carries."""
     mask, seed = 0xFFFFFFFF, axes["seed"]
     word = lambda i: (seed ^ ((i * 0x1021) & mask)) & mask
-    if case == "memcpy":
+    if case == "memcpy":                                   # the source's pattern from its offset past the guard
         checksum = 0
-        for i in range(axes["bytes"]):
+        for k in range(axes["bytes"]):
+            i = 32 + axes["src_off"] + k
             checksum = ((checksum * 33) ^ (((seed ^ ((i * 0x9E3779B9) & mask)) >> 11) & 0xFF)) & mask
         return checksum
-    if case in ("read_sequential", "walk_random"):         # four laps of a ring through every node, from 0
+    if case in ("read_sequential", "walk_random"):         # four laps from 0, then the ring itself folded
         n = axes["bytes"] // 4
-        return (4 * (n * (n - 1) // 2)) & mask
+        if case == "walk_random":                          # v1's Fisher-Yates with its LCG
+            state, perm = seed, list(range(n))
+            for i in range(n - 1, 0, -1):
+                state = (state * 1664525 + 1013904223) & mask
+                j = state % (i + 1)
+                perm[i], perm[j] = perm[j], perm[i]
+            links = [0] * n
+            for i in range(n):
+                links[perm[i]] = perm[(i + 1) % n]
+        else:
+            links = [(i + 1) % n for i in range(n)]
+        checksum = (4 * (n * (n - 1) // 2)) & mask
+        for v in links:
+            checksum = ((checksum * 33) ^ v) & mask
+        return checksum
     if case == "read_strided":
         return (4 * sum(word(i) for i in range(4096))) & mask
     if case == "working_set":
@@ -750,8 +774,8 @@ def oracle_memory(entry: Entry, records: list[dict]) -> str:
     want_windows = ["e2e"] if (entry.cold or not two) else ["e2e", "kernel"]
     if [r["window"] for r in records] != want_windows:
         raise asterbench_v12.ValidationError(f"windows {[r['window'] for r in records]}, not {want_windows}")
-    size = 4096 * 4 if entry.case == "read_strided" else (16384 if entry.case.startswith("stream") else a.get("bytes"))
-    param = (a["src_off"] << 4) | a["dst_off"] if entry.case == "memcpy" else a.get("stride", 0)
+    size = 4096 * 4 if entry.case == "read_strided" else (4096 if entry.case.startswith("stream") else a.get("bytes"))
+    param = (a["src_off"] << 4) | a["dst_off"] if entry.case == "memcpy" else a.get("stride", a.get("stagger", 0))
     iterations = 49152 // (a["bytes"] // 4) if entry.case == "working_set" else 4
     want = memory_model(entry.case, a)
     for r in records:

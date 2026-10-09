@@ -1,15 +1,18 @@
 // 20.4's matrix: the memory hierarchy (docs/matrix.md §4.2), one point of a case in each simulation. MEM_CASE:
 //   1 memcpy           v1's fair CPU copy (software/benchmarks/dma.c: words, with a byte prefix and tail; different
 //                      offsets take the byte path), MEM_BYTES from source offset MEM_SRC_OFF to destination offset
-//                      MEM_DST_OFF, MEM_REPS times
+//                      MEM_DST_OFF (v1's three: (0,0), (1,1), (1,2)), MEM_REPS times (memcpy_bench.c's), between
+//                      32-byte guards; every byte checked after the window
 //   2 read_sequential  v1's ring (software/benchmarks/memory_walk.c): one dependent read a hop, MEM_BYTES of links
 //                      in order, MEM_REPS laps
 //   3 read_strided     every MEM_STRIDE-th word over 16 KiB, offset by offset, so each word is read once a lap
 //   4 walk_random      v1's ring shuffled (its seeded Fisher-Yates, the permutation beside the ring), MEM_REPS laps
 //   5 working_set      the first MEM_BYTES of a 48 KiB buffer summed over and over: 49,152 reads at every size
-//   6 stream           each hart sums the lines of one bank in its own 16 KiB half, MEM_REPS laps: MEM_PATTERN
-//                      0 hart 0 alone (bank 0), 1 both harts in bank 0, 2 hart 0 in bank 0 and hart 1 in bank 1
-//                      (soc.md §4.2: a 16-byte line's bank is address bits [5:4])
+//   6 stream           each hart sums the lines of one bank in its own 16 KiB half (4 KiB of it, a line in four),
+//                      MEM_REPS laps: MEM_PATTERN 0 hart 0 alone (bank 0), 1 both harts in bank 0, 2 hart 0 in bank
+//                      0 and hart 1 in bank 1 (soc.md §4.2: a 16-byte line's bank is address bits [5:4]). Whether
+//                      two streams in one bank collide depends on their phase, so hart 1 starts MEM_STAGGER nops
+//                      late: the matrix sweeps it over a line's period and reports the spread.
 // A one-hart case has nothing outside its computation, so its two windows are one: each record is its e2e
 // window (matrix.md §10.10). The streaming cases record e2e (the runtime's dispatch and join) and, warm, the
 // kernel window (hart 1 armed, matrix_window.h). A cold run (matrix_cold.h) is the first pass after reset (the
@@ -46,6 +49,11 @@
 #ifndef MEM_SEED
 #define MEM_SEED 0x13570000u
 #endif
+#ifndef MEM_STAGGER
+#define MEM_STAGGER 0
+#endif
+#define STRINGIFY_(x) #x
+#define STRINGIFY(x) STRINGIFY_(x)
 #define MEM_REPS 4u
 #define WORDS (MEM_BYTES / 4u)
 #define WS_READS 49152u                                  // the working-set sweep's reads at every size
@@ -53,7 +61,7 @@
 #define HALF_BYTES 16384u                                // the streaming case's half a hart
 #define TWO_HARTS (MEM_CASE == 6 && MEM_PATTERN != 0)
 
-enum { UNTIMED, E2E, KERNEL };
+enum { E2E = 1, KERNEL };
 
 static uint32_t checksum;
 static volatile uint32_t pass_ok = 1;
@@ -81,23 +89,32 @@ __attribute__((noipa)) static void cpu_memcpy(void *destination, const void *sou
     while (size) { *dst++ = *src++; --size; }
 }
 
-static uint8_t source[MEM_BYTES + 4u] __attribute__((aligned(64)));
-static uint8_t destination[MEM_BYTES + 4u] __attribute__((aligned(64)));
+#define GUARD 32u
+#define COPY_BUFFER (GUARD + 4u + MEM_BYTES + GUARD)
+static uint8_t source[COPY_BUFFER] __attribute__((aligned(64)));
+static uint8_t destination[COPY_BUFFER] __attribute__((aligned(64)));
+
+static uint8_t pattern(uint32_t i) { return (uint8_t)(((MEM_SEED ^ (i * 0x9e3779b9u)) >> 11) & 0xffu); }
 
 static void setup(void) {
-    for (uint32_t i = 0; i < MEM_BYTES; ++i)
-        source[MEM_SRC_OFF + i] = (uint8_t)(((MEM_SEED ^ (i * 0x9e3779b9u)) >> 11) & 0xffu);
+    for (uint32_t i = 0; i < COPY_BUFFER; ++i) source[i] = pattern(i);
 }
 
 static __attribute__((noinline)) void run(void) {
-    for (uint32_t r = 0; r < MEM_REPS; ++r) cpu_memcpy(destination + MEM_DST_OFF, source + MEM_SRC_OFF, MEM_BYTES);
+    for (uint32_t r = 0; r < MEM_REPS; ++r)
+        cpu_memcpy(destination + GUARD + MEM_DST_OFF, source + GUARD + MEM_SRC_OFF, MEM_BYTES);
 }
 
 static void before_pass(void) { matrix_poison(destination, sizeof destination); }
 
-static void after_pass(void) {
+static void after_pass(void) {                          // every byte: the copy, the guards, the source (v1's check)
     checksum = 0;
-    for (uint32_t i = 0; i < MEM_BYTES; ++i) checksum = (checksum * 33u) ^ destination[MEM_DST_OFF + i];
+    for (uint32_t i = 0; i < COPY_BUFFER; ++i) {
+        if (source[i] != pattern(i)) pass_ok = 0;
+        const uint32_t in = i >= GUARD + MEM_DST_OFF && i < GUARD + MEM_DST_OFF + MEM_BYTES;
+        if (destination[i] != (in ? pattern(i - MEM_DST_OFF + MEM_SRC_OFF) : 0xA5u)) pass_ok = 0;
+        if (in) checksum = (checksum * 33u) ^ destination[i];
+    }
 }
 #elif MEM_CASE == 2 || MEM_CASE == 4
 // ---- v1's rings: one dependent read a hop ----
@@ -136,7 +153,8 @@ static __attribute__((noinline)) void run(void) {
 static void before_pass(void) { observed_sum = 0; observed_last = 0xFFFFFFFFu; }
 
 static void after_pass(void) {                          // v1's check: one ring through every node
-    checksum = observed_sum;
+    checksum = observed_sum;                            // (and the ring itself, folded: the oracle rebuilds it)
+    for (uint32_t i = 0; i < WORDS; ++i) checksum = (checksum * 33u) ^ links[i];
     if (observed_last != 0) pass_ok = 0;
     for (uint32_t i = 0; i < (WORDS + 31u) / 32u; ++i) visited[i] = 0;
     uint32_t position = 0;
@@ -201,10 +219,13 @@ static __attribute__((noinline)) uint32_t stream(uint32_t hart, uint32_t bank) {
 #if TWO_HARTS
 static void hart1_stream(void *arg) {
     (void)arg;
+    __asm__ volatile (".rept " STRINGIFY(MEM_STAGGER) "\n\tnop\n\t.endr" ::: "memory");   // (the stagger)
     matrix_stamp_start(1);
     part[1] = stream(1, MEM_PATTERN == 2 ? 1u : 0u);
     matrix_stamp_end(1);
 }
+
+static void hart1_poison(void *arg) { (void)arg; part[1] = 0xA5A5A5A5u; }   // (its own word: matrix_window.h)
 #endif
 
 static __attribute__((noinline)) void run_mode(int mode) {
@@ -220,12 +241,12 @@ static __attribute__((noinline)) void run_mode(int mode) {
         matrix_close();
         aster_smp_join();
     } else {
-        if (mode == E2E) matrix_open(1);
+        matrix_open(1);
         aster_smp_dispatch(hart1_stream, 0);
         part[0] = stream(0, 0);
         matrix_stamp_end(0);
         aster_smp_join();
-        if (mode == E2E) matrix_close();
+        matrix_close();
     }
 #else
     (void)mode;
@@ -234,21 +255,31 @@ static __attribute__((noinline)) void run_mode(int mode) {
 #endif
 }
 
-static void before_pass(void) { part[0] = part[1] = 0; }
+static void before_pass(void) {
+#if TWO_HARTS
+    aster_smp_dispatch(hart1_poison, 0);
+    part[0] = 0xA5A5A5A5u;
+    aster_smp_join();
+#else
+    part[0] = 0xA5A5A5A5u;
+    part[1] = 0;
+#endif
+}
 static void after_pass(void) { checksum = (part[0] * 33u) ^ part[1]; }
 #endif
 
-// one pass: timed in the mode's window, or not
+// one pass in the mode's window (a warm-up's window is opened and closed too, the same code)
 static void pass(int mode) {
 #if MEM_CASE == 6
-    if (TWO_HARTS || mode == UNTIMED) { run_mode(mode); return; }
+    if (TWO_HARTS) { run_mode(mode); return; }
     matrix_open(1);
     run_mode(mode);
     matrix_close();
 #else
-    if (mode != UNTIMED) matrix_open(1);
+    (void)mode;                                         // (one window, e2e)
+    matrix_open(1);
     run();
-    if (mode != UNTIMED) matrix_close();
+    matrix_close();
 #endif
 }
 
@@ -271,9 +302,10 @@ static int timed_pass(struct v12_record *record, int mode) {
     record->family = "memory";
     record->method = MEM_CASE == 1 ? "cpu_copy" : (TWO_HARTS ? "multicore" : "scalar");
     record->window = mode == KERNEL ? "kernel" : "e2e"; record->cache_state = MATRIX_CACHE_STATE;
-    record->size = MEM_CASE == 3 ? STRIDE_WORDS * 4u : (MEM_CASE == 6 ? HALF_BYTES : MEM_BYTES);
+    record->size = MEM_CASE == 3 ? STRIDE_WORDS * 4u : (MEM_CASE == 6 ? HALF_BYTES / 4u : MEM_BYTES);
     record->iterations = MEM_CASE == 5 ? WS_READS / WORDS : MEM_REPS;
-    record->param = MEM_CASE == 1 ? (MEM_SRC_OFF << 4) | MEM_DST_OFF : (MEM_CASE == 3 ? MEM_STRIDE : 0u);
+    record->param = MEM_CASE == 1 ? (MEM_SRC_OFF << 4) | MEM_DST_OFF
+                  : (MEM_CASE == 3 ? MEM_STRIDE : (MEM_CASE == 6 ? MEM_STAGGER : 0u));
     record->seed = MEM_SEED; record->checksum = checksum; record->workers = TWO_HARTS ? 2u : 1u;
     record->pass = pass_ok;
     v12_emit(record);

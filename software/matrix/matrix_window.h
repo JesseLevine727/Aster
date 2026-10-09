@@ -19,9 +19,10 @@
 //   (matrix_hart0_none). One interval holds no gaps: where hart 0 polls between its stages, its interval spans
 //   the polls.
 //   The two-worker kernel window: the computation alone, without the runtime's dispatch and join. Hart 1 is
-//   dispatched before the window and waits at a release flag (matrix_arm); hart 0 opens the window, releases
-//   it (matrix_release), runs its own share, waits for hart 1's done flag (matrix_await) and closes the window;
-//   aster_smp_join() after. The window holds the shares and the two flags' handoff.
+//   dispatched before the window and waits at a release flag (matrix_arm returns once hart 1 is waiting there,
+//   so no part of the dispatch falls in the window); hart 0 opens the window, releases it (matrix_release),
+//   runs its own share, waits for hart 1's done flag (matrix_await) and closes the window; aster_smp_join()
+//   after. The window holds the shares and the two flags' handoff.
 #ifndef MATRIX_WINDOW_H
 #define MATRIX_WINDOW_H
 
@@ -71,12 +72,13 @@ static inline void matrix_stamp_start(uint32_t hart) {
 static inline void matrix_stamp_end(uint32_t hart) { if (matrix_last) v12_work_end(hart); }
 
 struct matrix_armed_line { volatile uint32_t word; uint32_t pad[3]; } __attribute__((aligned(16)));
-static struct matrix_armed_line matrix_go, matrix_done;    // (each in its own line, as the runtime's words)
+static struct matrix_armed_line matrix_go, matrix_done, matrix_waiting;   // (each its own line, as the runtime's)
 static aster_smp_fn volatile matrix_armed_fn;
 static void *volatile matrix_armed_arg;
 
 __attribute__((unused)) static void matrix_armed_worker(void *unused) {
     (void)unused;
+    matrix_waiting.word = 1u;                          // (hart 1 at the release flag)
     while (!matrix_go.word) {}
     __asm__ volatile ("fence r,rw" ::: "memory");
     matrix_armed_fn(matrix_armed_arg);
@@ -89,7 +91,10 @@ static inline void matrix_arm(aster_smp_fn fn, void *arg) {
     matrix_armed_arg = arg;
     matrix_go.word = 0u;
     matrix_done.word = 0u;
+    matrix_waiting.word = 0u;
     aster_smp_dispatch(matrix_armed_worker, 0);             // (its fence w,w orders the words above first)
+    while (!matrix_waiting.word) {}
+    __asm__ volatile ("fence r,rw" ::: "memory");
 }
 
 static inline void matrix_release(void) {

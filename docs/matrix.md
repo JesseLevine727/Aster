@@ -461,3 +461,16 @@ did not settle a point; none loosens a gate.
     is the record's DMA busy cycles. Where hart 0 only submits and polls,
     its work interval is 0 and 0, since polling is not freed time
     (phase17-plus.md §4).
+11. **The memory hierarchy's details.**
+    - **memcpy:** §4.2's "word copy, byte prefix and tail" is v1's fair copy
+      in `dma.c`; `memcpy_bench.c` is a plain word loop. The matrix runs the
+      fair copy with `memcpy_bench.c`'s four repetitions and `dma.c`'s
+      offsets: aligned, the same offset (1, 1), and different offsets
+      (1, 2). It also adds `dma.c`'s check of every byte and guard.
+    - **Two harts streaming:** each hart reads the lines of one bank in its
+      own half, a line in four. Whether two streams in one bank collide
+      depends on their relative phase. So hart 1's start is swept over a
+      line's period (8 staggers of 3 nops), and the case is reported as the
+      range and median across them.
+    - **The sequential ring has no seed** (its links are its indices), so it
+      runs one seed rather than §3's three.
