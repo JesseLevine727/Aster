@@ -1,8 +1,10 @@
 # AsterBench v12 — the Phase 20 SoC's workload records
 
 Status: **approved by the owner, 8 October 2026** (with
-[`matrix.md`](matrix.md)); to be implemented in 20.4's first step. v2–v11
-records keep their meanings. v12 is
+[`matrix.md`](matrix.md)), and **implemented in 20.4's first step.** Every
+record of 20.4's workload matrix is v12: 19,018 records in
+[`results/phase20/matrix-20.4/`](results/phase20/matrix-20.4/README.md),
+signed off on 9 October 2026. v2–v11 records keep their meanings. v12 is
 soc.md §8's record:
 - v11's engine-attributed fields;
 - both harts' counters, not only the primary hart's;
@@ -203,6 +205,13 @@ counts and tiles.
 their own START (v1's code, unchanged), without v12's set-up (the NPU's
 totals cleared, the NPU idle). That is harmless for CPU kernels, which run
 no NPU job.
+
+## Beside the record
+
+20.4's matrix programs print a `MATRIX_JOBS` line after each record. It
+holds the engines' last jobs' own counters, read after FREEZE. It is not
+part of v12: the validators read only `ASTERBENCH,` lines. The matrix's
+runner reconciles a one-job window's totals with it (matrix.md §6).
 
 ## The validators and the corpus
 

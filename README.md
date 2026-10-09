@@ -10,7 +10,41 @@ Aster is inspired by heterogeneous-compute systems, not an attempt to reproduce
 an Apple A-series processor. Its research contribution is the architecture and,
 equally, a fair and reproducible method for deciding where work should execute.
 
-## Current status — 29 September 2026
+## Current status — 9 October 2026
+
+**Aster v2 is being built on the PYNQ-Z1 at 100 MHz, one verified subsystem
+at a time:**
+- **Phase 17 (complete):** v1's measurements corrected
+  ([AsterBench v11](docs/asterbench-v11.md)), its retained baseline, and the
+  frozen v2 targets.
+- **Phase 18 (complete, 5 October):** the Aster core, a seven-stage RV32IMA
+  core with DOT8. It is lockstep-verified against Spike, 3.68× PicoRV32 on
+  the CPU set, and runs at 100 MHz on the board.
+- **Phase 19 (complete, 6 October):** the NPU v2, an 8×8 INT8 array with a
+  64-bit port and two A strips, at 100 MHz on the board.
+- **Phase 20 (in progress):** two Aster cores, a four-bank shared memory,
+  the new DMA and the NPU in one SoC.
+  - **20.0–20.4 are signed off.** The last of them, on 9 October, is the
+    full workload matrix in
+    [AsterBench v12](docs/asterbench-v12.md) records
+    ([evidence](docs/results/phase20/matrix-20.4/README.md)).
+  - **Next:** 20.5 (tuning and the board run), then Phase 21.
+
+Measured at 100 MHz in the SoC's simulation (20.4's matrix; the board run
+is 20.5's). The NPU and two-core rows are kernel windows (the computation
+alone); the others are end to end:
+
+| Engine or workload | Figure |
+| --- | --- |
+| NPU, 8×8 (peak 12.8 GOPS) | 11.9 GOPS on GEMM 128×64×128 (92.7% of peak), 10.0 on 64×64×64 |
+| NPU, 4×4 builds (the frozen target: 3.2 GOPS peak, ≥50% of it) | 2.8–3.1 GOPS, 87–98% of peak |
+| Two cores, DOT8 GEMM | 0.51–0.52 GOPS (2.6 MACs a cycle), 1.98–1.99× one core |
+| One core | 57–79 MIPS (IPC 0.57–0.79) on the CPU set |
+| DMA | 771 MB/s (7.7 bytes a cycle), 14× a core's copy |
+| MNIST MLP on the NPU | 16,600 images/s one at a time; 44,600/s in batches of 32 |
+| Against v1 | 3.1× to 9.6× on the CPU set; 16× to 72× on Conv2D, MNIST and CIFAR |
+
+## Aster v1 and the Phase 16 attempt (status of 29 September 2026)
 
 ### Aster v1: functionally verified reference system
 
@@ -101,6 +135,9 @@ about the current design.
 | Multicore / offload | Measure scaling and crossovers end-to-end. Large GEMM and the selected MLP should benefit from the NPU; small jobs are allowed to lose and must remain in the results. |
 | Physical quality | FPGA timing closure, resource limits met, and workload-specific energy evidence. (The ASIC signoff targets — foundry DRC, LVS, antenna, electrical — were dropped with SKY130 on 1 October 2026.) |
 
+The figures measured against these targets so far are in
+[Current status](#current-status--9-october-2026) above.
+
 *SKY130 was dropped on 1 October 2026 ([`docs/phase17-plus.md`](docs/phase17-plus.md)):
 the two paragraphs below are history.*
 
@@ -176,9 +213,14 @@ with a drift-rejecting audit, corrected Phase 15/16 reporting and audits, the
 ([`docs/phase18.md`](docs/phase18.md), 5 October 2026): a seven-stage RV32IMA
 core with Zicsr, Zifencei and DOT8, lockstep-verified against Spike, 3.68×
 PicoRV32 on the CPU set, with coherent L1 caches, running at 100 MHz on the
-PYNQ-Z1. **Phase 19 — the high-utilization NPU — is in progress**
-([`docs/phase19.md`](docs/phase19.md); the approved
-[NPU specification](docs/npu.md)).
+PYNQ-Z1. **Phase 19 — the high-utilization NPU — is complete**
+([`docs/phase19.md`](docs/phase19.md), 6 October 2026; the
+[NPU specification](docs/npu.md)): an 8×8 array, 41–48× DOT8 on GEMM, at
+100 MHz on the PYNQ-Z1. **Phase 20 — the two-core SoC — is in progress**
+([`docs/phase20.md`](docs/phase20.md); the [SoC specification](docs/soc.md)).
+20.0–20.4 are signed off, the last with the full workload matrix in
+[AsterBench v12](docs/asterbench-v12.md) records
+([evidence](docs/results/phase20/matrix-20.4/README.md)). 20.5 is next.
 
 ## Historical phase links
 
