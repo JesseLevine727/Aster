@@ -28,7 +28,7 @@ int main(void) {
     static struct v12_record record;
     int failed = 0;
     for (int stamps = 0; stamps < 2; ++stamps) {
-        loop(stamps, 0);                               // (its warm-up)
+        loop(stamps, 1);                               // (its warm-up: the same code, its window too)
         steps = 0;
         v12_prepare();
         loop(stamps, 1);

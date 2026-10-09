@@ -261,6 +261,15 @@ static uint32_t run_kernel(void) {
     return checksum;
 }
 
+// v1's window, the same code for the warm-up and the timed pass (so its START and FREEZE are warm too)
+static __attribute__((noinline)) uint32_t window_e2e(void) {
+    *(volatile uint32_t *)(uintptr_t)ASTER_ABI4_COMMAND = ASTER_ABI4_START;
+    __asm__ volatile ("fence rw,rw" ::: "memory");
+    const uint32_t e2e = run_e2e();
+    *(volatile uint32_t *)(uintptr_t)ASTER_ABI4_COMMAND = ASTER_ABI4_FREEZE;
+    return e2e;
+}
+
 static void emit(struct v12_record *record, const char *window, uint32_t checksum) {
     static const char *const names[] = {"", "conv2d_im2col_scalar", "conv2d_im2col_multicore", "conv2d_im2col_dot8",
                                         "conv2d_im2col_npu", "conv2d_direct_scalar", "conv2d_direct_multicore",
@@ -279,15 +288,12 @@ int main(void) {
 #if WORKERS == 2
     aster_smp_start();
 #endif
-    if (!matrix_cold) (void)run_e2e();                 // the warm-up pass
+    if (!matrix_cold) (void)window_e2e();              // the warm-up pass
     poison_all();
     engine_failed = 0;
     matrix_stamps_clear();
     v12_prepare();
-    *(volatile uint32_t *)(uintptr_t)ASTER_ABI4_COMMAND = ASTER_ABI4_START;
-    __asm__ volatile ("fence rw,rw" ::: "memory");
-    const uint32_t e2e = run_e2e();
-    *(volatile uint32_t *)(uintptr_t)ASTER_ABI4_COMMAND = ASTER_ABI4_FREEZE;
+    const uint32_t e2e = window_e2e();
     v12_end(&record);
     matrix_hart0_whole(&record);                       // (v1's window ends in hart 0's checksum)
     emit(&record, "e2e", e2e);

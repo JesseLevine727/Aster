@@ -66,7 +66,7 @@ static int emit(struct v12_record *record, const char *name, uint32_t want) {
 int main(void) {
     static struct v12_record record;
     aster_smp_start();
-    if (!matrix_cold) round_trips(0);                  // the warm-up pass
+    if (!matrix_cold) round_trips(1);                  // the warm-up pass (the same code, its window too)
     calls = 0;
     v12_prepare();
     round_trips(1);
@@ -75,7 +75,7 @@ int main(void) {
     for (int h = 0; h < 2; ++h) { record.hart[h].work_start = 0; record.hart[h].work_end = cycles; }
     int failed = emit(&record, "smp_round_trip", SMP_TRIPS);
     if (!matrix_cold) {
-        handoff(0);                                    // the handoff's warm-up
+        handoff(1);                                    // the handoff's warm-up (the same code, its window too)
         calls = 0;
         v12_prepare();
         handoff(1);

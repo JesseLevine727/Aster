@@ -440,6 +440,9 @@ did not settle a point; none loosens a gate.
    - ECG reads hart 0's cycle CSR at each end of a chunk, and stores the
      chunk's latency, for the deadline (§4.8: "reported apart").
    - The work stamps of item 7.
+   - In the coherence cases' v1 window (step 3), hart 1's load of the flag
+     that chooses v1's code or the runtime's, and two fences around each
+     store to SECONDARY_RUN.
 
    Each is a few instructions a chunk or a window, and counts against v2.
    Otherwise each v1-retained window holds v1's code, its checksum
@@ -456,11 +459,21 @@ did not settle a point; none loosens a gate.
     record both, since their e2e window holds the runtime's dispatch and
     join and their kernel window the armed hand-over (item 2).
 
-    The DMA's cases (§4.3) also record one window, e2e: v1's, the copy
-    through v1's driver (set-up, movement and wait). The engine's own time
-    is the record's DMA busy cycles. Where hart 0 only submits and polls,
-    its work interval is 0 and 0, since polling is not freed time
-    (phase17-plus.md §4).
+    The DMA's cases (§4.3) also record one window, e2e.
+    - **The copies:** v1's window, the copy through v1's driver (set-up,
+      movement and wait). The engine's own time is the record's DMA busy
+      cycles. Hart 0 only submits and polls, so its work interval is 0 and
+      0, since polling is not freed time (phase17-plus.md §4).
+    - **The overlap cases (new):** a copy beside unrelated work. The overlap
+      itself is what they measure, so they have no kernel apart from it. The
+      hart-1 variants' window holds the runtime's dispatch and join, as
+      their serial twins' does.
+    - **The worker's interval** is the hart that does the checksum's: hart
+      0's from the checksum's start to its end (not from 0: its submit is
+      set-up), or hart 1's.
+    - **Busy and polling:** the record gives the busy time as the work
+      interval. Hart 0's polling is the window less its work and set-up,
+      which one window cannot separate.
 11. **The memory hierarchy's details.**
     - **memcpy:** §4.2's "word copy, byte prefix and tail" is v1's fair copy
       in `dma.c`; `memcpy_bench.c` is a plain word loop. The matrix runs the
@@ -474,3 +487,19 @@ did not settle a point; none loosens a gate.
       range and median across them.
     - **The sequential ring has no seed** (its links are its indices), so it
       runs one seed rather than §3's three.
+    - **Coherence (§4.4):**
+      - The false-shared counters' line holds only the two counters.
+      - On one worker, false_shared and padded differ by 12% (8,235 against
+        9,258 cycles at 1,024 items) because GCC adds a `mv` to padded's
+        loop in v1's code. The comparison is meaningful on two workers,
+        where both loops are four instructions.
+      - shared_mix's hart 1 resets its own half before the kernel window
+        (item 4).
+12. **Hart 1's poisoning can leave a few of its instruction lines cold.**
+    Hart 1 poisons its own outputs (item 4) between a window's warm-up and
+    the window, and that code can evict some of its kernel's lines from its
+    direct-mapped instruction cache. Up to about ten lines start cold, about
+    80 cycles, counted against v2. It shows only in windows of a few
+    thousand cycles or less: the dot product's two-worker kernel window at
+    K ≤ 64 comes out longer than its e2e window (424 against 356 cycles at
+    K = 8, with 10 instruction misses on hart 1 against 2).

@@ -247,6 +247,13 @@ static void run_kernel(void) {
 #endif
 }
 
+// the e2e window, the same code for the warm-up and the timed pass (so its START and FREEZE are warm too)
+static __attribute__((noinline)) void window_e2e(uint32_t pass) {
+    *(volatile uint32_t *)(uintptr_t)ASTER_ABI4_COMMAND = ASTER_ABI4_START;
+    run(pass);
+    *(volatile uint32_t *)(uintptr_t)ASTER_ABI4_COMMAND = ASTER_ABI4_FREEZE;
+}
+
 static void emit(struct v12_record *record, const char *window) {
     uint32_t sum = 0;
     for (uint32_t i = 0; i < GEMM_M * GEMM_N; ++i) sum = (sum * 33u) ^ (uint32_t)c[i];
@@ -288,12 +295,10 @@ int main(void) {
 #if GEMM_WORKERS == 2
     aster_smp_start();                                 // (released and ready before the window)
 #endif
-    if (!matrix_cold) run(1);                          // the warm-up pass
+    if (!matrix_cold) window_e2e(1);                   // the warm-up pass
     poison(1);
     v12_prepare();
-    *(volatile uint32_t *)(uintptr_t)ASTER_ABI4_COMMAND = ASTER_ABI4_START;
-    run(2);
-    *(volatile uint32_t *)(uintptr_t)ASTER_ABI4_COMMAND = ASTER_ABI4_FREEZE;
+    window_e2e(2);
     v12_end(&record);
     emit(&record, "e2e");
     int failed = !record.pass;

@@ -3,7 +3,7 @@
 //   1 a copy, v1's window (software/benchmarks/dma.c): DMA_METHOD 0 v1's fair CPU copy, 1 the DMA
 //     (aster_dma_copy); DMA_BYTES from source offset DMA_SRC_OFF to destination offset DMA_DST_OFF, with
 //     DMA_DST_CACHED 1 the destination's lines read into hart 0's data cache just before the window
-//   2 the overlap: a DMA copy of DMA_BYTES and an unrelated checksum over an 8 KiB buffer, DMA_METHOD
+//   2 the overlap (new): a DMA copy of DMA_BYTES and an unrelated checksum over DMA_WORK words, DMA_METHOD
 //     0 the copy then the checksum on hart 0, 1 the checksum on hart 0 while the DMA copies,
 //     2 the copy then the checksum on hart 1, 3 the checksum on hart 1 while the DMA copies
 //     (phase17-plus.md §4: polling alone is not freed time; hart 0 only polls while the DMA works for it)
@@ -45,7 +45,10 @@
 #endif
 #define GUARD 64u
 #define BUFFER_BYTES ((GUARD + 8u + DMA_BYTES + GUARD + 63u) & ~63u)
-#define WORK_WORDS 2048u                                 // the overlap's checksum: 8 KiB
+#ifndef DMA_WORK
+#define DMA_WORK 2048u                                   // the overlap's checksum: 8 KiB (or 1 KiB: 256)
+#endif
+#define WORK_WORDS DMA_WORK
 #define USES_DMA (DMA_CASE == 2 || DMA_METHOD == 1)
 #define HART1_WORK (DMA_CASE == 2 && DMA_METHOD >= 2)
 
@@ -158,22 +161,27 @@ static __attribute__((noinline)) void run(void) {
 #endif
 }
 
+// the window, the same code for the warm-up and the timed pass (its START and FREEZE warm too)
+static __attribute__((noinline)) void window(void) {
+    matrix_open(1);
+    run();
+    matrix_close();
+}
+
 int main(void) {
     static struct v12_record record;
 #if HART1_WORK
     aster_smp_start();
 #endif
-    if (!matrix_cold) {                                // the window's warm-up (the same code)
+    if (!matrix_cold) {                                // the window's warm-up
         prepare();
-        run();
+        window();
     }
     driver_failed = 0;
     prepare();
     matrix_stamps_clear();
     v12_prepare();
-    matrix_open(1);
-    run();
-    matrix_close();
+    window();
     v12_end(&record);
 #if DMA_CASE == 1 && DMA_METHOD == 0
     matrix_hart0_whole(&record);                       // (the CPU copy is hart 0's, all of the window)
@@ -196,7 +204,7 @@ int main(void) {
     record.name = names[DMA_CASE - 1][DMA_METHOD]; record.family = "dma";
     record.method = USES_DMA ? "dma" : "cpu_copy"; record.window = "e2e"; record.cache_state = MATRIX_CACHE_STATE;
     record.size = DMA_BYTES; record.iterations = 1;
-    record.param = (DMA_DST_CACHED << 8) | (DMA_SRC_OFF << 4) | DMA_DST_OFF;
+    record.param = DMA_CASE == 2 ? WORK_WORDS : (DMA_DST_CACHED << 8) | (DMA_SRC_OFF << 4) | DMA_DST_OFF;
     record.seed = DMA_SEED; record.checksum = checksum; record.workers = HART1_WORK ? 2u : 1u;
     record.pass = errors == 0 && !driver_failed;
     v12_emit(&record);

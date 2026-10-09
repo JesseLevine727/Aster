@@ -175,6 +175,15 @@ static uint32_t run_kernel(void) {
 }
 #endif
 
+// the e2e window, the same code for the warm-up and the timed pass (so its START and FREEZE are warm too)
+static __attribute__((noinline)) uint32_t window_e2e(void) {
+    *(volatile uint32_t *)(uintptr_t)ASTER_ABI4_COMMAND = ASTER_ABI4_START;
+    __asm__ volatile ("fence rw,rw" ::: "memory");
+    const uint32_t checksum = run_e2e();
+    *(volatile uint32_t *)(uintptr_t)ASTER_ABI4_COMMAND = ASTER_ABI4_FREEZE;
+    return checksum;
+}
+
 static void emit(struct v12_record *record, const char *window, uint32_t checksum) {
     matrix_hart0_whole(record);                        // (every window ends in hart 0's add and fold)
     record->name = REDUCE_VERSION == 1 ? "reduce_v1" : "reduce_fill";
@@ -217,17 +226,14 @@ int main(void) {
 #if REDUCE_VERSION == 1 && REDUCE_WORKERS == 2
         *(volatile uint32_t *)0x20002004u = 1u;        // (warm: hart 1 is running before the timed pass)
 #endif
-        (void)run_e2e();                               // the warm-up pass
+        (void)window_e2e();                            // the warm-up pass
     }
     poison();
     v12_prepare();
 #if REDUCE_VERSION == 1 && REDUCE_WORKERS == 2
     if (matrix_cold) *(volatile uint32_t *)0x20002004u = 1u;   // v1's: released just before START
 #endif
-    *(volatile uint32_t *)(uintptr_t)ASTER_ABI4_COMMAND = ASTER_ABI4_START;
-    __asm__ volatile ("fence rw,rw" ::: "memory");
-    const uint32_t checksum = run_e2e();
-    *(volatile uint32_t *)(uintptr_t)ASTER_ABI4_COMMAND = ASTER_ABI4_FREEZE;
+    const uint32_t checksum = window_e2e();
     v12_end(&record);
     emit(&record, "e2e", checksum);
     if (!matrix_cold) {

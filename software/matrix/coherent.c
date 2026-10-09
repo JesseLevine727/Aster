@@ -50,7 +50,7 @@ _Static_assert(COHERENT_KIND < 6 || COHERENT_KIND == 8 || COHERENT_WORKERS == 2,
 static _Atomic uint32_t epoch, done, total, lock, turn, head, tail;
 static uint32_t seed_for_job, locked_sum, request[2], reply[2], queue[8][2];
 static uint32_t units[2], sums[2], errors[2];
-static _Atomic uint32_t adjacent[2] __attribute__((aligned(4096)));
+static _Atomic uint32_t adjacent[4] __attribute__((aligned(4096)));   // (two used: the line holds nothing else)
 struct padded_word { _Atomic uint32_t value; uint32_t padding[1023]; };
 static struct padded_word separate[2] __attribute__((aligned(4096)));
 volatile uint32_t aster_coherent_output[COHERENT_ITEMS];
@@ -176,6 +176,15 @@ void aster_coherent_kernel(unsigned hart, uint32_t seed) {
 }
 #endif
 
+#if COHERENT_KIND == 8 && COHERENT_WORKERS == 2
+// shared_mix's hart 1 resets its own half (matrix.md §10.4: a hart's stores invalidate the other's warm lines)
+static void hart1_reset(void *arg) {
+    (void)arg;
+    for (unsigned i = (COHERENT_ITEMS + 1u) / 2u; i < COHERENT_ITEMS; ++i)
+        aster_coherent_output[i] = seed_for_job ^ (i * 0x1021u);
+}
+#endif
+
 // ---- the harness ----
 enum { UNTIMED, E2E, KERNEL };
 
@@ -208,6 +217,13 @@ static __attribute__((noinline)) void reset_state(uint32_t job) {
         atomic_store_explicit(&adjacent[h], 0, memory_order_relaxed);
         atomic_store_explicit(&separate[h].value, 0, memory_order_relaxed);
     }
+#if COHERENT_KIND == 8 && COHERENT_WORKERS == 2
+    if (kernel_phase) {                                // (hart 1 under the runtime: its half by hart 1)
+        aster_smp_dispatch(hart1_reset, 0);
+        for (unsigned i = 0; i < (COHERENT_ITEMS + 1u) / 2u; ++i) aster_coherent_output[i] = seed_for_job ^ (i*0x1021u);
+        aster_smp_join();
+    } else
+#endif
     for (unsigned i = 0; i < COHERENT_ITEMS; ++i)
         aster_coherent_output[i] = COHERENT_KIND == 8 ? seed_for_job ^ (i*0x1021u) : 0;
     atomic_store_explicit(&epoch, job, memory_order_release);
