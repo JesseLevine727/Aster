@@ -6,8 +6,10 @@ It checks that the runs are one capture:
   - no entry listed twice.
 Then it writes, into OUT (docs/results/phase20/matrix-20.4):
   - manifest.json: schema aster.phase20.matrix.v1, every planned combination of every family (one entry a line),
-    with the runs' determinism, cold/warm pairs and totals summed and kept per family. The cache geometry axis is
-    20.5's (matrix.md §2): each captured case and method is also listed at 2 and 8 KiB, planned for 20.5;
+    with the runs' determinism, cold/warm pairs and totals summed and kept per family. matrix.md §7's unsupported
+    configurations (each captured case and method) and methods (each case they name) are listed with their
+    reasons, beside the runner's own; the cache geometry axis is 20.5's (matrix.md §2): each captured case and
+    method is also listed at 2 and 8 KiB, planned for 20.5;
   - raw-<family>.tar.xz: the family's raw records and console logs, and its determinism repeat's, packed
     reproducibly (sorted, fixed times and owners); each entry's `records` names its path inside;
   - overlap.json (scripts/matrix_overlap.py) and gates.json (scripts/matrix_gates.py);
@@ -22,6 +24,7 @@ import hashlib
 import io
 import json
 import lzma
+import re
 import sys
 import tarfile
 from collections import Counter
@@ -32,6 +35,29 @@ import matrix_overlap
 
 ROOT = Path(__file__).resolve().parents[1]
 SCHEMA = "aster.phase20.matrix.v1"
+# matrix.md §7's unsupported combinations, which the runner does not plan: the configurations (each captured case
+# and method, at R warm otherwise) and the methods (each case they name)
+CONFIGURATIONS = [
+    ("soc_icache_off", None, "the instruction cache off: the core fetches only through its cache (matrix.md §7)"),
+    ("soc_l2", None, "an L2: set aside by the owner (matrix.md §7)"),
+    ("soc_zero_wait", None, "zero-wait memory: the memory is block RAM with a two-cycle read (matrix.md §7)"),
+    ("soc_n2x2", "npu", "a 2x2 NPU: the NPU v2 is built 4x4 or 8x8 (matrix.md §7)"),
+    ("soc_n8p4", "npu", "8x8 on a 32-bit port: the 8x8 array needs the 64-bit port (matrix.md §7)"),
+]
+# a case name that carries its method (Conv2D's, MNIST's, CIFAR's), stripped to the case for §7's methods
+METHOD_SUFFIX = re.compile(r"_(scalar|multicore|dot8|npu|npu_direct|npu_im2col|npu_batched)$")
+COHERENT = ("atomic_add", "lrsc_counter", "cas_counter", "lock_sum", "false_shared", "padded", "ping_pong", "spsc_queue",
+            "shared_mix", "producer_consumer")
+METHODS = [
+    ("npu", lambda f, c: (f, c) in {("cpu", "fft"), ("dsp", "fft"), ("cpu", "sort_search"), ("cpu", "coremark"),
+                                    ("cpu", "dhrystone"), ("cpu", "strided")} or (f == "coherence" and c in COHERENT),
+     "the NPU for FFT, sort/search, CoreMark, Dhrystone, strided and the coherence cases: no GEMM in them (matrix.md §7)"),
+    ("multicore", lambda f, c: f == "cpu" and c in ("coremark", "dhrystone", "sort_search", "strided"),
+     "single-threaded v1 kernels: scaling is the multicore family's question (matrix.md §7)"),
+    ("dot8", lambda f, c: c == "fft", "DOT8 for the FFT: its Q15 butterflies are not int8 dot products (matrix.md §7)"),
+    ("dma", lambda f, c: f in ("cpu", "dsp", "ml", "npu_gemm", "coherence"),
+     "the DMA as a compute method: it only moves bytes; it is in the DMA family and ECG's pipeline (matrix.md §7)"),
+]
 GEOMETRY = ("planned for 20.5: the 2 and 8 KiB caches (matrix.md §2, soc.md §9), with the L1 tests at each size "
             "and ABI 4's line-geometry metadata following the parameter")
 MTIME = 1791504000           # 2026-10-09 00:00 UTC: the archives' fixed time
@@ -96,12 +122,30 @@ def main() -> int:
                 for k, v in e["totals"].items():
                     totals[k] += v
             entries.append(e)
-        per_family[family] = dict(run=str(run.resolve().relative_to(ROOT)), counts=m["counts"], determinism=m["determinism"],
+        where = run.resolve()
+        per_family[family] = dict(run=str(where.relative_to(ROOT) if where.is_relative_to(ROOT) else where), counts=m["counts"], determinism=m["determinism"],
                                   cold_warm_pairs=m["cold_warm_pairs"], seconds=m["seconds"], created=m["created"],
                                   archive=archive, archived_files=files)
+    allrec = {}
+    for run in args.runs:
+        allrec.update(matrix_overlap.records_of(run))
+    uses_npu = {(e["family"], e["case"], e["method"]) for e, recs in allrec.values()
+                if any(int(r["npu_jobs"]) for r in recs)}
+    captured = sorted({(e["family"], e["case"], e["method"]) for e in entries if e["status"] == "captured"})
+    for family, case, method in captured:                # §7's configurations (the NPU's: where it ran)
+        for sim, needs, reason in CONFIGURATIONS:
+            if needs is None or (family, case, method) in uses_npu:
+                entries.append(dict(id=f"{family}/{case}/{method}/{sim}/warm", family=family, case=case, method=method,
+                                    sim=sim, axes=dict(cache_state="warm"), status="unsupported", reason=reason))
+    have = {(f, METHOD_SUFFIX.sub("", c), m) for f, c, m in captured}
+    for family, case in sorted({(f, METHOD_SUFFIX.sub("", c)) for f, c, _ in captured}):     # §7's methods
+        for method, applies, reason in METHODS:
+            if applies(family, case) and (family, case, method) not in have:
+                entries.append(dict(id=f"{family}/{case}/{method}/soc_dev/warm", family=family, case=case,
+                                    method=method, sim="soc_dev", axes=dict(cache_state="warm"), status="unsupported",
+                                    reason=reason))
     # the cache geometry axis (2 and 8 KiB) is 20.5's (matrix.md §2): each captured case and method, at R warm
-    for family, case, method in sorted({(e["family"], e["case"], e["method"]) for e in entries
-                                        if e["status"] == "captured"}):
+    for family, case, method in captured:
         for kib in (2, 8):
             entries.append(dict(id=f"{family}/{case}/{method}/soc_l1_{kib}k/warm", family=family, case=case,
                                 method=method, sim=f"soc_l1_{kib}k", axes=dict(cache_kib=kib, cache_state="warm"),
@@ -118,9 +162,6 @@ def main() -> int:
         return dict(checked=sum(p["checked"] for p in parts), identical=sum(p["identical"] for p in parts),
                     differ=[d for p in parts for d in p["differ"]])
 
-    allrec = {}
-    for run in args.runs:
-        allrec.update(matrix_overlap.records_of(run))
     first = manifests[0][1]
     head = dict(schema=SCHEMA, source=first["source"], toolchain=first["toolchain"], families=families,
                 counts={k: counts[k] for k in ("captured", "unsupported", "failed", "planned")},

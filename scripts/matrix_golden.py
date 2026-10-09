@@ -9,6 +9,7 @@ The golden tree is exported with git archive and its soc_dev simulation built th
   matrix_golden.py RUN_DIR... [--golden-rev e6e2b98] [--jobs N] [--out build/matrix/golden]
 """
 import argparse
+import hashlib
 import json
 import os
 import subprocess
@@ -23,11 +24,15 @@ MAX_CYCLES = 2_000_000_000
 def build_golden(rev: str) -> Path:
     tree = ROOT / "build/golden" / rev
     sim = tree / "build/aster_soc/soc_dev"
-    if not sim.exists():
+    full = subprocess.run(["git", "rev-parse", rev], cwd=ROOT, capture_output=True, text=True, check=True).stdout.strip()
+    marker = tree / ".golden-revision"                   # (a tree another tool left: rebuilt unless it is GOLDEN's)
+    if not sim.exists() or not marker.exists() or marker.read_text().strip() != full:
+        subprocess.run(["rm", "-rf", str(tree)], check=True)
         tree.mkdir(parents=True, exist_ok=True)
         archive = subprocess.run(["git", "archive", rev], cwd=ROOT, capture_output=True, check=True).stdout
         subprocess.run(["tar", "-x", "-C", str(tree)], input=archive, check=True)
         subprocess.run(["make", "-s", "-C", str(tree), str(sim)], check=True, capture_output=True)
+        marker.write_text(full + "\n")
     return sim
 
 
@@ -39,17 +44,21 @@ def tohost(elf: Path, prefix: str) -> int:
 def replay(sim: Path, run: Path, entry: dict, out: Path, prefix: str) -> str | None:
     """None if the golden simulation's console and SOC line are the run's; else what differs."""
     binary = run / entry["firmware_bin"]
+    if hashlib.sha256(binary.read_bytes()).hexdigest() != entry["firmware_sha256"]:
+        return f"{entry['id']}: the firmware is not the run's"
     name = entry["id"].replace("/", "__")
     console = out / (name + ".console")
+    console.unlink(missing_ok=True)                      # (never a stale console)
     result = subprocess.run([str(sim), f"+bin={binary}", f"+tohost={tohost(binary.with_suffix('.elf'), prefix):x}",
                              f"+console={console}", f"+max_cycles={MAX_CYCLES}"], capture_output=True, text=True)
     soc = next((l for l in result.stdout.splitlines() if l.startswith("SOC ")), "")
     want = (run / "console" / (name + ".console")).read_bytes()
     got = console.read_bytes() if console.exists() else b""
-    if got != want:
+    if not want or got != want:
         return f"{entry['id']}: the console differs ({len(got)} bytes against {len(want)})"
-    status = soc.split()[1] if len(soc.split()) > 1 else "(none)"
-    if status != entry["soc"]["status"] or f"cycles={entry['soc']['cycles']}" not in soc:
+    fields = soc.split()
+    status = fields[1] if len(fields) > 1 else "(none)"
+    if status != entry["soc"]["status"] or f"cycles={entry['soc']['cycles']}" not in fields[2:]:
         return f"{entry['id']}: the SOC line differs: {soc!r}, the run's {entry['soc']}"
     return None
 
@@ -62,12 +71,15 @@ def main() -> int:
     parser.add_argument("--out", type=Path, default=ROOT / "build/matrix/golden")
     args = parser.parse_args()
     prefix = os.environ.get("RISCV_PREFIX", "riscv32-unknown-elf-")
-    sim = build_golden(args.golden_rev)
-    args.out.mkdir(parents=True, exist_ok=True)
     work = []
     for run in args.runs:
         manifest = json.loads((run / "manifest.json").read_text())
         work += [(run, e) for e in manifest["entries"] if e["status"] == "captured" and e["sim"] == "soc_dev"]
+    if not work:                                         # (nothing replayed proves nothing)
+        print("FAIL: no R firmware image to replay")
+        return 1
+    sim = build_golden(args.golden_rev)
+    args.out.mkdir(parents=True, exist_ok=True)
     with ThreadPoolExecutor(args.jobs) as pool:
         differ = [d for d in pool.map(lambda w: replay(sim, w[0], w[1], args.out, prefix), work) if d]
     print(f"{'PASS' if not differ else 'FAIL'}: {len(work) - len(differ)} of {len(work)} R firmware images give "

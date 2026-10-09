@@ -10,8 +10,8 @@ where it only starts an engine and polls it. The classes:
   - overlap, by speedup: hart 0's interval spans its wait, so it cannot show overlap, but the same kernel on one
     worker (the one-worker record of the same case, axes and window: DOT8 when the two-worker record retired
     DOT8s, else scalar) is slower, so the work ran on both harts at once;
-  - not shown, spans hart 0's wait: hart 0's interval spans its wait and no one-worker twin is slower (none
-    exists, as for ECG's pipelines, whose overlap proof is 20.5's: matrix.md §4.8, or it is not faster);
+  - not shown, spans hart 0's wait: hart 0's interval spans its wait and the one-worker twin is not slower than
+    the two workers, or there is none (as for ECG's pipelines, whose overlap proof is 20.5's: matrix.md §4.8);
   - no overlap: stamped intervals that do not overlap by more than MIN_OVERLAP (the hand-over outlasts the work);
   - engine overlap: the DMA's overlap cases (hart 0 polls, hart 1 works), against their serial twins, saved
     cycles when positive (§4.3's comparison; polling alone is not freed time);

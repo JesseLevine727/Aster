@@ -1,6 +1,7 @@
 # Phase 20: whole-SoC workload placement and concurrency
 
-Status: **milestone 20.4 (the workload matrix) in progress.** 20.3 (the DMA) was signed off by the
+Status: **milestone 20.4 (the workload matrix): its four steps done, awaiting the owner's review** (matrix.md
+§10.10–14, and the timing's sign-off on m4-o5asm-mgi, +0.333 ns). 20.3 (the DMA) was signed off by the
 owner on 8 October 2026, its timing on the g2-o5end build (+0.375 ns, reproducible; one placement: the
 median across its RTL's ten strategies is about +0.1 ns). 20.2 (the two-hart SoC) was signed off
 by the owner on 8 October 2026. The owner decided 20.2's timing on 7 October 2026, in three rounds (below,
@@ -1023,7 +1024,7 @@ eleven builds):
 
 **Signed off by the owner, 8 October 2026** (with "proceed with 20.4").
 
-## Milestone 20.4: the workload matrix (in progress, 8 October 2026)
+## Milestone 20.4: the workload matrix (its steps done 9 October 2026; awaiting the owner's review)
 
 **The plan:** [`matrix.md`](matrix.md), the matrix soc.md §9 asks for, made
 concrete, and [`asterbench-v12.md`](asterbench-v12.md), its records.
@@ -1376,9 +1377,14 @@ unsupported. Determinism 33/33; 72/72 pairs.
   cache.
 
 **Step 2 is complete:** every workload of matrix.md §8's step 2 is in the matrix, and the scaling and v1
-gates are measured. Next come the step's watchdog review and the push, then step 3.
+gates are measured. It was pushed as d097b2b.
 
-### Step 3: the other families (done; awaiting its review)
+Its figures are of its captures. Step 4's final capture is of record: step 3's method changes and the final
+runtime's layout moved some of them. For example:
+- two workers on GEMM 128×64×128: 432,920 → 429,210 cycles, 1.949× → 1.965×;
+- the ECG pipeline against v1: 8.69× → 8.66×.
+
+### Step 3: the other families (done, pushed as bb024f3)
 
 **Captured on clean firmware sources:**
 - `build/matrix/s3-mem`, `s3-dma` and `s3c-coh` from c8aea66;
@@ -1572,14 +1578,229 @@ two workers on the one-hart build are unsupported. Determinism 27/27; 66/66 pair
 
   How many records show it moves with the layout.
 
-**Still to do:** step 3's watchdog review and the push; then step 4, the full matrix (matrix.md §8):
-- the manifest complete;
-- the overlap and the totals reconciled;
-- the evidence bundle in `docs/results/phase20/matrix-20.4/`;
-- timing in context for the RTL changes, by the owner's rule.
+**Step 3 was pushed as bb024f3** after five watchdog reviews. Its figures are of its captures; step 4's
+final capture moved some of them (below).
 
-Step 4 also re-captures step 2's families on the method as it now stands, since every two-worker kernel
-window has changed.
+### Step 4: the full matrix (done; awaiting the owner's review)
+
+**The final capture:** every family from one clean commit, 87c6b0a (`build/matrix/m5-*`), bundled in
+[`results/phase20/matrix-20.4/`](results/phase20/matrix-20.4/README.md).
+
+| Family | Captured | Unsupported | Determinism | Cold/warm pairs | Time |
+| --- | ---: | ---: | ---: | ---: | ---: |
+| CPU | 108 | 0 | 18/18 | 54/54 | 30 s |
+| coherence | 504 | 141 | 26/26 | 88/88 | 49 s |
+| DSP | 657 | 17 | 27/27 | 66/66 | 97 s |
+| ML | 124 | 2 | 16/16 | 13/13 | 1,298 s |
+| ECG | 648 | 36 | 33/33 | 72/72 | 84 s |
+| memory | 1,034 | 16 | 35/35 | 464/464 | 90 s |
+| NPU GEMM | 1,503 | 56 | 38/38 | 149/149 | 452 s |
+| DMA | 11,232 | 0 | 75/75 | 4,992/4,992 | 474 s |
+| **All** | **15,810** | **268** | **268/268** | **5,898/5,898** | |
+
+- **The manifest is complete:** 17,444 entries.
+  - **15,810 captured,** with 19,018 records. That is over twice matrix.md §3's estimate of about 8,000;
+    the DMA family's sizes, alignments and offsets alone give 11,232 entries.
+  - **1,166 unsupported,** each with its reason:
+    - 268 are the runner's: two workers on one hart, the pipeline and the streams on one hart, one row of C,
+      dispatch and join on one hart;
+    - 898 are matrix.md §7's: the configurations (the instruction cache off, an L2, zero-wait memory; and,
+      where the NPU ran, ECG's pipelines included, a 2×2 array and 8×8 on a 32-bit port) for each captured
+      case and method, and the methods (the NPU, two workers, DOT8, the DMA) for each case §7 names.
+  - **None failed.**
+  - **468 planned for 20.5:** each captured case and method with the 2 and 8 KiB caches (matrix.md §2).
+  - Two of §7's items are not combinations of the matrix's cases, so they are not entries: v1's
+    private-region permissions and warm stop, and energy per inference.
+- **Correctness:** every record passes both validators and its family's independent oracle.
+- **Determinism, over the whole matrix:** a second full capture gives all 15,810 entries' records byte for
+  byte, on the same firmware and simulations (equal hashes). It was made from 437ca62. Six of its eight
+  runs had uncommitted docs and analysis scripts, which the capture does not use.
+
+**R is 20.3's R.** 20.4's one RTL change (328891a: `DCACHE` and the NPU's 32-bit adapter) leaves the
+default build's behaviour as it was:
+- **Every R firmware image of the final capture,** 3,885 of them, replayed on the SoC simulation built from
+  20.3's commit e6e2b98, prints the same console byte for byte and ends on the same cycle
+  (`matrix_golden.py`; every record and counter, cycle for cycle).
+- `make core-shell-equiv` against e6e2b98: 879 of 879 runs the same, cycle for cycle and RVFI record for
+  record.
+
+Step 1's "the default build is the same logic" now rests on these. The netlist is not identical. Synthesis
+maps 20.4's RTL to 22 more LUTs (34,519 against 34,497). On the same strategy, the routed builds have 34,001
+against 33,975 (o5end) and 33,871 against 33,866 (the defaults).
+
+**The totals gate** (soc.md §11), checked in every record from counters that nothing in the window reads
+(`reconcile_totals`):
+- **The NPU's bytes against the fabric's.** Each NPU request is a read of the port's width or one C word, so
+  f_accepted_n = npu_bytes_read / port bytes + npu_bytes_written / 4. It holds in all 19,018 records, the
+  4×4 and 32-bit builds included.
+- **The cycles, bounded by the fabric's counters.** An engine's requests are accepted or waiting only while
+  it runs, at most one a cycle on each port. So:
+  - f_accepted_n + f_waited_n ≤ npu_job_cycles;
+  - the DMA's R and W requests each ≤ its busy cycles;
+  - its bytes ≤ 8 × its busy cycles.
+
+  All 19,018 records hold, multi-job windows included. The bounds bite where an engine runs: 2,429 records
+  have NPU job cycles, with the fabric's count reaching 0.983 of them; 6,012 have DMA busy cycles, reaching
+  0.999.
+- **One-job windows** (1,458 NPU, 5,832 DMA): the totals equal the job's own counters, read after FREEZE
+  (`MATRIX_JOBS`, matrix.md §6). That holds by construction, since TOTAL adds each JOB. So it checks the
+  plumbing, not the engine.
+- **The MACs and the DMA's bytes** match each oracle's exactly, against the workload. The DMA's reads,
+  writes, waits and invalidations are the validator's, checked against the fabric's.
+
+**The overlap gate** (`matrix_overlap.py`). Every two-worker record is classed by its harts' intervals
+(matrix.md §10.7). Where hart 0 works after its last wait, its interval spans that wait, so it cannot show
+overlap. There, the script reads overlap from a speedup over the same kernel on one worker. That is a new
+reading of the gate, put to the owner as matrix.md §10.14.
+
+| Class | Records | Cases |
+| --- | ---: | --- |
+| Overlap, stamped: the intervals overlap by more than hart 1's two stamps (40 cycles), and both harts retire | 1,422 | the GEMMs (the sweep's and the gate's), the FIR, the streams, the coherence cases, ping-pong, the queues, producer/consumer; Conv2D, the FFT, MNIST and CIFAR in their kernel windows; dispatch and join once (+4 waits) |
+| Overlap, by speedup (§10.14, for the owner): hart 0's interval spans its wait, and the one-worker twin is slower | 117 | both reductions (both windows), Conv2D, the FFT, MNIST and CIFAR in their e2e windows, the dot at K ≥ 64 (both windows) |
+| Not shown: hart 0's interval spans its wait, and the one-worker twin is not slower (0.20× to 0.85× here), or there is none | 823 | ECG's four pipelines (756: their proof is 20.5's, matrix.md §4.8), the dot at K ≤ 8 (and once at 64), dispatch and join |
+| No overlap within the stamps | 85 | the coherence cases at 2 items and dispatch and join: in 70, hart 0 is done before hart 1 starts; the other 15 overlap by under 40 cycles |
+| The DMA beside hart 1, against its serial twin | 108 | saves 0.8% to 48% (1.008× to 1.92×) |
+| The DMA's serial twins | 108 | — |
+
+- **No stamping faults.**
+- **Stamps show concurrent intervals, not useful work.** 15 stamped records are slower than one worker:
+  lock_sum, whose lock serialises the harts (down to 0.54×); shared_mix at 2 items; the 3×1×7 GEMM.
+- **Speedups over the same kernel on one worker** reach 2.23×. 71 records exceed 2×:
+  - **DOT8 GEMMs:** 16×16×64, 33×33×32, 96³, 64³ and 64×32×64. Two harts have two data caches: at +4 waits,
+    16×16×64 takes 1,540 misses on one worker and 132 + 519 on two. Those conflicts follow the layout: the
+    one-worker twin is 12% slower here than in step 3's capture, which would have given 1.99×.
+  - **Conv2D im2col** on two workers.
+  - **The padded counters:** v1's one-worker loop retires 5,141 instructions, against 4,298 on both harts
+    (2,161 + 2,137, at R).
+
+**The scaling gate, measured** (required in 20.5). Two workers against one, DOT8 for the GEMMs:
+
+| Workload (warm, R) | e2e, 1 worker | e2e, 2 workers | Speedup | Kernel, 1 | Kernel, 2 | Speedup | e2e across the six configurations |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
+| reduction, the gate's | 73,958 | 37,687 | **1.962×** | 36,998 | 19,192 | 1.928× | 1.944× to 1.971× |
+| GEMM 64×64×64 | 215,175 | 109,033 | **1.973×** | 201,219 | 101,873 | 1.975× | 1.957× to 1.995× |
+| GEMM 96×96×96 | 703,722 | 354,285 | **1.986×** | 672,634 | 338,491 | 1.987× | 1.981× to 1.998× |
+| GEMM 128×64×128 | 843,600 | 429,210 | **1.965×** | 805,370 | 404,472 | 1.991× | 1.948× to 1.998× |
+
+All four clear 1.8× in every configuration both ran in: R warm and cold, the cache off, +1, +2 and +4 waits.
+
+**Against v1, measured** (required in 20.5). The comparison uses v1's inputs and window, cold, at R:
+
+| Workload | v1's best | v2's best | Method | v1 ÷ v2 |
+| --- | ---: | ---: | --- | ---: |
+| Conv2D 32×32 K=5, ×4 | 4,837,408 | 84,551 | NPU, direct | **57.2×** |
+| reduction, 1,024 words ×4 | 233,112 | 58,874 | v1's, two workers | **3.96×** |
+| MNIST MLP, an image | 433,903 | 6,019 | NPU, an image at a time | **72.1×** |
+| streaming ECG, 16 × 64 | 1,528,505 | 176,523 | the two-hart pipeline | **8.66×** |
+| CIFAR-10, 20 images | 65,568,218 | 4,085,916 | NPU, direct | **16.0×** |
+| CoreMark (CRC run) | 1,922,272 | 467,475 | the Aster core | **4.11×** |
+| Dhrystone | 3,128,553 | 859,400 | the Aster core | **3.64×** |
+| sort/search | 2,183,301 | 696,883 | the Aster core | **3.13×** |
+| FFT | 3,057,473 | 317,346 | the Aster core | **9.63×** |
+| strided | 9,087 | 2,732 | the Aster core | **3.33×** |
+| Conv2D (CPU) | 5,820,652 | 1,111,074 | the Aster core | **5.24×** |
+
+Every v1-retained workload has a faster v2 method. The CPU kernels compare with v1's `aster_minimal`
+figures.
+
+**What moved since steps 2 and 3** (`checks/moved-from-steps-2-3.log`, on the same simulations):
+- **Layout alone, for step 3's captures and step 2's CPU, ECG and MNIST ones.** The final firmware's runtime
+  gains 228 bytes of code, 72 of read-only data and 64 of .bss, for the jobs' counters read after FREEZE.
+- **Step 3's method changes too, for step 2's coherence, Conv2D and CIFAR.** The armed hand-over now waits
+  for hart 1 at its flag, and each window's START and FREEZE sit in the code its warm-up runs. CIFAR's
+  hand-over change moved it by under 0.04%.
+
+| From | Changes | Windows | Unchanged | Median change | Range |
+| --- | --- | ---: | ---: | ---: | --- |
+| step 2: CPU | layout | 108 | 37 | 0.001% | −0.00% to +0.59% (the FFT) |
+| step 2: coherence | layout and method | 170 | 26 | 0.013% | −8.5% to +6.3% (dispatch and join's warm-up) |
+| step 2: Conv2D | layout and method | 152 | 51 | 0.005% | −0.13% to +0.04% |
+| step 2: ML | layout (MNIST); layout and method (CIFAR) | 235 | 128 | 0.000% | −1.4% to +10.9% (MNIST on two workers, +4 waits: layout) |
+| step 2: ECG | layout | 1,224 | 310 | 0.050% | −7.9% to +5.9% (the pipelines at +4 waits) |
+| step 3: memory | layout | 1,194 | 949 | 0.000% | −4.3% to +4.7% (the same-bank streams) |
+| step 3: DMA | layout | 11,232 | 11,003 | 0.000% | −0.85% to +0.60% |
+| step 3: coherence | layout | 920 | 745 | 0.000% | −42% to +69% (lr/sc and CAS contention) |
+| step 3: DSP | layout | 1,248 | 915 | 0.000% | −2.0% to +26% (the dot's shortest kernel windows) |
+| step 3: NPU GEMM | layout | 2,857 | 2,100 | 0.000% | −18% to +43% (the small GEMMs on two workers) |
+
+What layout alone moves, by kind:
+- **The long CPU kernels:** under 0.6%.
+- **The DMA's copies:** under 0.9%.
+- **The memory family's one-hart reads and copies:** up to +2.0%.
+- **One hart elsewhere moves too,** wherever the direct-mapped caches' conflicts shift:
+  - the 16×16×64 GEMM at +4 waits: +12% on DOT8 (154,296 cycles) and on scalar (219,470);
+  - ECG on one hart: −5.5% to +1.2%;
+  - the dot's shortest windows: up to +26%.
+- **Two harts on a long kernel move too:** MNIST on two workers, end to end, +5.3% at R (4,880,762 →
+  5,137,682 cycles, its speedup over scalar 1.99× → 1.88×) and +10.7% at +4 waits (+10.9% in its kernel
+  window, the table's extreme).
+- **Two harts in contention move most:** −42% to +69%. Which banks the harts meet in also follows the layout.
+  This qualifies step 3's "contention by phase": the layout moves it too.
+
+Figures at that scale are readings of one layout, not properties of the method. The tables of steps 2 and 3
+are their captures'; the bundle's figures are of record.
+
+**Timing in context** (the owner's rule of 8 October 2026), on 20.4's RTL (unchanged at 87c6b0a):
+- **19 strategies,** each built at 10 ns in context; all meet setup and hold. The worst slack ranges from
+  +0.033 to +0.333 ns, median +0.163 (`timing/builds.csv`). 20.3's ten gave +0.031 to +0.375, median about
+  +0.1.
+- **The best, m4-o5asm-mgi** (`over=0.5;place=AltSpreadLogic_medium;route=MoreGlobalIterations`): +0.333 ns,
+  hold +0.022.
+  - **Reproducible:** rebuilt from the same sources, it gives the same configuration data and slack
+    (`timing/reproducibility.txt`).
+  - **Its near-critical endpoints:** seven are under 0.4 ns: the fabric's snoop into hart 1's data cache,
+    the NPU's register queue into the fabric, the SoC's CONTROL run bit into bank 0, and two data-cache
+    writes.
+- **The default directives** give +0.154 ns.
+- **Area:** 33,988 LUTs (63.9%), 77 block RAM tiles (55.0%), 27 DSPs (12.3%): under 80%.
+- **For the owner:** 20.4's timing to be signed off on m4-o5asm-mgi. As with 20.3's, the margin holds for
+  that build, not across placements.
+- **The variant builds** are axes of the simulated matrix, never built for the board, so no timing claim is
+  made for them:
+  - the waits are simulation-only (matrix.md §2);
+  - aster_soc.sv marks `DCACHE` as simulation-only;
+  - the NPU's other geometries and one hart are RTL parameters.
+
+  A variant that 20.5 adopts needs its own in-context timing.
+
+**The reviews in step 4** (two watchdog rounds) changed the method before the final capture:
+- **Overlap:** hart 0's whole-window interval no longer counts as overlap on its own, and a stamped overlap
+  must exceed the stamps.
+- **Totals:** the cycle totals are bounded by the fabric's counters, beyond the one-job identities.
+- **Provenance:** the final capture was made from a committed, clean tree.
+- **After the capture:**
+  - the manifest gained §7's exclusions;
+  - the golden replay checks each firmware's hash and starts from fresh consoles;
+  - this record's claims were corrected (the cause of the moves, the scaling table's configurations).
+
+**For 20.5:** the board's console is 4 KiB. A warm entry's two records already come to about 4,500 bytes,
+and `MATRIX_JOBS` adds about 130 bytes a record. The board run must drain the console between windows, or
+print less.
+
+**Step 4 is complete:**
+- the manifest is complete;
+- the overlap and the totals are reconciled;
+- the evidence is bundled;
+- the timing is re-checked by the owner's rule.
+
+20.4's exit is met, subject to the owner's reading in §10.14:
+- **Correctness and records:** met.
+- **Overlap:** shown for every multicore workload, except:
+  - ECG's pipelines, whose proof is 20.5's (matrix.md §4.8);
+  - the smallest sizes, where the hand-over outlasts the work (published as losses).
+
+  The overlap of some workloads rests on the speedup reading, matrix.md §10.14:
+  - both reductions, in both windows;
+  - Conv2D, the FFT, MNIST and CIFAR, in their e2e windows;
+  - the dot at K ≥ 64, in both windows. Its K ≤ 8 records are not shown, so without §10.14 the dot shows
+    overlap at no size.
+
+  That reading is the owner's call. Under it the exit is met; without it, those windows' overlap would wait
+  for 20.5, which could also stamp hart 0's share there.
+- **Totals:** reconciled.
+- **Scaling and v1:** measured.
+
+It awaits the owner's review: matrix.md §10.10–14, and the timing's sign-off.
 
 ## Milestones and gates
 

@@ -1,0 +1,36 @@
+Copyright 1986-2022 Xilinx, Inc. All Rights Reserved. Copyright 2022-2025 Advanced Micro Devices, Inc. All Rights Reserved.
+----------------------------------------------------------------------------------------------------------------------------------------------------------------
+| Tool Version : Vivado v.2025.1 (lin64) Build 6140274 Wed May 21 22:58:25 MDT 2025
+| Date         : Fri Oct  9 01:04:11 2026
+| Host         : gondor running 64-bit Ubuntu 24.04.5 LTS
+| Command      : report_utilization -hierarchical -hierarchical_depth 4 -file /home/elfo/Documents/Aster/build/timing-20.4/o5asm-mgi-paths/utilization_hier.rpt
+| Design       : aster_soc_board_wrapper
+| Device       : xc7z020clg400-1
+| Speed File   : -1
+| Design State : Physopt postRoute
+----------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+Utilization Design Information
+
+Table of Contents
+-----------------
+1. Utilization by Hierarchy
+
+1. Utilization by Hierarchy
+---------------------------
+
++-------------------------+--------------------------------------+------------+------------+---------+------+-------+--------+--------+------------+
+|         Instance        |                Module                | Total LUTs | Logic LUTs | LUTRAMs | SRLs |  FFs  | RAMB36 | RAMB18 | DSP Blocks |
++-------------------------+--------------------------------------+------------+------------+---------+------+-------+--------+--------+------------+
+| aster_soc_board_wrapper |                                (top) |      33988 |      33318 |     606 |   64 | 23657 |     77 |      0 |         27 |
+|   aster_soc_board_i     |                      aster_soc_board |      33988 |      33318 |     606 |   64 | 23657 |     77 |      0 |         27 |
+|     fabric              |             aster_soc_board_fabric_0 |        390 |        331 |       0 |   59 |   490 |      0 |      0 |          0 |
+|       s00_couplers      |               s00_couplers_imp_NTWX2 |        390 |        331 |       0 |   59 |   490 |      0 |      0 |          0 |
+|         auto_pc         | aster_soc_board_fabric_imp_auto_pc_0 |        390 |        331 |       0 |   59 |   490 |      0 |      0 |          0 |
+|     aster               |              aster_soc_board_aster_0 |      33581 |      32971 |     606 |    4 | 23134 |     77 |      0 |         27 |
+|       inst              | aster_soc_board_aster_0_aster_soc_ip |      33581 |      32971 |     606 |    4 | 23134 |     77 |      0 |         27 |
+|         implementation  |    aster_soc_board_aster_0_aster_soc |      33581 |      32971 |     606 |    4 | 23134 |     77 |      0 |         27 |
++-------------------------+--------------------------------------+------------+------------+---------+------+-------+--------+--------+------------+
+* Note: The sum of lower-level cells may be larger than their parent cells total, due to cross-hierarchy LUT combining
+
+

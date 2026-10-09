@@ -1,0 +1,8 @@
+PASS: m4-cpu and m5-cpu: 108 captured entries, 0 differ in firmware, simulation or records
+PASS: m4-coherence and m5-coherence: 504 captured entries, 0 differ in firmware, simulation or records
+PASS: m4-dsp and m5-dsp: 657 captured entries, 0 differ in firmware, simulation or records
+PASS: m4-ml and m5-ml: 124 captured entries, 0 differ in firmware, simulation or records
+PASS: m4-ecg and m5-ecg: 648 captured entries, 0 differ in firmware, simulation or records
+PASS: m4-memory and m5-memory: 1034 captured entries, 0 differ in firmware, simulation or records
+PASS: m4-npu_gemm and m5-npu_gemm: 1503 captured entries, 0 differ in firmware, simulation or records
+PASS: m4-dma and m5-dma: 11232 captured entries, 0 differ in firmware, simulation or records

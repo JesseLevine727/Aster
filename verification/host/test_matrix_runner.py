@@ -1,5 +1,6 @@
 """20.4's runner (scripts/matrix.py): its cold/warm pair check, its totals reconciliation and its MNIST weights
-header; and the overlap gate's classes (scripts/matrix_overlap.py)."""
+header; the overlap gate's classes (scripts/matrix_overlap.py); two captures compared (scripts/matrix_compare.py);
+the scaling gate (scripts/matrix_gates.py) and the bundle's refusals (scripts/matrix_bundle.py)."""
 import subprocess
 import sys
 import tempfile
@@ -10,6 +11,10 @@ ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(ROOT / "scripts"))
 
 import matrix  # noqa: E402
+import matrix_bundle  # noqa: E402
+import matrix_compare  # noqa: E402
+import matrix_gates  # noqa: E402
+import matrix_golden  # noqa: E402
 import matrix_overlap  # noqa: E402
 
 
@@ -154,6 +159,138 @@ class Overlap(unittest.TestCase):
         result, _ = self.classes([("f", "a", "multicore", 2, 600, (0, 0), (10, 500)),     # hart 0 unstamped
                                   ("f", "b", "multicore", 2, 600, (0, 300), (0, 0))])     # hart 1 unstamped
         self.assertEqual(len(result["faults"]), 2)
+
+
+class Compare(unittest.TestCase):
+    """matrix_compare.identical: two captures of one build, entry by entry."""
+    @staticmethod
+    def capture(out: Path, cycles: int, firmware: str = "f0") -> Path:
+        out.mkdir()
+        (out / "a.record").write_text(f"ASTERBENCH,name=a,window=e2e,h0_cycles={cycles}\n")
+        entries = [dict(id="f/a/scalar/soc_dev/warm", status="captured", records="a.record", firmware_sha256=firmware,
+                        sim_sha256="s0"), dict(id="f/b/scalar/soc_h1/warm", status="unsupported")]
+        (out / "manifest.json").write_text(matrix_overlap.json.dumps(dict(entries=entries)))
+        return out
+
+    def test_identical_and_not(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            a = self.capture(Path(tmp) / "a", 100)
+            self.assertEqual(matrix_compare.identical(a, self.capture(Path(tmp) / "b", 100)), (1, []))
+            self.assertEqual(len(matrix_compare.identical(a, self.capture(Path(tmp) / "c", 101))[1]), 1)
+            self.assertEqual(len(matrix_compare.identical(a, self.capture(Path(tmp) / "d", 100, "f1"))[1]), 1)
+            self.assertIn("e2e 100 -> 101", matrix_compare.moved(a, Path(tmp) / "c"))
+
+
+def scaling_run(out: Path, family: str, revision: str = "r", dirty: bool = False, one: int = 1000,
+                two: int = 520) -> Path:
+    """A run of the gate's reduction on one and two workers, as the runner writes it."""
+    (out / "records").mkdir(parents=True)
+    (out / "console").mkdir()
+    entries = []
+    for workers, method, cycles in ((1, "scalar", one), (2, "multicore", two)):
+        name = f"{family}__reduce_fill__{method}"
+        line = (f"ASTERBENCH,name=reduce_fill,window=e2e,h0_cycles={cycles},h0_retired=10,h1_retired="
+                f"{10 if workers == 2 else 0},h0_work_start=0,h0_work_end={cycles},h1_work_start=5,"
+                f"h1_work_end={cycles - 20},h0_dot8_retire=0,h1_dot8_retire=0,npu_jobs=0\n")
+        (out / "records" / f"{name}.record").write_text(line)
+        (out / "console" / f"{name}.console").write_text(line)
+        entries.append(dict(id=f"{family}/reduce_fill/{method}/soc_dev/warm", family=family, case="reduce_fill",
+                            method=method, sim="soc_dev", status="captured", records=f"records/{name}.record",
+                            axes=dict(workers=workers, cache_state="warm"), totals=dict(npu_fabric=1)))
+    sample = dict(checked=1, identical=1, differ=[])
+    (out / "manifest.json").write_text(matrix_overlap.json.dumps(dict(
+        schema=matrix_bundle.SCHEMA, created="t", source=dict(revision=revision, dirty=dirty, changed=[]),
+        toolchain=dict(gcc="g"), families=[family], counts=dict(captured=2, failed=0, unsupported=0, planned=0),
+        determinism=sample, cold_warm_pairs=sample, seconds=1, entries=entries)))
+    return out
+
+
+class Gates(unittest.TestCase):
+    def test_scaling(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            allrec = matrix_overlap.records_of(scaling_run(Path(tmp), "coherence"))
+            s = matrix_gates.scaling(allrec)["reduce_fill"]
+            self.assertEqual((s["pairs"], s["e2e_min"], s["meets"]), (1, 1.9231, True))
+            allrec = matrix_overlap.records_of(scaling_run(Path(tmp) / "slow", "coherence", two=600))
+            self.assertFalse(matrix_gates.scaling(allrec)["reduce_fill"]["meets"])             # 1.67x
+
+
+class Bundle(unittest.TestCase):
+    def bundle(self, *runs) -> int:
+        with tempfile.TemporaryDirectory() as tmp:
+            argv = sys.argv
+            sys.argv = ["matrix_bundle.py", *map(str, runs), "--out", str(Path(tmp) / "out")]
+            try:
+                return matrix_bundle.main()
+            finally:
+                sys.argv = argv
+
+    def test_one_clean_capture_or_none(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            t = Path(tmp)
+            self.assertEqual(self.bundle(scaling_run(t / "a", "coherence"), scaling_run(t / "b", "dsp")), 0)
+            self.assertEqual(self.bundle(scaling_run(t / "c", "coherence"), scaling_run(t / "d", "dsp", "r2")), 1)
+            self.assertEqual(self.bundle(scaling_run(t / "e", "coherence", dirty=True)), 1)
+            self.assertEqual(self.bundle(scaling_run(t / "f", "coherence"), scaling_run(t / "g", "coherence")), 1)
+
+    def test_section_7_exclusions(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            out = Path(tmp) / "out"
+            argv = sys.argv
+            sys.argv = ["matrix_bundle.py", str(scaling_run(Path(tmp) / "a", "coherence")), "--out", str(out)]
+            try:
+                self.assertEqual(matrix_bundle.main(), 0)
+            finally:
+                sys.argv = argv
+            entries = [matrix_overlap.json.loads(l.strip().rstrip(",")) for l in (out / "manifest.json").open()
+                       if l.strip().startswith('{"')]
+        unsupported = sorted(e["id"] for e in entries if e["status"] == "unsupported")
+        # the three configurations for each of the two captured methods, and the DMA for the case; no NPU ran
+        self.assertEqual(unsupported, sorted([f"coherence/reduce_fill/{m}/{sim}/warm" for m in ("multicore", "scalar")
+                                              for sim in ("soc_icache_off", "soc_l2", "soc_zero_wait")]
+                                             + ["coherence/reduce_fill/dma/soc_dev/warm"]))
+        self.assertEqual(sum(e["status"] == "planned" for e in entries), 4)       # 2 and 8 KiB, each method
+        self.assertEqual(matrix_bundle.METHOD_SUFFIX.sub("", "conv2d_im2col_npu"), "conv2d_im2col")
+
+    def test_npu_exclusions_where_the_npu_ran(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            run = scaling_run(Path(tmp) / "a", "coherence")
+            record = run / "records" / "coherence__reduce_fill__multicore.record"
+            record.write_text(record.read_text().replace("npu_jobs=0", "npu_jobs=1"))   # (as if it ran the NPU)
+            out = Path(tmp) / "out"
+            argv = sys.argv
+            sys.argv = ["matrix_bundle.py", str(run), "--out", str(out)]
+            try:
+                self.assertEqual(matrix_bundle.main(), 0)
+            finally:
+                sys.argv = argv
+            ids = {matrix_overlap.json.loads(l.strip().rstrip(","))["id"] for l in (out / "manifest.json").open()
+                   if l.strip().startswith('{"')}
+        self.assertLessEqual({"coherence/reduce_fill/multicore/soc_n2x2/warm",
+                              "coherence/reduce_fill/multicore/soc_n8p4/warm"}, ids)
+        self.assertNotIn("coherence/reduce_fill/scalar/soc_n2x2/warm", ids)
+
+    def test_reproducible_archives(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            run = scaling_run(Path(tmp) / "a", "coherence")
+            matrix_bundle.pack(run, Path(tmp) / "1.tar.xz")
+            matrix_bundle.pack(run, Path(tmp) / "2.tar.xz")
+            self.assertEqual((Path(tmp) / "1.tar.xz").read_bytes(), (Path(tmp) / "2.tar.xz").read_bytes())
+
+
+class Golden(unittest.TestCase):
+    def test_nothing_to_replay_fails(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            run = Path(tmp) / "run"
+            run.mkdir()
+            (run / "manifest.json").write_text(matrix_overlap.json.dumps(dict(entries=[
+                dict(id="f/a/scalar/soc_w1/warm", status="captured", sim="soc_w1")])))
+            argv = sys.argv
+            sys.argv = ["matrix_golden.py", str(run), "--out", str(Path(tmp) / "out")]
+            try:
+                self.assertEqual(matrix_golden.main(), 1)                         # (no R image: no golden build)
+            finally:
+                sys.argv = argv
 
 
 class MnistWeights(unittest.TestCase):

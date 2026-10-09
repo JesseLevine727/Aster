@@ -510,10 +510,42 @@ did not settle a point; none loosens a gate.
     against v2.
     - It is a cost of the armed hand-over itself, not of poisoning: the
       e2e window's two misses are the poisoning code's.
-    - It shows wherever the kernel window is short. The dot product's
-      two-worker kernel window exceeds its e2e window at every K from 7 to
-      4,096 (424 against 356 cycles at K = 8, 24,610 against 24,591 at
-      4,096), as do the 4- and 256-tap FIRs'.
+    - It shows wherever the kernel window is short. In the final capture
+      (step 4's bundle), the dot product's two-worker kernel window exceeds
+      its e2e window at every K from 7 to 4,096 (424 against 356 cycles at
+      K = 8, 24,610 against 24,586 at 4,096), as do the 4- and 256-tap
+      FIRs' (369,683 against 369,671 at 256 taps).
 13. **The FIR's "256 samples"** (§4.5) is read as 256 outputs, each a K-tap
     dot over 256 + K − 1 input samples. The NPU runs it as a 256 × 1 × K
     job whose A rows overlap (A_STRIDE 1), with no Toeplitz copy.
+
+**Found in step 4, for the owner's review:**
+
+14. **Overlap where hart 0's interval spans its wait.** Where hart 0 works
+    after its last wait, §10.7 runs its interval to the window's end, so it
+    contains hart 0's own wait. Intervals then cannot show overlap: any
+    work on hart 1 lies inside hart 0's interval, even in a serial run.
+    - **The reading:** for such a two-worker record, overlap is read from a
+      speedup over the same kernel on one worker, in the same case,
+      configuration and window. That is DOT8 where the two-worker record
+      retires DOT8s, else scalar. Overlap is shown when that twin is
+      slower; a twin that is not slower, or none, leaves it not shown
+      (`scripts/matrix_overlap.py`).
+    - **Its weakness:** the speedup compares two runs' window cycles, not
+      one run's per-hart counters, which is what soc.md §11 names. Its
+      threshold is any speedup above 1. Two harts also have two data
+      caches, which can make a split kernel faster even without running
+      at once: the final capture has records above 2×.
+    - **Where it decides:** 117 records.
+      - Both reductions in both windows (the scaling gate's included), and
+        Conv2D, the FFT, MNIST and CIFAR in their e2e windows: 1.26× (v1's
+        reduction e2e, whose hart 0 fills inside the window) to 1.96× at
+        R, warm.
+      - The dot at K ≥ 64, in both windows: 1.169× at the lowest at R,
+        warm, and 1.036× at +4 waits. Its K ≤ 8 records are not shown, so
+        without this reading the dot shows overlap at no size.
+      - In their kernel windows, Conv2D, the FFT, MNIST and CIFAR show
+        stamped overlap.
+    - **The alternative:** these programs could also stamp the end of
+      hart 0's share, as the kernel windows do, and read their overlap
+      from stamps. That changes §10.7's rule, so it would be 20.5's.
