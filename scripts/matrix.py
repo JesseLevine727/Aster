@@ -99,6 +99,9 @@ def cpu_entries() -> list[Entry]:
 
 
 H1_OF = {0: "soc_h1", 1: "soc_h1_w1", 2: "soc_h1_w2", 4: "soc_h1_w4"}
+COHERENT_KINDS = ((0, "atomic_add", (1, 2)), (1, "lrsc_counter", (1, 2)), (2, "cas_counter", (1, 2)),
+                  (3, "lock_sum", (1, 2)), (4, "false_shared", (1, 2)), (5, "padded", (1, 2)), (6, "ping_pong", (2,)),
+                  (7, "spsc_queue", (2,)), (8, "shared_mix", (1, 2)), (9, "producer_consumer", (2,)))
 
 
 def coherence_entries() -> list[Entry]:
@@ -146,6 +149,27 @@ def coherence_entries() -> list[Entry]:
         entries.append(Entry(ident, "coherence", "smp_overhead", "multicore", sim, cold, [], "LITMUS_CFLAGS", [], [],
                              "", smp_sources, soc_variants.v12_defines(sim) + (["-DMATRIX_COLD"] if cold else []),
                              axes, "smp"))
+    # v1's coherence kernels (software/benchmarks/coherent.c) and producer/consumer, at v1's sizes
+    coherent_sources = ["software/matrix/coherent.c", "software/runtime/asterbench_v12.c", "software/runtime/aster_smp.c"]
+    for kind, name, worker_counts in COHERENT_KINDS:
+        for items in (2, 129, 1024):
+            for workers in worker_counts:
+                method = "multicore" if workers == 2 else "scalar"
+                kconfigs = [c for c in configs if c[4] == workers]
+                if workers == 2:
+                    kconfigs.append((0, 1, False, "soc_h1", 2))
+                for wait, dcache, cold, sim, _ in kconfigs:
+                    harts = soc_variants.VARIANTS[sim]["HARTS"]
+                    axes = dict(memory_wait=wait, dcache=dcache, cache_state="cold" if cold else "warm", harts=harts,
+                                workers=workers, items=items, kind=kind)
+                    ident = f"coherence/{name}/{method}/{sim}/{'cold' if cold else 'warm'}/n{items}"
+                    e = Entry(ident, "coherence", name, method, sim, cold, [], "LITMUS_CFLAGS", [], [], "",
+                              coherent_sources, soc_variants.v12_defines(sim)
+                              + [f"-DCOHERENT_KIND={kind}", f"-DCOHERENT_ITEMS={items}", f"-DCOHERENT_WORKERS={workers}"]
+                              + (["-DMATRIX_COLD"] if cold else []), axes, "coherent")
+                    if harts == 1 and workers == 2:
+                        e.status, e.reason = "unsupported", "two workers need two harts"
+                    entries.append(e)
     for sim in ("soc_dev", "soc_w4"):                  # a work stamp's cost (the figure phase20.md quotes)
         entries.append(Entry(f"coherence/stamp_cost/scalar/{sim}/warm", "coherence", "stamp_cost", "scalar", sim, False,
                              [], "LITMUS_CFLAGS", [], [], "", ["software/matrix/stamp_cost.c",
@@ -340,8 +364,44 @@ def memory_entries() -> list[Entry]:
     return entries
 
 
+DMA_SIZES = (0, 1, 3, 4, 7, 8, 15, 16, 63, 64, 255, 256, 1024, 4096, 16384, 32768)
+DMA_ALIGNMENTS = ((0, 0), (1, 0), (0, 3), (3, 6))
+DMA_OVERLAP = ((0, "overlap_serial_h0", 1), (1, "overlap_h0", 1), (2, "overlap_serial_h1", 2), (3, "overlap_h1", 2))
+
+
+def dma_entries() -> list[Entry]:
+    """matrix.md §4.3: the DMA through v1's driver against v1's fair CPU copy, every size x alignment x the
+    destination cached or not; the overlap of a copy with unrelated work on hart 0, then hart 1, against the same
+    done one after the other; each crossed memory x data cache x cache state (§3), three seeds at R."""
+    entries = []
+    sources = ["software/matrix/dma_bench.c", "software/drivers/aster_dma.c", "software/runtime/asterbench_v12.c",
+               "software/runtime/aster_smp.c"]
+    points = [(1, method, "copy", "dma" if method else "cpu_copy", 1, f"b{size}s{src}d{dst}c{cached}",
+               [f"-DDMA_BYTES={size}u", f"-DDMA_SRC_OFF={src}u", f"-DDMA_DST_OFF={dst}u", f"-DDMA_DST_CACHED={cached}u"],
+               dict(bytes=size, src_off=src, dst_off=dst, cached=cached))
+              for size in DMA_SIZES for src, dst in DMA_ALIGNMENTS for cached in (0, 1) for method in (0, 1)]
+    points += [(2, method, name, "dma", workers, f"b{size}", [f"-DDMA_BYTES={size}u"],
+                dict(bytes=size, src_off=0, dst_off=0, cached=0))
+               for size in (1024, 4096, 16384) for method, name, workers in DMA_OVERLAP]
+    for case, method_number, name, method, workers, tag, defines, point in points:
+        configs = [(wait, dcache, cold, MEMORY_SEEDS[0]) for wait in (0, 1, 2, 4) for dcache in (1, 0)
+                   for cold in (False, True)]
+        configs += [(0, 1, False, seed) for seed in MEMORY_SEEDS[1:]]
+        for wait, dcache, cold, seed in configs:
+            sim = VARIANT_OF[(wait, dcache)]
+            ident = f"dma/{name}/{method}/{sim}/{'cold' if cold else 'warm'}/{tag}" + \
+                    ("" if seed == MEMORY_SEEDS[0] else f"/seed{seed:08x}")
+            axes = make_axes(sim, cold, workers)
+            axes.update(point, seed=seed)
+            entries.append(Entry(ident, "dma", name, method, sim, cold, [], "LITMUS_CFLAGS", [], [], "", sources,
+                                 soc_variants.v12_defines(sim) + [f"-DDMA_CASE={case}", f"-DDMA_METHOD={method_number}",
+                                                                  f"-DDMA_SEED={seed:#010x}u"]
+                                 + defines + (["-DMATRIX_COLD"] if cold else []), axes, "dma"))
+    return entries
+
+
 FAMILIES = {"cpu": cpu_entries, "coherence": coherence_entries, "dsp": dsp_entries, "ml": ml_family,
-            "ecg": ecg_entries, "memory": memory_entries}
+            "ecg": ecg_entries, "memory": memory_entries, "dma": dma_entries}
 
 # v1's baseline records (Phase 17, sync1), the cases' identity the v12 record must keep
 BASELINE = run_core_tests.BASELINE
@@ -703,9 +763,105 @@ def oracle_memory(entry: Entry, records: list[dict]) -> str:
     return f"checksum {want:#010x}: the model's ({len(records)} window{'s' if len(records) > 1 else ''})"
 
 
+def dma_model(axes: dict, overlap: bool) -> int:
+    """software/matrix/dma_bench.c's checksum: the copied bytes folded (the source's pattern from its offset past
+    the 64-byte guard), and for the overlap the checksum of its work buffer folded after."""
+    mask, seed = 0xFFFFFFFF, axes["seed"]
+    byte = lambda i: ((seed ^ ((i * 0x9E3779B9) & mask)) >> 11) & 0xFF
+    checksum = 0
+    for k in range(axes["bytes"]):
+        checksum = ((checksum * 33) ^ byte(64 + axes["src_off"] + k)) & mask
+    if overlap:
+        work = 0
+        for i in range(2048):
+            work = ((work * 33) ^ ((seed ^ ((i * 0x1021) & mask)) & mask)) & mask
+        checksum = ((checksum * 33) ^ work) & mask
+    return checksum
+
+
+def oracle_dma(entry: Entry, records: list[dict]) -> str:
+    a = entry.axes
+    if len(records) != 1 or records[0]["window"] != "e2e":
+        raise asterbench_v12.ValidationError(f"{len(records)} records, not one e2e window")
+    r = records[0]
+    overlap = entry.case.startswith("overlap")
+    want = dma_model(a, overlap)
+    param = (a["cached"] << 8) | (a["src_off"] << 4) | a["dst_off"]
+    if (r["name"], r["size"], r["iterations"], r["param"], r["seed"], r["workers"], r["checksum"]) != \
+            (entry.case, a["bytes"], 1, param, a["seed"], a["workers"], want):
+        raise asterbench_v12.ValidationError(f"the record's identity or checksum ({r['checksum']:#010x}, the "
+                                             f"model's {want:#010x}) differs from the entry's")
+    dma = entry.method == "dma"
+    if (r["dma_jobs"], r["dma_completed_jobs"], r["dma_bytes"]) != ((1, 1, a["bytes"]) if dma else (0, 0, 0)):
+        raise asterbench_v12.ValidationError(f"DMA jobs {r['dma_jobs']}/{r['dma_completed_jobs']}, bytes {r['dma_bytes']}")
+    cached = bool(a["cached"]) and a["dcache"] == 1          # (with the data cache off, nothing is cached)
+    if dma and a["bytes"] and (r["dma_invalidations"] > 0) != cached:
+        raise asterbench_v12.ValidationError(f"{r['dma_invalidations']} invalidations, the destination "
+                                             f"{'cached' if cached else 'not cached'}")
+    if r["h0_dot8_retire"] + r["h1_dot8_retire"] or r["npu_jobs"]:
+        raise asterbench_v12.ValidationError("an engine the case does not use")
+    if a["workers"] == 1 and r["h1_retired"]:
+        raise asterbench_v12.ValidationError(f"one worker, but hart 1 retired {r['h1_retired']}")
+    if a["workers"] == 2 and not (r["h1_retired"] and r["h1_work_end"] > r["h1_work_start"]):
+        raise asterbench_v12.ValidationError("hart 1 did not do the work")
+    if overlap and a["workers"] == 1 and not r["h0_work_end"] > r["h0_work_start"]:
+        raise asterbench_v12.ValidationError("hart 0's work is not stamped")
+    return f"checksum {want:#010x}: the model's; every byte and guard checked in the firmware"
+
+
+def coherent_model(kind: int, items: int, workers: int, rounds: int = 4) -> tuple[int, int]:
+    """software/matrix/coherent.c's job 1, re-run: its seed and the harts' summed sums (v1's expected_sum)."""
+    mask = 0xFFFFFFFF
+    seed = (0x13570000 ^ 0x9E3779B9) & mask
+    payload = lambda sd, i: ((sd ^ ((i * 0x1021) & mask)) + 0x9E3779B9) & mask
+    def mix(x, r):
+        x = (x + r + 0x9E3779B9) & mask
+        x = ((x ^ (x >> 16)) * 0x7FEB352D) & mask
+        x = ((x ^ (x >> 15)) * 0x846CA68B) & mask
+        return x ^ (x >> 16)
+    n = items
+    split = (n + 1) // 2 if workers == 2 else n
+    second = n - split
+    if kind <= 2:
+        total = n * (n - 1) // 2
+    elif kind == 3:
+        total = n * (n + 1) // 2
+    elif kind <= 5:
+        total = split * (split - 1) // 2 + second * (second - 1) // 2
+    elif kind <= 7:
+        total = sum(payload(seed, i) for i in range(n)) * workers
+    elif kind == 8:
+        total = 0
+        for i in range(n):
+            x = seed ^ ((i * 0x1021) & mask)
+            for r in range(rounds):
+                x = mix(x, r)
+            total += x
+    else:
+        total = 2 * sum(payload((seed + r * 0x9E3779B9) & mask, i) for r in range(rounds) for i in range(n))
+    return seed, total & mask
+
+
+def oracle_coherent(entry: Entry, records: list[dict]) -> str:
+    a = entry.axes
+    seed, want = coherent_model(a["kind"], a["items"], a["workers"])
+    for r in two_windows(entry, records):
+        if (r["name"], r["size"], r["iterations"], r["param"], r["seed"], r["workers"], r["checksum"]) != \
+                (entry.case, a["items"], 1, 4, seed, a["workers"], want):
+            raise asterbench_v12.ValidationError(f"the record's identity or checksum ({r['checksum']:#010x}, the "
+                                                 f"model's {want:#010x}) differs from the entry's")
+        method_evidence(entry, r, dot8=0)
+        atomics = r["h0_amos"] + r["h1_amos"]
+        if a["kind"] in (0, 3, 4, 5) and atomics < a["items"]:
+            raise asterbench_v12.ValidationError(f"{atomics} A instructions for {a['items']} atomic updates")
+        if a["kind"] in (1, 2) and r["h0_sc_success"] + r["h1_sc_success"] < a["items"]:
+            raise asterbench_v12.ValidationError("fewer successful sc than increments")
+    return f"the harts' sums {want:#010x}: v1's expected sum, re-run; v1's checks in the firmware"
+
+
 ORACLES = {"cpu": oracle_cpu, "reduce": oracle_reduce, "gemm": oracle_gemm, "conv2d": oracle_conv2d,
            "mnist": oracle_mnist, "smp": oracle_smp, "cifar": oracle_cifar, "stamps": oracle_stamps,
-           "ecg": oracle_ecg, "memory": oracle_memory}
+           "ecg": oracle_ecg, "memory": oracle_memory, "dma": oracle_dma, "coherent": oracle_coherent}
 
 _make_lock = threading.Lock()
 _make_cache: dict[tuple, list[str]] = {}

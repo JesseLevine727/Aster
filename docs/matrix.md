@@ -455,3 +455,9 @@ did not settle a point; none loosens a gate.
     records its e2e window, warm and cold. The two-hart streaming cases
     record both, since their e2e window holds the runtime's dispatch and
     join and their kernel window the armed hand-over (item 2).
+
+    The DMA's cases (§4.3) also record one window, e2e: v1's, the copy
+    through v1's driver (set-up, movement and wait). The engine's own time
+    is the record's DMA busy cycles. Where hart 0 only submits and polls,
+    its work interval is 0 and 0, since polling is not freed time
+    (phase17-plus.md §4).
