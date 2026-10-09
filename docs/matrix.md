@@ -373,7 +373,7 @@ Each step has its watchdog review before it is pushed.
 6. **CoreMark:** the CRC test's cycles in 20.4, and the official, ten-second
    score on the board in 20.5.
 
-## 10. Clarifications found in 20.4, accepted by the owner (8 October 2026)
+## 10. Clarifications found in 20.4, accepted by the owner (1–9: 8 October 2026; 10–14: 9 October 2026)
 
 Found while building step 2. Each is how the plan above was read where it
 did not settle a point; none loosens a gate.
@@ -456,7 +456,7 @@ did not settle a point; none loosens a gate.
    included (CIFAR's is folded and its classes checked inside the window,
    as v1 did).
 
-**Found in step 3, for the owner's review:**
+**Found in step 3, accepted by the owner (9 October 2026, with 20.4's sign-off):**
 
 10. **A one-hart microbenchmark records one window.** The memory hierarchy's
     one-hart cases (§4.2) have nothing outside their computation: no
@@ -519,7 +519,7 @@ did not settle a point; none loosens a gate.
     dot over 256 + K − 1 input samples. The NPU runs it as a 256 × 1 × K
     job whose A rows overlap (A_STRIDE 1), with no Toeplitz copy.
 
-**Found in step 4, for the owner's review:**
+**Found in step 4, accepted by the owner (9 October 2026, with 20.4's sign-off):**
 
 14. **Overlap where hart 0's interval spans its wait.** Where hart 0 works
     after its last wait, §10.7 runs its interval to the window's end, so it

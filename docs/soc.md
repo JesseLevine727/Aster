@@ -1056,3 +1056,18 @@ Milestone 20.3):
 - **§9's NPU axis:** a lane adapter on port N for the 4×4 NPU's 32-bit port,
   in its simulation variants.
 
+**Decided by the owner, 9 October 2026 (20.4's sign-off).**
+- **20.4 is signed off,** with matrix.md §10.10–14. §10.14 reads the
+  overlap gate's overlap from a speedup over the same kernel on one worker,
+  where hart 0's interval spans its own wait.
+- **20.4's timing is signed off on the m4-o5asm-mgi build.**
+  - **The build:** +0.333 ns at 10 ns in context (hold +0.022 ns),
+    reproducible. It is built with `make fpga-aster-soc
+    SOC_DIRECTIVES="over=0.5;place=AltSpreadLogic_medium;route=MoreGlobalIterations"`
+    from the committed RTL, with no cycle cost and no contract change.
+  - **The spread:** the margin holds for that build, not across placements.
+    The same RTL gave +0.033 to +0.262 ns on its other eighteen
+    strategies, median +0.163 over all nineteen.
+  - **The evidence:** `docs/results/phase20/matrix-20.4/timing/`.
+- **20.5 begins after 03:00 on 10 October 2026.**
+

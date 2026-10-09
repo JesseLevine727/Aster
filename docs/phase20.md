@@ -1,7 +1,8 @@
 # Phase 20: whole-SoC workload placement and concurrency
 
-Status: **milestone 20.4 (the workload matrix): its four steps done, awaiting the owner's review** (matrix.md
-§10.10–14, and the timing's sign-off on m4-o5asm-mgi, +0.333 ns). 20.3 (the DMA) was signed off by the
+Status: **milestone 20.4 (the workload matrix) signed off by the owner on 9 October 2026,** with matrix.md
+§10.10–14 and its timing on the m4-o5asm-mgi build (+0.333 ns, reproducible). 20.5 begins after 03:00 on
+10 October 2026, at the owner's word. 20.3 (the DMA) was signed off by the
 owner on 8 October 2026, its timing on the g2-o5end build (+0.375 ns, reproducible; one placement: the
 median across its RTL's ten strategies is about +0.1 ns). 20.2 (the two-hart SoC) was signed off
 by the owner on 8 October 2026. The owner decided 20.2's timing on 7 October 2026, in three rounds (below,
@@ -1024,7 +1025,7 @@ eleven builds):
 
 **Signed off by the owner, 8 October 2026** (with "proceed with 20.4").
 
-## Milestone 20.4: the workload matrix (its steps done 9 October 2026; awaiting the owner's review)
+## Milestone 20.4: the workload matrix (signed off by the owner, 9 October 2026)
 
 **The plan:** [`matrix.md`](matrix.md), the matrix soc.md §9 asks for, made
 concrete, and [`asterbench-v12.md`](asterbench-v12.md), its records.
@@ -1410,7 +1411,7 @@ The runs:
   - the AMO and sc counts;
   - the rings' links;
   - every byte and guard of each copy.
-- **Four new readings of the plan** are in matrix.md §10, for the owner's review:
+- **Four new readings of the plan** are in matrix.md §10 (accepted by the owner with 20.4's sign-off):
   - 10: one window for one-hart microbenchmarks and for the DMA;
   - 11: the memory family's details;
   - 12: the armed hand-over's own code can leave a few of hart 1's instruction lines cold;
@@ -1581,7 +1582,7 @@ two workers on the one-hart build are unsupported. Determinism 27/27; 66/66 pair
 **Step 3 was pushed as bb024f3** after five watchdog reviews. Its figures are of its captures; step 4's
 final capture moved some of them (below).
 
-### Step 4: the full matrix (done; awaiting the owner's review)
+### Step 4: the full matrix (done; signed off)
 
 **The final capture:** every family from one clean commit, 87c6b0a (`build/matrix/m5-*`), bundled in
 [`results/phase20/matrix-20.4/`](results/phase20/matrix-20.4/README.md).
@@ -1656,7 +1657,7 @@ reading of the gate, put to the owner as matrix.md §10.14.
 | Class | Records | Cases |
 | --- | ---: | --- |
 | Overlap, stamped: the intervals overlap by more than hart 1's two stamps (40 cycles), and both harts retire | 1,422 | the GEMMs (the sweep's and the gate's), the FIR, the streams, the coherence cases, ping-pong, the queues, producer/consumer; Conv2D, the FFT, MNIST and CIFAR in their kernel windows; dispatch and join once (+4 waits) |
-| Overlap, by speedup (§10.14, for the owner): hart 0's interval spans its wait, and the one-worker twin is slower | 117 | both reductions (both windows), Conv2D, the FFT, MNIST and CIFAR in their e2e windows, the dot at K ≥ 64 (both windows) |
+| Overlap, by speedup (§10.14, accepted): hart 0's interval spans its wait, and the one-worker twin is slower | 117 | both reductions (both windows), Conv2D, the FFT, MNIST and CIFAR in their e2e windows, the dot at K ≥ 64 (both windows) |
 | Not shown: hart 0's interval spans its wait, and the one-worker twin is not slower (0.20× to 0.85× here), or there is none | 823 | ECG's four pipelines (756: their proof is 20.5's, matrix.md §4.8), the dot at K ≤ 8 (and once at 64), dispatch and join |
 | No overlap within the stamps | 85 | the coherence cases at 2 items and dispatch and join: in 70, hart 0 is done before hart 1 starts; the other 15 overlap by under 40 cycles |
 | The DMA beside hart 1, against its serial twin | 108 | saves 0.8% to 48% (1.008× to 1.92×) |
@@ -1753,7 +1754,7 @@ are their captures'; the bundle's figures are of record.
     writes.
 - **The default directives** give +0.154 ns.
 - **Area:** 33,988 LUTs (63.9%), 77 block RAM tiles (55.0%), 27 DSPs (12.3%): under 80%.
-- **For the owner:** 20.4's timing to be signed off on m4-o5asm-mgi. As with 20.3's, the margin holds for
+- **Signed off by the owner** (9 October 2026): 20.4's timing on m4-o5asm-mgi. As with 20.3's, the margin holds for
   that build, not across placements.
 - **The variant builds** are axes of the simulated matrix, never built for the board, so no timing claim is
   made for them:
@@ -1783,7 +1784,7 @@ print less.
 - the evidence is bundled;
 - the timing is re-checked by the owner's rule.
 
-20.4's exit is met, subject to the owner's reading in §10.14:
+20.4's exit is met, with the owner's reading in §10.14:
 - **Correctness and records:** met.
 - **Overlap:** shown for every multicore workload, except:
   - ECG's pipelines, whose proof is 20.5's (matrix.md §4.8);
@@ -1795,12 +1796,14 @@ print less.
   - the dot at K ≥ 64, in both windows. Its K ≤ 8 records are not shown, so without §10.14 the dot shows
     overlap at no size.
 
-  That reading is the owner's call. Under it the exit is met; without it, those windows' overlap would wait
-  for 20.5, which could also stamp hart 0's share there.
+  The owner accepted that reading with the sign-off. 20.5 could still stamp hart 0's share there, for
+  overlap from the stamps.
 - **Totals:** reconciled.
 - **Scaling and v1:** measured.
 
-It awaits the owner's review: matrix.md §10.10–14, and the timing's sign-off.
+**Signed off by the owner, 9 October 2026** ("I sign off"), after this record. The sign-off covers 20.4,
+matrix.md §10.10–14, and its timing on m4-o5asm-mgi (soc.md §13). 20.5 begins after 03:00 on 10 October
+2026.
 
 ## Milestones and gates
 
@@ -1821,7 +1824,7 @@ It awaits the owner's review: matrix.md §10.10–14, and the timing's sign-off.
 - [x] 20.1 as in the table above — signed off by the owner (7 October 2026), the §4.4 arbitration change approved; re-confirmed by the owner (7 October 2026) after 20.2 corrected its timing (the fabric missed 10 ns; carried by 20.2)
 - [x] 20.2 as in the table above — signed off by the owner (8 October 2026); its timing signed off on r19's build (7 October 2026)
 - [x] 20.3 as in the table above — signed off by the owner (8 October 2026); its timing signed off on g2-o5end (8 October 2026)
-- [ ] 20.4 as in the table above
+- [x] 20.4 as in the table above — signed off by the owner (9 October 2026), with matrix.md §10.10–14; its timing signed off on m4-o5asm-mgi (9 October 2026)
 - [ ] 20.5 as in the table above
 
 ## Risks
