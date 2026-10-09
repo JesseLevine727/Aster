@@ -6,6 +6,10 @@
 // The software totals and each hart's stamps for the open window (shared: hart 1 stamps its own)
 static volatile uint32_t work_start[2], work_end[2];
 static volatile uint32_t dma_jobs, npu_completed, npu_aborted, npu_errors, npu_tiles;
+// The engines' last jobs' own counters, read after FREEZE (nothing in the window): the NPU's JOB_CYCLES, JOB_ACTIVE,
+// JOB_MACS, JOB_BYTES_READ and JOB_BYTES_WRITTEN, then the DMA's JOB_CYCLES and BYTES_DONE. v12_emit prints them on
+// a MATRIX_JOBS line after the record; scripts/matrix.py reconciles a one-job window's totals with them.
+static uint64_t last_job[7];
 
 enum { NPU2_CONTROL = 0x40000000u, NPU2_STATUS = 0x40000004u };
 enum { NPU2_BUSY = 1u, NPU2_DONE = 2u, NPU2_ERROR = 4u, NPU2_ABORTED = 8u, NPU2_CLEAR_TOTALS = 8u };
@@ -81,6 +85,9 @@ void v12_end(struct v12_record *r) {
     r->npu_aborted = npu_aborted;
     r->npu_errors = npu_errors;
     r->npu_tiles = npu_tiles;
+    for (uint32_t i = 0; i < 5; ++i) last_job[i] = aster_counter_read64(0x40000080u + 8u * i);
+    last_job[5] = aster_counter_read64(0x30000020u);
+    last_job[6] = ASTER_REG32(0x30000014u);
     for (uint32_t k = 0; k < ASTER_FABRIC_COUNT; ++k) r->fabric[k] = aster_counter_read64(ASTER_FABRIC(k));
 }
 
@@ -189,5 +196,11 @@ void v12_emit(const struct v12_record *r) {
         const char *b = req[q]; while (*b) key[n++] = *b++; key[n] = 0;
         field(key, r->fabric[k]);
     }
+    aster_putc('\n');
+    // the engines' last jobs (beside the record, not in it: v12's fields are fixed)
+    static const char *const job_names[7] = {"npu_job_cycles", "npu_active_cycles", "npu_macs", "npu_bytes_read",
+                                             "npu_bytes_written", "dma_job_cycles", "dma_bytes_done"};
+    aster_puts("MATRIX_JOBS");
+    for (int i = 0; i < 7; ++i) field(job_names[i], last_job[i]);
     aster_putc('\n');
 }

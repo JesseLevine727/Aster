@@ -1045,6 +1045,45 @@ def oracle_npu_gemm(entry: Entry, records: list[dict]) -> str:
     return f"C's checksum {want:#010x}: the independent model's, over every element"
 
 
+NPU_TOTALS = ("npu_job_cycles", "npu_active_cycles", "npu_macs", "npu_bytes_read", "npu_bytes_written")
+
+
+def reconcile_totals(records: list[dict], extras: list[str]) -> dict:
+    """soc.md §11's totals, from counters nothing in the window reads:
+      - the NPU's bytes and the fabric's: every NPU request the fabric accepted is a read of the port's width or
+        a write of one C word (npu.md §3, §5.1), so f_accepted_n = npu_bytes_read / npu_port_bytes +
+        npu_bytes_written / 4 in every record (the DMA's reads, writes, waits and invalidations are the
+        validator's, against the fabric's);
+      - a window of one NPU job: its five totals are that job's own counters (JOB_CYCLES to JOB_BYTES_WRITTEN);
+      - a window of one DMA job: its bytes are the job's BYTES_DONE and its busy cycles the job's JOB_CYCLES.
+    The jobs' own counters are the last job's, which the runtime reads after FREEZE and prints on a MATRIX_JOBS
+    line after the record. The MACs and the DMA's bytes are also each oracle's, against the workload."""
+    jobs = [{k: int(v) for k, v in (t.split("=", 1) for t in l.split(",")[1:])} for l in extras
+            if l.startswith("MATRIX_JOBS,")]
+    if len(jobs) != len(records):
+        raise asterbench_v12.ValidationError(f"{len(jobs)} MATRIX_JOBS lines for {len(records)} records")
+    one_npu = one_dma = 0
+    for r, j in zip(records, jobs):
+        where = r["window"]
+        read, written = r["npu_bytes_read"], r["npu_bytes_written"]
+        if read % r["npu_port_bytes"] or written % 4 \
+                or r["f_accepted_n"] != read // r["npu_port_bytes"] + written // 4:
+            raise asterbench_v12.ValidationError(f"{where}: the NPU read {read} and wrote {written} bytes, the "
+                                                 f"fabric accepted {r['f_accepted_n']} of its requests")
+        if r["npu_jobs"] == 1:
+            one_npu += 1
+            for k in NPU_TOTALS:
+                if r[k] != j[k]:
+                    raise asterbench_v12.ValidationError(f"{where}: the record's {k} {r[k]}, its job's {j[k]}")
+        if r["dma_jobs"] == 1:
+            one_dma += 1
+            if (r["dma_bytes"], r["dma_busy_cycles"]) != (j["dma_bytes_done"], j["dma_job_cycles"]):
+                raise asterbench_v12.ValidationError(
+                    f"{where}: the DMA's {r['dma_bytes']} bytes and {r['dma_busy_cycles']} busy cycles, its job's "
+                    f"{j['dma_bytes_done']} and {j['dma_job_cycles']}")
+    return dict(npu_fabric=len(records), npu_one_job=one_npu, dma_one_job=one_dma)
+
+
 ORACLES = {"cpu": oracle_cpu, "reduce": oracle_reduce, "gemm": oracle_gemm, "conv2d": oracle_conv2d,
            "mnist": oracle_mnist, "smp": oracle_smp, "cifar": oracle_cifar, "stamps": oracle_stamps,
            "ecg": oracle_ecg, "memory": oracle_memory, "dma": oracle_dma, "coherent": oracle_coherent,
@@ -1200,8 +1239,8 @@ def do_entry(entry: Entry, out: Path, prefix: str, soc_flags: list[str]) -> dict
         result["soc"] = {k: fields[k] for k in ("status", "cycles", "npu_config", "soc_config") if k in fields}
         lines = [l + "\n" for l in console.splitlines() if l.startswith("ASTERBENCH,")]
         extras = [l for l in console.splitlines() if l.startswith("MATRIX_")]     # (figures reported apart)
-        if extras:
-            result["extras"] = extras
+        if [l for l in extras if not l.startswith("MATRIX_JOBS,")]:
+            result["extras"] = [l for l in extras if not l.startswith("MATRIX_JOBS,")]
         record_path = out / "records" / (entry.id.replace("/", "__") + ".record")
         record_path.parent.mkdir(parents=True, exist_ok=True)
         record_path.write_text("".join(lines))
@@ -1218,6 +1257,7 @@ def do_entry(entry: Entry, out: Path, prefix: str, soc_flags: list[str]) -> dict
         oracle = ORACLES[entry.oracle]
         result["oracle"] = oracle(entry, records, extras) if getattr(oracle, "wants_extras", False) \
             else oracle(entry, records)
+        result["totals"] = reconcile_totals(records, extras)
         result["lines"] = lines
         result["status"] = "captured"
     except Exception as error:                                   # (every failure recorded, none lost)
