@@ -19,7 +19,7 @@
 // Each timed pass's outputs (every image's logits and class) are
 // poisoned before it, by hart 0, which alone writes them; the intermediates are rewritten for every image.
 // Each record's checksum folds every logit and class (v1's), which scripts/matrix.py's oracle recomputes with
-// cifar_reference's independent model; PASS needs every logit equal to the frozen reference's.
+// cifar_reference's independent model; PASS needs every logit and class equal to the frozen reference's.
 #include <stdint.h>
 
 #include "aster.h"

@@ -29,8 +29,8 @@ def main() -> int:
     parser.add_argument("--prefix", default="riscv32-unknown-elf-")
     args = parser.parse_args()
     args.out = args.out.resolve()
-    if ROOT not in args.out.parents:
-        parser.error("--out must lie inside the repository (the runner builds sources from there)")
+    if (ROOT / "build") not in args.out.parents:
+        parser.error("--out must lie under build/ (it is deleted first; the runner builds sources from the repository)")
     shutil.rmtree(args.out, ignore_errors=True)
     (args.out / "src").mkdir(parents=True)
     soc_flags = matrix.make_variable("LITMUS_CFLAGS", [])

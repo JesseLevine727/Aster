@@ -429,8 +429,10 @@ did not settle a point; none loosens a gate.
    has one, are inside every two-worker window, v1-retained ones included;
    they count against v2.
 8. **The computation's functions are compiled out of line** (`noinline`)
-   in every one of the matrix's own programs, so that their code is the
-   same in every caller and build. Inlined, a small change elsewhere in Conv2D's program
+   in every one of the matrix's own programs, so that the code around a
+   call no longer shapes a kernel's own code. GCC may still specialise a
+   copy for its calls' constant arguments (`.constprop`, `.isra`), which
+   belong to the kernel's own use. Inlined, a small change elsewhere in Conv2D's program
    changed the code GCC generated for its hot loop: 12 more instructions an
    output row, 7.3% more cycles on two workers. v1's kernels (`xe_kernels.c`)
    are out of line already.

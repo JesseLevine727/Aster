@@ -12,9 +12,10 @@
 //                            overwrites). A stamp is a call and a counter read, about 20 cycles.
 //   matrix_stamp_end(h)      hart h's work interval ended, in the window's last stretch only (hart 0 sets
 //                            matrix_last before it hands that stretch out): one stamp a window, not one a stretch.
-//   Hart 0's interval (matrix.md §10): it opens the window, so it starts at 0; it ends at the window's end when the
-//   window ends in hart 0's own work (matrix_hart0_whole, set after the window), else at the end of its last
-//   share (matrix_stamp_end(0) before it waits); 0 and 0 where hart 0 only starts an engine and polls it
+//   Hart 0's interval (matrix.md §10.7): it opens the window, so it starts at 0; it ends at the window's end when
+//   hart 0 works after its last wait (matrix_hart0_whole, set after the window), else at the end of its last
+//   share (matrix_stamp_end(0), where it only waits after it); 0 and 0 where hart 0 only starts an engine and
+//   polls it
 //   (matrix_hart0_none). One interval holds no gaps: where hart 0 polls between its stages, its interval spans
 //   the polls.
 //   The two-worker kernel window: the computation alone, without the runtime's dispatch and join. Hart 1 is

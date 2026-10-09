@@ -1351,7 +1351,10 @@ unsupported. Determinism 33/33; 72/72 pairs.
 | DOT8, one hart | 200,067 | 201,091 | 7.60× | 196,138 | 509 K | 13,468 / 12,551 |
 | two-hart pipeline | **175,038** | **175,849** | **8.69×** | 170,000 | 582 K | 14,242 / 12,977 |
 
-- **Against v1:** v2's best in v1's window is the two-hart pipeline, 8.69× v1's.
+- **Against v1:** v2's best in v1's window is the two-hart pipeline, 8.69× v1's, but only by 1.3% over
+  scalar (8.59×), less than the layout effect. In the previous capture this same pipeline cell took 6.7%
+  longer (hart 1's data misses 4,818 against 3,218), and scalar was best. At +4 waits scalar is faster
+  (177,461 against 177,554). The gate holds either way, at 8.6× to 8.7×.
 - **v1's pipeline, ported, is not v2's best.** It ties DOT8 on one hart: 200,613 cycles against 200,067.
   Both lose to the scalar FIR, because v1's DOT8 kernel gathers the taps a byte at a time.
 - **The two-hart pipeline** overlaps one chunk's FIR with the last one's classifier. It is 12.7% faster than
@@ -1368,8 +1371,9 @@ unsupported. Determinism 33/33; 72/72 pairs.
 - **The DOT8 FIR overtakes the scalar one at 32 taps:** 205,610 cycles against 215,682 at 64-sample chunks,
   and 289,616 against 309,172 at 128.
 - **The larger model is faster in one cell:** v1's pipeline at 64 × 32, 209,557 against 214,386. That is
-  placement. Hart 1's FIR is the critical path, and its data misses there are 2,233 against 3,318: the
-  larger model's arrays move the buffers in the direct-mapped cache.
+  placement. Hart 1's FIR is a link in v1's serial chain, and its data misses there are 2,233 against
+  3,318, while hart 0's are 519 in both: the larger model's arrays move the buffers in the direct-mapped
+  cache.
 
 **Step 2 is complete:** every workload of matrix.md §8's step 2 is in the matrix, and the scaling and v1
 gates are measured. Next come the step's watchdog review and the push, then step 3.
