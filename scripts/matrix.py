@@ -1057,7 +1057,14 @@ def reconcile_totals(records: list[dict], extras: list[str]) -> dict:
       - a window of one NPU job: its five totals are that job's own counters (JOB_CYCLES to JOB_BYTES_WRITTEN);
       - a window of one DMA job: its bytes are the job's BYTES_DONE and its busy cycles the job's JOB_CYCLES.
     The jobs' own counters are the last job's, which the runtime reads after FREEZE and prints on a MATRIX_JOBS
-    line after the record. The MACs and the DMA's bytes are also each oracle's, against the workload."""
+    line after the record. Those two are equal by construction (TOTAL adds each JOB at its end; the DMA's busy
+    and JOB_CYCLES count one signal), so the cycles are also bounded by the fabric's own counters, in every
+    window (several jobs included): an engine's requests are accepted or waiting only while it runs, one a cycle
+    on each of its ports, so
+      - f_accepted_n + f_waited_n <= npu_job_cycles;
+      - f_accepted_r + f_waited_r <= dma_busy_cycles, and the same for W;
+      - dma_bytes <= 8 x dma_busy_cycles (a write a cycle, eight bytes wide).
+    The MACs and the DMA's bytes are also each oracle's, against the workload."""
     jobs = [{k: int(v) for k, v in (t.split("=", 1) for t in l.split(",")[1:])} for l in extras
             if l.startswith("MATRIX_JOBS,")]
     if len(jobs) != len(records):
@@ -1065,6 +1072,13 @@ def reconcile_totals(records: list[dict], extras: list[str]) -> dict:
     one_npu = one_dma = 0
     for r, j in zip(records, jobs):
         where = r["window"]
+        bounds = [("f_accepted_n + f_waited_n", r["f_accepted_n"] + r["f_waited_n"], "npu_job_cycles", r["npu_job_cycles"]),
+                  ("f_accepted_r + f_waited_r", r["f_accepted_r"] + r["f_waited_r"], "dma_busy_cycles", r["dma_busy_cycles"]),
+                  ("f_accepted_w + f_waited_w", r["f_accepted_w"] + r["f_waited_w"], "dma_busy_cycles", r["dma_busy_cycles"]),
+                  ("dma_bytes", r["dma_bytes"], "8 x dma_busy_cycles", 8 * r["dma_busy_cycles"])]
+        for what, value, limit_name, limit in bounds:
+            if value > limit:
+                raise asterbench_v12.ValidationError(f"{where}: {what} {value} exceeds {limit_name} {limit}")
         read, written = r["npu_bytes_read"], r["npu_bytes_written"]
         if read % r["npu_port_bytes"] or written % 4 \
                 or r["f_accepted_n"] != read // r["npu_port_bytes"] + written // 4:
@@ -1081,7 +1095,7 @@ def reconcile_totals(records: list[dict], extras: list[str]) -> dict:
                 raise asterbench_v12.ValidationError(
                     f"{where}: the DMA's {r['dma_bytes']} bytes and {r['dma_busy_cycles']} busy cycles, its job's "
                     f"{j['dma_bytes_done']} and {j['dma_job_cycles']}")
-    return dict(npu_fabric=len(records), npu_one_job=one_npu, dma_one_job=one_dma)
+    return dict(npu_fabric=len(records), fabric_bounds=len(records), npu_one_job=one_npu, dma_one_job=one_dma)
 
 
 ORACLES = {"cpu": oracle_cpu, "reduce": oracle_reduce, "gemm": oracle_gemm, "conv2d": oracle_conv2d,

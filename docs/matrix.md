@@ -285,6 +285,13 @@ soc.md §11's gates, measured in 20.4 and required in 20.5:
 
   The bundle holds the raw records and console logs, the oracles' output
   and the source tree's hash, as Phase 17's baseline did.
+- **The engines' last jobs** (step 4): after each record the runtime prints
+  a `MATRIX_JOBS` line, beside the record and not in it, since v12's fields
+  are fixed. It holds the NPU's last job's JOB_CYCLES, JOB_ACTIVE, JOB_MACS,
+  JOB_BYTES_READ and JOB_BYTES_WRITTEN, and the DMA's last JOB_CYCLES and
+  BYTES_DONE, read after FREEZE, so nothing in the window reads them. They
+  describe the window only when it holds exactly one job of that engine;
+  otherwise they are an earlier job's, and the runner does not compare them.
 - **The runner** (`scripts/matrix.py`):
   1. builds each simulation variant, and each case's firmware;
   2. runs the simulations in parallel;

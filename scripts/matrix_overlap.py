@@ -1,16 +1,23 @@
 #!/usr/bin/env python3
 """20.4's overlap gate (docs/soc.md §11: "multicore overlap proven from per-hart counters"), from matrix runs.
 
-For every captured two-worker record it reads each hart's work interval (AsterBench v12's work_start and work_end,
-stamped by the hart itself; matrix.md §10.7's rules) and its retired instructions, and classes the record:
-  - overlap shown: the two intervals overlap and both harts retired instructions in the window;
-  - hart 0 polls: hart 0's interval is 0 and 0 (it only submits, dispatches and polls: its overlap is with an
-    engine, read from the engine's counters, not from hart 0's);
-  - no overlap: the intervals do not overlap.
-Where the same case, window and configuration ran on one worker with the same kernel (DOT8 when the two-worker
-record retired DOT8s, else scalar), it also gives the speedup, one worker's cycles over two's: overlap that pays.
-Cases with no such twin (two harts streaming, the queues, ping-pong, producer/consumer, dispatch and join, ECG's
-pipeline, the DMA beside hart 1) are counted apart.
+Each two-worker record's harts have work intervals (AsterBench v12's work_start and work_end), set by matrix.md
+§10.7's rules: hart 1 stamps its own; hart 0's runs from 0 to the end of its last share where it only waits after
+it (stamped), to the window's end where it works after its last wait (it then spans its own wait), or is 0 and 0
+where it only starts an engine and polls it. The classes:
+  - overlap, stamped: both intervals stamped and overlapping by more than MIN_OVERLAP cycles (both of hart 1's
+    stamps), and both harts retired instructions: the harts ran at once;
+  - overlap, by speedup: hart 0's interval spans its wait, so it cannot show overlap, but the same kernel on one
+    worker (the one-worker record of the same case, axes and window: DOT8 when the two-worker record retired
+    DOT8s, else scalar) is slower, so the work ran on both harts at once;
+  - not shown, spans hart 0's wait: hart 0's interval spans its wait and no one-worker twin is slower (none
+    exists, as for ECG's pipelines, whose overlap proof is 20.5's: matrix.md §4.8, or it is not faster);
+  - no overlap: stamped intervals that do not overlap by more than MIN_OVERLAP (the hand-over outlasts the work);
+  - engine overlap: the DMA's overlap cases (hart 0 polls, hart 1 works), against their serial twins, saved
+    cycles when positive (§4.3's comparison; polling alone is not freed time);
+  - serial by design: the DMA's serial twins.
+A two-worker record whose hart 0 is 0 and 0 outside the DMA's cases is a stamping fault, as is one missing a
+hart's interval: the script lists them and exits 1. Runs from different commits are refused.
 
   matrix_overlap.py RUN_DIR... [--json OUT]    (each RUN_DIR holds a manifest.json and its records)
 """
@@ -19,6 +26,8 @@ import json
 import sys
 from collections import Counter
 from pathlib import Path
+
+MIN_OVERLAP = 40              # cycles: hart 1's two stamps (matrix.md §10.7: about 20 each)
 
 
 def records_of(run: Path) -> dict:
@@ -33,53 +42,74 @@ def records_of(run: Path) -> dict:
     return out
 
 
-def key(entry: dict, method: str) -> tuple:
-    """The same case, configuration and axes but for the workers; the case named for the method."""
+def revisions(runs: list[Path]) -> set:
+    return {json.loads((run / "manifest.json").read_text())["source"]["revision"] for run in runs}
+
+
+def key(entry: dict, case: str, method: str, window: str) -> tuple:
+    """The same configuration and axes but for the workers."""
     axes = {k: v for k, v in entry["axes"].items() if k != "workers"}
-    return (entry["family"], entry["case"].replace(entry["method"], method), method, entry["sim"],
-            json.dumps(axes, sort_keys=True))
+    return (entry["family"], case, method, entry["sim"], json.dumps(axes, sort_keys=True), window)
 
 
 def analyse(runs: list[Path]) -> dict:
     allrec = {}
     for run in runs:
         allrec.update(records_of(run))
-    one = {}
+    cycles_of = {}
     for e, recs in allrec.values():
-        if e["axes"].get("workers") == 1:
-            for r in recs:
-                one[key(e, e["method"]) + (r["window"],)] = int(r["h0_cycles"])
-    rows, classes = [], Counter()
+        for r in recs:
+            cycles_of[key(e, e["case"], e["method"], r["window"]) + (e["axes"].get("workers"),)] = int(r["h0_cycles"])
+    rows, classes, faults = [], Counter(), []
     for e, recs in allrec.values():
         if e["axes"].get("workers") != 2:
             continue
         for r in recs:
             s0, e0, s1, e1 = (int(r[k]) for k in ("h0_work_start", "h0_work_end", "h1_work_start", "h1_work_end"))
             cycles = int(r["h0_cycles"])
-            overlap = max(0, min(e0, e1) - max(s0, s1))
             retired = (int(r["h0_retired"]), int(r["h1_retired"]))
-            twin = "dot8" if int(r["h0_dot8_retire"]) + int(r["h1_dot8_retire"]) else "scalar"
-            single = one.get(key(e, twin) + (r["window"],)) if e["method"] == "multicore" else None
-            if s0 == e0 == 0:
-                cls = "hart 0 polls"
-            elif overlap > 0 and all(retired):
-                cls = "overlap shown"
+            overlap = max(0, min(e0, e1) - max(s0, s1))
+            dma = e["family"] == "dma"
+            twin = speedup = None
+            if dma and e["case"].startswith("overlap_serial_"):
+                cls = "serial by design"
+            elif dma:
+                twin = e["case"].replace("overlap_", "overlap_serial_")
+                single = cycles_of.get(key(e, twin, e["method"], r["window"]) + (2,))
+                speedup = single / cycles if single else None
+                cls = "engine overlap" if single and single > cycles else "engine: no saving"
             else:
-                cls = "no overlap"
+                if e["method"] == "multicore":
+                    twin = "dot8" if int(r["h0_dot8_retire"]) + int(r["h1_dot8_retire"]) else "scalar"
+                    single = cycles_of.get(key(e, e["case"].replace("multicore", twin), twin, r["window"]) + (1,))
+                    speedup = single / cycles if single else None
+                if s0 == e0 == 0 or not e1 > s1:
+                    cls = "fault"
+                    faults.append(f"{e['id']} {r['window']}: hart 0 {s0}-{e0}, hart 1 {s1}-{e1}")
+                elif e0 == cycles:                       # hart 0's interval spans its own wait
+                    cls = "overlap, by speedup" if speedup and speedup > 1.0 else "not shown, spans hart 0's wait"
+                elif overlap > MIN_OVERLAP and all(retired):
+                    cls = "overlap, stamped"
+                else:
+                    cls = "no overlap"
             classes[cls] += 1
-            rows.append(dict(id=e["id"], window=r["window"], cycles=cycles, overlap=overlap,
-                             overlap_share=round(overlap / cycles, 4) if cycles else 0, retired=retired,
-                             twin=twin if single else None, speedup=round(single / cycles, 4) if single else None,
-                             cls=cls))
-    shown = [r for r in rows if r["cls"] == "overlap shown"]
-    paired = [r for r in shown if r["speedup"]]
-    return dict(records=len(rows), classes=dict(classes), paired=len(paired),
-                unpaired=sorted({r["id"].split("/")[1] for r in shown if not r["speedup"]}),
-                overlap_share_min=min((r["overlap_share"] for r in shown), default=None),
+            rows.append(dict(id=e["id"], window=r["window"], cycles=cycles, intervals=[s0, e0, s1, e1],
+                             overlap=overlap, retired=retired, twin=twin if speedup else None,
+                             speedup=round(speedup, 4) if speedup else None, cls=cls))
+
+    def ids(cls):
+        return sorted({r["id"].split("/")[1] for r in rows if r["cls"] == cls})
+    stamped = [r for r in rows if r["cls"] == "overlap, stamped"]
+    paired = [r for r in rows if r["speedup"] and r["cls"] in ("overlap, stamped", "overlap, by speedup")]
+    return dict(records=len(rows), classes=dict(classes), min_overlap=MIN_OVERLAP,
+                stamped_cases=ids("overlap, stamped"), by_speedup_cases=ids("overlap, by speedup"),
+                not_shown_cases=ids("not shown, spans hart 0's wait"), no_overlap_cases=ids("no overlap"),
+                engine_cases=ids("engine overlap"), engine_no_saving=ids("engine: no saving"),
+                stamped_overlap_share_min=min((round(r["overlap"] / r["cycles"], 4) for r in stamped), default=None),
                 speedup_min=min((r["speedup"] for r in paired), default=None),
                 speedup_max=max((r["speedup"] for r in paired), default=None),
-                slower=sorted({r["id"] for r in paired if r["speedup"] <= 1.0}),
-                no_overlap=sorted({r["id"] for r in rows if r["cls"] == "no overlap"}), rows=rows)
+                stamped_not_faster=sorted({r["id"] for r in stamped if r["speedup"] and r["speedup"] <= 1.0}),
+                faults=faults, rows=rows)
 
 
 def main() -> int:
@@ -87,16 +117,22 @@ def main() -> int:
     parser.add_argument("runs", nargs="+", type=Path)
     parser.add_argument("--json", type=Path)
     args = parser.parse_args()
+    if len(revisions(args.runs)) != 1:
+        print(f"FAIL: the runs come from several commits: {sorted(revisions(args.runs))}")
+        return 1
     result = analyse(args.runs)
     if args.json:
         args.json.write_text(json.dumps(result, indent=1) + "\n")
     print(f"two-worker records: {result['records']}; {result['classes']}")
-    print(f"overlap shown: at least {result['overlap_share_min']} of the window; {result['paired']} records with a "
-          f"one-worker twin, speedups {result['speedup_min']} to {result['speedup_max']}, "
-          f"{len(result['slower'])} not faster; no twin: {result['unpaired']}")
-    if result["no_overlap"]:                            # (published, not failed: the hand-over outlasts the work)
-        print(f"no overlap: {result['no_overlap']}")
-    return 0
+    for k in ("stamped_cases", "by_speedup_cases", "not_shown_cases", "no_overlap_cases", "engine_cases",
+              "engine_no_saving"):
+        print(f"  {k}: {result[k]}")
+    print(f"  stamped overlap at least {result['stamped_overlap_share_min']} of the window; speedups over one "
+          f"worker {result['speedup_min']} to {result['speedup_max']}; stamped yet not faster: "
+          f"{len(result['stamped_not_faster'])}")
+    for f in result["faults"][:20]:
+        print(f"  FAULT {f}")
+    return 1 if result["faults"] else 0
 
 
 if __name__ == "__main__":
