@@ -1410,14 +1410,16 @@ The runs:
   - 12: the armed hand-over's own code can leave a few of hart 1's instruction lines cold;
   - 13: the FIR's 256 samples as 256 outputs.
 - **The DSP's FFT** first took 1.94× v1's cycles: a divide a butterfly, from a loop written for the split. It
-  now runs v1's loops, and its scalar time is v1's to within 58 cycles.
+  now runs v1's loops, and its scalar time at R, warm, is v1's to within 58 cycles. At +4 waits and with the
+  cache off, the code around the loops differs from v1's, and so do the times: 318,575 against 315,785, and
+  400,250 against 407,694.
 
 **The memory hierarchy** (`s3-mem`, §4.2): 1,050 planned, 1,034 captured. The two-hart streams on the one-hart
 build are unsupported. Determinism 35/35; 464/464 pairs.
 
 | Cycles a read (warm / cold) | R | +4 waits | Cache off | Cache off, +4 |
 | --- | ---: | ---: | ---: | ---: |
-| sequential ring, 1–4 KiB (256 B: 9.1 / 9.6) | 9.0 / 9.3 | 9.0 / 9.8 | 10.0 / 10.0 | 14.0 / 14.0 |
+| sequential ring, 1–4 KiB (256 B: 9.1 / 9.5) | 9.0 / 9.3–9.4 | 9.0 / 9.8–9.9 | 10.0 / 10.0 | 14.0 / 14.0 |
 | sequential ring, 32 KiB | 10.25 | 12.25 | 10.0 | 14.0 |
 | random ring, 32 KiB | 13.5 | 20.7 | 10.0 | 14.0 |
 | strided, 1 word | 8.25 | 10.26 | 8.0 | 12.0 |
@@ -1457,14 +1459,19 @@ Determinism 75/75; 4,992/4,992 pairs.
 - **The crossover:** the DMA beats the CPU copy for every size from:
   - 127 bytes when aligned, 63 to 127 at the same offset, and 15 to 31 at different offsets, warm or cold, at R
     and with the cache off;
-  - aligned at +4 waits, 255 bytes, or 127 with the destination cached when warm; 255 at +2 waits cold.
+  - aligned at +4 waits, 255 bytes, or 127 with the destination cached when warm; at +2 waits cold, 255
+    with the destination not cached; at +4 waits with the cache off, 127 warm.
 - **A cached destination** costs the DMA invalidations: exactly one a line up to 1 KiB, 247 at 4 KiB, where
   the 4 KiB cache aliases. Its time moves by 21 cycles or less at 64 bytes, 1 KiB and 4 KiB.
 - **The overlap:**
   - The copy disappears behind unrelated work when the work is at least as long. A 16 KiB copy beside a 1 KiB
     checksum takes 2,319 cycles, against 4,342 one after the other.
-  - At 16 KiB the saving is nearly all the DMA's busy time, on hart 0 and on hart 1: 1,980 to 2,066 of its
-    2,055 to 2,110 busy cycles. Smaller copies save less of it: 73 of 138 at 1 KiB, 435 of 532 at 4 KiB.
+  - **At 16 KiB** the saving is nearly all the DMA's busy time, on hart 0 and on hart 1: 1,980 to 2,066 of
+    its 2,055 to 2,110 busy cycles.
+  - **Smaller copies, hart 0, warm,** save less of it: 73 of 138 at 1 KiB, 435 of 532 at 4 KiB.
+  - **Cold at 1 KiB,** hart 0's overlap is 8 to 15 cycles slower than serial.
+  - **Hart 1** saves 177 to 199 cycles at 1 KiB, more than the DMA's 134 to 146 busy cycles: the driver's own
+    time around the job overlaps hart 1's work too.
   - Polling is not counted as work (matrix.md §10.10).
 
 **The coherence cases** (`s3c-coh`, §4.4): v1's nine kernels and a new producer/consumer, at 2, 129 and 1,024
@@ -1517,8 +1524,11 @@ two workers on the one-hart build are unsupported. Determinism 27/27; 66/66 pair
 
 - **The NPU** runs the FIR as one job whose A rows overlap (A_STRIDE 1), with no Toeplitz copy. It is 36× to
   83× scalar on the FIR, and 31× on the 4,096-long dot.
-- **Two workers** halve the FIR and the long dots. Under K = 64 the hand-over outweighs the work, and the
-  two-worker kernel window can exceed its e2e window (matrix.md §10.12).
+- **Two workers** halve the FIR and the long dots; under K = 64 the hand-over outweighs the work. The
+  two-worker kernel window exceeds its e2e window at every K from 7 to 4,096, and on the 4- and 256-tap FIRs,
+  by about 70 cycles or less (matrix.md §10.12).
+- **The dot's two workers at K = 0 and 1** leave hart 1 nothing to do but are kept: they measure the hand-over
+  itself. The one-row GEMM's two workers are unsupported, since the sweep compares engines.
 - **The FFT,** v1's code, takes 314,687 cycles on one worker in v1's window (v1's own in the CPU family:
   314,745), and 196,134 on two (1.60×). The transforms alone take 284,612 and 164,281 (1.73×).
 
@@ -1541,8 +1551,9 @@ two workers on the one-hart build are unsupported. Determinism 27/27; 66/66 pair
 | 33×33×32 | 1,596 | 1,665 | 34.6% | 25 | 0.19 |
 | 784×1×25 | 4,477 | 4,536 | 6.9% | 98 | 1.44 |
 
-- **Bytes a cycle,** read and written over the job: 3.3 to 4.7 on the large shapes (4.70 at 64³, 3.25 at
-  128×64×128), against the 64-bit port's 8.
+- **Bytes a cycle,** read and written over the job, against the 64-bit port's 8:
+  - 3.3 to 4.7 on the large square-ish shapes (4.70 at 64³, 3.25 at 128×64×128);
+  - up to 7.61 on the narrow ones (32×1×784), which stream A.
 - **The set-up** (the descriptor, e2e less kernel) costs 57 to 69 cycles a job.
 - **Against the best DOT8 code** (19.4's, the coherence family's GEMM), npu.md §7's three cases: in kernel
   windows the NPU is 38× to 46× one worker and 19× to 23× two (40× to 48× and 20.5× to 24× end to end). v1's generic DOT8 kernel, the sweep's DOT8 method for every
@@ -1552,9 +1563,14 @@ two workers on the one-hart build are unsupported. Determinism 27/27; 66/66 pair
   - the second strip saves 10% to 15% on the 8×8 (64×64×64: 5,260 against 5,844 on one strip), and 2.9% to
     7.1% on the 4×4.
 - **Two workers' kernel windows can exceed their e2e windows** with v1's DOT8 kernel: in 79 records, by up
-  to 0.3% (128×64×128 at +2 waits: 29,487 cycles more). It is bank contention, not instruction misses. In the
-  first capture of this case, the misses were equal, but the kernel window had 398,728 bank conflicts
-  against 305,516: it releases the harts nearly together. How many records show it moves with the layout.
+  to 0.3% (128×64×128 at +2 waits: 29,487 cycles more). The cause is not established:
+  - **The large shapes:** the kernel window has more bank conflicts (398,728 against 305,516 in this case's
+    first capture), with equal data misses. That points to contention, but hart 1 starts at the same moment
+    in both windows (93 cycles in), so it is not the release.
+  - **33 of the 79:** they show no extra conflicts; their excess is 38 cycles or less, with 1 to 3 more
+    instruction misses.
+
+  How many records show it moves with the layout.
 
 **Still to do:** step 3's watchdog review and the push; then step 4, the full matrix (matrix.md §8):
 - the manifest complete;

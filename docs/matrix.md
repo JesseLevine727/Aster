@@ -505,8 +505,8 @@ did not settle a point; none loosens a gate.
       e2e window's two misses are the poisoning code's.
     - It shows wherever the kernel window is short. The dot product's
       two-worker kernel window exceeds its e2e window at every K from 7 to
-      1,024 (424 against 356 cycles at K = 8, 6,010 against 5,948 at
-      1,024), as does the 4-tap FIR's.
+      4,096 (424 against 356 cycles at K = 8, 24,610 against 24,591 at
+      4,096), as do the 4- and 256-tap FIRs'.
 13. **The FIR's "256 samples"** (§4.5) is read as 256 outputs, each a K-tap
     dot over 256 + K − 1 input samples. The NPU runs it as a 256 × 1 × K
     job whose A rows overlap (A_STRIDE 1), with no Toeplitz copy.
