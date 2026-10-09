@@ -294,8 +294,54 @@ def ecg_entries() -> list[Entry]:
     return entries
 
 
+MEMORY_SEEDS = (0x13570000, 0x2468ACE0, 0x9E3779B9)   # v1's, then two more (matrix.md §3: three seeds at R)
+
+
+def memory_points() -> list[tuple]:
+    """matrix.md §4.2's cases and their points: (case number, name, method, workers, tag, defines, axes)."""
+    points = []
+    for size in (64, 256, 1024, 4096, 16384, 32768):
+        for src, dst in ((0, 0), (3, 3), (1, 0)):          # v1's dma.c: aligned, the same offset, different offsets
+            points.append((1, "memcpy", "cpu_copy", 1, f"b{size}s{src}d{dst}",
+                           [f"-DMEM_BYTES={size}u", f"-DMEM_SRC_OFF={src}u", f"-DMEM_DST_OFF={dst}u"],
+                           dict(bytes=size, src_off=src, dst_off=dst)))
+    for size in (256, 1024, 4096, 16384, 32768):
+        points.append((2, "read_sequential", "scalar", 1, f"b{size}", [f"-DMEM_BYTES={size}u"], dict(bytes=size)))
+    for stride in (1, 2, 4, 8, 16, 64):
+        points.append((3, "read_strided", "scalar", 1, f"s{stride}", [f"-DMEM_STRIDE={stride}u"], dict(stride=stride)))
+    for size in (1024, 4096, 16384, 32768):
+        points.append((4, "walk_random", "scalar", 1, f"b{size}", [f"-DMEM_BYTES={size}u"], dict(bytes=size)))
+    for size in (512, 1024, 2048, 4096, 8192, 16384, 32768, 49152):
+        points.append((5, "working_set", "scalar", 1, f"b{size}", [f"-DMEM_BYTES={size}u"], dict(bytes=size)))
+    for pattern, name in ((0, "stream_one_hart"), (1, "stream_same_bank"), (2, "stream_diff_banks")):
+        points.append((6, name, "multicore" if pattern else "scalar", 2 if pattern else 1, "",
+                       [f"-DMEM_PATTERN={pattern}u"], dict(pattern=pattern)))
+    return points
+
+
+def memory_entries() -> list[Entry]:
+    """matrix.md §4.2: the memory hierarchy, each case's points crossed memory x data cache x cache state (§3's
+    named cross), and three seeds at R; one simulation a point."""
+    entries = []
+    sources = ["software/matrix/memory.c", "software/runtime/asterbench_v12.c", "software/runtime/aster_smp.c"]
+    for number, name, method, workers, tag, defines, point in memory_points():
+        configs = [(wait, dcache, cold, MEMORY_SEEDS[0]) for wait in (0, 1, 2, 4) for dcache in (1, 0)
+                   for cold in (False, True)]
+        configs += [(0, 1, False, seed) for seed in MEMORY_SEEDS[1:]]
+        for wait, dcache, cold, seed in configs:
+            sim = VARIANT_OF[(wait, dcache)]
+            ident = f"memory/{name}/{method}/{sim}/{'cold' if cold else 'warm'}" + (f"/{tag}" if tag else "") + \
+                    ("" if seed == MEMORY_SEEDS[0] else f"/seed{seed:08x}")
+            axes = make_axes(sim, cold, workers)
+            axes.update(point, seed=seed)
+            entries.append(Entry(ident, "memory", name, method, sim, cold, [], "LITMUS_CFLAGS", [], [], "", sources,
+                                 soc_variants.v12_defines(sim) + [f"-DMEM_CASE={number}", f"-DMEM_SEED={seed:#010x}u"]
+                                 + defines + (["-DMATRIX_COLD"] if cold else []), axes, "memory"))
+    return entries
+
+
 FAMILIES = {"cpu": cpu_entries, "coherence": coherence_entries, "dsp": dsp_entries, "ml": ml_family,
-            "ecg": ecg_entries}
+            "ecg": ecg_entries, "memory": memory_entries}
 
 # v1's baseline records (Phase 17, sync1), the cases' identity the v12 record must keep
 BASELINE = run_core_tests.BASELINE
@@ -613,9 +659,53 @@ def oracle_ecg(entry: Entry, records: list[dict], extras: list[str]) -> str:
 oracle_ecg.wants_extras = True
 
 
+def memory_model(case: str, axes: dict) -> int:
+    """software/matrix/memory.c's computation, re-run: the checksum each case's record carries."""
+    mask, seed = 0xFFFFFFFF, axes["seed"]
+    word = lambda i: (seed ^ ((i * 0x1021) & mask)) & mask
+    if case == "memcpy":
+        checksum = 0
+        for i in range(axes["bytes"]):
+            checksum = ((checksum * 33) ^ (((seed ^ ((i * 0x9E3779B9) & mask)) >> 11) & 0xFF)) & mask
+        return checksum
+    if case in ("read_sequential", "walk_random"):         # four laps of a ring through every node, from 0
+        n = axes["bytes"] // 4
+        return (4 * (n * (n - 1) // 2)) & mask
+    if case == "read_strided":
+        return (4 * sum(word(i) for i in range(4096))) & mask
+    if case == "working_set":
+        n = axes["bytes"] // 4
+        return ((49152 // n) * sum(word(i) for i in range(n))) & mask
+    def stream(hart: int, bank: int) -> int:
+        base = hart * 4096 + 4 * bank
+        return (4 * sum(word(base + 16 * line + k) for line in range(256) for k in range(4))) & mask
+    part0 = stream(0, 0)
+    part1 = {0: 0, 1: stream(1, 0), 2: stream(1, 1)}[axes["pattern"]]
+    return ((part0 * 33) ^ part1) & mask
+
+
+def oracle_memory(entry: Entry, records: list[dict]) -> str:
+    a = entry.axes
+    two = entry.axes["workers"] == 2
+    want_windows = ["e2e"] if (entry.cold or not two) else ["e2e", "kernel"]
+    if [r["window"] for r in records] != want_windows:
+        raise asterbench_v12.ValidationError(f"windows {[r['window'] for r in records]}, not {want_windows}")
+    size = 4096 * 4 if entry.case == "read_strided" else (16384 if entry.case.startswith("stream") else a.get("bytes"))
+    param = (a["src_off"] << 4) | a["dst_off"] if entry.case == "memcpy" else a.get("stride", 0)
+    iterations = 49152 // (a["bytes"] // 4) if entry.case == "working_set" else 4
+    want = memory_model(entry.case, a)
+    for r in records:
+        if (r["name"], r["size"], r["iterations"], r["param"], r["seed"], r["workers"], r["checksum"]) != \
+                (entry.case, size, iterations, param, a["seed"], a["workers"], want):
+            raise asterbench_v12.ValidationError(f"the record's identity or checksum ({r['checksum']:#010x}, the "
+                                                 f"model's {want:#010x}) differs from the entry's")
+        method_evidence(entry, r, dot8=0)
+    return f"checksum {want:#010x}: the model's ({len(records)} window{'s' if len(records) > 1 else ''})"
+
+
 ORACLES = {"cpu": oracle_cpu, "reduce": oracle_reduce, "gemm": oracle_gemm, "conv2d": oracle_conv2d,
            "mnist": oracle_mnist, "smp": oracle_smp, "cifar": oracle_cifar, "stamps": oracle_stamps,
-           "ecg": oracle_ecg}
+           "ecg": oracle_ecg, "memory": oracle_memory}
 
 _make_lock = threading.Lock()
 _make_cache: dict[tuple, list[str]] = {}

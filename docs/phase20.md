@@ -1164,7 +1164,7 @@ that a slower build broke:
 - **The poll loop is bounded,** so a hung job fails check 65 rather than timing out.
 
 
-### Step 2: the v1-retained and gate workloads (done; awaiting its review)
+### Step 2: the v1-retained and gate workloads (done, pushed as d097b2b)
 
 **Captured from b8c9f62,** a clean tree: `build/matrix/h-coh`, `h-dsp`, `h-ml` and `h-ecg`, with the CPU
 family's `h-cpu`.
@@ -1181,7 +1181,7 @@ family's `h-cpu`.
 - its kernel window: the computation alone, its data in place.
 
 A cold run records the end-to-end window. matrix.md §10 lists nine readings of the plan found here, for the
-owner's review.
+owner's review; the owner accepted them on 8 October 2026, when step 2 was pushed ("its ok!").
 
 **How the matrix measures.** Four reviews and checks of my own changed the method; every figure below is from
 the method as it now stands.

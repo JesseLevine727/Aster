@@ -366,7 +366,7 @@ Each step has its watchdog review before it is pushed.
 6. **CoreMark:** the CRC test's cycles in 20.4, and the official, ten-second
    score on the board in 20.5.
 
-## 10. Clarifications found in 20.4, for the owner's review
+## 10. Clarifications found in 20.4, accepted by the owner (8 October 2026)
 
 Found while building step 2. Each is how the plan above was read where it
 did not settle a point; none loosens a gate.
@@ -445,3 +445,13 @@ did not settle a point; none loosens a gate.
    Otherwise each v1-retained window holds v1's code, its checksum
    included (CIFAR's is folded and its classes checked inside the window,
    as v1 did).
+
+**Found in step 3, for the owner's review:**
+
+10. **A one-hart microbenchmark records one window.** The memory hierarchy's
+    one-hart cases (§4.2) have nothing outside their computation: no
+    dispatch, packing, set-up or result to put in place. So their kernel
+    and end-to-end windows would be the same instructions, and each point
+    records its e2e window, warm and cold. The two-hart streaming cases
+    record both, since their e2e window holds the runtime's dispatch and
+    join and their kernel window the armed hand-over (item 2).
