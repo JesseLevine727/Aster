@@ -490,6 +490,8 @@ def npu_gemm_entries() -> list[Entry]:
                                                            f"-DGEMM_METHOD={number}", f"-DGEMM_SEED={seed:#010x}u",
                                                            "-Isoftware/benchmarks"]
                           + (["-DMATRIX_COLD"] if cold else []), axes, "npu_gemm")
+                if not reason and workers == 2 and m < 2:
+                    reason = "one row of C: nothing for hart 1"
                 if reason:
                     e.status, e.reason = "unsupported", reason
                 entries.append(e)
@@ -1021,7 +1023,8 @@ def oracle_dsp(entry: Entry, records: list[dict]) -> str:
             raise asterbench_v12.ValidationError(f"{r['npu_macs']} NPU MACs, not {m * a['k']}")
     if want != records[0]["checksum"]:
         raise asterbench_v12.ValidationError(f"checksum {records[0]['checksum']:#010x}, the model's {want:#010x}")
-    return f"checksum {want:#010x}: the model's; the outputs and guards checked in the firmware against v1's scalar"
+    note = "" if entry.case == "fft" else "; the outputs and guards checked in the firmware against v1's scalar"
+    return f"checksum {want:#010x}: the model's{note}"
 
 
 def oracle_npu_gemm(entry: Entry, records: list[dict]) -> str:

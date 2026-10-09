@@ -241,12 +241,13 @@ static __attribute__((noinline)) void bit_reverse(void) {
     }
 }
 
-// a stage's butterflies [b0, b1) of FFT_N / 2 (v1's arithmetic): butterfly b at start (b / half) * length, k b % half
-static __attribute__((noinline)) void butterflies(uint32_t length, uint32_t b0, uint32_t b1) {
+// a stage's butterflies, v1's loops (workload_fft.c): the blocks [s0, s1) of `length` samples, and in each the k
+// range [k0, k1) of its half (one worker: every block and every k)
+static __attribute__((noinline)) void butterflies(uint32_t length, uint32_t s0, uint32_t s1, uint32_t k0, uint32_t k1) {
     const uint32_t half = length >> 1;
     const uint32_t step = FFT_N / length;
-    for (uint32_t b = b0; b < b1; ++b) {
-        const uint32_t start = (b / half) * length, k = b % half;
+    for (uint32_t start = s0; start < s1; start += length)
+        for (uint32_t k = k0; k < k1; ++k) {
         const int32_t wr = fft_twiddle_re[k * step];
         const int32_t wi = fft_twiddle_im[k * step];
         const int32_t xr = re[start + k], xi = im[start + k];
@@ -279,8 +280,13 @@ static void fft_half(uint32_t hart) {
     if (hart == 0) bit_reverse();
     stage_barrier(hart, ++stage);
     for (uint32_t length = 2; length <= FFT_N; length <<= 1) {
-        const uint32_t quarter = FFT_N / 4u;
-        butterflies(length, hart * quarter, hart * quarter + quarter);
+        if (length < FFT_N) {                          // half the blocks each
+            const uint32_t mid = FFT_N / 2u;
+            butterflies(length, hart ? mid : 0, hart ? FFT_N : mid, 0, length >> 1);
+        } else {                                       // one block: half its k range each
+            const uint32_t q = FFT_N / 4u;
+            butterflies(length, 0, FFT_N, hart ? q : 0, hart ? 2u * q : q);
+        }
         stage_barrier(hart, ++stage);
     }
 }
@@ -317,7 +323,7 @@ static __attribute__((noinline)) void fft(uint32_t number, int last, int mode, i
     (void)number; (void)last;
     if (mode == KERNEL) matrix_open(first);
     bit_reverse();
-    for (uint32_t length = 2; length <= FFT_N; length <<= 1) butterflies(length, 0, FFT_N / 2u);
+    for (uint32_t length = 2; length <= FFT_N; length <<= 1) butterflies(length, 0, FFT_N, 0, length >> 1);
     if (mode == KERNEL) matrix_close();
 #endif
 }

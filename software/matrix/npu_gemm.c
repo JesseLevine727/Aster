@@ -44,8 +44,8 @@ enum { E2E = 1, KERNEL };
 
 static int8_t a[GEMM_M * GEMM_K] __attribute__((aligned(64)));
 static int8_t b[GEMM_K * GEMM_N] __attribute__((aligned(64)));
-static uint8_t c_buf[4u * GEMM_M * GEMM_N + GUARD] __attribute__((aligned(64)));
-#define C ((int32_t *)(void *)c_buf)
+static uint8_t c_buf[GUARD + 4u * GEMM_M * GEMM_N + GUARD] __attribute__((aligned(64)));   // (C between guards)
+#define C ((int32_t *)(void *)(c_buf + GUARD))
 static volatile uint32_t engine_failed;
 
 static uint32_t random_state = GEMM_SEED;
@@ -79,15 +79,15 @@ static void hart1_rows(void *arg) {
 
 static void hart1_poison(void *arg) {                  // (its rows of C: matrix_window.h)
     (void)arg;
-    matrix_poison(c_buf + 4u * SPLIT * GEMM_N, 4u * (GEMM_M - SPLIT) * GEMM_N);
+    matrix_poison(c_buf + GUARD + 4u * SPLIT * GEMM_N, 4u * (GEMM_M - SPLIT) * GEMM_N);
 }
 #endif
 
 static void poison(void) {
 #if WORKERS == 2
     aster_smp_dispatch(hart1_poison, 0);
-    matrix_poison(c_buf, 4u * SPLIT * GEMM_N);
-    matrix_poison(c_buf + 4u * GEMM_M * GEMM_N, GUARD);
+    matrix_poison(c_buf, GUARD + 4u * SPLIT * GEMM_N);
+    matrix_poison(c_buf + GUARD + 4u * GEMM_M * GEMM_N, GUARD);
     aster_smp_join();
 #else
     matrix_poison(c_buf, sizeof c_buf);
@@ -145,7 +145,11 @@ static int timed_pass(struct v12_record *record, int mode) {
 #endif
     uint32_t sum = 0, guard_errors = 0;
     for (uint32_t i = 0; i < GEMM_M * GEMM_N; ++i) sum = (sum * 33u) ^ (uint32_t)C[i];
-    for (uint32_t i = 0; i < GUARD; ++i) guard_errors += c_buf[4u * GEMM_M * GEMM_N + i] != 0xA5u;
+    for (uint32_t i = 0; i < GUARD; ++i)               // (both guards of C; A and B unchanged)
+        guard_errors += (c_buf[i] != 0xA5u) + (c_buf[GUARD + 4u * GEMM_M * GEMM_N + i] != 0xA5u);
+    random_state = GEMM_SEED;
+    for (uint32_t i = 0; i < GEMM_M * GEMM_K; ++i) guard_errors += a[i] != (int8_t)next_random();
+    for (uint32_t i = 0; i < GEMM_K * GEMM_N; ++i) guard_errors += b[i] != (int8_t)next_random();
     static char name[32] = "gemm_";
     if (!name[5]) {                                    // gemm_<M>x<N>x<K>
         char *p = name + 5;
