@@ -28,7 +28,9 @@ V1 = {
     "Conv2D 32x32 K=5, x4": ("dsp", lambda c: c.startswith("conv2d_"), 4_837_408),
     "reduction, 1,024 words x4 (v1's)": ("coherence", lambda c: c == "reduce_v1", 233_112),
     "MNIST MLP, per image": ("ml", lambda c: c.startswith("mnist_mlp_") and c != "mnist_mlp_npu_batched", 433_903),
-    "streaming ECG, 16 x 64": ("ecg", lambda c: c.startswith("ecg_") and not c.endswith("_f8"), 1_528_505),
+    # (v1's model, not the 8-feature one; tuned variants count, the stamped twins do not)
+    "streaming ECG, 16 x 64": ("ecg", lambda c: c.startswith("ecg_") and not c.split("__")[0].endswith("_f8")
+                               and not c.endswith("_stages"), 1_528_505),
     "CIFAR-10, 20 images": ("ml", lambda c: c.startswith("cifar_cnn_"), 65_568_218),
     "CoreMark (aster_minimal)": ("cpu", lambda c: c == "coremark", 1_922_272),
     "Dhrystone (aster_minimal)": ("cpu", lambda c: c == "dhrystone", 3_128_553),

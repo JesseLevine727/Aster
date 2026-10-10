@@ -1844,13 +1844,16 @@ alignment.
 
 **The overlap evidence** (tuning.md §6): both harts stamp their shares, on `MATRIX_SHARE` lines.
 - **Every two-worker program** now shows its overlap from stamps: the reductions, Conv2D, the dot, FIR and FFT,
-  MNIST and CIFAR. The exceptions are the dot at K = 0 and 1, where hart 1 has no work.
+  MNIST and CIFAR. The exceptions are the dot's smallest cases:
+  - at K = 0 and 1, hart 1 has no work;
+  - cold, at K = 7 and 8 (e2e), the shares overlap by 33 and 13 cycles, under the 40-cycle minimum, and two
+    workers are slower than one (0.31× and 0.33×).
 - **The speedup reading** (matrix.md §10.14) is now a cross-check.
 
 **ECG's stage stamps** (tuning.md §5), in 72 separate `_stages` entries, show:
 - **v1's ported pipeline:** sequential per chunk;
-- **the two-hart pipeline:** each chunk's FIR beside the previous chunk's classifier, 26,814 cycles of overlap
-  in v1's case. It is bound by v1's byte-gathering DOT8 FIR, about 10,400 cycles a chunk.
+- **the two-hart pipeline:** each chunk's FIR beside the previous chunk's classifier. In v1's case the overlap
+  is 26,724 cycles (warm, e2e), 27,181 cold and 25,788 in the kernel window. It is bound by v1's byte-gathering DOT8 FIR, about 10,400 cycles a chunk.
 
 **The copy helper** (`aster_copy`): the DMA or v1's fair copy, by size and offset.
 - **Its test** (`soc_copy`): 1,200 copies on two builds, every byte, guard and choice checked.

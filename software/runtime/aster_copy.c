@@ -42,6 +42,7 @@ enum aster_copy_engine aster_copy_choice(void *destination, const void *source, 
 
 enum aster_dma_result aster_copy_start(void *destination, const void *source, uint32_t bytes,
                                        enum aster_copy_engine *used) {
+    if (pending == ASTER_DMA_PENDING) return ASTER_DMA_ALREADY_BUSY;     // (one copy at a time)
     const enum aster_copy_engine engine = aster_copy_choice(destination, source, bytes);
     if (used) *used = engine;
     if (engine == ASTER_COPY_CPU) {
@@ -56,7 +57,9 @@ enum aster_dma_result aster_copy_start(void *destination, const void *source, ui
 enum aster_dma_result aster_copy_finish(void) {
     enum aster_dma_result r = pending;
     if (r == ASTER_DMA_PENDING) r = aster_dma_wait(8000000u);
-    pending = ASTER_DMA_OK;
+    // (a timeout does not hand the buffers back, v1's driver says: the copy stays pending, to be finished or
+    // aborted through the driver)
+    pending = r == ASTER_DMA_TIMEOUT ? ASTER_DMA_PENDING : ASTER_DMA_OK;
     return r;
 }
 

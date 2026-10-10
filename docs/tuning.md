@@ -56,7 +56,8 @@ As in 20.4:
 
 - **Every result is published,** the losses too (soc.md §11).
 - **The original methods stay.** A tuned variant is a new case under the
-  existing methods, named for its original with `__` and a tag. For example, `cifar_cnn_npu_direct__2h` uses method
+  existing methods, named for its original with `__` and a tag (amended in step 1: the approved plan's example
+  had one `_`). For example, `cifar_cnn_npu_direct__2h` uses method
   `npu_direct` with two workers, and v12's method list is unchanged.
   - Each variant is planned before it is captured, with matrix.md §3's
     crossing: R plus each axis alone, plus its family's named crosses
@@ -97,12 +98,15 @@ As in 20.4:
       buffer's conflicts onto another of the same shape.
     - The code pad also pushes every data section after it, since `.text`
       comes first.
-  - **The eight layouts reach** at least half of 20.4's move in all 262
-    windows: the GEMM's moves (−10.7% at +4 waits) and the contention
-    cases (−41% to +74%). The measure is the spread over the layouts against
-    the size of 20.4's move. Measured instead as the largest single move
-    from L0, three NPU e2e windows fall short: 20.4 moved them by 15 or 16
-    cycles, and the layouts by at most 7.
+  - **The eight layouts reach** at least half of 20.4's move in 261 of the
+    262 windows (from the clean commit 2463544): the GEMM's moves (−10.7% at
+    +4 waits) and the contention cases (−41% to +74%).
+    - **The measure:** the spread over the layouts, against the size of
+      20.4's move. Measured instead as the largest single move from L0, the
+      result is the same.
+    - **The one short:** the lr/sc counter's 2-item kernel window with the
+      cache off, which 20.4 moved by 6 cycles (246 to 240). No layout moves
+      it.
 
   **Eight layouts instead of decision 2's five: pending the owner's
   approval.** The change is made before any change is judged, and it only
@@ -159,7 +163,9 @@ As in 20.4:
 ### 4.1 DMA thresholds
 
 - **A copy helper in the runtime** (`aster_copy`) picks the DMA or the CPU's
-  fair copy by size, alignment and whether the destination is cached.
+  fair copy by size, alignment and whether the destination is cached. (Step
+  1's helper picks by size and offset; the destination's cache state joins
+  it in step 3, if the finer sweep shows it matters at R.)
   - **Its thresholds:** from a finer sweep around 20.4's crossovers (every
     size from 32 to 160 bytes, and 8 to 63 misaligned), on each layout.
   - **Freed time:** whether the time the DMA frees is used is reported too.
@@ -247,7 +253,7 @@ Where code and data sit:
     100,000 cycles (1 ms) after each line, outside the window, the same
     cycles in the simulation and on the board.
   - **The result:** all 72 stamped programs end on the board as simulated,
-    their console within 6,706 bytes of the reader, under half of the
+    their console within 5,003 bytes of the reader, under half of the
     16 KiB ring. Unpaced, they overflowed.
 - **Tuning:**
   - the chunk moves by the copy policy (§4.1);
@@ -275,9 +281,15 @@ each stretch.
 - **The scaling gate's lowest point:** 1.890×. In 20.4 it was 1.882×, and
   layout moves it either way.
 
-The stamps compile in only where a program uses them (`MATRIX_SHARES`). The overlap script will pair each tuned variant with its
-original: today it pairs only `multicore` records with their one-worker twins,
-and the DMA's overlap cases with their serial twins (step 1).
+The stamps compile in only where a program uses them (`MATRIX_SHARES`).
+- **Cold, they cost more:** +235 cycles on the gate's reduction end to end,
+  +164 on v1's. That moves the v1 gate's reduction from 3.96× to 3.95×.
+- **Against the plan's estimate:** about six times the "about 20 cycles"
+  above, since a window has four stamps and a check each stretch.
+
+The overlap script pairs each tuned variant with its original (step 1).
+Overlap is read only against a one-worker original. A win over a two-worker
+original is reported apart, as the tuning's own speedup.
 
 **The two-hart NPU variants' windows.** In an NPU kernel window hart 0 only
 starts and polls the job (matrix.md §10.7: its interval 0 and 0), and hart 1 has
