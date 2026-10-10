@@ -150,6 +150,23 @@ class Overlap(unittest.TestCase):
         self.assertEqual(by["overlap_h1"]["speedup"], 1.6667)
         self.assertEqual(result["faults"], [])
 
+    def test_shares_and_variants(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            out = self.run_dir(Path(tmp), [
+                ("f", "red", "scalar", 1, 1000, (0, 1000), (0, 0)),
+                ("f", "red", "multicore", 2, 600, (0, 600), (10, 500)),           # spans; its shares overlap
+                ("f", "cnn", "npu", 1, 900, (0, 900), (0, 0)),
+                ("f", "cnn__2h", "npu", 2, 600, (0, 600), (10, 590))])            # a tuned variant, spans
+            manifest = matrix_overlap.json.loads((out / "manifest.json").read_text())
+            manifest["entries"][1]["extras"] = ["MATRIX_SHARE,window=e2e,h0_begin=100,h0_end=400,h1_begin=120,h1_end=420"]
+            manifest["entries"][3]["extras"] = ["MATRIX_SHARE,window=e2e,h0_begin=100,h0_end=130,h1_begin=120,h1_end=420"]
+            (out / "manifest.json").write_text(matrix_overlap.json.dumps(manifest))
+            result = matrix_overlap.analyse([out])
+        by = {r["id"].split("/")[1]: r for r in result["rows"]}
+        self.assertEqual((by["red"]["cls"], by["red"]["overlap"]), ("overlap, stamped shares", 280))
+        self.assertEqual(by["cnn__2h"]["cls"], "overlap, by speedup")       # (its shares overlap 10: not shown)
+        self.assertEqual((by["cnn__2h"]["twin"], by["cnn__2h"]["speedup"]), ("cnn", 1.5))
+
     def test_a_twin_must_match_every_axis(self):
         _, by = self.classes([("f", "red", "scalar", 1, 1000, (0, 1000), (0, 0), 0, "cold"),
                               ("f", "red", "multicore", 2, 600, (0, 600), (10, 500))])

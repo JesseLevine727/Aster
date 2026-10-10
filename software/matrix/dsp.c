@@ -18,6 +18,7 @@
 // (the dot at K = 0 makes some set-up and check loops empty: i < 0u)
 #pragma GCC diagnostic ignored "-Wtype-limits"
 
+#include "matrix_layout.h"
 #include "aster.h"
 #include "aster_npu2.h"
 #include "aster_smp.h"
@@ -62,9 +63,12 @@ static uint32_t checksum;
 #define A_STRIDE 1u                                    // (the FIR's rows overlap: row i is x + i)
 #endif
 #define GUARD 64u
-static uint8_t a_buf[GUARD + A_BYTES + GUARD] __attribute__((aligned(64)));
-static uint8_t b_buf[GUARD + DSP_K + GUARD] __attribute__((aligned(64)));
-static uint8_t c_buf[GUARD + 4u * M + GUARD] __attribute__((aligned(64)));
+MATRIX_ROOM(a_buf, sizeof(uint8_t[GUARD + A_BYTES + GUARD]), 64);
+#define a_buf MATRIX_AT(uint8_t, a_buf, GUARD + A_BYTES + GUARD)
+MATRIX_ROOM(b_buf, sizeof(uint8_t[GUARD + DSP_K + GUARD]), 64);
+#define b_buf MATRIX_AT(uint8_t, b_buf, GUARD + DSP_K + GUARD)
+MATRIX_ROOM(c_buf, sizeof(uint8_t[GUARD + 4u * M + GUARD]), 64);
+#define c_buf MATRIX_AT(uint8_t, c_buf, GUARD + 4u * M + GUARD)
 static int32_t reference[M];
 static volatile int32_t partial;                       // (the two-worker dot: hart 1's half)
 
@@ -99,6 +103,7 @@ static void setup(void) {
 static void hart1_share(void *arg) {
     (void)arg;
     matrix_stamp_start(1);
+    matrix_share_begin(1);
     struct aster_npu_gemm job = logical();
 #if DSP_CASE == 1
     const uint32_t split = DSP_K / 2u;                 // (v1's: the dot's K halved)
@@ -108,6 +113,7 @@ static void hart1_share(void *arg) {
     job.a += split * A_STRIDE; job.c += split; job.m -= split;
 #endif
     xe_scalar_gemm(&job);
+    matrix_share_end(1);
     matrix_stamp_end(1);
 }
 
@@ -171,13 +177,17 @@ static __attribute__((noinline)) void pass(int mode) {
         matrix_arm(hart1_share, 0);
         matrix_open(1);
         matrix_release();
+        matrix_share_begin(0);
         xe_scalar_gemm(&job);
+        matrix_share_end(0);
         if (DSP_CASE == 2) matrix_stamp_end(0);        // (the FIR's hart 0 only waits after its share)
         matrix_await();
     } else {
         matrix_open(1);
         aster_smp_dispatch(hart1_share, 0);
+        matrix_share_begin(0);
         xe_scalar_gemm(&job);
+        matrix_share_end(0);
         if (DSP_CASE == 2) matrix_stamp_end(0);
         aster_smp_join();
     }
@@ -285,7 +295,9 @@ static void fft_half(uint32_t hart) {
             butterflies(length, hart ? mid : 0, hart ? FFT_N : mid, 0, length >> 1);
         } else {                                       // one block: half its k range each
             const uint32_t q = FFT_N / 4u;
-            butterflies(length, 0, FFT_N, hart ? q : 0, hart ? 2u * q : q);
+            matrix_share_begin(hart);                  // (the shares: each hart's half of the last stage, where
+            butterflies(length, 0, FFT_N, hart ? q : 0, hart ? 2u * q : q);   // only their butterflies run)
+            matrix_share_end(hart);
         }
         stage_barrier(hart, ++stage);
     }
@@ -392,6 +404,9 @@ static int timed_pass(struct v12_record *record, int mode) {
     record->seed = DSP_SEED; record->checksum = checksum; record->workers = WORKERS;
     record->pass = !engine_failed && check_errors == 0;
     v12_emit(record);
+#if WORKERS == 2
+    matrix_share_emit(record->window);                 // (each hart's last share, beside the record: tuning.md §6)
+#endif
     return !record->pass;
 }
 

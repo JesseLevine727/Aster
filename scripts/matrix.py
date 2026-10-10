@@ -47,6 +47,15 @@ import workload_reference  # noqa: E402
 SIM_DIR = ROOT / "build/aster_soc"
 RUNTIME = ["software/runtime/start_multicore_aster.S", "software/runtime/aster_trap.S", "verification/core/firmware/exit.c"]
 LINK = "verification/core/firmware/link_matrix.ld"   # (20.4: 96 KiB as one region)
+# 20.5's layout knob (docs/tuning.md §3; software/matrix/matrix_layout.h): the code pad, linked just before the
+# runtime's objects, and each layout's pads (code, data, hart 1's), L0 every pad 0 (the layout of record)
+PAD = "software/matrix/matrix_pad.S"
+# (code, data, hart 1's): L1-L3 the other bank phases (16, 32, 48 bytes); L4 a quarter of the caches; L5-L7 the
+# bank phases with a distinct cache-index shift of the data (20, 40, 60 more lines: none a power of two, so no
+# buffer size aliases it). Five layouts did not reproduce 20.4's moves; these eight do (tuning.md §3).
+LAYOUTS = {"L1": (16, 16, 16), "L2": (32, 32, 32), "L3": (48, 48, 48), "L4": (1024, 1024, 0),
+           "L5": (16, 336, 16), "L6": (32, 672, 32), "L7": (48, 1008, 48)}
+LAYOUT_ANCHORS = ("__matrix_pad_code", "v12_emit", "aster_smp_dispatch", "aster_smp_worker", "matrix_arm")
 MAX_CYCLES = 2_000_000_000
 SCHEMA = "aster.phase20.matrix.v1"
 
@@ -1145,14 +1154,39 @@ def headers_digest(prefix: str) -> str:
         return _headers_digest
 
 
+def with_pad(harness: list[str]) -> list[str]:
+    """The harness's sources with the code pad (matrix_pad.S) just before the runtime's (tuning.md §3)."""
+    at = harness.index("software/runtime/asterbench_v12.c")
+    return harness[:at] + [PAD] + harness[at:]
+
+
+def with_layout(entry: Entry, name: str) -> Entry:
+    """The entry at layout `name` (LAYOUTS): its id and axes say so, and its pads are defines."""
+    code, data, hart = LAYOUTS[name]
+    return dataclasses.replace(entry, id=f"{entry.id}/{name}", axes=dict(entry.axes, layout=name),
+                               defines=entry.defines + [f"-DMATRIX_PAD_CODE={code}", f"-DMATRIX_PAD_DATA={data}u",
+                                                        f"-DMATRIX_PAD_HART={hart}u"])
+
+
+def layout_addresses(entry: Entry, symbols: dict) -> dict:
+    """Where the layout put things (tuning.md §3: read from the ELF and checked): each program buffer's address
+    (its room's, plus the data pad) and the code anchors, with each address mod 64 (bank phase) and mod 4 KiB
+    (cache index)."""
+    data = LAYOUTS[entry.axes["layout"]][1] if entry.axes.get("layout") in LAYOUTS else 0
+    at = {name[:-5]: address + data for name, address in symbols.items() if name.endswith("_room")}
+    at.update({name: symbols[name] for name in LAYOUT_ANCHORS if name in symbols})
+    return {name: [address, address % 64, address % 4096] for name, address in sorted(at.items())}
+
+
 def build_firmware(entry: Entry, fw_root: Path, prefix: str, soc_flags: list[str]) -> tuple[Path, dict, str]:
     """The entry's firmware, built once for every entry that shares its sources, flags and defines."""
+    harness = with_pad(entry.harness_sources)
     kflags = make_variable(entry.kernel_flags, entry.kernel_overrides)
     vflags = make_variable(entry.vendor_flags, []) if entry.vendor_sources else []
-    key_text = json.dumps([entry.kernel_sources, kflags, entry.vendor_sources, vflags, entry.harness_sources,
+    key_text = json.dumps([entry.kernel_sources, kflags, entry.vendor_sources, vflags, harness,
                            entry.defines, soc_flags, RUNTIME, LINK, headers_digest(prefix)])
     digest = hashlib.sha256(key_text.encode()).hexdigest()[:16]
-    for path in entry.kernel_sources + entry.vendor_sources + entry.harness_sources + RUNTIME + [LINK]:
+    for path in entry.kernel_sources + entry.vendor_sources + harness + RUNTIME + [LINK]:
         digest = hashlib.sha256((digest + hashlib.sha256((ROOT / path).read_bytes()).hexdigest()).encode()).hexdigest()[:16]
     out = fw_root / f"{entry.case}-{digest}"
     with _build_locks_lock:
@@ -1180,7 +1214,7 @@ def build_firmware(entry: Entry, fw_root: Path, prefix: str, soc_flags: list[str
                 run_command([tool(prefix, "gcc"), *vflags, "-Dmain=v1_main", "-c", "-o", str(obj), source])
                 objects.append(str(obj))
             run_command([tool(prefix, "gcc"), *soc_flags, *entry.defines, "-Isoftware/runtime", "-Isoftware/drivers",
-                         f"-T{LINK}", "-Wl,--no-warn-rwx-segments", "-o", str(elf), *RUNTIME, *entry.harness_sources,
+                         f"-T{LINK}", "-Wl,--no-warn-rwx-segments", "-o", str(elf), *RUNTIME, *harness,
                          *objects, "-lgcc"])
             run_command([tool(prefix, "objcopy"), "-O", "binary", str(elf), str(elf.with_suffix(".bin"))])
     symbols = {}
@@ -1248,6 +1282,7 @@ def do_entry(entry: Entry, out: Path, prefix: str, soc_flags: list[str]) -> dict
         result["firmware_bin"] = str(elf.with_suffix(".bin").relative_to(out))
         result["cold_word"] = None if "matrix_cold" not in symbols else symbols["matrix_cold"] - symbols["_start"]
         result["footprint"] = footprint(elf, prefix)
+        result["layout_addresses"] = layout_addresses(entry, symbols)
         result["sim_sha256"] = sha256(SIM_DIR / entry.sim)
         fields, console = run_entry(entry, elf, symbols, out)
         result["soc"] = {k: fields[k] for k in ("status", "cycles", "npu_config", "soc_config") if k in fields}
@@ -1275,8 +1310,12 @@ def do_entry(entry: Entry, out: Path, prefix: str, soc_flags: list[str]) -> dict
         result["lines"] = lines
         result["status"] = "captured"
     except Exception as error:                                   # (every failure recorded, none lost)
-        result["status"] = "failed"
-        result["failure"] = f"{type(error).__name__}: {error}"[-1500:]
+        if entry.axes.get("layout") in LAYOUTS and "overflowed by" in str(error) and "firmware_sha256" not in result:
+            result["status"] = "unsupported"                     # (tuning.md §3: only the layouts that fit)
+            result["reason"] = f"layout {entry.axes['layout']} does not fit main memory"
+        else:
+            result["status"] = "failed"
+            result["failure"] = f"{type(error).__name__}: {error}"[-1500:]
     result["seconds"] = round(time.time() - started, 1)
     return result
 
@@ -1307,12 +1346,16 @@ def main() -> int:
     parser.add_argument("--out", type=Path)
     parser.add_argument("--jobs", type=int, default=max(1, (os.cpu_count() or 2) - 4))
     parser.add_argument("--only", help="entries whose id starts with this")
+    parser.add_argument("--layouts", help="also each selected entry at these layouts (tuning.md §3), e.g. L1,L2,L3,L4")
     parser.add_argument("--repeat-every", type=int, default=0,
                         help="determinism: run every Nth captured entry again and require identical records")
     args = parser.parse_args()
     entries = [e for f in (args.family or sorted(FAMILIES)) for e in FAMILIES[f]()]
     if args.only:
         entries = [e for e in entries if e.id.startswith(args.only)]
+    if args.layouts:
+        entries += [with_layout(e, name) for name in args.layouts.split(",") for e in list(entries)
+                    if e.status != "unsupported"]
     if args.action == "plan":
         for e in entries:
             print(e.id)

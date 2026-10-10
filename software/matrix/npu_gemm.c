@@ -12,6 +12,7 @@
 // untimed first. C and its guard are poisoned before each pass by their writers; the guard is checked after it.
 #include <stdint.h>
 
+#include "matrix_layout.h"
 #include "aster.h"
 #include "aster_npu2.h"
 #include "aster_smp.h"
@@ -42,9 +43,12 @@
 
 enum { E2E = 1, KERNEL };
 
-static int8_t a[GEMM_M * GEMM_K] __attribute__((aligned(64)));
-static int8_t b[GEMM_K * GEMM_N] __attribute__((aligned(64)));
-static uint8_t c_buf[GUARD + 4u * GEMM_M * GEMM_N + GUARD] __attribute__((aligned(64)));   // (C between guards)
+MATRIX_ROOM(a, sizeof(int8_t[GEMM_M * GEMM_K]), 64);
+#define a MATRIX_AT(int8_t, a, GEMM_M * GEMM_K)
+MATRIX_ROOM(b, sizeof(int8_t[GEMM_K * GEMM_N]), 64);
+#define b MATRIX_AT(int8_t, b, GEMM_K * GEMM_N)
+MATRIX_ROOM(c_buf, sizeof(uint8_t[GUARD + 4u * GEMM_M * GEMM_N + GUARD]), 64);   // (C between guards)
+#define c_buf MATRIX_AT(uint8_t, c_buf, GUARD + 4u * GEMM_M * GEMM_N + GUARD)
 #define C ((int32_t *)(void *)(c_buf + GUARD))
 static volatile uint32_t engine_failed;
 

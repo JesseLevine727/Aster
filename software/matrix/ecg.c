@@ -22,6 +22,7 @@
 #include <stdint.h>
 #include <stdatomic.h>
 
+#include "matrix_layout.h"
 #include "aster.h"
 #include "aster_dma.h"
 #include "aster_npu2.h"
@@ -54,14 +55,22 @@ _Static_assert(ECG_FEATURES == 4u || ECG_FEATURES == 8u, "v1's model or twice it
 
 enum { UNTIMED, E2E, KERNEL };
 
-static int8_t raw[ECG_CHUNK] __attribute__((aligned(8)));                 // the staging buffer
-static int8_t moved[2][ECG_CHUNK] __attribute__((aligned(8)));            // the DMA's (or the CPU copy's) target
-static int8_t stream[ECG_DATA_COUNT] __attribute__((aligned(8)));         // the kernel window's stream in place
-static int8_t coef[ECG_COEF] __attribute__((aligned(4)));
-static int32_t filtered[2][ECG_FOUT] __attribute__((aligned(4)));
-static int8_t feat_q[ECG_FEATURES] __attribute__((aligned(4)));
-static int8_t weights[ECG_CLASSES * ECG_FEATURES] __attribute__((aligned(4)));
-static int32_t scores[ECG_CLASSES] __attribute__((aligned(4)));
+MATRIX_ROOM(raw, sizeof(int8_t[ECG_CHUNK]), 8);                 // the staging buffer
+#define raw MATRIX_AT(int8_t, raw, ECG_CHUNK)
+MATRIX_ROOM(moved, sizeof(int8_t[2][ECG_CHUNK]), 8);            // the DMA's (or the CPU copy's) target
+#define moved MATRIX_AT(int8_t, moved, 2][ECG_CHUNK)
+MATRIX_ROOM(stream, sizeof(int8_t[ECG_DATA_COUNT]), 8);         // the kernel window's stream in place
+#define stream MATRIX_AT(int8_t, stream, ECG_DATA_COUNT)
+MATRIX_ROOM(coef, sizeof(int8_t[ECG_COEF]), 4);
+#define coef MATRIX_AT(int8_t, coef, ECG_COEF)
+MATRIX_ROOM(filtered, sizeof(int32_t[2][ECG_FOUT]), 4);
+#define filtered MATRIX_AT(int32_t, filtered, 2][ECG_FOUT)
+MATRIX_ROOM(feat_q, sizeof(int8_t[ECG_FEATURES]), 4);
+#define feat_q MATRIX_AT(int8_t, feat_q, ECG_FEATURES)
+MATRIX_ROOM(weights, sizeof(int8_t[ECG_CLASSES * ECG_FEATURES]), 4);
+#define weights MATRIX_AT(int8_t, weights, ECG_CLASSES * ECG_FEATURES)
+MATRIX_ROOM(scores, sizeof(int32_t[ECG_CLASSES]), 4);
+#define scores MATRIX_AT(int32_t, scores, ECG_CLASSES)
 static uint32_t chunk_start[ECG_CHUNKS], chunk_latency[ECG_CHUNKS];
 static int32_t chunk_class[ECG_CHUNKS];
 static volatile uint32_t engine_failed;

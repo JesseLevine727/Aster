@@ -74,6 +74,31 @@ As in 20.4:
   - **L0:** every pad 0. This is the layout of record.
   - **L1, L2, L3:** every pad 16, 32 and 48 bytes, the other bank phases.
   - **L4:** the first two pads 1 KiB, a quarter of the caches' index.
+  - **L5, L6, L7** (added in step 1, below): the bank phases of L1–L3 with
+    the data shifted a further 320, 640 and 960 bytes. That is 20, 40 and
+    60 cache lines, none a power of two, so no buffer size aliases it.
+
+  **Step 1's proof** (before any tuning comparison) ran 20.4's
+  layout-sensitive cases at the layouts: the 16×16×64 GEMM in every
+  configuration, and the lr/sc and CAS counters.
+  - **L0** equalled the final capture in all 262 windows. With every pad 0,
+    5,905 of the 5,920 distinct firmware images were byte-identical to the
+    final capture's. The other 15 (shared_mix) differ in two commutative
+    `xor`s' operand order, and their records are the same.
+  - **The five approved layouts fell short:** they missed the GEMM's moves
+    (20.4: +12% at +4 waits; the five: ±0.3%).
+    - L1–L3's data pads change the buffers' cache index by one to three
+      lines.
+    - L4's 1 KiB shift equals the GEMM's buffer sizes, so it maps one
+      buffer's conflicts onto another of the same shape.
+    - The code pad also pushes every data section after it, since `.text`
+      comes first.
+  - **The eight layouts reach** at least half of 20.4's move in all 262
+    windows: the GEMM's moves (−10.7% at +4 waits) and the contention
+    cases (−41% to +74%).
+
+  This amends decision 2's five layouts to eight, before any change is
+  judged.
   - **The pads survive alignment.** Most kernels' buffers are 64-byte
     aligned, which would swallow a pad placed before them. So a pad is an
     offset applied after the alignment: each buffer is declared with room
@@ -84,9 +109,12 @@ As in 20.4:
     contention cases.
   - **Fits in memory:** the pads, and the room each buffer is declared
     with, must fit the case's free memory.
-    - L4 needs about 2 KiB. GEMM 128×64×128 lacks it on one worker (about
-      1.5 KB free) and on two (528 bytes), so it takes L0 to L3.
-    - Two workers on 96³ have about 2.5 KB free and take L4.
+    - The large layouts need room: L5–L7 add 336 to 1,008 bytes to each
+      buffer, and L4 about 2 KiB in all. GEMM 128×64×128 has about 1.5 KB
+      free on one worker and 528 bytes on two, so it fits only some of
+      them.
+    - The runner finds the fit at build time: a layout that does not fit
+      is unsupported, with that reason.
     - A comparison uses the layouts both of its sides fit. Each case's
       layouts are listed in its plan before capture.
 - **The rule:** a change wins if it is faster in every window it has, on

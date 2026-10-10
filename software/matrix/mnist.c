@@ -20,6 +20,7 @@
 #include <stdint.h>
 #include <stdatomic.h>
 
+#include "matrix_layout.h"
 #include "aster.h"
 #include "aster_npu2.h"
 #include "aster_smp.h"
@@ -96,10 +97,13 @@ void aster_secondary_main(void) {
             matrix_stamp_start(1);
             struct aster_npu_gemm job = shared_job;
             const uint32_t split = (job.m + 1u) / 2u;
+            const int share = job.m == FC1_OUT;        // (the shares: the last image's first layer, tuning.md §6)
             job.a = (const int8_t *)((const uint8_t *)job.a + (uint64_t)split * job.a_stride);
             job.c = (int32_t *)((uint8_t *)job.c + (uint64_t)split * job.c_stride);
             job.m = job.m - split;
+            if (share) matrix_share_begin(1);
             xe_scalar_gemm(&job);
+            if (share) matrix_share_end(1);
             matrix_stamp_end(1);
             atomic_store_explicit(&done, e, memory_order_release);
         }
@@ -138,7 +142,9 @@ static __attribute__((noinline)) void layer(const struct aster_npu2_job *job, in
     __asm__ volatile ("fence iorw,iorw" ::: "memory");
     struct aster_npu_gemm local = gemm;
     local.m = split;
+    if (gemm.m == FC1_OUT) matrix_share_begin(0);
     xe_scalar_gemm(&local);
+    if (gemm.m == FC1_OUT) matrix_share_end(0);
     if (mode == KERNEL) matrix_stamp_end(0);           // (the kernel window's last share ends; hart 0 waits)
     while (atomic_load_explicit(&done, memory_order_acquire) != next_epoch) {}
     __asm__ volatile ("fence iorw,iorw" ::: "memory");
@@ -157,7 +163,8 @@ struct io {
     int8_t hidden[FC1_OUT];
     int32_t acc2[FC2_OUT];
 } __attribute__((aligned(64)));
-static struct io io __attribute__((aligned(64)));
+MATRIX_ROOM(io, sizeof(struct io), 64);
+#define io MATRIX_OBJECT(struct io, io)
 
 static __attribute__((noinline)) void infer(uint32_t image, int mode) {
     for (uint32_t i = 0; i < FC1_IN; ++i) io.input[i] = phase11_test_images[image * FC1_IN + i];
@@ -165,7 +172,13 @@ static __attribute__((noinline)) void infer(uint32_t image, int mode) {
     if (mode == E2E) interval_open();
     const struct aster_npu2_job fc1 = {w1, io.input, io.acc1, FC1_IN, 1u, 4u, FC1_OUT, 1u, FC1_IN, 0, 0, 0, 0, 0};
     matrix_last = 0;
+#if MNIST_METHOD == 1
+    matrix_share_on = image == IMAGES - 1u;            // (the shares: the last image's first layer, tuning.md §6)
+#endif
     layer(&fc1, mode);
+#if MNIST_METHOD == 1
+    matrix_share_on = 0;
+#endif
     for (uint32_t o = 0; o < FC1_OUT; ++o) {
         const int8_t value = requant(io.acc1[o], PHASE11_FC1_MULT, PHASE11_FC1_SHIFT, phase11_fc1_bias_q[o]);
         io.hidden[o] = value > 0 ? value : 0;
@@ -191,9 +204,12 @@ static void poison_intermediates(void) { matrix_poison(&io, sizeof io); }
 #else
 // ---- the NPU, MNIST_BATCH images a job ----
 #include "phase11_weights_t.h"
-static int32_t acc1[MNIST_BATCH * FC1_OUT] __attribute__((aligned(64)));
-static int8_t hidden[MNIST_BATCH * FC1_OUT] __attribute__((aligned(16)));
-static int32_t acc2[MNIST_BATCH * FC2_OUT] __attribute__((aligned(16)));
+MATRIX_ROOM(acc1, sizeof(int32_t[MNIST_BATCH * FC1_OUT]), 64);
+#define acc1 MATRIX_AT(int32_t, acc1, MNIST_BATCH * FC1_OUT)
+MATRIX_ROOM(hidden, sizeof(int8_t[MNIST_BATCH * FC1_OUT]), 16);
+#define hidden MATRIX_AT(int8_t, hidden, MNIST_BATCH * FC1_OUT)
+MATRIX_ROOM(acc2, sizeof(int32_t[MNIST_BATCH * FC2_OUT]), 16);
+#define acc2 MATRIX_AT(int32_t, acc2, MNIST_BATCH * FC2_OUT)
 
 static __attribute__((noinline)) void infer_batch(uint32_t first, int mode) {
     if (mode == E2E) interval_open();
@@ -265,6 +281,9 @@ static void timed_pass(struct v12_record *record, int mode) {
     record->checksum = checksum; record->workers = MNIST_METHOD == 1 ? 2u : 1u;
     record->pass = logits_ok && !engine_failed;
     v12_emit(record);
+#if MNIST_METHOD == 1
+    matrix_share_emit(record->window);                 // (each hart's last share, beside the record: tuning.md §6)
+#endif
 }
 
 int main(void) {

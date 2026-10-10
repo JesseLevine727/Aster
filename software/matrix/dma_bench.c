@@ -15,6 +15,7 @@
 // 0 and 0; the overlap's checksum is stamped on the hart that does it.
 #include <stdint.h>
 
+#include "matrix_layout.h"
 #include "aster.h"
 #include "aster_dma.h"
 #include "aster_smp.h"
@@ -52,10 +53,13 @@
 #define USES_DMA (DMA_CASE == 2 || DMA_METHOD == 1)
 #define HART1_WORK (DMA_CASE == 2 && DMA_METHOD >= 2)
 
-static uint8_t source[BUFFER_BYTES] __attribute__((aligned(64)));
-static uint8_t destination[BUFFER_BYTES] __attribute__((aligned(64)));
+MATRIX_ROOM(source, sizeof(uint8_t[BUFFER_BYTES]), 64);
+#define source MATRIX_AT(uint8_t, source, BUFFER_BYTES)
+MATRIX_ROOM(destination, sizeof(uint8_t[BUFFER_BYTES]), 64);
+#define destination MATRIX_AT(uint8_t, destination, BUFFER_BYTES)
 #if DMA_CASE == 2
-static uint32_t work[WORK_WORDS] __attribute__((aligned(64)));
+MATRIX_ROOM(work, sizeof(uint32_t[WORK_WORDS]), 64);
+#define work MATRIX_AT(uint32_t, work, WORK_WORDS)
 static volatile uint32_t work_sum;
 #endif
 static volatile uint32_t driver_failed;

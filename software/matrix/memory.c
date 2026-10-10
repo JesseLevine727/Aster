@@ -22,6 +22,7 @@
 // window, as v1 did.
 #include <stdint.h>
 
+#include "matrix_layout.h"
 #include "aster.h"
 #include "aster_smp.h"
 #include "asterbench_v12.h"
@@ -91,8 +92,10 @@ __attribute__((noipa)) static void cpu_memcpy(void *destination, const void *sou
 
 #define GUARD 32u
 #define COPY_BUFFER (GUARD + 4u + MEM_BYTES + GUARD)
-static uint8_t source[COPY_BUFFER] __attribute__((aligned(64)));
-static uint8_t destination[COPY_BUFFER] __attribute__((aligned(64)));
+MATRIX_ROOM(source, sizeof(uint8_t[COPY_BUFFER]), 64);
+#define source MATRIX_AT(uint8_t, source, COPY_BUFFER)
+MATRIX_ROOM(destination, sizeof(uint8_t[COPY_BUFFER]), 64);
+#define destination MATRIX_AT(uint8_t, destination, COPY_BUFFER)
 
 static uint8_t pattern(uint32_t i) { return (uint8_t)(((MEM_SEED ^ (i * 0x9e3779b9u)) >> 11) & 0xffu); }
 
@@ -118,7 +121,8 @@ static void after_pass(void) {                          // every byte: the copy,
 }
 #elif MEM_CASE == 2 || MEM_CASE == 4
 // ---- v1's rings: one dependent read a hop ----
-static volatile uint32_t links[WORDS] __attribute__((aligned(64)));
+MATRIX_ROOM(links, sizeof(volatile uint32_t[WORDS]), 64);
+#define links MATRIX_AT(volatile uint32_t, links, WORDS)
 static uint32_t visited[(WORDS + 31u) / 32u];
 #if MEM_CASE == 4
 static uint32_t permutation[WORDS];
@@ -172,7 +176,8 @@ static void after_pass(void) {                          // v1's check: one ring 
 #else
 #define BUFFER_WORDS (48u * 1024u / 4u)
 #endif
-static uint32_t buffer[BUFFER_WORDS] __attribute__((aligned(64)));
+MATRIX_ROOM(buffer, sizeof(uint32_t[BUFFER_WORDS]), 64);
+#define buffer MATRIX_AT(uint32_t, buffer, BUFFER_WORDS)
 static volatile uint32_t observed_sum;
 
 static void setup(void) {
@@ -197,7 +202,8 @@ static void before_pass(void) { observed_sum = 0; }
 static void after_pass(void) { checksum = observed_sum; }
 #else
 // ---- two harts streaming, each the lines of one bank in its own half ----
-static uint32_t buffer[2u * HALF_BYTES / 4u] __attribute__((aligned(64)));
+MATRIX_ROOM(buffer, sizeof(uint32_t[2u * HALF_BYTES / 4u]), 64);
+#define buffer MATRIX_AT(uint32_t, buffer, 2u * HALF_BYTES / 4u)
 static volatile uint32_t part[2];
 
 static void setup(void) {

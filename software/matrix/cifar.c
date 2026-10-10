@@ -22,6 +22,7 @@
 // cifar_reference's independent model; PASS needs every logit and class equal to the frozen reference's.
 #include <stdint.h>
 
+#include "matrix_layout.h"
 #include "aster.h"
 #include "aster_npu2.h"
 #include "aster_smp.h"
@@ -53,15 +54,21 @@
 
 enum { UNTIMED, E2E, KERNEL };
 
-static int8_t image[IMAGE_BYTES] __attribute__((aligned(16)));
+MATRIX_ROOM(image, sizeof(int8_t[IMAGE_BYTES]), 16);
+#define image MATRIX_AT(int8_t, image, IMAGE_BYTES)
 #if !DIRECT
-static int8_t im2col[C1_M * CIFAR_CONV1_K] __attribute__((aligned(16)));
+MATRIX_ROOM(im2col, sizeof(int8_t[C1_M * CIFAR_CONV1_K]), 16);
+#define im2col MATRIX_AT(int8_t, im2col, C1_M * CIFAR_CONV1_K)
 #endif
-static int32_t conv_acc[C1_M * CIFAR_CONV1_OUT] __attribute__((aligned(16)));
+MATRIX_ROOM(conv_acc, sizeof(int32_t[C1_M * CIFAR_CONV1_OUT]), 16);
+#define conv_acc MATRIX_AT(int32_t, conv_acc, C1_M * CIFAR_CONV1_OUT)
 static int8_t conv_q[CIFAR_CONV2_OUT * C1_M];
-static int8_t pool1[POOL1] __attribute__((aligned(16)));
-static int8_t pool2[POOL2] __attribute__((aligned(16)));
-static int32_t fc_acc[CIFAR_FC_OUT] __attribute__((aligned(16)));
+MATRIX_ROOM(pool1, sizeof(int8_t[POOL1]), 16);
+#define pool1 MATRIX_AT(int8_t, pool1, POOL1)
+MATRIX_ROOM(pool2, sizeof(int8_t[POOL2]), 16);
+#define pool2 MATRIX_AT(int8_t, pool2, POOL2)
+MATRIX_ROOM(fc_acc, sizeof(int32_t[CIFAR_FC_OUT]), 16);
+#define fc_acc MATRIX_AT(int32_t, fc_acc, CIFAR_FC_OUT)
 static int8_t logits[IMAGES][CIFAR_FC_OUT];
 static int32_t classes[IMAGES];
 static volatile uint32_t engine_failed;
@@ -117,12 +124,15 @@ static struct aster_npu_gemm shared_job;               // the layer in hand (har
 static void upper_rows(void *layer) {                  // (layer: its im2col rows built too; 0 in the kernel window)
     matrix_stamp_start(1);
     const uint32_t split = (shared_job.m + 1u) / 2u;
+    const int share = shared_job.m == C1_M;            // (the shares: the last image's first layer, tuning.md §6)
+    if (share) matrix_share_begin(1);
     build_layer_rows((int)(uintptr_t)layer, split, shared_job.m);
     struct aster_npu_gemm job = shared_job;
     job.a += split * job.a_stride;
     job.c = (int32_t *)((uint8_t *)job.c + split * job.c_stride);
     job.m -= split;
     xe_scalar_gemm(&job);
+    if (share) matrix_share_end(1);
     matrix_stamp_end(1);
 }
 #endif
@@ -163,7 +173,9 @@ static __attribute__((noinline)) void run_layer(const struct aster_npu2_job *job
         matrix_open((int)window_first);
         window_first = 0;
         matrix_release();
+        if (gemm.m == C1_M) matrix_share_begin(0);
         xe_scalar_gemm(&lower);
+        if (gemm.m == C1_M) matrix_share_end(0);
         matrix_stamp_end(0);                           // (the window's last share ends; hart 0 waits)
         matrix_await();
         matrix_close();
@@ -171,8 +183,10 @@ static __attribute__((noinline)) void run_layer(const struct aster_npu2_job *job
     } else {
         __asm__ volatile ("fence rw,rw" ::: "memory");
         aster_smp_dispatch(upper_rows, (void *)(uintptr_t)layer);
+        if (gemm.m == C1_M) matrix_share_begin(0);
         build_layer_rows(layer, 0, split);
         xe_scalar_gemm(&lower);
+        if (gemm.m == C1_M) matrix_share_end(0);
         aster_smp_join();
     }
 #else
@@ -214,7 +228,13 @@ static __attribute__((noinline)) void infer(uint32_t item, int mode) {
                                          4u * CIFAR_CONV1_OUT, C1_M, CIFAR_CONV1_OUT, CIFAR_CONV1_K, 0, 0, 0, 0, 0};
 #endif
     matrix_last = 0;
+#if WORKERS == 2
+    matrix_share_on = item == IMAGES - 1u;             // (the shares: the last image's first layer, tuning.md §6)
+#endif
     run_layer(&conv1, 1, mode);
+#if WORKERS == 2
+    matrix_share_on = 0;
+#endif
     for (uint32_t row = 0; row < C1_M; ++row)
         for (uint32_t n = 0; n < CIFAR_CONV1_OUT; ++n) {
             const int8_t value = requant(conv_acc[row * CIFAR_CONV1_OUT + n], CIFAR_CONV1_MULT, CIFAR_CONV1_SHIFT,
@@ -319,6 +339,9 @@ static int timed_pass(struct v12_record *record, int mode) {
     record->checksum = checksum; record->workers = WORKERS;
     record->pass = logits_ok && mismatches == 0 && !engine_failed;     // (v1's: every class the reference's)
     v12_emit(record);
+#if WORKERS == 2
+    matrix_share_emit(record->window);                 // (each hart's last share, beside the record: tuning.md §6)
+#endif
     return !record->pass;
 }
 

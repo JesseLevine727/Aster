@@ -16,6 +16,7 @@
 // checksum (each window's: the four outputs folded, v1's).
 #include <stdint.h>
 
+#include "matrix_layout.h"
 #include "aster.h"
 #include "aster_dot8.h"
 #include "aster_npu2.h"
@@ -43,12 +44,16 @@
 #define NPU (CONV_METHOD == 4 || CONV_METHOD == 8)
 #define WORKERS ((CONV_METHOD == 2 || CONV_METHOD == 6) ? 2u : 1u)
 
-static int8_t image[CONV_H * CONV_W] __attribute__((aligned(16)));
-static int8_t kernel[CONV_KK] __attribute__((aligned(16)));
+MATRIX_ROOM(image, sizeof(int8_t[CONV_H * CONV_W]), 16);
+#define image MATRIX_AT(int8_t, image, CONV_H * CONV_W)
+MATRIX_ROOM(kernel, sizeof(int8_t[CONV_KK]), 16);
+#define kernel MATRIX_AT(int8_t, kernel, CONV_KK)
 #if IM2COL
-static int8_t im2col[CONV_M * CONV_KK] __attribute__((aligned(16)));
+MATRIX_ROOM(im2col, sizeof(int8_t[CONV_M * CONV_KK]), 16);
+#define im2col MATRIX_AT(int8_t, im2col, CONV_M * CONV_KK)
 #endif
-static int32_t output[CONV_M] __attribute__((aligned(16)));
+MATRIX_ROOM(output, sizeof(int32_t[CONV_M]), 16);
+#define output MATRIX_AT(int32_t, output, CONV_M)
 static volatile uint32_t engine_failed;
 
 // (the computation's functions are compiled out of line, noinline, so that their code is the same in every
@@ -119,6 +124,7 @@ static uint32_t npu_status;                            // the kernel window's jo
 // hart 1's share: the upper half of the rows (arg nonzero: the e2e window's, its im2col rows too)
 static void upper_rows(void *arg) {
     matrix_stamp_start(1);
+    matrix_share_begin(1);
 #if IM2COL
     if (arg) build_im2col(CONV_M / 2u, CONV_M);
     gemm_rows_scalar(CONV_M / 2u, CONV_M);
@@ -126,6 +132,7 @@ static void upper_rows(void *arg) {
     (void)arg;
     direct_rows(CONV_M / 2u, CONV_M);
 #endif
+    matrix_share_end(1);
     matrix_stamp_end(1);
 }
 #endif
@@ -143,11 +150,13 @@ static void engine(void) {
     npu_status = aster_npu2_wait();
 #elif WORKERS == 2
     matrix_release();
+    matrix_share_begin(0);
 #if IM2COL
     gemm_rows_scalar(0, CONV_M / 2u);
 #else
     direct_rows(0, CONV_M / 2u);
 #endif
+    matrix_share_end(0);
     matrix_stamp_end(0);                               // (hart 0's last share ends; it waits)
     matrix_await();
 #else
@@ -167,12 +176,14 @@ static void iteration_e2e(void) {
 #elif WORKERS == 2
     __asm__ volatile ("fence rw, rw" ::: "memory");
     aster_smp_dispatch(upper_rows, (void *)1);
+    matrix_share_begin(0);
 #if IM2COL
     build_im2col(0, CONV_M / 2u);
     gemm_rows_scalar(0, CONV_M / 2u);
 #else
     direct_rows(0, CONV_M / 2u);
 #endif
+    matrix_share_end(0);
     aster_smp_join();
 #else
 #if IM2COL
@@ -281,6 +292,9 @@ static void emit(struct v12_record *record, const char *window, uint32_t checksu
     record->size = CONV_H * CONV_W; record->iterations = CONV_ITERATIONS; record->param = CONV_K;
     record->seed = CONV_SEED; record->checksum = checksum; record->workers = WORKERS; record->pass = !engine_failed;
     v12_emit(record);
+#if WORKERS == 2
+    matrix_share_emit(record->window);                 // (each hart's last share, beside the record: tuning.md §6)
+#endif
 }
 
 int main(void) {

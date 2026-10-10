@@ -62,7 +62,9 @@ void aster_secondary_main(void) {
         if (epoch != 0u && epoch != last) {
             last = epoch;
             matrix_stamp_start(1);
+            matrix_share_begin(1);
             upper_sum = sum_range(REDUCE_WORDS / 2u, REDUCE_WORDS);
+            matrix_share_end(1);
             matrix_stamp_end(1);
             atomic_store_explicit(&reduce_done, epoch, memory_order_release);
         }
@@ -75,7 +77,9 @@ static uint32_t sum_all(void) {                        // (in the window) v1's s
     atomic_store_explicit(&reduce_done, 0u, memory_order_relaxed);
     atomic_store_explicit(&reduce_epoch, epoch, memory_order_release);
     __asm__ volatile ("fence rw,rw" ::: "memory");
+    matrix_share_begin(0);
     const uint32_t left = sum_range(0, REDUCE_WORDS / 2u);
+    matrix_share_end(0);
     while (atomic_load_explicit(&reduce_done, memory_order_acquire) != epoch) { }
     __asm__ volatile ("fence rw,rw" ::: "memory");
     return left + upper_sum;
@@ -113,8 +117,10 @@ static uint32_t run_kernel(void) {
 static void upper_half(void *arg) {                    // the e2e window's share: fill and sum
     (void)arg;
     matrix_stamp_start(1);
+    matrix_share_begin(1);
     fill_range(REDUCE_WORDS / 2u, REDUCE_WORDS);
     upper_sum = sum_range(REDUCE_WORDS / 2u, REDUCE_WORDS);
+    matrix_share_end(1);
     matrix_stamp_end(1);
 }
 
@@ -123,7 +129,9 @@ static void upper_fill(void *arg) { (void)arg; fill_range(REDUCE_WORDS / 2u, RED
 static void upper_sum_only(void *arg) {                // the kernel window's share
     (void)arg;
     matrix_stamp_start(1);
+    matrix_share_begin(1);
     upper_sum = sum_range(REDUCE_WORDS / 2u, REDUCE_WORDS);
+    matrix_share_end(1);
     matrix_stamp_end(1);
 }
 #endif
@@ -134,8 +142,10 @@ static uint32_t run_e2e(void) {
 #if REDUCE_WORKERS == 2
         matrix_last = iteration == REDUCE_ITERATIONS;
         aster_smp_dispatch(upper_half, 0);
+        matrix_share_begin(0);
         fill_range(0, REDUCE_WORDS / 2u);
         const uint32_t left = sum_range(0, REDUCE_WORDS / 2u);
+        matrix_share_end(0);
         aster_smp_join();
         const uint32_t total = left + upper_sum;
 #else
@@ -158,7 +168,9 @@ static uint32_t run_kernel(void) {
         matrix_arm(upper_sum_only, 0);
         matrix_open(iteration == 1);
         matrix_release();
+        matrix_share_begin(0);
         const uint32_t left = sum_range(0, REDUCE_WORDS / 2u);
+        matrix_share_end(0);
         matrix_await();
         const uint32_t total = left + upper_sum;
         matrix_close();
@@ -194,6 +206,9 @@ static void emit(struct v12_record *record, const char *window, uint32_t checksu
     record->size = REDUCE_WORDS * 4u; record->iterations = REDUCE_ITERATIONS; record->param = REDUCE_WORKERS;
     record->seed = REDUCE_SEED; record->checksum = checksum; record->workers = REDUCE_WORKERS; record->pass = 1;
     v12_emit(record);
+#if REDUCE_WORKERS == 2
+    matrix_share_emit(record->window);                 // (each hart's last share, beside the record: tuning.md §6)
+#endif
 }
 
 #if REDUCE_VERSION == 2 && REDUCE_WORKERS == 2

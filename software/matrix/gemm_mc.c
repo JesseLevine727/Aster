@@ -12,6 +12,7 @@
 // pass of the same code, then the window; C (and, before the e2e window, B's packing) poisoned before each.
 #include <stdint.h>
 
+#include "matrix_layout.h"
 #include "aster.h"
 #include "aster_smp.h"
 #include "asterbench_v12.h"
@@ -37,7 +38,8 @@ enum { SLOT = 4096, GROUP_BYTES = 3584 };
 #define GROUPS ((GEMM_N + GROUP_COLUMNS - 1u) / GROUP_COLUMNS)
 #define ARENA_BYTES (((GEMM_M * GEMM_K + 63u) & ~63u) + ((GEMM_K * GEMM_N + 63u) & ~63u) + 4u * GEMM_M * GEMM_N \
                      + GROUPS * SLOT + 2u * SLOT)
-static uint8_t arena[ARENA_BYTES] __attribute__((aligned(64)));
+MATRIX_ROOM(arena, sizeof(uint8_t[ARENA_BYTES]), 64);
+#define arena MATRIX_AT(uint8_t, arena, ARENA_BYTES)
 static int8_t *a, *b;
 static int32_t *c;
 static uint8_t *slots;
