@@ -611,9 +611,9 @@ int main(int argc, char** argv) {
         for (int i = 0; i < 2000 && failure.empty(); ++i) cycle();
         const std::uint32_t status = axi_read(0x3F004);
         const std::uint32_t count = axi_read(0x3F008);
-        if (count - seen > 4096) { result = "CONSOLE_OVERFLOW"; break; }
+        if (count - seen > 16384) { result = "CONSOLE_OVERFLOW"; break; }     // (the 16 KiB ring, 20.5)
         while (seen < count) {
-            const std::uint32_t word = axi_read(0x30000 + (seen & 0xFFC));
+            const std::uint32_t word = axi_read(0x30000 + (seen & 0x3FFC));
             console += char((word >> (8 * (seen & 3))) & 0xFF);
             ++seen;
         }

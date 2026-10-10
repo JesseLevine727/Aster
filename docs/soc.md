@@ -329,8 +329,11 @@ releases it at `0x8000_0000`, and it reads `mhartid` = 1
 
 ### 7.4 The console
 
-A store to the UART's TX word appends its low byte to the console: a 4 KiB
-buffer and a byte count, which the ARM side reads over AXI, as in Phase 19.
+A store to the UART's TX word appends its low byte to the console: a 16 KiB
+ring and a byte count, which the ARM side reads over AXI (at `0x30000`–
+`0x33FFF`), as in Phase 19. (It was 4 KiB until 20.5: on the board, a
+program's records outran the ARM side's drain of a 4 KiB ring; tuning.md
+§7.1.)
 The UART answers in the next cycle and never makes a hart wait. The count
 keeps counting past 4 KiB, so an overflow is visible. Both harts' bytes go
 in the order the I/O bus accepts them. v1's serial transmitter, and the

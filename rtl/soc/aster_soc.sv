@@ -31,7 +31,7 @@
 // are held, else reads return 0xDEADBEEF and writes are dropped):
 //   0x00000-0x17FFF main memory, through the fabric's ports W (writes) and R (reads);
 //   0x20000-0x23FFF the register page (SHELL_PAGE only);
-//   0x30000-0x30FFF the console;
+//   0x30000-0x33FFF the console (16 KiB since 20.5, tuning.md §7.1; a ring the ARM side drains);
 //   0x3F000 onwards: CONTROL, STATUS, counters, tohost (the Phase 19 SoC's),
 //   the magic "AST2", 0x3F058 the NPU's configuration, 0x3F05C this SoC's
 //   ({WAIT, SHELL_PAGE, HARTS} a byte each), 0x3F060/4 hart 1's retired count.
@@ -549,14 +549,15 @@ module aster_soc #(
                                       : console_word_store;
     assign console_byte  = SP ? rvfi_mem_wdata[0][7:0] : console_byte_store;
     // (byte enables in Vivado's template, so the buffer is one block RAM, not 32 one-bit ones)
-    (* ram_style = "block" *) logic [31:0] console_ram [1024];
+    // 16 KiB (20.5: 4 KiB before; a program's records outran the board's drain of a 4 KiB ring)
+    (* ram_style = "block" *) logic [31:0] console_ram [4096];
     logic [31:0] con_q;
     logic [3:0]  con_we;
     assign con_we = console_store ? 4'b0001 << console_count[1:0] : 4'b0000;
     always_ff @(posedge aclk) begin
         for (int lane = 0; lane < 4; lane++)
-            if (con_we[lane]) console_ram[console_count[11:2]][8*lane +: 8] <= console_byte;
-        if (ar_busy && ar_wait == 2'd2) con_q <= console_ram[ar_addr[11:2]];     // (answered at ar_wait 0)
+            if (con_we[lane]) console_ram[console_count[13:2]][8*lane +: 8] <= console_byte;
+        if (ar_busy && ar_wait == 2'd2) con_q <= console_ram[ar_addr[13:2]];     // (answered at ar_wait 0)
     end
 
     // ---- counters, the window and tohost ----
@@ -694,7 +695,7 @@ module aster_soc #(
                     s_axi_rdata  <= ar_addr < 18'h18000 ? 32'hDEAD_BEEF                // main memory while running
                                   : ar_addr < 18'h20000 ? 32'h0                        // past main memory
                                   : ar_addr < 18'h24000 ? (SP && !run ? arm_page_q : 32'hDEAD_BEEF)
-                                  : ar_addr >= 18'h30000 && ar_addr < 18'h31000 ? con_q
+                                  : ar_addr >= 18'h30000 && ar_addr < 18'h34000 ? con_q
                                   : reg_rdata;
                 end
             end
