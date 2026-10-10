@@ -1,6 +1,7 @@
 # The Phase 20 tuning and board run (milestone 20.5)
 
-Status: **draft, for the owner's approval.** Nothing in it is built yet.
+Status: **approved by the owner, 10 October 2026,** with every decision
+in §10 as recommended ("approve all 9").
 
 20.5 closes Phase 20 (soc.md §12):
 - **Scope:** tuning from 20.4's captured data (DMA thresholds, cache
@@ -12,7 +13,7 @@ Status: **draft, for the owner's approval.** Nothing in it is built yet.
 
 The starting point is 20.4's bundle
 ([`results/phase20/matrix-20.4/`](results/phase20/matrix-20.4/README.md)).
-Its figures are of record, and §10 lists the decisions this plan asks for.
+Its figures are of record. §10 lists the plan's decisions, approved by the owner.
 
 **Out of scope,** as in Phase 20's non-goals:
 - energy per workload;
@@ -220,7 +221,7 @@ and the DMA's overlap cases with their serial twins (step 1).
 **The two-hart NPU variants' windows.** In an NPU kernel window hart 0 only
 starts and polls the job (matrix.md §10.7: its interval 0 and 0), and hart 1 has
 nothing of the job's to do. So a two-hart NPU variant records the e2e window
-alone, where its overlap is. This is a new reading, for the owner (§10).
+alone, where its overlap is. This is a new reading, approved by the owner (§10).
 
 ## 7. The board run
 
@@ -333,7 +334,9 @@ timing claim.
   - has checks that can fail, each shown failing on a planted fault;
   - says PASS only if every gate passed, and otherwise "incomplete".
 
-## 10. Decisions for the owner
+## 10. Decisions, approved by the owner (10 October 2026)
+
+Each was approved as recommended, the first option of each.
 
 1. **The console (§7.1):**
    - keep the 4 KiB ring if the drain keeps up, else 16 KiB

@@ -28,7 +28,8 @@ at a time:**
     full workload matrix in
     [AsterBench v12](docs/asterbench-v12.md) records
     ([evidence](docs/results/phase20/matrix-20.4/README.md)).
-  - **Next:** 20.5 (tuning and the board run), then Phase 21.
+  - **20.5 (tuning and the board run) is in progress,** its plan
+    ([`docs/tuning.md`](docs/tuning.md)) approved on 10 October; then Phase 21.
 
 Measured at 100 MHz in the SoC's simulation (20.4's matrix; the board run
 is 20.5's). The NPU and two-core rows are kernel windows (the computation
@@ -220,7 +221,8 @@ PYNQ-Z1. **Phase 19 — the high-utilization NPU — is complete**
 ([`docs/phase20.md`](docs/phase20.md); the [SoC specification](docs/soc.md)).
 20.0–20.4 are signed off, the last with the full workload matrix in
 [AsterBench v12](docs/asterbench-v12.md) records
-([evidence](docs/results/phase20/matrix-20.4/README.md)). 20.5 is next.
+([evidence](docs/results/phase20/matrix-20.4/README.md)). 20.5 is in progress
+([`docs/tuning.md`](docs/tuning.md)).
 
 ## Historical phase links
 

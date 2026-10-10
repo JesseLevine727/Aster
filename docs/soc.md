@@ -1071,3 +1071,23 @@ Milestone 20.3):
   - **The evidence:** `docs/results/phase20/matrix-20.4/timing/`.
 - **20.5 begins after 03:00 on 10 October 2026.**
 
+### Decided in 20.5 (the tuning and the board run)
+
+**Decided by the owner, 10 October 2026:** 20.5's plan,
+[`tuning.md`](tuning.md), with its nine decisions as recommended:
+- **The console:** the 4 KiB ring kept if the board's drain stays within
+  2 KiB of the writer, else 16 KiB.
+- **Tuning judged across five fixed layouts** that pad between the image's
+  parts, after alignment. They must first reproduce 20.4's moves; L0 is the
+  layout of record.
+- **Tuned variants** are new cases under the existing methods, with the
+  originals kept, so v12 is unchanged.
+- **The cache geometry** is adopted only by the owner's sign-off, with the
+  data in hand.
+- **Overlap stamps** go beside the records, with matrix.md §10.7 unchanged.
+- **ECG's stage stamps** run in separate entries.
+- **The board set** is every R program of the final capture, on two loads
+  of the bitstream.
+- **Two-hart NPU variants** record the e2e window alone.
+- **Phase 21** stays a short phase on 20.5's board set.
+

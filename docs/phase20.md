@@ -1,7 +1,8 @@
 # Phase 20: whole-SoC workload placement and concurrency
 
-Status: **milestone 20.4 (the workload matrix) signed off by the owner on 9 October 2026,** with matrix.md
-§10.10–14 and its timing on the m4-o5asm-mgi build (+0.333 ns, reproducible). 20.5 begins after 03:00 on
+Status: **milestone 20.5 (the tuning and the board run) in progress;** its plan, tuning.md, was approved by the
+owner on 10 October 2026. **Milestone 20.4 (the workload matrix) was signed off by the owner on 9 October 2026,** with matrix.md
+§10.10–14 and its timing on the m4-o5asm-mgi build (+0.333 ns, reproducible). 20.5 began after 03:00 on
 10 October 2026, at the owner's word. 20.3 (the DMA) was signed off by the
 owner on 8 October 2026, its timing on the g2-o5end build (+0.375 ns, reproducible; one placement: the
 median across its RTL's ten strategies is about +0.1 ns). 20.2 (the two-hart SoC) was signed off
@@ -1804,6 +1805,18 @@ print less.
 **Signed off by the owner, 9 October 2026** ("I sign off"), after this record. The sign-off covers 20.4,
 matrix.md §10.10–14, and its timing on m4-o5asm-mgi (soc.md §13). 20.5 begins after 03:00 on 10 October
 2026.
+
+## Milestone 20.5: the tuning and the board run (in progress, 10 October 2026)
+
+**The plan:** [`tuning.md`](tuning.md), **approved by the owner on 10 October
+2026** with its nine decisions as recommended (soc.md §13). The steps
+(tuning.md §11):
+1. the infrastructure, including a board smoke run of 20.4's signed-off image;
+2. the cache geometry;
+3. the tuning;
+4. the final configuration;
+5. the board run;
+6. the report and the closeout audit.
 
 ## Milestones and gates
 
