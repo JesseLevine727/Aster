@@ -258,6 +258,34 @@ class Gates(unittest.TestCase):
             self.assertEqual((l3["pairs"], l3["meets"]), (1, False))
 
 
+class DmaInvalidations(unittest.TestCase):
+    """20.5: the DMA oracle's exact count up to a quarter of the cache at each size, and its bound above."""
+    def check(self, kib: int, size: int, off_by: int) -> None:
+        base = next(e for e in matrix.dma_entries() if e.id == f"dma/copy/dma/soc_dev/warm/b{size}s0d0c1")
+        e = base if kib == 4 else matrix.with_caches([base], [kib])[0]
+        a, lines = e.axes, (size + 15) // 16
+        r = dict(window="e2e", name="copy", size=size, iterations=1, param=(1 << 8), seed=a["seed"], workers=1,
+                 checksum=matrix.dma_model(a, False), dma_jobs=1, dma_completed_jobs=1, dma_bytes=size,
+                 dma_invalidations=lines + off_by, dma_reads=(size + 7) // 8, dma_writes=(size + 7) // 8,
+                 h0_dot8_retire=0, h1_dot8_retire=0, npu_jobs=0, h1_retired=0, h1_work_start=0, h1_work_end=0)
+        matrix.oracle_dma(e, [r])
+
+    def test_exact_to_a_quarter(self):
+        for kib, size in ((2, 512), (4, 1024), (8, 2048)):
+            self.check(kib, size, 0)
+            for off_by in (-1, 1):
+                with self.assertRaisesRegex(matrix.asterbench_v12.ValidationError, "invalidations"):
+                    self.check(kib, size, off_by)
+
+    def test_bounded_above_it(self):
+        self.check(2, 1024, -1)                                  # (a line aliased: 20.5's 2 KiB case)
+        self.check(4, 4096, -9)
+        with self.assertRaisesRegex(matrix.asterbench_v12.ValidationError, "over the destination"):
+            self.check(2, 1024, 1)
+        with self.assertRaisesRegex(matrix.asterbench_v12.ValidationError, "over the destination"):
+            self.check(2, 4096, 129 - 256)                       # 129 invalidations: over 2 KiB's 128 lines
+
+
 class Geometry(unittest.TestCase):
     """20.5: each 2 and 8 KiB entry against its 4 KiB twin, and a gate workload judged on every layout."""
     def rec(self, cycles: int) -> dict:

@@ -947,8 +947,15 @@ def oracle_dma(entry: Entry, records: list[dict]) -> str:
             raise asterbench_v12.ValidationError(f"DMA reads {r['dma_reads']}, writes {r['dma_writes']}: not the units "
                                                  f"{units(a['src_off'])}, {units(a['dst_off'])}")
         lines = (a["dst_off"] % 16 + a["bytes"] + 15) // 16 if a["bytes"] else 0
-        if cached and a["bytes"] <= 1024 and r["dma_invalidations"] != lines:  # (larger: the 4 KiB cache aliases)
+        # a destination up to a quarter of the cache stays cached whole until the DMA's job (1 KiB at 4 KiB; 20.5:
+        # 512 bytes at 2 KiB, 2 KiB at 8 KiB); a larger one aliases the program's other lines, and at most its own
+        # lines and the cache's are invalidated
+        cache = soc_variants.VARIANTS[entry.sim]["CACHE_BYTES"]
+        if cached and a["bytes"] <= cache // 4 and r["dma_invalidations"] != lines:
             raise asterbench_v12.ValidationError(f"{r['dma_invalidations']} invalidations, not the {lines} lines cached")
+        if r["dma_invalidations"] > min(lines, cache // 16):
+            raise asterbench_v12.ValidationError(f"{r['dma_invalidations']} invalidations, over the destination's "
+                                                 f"{lines} lines or the cache's {cache // 16}")
     if r["h0_dot8_retire"] + r["h1_dot8_retire"] or r["npu_jobs"]:
         raise asterbench_v12.ValidationError("an engine the case does not use")
     if a["workers"] == 1 and r["h1_retired"]:
