@@ -55,7 +55,7 @@ PAD = "software/matrix/matrix_pad.S"
 # buffer size aliases it). Five layouts did not reproduce 20.4's moves; these eight do (tuning.md §3).
 LAYOUTS = {"L1": (16, 16, 16), "L2": (32, 32, 32), "L3": (48, 48, 48), "L4": (1024, 1024, 0),
            "L5": (16, 336, 16), "L6": (32, 672, 32), "L7": (48, 1008, 48)}
-LAYOUT_ANCHORS = ("__matrix_pad_code", "v12_emit", "aster_smp_dispatch", "aster_smp_worker", "matrix_arm")
+LAYOUT_ANCHORS = ("__matrix_pad_code", "v12_emit", "aster_smp_dispatch", "aster_smp_worker")
 MAX_CYCLES = 2_000_000_000
 SCHEMA = "aster.phase20.matrix.v1"
 
@@ -367,7 +367,7 @@ def ecg_entries() -> list[Entry]:
             # 20.5 (tuning.md §5): the pipelines' stamped twins at R, the overlap proof's (the stamps cost cycles,
             # so the gate's figures stay the unstamped entries')
             if number in (0, 3) and sim == "soc_dev" and not reason:
-                stamped = case + "__stages"
+                stamped = case + "_stages"                   # (an instrumented twin, not a tuned variant: one _)
                 entries.append(dataclasses.replace(e, id=ident.replace(f"/{case}/", f"/{stamped}/"), case=stamped,
                                                    defines=e.defines + ["-DECG_STAGES=1"]))
     return entries
@@ -821,7 +821,7 @@ def oracle_ecg(entry: Entry, records: list[dict], extras: list[str]) -> str:
     latency = [dict(t.split("=", 1) for t in l.split(",")[1:]) for l in extras if l.startswith("MATRIX_ECG,")]
     if len(latency) != 1 or latency[0].get("name") != entry.case or int(latency[0]["chunks"]) != chunks:
         raise asterbench_v12.ValidationError(f"the latency line: {extras}")
-    if "__stages" in entry.case:                      # (the stamped twins: every chunk's stages, ordered)
+    if entry.case.endswith("_stages"):                # (the stamped twins: every chunk's stages, ordered)
         for r in records:
             stages = [dict(t.split("=", 1) for t in l.split(",")[1:]) for l in extras
                       if l.startswith(f"MATRIX_STAGE,window={r['window']},")]
@@ -1328,7 +1328,8 @@ def do_entry(entry: Entry, out: Path, prefix: str, soc_flags: list[str]) -> dict
         result["lines"] = lines
         result["status"] = "captured"
     except Exception as error:                                   # (every failure recorded, none lost)
-        if entry.axes.get("layout") in LAYOUTS and "overflowed by" in str(error) and "firmware_sha256" not in result:
+        if entry.axes.get("layout") in LAYOUTS and "firmware_sha256" not in result and \
+                ("overflowed by" in str(error) or "overflow into the stacks" in str(error)):
             result["status"] = "unsupported"                     # (tuning.md §3: only the layouts that fit)
             result["reason"] = f"layout {entry.axes['layout']} does not fit main memory"
         else:

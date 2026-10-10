@@ -15,6 +15,11 @@
 // untimed pass of the same code, then the window; the array and the partial sums poisoned before each. Hart 1
 // stamps its work interval (its first fill or sum to its last); hart 0's is the window, which ends in its own add
 // and fold (matrix_window.h).
+#ifndef REDUCE_WORKERS
+#define REDUCE_WORKERS 2u
+#endif
+#define MATRIX_SHARES (REDUCE_WORKERS == 2)                // (the share stamps, its two-worker builds': matrix_window.h)
+
 #include <stdint.h>
 #include <stdatomic.h>
 

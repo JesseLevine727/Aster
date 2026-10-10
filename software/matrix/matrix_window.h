@@ -67,16 +67,25 @@ static inline void matrix_hart0_none(struct v12_record *record) {
 // 20.5 (tuning.md §6): each hart's share in the window's last stretch, begun and ended, for the overlap gate
 // where hart 0's record interval spans its own wait (matrix.md §10.7 leaves the record as it is): printed beside
 // the record on a MATRIX_SHARE line (matrix_share_emit). A stamp is a counter read, about 20 cycles in the window.
-// A program whose last stretch is too short for a share (MNIST's and CIFAR's last layer) raises matrix_share_on
-// around the stretch it stamps instead (their last image's first layer).
+// Only a program that defines MATRIX_SHARES (its two-worker builds) has them: elsewhere they are nothing, so the
+// one-worker builds' code and data are as before. A program whose last stretch is too short for a share (MNIST's
+// and CIFAR's last layer) raises matrix_share_on around the stretch it stamps instead (their last image's first
+// layer).
+#if MATRIX_SHARES
 static volatile uint32_t matrix_share_at[2][2];
 static volatile uint32_t matrix_share_on;
+#define MATRIX_SHARES_CLEAR() \
+    (matrix_share_on = 0, matrix_share_at[0][0] = matrix_share_at[0][1] = matrix_share_at[1][0] = matrix_share_at[1][1] = 0)
+#else
+#define MATRIX_SHARES_CLEAR() ((void)0)
+#endif
 
 static inline void matrix_stamps_clear(void) {
-    matrix_stamped[0] = matrix_stamped[1] = 0; matrix_last = 0; matrix_share_on = 0;
-    matrix_share_at[0][0] = matrix_share_at[0][1] = matrix_share_at[1][0] = matrix_share_at[1][1] = 0;
+    matrix_stamped[0] = matrix_stamped[1] = 0; matrix_last = 0;
+    MATRIX_SHARES_CLEAR();
 }
 
+#if MATRIX_SHARES
 static inline void matrix_share_begin(uint32_t hart) {
     if (matrix_last || matrix_share_on) matrix_share_at[hart & 1u][0] = aster_window_now();
 }
@@ -97,6 +106,13 @@ static inline void matrix_share_emit(const char *window) {      // (after the re
     matrix_share_put("h1_begin", matrix_share_at[1][0]); matrix_share_put("h1_end", matrix_share_at[1][1]);
     aster_putc('\n');
 }
+#define MATRIX_SHARE_ON(value) (matrix_share_on = (value))
+#else
+#define matrix_share_begin(hart) ((void)0)
+#define matrix_share_end(hart) ((void)0)
+#define matrix_share_emit(window) ((void)0)
+#define MATRIX_SHARE_ON(value) ((void)0)
+#endif
 
 static inline void matrix_stamp_start(uint32_t hart) {
     if (!matrix_stamped[hart & 1u]) { matrix_stamped[hart & 1u] = 1; v12_work_start(hart); }

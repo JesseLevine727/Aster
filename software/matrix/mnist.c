@@ -17,6 +17,11 @@
 // for each window, an untimed pass of the same code, then the window; the outputs poisoned before each.
 // Each record's checksum folds every logit and class (v1's), which scripts/matrix.py's oracle recomputes with
 // phase11_reference's independent model; PASS needs every logit equal to the frozen reference's.
+#ifndef MNIST_METHOD
+#define MNIST_METHOD 3
+#endif
+#define MATRIX_SHARES (MNIST_METHOD == 1)                // (the share stamps, its two-worker builds': matrix_window.h)
+
 #include <stdint.h>
 #include <stdatomic.h>
 
@@ -173,11 +178,11 @@ static __attribute__((noinline)) void infer(uint32_t image, int mode) {
     const struct aster_npu2_job fc1 = {w1, io.input, io.acc1, FC1_IN, 1u, 4u, FC1_OUT, 1u, FC1_IN, 0, 0, 0, 0, 0};
     matrix_last = 0;
 #if MNIST_METHOD == 1
-    matrix_share_on = image == IMAGES - 1u;            // (the shares: the last image's first layer, tuning.md §6)
+    MATRIX_SHARE_ON(image == IMAGES - 1u);            // (the shares: the last image's first layer, tuning.md §6)
 #endif
     layer(&fc1, mode);
 #if MNIST_METHOD == 1
-    matrix_share_on = 0;
+    MATRIX_SHARE_ON(0);
 #endif
     for (uint32_t o = 0; o < FC1_OUT; ++o) {
         const int8_t value = requant(io.acc1[o], PHASE11_FC1_MULT, PHASE11_FC1_SHIFT, phase11_fc1_bias_q[o]);

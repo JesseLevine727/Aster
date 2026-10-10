@@ -20,6 +20,11 @@
 // poisoned before it, by hart 0, which alone writes them; the intermediates are rewritten for every image.
 // Each record's checksum folds every logit and class (v1's), which scripts/matrix.py's oracle recomputes with
 // cifar_reference's independent model; PASS needs every logit and class equal to the frozen reference's.
+#ifndef CIFAR_METHOD
+#define CIFAR_METHOD 3
+#endif
+#define MATRIX_SHARES (CIFAR_METHOD == 1)                // (the share stamps, its two-worker builds': matrix_window.h)
+
 #include <stdint.h>
 
 #include "matrix_layout.h"
@@ -229,11 +234,11 @@ static __attribute__((noinline)) void infer(uint32_t item, int mode) {
 #endif
     matrix_last = 0;
 #if WORKERS == 2
-    matrix_share_on = item == IMAGES - 1u;             // (the shares: the last image's first layer, tuning.md §6)
+    MATRIX_SHARE_ON(item == IMAGES - 1u);             // (the shares: the last image's first layer, tuning.md §6)
 #endif
     run_layer(&conv1, 1, mode);
 #if WORKERS == 2
-    matrix_share_on = 0;
+    MATRIX_SHARE_ON(0);
 #endif
     for (uint32_t row = 0; row < C1_M; ++row)
         for (uint32_t n = 0; n < CIFAR_CONV1_OUT; ++n) {

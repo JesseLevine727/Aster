@@ -3,13 +3,16 @@
 // runtime growth moved them. Three pads:
 //   MATRIX_PAD_CODE  between the program's code and the runtime's (matrix_pad.S, linked before the runtime);
 //   MATRIX_PAD_DATA  each of the program's buffers placed this many bytes past its alignment;
-//   MATRIX_PAD_HART  hart 1's own buffers placed this many bytes further, in the two-hart programs that have them.
+//   MATRIX_PAD_HART  hart 1's own buffers placed this many bytes further: only buffers declared with
+//                    MATRIX_ROOM_HART / MATRIX_AT_HART (20.5's placement variants). The programs of 20.4 split one
+//                    array between the harts, so their halves move together and this pad does not apply to them.
 // The layouts: L0 every pad 0 (the layout of record); L1, L2, L3 every pad 16, 32, 48; L4 the code and data pads
 // 1 KiB. A buffer's pad survives its alignment: the buffer is declared with room for the pad and named through
 // MATRIX_AT, a dereferenced pointer to an array of its own type and length, so indexing, sizeof and decay are
 // the array's:
-//     MATRIX_ROOM(name, bytes, align);                      (its room: the bytes, plus the pads, aligned)
-//     #define name MATRIX_AT(type, name, count)             (or MATRIX_AT_HART for hart 1's own buffer)
+//     MATRIX_ROOM(name, bytes, align);                      (its room: the bytes, plus the data pad, aligned)
+//     #define name MATRIX_AT(type, name, count)
+// or, for hart 1's own buffer, MATRIX_ROOM_HART and MATRIX_AT_HART (the data pad and the hart pad).
 // With every pad 0 the buffer's address is the room's: the layout of record.
 #ifndef MATRIX_LAYOUT_H
 #define MATRIX_LAYOUT_H
@@ -24,6 +27,8 @@
 #endif
 
 #define MATRIX_ROOM(name, bytes, align) \
+    static uint8_t name##_room[(bytes) + MATRIX_PAD_DATA] __attribute__((aligned(align)))
+#define MATRIX_ROOM_HART(name, bytes, align) \
     static uint8_t name##_room[(bytes) + MATRIX_PAD_DATA + MATRIX_PAD_HART] __attribute__((aligned(align)))
 #define MATRIX_AT(type, name, count) (*(type (*)[count])(void *)(name##_room + MATRIX_PAD_DATA))
 #define MATRIX_AT_HART(type, name, count) \

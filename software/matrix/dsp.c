@@ -13,6 +13,11 @@
 // outputs are poisoned before each pass by their writers. The dot and FIR outputs are checked after the window
 // against v1's scalar reference and their guards (v1's check); each record's checksum folds the outputs, which
 // scripts/matrix.py's oracle recomputes (workload_reference.fft_checksum for the FFT).
+#ifndef DSP_METHOD
+#define DSP_METHOD 0
+#endif
+#define MATRIX_SHARES (DSP_METHOD == 1)                // (the share stamps, its two-worker builds': matrix_window.h)
+
 #include <stdint.h>
 
 // (the dot at K = 0 makes some set-up and check loops empty: i < 0u)

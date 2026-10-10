@@ -8,8 +8,8 @@ on the board's Phase 20 SoC through scripts/aster_board_remote.py, and must end 
   - tohost at the same cycle: the board's latched tohost cycles (0x3F038) against the simulation's SOC line
     (its cycles are the same counter);
   - the same console, byte for byte (so every record and every counter in it is the simulation's).
-The board's report also gives each program's largest console lag (tuning.md §7.1: at most 2 KiB, half the
-4 KiB ring, or the console must grow), its load and run times, and hart 1's live retired count (read only).
+The board's report also gives each program's largest console lag (tuning.md §7.1: at most half the ring, 8 KiB
+of the 16 KiB console), its load and run times, and hart 1's live retired count (read only).
 
   matrix_board.py RUN_DIR... --bitstream BIT --output DIR [--smoke | --all | --only ID...] [--host xilinx@10.0.0.82]
 
@@ -133,17 +133,21 @@ def main() -> int:
     subprocess.run(["ssh", args.host, f"rm -rf {remote} && mkdir -p {remote}"], check=True)
     subprocess.run(["scp", "-q", "-r", *(str(path) for path in stage.iterdir()), f"{args.host}:{remote}/"], check=True)
     # (the password to sudo on stdin only: never in argv, a file or a log; no tty, so nothing echoes it)
-    run = subprocess.run(["ssh", args.host, f"cd {remote} && sudo -S -p '' python3 aster_board_remote.py"],
-                         input=password + "\n", capture_output=True, text=True, timeout=args.timeout)
-    (output / "remote.log").write_text(run.stdout + run.stderr)
+    try:
+        run = subprocess.run(["ssh", args.host, f"cd {remote} && sudo -S -p '' python3 aster_board_remote.py"],
+                             input=password + "\n", capture_output=True, text=True, timeout=args.timeout)
+        returncode, log = run.returncode, run.stdout + run.stderr
+    except subprocess.TimeoutExpired as expired:        # (the partial report is still fetched, below)
+        returncode, log = "timeout", f"{expired.stdout or ''}{expired.stderr or ''}"
+    (output / "remote.log").write_text(log if isinstance(log, str) else log.decode(errors="replace"))
     subprocess.run(["scp", "-q", f"{args.host}:{remote}/report.json", str(output / "report.json")], check=True)
     shutil.rmtree(stage, ignore_errors=True)
     report = json.loads((output / "report.json").read_text())
     problems = []
     if report.get("status") != "complete":
         problems.append(f"the board run is {report.get('status')}: {report.get('error')}")
-    if run.returncode:
-        problems.append(f"the board script exited {run.returncode}")
+    if returncode:
+        problems.append(f"the board script exited {returncode}")
     if report.get("bitstream_sha256") != hashlib.sha256(args.bitstream.read_bytes()).hexdigest():
         problems.append("the board ran a different bitstream")
     clock = report.get("clock", {})

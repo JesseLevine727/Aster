@@ -327,11 +327,11 @@ static int timed_pass(struct v12_record *record, int mode) {
     static const char *const methods[] = {"pipeline", "scalar", "dot8", "pipeline"};
     record->name = names[ECG_FEATURES == 8u][ECG_METHOD]; record->family = "ecg"; record->method = methods[ECG_METHOD];
 #if ECG_STAGES
-    static char stamped[48];                           // (the stamped entry's case: the name and "__stages")
+    static char stamped[48];                           // (the stamped entry's case: the name and "_stages")
     if (!stamped[0]) {
         int n = 0;
         for (const char *c = record->name; *c; ++c) stamped[n++] = *c;
-        for (const char *c = "__stages"; *c; ++c) stamped[n++] = *c;
+        for (const char *c = "_stages"; *c; ++c) stamped[n++] = *c;
     }
     record->name = stamped;
 #endif
@@ -347,6 +347,11 @@ static int timed_pass(struct v12_record *record, int mode) {
             aster_puts(kinds[k]); aster_put_u32(stage_at[c][k][0]); aster_putc('-'); aster_put_u32(stage_at[c][k][1]);
         }
         aster_puts("\n");
+        // (paced, outside the window: the board's reader drains the console's ring about ten times slower than a
+        // program prints, so a line at a time keeps it within half the ring; tuning.md §7.1. The pause is the
+        // same cycles in the simulation and on the board.)
+        const uint32_t paused = now();
+        while (now() - paused < 100000u) {}
     }
 #endif
     if (mode == E2E) {                                 // each chunk's latency, apart from the record

@@ -167,6 +167,12 @@ class Overlap(unittest.TestCase):
         self.assertEqual(by["cnn__2h"]["cls"], "overlap, by speedup")       # (its shares overlap 10: not shown)
         self.assertEqual((by["cnn__2h"]["twin"], by["cnn__2h"]["speedup"]), ("cnn", 1.5))
 
+    def test_a_variant_of_a_two_worker_original_is_no_overlap_proof(self):
+        _, by = self.classes([("f", "red", "multicore", 2, 900, (0, 900), (10, 800)),
+                              ("f", "red__place", "multicore", 2, 600, (0, 600), (10, 500))])   # (faster: tuning won)
+        self.assertEqual((by["red__place"]["cls"], by["red__place"]["speedup"], by["red__place"]["tuned_speedup"]),
+                         ("not shown, spans hart 0's wait", None, 1.5))
+
     def test_a_twin_must_match_every_axis(self):
         _, by = self.classes([("f", "red", "scalar", 1, 1000, (0, 1000), (0, 0), 0, "cold"),
                               ("f", "red", "multicore", 2, 600, (0, 600), (10, 500))])

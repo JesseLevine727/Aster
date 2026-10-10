@@ -47,6 +47,10 @@ class Mmio:
     def __init__(self, base, size):
         self.fd = os.open("/dev/mem", os.O_RDWR | os.O_SYNC)
         self.map = mmap.mmap(self.fd, size, mmap.MAP_SHARED, mmap.PROT_READ | mmap.PROT_WRITE, offset=base)
+        self.words = memoryview(self.map).cast("I")      # (20.5: one 32-bit load a word, for the console's drain)
+
+    def read_word(self, offset):
+        return self.words[offset >> 2]
 
     def read(self, offset):
         return struct.unpack_from("<I", self.map, offset)[0]
@@ -137,7 +141,7 @@ def run_program(pl, entry, image):
             result = "CONSOLE_OVERFLOW"
             break
         while seen < count:                          # (each word read once: the drain must keep up, §7.1)
-            word = pl.read(CONSOLE + (seen & (CONSOLE_BYTES - 4)))
+            word = pl.read_word(CONSOLE + (seen & (CONSOLE_BYTES - 4)))
             take = min(4 - (seen & 3), count - seen)
             console += (word >> (8 * (seen & 3))).to_bytes(4, "little")[:take]
             seen += take
@@ -170,6 +174,10 @@ def run_program(pl, entry, image):
 
 
 def main():
+    try:                                         # (20.5: the console's drain at real-time priority, so the reader
+        os.sched_setscheduler(0, os.SCHED_FIFO, os.sched_param(50))   # is not descheduled behind a burst)
+    except (AttributeError, PermissionError, OSError):
+        pass
     here = Path(__file__).resolve().parent
     manifest = json.loads((here / "manifest.json").read_text())
     report = {"schema": "aster.18.7.board.v1", "status": "running", "board": os.uname().nodename,

@@ -56,7 +56,7 @@ As in 20.4:
 
 - **Every result is published,** the losses too (soc.md §11).
 - **The original methods stay.** A tuned variant is a new case under the
-  existing methods. For example, `cifar_cnn_npu_direct_2h` uses method
+  existing methods, named for its original with `__` and a tag. For example, `cifar_cnn_npu_direct__2h` uses method
   `npu_direct` with two workers, and v12's method list is unchanged.
   - Each variant is planned before it is captured, with matrix.md §3's
     crossing: R plus each axis alone, plus its family's named crosses
@@ -81,10 +81,14 @@ As in 20.4:
   **Step 1's proof** (before any tuning comparison) ran 20.4's
   layout-sensitive cases at the layouts: the 16×16×64 GEMM in every
   configuration, and the lr/sc and CAS counters.
-  - **L0** equalled the final capture in all 262 windows. With every pad 0,
-    5,905 of the 5,920 distinct firmware images were byte-identical to the
-    final capture's. The other 15 (shared_mix) differ in two commutative
-    `xor`s' operand order, and their records are the same.
+  - **L0** equalled the final capture in all 262 windows.
+    - **Before the share stamps (§6),** with every pad 0, 5,905 of the 5,920
+      distinct firmware images were byte-identical to the final capture's.
+      The other 15 (shared_mix) differ in two commutative `xor`s' operand
+      order, and their records are the same (51 of 51).
+    - **With the stamps,** only the two-worker builds that carry them
+      differ: 5,808 are identical. The stamps compile in only where a
+      program uses them, so every one-worker image is as before.
   - **The five approved layouts fell short:** they missed the GEMM's moves
     (20.4: +12% at +4 waits; the five: ±0.3%).
     - L1–L3's data pads change the buffers' cache index by one to three
@@ -95,15 +99,28 @@ As in 20.4:
       comes first.
   - **The eight layouts reach** at least half of 20.4's move in all 262
     windows: the GEMM's moves (−10.7% at +4 waits) and the contention
-    cases (−41% to +74%).
+    cases (−41% to +74%). The measure is the spread over the layouts against
+    the size of 20.4's move. Measured instead as the largest single move
+    from L0, three NPU e2e windows fall short: 20.4 moved them by 15 or 16
+    cycles, and the layouts by at most 7.
 
-  This amends decision 2's five layouts to eight, before any change is
-  judged.
+  **Eight layouts instead of decision 2's five: pending the owner's
+  approval.** The change is made before any change is judged, and it only
+  makes the rule stricter, since a change must win on every layout. Until
+  the owner approves, no tuning change is judged.
+  - **The code pad and the CPU kernels:** v1's CPU kernels keep their hot code
+    in `.text.benchmark`, linked ahead of all `.text`. So for them, the code
+    pad moves the runtime and the data, not the kernel against the runtime.
+  - **The hart pad** applies only to buffers declared as hart 1's own
+    (`MATRIX_ROOM_HART`, `MATRIX_AT_HART`: 20.5's placement variants). The
+    programs of 20.4 split one array between the harts, so their halves move
+    together.
   - **The pads survive alignment.** Most kernels' buffers are 64-byte
     aligned, which would swallow a pad placed before them. So a pad is an
     offset applied after the alignment: each buffer is declared with room
     for it, and its code uses the base plus the offset. Each layout's actual
-    addresses (mod 64 and mod 4 KiB) are read from the ELF and checked.
+    addresses (mod 64 and mod 4 KiB) are read from the ELF and recorded in
+    the manifest.
   - **Proven first:** before the knob judges anything, it must reproduce
     20.4's moves: the 16×16×64 GEMM at +4 waits, and the lr/sc and CAS
     contention cases.
@@ -223,6 +240,15 @@ Where code and data sit:
   the two-hart pipeline leads scalar by under 1% cold. So the stamped runs
   are separate entries: the unstamped runs keep the gate's figures, and the
   stamped ones carry the proof (§10).
+  - **Their names:** each stamped twin is its case's name plus `_stages`.
+    These are instrumented twins, not tuned variants, which take `__`.
+  - **Their pacing:** a stamped program prints up to about 20 KB of stage
+    lines, faster than the board's reader drains the ring. So it pauses
+    100,000 cycles (1 ms) after each line, outside the window, the same
+    cycles in the simulation and on the board.
+  - **The result:** all 72 stamped programs end on the board as simulated,
+    their console within 6,706 bytes of the reader, under half of the
+    16 KiB ring. Unpaced, they overflowed.
 - **Tuning:**
   - the chunk moves by the copy policy (§4.1);
   - the stages' split between the harts balanced from the stamps;
@@ -265,10 +291,10 @@ fails only if it gets more than 4 KiB ahead of the reader.
   how fast a program prints, not only how much.
   - Every byte must match the simulation's console.
   - **"Keeps up" means** the reader's largest lag behind the writer stays at
-    or under half the ring (2 KiB). That leaves a margin for the 7,800 board
-    runs to come.
+    or under half the ring: 2 KiB of the 4 KiB ring, 8 KiB of the 16 KiB one.
+    That leaves a margin for the 7,800 board runs to come.
   - **The rule holds for the whole board run:** the script records each
-    program's largest lag and fails any program over 2 KiB.
+    program's largest lag, and fails any program over half the ring.
 - **If it cannot keep up:** the console grows to 16 KiB. That is four block
   RAM tiles, and the ARM window becomes `0x30000`–`0x33FFF`, with these
   changed to match:

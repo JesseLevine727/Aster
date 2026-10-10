@@ -96,11 +96,12 @@ def analyse(runs: list[Path]) -> dict:
                 speedup = single / cycles if single else None
                 cls = "engine overlap" if single and single > cycles else "engine: no saving"
             else:
-                single = None
+                single = tuned = None
                 if "__" in e["case"]:                    # a tuned variant: against its original
                     twin = e["case"].split("__")[0]
-                    single = next((cycles_of[k] for w in (1, 2) if (k := key(e, twin, e["method"], r["window"]) + (w,))
-                                   in cycles_of), None)
+                    single = cycles_of.get(key(e, twin, e["method"], r["window"]) + (1,))   # (one worker: overlap)
+                    two = cycles_of.get(key(e, twin, e["method"], r["window"]) + (2,))      # (two: the tuning's own win)
+                    tuned = round(two / cycles, 4) if two else None
                 elif e["method"] == "multicore":
                     twin = "dot8" if int(r["h0_dot8_retire"]) + int(r["h1_dot8_retire"]) else "scalar"
                     single = cycles_of.get(key(e, e["case"].replace("multicore", twin), twin, r["window"]) + (1,))
@@ -122,8 +123,8 @@ def analyse(runs: list[Path]) -> dict:
                     cls = "no overlap"
             classes[cls] += 1
             rows.append(dict(id=e["id"], window=r["window"], cycles=cycles, intervals=[s0, e0, s1, e1],
-                             overlap=overlap, retired=retired, twin=twin if speedup else None,
-                             speedup=round(speedup, 4) if speedup else None, cls=cls))
+                             overlap=overlap, retired=retired, twin=twin if (speedup or tuned) else None,
+                             speedup=round(speedup, 4) if speedup else None, tuned_speedup=tuned, cls=cls))
 
     def ids(cls):
         return sorted({r["id"].split("/")[1] for r in rows if r["cls"] == cls})

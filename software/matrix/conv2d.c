@@ -14,6 +14,11 @@
 // untimed pass of the same code, then the window (so the window's code is warm too, not only its data). Before
 // each timed pass (and each kernel iteration) the outputs are poisoned. The output is the same for every method, and workload_reference.conv2d_checksum recomputes the
 // checksum (each window's: the four outputs folded, v1's).
+#ifndef CONV_METHOD
+#define CONV_METHOD 1
+#endif
+#define MATRIX_SHARES (CONV_METHOD == 2 || CONV_METHOD == 6)                // (the share stamps, its two-worker builds': matrix_window.h)
+
 #include <stdint.h>
 
 #include "matrix_layout.h"

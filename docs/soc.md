@@ -335,7 +335,7 @@ ring and a byte count, which the ARM side reads over AXI (at `0x30000`–
 program's records outran the ARM side's drain of a 4 KiB ring; tuning.md
 §7.1.)
 The UART answers in the next cycle and never makes a hart wait. The count
-keeps counting past 4 KiB, so an overflow is visible. Both harts' bytes go
+keeps counting past the ring's size, so an overflow is visible. Both harts' bytes go
 in the order the I/O bus accepts them. v1's serial transmitter, and the
 stall it imposed while its FIFO was full, are not kept.
 
@@ -1080,7 +1080,8 @@ Milestone 20.3):
 [`tuning.md`](tuning.md), with its nine decisions as recommended:
 - **The console:** the 4 KiB ring kept if the board's drain stays within
   2 KiB of the writer, else 16 KiB.
-- **Tuning judged across five fixed layouts** that pad between the image's
+- **Tuning judged across five fixed layouts** (eight in step 1's amendment, pending the owner's approval:
+  tuning.md §3) that pad between the image's
   parts, after alignment. They must first reproduce 20.4's moves; L0 is the
   layout of record.
 - **Tuned variants** are new cases under the existing methods, with the
