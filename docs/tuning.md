@@ -267,8 +267,15 @@ of hart 0's share, on a `MATRIX_SHARE` line beside the record:
 - overlap is then shown from stamps;
 - matrix.md §10.14's speedup reading stays only as a cross-check.
 
-The share stamp costs about 20 cycles in the window, as hart 1's do
-(matrix.md §10.7). The overlap script will pair each tuned variant with its
+**The stamps' cost** (measured in step 1): four stamps a window, and a check
+each stretch.
+- **The gate's reduction:** +47 cycles end to end and +1 in the kernel window
+  at R.
+- **v1's reduction:** +142 and +132.
+- **The scaling gate's lowest point:** 1.890×. In 20.4 it was 1.882×, and
+  layout moves it either way.
+
+The stamps compile in only where a program uses them (`MATRIX_SHARES`). The overlap script will pair each tuned variant with its
 original: today it pairs only `multicore` records with their one-worker twins,
 and the DMA's overlap cases with their serial twins (step 1).
 

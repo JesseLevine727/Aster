@@ -1818,6 +1818,43 @@ matrix.md §10.10–14, and its timing on m4-o5asm-mgi (soc.md §13). 20.5 begin
 5. the board run;
 6. the report and the closeout audit.
 
+### Step 1: the infrastructure (done; awaiting its review and the owner's word on the layouts)
+
+**The board.** The full two-hart SoC ran on the PYNQ-Z1 for the first time, through the new runner
+(`matrix_board.py`).
+- **First run:** every program that finished ended at exactly its simulated tohost cycle, 33 of 33.
+- **The console:** its 4 KiB ring overflowed. The ARM side's reader fell 4,508 bytes behind, and consoles were
+  overwritten before being read. So by the plan (tuning.md §7.1) the console grew to 16 KiB, as an RTL change:
+  - **verified:** soc-tests, all 29 checks, pass;
+  - **timed** in context on ten strategies, all meeting 10 ns: +0.031 to +0.373 ns. The best, o5asm-mgi at
+    +0.373 ns, rebuilt identically. 80 block RAM tiles (57%).
+- **The smoke set on it:** 36 of 36 programs end on the board exactly as simulated, at 100 MHz.
+- **ECG's stamped programs** print up to 20 KB of stage lines, faster than the reader drains. Paced at 1 ms a
+  line, all 72 end on the board as simulated, within 5,003 bytes of the reader.
+
+**The layout knob** (tuning.md §3): pads between the image's parts, each buffer's offset kept past its
+alignment.
+- **L0 is the layout of record:** at every pad 0 the images are byte-identical to the final capture's (5,808 of
+  5,920 at this commit; those that differ are the two-worker builds with stamps, and 15 commutative `xor`s).
+- **The proof:**
+  - the five approved layouts missed the 16×16×64 GEMM's 20.4 move (+12%; they moved it ±0.3%);
+  - eight layouts reach at least half of 20.4's move in 261 of 262 windows. The one short is the 2-item lr/sc
+    kernel window with the cache off, which 20.4 moved by 6 cycles.
+- **For the owner:** eight layouts instead of decision 2's five. No tuning change is judged until then.
+
+**The overlap evidence** (tuning.md §6): both harts stamp their shares, on `MATRIX_SHARE` lines.
+- **Every two-worker program** now shows its overlap from stamps: the reductions, Conv2D, the dot, FIR and FFT,
+  MNIST and CIFAR. The exceptions are the dot at K = 0 and 1, where hart 1 has no work.
+- **The speedup reading** (matrix.md §10.14) is now a cross-check.
+
+**ECG's stage stamps** (tuning.md §5), in 72 separate `_stages` entries, show:
+- **v1's ported pipeline:** sequential per chunk;
+- **the two-hart pipeline:** each chunk's FIR beside the previous chunk's classifier, 26,814 cycles of overlap
+  in v1's case. It is bound by v1's byte-gathering DOT8 FIR, about 10,400 cycles a chunk.
+
+**The copy helper** (`aster_copy`): the DMA or v1's fair copy, by size and offset.
+- **Its test** (`soc_copy`): 1,200 copies on two builds, every byte, guard and choice checked.
+
 ## Milestones and gates
 
 | Milestone | Scope | Exit |
