@@ -5,7 +5,7 @@ scripts/asterbench_v12.check_config then checks against the testbench's readback
 
 from __future__ import annotations
 
-BASE = dict(HARTS=2, SHELL_PAGE=0, WAIT=0, NPU_DIM=8, NPU_PORT_BYTES=8, NPU_A_STRIPS=2, DCACHE=1)
+BASE = dict(HARTS=2, SHELL_PAGE=0, WAIT=0, NPU_DIM=8, NPU_PORT_BYTES=8, NPU_A_STRIPS=2, DCACHE=1, CACHE_BYTES=4096)
 
 VARIANTS: dict[str, dict[str, int]] = {
     "soc_dev": dict(BASE),
@@ -27,6 +27,8 @@ VARIANTS: dict[str, dict[str, int]] = {
     "soc_w1_dc0": dict(BASE, WAIT=1, DCACHE=0),
     "soc_w2_dc0": dict(BASE, WAIT=2, DCACHE=0),
     "soc_w4_dc0": dict(BASE, WAIT=4, DCACHE=0),
+    "soc_l1_2k": dict(BASE, CACHE_BYTES=2048),          # (20.5: the L1 caches at 2 KiB, docs/tuning.md §4.2)
+    "soc_l1_8k": dict(BASE, CACHE_BYTES=8192),          # (and at 8 KiB)
 }
 
 

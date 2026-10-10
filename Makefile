@@ -2293,7 +2293,30 @@ $(L1I17_UNIT_SIM): $(ASTER_L1_RTL) verification/core/l1/tb_l1i.cpp Makefile
 		$(ROOT)/rtl/aster_core/aster_l1i.sv $(ROOT)/verification/core/l1/tb_l1i.cpp -CFLAGS -DL1I_SPAN17
 	@touch $@
 
-core-aster-l1-unit: $(L1D_UNIT_SIM) $(L1I_UNIT_SIM) $(L1D3_UNIT_SIM) $(L1D17_UNIT_SIM) $(L1I17_UNIT_SIM) $(L1DUC_UNIT_SIM)
+# 20.5 (docs/tuning.md §4.2): both caches at 2 and 8 KiB, as the SoC builds them (three snoop ports, main
+# memory's tag span), their pages CACHE_BYTES apart so that lines alias
+define L1_SIZE_RULES
+L1D_UNIT_C$(1)_SIM := $$(L1_UNIT_DIR)/l1d_unit_c$(1)
+$$(L1D_UNIT_C$(1)_SIM): rtl/aster_core/aster_core_pkg.sv $$(ASTER_L1_RTL) verification/core/l1/l1d_unit.sv verification/core/l1/tb_l1d.cpp Makefile
+	mkdir -p $$(L1_UNIT_DIR)
+	$$(VERILATOR) --cc --exe --build --assert --Wall --top-module l1d_unit --prefix Vl1d_unit -GSNOOPS=3 -GTAG_SPAN=17 \
+		-GCACHE_BYTES=$(2) --Mdir $$(L1_UNIT_DIR)/dc$(1)_obj -o $$(abspath $$@) $$(ROOT)/rtl/aster_core/aster_core_pkg.sv \
+		$$(addprefix $$(ROOT)/,$$(ASTER_L1_RTL)) $$(ROOT)/verification/core/l1/l1d_unit.sv $$(ROOT)/verification/core/l1/tb_l1d.cpp \
+		-CFLAGS -DL1D_SNOOPS=3 -CFLAGS -DL1D_SPAN17 -CFLAGS -DL1_CACHE_BYTES=$(2)u
+	@touch $$@
+L1I_UNIT_C$(1)_SIM := $$(L1_UNIT_DIR)/l1i_unit_c$(1)
+$$(L1I_UNIT_C$(1)_SIM): $$(ASTER_L1_RTL) verification/core/l1/tb_l1i.cpp Makefile
+	mkdir -p $$(L1_UNIT_DIR)
+	$$(VERILATOR) --cc --exe --build --assert --Wall --top-module aster_l1i --prefix Vaster_l1i -GTAG_SPAN=17 \
+		-GCACHE_BYTES=$(2) --Mdir $$(L1_UNIT_DIR)/ic$(1)_obj -o $$(abspath $$@) $$(ROOT)/rtl/aster_core/aster_l1_ram.sv \
+		$$(ROOT)/rtl/aster_core/aster_l1i.sv $$(ROOT)/verification/core/l1/tb_l1i.cpp -CFLAGS -DL1I_SPAN17 -CFLAGS -DL1_CACHE_BYTES=$(2)u
+	@touch $$@
+endef
+$(eval $(call L1_SIZE_RULES,2,2048))
+$(eval $(call L1_SIZE_RULES,8,8192))
+L1_SIZE_SIMS := $(L1D_UNIT_C2_SIM) $(L1I_UNIT_C2_SIM) $(L1D_UNIT_C8_SIM) $(L1I_UNIT_C8_SIM)
+
+core-aster-l1-unit: $(L1D_UNIT_SIM) $(L1I_UNIT_SIM) $(L1D3_UNIT_SIM) $(L1D17_UNIT_SIM) $(L1I17_UNIT_SIM) $(L1DUC_UNIT_SIM) $(L1_SIZE_SIMS)
 	@for seed in $$(seq 1 $(L1_UNIT_SEEDS)); do \
 		$(L1D_UNIT_SIM) $$seed 1000000 > /dev/null || { $(L1D_UNIT_SIM) $$seed 1000000; exit 1; }; \
 		$(L1I_UNIT_SIM) $$seed 1000000 > /dev/null || { $(L1I_UNIT_SIM) $$seed 1000000; exit 1; }; \
@@ -2301,11 +2324,13 @@ core-aster-l1-unit: $(L1D_UNIT_SIM) $(L1I_UNIT_SIM) $(L1D3_UNIT_SIM) $(L1D17_UNI
 		$(L1D17_UNIT_SIM) $$seed 1000000 > /dev/null || { $(L1D17_UNIT_SIM) $$seed 1000000; exit 1; }; \
 		$(L1I17_UNIT_SIM) $$seed 1000000 > /dev/null || { $(L1I17_UNIT_SIM) $$seed 1000000; exit 1; }; \
 		$(L1DUC_UNIT_SIM) $$seed 1000000 > /dev/null || { $(L1DUC_UNIT_SIM) $$seed 1000000; exit 1; }; \
-	done; echo "PASS: the L1 data and instruction caches pass $(L1_UNIT_SEEDS) random unit-test seeds each; the data cache with three snoop ports (20.1) too, snoops on two ports or more in one cycle and a refill snooped on each port in every seed; both with main memory's tag span (20.3), every lookup and snoop hit as full tags'; and the data cache off (20.4)"
+		for s in $(L1_SIZE_SIMS); do $$s $$seed 1000000 > /dev/null || { $$s $$seed 1000000; exit 1; }; done; \
+	done; echo "PASS: the L1 data and instruction caches pass $(L1_UNIT_SEEDS) random unit-test seeds each; the data cache with three snoop ports (20.1) too, snoops on two ports or more in one cycle and a refill snooped on each port in every seed; both with main memory's tag span (20.3), every lookup and snoop hit as full tags'; the data cache off (20.4); and both at 2 and 8 KiB (20.5)"
 
 # Planted bugs in the caches' narrow tags (20.3, scripts/l1_span_mutants.py): each kept tag bit dropped from
 # each narrow compare (the data cache's lookup and snoop hit, the instruction cache's lookup), caught on every
-# seed by the TAG_SPAN 17 unit tests, which the unmutated caches pass. Not in make check: it builds 17 tests.
+# seed by the TAG_SPAN 17 unit tests, which the unmutated caches pass; at 2, 4 and 8 KiB (20.5: the tag's lowest bit
+# moves with the capacity). Not in make check: it builds 51 tests.
 .PHONY: l1-span-mutants
 l1-span-mutants:
 	@mkdir -p $(L1_UNIT_DIR)
@@ -2360,7 +2385,38 @@ core-aster-tests: $(ASTER_PORTS_SIM) $(ASTER_DOT8_PLUGIN)
 # the random programs' usual 200,000 cycles.
 ASTER_L1_TESTS = RISCV_PREFIX=$(RISCV_PREFIX) $(PYTHON) scripts/run_core_tests.py --dut aster_l1 \
 	--sim $(ASTER_L1_SIM) --spike $(SPIKE) --aster-dot8 $(ASTER_DOT8_PLUGIN)
-.PHONY: core-aster-l1-tests core-aster-firmware
+.PHONY: core-aster-l1-tests core-aster-firmware core-aster-l1-sizes
+# 20.5 (docs/tuning.md §4.2): the CPU shell with its caches at 2 and 8 KiB (the model sized as the shell's
+# CACHE_BYTES), on a subset of core-aster-l1-tests' modes: the suites plain, stalled and long-stalled, the
+# random programs (with and without long stalls), the firmware and the kernels, each in lockstep with Spike
+define L1_SHELL_SIZE
+ASTER_L1_C$(1)_SIM := $$(ASTER_CORE_DIR)/core_ports_aster_l1_c$(1)
+$$(ASTER_L1_C$(1)_SIM): $$(ASTER_CORE_RTL) $$(ASTER_L1_RTL) verification/core/shell_aster_ports.sv verification/core/tb_core_ports.cpp verification/core/shell_common.h verification/core/shell_ports.h Makefile
+	mkdir -p $$(ASTER_CORE_DIR)
+	$$(VERILATOR) --cc --exe --build --assert --Wall --top-module shell_aster_ports -GL1=1 -GCACHE_BYTES=$(2) --prefix Vcore_ports \
+		--Mdir $$(ASTER_CORE_DIR)/ports_l1_c$(1)_obj -o $$(abspath $$@) \
+		$$(addprefix $$(ROOT)/,$$(ASTER_CORE_RTL) $$(ASTER_L1_RTL)) $$(ROOT)/verification/core/shell_aster_ports.sv \
+		$$(ROOT)/verification/core/tb_core_ports.cpp
+	@touch $$@
+endef
+$(eval $(call L1_SHELL_SIZE,2,2048))
+$(eval $(call L1_SHELL_SIZE,8,8192))
+core-aster-l1-sizes: $(ASTER_L1_C2_SIM) $(ASTER_L1_C8_SIM) $(ASTER_DOT8_PLUGIN) $(ASTER_CLOCK_PLUGIN)
+	@mkdir -p $(CORE_TESTS_DIR)
+	@set -o pipefail; for k in 2 8; do sim=$(ASTER_CORE_DIR)/core_ports_aster_l1_c$$k; \
+		for mode in plain stall long-stall random random-long-stall firmware kernels; do \
+		extra=$$(case $$mode in plain) echo "--require-trap-covers";; stall) echo "--stall-seed 5 --require-trap-covers";; \
+			long-stall) echo "--stall-seed 3 --shell-arg +long_stall --require-trap-covers";; \
+			random) echo "--random $(CORE_RANDOM_PROGRAMS) --random-seed 1 --require-coverage";; \
+			random-long-stall) echo "--random $(CORE_RANDOM_PROGRAMS) --random-seed 701 --stall-seed 17 \
+				--shell-arg +long_stall --require-coverage --require-div-waits";; \
+			firmware) echo "--firmware --aster-clock $(ASTER_CLOCK_PLUGIN)";; \
+			kernels) echo "--kernels --aster-clock $(ASTER_CLOCK_PLUGIN) --shell-arg +latency=1";; esac); \
+		RISCV_PREFIX=$(RISCV_PREFIX) $(PYTHON) scripts/run_core_tests.py --dut aster_l1 --sim $$sim --spike $(SPIKE) \
+			--aster-dot8 $(ASTER_DOT8_PLUGIN) $$extra \
+			--build-dir $(CORE_TESTS_DIR)/aster-l1-c$$k-$$mode | tee $(CORE_TESTS_DIR)/aster-l1-c$$k-$$mode.log | \
+			sed "s/^/c$$k KiB: /" | tail -1 || { grep -v '^PASS' $(CORE_TESTS_DIR)/aster-l1-c$$k-$$mode.log; exit 1; }; \
+	done; done
 core-aster-l1-tests: $(ASTER_L1_SIM) $(ASTER_DOT8_PLUGIN) $(ASTER_CLOCK_PLUGIN) core-aster-act4
 	@mkdir -p $(CORE_TESTS_DIR)
 	@set -o pipefail; for mode in plain latency1 stall latency1-stall inflight3 inflight4 long-stall arch arch-latency1 \
@@ -3102,7 +3158,9 @@ ASTER_SOC_MATRIX_BUILDS := soc_h1:-GSHELL_PAGE=0,-GHARTS=1 soc_h1_w1:-GSHELL_PAG
 	soc_n4p4s2:-GSHELL_PAGE=0,-GNPU_DIM=4,-GNPU_PORT_BYTES=4,-GNPU_A_STRIPS=2 \
 	soc_n4p4s1:-GSHELL_PAGE=0,-GNPU_DIM=4,-GNPU_PORT_BYTES=4,-GNPU_A_STRIPS=1 \
 	soc_dc0:-GSHELL_PAGE=0,-GDCACHE=0 soc_w1_dc0:-GSHELL_PAGE=0,-GWAIT=1,-GDCACHE=0 \
-	soc_w2_dc0:-GSHELL_PAGE=0,-GWAIT=2,-GDCACHE=0 soc_w4_dc0:-GSHELL_PAGE=0,-GWAIT=4,-GDCACHE=0
+	soc_w2_dc0:-GSHELL_PAGE=0,-GWAIT=2,-GDCACHE=0 soc_w4_dc0:-GSHELL_PAGE=0,-GWAIT=4,-GDCACHE=0 \
+	soc_l1_2k:-GSHELL_PAGE=0,-GCACHE_BYTES=2048 soc_l1_8k:-GSHELL_PAGE=0,-GCACHE_BYTES=8192
+# (20.5, docs/tuning.md §4.2: soc_l1_2k and soc_l1_8k, the L1 caches at 2 and 8 KiB)
 ASTER_SOC_BUILDS += $(ASTER_SOC_MATRIX_BUILDS)
 ASTER_SOC_MATRIX_SIMS := $(foreach b,$(ASTER_SOC_MATRIX_BUILDS),$(ASTER_SOC_DIR)/$(firstword $(subst :, ,$(b))))
 ASTER_SOC_SIMS := $(filter-out $(ASTER_SOC_MATRIX_SIMS),$(foreach b,$(ASTER_SOC_BUILDS),$(ASTER_SOC_DIR)/$(firstword $(subst :, ,$(b)))))

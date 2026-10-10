@@ -780,7 +780,8 @@ when it stopped hart 1).
   or 4 (RESUME), as in v1. Any other value is ignored.
 - **ABI 4's metadata:**
   - 0x8C reads 3 (caches on, synchronous memory);
-  - 0x90 reads 4 words a line and 0x94 256 lines;
+  - 0x90 reads 4 words a line and 0x94 the lines in each cache: 256 at 4 KiB
+    (since 20.5, the build's CACHE_BYTES / 16: 128 at 2 KiB, 512 at 8 KiB);
   - 0x98, the memory's wait cycles, reads 1 + WAIT: v1's synchronous memory
     read 1, and the v2 memory is the same two-cycle block RAM.
   - Counter 0 (cycles) is the window's cycles, the same for both harts.

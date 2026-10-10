@@ -43,6 +43,8 @@ module aster_soc #(
     parameter int          NPU_DIM = 8,
     // The data caches on (1) or off (0; 20.4's matrix axis, simulation only: aster_l1d's DCACHE)
     parameter int unsigned DCACHE = 1,
+    // Each L1 cache's capacity: 2, 4 (the default) or 8 KiB (20.5's matrix axis, docs/tuning.md §4.2)
+    parameter int unsigned CACHE_BYTES = 4096,
     parameter int unsigned HARTS = 2,
     parameter int unsigned SHELL_PAGE = 0,
     parameter int unsigned WAIT = 0,                    // the fabric's added answer cycles (simulation)
@@ -161,7 +163,7 @@ module aster_soc #(
             .rvfi_csr_mcycle_rmask(), .rvfi_csr_mcycle_wmask(), .rvfi_csr_mcycle_rdata(), .rvfi_csr_mcycle_wdata(),
             .rvfi_csr_minstret_rmask(), .rvfi_csr_minstret_wmask(), .rvfi_csr_minstret_rdata(), .rvfi_csr_minstret_wdata()
         );
-        aster_l1i #(.TAG_SPAN($clog2(MAIN_BYTES))) icache (   // (tags of main memory's span: 20.3's timing)
+        aster_l1i #(.TAG_SPAN($clog2(MAIN_BYTES)), .CACHE_BYTES(CACHE_BYTES)) icache (   // (tags of main memory's span: 20.3's timing)
             .clk(aclk), .rst_n(core_rst_n[h]), .cacheable_bytes(32'(MAIN_BYTES)), .invalidate(fencei_inval),
             .data_pending(posted_pending[h]),
             .i_req_valid(c_i_req_valid), .i_req_addr(c_i_req_addr), .i_req_ready(c_i_req_ready),
@@ -173,7 +175,7 @@ module aster_soc #(
         assign m_i_addr[h] = i_addr;
         // (tags of main memory's span: 20.3's timing)
         aster_l1d #(.IO_WINDOWS(4), .IO_BASE(IO_BASE), .IO_MASK(IO_MASK), .IO_WORD_ONLY(IO_WORD_ONLY), .SNOOPS(3),
-                    .TAG_SPAN($clog2(MAIN_BYTES)), .DCACHE(DCACHE)) dcache (
+                    .TAG_SPAN($clog2(MAIN_BYTES)), .DCACHE(DCACHE), .CACHE_BYTES(CACHE_BYTES)) dcache (
             .clk(aclk), .rst_n(core_rst_n[h]), .cacheable_bytes(32'(MAIN_BYTES)),
             .d_req_valid(c_d_req_valid), .d_req_op(c_d_req_op), .d_req_addr(c_d_req_addr),
             .d_req_wdata(c_d_req_wdata), .d_req_be(c_d_req_be), .d_req_ready(c_d_req_ready),
@@ -508,7 +510,7 @@ module aster_soc #(
                     if (ev_wait[k]) ev_bank_conflict[req_bank[k]] = 1'b1;
                 end
         end
-        aster_soc_devices #(.CLK_HZ(CLK_HZ), .HARTS(HARTS), .WAIT(WAIT)) devices (
+        aster_soc_devices #(.CLK_HZ(CLK_HZ), .HARTS(HARTS), .WAIT(WAIT), .LINES(CACHE_BYTES / 16)) devices (
             .clk(aclk), .rst_n(core_rst_n[0]),
             .io_valid(io_valid && run), .io_hart, .io_op, .io_addr, .io_wdata, .io_rdata(dev_rdata), .io_sel(dev_sel),
             .console_we(console_word_store), .console_byte(console_byte_store), .secondary_run, .mtime,

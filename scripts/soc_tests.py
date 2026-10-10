@@ -248,7 +248,8 @@ def main() -> int:
             for text, verdict in zip(records, cpp):
                 try:
                     record = asterbench_v12.validate_line(text)
-                    asterbench_v12.check_config(record, int(fields.get("npu_config", -1)), int(fields.get("soc_config", -1)))
+                    asterbench_v12.check_config(record, int(fields.get("npu_config", -1)), int(fields.get("soc_config", -1)),
+                                                 soc_variants.VARIANTS[sim_name]["CACHE_BYTES"] // 16)
                 except asterbench_v12.ValidationError as error:
                     problems.append(f"python: {error}")
                 if not verdict:
@@ -270,7 +271,8 @@ def main() -> int:
             for text, verdict in zip(records, v12_cpp_verdicts(records, out)):
                 try:
                     record = asterbench_v12.validate_line(text)
-                    asterbench_v12.check_config(record, int(fields.get("npu_config", -1)), int(fields.get("soc_config", -1)))
+                    asterbench_v12.check_config(record, int(fields.get("npu_config", -1)), int(fields.get("soc_config", -1)),
+                                                 soc_variants.VARIANTS[sim_name]["CACHE_BYTES"] // 16)
                     if record["harts"] != 1:
                         problems.append("the record's harts is not 1")
                 except asterbench_v12.ValidationError as error:

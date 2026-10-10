@@ -22,7 +22,8 @@ module sim_soc #(
     parameter int unsigned NPU_DIM = 8,
     parameter int unsigned NPU_PORT_BYTES = 8,
     parameter int unsigned NPU_A_STRIPS = 2,
-    parameter int unsigned DCACHE = 1
+    parameter int unsigned DCACHE = 1,
+    parameter int unsigned CACHE_BYTES = 4096              // (20.5: each L1 cache's capacity)
 ) (
     input  logic        aclk,
     input  logic        aresetn,
@@ -96,7 +97,8 @@ module sim_soc #(
     output logic [1:0][14:0][31:0] rvfi_csr_wdata
 );
     aster_soc #(.HARTS(HARTS), .SHELL_PAGE(SHELL_PAGE), .WAIT(WAIT), .NPU_BUFFER(NPU_BUFFER), .NPU_REG_Q(NPU_REG_Q),
-                .NPU_DIM(NPU_DIM), .NPU_PORT_BYTES(NPU_PORT_BYTES), .NPU_A_STRIPS(NPU_A_STRIPS), .DCACHE(DCACHE)) soc (
+                .NPU_DIM(NPU_DIM), .NPU_PORT_BYTES(NPU_PORT_BYTES), .NPU_A_STRIPS(NPU_A_STRIPS), .DCACHE(DCACHE),
+                .CACHE_BYTES(CACHE_BYTES)) soc (
         .aclk, .aresetn, .s_axi_awaddr, .s_axi_awvalid, .s_axi_awready, .s_axi_wdata, .s_axi_wstrb, .s_axi_wvalid,
         .s_axi_wready, .s_axi_bresp, .s_axi_bvalid, .s_axi_bready, .s_axi_araddr, .s_axi_arvalid, .s_axi_arready,
         .s_axi_rdata, .s_axi_rresp, .s_axi_rvalid, .s_axi_rready

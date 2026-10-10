@@ -37,6 +37,10 @@
 #include <string>
 #include <vector>
 
+#ifndef L1_CACHE_BYTES
+#define L1_CACHE_BYTES 4096u                    // (20.5: the cache's capacity, as the build's CACHE_BYTES)
+#endif
+
 #ifndef L1D_SNOOPS
 #define L1D_SNOOPS 1
 #endif
@@ -88,18 +92,24 @@ int main(int argc, char** argv) {
     std::mt19937 rng(seed);
     Vl1d_unit d;
 #ifdef L1D_SPAN17
-    // main memory's tag span (TAG_SPAN 17): 96 KiB cacheable; the core's pages set each kept tag bit
-    // (12-16) in some page, and the remote region's pages are 3, 7, 11 and 19 (snooped lines that differ
-    // from held ones in bit 14, 15 or 16 alone, as pages 1 and 2 do in bits 13 and 12)
+    // main memory's tag span (TAG_SPAN 17): 96 KiB cacheable. Pages are L1_CACHE_BYTES apart (the cache's
+    // capacity, 20.5; 4 KiB before), so their lines alias in it. The core's pages 0, 1, 2, 4, ... set each
+    // kept tag bit (bit log2(L1_CACHE_BYTES) up to 16) in some page. The remote region is page 3 plus offsets
+    // 0 and 4, 8, ... pages up to 64 KiB: its snooped lines differ from held ones in each kept tag bit alone
+    // (the lowest two against the core's pages 2 and 1, each higher one against another remote line). At
+    // 4 KiB: the core's pages 0, 1, 2, 4, 8 and 16; the remote pages 3, 7, 11 and 19.
     const uint32_t bytes = 0x18000;
-    static const uint32_t pages[] = {0, 1, 2, 4, 8, 16};
-    static const uint32_t remote_pages[] = {0, 0x4000, 0x8000, 0x10000};
+    std::vector<uint32_t> pages = {0};
+    for (uint32_t p = 1; p * L1_CACHE_BYTES <= 0x10000u; p *= 2) pages.push_back(p);
+    std::vector<uint32_t> remote_pages = {0};
+    for (uint32_t off = 4u * L1_CACHE_BYTES; off <= 0x10000u; off *= 2) remote_pages.push_back(off);
 #else
     const uint32_t bytes = 0x10000;
-    static const uint32_t pages[] = {0, 1, 2};
-    static const uint32_t remote_pages[] = {0};
+    const std::vector<uint32_t> pages = {0, 1, 2};
+    const std::vector<uint32_t> remote_pages = {0};
 #endif
-    const uint32_t npages = sizeof pages / sizeof pages[0], nremote = sizeof remote_pages / sizeof remote_pages[0];
+    const uint32_t remote_base = 0x80000000u + 3u * L1_CACHE_BYTES;    // (page 3: its lines share indices with the core's)
+    const uint32_t npages = uint32_t(pages.size()), nremote = uint32_t(remote_pages.size());
     d.cacheable_bytes = bytes;
     d.clk = 0; d.rst_n = 0; d.eval(); d.clk = 1; d.eval(); d.clk = 0; d.eval(); d.clk = 1; d.eval(); d.clk = 0; d.rst_n = 1; d.eval();
     Mem mem, ref;
@@ -115,7 +125,7 @@ int main(int argc, char** argv) {
     std::map<uint32_t, std::vector<Held>> hist;
     std::map<uint32_t, uint32_t> own_issued, own_done;
     auto remote_region = [&](uint32_t a) {
-        for (uint32_t r = 0; r < nremote; ++r) if ((a & ~0xFFFu) == 0x80003000u + remote_pages[r]) return true;
+        for (uint32_t r = 0; r < nremote; ++r) if ((a & ~(L1_CACHE_BYTES - 1u)) == remote_base + remote_pages[r]) return true;
         return false;
     };
     // A load looked up at `lookup`, after the core's `own`-th store to the word:
@@ -151,9 +161,9 @@ int main(int argc, char** argv) {
     auto gen = [&]() {
         uint32_t r = rng() % 100;
         uint32_t a;
-        if (r < 70) a = 0x80000000u + pages[rng() % npages] * 4096 + (rng() % 6) * 16 + (rng() % 4) * 4;
+        if (r < 70) a = 0x80000000u + pages[rng() % npages] * L1_CACHE_BYTES + (rng() % 6) * 16 + (rng() % 4) * 4;
         else if (r < 80) {                  // a word of the remote region: a load or a store
-            pop = rng() % 5 < 2 ? 1 : 0; paddr = 0x80003000u + (nremote > 1 ? remote_pages[rng() % nremote] : 0) + (rng() % 6) * 16 + (rng() % 4) * 4; pdata = rng(); pbe = 0xf;
+            pop = rng() % 5 < 2 ? 1 : 0; paddr = remote_base + (nremote > 1 ? remote_pages[rng() % nremote] : 0) + (rng() % 6) * 16 + (rng() % 4) * 4; pdata = rng(); pbe = 0xf;
             if (pop == 1 && rng() % 2) { uint32_t b = rng() % 4; pbe = 1u << b; paddr += b; }
             pv = true;
             return;
@@ -189,7 +199,7 @@ int main(int argc, char** argv) {
         std::vector<uint32_t> units;
         for (int port = 0; port < L1D_SNOOPS; ++port) {
             if (rng() % (L1D_SNOOPS == 1 ? 30 : 20) != 0) continue;
-            const uint32_t a = 0x80003000u + (nremote > 1 ? remote_pages[rng() % nremote] : 0) + (rng() % 6) * 16 + (rng() % 4) * 4, v = rng();
+            const uint32_t a = remote_base + (nremote > 1 ? remote_pages[rng() % nremote] : 0) + (rng() % 6) * 16 + (rng() % 4) * 4, v = rng();
             if (std::find(units.begin(), units.end(), a >> 3) != units.end()) continue;
             units.push_back(a >> 3);
             mem.wr(a, v, 0xf);

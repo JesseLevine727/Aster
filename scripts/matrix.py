@@ -56,6 +56,9 @@ PAD = "software/matrix/matrix_pad.S"
 LAYOUTS = {"L1": (16, 16, 16), "L2": (32, 32, 32), "L3": (48, 48, 48), "L4": (1024, 1024, 0),
            "L5": (16, 336, 16), "L6": (32, 672, 32), "L7": (48, 1008, 48)}
 LAYOUT_ANCHORS = ("__matrix_pad_code", "v12_emit", "aster_smp_dispatch", "aster_smp_worker")
+# 20.5's cache geometry (docs/tuning.md §4.2): the L1 caches at 2 and 8 KiB (4 KiB is soc_dev's, the default), the
+# builds named as 20.4's bundle planned them
+CACHE_SIMS = {2: "soc_l1_2k", 8: "soc_l1_8k"}
 MAX_CYCLES = 2_000_000_000
 SCHEMA = "aster.phase20.matrix.v1"
 
@@ -1188,12 +1191,38 @@ def with_layout(entry: Entry, name: str) -> Entry:
 
 def layout_addresses(entry: Entry, symbols: dict) -> dict:
     """Where the layout put things (tuning.md §3: read from the ELF and checked): each program buffer's address
-    (its room's, plus the data pad) and the code anchors, with each address mod 64 (bank phase) and mod 4 KiB
-    (cache index)."""
+    (its room's, plus the data pad) and the code anchors, with each address mod 64 (bank phase) and mod the
+    build's cache size (cache index: 4 KiB but at 20.5's other sizes)."""
     data = LAYOUTS[entry.axes["layout"]][1] if entry.axes.get("layout") in LAYOUTS else 0
+    index = soc_variants.VARIANTS[entry.sim]["CACHE_BYTES"]
     at = {name[:-5]: address + data for name, address in symbols.items() if name.endswith("_room")}
     at.update({name: symbols[name] for name in LAYOUT_ANCHORS if name in symbols})
-    return {name: [address, address % 64, address % 4096] for name, address in sorted(at.items())}
+    return {name: [address, address % 64, address % index] for name, address in sorted(at.items())}
+
+
+def gate_workload(e: Entry) -> bool:
+    """A case of the scaling gate or the v1 gate (matrix_gates.py), in a method that competes there."""
+    import matrix_gates
+    if e.case in matrix_gates.SCALING:
+        return True
+    if e.family == "ecg" and (e.axes.get("chunk"), e.axes.get("taps")) != (64, 16):
+        return False
+    return any(e.family == family and competes(e.case) for family, competes, _ in matrix_gates.V1.values())
+
+
+def geometry_base(e: Entry) -> bool:
+    """tuning.md §4.2's entries for the cache geometry: R on the default seed, warm, and cold for the gate
+    workloads."""
+    return e.sim == "soc_dev" and e.status != "unsupported" and "/seed" not in e.id and (not e.cold or gate_workload(e))
+
+
+def with_caches(entries: list[Entry], kibs: list[int]) -> list[Entry]:
+    """Of `entries`, each of the geometry's (geometry_base) with the L1 caches at each size in `kibs` (KiB)."""
+    r = [e for e in entries if geometry_base(e)]
+    if any(e.id.count("/soc_dev/") != 1 for e in r):
+        raise SystemExit("an R entry's id does not name its build once")
+    return [dataclasses.replace(e, id=e.id.replace("/soc_dev/", f"/{CACHE_SIMS[kib]}/"), sim=CACHE_SIMS[kib],
+                                axes=dict(e.axes, cache_kib=kib)) for kib in kibs for e in r]
 
 
 def build_firmware(entry: Entry, fw_root: Path, prefix: str, soc_flags: list[str]) -> tuple[Path, dict, str]:
@@ -1317,7 +1346,8 @@ def do_entry(entry: Entry, out: Path, prefix: str, soc_flags: list[str]) -> dict
         records = []
         for text in lines:
             record = asterbench_v12.validate_line(text)
-            asterbench_v12.check_config(record, int(fields["npu_config"]), int(fields["soc_config"]))
+            asterbench_v12.check_config(record, int(fields["npu_config"]), int(fields["soc_config"]),
+                                        soc_variants.VARIANTS[entry.sim]["CACHE_BYTES"] // 16)
             if record["cache_state"] != result["axes"]["cache_state"]:
                 raise asterbench_v12.ValidationError("the record's cache state differs from the entry's")
             records.append(record)
@@ -1364,7 +1394,12 @@ def main() -> int:
     parser.add_argument("--family", action="append", choices=sorted(FAMILIES))
     parser.add_argument("--out", type=Path)
     parser.add_argument("--jobs", type=int, default=max(1, (os.cpu_count() or 2) - 4))
-    parser.add_argument("--only", help="entries whose id starts with this")
+    parser.add_argument("--only", help="entries whose id starts with this (applied before --caches and --layouts)")
+    parser.add_argument("--gate-workloads", action="store_true", help="only the scaling and v1 gates' cases")
+    parser.add_argument("--r-only", action="store_true", help="only the R entries on the default seed (warm; cold "
+                                                                  "for the gate workloads): the cache geometry's")
+    parser.add_argument("--caches", help="also each of those (tuning.md §4.2) among the selected entries with the L1 "
+                                         "caches at these sizes in KiB, e.g. 2,8")
     parser.add_argument("--layouts", help="also each selected entry at these layouts (tuning.md §3), e.g. L1,L2,L3,L4")
     parser.add_argument("--repeat-every", type=int, default=0,
                         help="determinism: run every Nth captured entry again and require identical records")
@@ -1372,6 +1407,15 @@ def main() -> int:
     entries = [e for f in (args.family or sorted(FAMILIES)) for e in FAMILIES[f]()]
     if args.only:
         entries = [e for e in entries if e.id.startswith(args.only)]
+    if args.gate_workloads:
+        entries = [e for e in entries if gate_workload(e)]
+    if args.r_only:
+        entries = [e for e in entries if geometry_base(e)]
+    if args.caches:
+        kibs = [int(k) for k in args.caches.split(",")]
+        if any(k not in CACHE_SIMS for k in kibs) or len(set(kibs)) != len(kibs):
+            parser.error(f"--caches: each of {', '.join(map(str, CACHE_SIMS))} at most once (4 KiB is the entries' own)")
+        entries += with_caches(entries, kibs)
     if args.layouts:
         entries += [with_layout(e, name) for name in args.layouts.split(",") for e in list(entries)
                     if e.status != "unsupported"]

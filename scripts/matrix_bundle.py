@@ -144,9 +144,14 @@ def main() -> int:
                 entries.append(dict(id=f"{family}/{case}/{method}/soc_dev/warm", family=family, case=case,
                                     method=method, sim="soc_dev", axes=dict(cache_state="warm"), status="unsupported",
                                     reason=reason))
-    # the cache geometry axis (2 and 8 KiB) is 20.5's (matrix.md §2): each captured case and method, at R warm
+    # the cache geometry axis (2 and 8 KiB) is 20.5's (matrix.md §2): each captured case and method, at R warm, planned
+    # until a run captures it at that size, warm and at L0 (tuning.md §4.2)
+    sized = {(e["family"], e["case"], e["method"], e["sim"]) for e in entries if e["status"] == "captured"
+             and e["axes"].get("cache_state") == "warm" and not e["axes"].get("layout")}
     for family, case, method in captured:
         for kib in (2, 8):
+            if (family, case, method, f"soc_l1_{kib}k") in sized:
+                continue
             entries.append(dict(id=f"{family}/{case}/{method}/soc_l1_{kib}k/warm", family=family, case=case,
                                 method=method, sim=f"soc_l1_{kib}k", axes=dict(cache_kib=kib, cache_state="warm"),
                                 status="planned", reason=GEOMETRY))

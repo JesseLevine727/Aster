@@ -1,5 +1,5 @@
-// Aster L1 data cache (docs/cpu.md §4-§5; milestone 18.6): 4 KiB,
-// direct-mapped, 16-byte lines (index addr[11:4], tag addr[31:12]),
+// Aster L1 data cache (docs/cpu.md §4-§5; milestone 18.6): 4 KiB by default
+// (CACHE_BYTES: 2, 4 or 8 KiB since 20.5), direct-mapped, 16-byte lines (index addr[IB-1:4], tag addr[31:IB]),
 // write-through with no write-allocate (owner decision, 3 October 2026),
 // coherent with the other masters by snooped invalidations and with stores to
 // cacheable memory answered when the memory side accepts them (owner
@@ -59,7 +59,7 @@ module aster_l1d #(
     // Snoop ports (soc.md §4.6): any of them may carry a line in a cycle.
     parameter int unsigned SNOOPS = 1,
     // The cacheable range (MEM_BASE, cacheable_bytes) lies in MEM_BASE's aligned 2^TAG_SPAN bytes, so a
-    // line's tag keeps only its address bits [TAG_SPAN-1:12] (32: all of them). Only cacheable lines are
+    // line's tag keeps only its address bits [TAG_SPAN-1:IB] (32: all of them). Only cacheable lines are
     // installed and valid, so the compare is exact (checked against full tags in simulation); a snoop
     // must carry a line of that span to hit (20.3's timing: the Phase 20 SoC's main memory, 17).
     parameter int unsigned TAG_SPAN = 32,
@@ -67,7 +67,10 @@ module aster_l1d #(
     // a load of main memory goes to the memory side as a store or an atomic does, by the access path, keeping
     // its main-memory flag (which lr, sc and the AMOs need). Only the cached load (s1_cload) looks up, refills
     // and replays.
-    parameter int unsigned DCACHE = 1
+    parameter int unsigned DCACHE = 1,
+    // The capacity (20.5, docs/tuning.md §4.2): 2, 4 (the default) or 8 KiB, direct-mapped with 16-byte lines, so
+    // the index is addr[IB-1:4] and the tag addr[TAG_SPAN-1:IB]
+    parameter int unsigned CACHE_BYTES = 4096
 ) (
     input  logic        clk,
     input  logic        rst_n,
@@ -121,9 +124,16 @@ module aster_l1d #(
         return 1'b0;
     endfunction
 
-    localparam int unsigned TB = TAG_SPAN - 12;   // a tag's bits
-    logic [TB-1:0] tag_ram [256];
-    logic [255:0]  valid;
+    localparam int unsigned IB = $clog2(CACHE_BYTES);      // the index's top bit plus one (12 at 4 KiB)
+    localparam int unsigned LINES = CACHE_BYTES / 16;
+    localparam int unsigned TB = TAG_SPAN - IB;   // a tag's bits
+    initial begin   // (20.5: the capacities built and tested)
+        if (CACHE_BYTES != 2048 && CACHE_BYTES != 4096 && CACHE_BYTES != 8192)
+            $error("CACHE_BYTES must be 2048, 4096 or 8192");
+        if (IB >= TAG_SPAN) $error("CACHE_BYTES leaves the tag no bits within TAG_SPAN");
+    end
+    logic [TB-1:0] tag_ram [LINES];
+    logic [LINES-1:0]  valid;
 
     // Stage 1: s1_age counts the cycles since acceptance (0: the first, when
     // d_rsp_error reports its error); its word is on the array's output at age
@@ -156,7 +166,7 @@ module aster_l1d #(
     logic refill_write, store_write, array_write, m_accept, m_mine, m_drop, snoop_s1, snoop_s2;
     logic [SNOOPS-1:0] snoop_hit;
     logic install, amo_inval, refill_start;
-    logic [255:0] valid_next;
+    logic [LINES-1:0] valid_next;
     logic [31:0] rd_data;
 
     // The request's target, decided as stage 1 takes it and kept in registers beside s1_addr (20.2's
@@ -175,7 +185,7 @@ module aster_l1d #(
         snoop_s1 = 1'b0;
         for (int unsigned p = 0; p < SNOOPS; p++) if (snoop_valid[p] && snoop_line[p] == s1_addr[31:4]) snoop_s1 = 1'b1;
     end
-    assign lookup_hit   = DCACHE != 0 && s1_cacheable && valid[s1_addr[11:4]] && tag_ram[s1_addr[11:4]] == s1_addr[TAG_SPAN-1:12]
+    assign lookup_hit   = DCACHE != 0 && s1_cacheable && valid[s1_addr[IB-1:4]] && tag_ram[s1_addr[IB-1:4]] == s1_addr[TAG_SPAN-1:IB]
                           && !snoop_s1;
     // The head's word when it moves: on the array's output in its first cycle
     // there (s1_now), or kept (s1_kept), unless the array was written since its read. (Used only as the
@@ -310,13 +320,13 @@ module aster_l1d #(
     // registers only, not the core's late d_req_valid; 18.1's timing): an
     // unaccepted read only replaces a word no one is waiting for, since each
     // word is taken from rd_data in its one cycle there.
-    aster_l1_ram data (
+    aster_l1_ram #(.WORDS(CACHE_BYTES / 4)) data (
         .clk,
         .rd_en(d_req_ready || replay_issue),
-        .rd_addr(replay_issue ? s2_addr[11:2] : d_req_addr[11:2]),
+        .rd_addr(replay_issue ? s2_addr[IB-1:2] : d_req_addr[IB-1:2]),
         .rd_data,
         .wr_be(refill_write ? 4'hf : store_write ? s2_be : 4'h0),
-        .wr_addr(refill_write ? {s2_addr[11:4], received[1:0]} : s2_addr[11:2]),
+        .wr_addr(refill_write ? {s2_addr[IB-1:4], received[1:0]} : s2_addr[IB-1:2]),
         .wr_data(refill_write ? m_rsp_rdata : s2_wdata)
     );
 
@@ -330,8 +340,8 @@ module aster_l1d #(
         snoop_s2 = 1'b0;
         for (int unsigned p = 0; p < SNOOPS; p++) begin
             if (snoop_valid[p] && snoop_line[p] == s2_addr[31:4]) snoop_s2 = 1'b1;
-            snoop_hit[p] = snoop_valid[p] && valid[snoop_line[p][11:4]]
-                           && tag_ram[snoop_line[p][11:4]] == snoop_line[p][TAG_SPAN-1:12];
+            snoop_hit[p] = snoop_valid[p] && valid[snoop_line[p][IB-1:4]]
+                           && tag_ram[snoop_line[p][IB-1:4]] == snoop_line[p][TAG_SPAN-1:IB];
         end
     end
     assign install   = refill_write && received == 3'd3 && !poisoned && !snoop_s2;
@@ -343,29 +353,29 @@ module aster_l1d #(
                        && s2_op != OP_STORE && s2_op != OP_LR && s2_op != OP_LOAD;
     always_comb begin
         valid_next = valid;
-        for (int unsigned p = 0; p < SNOOPS; p++) if (snoop_hit[p]) valid_next[snoop_line[p][11:4]] = 1'b0;
-        if (refill_start) valid_next[s1_addr[11:4]] = 1'b0;
-        if (amo_inval) valid_next[s2_addr[11:4]] = 1'b0;
-        if (install) valid_next[s2_addr[11:4]] = 1'b1;
+        for (int unsigned p = 0; p < SNOOPS; p++) if (snoop_hit[p]) valid_next[snoop_line[p][IB-1:4]] = 1'b0;
+        if (refill_start) valid_next[s1_addr[IB-1:4]] = 1'b0;
+        if (amo_inval) valid_next[s2_addr[IB-1:4]] = 1'b0;
+        if (install) valid_next[s2_addr[IB-1:4]] = 1'b1;
     end
 
     always_ff @(posedge clk) begin
-        if (refill_write && received == 3'd3) tag_ram[s2_addr[11:4]] <= s2_addr[TAG_SPAN-1:12];
+        if (refill_write && received == 3'd3) tag_ram[s2_addr[IB-1:4]] <= s2_addr[TAG_SPAN-1:IB];
     end
 `ifndef SYNTHESIS
     // TAG_SPAN's tags against full ones: the same lookups and snoop hits in every cycle
-    logic [19:0] tag_full [256];
+    logic [31-IB:0] tag_full [LINES];
     always_ff @(posedge clk) begin
-        if (refill_write && received == 3'd3) tag_full[s2_addr[11:4]] <= s2_addr[31:12];
+        if (refill_write && received == 3'd3) tag_full[s2_addr[IB-1:4]] <= s2_addr[31:IB];
         if (rst_n) begin
             assert (TAG_SPAN == 32 || (MEM_BASE[TAG_SPAN-1:0] == '0 && 33'(cacheable_bytes) <= 33'(1) << TAG_SPAN))
                 else $error("aster_l1d: the cacheable range is not inside TAG_SPAN's aligned span");
-            assert (lookup_hit == (s1_cacheable && valid[s1_addr[11:4]] && tag_full[s1_addr[11:4]] == s1_addr[31:12]
+            assert (lookup_hit == (s1_cacheable && valid[s1_addr[IB-1:4]] && tag_full[s1_addr[IB-1:4]] == s1_addr[31:IB]
                                    && !snoop_s1))
                 else $error("aster_l1d: a TAG_SPAN lookup differs from the full tag's");
             for (int unsigned p = 0; p < SNOOPS; p++)
-                assert (snoop_hit[p] == (snoop_valid[p] && valid[snoop_line[p][11:4]]
-                                         && tag_full[snoop_line[p][11:4]] == snoop_line[p][31:12]))
+                assert (snoop_hit[p] == (snoop_valid[p] && valid[snoop_line[p][IB-1:4]]
+                                         && tag_full[snoop_line[p][IB-1:4]] == snoop_line[p][31:IB]))
                     else $error("aster_l1d: a TAG_SPAN snoop hit differs from the full tag's");
         end
     end

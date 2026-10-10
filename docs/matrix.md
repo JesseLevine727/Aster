@@ -44,7 +44,9 @@ Crossed builds are built where a family crosses two RTL axes, for example
   variant runs `soc-tests`' two-hart programs, so the memory checker,
   litmus and the DMA all run on it.
 - **Cache geometry (20.5)** also needs ABI 4's line-geometry metadata
-  (`0x90`, `0x94`) to follow the parameter; today those words are fixed.
+  (`0x90`, `0x94`) to follow the parameter. Since 20.5's step 2, `0x94`
+  reads the build's line count, and each record's is checked against the
+  build's (tuning.md §4.2).
 
 ## 3. How the axes cross
 

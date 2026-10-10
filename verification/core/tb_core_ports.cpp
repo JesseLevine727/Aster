@@ -25,7 +25,7 @@
 //
 // The L1 model (+cache_model; the Aster core with its caches, 18.6): the lines
 // each cache holds, kept from its misses and the policy (docs/cpu.md §9, 18.6:
-// direct-mapped 16-byte lines, 256 per cache; the data cache write-through
+// direct-mapped 16-byte lines, 256 per cache at 4 KiB, the shell's CACHE_BYTES / 16 (20.5); the data cache write-through
 // with no write-allocate, sc and the AMOs invalidating their line; fence.i
 // invalidating the instruction cache), checked against every lookup's hit and
 // every memory-side access the caches make: a miss refills exactly its line's
@@ -437,7 +437,9 @@ struct L1Model {
     bool enabled = false;
     bool ignore_fencei = false;                  // self-test: the model misses fence.i's invalidation
     std::uint32_t base = 0x80000000u, bytes = 0;
-    std::array<std::int64_t, 256> itag, dtag;   // the line's tag, or -1
+    // (20.5: each cache's capacity, the shell's CACHE_BYTES: 2048, 4096 by default, or 8192)
+    std::uint32_t lines = 256, index_bits = 12;   // the lines, and the tag's lowest address bit
+    std::vector<std::int64_t> itag, dtag;        // the line's tag, or -1
     std::deque<std::uint32_t> i_expect;          // refill fetches expected, by address
     std::deque<Access> d_expect;                 // memory-side data accesses expected
     std::uint64_t i_hits = 0, i_misses = 0, d_hits = 0, d_misses = 0;
@@ -461,7 +463,13 @@ struct L1Model {
     Refill drefill;
     std::deque<bool> d_answers;
     std::string error;
-    L1Model() { itag.fill(-1); dtag.fill(-1); }
+    void size(std::uint32_t cache_bytes) {
+        lines = cache_bytes / 16u;
+        index_bits = 0;
+        while ((1u << index_bits) < cache_bytes) ++index_bits;
+        itag.assign(lines, -1); dtag.assign(lines, -1);
+    }
+    L1Model() { size(4096u); }
     bool cacheable(std::uint32_t a) const { return a - base < bytes; }
     bool performs(std::uint32_t a) const { return cacheable(a) || io(a); }   // not an error
     static bool io(std::uint32_t a) {
@@ -472,7 +480,7 @@ struct L1Model {
     void fail(const std::string& what) { if (error.empty()) error = what; }
     void ilookup(std::uint32_t a, bool hit, std::uint64_t cycle) {
         if (!cacheable(a)) { ++i_errors; return; }   // answered with an error, nothing fetched
-        const std::uint32_t index = (a >> 4) & 255u, tag = a >> 12;
+        const std::uint32_t index = (a >> 4) & (lines - 1u), tag = a >> index_bits;
         const bool resident = itag[index] == std::int64_t(tag);
         if (hit != resident) fail("instruction lookup " + hex(a) + (hit ? " hit, the line is absent" : " missed, the line is resident"));
         if (resident) { ++i_hits; return; }
@@ -482,12 +490,12 @@ struct L1Model {
     }
     void ianswer() {                                 // a refill word arrives
         if (!refill.active || ++refill.answered < 4) return;
-        if (!refill.poisoned) itag[(refill.line >> 4) & 255u] = refill.line >> 12;
+        if (!refill.poisoned) itag[(refill.line >> 4) & (lines - 1u)] = refill.line >> index_bits;
         refill.active = false;
     }
     void dlookup(std::uint32_t op, std::uint32_t a, std::uint32_t be, std::uint32_t data, bool hit,
                  std::uint64_t cycle) {
-        const std::uint32_t index = (a >> 4) & 255u, tag = a >> 12;
+        const std::uint32_t index = (a >> 4) & (lines - 1u), tag = a >> index_bits;
         if (!cacheable(a)) {
             if (hit) fail("data lookup " + hex(a) + " hit outside the cacheable memory");
             if (io(a)) d_expect.push_back({op, a, be, data});
@@ -529,17 +537,17 @@ struct L1Model {
         const bool refill_word = d_answers.front();
         d_answers.pop_front();
         if (!refill_word || !drefill.active || ++drefill.answered < 4) return;
-        if (!drefill.poisoned) dtag[(drefill.line >> 4) & 255u] = drefill.line >> 12;
+        if (!drefill.poisoned) dtag[(drefill.line >> 4) & (lines - 1u)] = drefill.line >> index_bits;
         drefill.active = false;
     }
     void dsnoop(std::uint32_t line) {                // another master wrote this line
-        const std::uint32_t index = (line >> 4) & 255u;
-        if (dtag[index] == std::int64_t(line >> 12)) dtag[index] = -1;
+        const std::uint32_t index = (line >> 4) & (lines - 1u);
+        if (dtag[index] == std::int64_t(line >> index_bits)) dtag[index] = -1;
         if (drefill.active && drefill.line == line) drefill.poisoned = true;
     }
     void fencei(std::uint64_t cycle) {
         if (ignore_fencei) return;
-        itag.fill(-1);
+        std::fill(itag.begin(), itag.end(), -1);
         if (refill.active && cycle != refill.cycle) refill.poisoned = true;
     }
     static std::string hex(std::uint32_t v) {
@@ -692,6 +700,13 @@ int main(int argc, char** argv) {
     for (int i = 0; i < 8; ++i) { d.clk = 0; d.eval(); d.clk = 1; d.eval(); }
     d.clk = 0; d.eval();
     d.resetn = 1;
+    if (l1.enabled) {                       // (20.5) the model's caches are the shell's: 2, 4 or 8 KiB
+        if (d.cache_bytes != 2048u && d.cache_bytes != 4096u && d.cache_bytes != 8192u) {
+            std::cerr << "+cache_model needs a shell with 2, 4 or 8 KiB caches (cache_bytes " << d.cache_bytes << ")\n";
+            return 2;
+        }
+        l1.size(d.cache_bytes);
+    }
 
     const std::uint64_t corrupt_write =
         plusarg("corrupt_write").empty() ? 0 : std::stoull(plusarg("corrupt_write"));

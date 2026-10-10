@@ -217,11 +217,13 @@ def validate_line(line: str, *, name: str | None = None, family: str | None = No
     return result
 
 
-def check_config(record: dict[str, object], npu_config: int, soc_config: int) -> None:
+def check_config(record: dict[str, object], npu_config: int, soc_config: int, line_count: int | None = None) -> None:
     """The record's configuration against the testbench's readback of the ARM side's words
     (0x3F058 = {0, DIM, PORT_BYTES, A_STRIPS}; 0x3F05C = {DCACHE off, WAIT, SHELL_PAGE, HARTS}): the
     fields a hart cannot read come from the build, and this is where they are checked (the owner's
-    decision, matrix.md §9)."""
+    decision, matrix.md §9). line_count, when given, is the build's (CACHE_BYTES / 16, 20.5): the hart reads
+    its own from the hardware (ABI 4), and that word must be the build's."""
+    require(line_count is None or record["line_count"] == line_count, "line_count differs from the build's")
     require(record["npu_dim"] == (npu_config >> 16) & 0xFF, "npu_dim differs from the build's")
     require(record["npu_port_bytes"] == (npu_config >> 8) & 0xFF, "npu_port_bytes differs from the build's")
     require(record["npu_strips"] == npu_config & 0xFF, "npu_strips differs from the build's")

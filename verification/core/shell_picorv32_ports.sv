@@ -33,6 +33,7 @@ module shell_picorv32_ports (
     input  logic [63:0] mtime,
     input  logic [31:0] cacheable_bytes,
     output logic        trap,
+    output logic [31:0] cache_bytes,       // 0: no caches (the Aster shell's capacity, 20.5)
     output logic        chk_i_redirect,
     // L1 lookups (the Aster core's caches; none here)
     output logic        chk_ic_lookup,
@@ -135,6 +136,8 @@ module shell_picorv32_ports (
     assign {chk_core_i_req_valid, chk_core_i_req_addr, chk_core_i_req_ready, chk_core_i_redirect,
             chk_core_d_req_valid, chk_core_d_req_op, chk_core_d_req_addr, chk_core_d_req_wdata, chk_core_d_req_be,
             chk_core_d_req_ready, chk_core_d_rsp_valid} = '0;
+
+    assign cache_bytes = 32'd0;
 
     /* verilator lint_off PINMISSING */
     picorv32 #(

@@ -1,5 +1,5 @@
-// Aster L1 instruction cache (docs/cpu.md §4-§5; milestone 18.6): 4 KiB,
-// direct-mapped, 16-byte lines (index addr[11:4], tag addr[31:12]), blocking
+// Aster L1 instruction cache (docs/cpu.md §4-§5; milestone 18.6): 4 KiB by default
+// (CACHE_BYTES: 2, 4 or 8 KiB since 20.5), direct-mapped, 16-byte lines (index addr[IB-1:4], tag addr[31:IB]), blocking
 // (one miss at a time), between the core's instruction port and a memory-side
 // port of the same protocol (§5).
 //
@@ -25,11 +25,14 @@
 module aster_l1i #(
     parameter logic [31:0] MEM_BASE = 32'h8000_0000,
     // The cacheable range (MEM_BASE, cacheable_bytes) lies in MEM_BASE's aligned 2^TAG_SPAN bytes, so a
-    // line's tag keeps only its address bits [TAG_SPAN-1:12] (32: all of them), and a fetch's other
+    // line's tag keeps only its address bits [TAG_SPAN-1:IB] (32: all of them), and a fetch's other
     // address bits are compared with MEM_BASE's as it enters stage 1, beside its address (s1_span).
     // Only cacheable lines are valid, so the lookup is exact (checked against full tags in simulation;
     // 20.3's timing: the Phase 20 SoC's main memory, 17).
-    parameter int unsigned TAG_SPAN = 32
+    parameter int unsigned TAG_SPAN = 32,
+    // The capacity (20.5, docs/tuning.md §4.2): 2, 4 (the default) or 8 KiB, direct-mapped with 16-byte lines, so
+    // the index is addr[IB-1:4] and the tag addr[TAG_SPAN-1:IB]
+    parameter int unsigned CACHE_BYTES = 4096
 ) (
     input  logic        clk,
     input  logic        rst_n,
@@ -57,10 +60,17 @@ module aster_l1i #(
 );
     typedef enum logic [1:0] {IDLE, REFILL, ANSWER, REPLAY} state_t;
 
-    localparam int unsigned TB = TAG_SPAN - 12;   // a tag's bits
+    localparam int unsigned IB = $clog2(CACHE_BYTES);      // the index's top bit plus one (12 at 4 KiB)
+    localparam int unsigned LINES = CACHE_BYTES / 16;
+    localparam int unsigned TB = TAG_SPAN - IB;   // a tag's bits
+    initial begin   // (20.5: the capacities built and tested)
+        if (CACHE_BYTES != 2048 && CACHE_BYTES != 4096 && CACHE_BYTES != 8192)
+            $error("CACHE_BYTES must be 2048, 4096 or 8192");
+        if (IB >= TAG_SPAN) $error("CACHE_BYTES leaves the tag no bits within TAG_SPAN");
+    end
     localparam logic [31:0] SPAN_MASK = TAG_SPAN >= 32 ? 32'h0 : ~((32'h1 << TAG_SPAN) - 32'h1);
-    logic [TB-1:0] tag_ram [256];
-    logic [255:0]  valid;
+    logic [TB-1:0] tag_ram [LINES];
+    logic [LINES-1:0]  valid;
     logic          s1_span;                       // stage 1's fetch is in TAG_SPAN's span
 
     // Stage 1: s1_age counts the cycles since acceptance (0: the first); its
@@ -95,7 +105,7 @@ module aster_l1i #(
     assign s2_free      = !s2_valid || s2_answer;
     assign s1_move      = s1_valid && s2_free;
     assign i_req_ready  = (!s1_valid || s1_move) && state != REFILL && !replay_issue;
-    assign lookup_hit   = valid[s1_addr[11:4]] && s1_span && tag_ram[s1_addr[11:4]] == s1_addr[TAG_SPAN-1:12];
+    assign lookup_hit   = valid[s1_addr[IB-1:4]] && s1_span && tag_ram[s1_addr[IB-1:4]] == s1_addr[TAG_SPAN-1:IB];
 
     assign i_rsp_valid  = s2_answer;
     assign i_rsp_error  = !s2_cacheable;
@@ -136,28 +146,28 @@ module aster_l1i #(
     // The array reads whenever a fetch could be accepted (i_req_ready, from
     // registers only, not the fetch unit's late i_req_valid): an unaccepted
     // read only replaces a word no one is waiting for.
-    aster_l1_ram data (
+    aster_l1_ram #(.WORDS(CACHE_BYTES / 4)) data (
         .clk,
         .rd_en(i_req_ready || replay_issue),
-        .rd_addr(replay_issue ? s2_addr[11:2] : i_req_addr[11:2]),
+        .rd_addr(replay_issue ? s2_addr[IB-1:2] : i_req_addr[IB-1:2]),
         .rd_data,
         .wr_be({4{refill_write}}),
-        .wr_addr({s2_addr[11:4], received[1:0]}),
+        .wr_addr({s2_addr[IB-1:4], received[1:0]}),
         .wr_data(m_rsp_data)
     );
 
     always_ff @(posedge clk) begin
-        if (refill_write && received == 3'd3) tag_ram[s2_addr[11:4]] <= s2_addr[TAG_SPAN-1:12];
+        if (refill_write && received == 3'd3) tag_ram[s2_addr[IB-1:4]] <= s2_addr[TAG_SPAN-1:IB];
     end
 `ifndef SYNTHESIS
     // TAG_SPAN's tags against full ones: the same lookups in every cycle
-    logic [19:0] tag_full [256];
+    logic [31-IB:0] tag_full [LINES];
     always_ff @(posedge clk) begin
-        if (refill_write && received == 3'd3) tag_full[s2_addr[11:4]] <= s2_addr[31:12];
+        if (refill_write && received == 3'd3) tag_full[s2_addr[IB-1:4]] <= s2_addr[31:IB];
         if (rst_n) begin
             assert (TAG_SPAN >= 32 || (MEM_BASE[TAG_SPAN-1:0] == '0 && 33'(cacheable_bytes) <= 33'(1) << TAG_SPAN))
                 else $error("aster_l1i: the cacheable range is not inside TAG_SPAN's aligned span");
-            assert (lookup_hit == (valid[s1_addr[11:4]] && tag_full[s1_addr[11:4]] == s1_addr[31:12]))
+            assert (lookup_hit == (valid[s1_addr[IB-1:4]] && tag_full[s1_addr[IB-1:4]] == s1_addr[31:IB]))
                 else $error("aster_l1i: a TAG_SPAN lookup differs from the full tag's");
         end
     end
@@ -248,7 +258,7 @@ module aster_l1i #(
             endcase
             // Lines
             if (invalidate) valid <= '0;
-            else if (refill_write && received == 3'd3 && !poisoned) valid[s2_addr[11:4]] <= 1'b1;
+            else if (refill_write && received == 3'd3 && !poisoned) valid[s2_addr[IB-1:4]] <= 1'b1;
         end
     end
 

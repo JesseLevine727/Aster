@@ -44,7 +44,8 @@
 module aster_soc_devices #(
     parameter int unsigned CLK_HZ = 100_000_000,
     parameter int unsigned HARTS = 2,
-    parameter int unsigned WAIT = 0
+    parameter int unsigned WAIT = 0,
+    parameter int unsigned LINES = 256                  // each L1 cache's lines (ABI 4's 0x94; 20.5: CACHE_BYTES / 16)
 ) (
     input  logic        clk,
     input  logic        rst_n,                  // the run's reset
@@ -308,7 +309,7 @@ module aster_soc_devices #(
                         8'h88: io_rdata = CLK_HZ;
                         8'h8C: io_rdata = 32'h3;                         // caches, synchronous memory
                         8'h90: io_rdata = 32'd4;                         // line words
-                        8'h94: io_rdata = 32'd256;                       // lines
+                        8'h94: io_rdata = 32'(LINES);                    // lines
                         8'h98: io_rdata = 1 + WAIT;                      // memory waits: v1's sync memory read 1
                         8'h9C: io_rdata = 32'd14;
                         default: io_rdata = '0;

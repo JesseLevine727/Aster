@@ -32,7 +32,8 @@
 // mcycleh, minstret, minstreth, misa (tb_core_ports.cpp names their addresses).
 `timescale 1 ns / 1 ps
 module shell_aster_ports #(
-    parameter int unsigned L1 = 0
+    parameter int unsigned L1 = 0,
+    parameter int unsigned CACHE_BYTES = 4096      // (20.5: each cache's capacity; the model's +cache_bytes)
 ) (
     input  logic        clk,
     input  logic        resetn,
@@ -45,6 +46,7 @@ module shell_aster_ports #(
     input  logic        snoop_valid,       // another master wrote this line (with the caches)
     input  logic [31:4] snoop_line,
     output logic        trap,
+    output logic [31:0] cache_bytes,       // each L1 cache's capacity (CACHE_BYTES), for the shell's model (20.5)
     output logic        chk_i_redirect,
     // L1 lookups (18.6)
     output logic        chk_ic_lookup,
@@ -109,6 +111,7 @@ module shell_aster_ports #(
 );
     logic unused;
     assign trap = 1'b0;
+    assign cache_bytes = 32'(CACHE_BYTES);
 
     logic [31:0] mstatus_wmask, mstatus_wdata, mstatush_wmask, mstatush_wdata, mie_wmask, mie_wdata;
     logic [31:0] mip_wmask, mip_wdata, mtvec_wmask, mtvec_wdata, mscratch_wmask, mscratch_wdata;
@@ -141,7 +144,7 @@ module shell_aster_ports #(
         localparam logic [4*32-1:0] IO_BASE = {32'h0200_BFF8, 32'h0200_4000, 32'h3000_0000, 32'h2000_0000};
         localparam logic [4*32-1:0] IO_MASK = {32'h0000_0007, 32'h0000_0007, 32'h0000_0003, 32'h0000_FFFF};
         logic posted_pending;
-        aster_l1i icache (
+        aster_l1i #(.CACHE_BYTES(CACHE_BYTES)) icache (
             .clk, .rst_n(resetn), .cacheable_bytes, .invalidate(fencei_inval), .data_pending(posted_pending),
             .i_req_valid(k_i_req_valid), .i_req_addr(c_i_req_addr), .i_req_ready(c_i_req_ready),
             .i_rsp_valid(c_i_rsp_valid), .i_rsp_data(c_i_rsp_data), .i_rsp_error(c_i_rsp_error),
@@ -154,7 +157,7 @@ module shell_aster_ports #(
         assign held          = selftest == 4'd1 && tick;
         assign c_d_req_ready = dcache_ready && !held;
         /* verilator lint_off PINCONNECTEMPTY */
-        aster_l1d #(.IO_WINDOWS(4), .IO_BASE(IO_BASE), .IO_MASK(IO_MASK)) dcache (
+        aster_l1d #(.IO_WINDOWS(4), .IO_BASE(IO_BASE), .IO_MASK(IO_MASK), .CACHE_BYTES(CACHE_BYTES)) dcache (
             .clk, .rst_n(resetn), .cacheable_bytes,
             .d_req_valid(c_d_req_valid && !held), .d_req_op(c_d_req_op), .d_req_addr(k_d_req_addr),
             .d_req_wdata(k_d_req_wdata), .d_req_be(k_d_req_be), .d_req_ready(dcache_ready),

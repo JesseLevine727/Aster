@@ -123,8 +123,8 @@ As in 20.4:
     aligned, which would swallow a pad placed before them. So a pad is an
     offset applied after the alignment: each buffer is declared with room
     for it, and its code uses the base plus the offset. Each layout's actual
-    addresses (mod 64 and mod 4 KiB) are read from the ELF and recorded in
-    the manifest.
+    addresses (mod 64, and mod the build's cache size: 4 KiB but at §4.2's
+    other sizes) are read from the ELF and recorded in the manifest.
   - **Proven first:** before the knob judges anything, it must reproduce
     20.4's moves: the 16×16×64 GEMM at +4 waits, and the lr/sc and CAS
     contention cases.

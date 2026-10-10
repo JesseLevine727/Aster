@@ -12,7 +12,8 @@ module aster_soc_ip #(
     parameter integer HARTS = 2,
     parameter integer SHELL_PAGE = 0,                    // 1: the regression build (aster_soc.sv)
     parameter integer NPU_BUFFER = 1,                    // (aster_soc.sv)
-    parameter integer NPU_REG_Q = 1                      // (aster_soc.sv)
+    parameter integer NPU_REG_Q = 1,                     // (aster_soc.sv)
+    parameter integer CACHE_BYTES = 4096                 // each L1 cache's capacity (20.5: 2048, 4096 or 8192)
 ) (
     (* X_INTERFACE_INFO = "xilinx.com:signal:clock:1.0 aclk CLK",
        X_INTERFACE_PARAMETER = "ASSOCIATED_BUSIF s_axi, ASSOCIATED_RESET aresetn, FREQ_HZ 100000000" *)
@@ -57,7 +58,8 @@ module aster_soc_ip #(
     input wire s_axi_rready
 );
     aster_soc #(.CLK_HZ(CLK_HZ), .NPU_A_STRIPS(NPU_A_STRIPS), .NPU_PORT_BYTES(NPU_PORT_BYTES), .NPU_DIM(NPU_DIM),
-                .HARTS(HARTS), .SHELL_PAGE(SHELL_PAGE), .NPU_BUFFER(NPU_BUFFER), .NPU_REG_Q(NPU_REG_Q)) implementation (
+                .HARTS(HARTS), .SHELL_PAGE(SHELL_PAGE), .NPU_BUFFER(NPU_BUFFER), .NPU_REG_Q(NPU_REG_Q),
+                .CACHE_BYTES(CACHE_BYTES)) implementation (
         .aclk(aclk), .aresetn(aresetn),
         .s_axi_awaddr(s_axi_awaddr), .s_axi_awvalid(s_axi_awvalid), .s_axi_awready(s_axi_awready),
         .s_axi_wdata(s_axi_wdata), .s_axi_wstrb(s_axi_wstrb),
