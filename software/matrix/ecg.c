@@ -77,6 +77,27 @@ static volatile uint32_t engine_failed;
 
 static inline uint32_t now(void) { uint32_t t; __asm__ volatile ("rdcycle %0" : "=r"(t)); return t; }
 
+// 20.5 (tuning.md §5): ECG_STAGES 1 builds a separate entry that stamps each chunk's stages and engine jobs in the
+// window's time base (the stamps cost cycles in v1's window, so the gate's figures are the unstamped entries'):
+// hart 0's staging and move (bring) and its features and classifier (classify), hart 1's FIR, and each DMA and
+// NPU job from its submission for its own JOB_CYCLES (not the polling span). Printed after the record, one
+// MATRIX_STAGE line a chunk.
+#ifndef ECG_STAGES
+#define ECG_STAGES 0
+#endif
+#if ECG_STAGES
+enum { ST_BRING, ST_FIR, ST_CLASSIFY, ST_DMA, ST_NPU, ST_KINDS };
+static volatile uint32_t stage_at[ECG_CHUNKS][ST_KINDS][2];
+static volatile uint32_t fir_chunk;                    // (the chunk hart 1 filters)
+#define STAGE_BEGIN(c, k) (stage_at[c][k][0] = aster_window_now())
+#define STAGE_END(c, k) (stage_at[c][k][1] = aster_window_now())
+#define STAGE_JOB(c, k, start, cycles) (stage_at[c][k][0] = (start), stage_at[c][k][1] = (start) + (uint32_t)(cycles))
+#else
+#define STAGE_BEGIN(c, k) ((void)0)
+#define STAGE_END(c, k) ((void)0)
+#define STAGE_JOB(c, k, start, cycles) ((void)0)
+#endif
+
 static int32_t trunc_div(int32_t value, int32_t divisor) {
     const int32_t quotient = (value < 0 ? -value : value) / divisor;
     return value < 0 ? -quotient : quotient;
@@ -127,6 +148,7 @@ static __attribute__((noinline)) void features_of(const int32_t *f, uint32_t beg
 
 // a chunk's features, classifier and class, its results folded into the checksum
 static __attribute__((noinline)) uint32_t classify(uint32_t chunk, const int32_t *f, uint32_t checksum) {
+    STAGE_BEGIN(chunk, ST_CLASSIFY);
 #if ECG_FEATURES == 4
     features_of(f, 0, ECG_FOUT, 0);
 #else
@@ -136,8 +158,12 @@ static __attribute__((noinline)) uint32_t classify(uint32_t chunk, const int32_t
 #if PIPELINE
     const struct aster_npu2_job job = {weights, feat_q, scores, ECG_FEATURES, 1u, 4u, ECG_CLASSES, 1u, ECG_FEATURES,
                                        0, 0, 0, 0, 0};
+#if ECG_STAGES
+    const uint32_t submitted = aster_window_now();
+#endif
     aster_npu2_start(&job);
     const uint32_t status = aster_npu2_wait();
+    STAGE_JOB(chunk, ST_NPU, submitted, aster_counter_read64(0x40000080u));     // (its JOB_CYCLES)
     v12_note_npu_job(status);
     aster_npu2_ack();
     if ((status & (ASTER_NPU2_DONE | ASTER_NPU2_ERROR | ASTER_NPU2_ABORTED)) != ASTER_NPU2_DONE) engine_failed = 1;
@@ -158,21 +184,28 @@ static __attribute__((noinline)) uint32_t classify(uint32_t chunk, const int32_t
     checksum = (checksum * 33u) ^ (uint32_t)f[ECG_FOUT - 1u];
     for (uint32_t i = 0; i < ECG_FEATURES; ++i) checksum = (checksum * 33u) ^ (uint32_t)(uint8_t)feat_q[i];
     for (uint32_t c = 0; c < ECG_CLASSES; ++c) checksum = (checksum * 33u) ^ (uint32_t)scores[c];
+    STAGE_END(chunk, ST_CLASSIFY);
     return (checksum * 33u) ^ (uint32_t)best;
 }
 
 // a chunk staged and moved into moved[slot] (e2e), its samples' address returned; the kernel window's are in place
 static __attribute__((noinline)) const int8_t *bring(uint32_t chunk, uint32_t slot, int mode) {
     if (mode == KERNEL) return &stream[chunk * ECG_CHUNK];
+    STAGE_BEGIN(chunk, ST_BRING);
     for (uint32_t i = 0; i < ECG_CHUNK; ++i) raw[i] = ecg_samples[chunk * ECG_CHUNK + i];      // the staging
     __asm__ volatile ("fence rw,rw" ::: "memory");
 #if PIPELINE
+#if ECG_STAGES
+    const uint32_t submitted = aster_window_now();
+#endif
     if (aster_dma_copy(moved[slot], raw, ECG_CHUNK, 8000000u) != ASTER_DMA_OK) engine_failed = 1;
+    STAGE_JOB(chunk, ST_DMA, submitted, aster_dma_job_cycles());
     v12_note_dma_job();
 #else
     for (uint32_t i = 0; i < ECG_CHUNK; ++i) moved[slot][i] = raw[i];                          // the CPU's copy
 #endif
     __asm__ volatile ("fence rw,rw" ::: "memory");
+    STAGE_END(chunk, ST_BRING);
     return moved[slot];
 }
 
@@ -189,7 +222,9 @@ void aster_secondary_main(void) {
         if (e != 0u && e != last) {
             last = e;
             matrix_stamp_start(1);
+            STAGE_BEGIN(fir_chunk, ST_FIR);
             fir(fir_in, filtered[0]);
+            STAGE_END(fir_chunk, ST_FIR);
             matrix_stamp_end(1);
             atomic_store_explicit(&ecg_done, e, memory_order_release);
         }
@@ -201,6 +236,9 @@ static uint32_t run(int mode) {
     for (uint32_t chunk = 0; chunk < ECG_CHUNKS; ++chunk) {
         chunk_start[chunk] = now();
         fir_in = bring(chunk, 0, mode);
+#if ECG_STAGES
+        fir_chunk = chunk;
+#endif
         matrix_last = chunk == ECG_CHUNKS - 1u;
         const uint32_t e = ++next_epoch;
         atomic_store_explicit(&ecg_done, 0u, memory_order_relaxed);
@@ -221,7 +259,9 @@ static int32_t *volatile fir_out;
 static void fir_job(void *arg) {
     (void)arg;
     matrix_stamp_start(1);
+    STAGE_BEGIN(fir_chunk, ST_FIR);
     fir(fir_in, fir_out);
+    STAGE_END(fir_chunk, ST_FIR);
     matrix_stamp_end(1);
 }
 
@@ -232,6 +272,9 @@ static uint32_t run(int mode) {
             chunk_start[chunk] = now();
             fir_in = bring(chunk, chunk & 1u, mode);
             fir_out = filtered[chunk & 1u];
+#if ECG_STAGES
+            fir_chunk = chunk;
+#endif
             matrix_last = chunk == ECG_CHUNKS - 1u;
             aster_smp_dispatch(fir_job, 0);
         }
@@ -267,6 +310,10 @@ static int timed_pass(struct v12_record *record, int mode) {
     matrix_poison(chunk_class, sizeof chunk_class);
     matrix_poison(chunk_latency, sizeof chunk_latency);
     matrix_stamps_clear();
+#if ECG_STAGES
+    for (uint32_t c = 0; c < ECG_CHUNKS; ++c)
+        for (uint32_t k = 0; k < ST_KINDS; ++k) stage_at[c][k][0] = stage_at[c][k][1] = 0;
+#endif
     v12_prepare();
 #if ECG_METHOD == 0
     if (matrix_cold) *(volatile uint32_t *)0x20002004u = 1u;   // v1's: hart 1 released just before START
@@ -279,10 +326,29 @@ static int timed_pass(struct v12_record *record, int mode) {
                                              "ecg_pipeline_overlap_f8"}};
     static const char *const methods[] = {"pipeline", "scalar", "dot8", "pipeline"};
     record->name = names[ECG_FEATURES == 8u][ECG_METHOD]; record->family = "ecg"; record->method = methods[ECG_METHOD];
+#if ECG_STAGES
+    static char stamped[48];                           // (the stamped entry's case: the name and "__stages")
+    if (!stamped[0]) {
+        int n = 0;
+        for (const char *c = record->name; *c; ++c) stamped[n++] = *c;
+        for (const char *c = "__stages"; *c; ++c) stamped[n++] = *c;
+    }
+    record->name = stamped;
+#endif
     record->window = mode == KERNEL ? "kernel" : "e2e"; record->cache_state = MATRIX_CACHE_STATE;
     record->size = ECG_CHUNK; record->iterations = ECG_CHUNKS; record->param = ECG_COEF; record->seed = ECG_SEED;
     record->checksum = checksum; record->workers = PIPELINE ? 2u : 1u; record->pass = !engine_failed;
     v12_emit(record);
+#if ECG_STAGES
+    static const char *const kinds[ST_KINDS] = {",bring=", ",fir=", ",classify=", ",dma=", ",npu="};
+    for (uint32_t c = 0; c < ECG_CHUNKS; ++c) {
+        aster_puts("MATRIX_STAGE,window="); aster_puts(record->window); aster_puts(",chunk="); aster_put_u32(c);
+        for (uint32_t k = 0; k < ST_KINDS; ++k) {
+            aster_puts(kinds[k]); aster_put_u32(stage_at[c][k][0]); aster_putc('-'); aster_put_u32(stage_at[c][k][1]);
+        }
+        aster_puts("\n");
+    }
+#endif
     if (mode == E2E) {                                 // each chunk's latency, apart from the record
         uint32_t lo = 0xFFFFFFFFu, hi = 0;
         uint64_t sum = 0;

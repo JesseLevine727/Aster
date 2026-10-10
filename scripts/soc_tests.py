@@ -226,6 +226,16 @@ def main() -> int:
             report(ok, f"the DMA {where} through v1's driver: {line}; port R's answers checked {fields.get('dma_reads')}, "
                        f"port W's writes {fields.get('dma_writes')}, loads checked {fields.get('loads')}"
                        + ("" if ok else f"; {fields} {console.strip()[-300:]}"))
+        if wanted("copy") and not one_hart:            # 20.5: the copy helper (tuning.md §4.1)
+            elf, symbols = build("soc_copy", ["software/drivers/aster_dma.c", "software/runtime/aster_copy.c",
+                                              "software/runtime/aster_smp.c", "software/tests/soc_copy.c"],
+                                 soc_variants.program_defines(sim_name), out, args.cflags, prefix)
+            fields, console = run(sim, elf, symbols, [])
+            (out / f"copy.{sim_name}.log").write_text(console)
+            line = next((l for l in console.splitlines() if l.startswith("SOC COPY")), "(no line)")
+            ok = fields["status"] == "PASS" and line.endswith(" PASS")
+            report(ok, f"the copy helper {where}: {line[len('SOC COPY '):]}, every byte, guard and choice checked"
+                       + ("" if ok else f"; {fields} {console.strip()[-300:]}"))
         if wanted("v12") and not one_hart:
             elf, symbols = build("soc_v12", ["software/runtime/asterbench_v12.c", "software/drivers/aster_dma.c",
                                              "software/runtime/aster_smp.c", "software/tests/soc_v12.c"],

@@ -364,6 +364,12 @@ def ecg_entries() -> list[Entry]:
             if reason:
                 e.status, e.reason = "unsupported", reason
             entries.append(e)
+            # 20.5 (tuning.md §5): the pipelines' stamped twins at R, the overlap proof's (the stamps cost cycles,
+            # so the gate's figures stay the unstamped entries')
+            if number in (0, 3) and sim == "soc_dev" and not reason:
+                stamped = case + "__stages"
+                entries.append(dataclasses.replace(e, id=ident.replace(f"/{case}/", f"/{stamped}/"), case=stamped,
+                                                   defines=e.defines + ["-DECG_STAGES=1"]))
     return entries
 
 
@@ -815,6 +821,18 @@ def oracle_ecg(entry: Entry, records: list[dict], extras: list[str]) -> str:
     latency = [dict(t.split("=", 1) for t in l.split(",")[1:]) for l in extras if l.startswith("MATRIX_ECG,")]
     if len(latency) != 1 or latency[0].get("name") != entry.case or int(latency[0]["chunks"]) != chunks:
         raise asterbench_v12.ValidationError(f"the latency line: {extras}")
+    if "__stages" in entry.case:                      # (the stamped twins: every chunk's stages, ordered)
+        for r in records:
+            stages = [dict(t.split("=", 1) for t in l.split(",")[1:]) for l in extras
+                      if l.startswith(f"MATRIX_STAGE,window={r['window']},")]
+            if [int(s["chunk"]) for s in stages] != list(range(chunks)):
+                raise asterbench_v12.ValidationError(f"{r['window']}: {len(stages)} MATRIX_STAGE lines, not {chunks}")
+            for s in stages:
+                for kind in ("bring", "fir", "classify", "dma", "npu"):
+                    begin, end = map(int, s[kind].split("-"))
+                    wanted = kind in ("fir", "classify", "npu") or r["window"] == "e2e"
+                    if end < begin or wanted != (end > 0):
+                        raise asterbench_v12.ValidationError(f"{r['window']} chunk {s['chunk']}: its {kind} {begin}-{end}")
     worst = int(latency[0]["latency_max"])
     deadline = chunk * records[0]["clock_hz"] // 360          # the chunk's period at 360 Hz, in cycles
     if worst > deadline:
