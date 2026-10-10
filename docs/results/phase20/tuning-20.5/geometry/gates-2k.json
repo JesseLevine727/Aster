@@ -1,0 +1,273 @@
+{
+ "cache_kib": 2,
+ "layout": "L0",
+ "scaling": {
+  "reduce_fill": {
+   "pairs": 3,
+   "e2e_min": 2.0365,
+   "e2e_max": 2.0864,
+   "r_warm": {
+    "e2e": [
+     79053,
+     37890,
+     2.0864
+    ],
+    "kernel": [
+     42088,
+     19371,
+     2.1727
+    ]
+   },
+   "meets": true,
+   "rows": [
+    {
+     "config": "soc_l1_2k {\"cache_kib\": 2, \"cache_state\": \"cold\", \"dcache\": 1, \"harts\": 2, \"memory_wait\": 0}",
+     "window": "e2e",
+     "sim": "soc_l1_2k",
+     "cache_state": "cold",
+     "one": 79158,
+     "two": 38870,
+     "speedup": 2.0365
+    },
+    {
+     "config": "soc_l1_2k {\"cache_kib\": 2, \"cache_state\": \"warm\", \"dcache\": 1, \"harts\": 2, \"memory_wait\": 0}",
+     "window": "e2e",
+     "sim": "soc_l1_2k",
+     "cache_state": "warm",
+     "one": 79053,
+     "two": 37890,
+     "speedup": 2.0864
+    },
+    {
+     "config": "soc_l1_2k {\"cache_kib\": 2, \"cache_state\": \"warm\", \"dcache\": 1, \"harts\": 2, \"memory_wait\": 0}",
+     "window": "kernel",
+     "sim": "soc_l1_2k",
+     "cache_state": "warm",
+     "one": 42088,
+     "two": 19371,
+     "speedup": 2.1727
+    }
+   ]
+  },
+  "gemm_dot8_64x64x64": {
+   "pairs": 3,
+   "e2e_min": 1.9113,
+   "e2e_max": 1.9717,
+   "r_warm": {
+    "e2e": [
+     247575,
+     125562,
+     1.9717
+    ],
+    "kernel": [
+     228243,
+     115433,
+     1.9773
+    ]
+   },
+   "meets": true,
+   "rows": [
+    {
+     "config": "soc_l1_2k {\"cache_kib\": 2, \"cache_state\": \"cold\", \"dcache\": 1, \"harts\": 2, \"k\": 64, \"m\": 64, \"memory_wait\": 0, \"n\": 64}",
+     "window": "e2e",
+     "sim": "soc_l1_2k",
+     "cache_state": "cold",
+     "one": 248246,
+     "two": 129883,
+     "speedup": 1.9113
+    },
+    {
+     "config": "soc_l1_2k {\"cache_kib\": 2, \"cache_state\": \"warm\", \"dcache\": 1, \"harts\": 2, \"k\": 64, \"m\": 64, \"memory_wait\": 0, \"n\": 64}",
+     "window": "e2e",
+     "sim": "soc_l1_2k",
+     "cache_state": "warm",
+     "one": 247575,
+     "two": 125562,
+     "speedup": 1.9717
+    },
+    {
+     "config": "soc_l1_2k {\"cache_kib\": 2, \"cache_state\": \"warm\", \"dcache\": 1, \"harts\": 2, \"k\": 64, \"m\": 64, \"memory_wait\": 0, \"n\": 64}",
+     "window": "kernel",
+     "sim": "soc_l1_2k",
+     "cache_state": "warm",
+     "one": 228243,
+     "two": 115433,
+     "speedup": 1.9773
+    }
+   ]
+  },
+  "gemm_dot8_96x96x96": {
+   "pairs": 3,
+   "e2e_min": 1.9823,
+   "e2e_max": 1.9869,
+   "r_warm": {
+    "e2e": [
+     796993,
+     401132,
+     1.9869
+    ],
+    "kernel": [
+     757841,
+     381516,
+     1.9864
+    ]
+   },
+   "meets": true,
+   "rows": [
+    {
+     "config": "soc_l1_2k {\"cache_kib\": 2, \"cache_state\": \"cold\", \"dcache\": 1, \"harts\": 2, \"k\": 96, \"m\": 96, \"memory_wait\": 0, \"n\": 96}",
+     "window": "e2e",
+     "sim": "soc_l1_2k",
+     "cache_state": "cold",
+     "one": 797674,
+     "two": 402408,
+     "speedup": 1.9823
+    },
+    {
+     "config": "soc_l1_2k {\"cache_kib\": 2, \"cache_state\": \"warm\", \"dcache\": 1, \"harts\": 2, \"k\": 96, \"m\": 96, \"memory_wait\": 0, \"n\": 96}",
+     "window": "e2e",
+     "sim": "soc_l1_2k",
+     "cache_state": "warm",
+     "one": 796993,
+     "two": 401132,
+     "speedup": 1.9869
+    },
+    {
+     "config": "soc_l1_2k {\"cache_kib\": 2, \"cache_state\": \"warm\", \"dcache\": 1, \"harts\": 2, \"k\": 96, \"m\": 96, \"memory_wait\": 0, \"n\": 96}",
+     "window": "kernel",
+     "sim": "soc_l1_2k",
+     "cache_state": "warm",
+     "one": 757841,
+     "two": 381516,
+     "speedup": 1.9864
+    }
+   ]
+  },
+  "gemm_dot8_128x64x128": {
+   "pairs": 3,
+   "e2e_min": 1.9171,
+   "e2e_max": 1.9276,
+   "r_warm": {
+    "e2e": [
+     950459,
+     493067,
+     1.9276
+    ],
+    "kernel": [
+     912229,
+     461668,
+     1.9759
+    ]
+   },
+   "meets": true,
+   "rows": [
+    {
+     "config": "soc_l1_2k {\"cache_kib\": 2, \"cache_state\": \"cold\", \"dcache\": 1, \"harts\": 2, \"k\": 128, \"m\": 128, \"memory_wait\": 0, \"n\": 64}",
+     "window": "e2e",
+     "sim": "soc_l1_2k",
+     "cache_state": "cold",
+     "one": 951102,
+     "two": 496103,
+     "speedup": 1.9171
+    },
+    {
+     "config": "soc_l1_2k {\"cache_kib\": 2, \"cache_state\": \"warm\", \"dcache\": 1, \"harts\": 2, \"k\": 128, \"m\": 128, \"memory_wait\": 0, \"n\": 64}",
+     "window": "e2e",
+     "sim": "soc_l1_2k",
+     "cache_state": "warm",
+     "one": 950459,
+     "two": 493067,
+     "speedup": 1.9276
+    },
+    {
+     "config": "soc_l1_2k {\"cache_kib\": 2, \"cache_state\": \"warm\", \"dcache\": 1, \"harts\": 2, \"k\": 128, \"m\": 128, \"memory_wait\": 0, \"n\": 64}",
+     "window": "kernel",
+     "sim": "soc_l1_2k",
+     "cache_state": "warm",
+     "one": 912229,
+     "two": 461668,
+     "speedup": 1.9759
+    }
+   ]
+  }
+ },
+ "against_v1": {
+  "Conv2D 32x32 K=5, x4": {
+   "v1": 4837408,
+   "v2": 84593.0,
+   "method": "dsp/conv2d_direct_npu/npu_direct/soc_l1_2k/cold",
+   "ratio": 57.18,
+   "faster": true
+  },
+  "reduction, 1,024 words x4 (v1's)": {
+   "v1": 233112,
+   "v2": 59080.0,
+   "method": "coherence/reduce_v1/multicore/soc_l1_2k/cold",
+   "ratio": 3.95,
+   "faster": true
+  },
+  "MNIST MLP, per image": {
+   "v1": 433903,
+   "v2": 6075.81,
+   "method": "ml/mnist_mlp_npu/npu/soc_l1_2k/cold",
+   "ratio": 71.41,
+   "faster": true
+  },
+  "streaming ECG, 16 x 64": {
+   "v1": 1528505,
+   "v2": 178259.0,
+   "method": "ecg/ecg_scalar/scalar/soc_l1_2k/cold",
+   "ratio": 8.57,
+   "faster": true
+  },
+  "CIFAR-10, 20 images": {
+   "v1": 65568218,
+   "v2": 4090594.0,
+   "method": "ml/cifar_cnn_npu_direct/npu_direct/soc_l1_2k/cold",
+   "ratio": 16.03,
+   "faster": true
+  },
+  "CoreMark (aster_minimal)": {
+   "v1": 1922272,
+   "v2": 487313.0,
+   "method": "cpu/coremark/scalar/soc_l1_2k/cold",
+   "ratio": 3.94,
+   "faster": true
+  },
+  "Dhrystone (aster_minimal)": {
+   "v1": 3128553,
+   "v2": 1059584.0,
+   "method": "cpu/dhrystone/scalar/soc_l1_2k/cold",
+   "ratio": 2.95,
+   "faster": true
+  },
+  "sort/search (aster_minimal)": {
+   "v1": 2183301,
+   "v2": 696902.0,
+   "method": "cpu/sort_search/scalar/soc_l1_2k/cold",
+   "ratio": 3.13,
+   "faster": true
+  },
+  "FFT (aster_minimal)": {
+   "v1": 3057473,
+   "v2": 331188.0,
+   "method": "cpu/fft/scalar/soc_l1_2k/cold",
+   "ratio": 9.23,
+   "faster": true
+  },
+  "strided (aster_minimal)": {
+   "v1": 9087,
+   "v2": 3709.0,
+   "method": "cpu/strided/scalar/soc_l1_2k/cold",
+   "ratio": 2.45,
+   "faster": true
+  },
+  "Conv2D (aster_minimal)": {
+   "v1": 5820652,
+   "v2": 1116656.0,
+   "method": "cpu/conv2d/scalar/soc_l1_2k/cold",
+   "ratio": 5.21,
+   "faster": true
+  }
+ }
+}

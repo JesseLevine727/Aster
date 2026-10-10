@@ -1,0 +1,16 @@
+Archive ar -rcs Vcore_ports__ALL.a Vcore_ports__ALL.o
+PASS: shell port model — 6 configurations x 20 seeds, full rate 1002 cycles for 1000 requests; request checks
+PASS: picorv32 52/52 tests pass in lockstep and by signature with Spike (9 skipped); 15624 instructions in 98356 cycles
+PASS: picorv32 52/52 tests pass in lockstep and by signature with Spike (9 skipped); 15624 instructions in 81690 cycles
+PASS: picorv32 52/52 tests pass in lockstep and by signature with Spike (9 skipped, stall seed 5); 15624 instructions in 120768 cycles
+PASS: picorv32 52/52 tests pass in lockstep and by signature with Spike (9 skipped, stall seed 7); 15624 instructions in 121173 cycles
+PASS: picorv32 47/47 riscv-arch-test programs pass in lockstep and by signature with Spike (0 skipped); 114163 instructions in 918927 cycles
+PASS: rv32ui/sw with +corrupt_write=3: shell reported 'STORE_MISMATCH cycles=351 retired=65 fetch_errors=0 interrupts=0', expected STORE_MISMATCH
+PASS: rv32ui/sw with +duplicate_tohost_write: shell reported 'STRAY_WRITE cycles=2879 retired=509 fetch_errors=0 interrupts=0', expected STRAY_WRITE
+PASS: rv32ui/lw with +duplicate_read=3: shell reported 'LOAD_MISMATCH cycles=342 retired=64 fetch_errors=0 interrupts=0', expected LOAD_MISMATCH
+PASS: rv32ui/sw with +selftest=1: shell reported 'D_REQ_UNSTABLE cycles=260 retired=38 fetch_errors=0 interrupts=0', expected D_REQ_UNSTABLE
+PASS: rv32ui/add with +selftest=2: shell reported 'I_REQ_UNSTABLE cycles=10 retired=0 fetch_errors=0 interrupts=0', expected I_REQ_UNSTABLE
+PASS: rv32ui/add with +selftest=3: shell reported 'RVFI_COMBINATIONAL cycles=4 retired=0 fetch_errors=0 interrupts=0', expected RVFI_COMBINATIONAL
+PASS: rv32ui/lw with +selftest=4: shell reported 'D_REQ_MALFORMED cycles=191 retired=36 fetch_errors=0 interrupts=0', expected D_REQ_MALFORMED
+PASS: rv32ui/lw with +max_inflight=3 +skip_load_check +selftest=5: shell reported 'D_INFLIGHT cycles=729 retired=107 fetch_errors=0 interrupts=0', expected D_INFLIGHT
+PASS: rv32ui/add with +selftest=6: shell reported 'PC_WDATA_MISMATCH cycles=16 retired=2 fetch_errors=0 interrupts=0', expected PC_WDATA_MISMATCH

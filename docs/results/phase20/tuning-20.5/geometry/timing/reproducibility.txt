@@ -1,0 +1,25 @@
+20.5 step 2's timing evidence (the board design in context at 10 ns). Configuration data: the .bit from its sync word
+(0xAA995566) to the end, so the header's date and time are left out.
+
+4 KiB, unchanged: e86b47e's 4 KiB build on o5asm-mgi against step 1's (0d8bfa0's RTL, the 16 KiB console) and its repeat.
+Best at 2 and 8 KiB, each rebuilt from the same sources (f246a11; its RTL is e86b47e's).
+
+c1-o5asm-mgi: configuration data 4045516 bytes sha256 04821fbbeb1a4aca8aacba3e0440e013516ea0b264ff9f72f454ba4ea7737305
+  wns_ns=0.373 whs_ns=0.024 directives=synth:Default,retime:0,over:0.5,place:AltSpreadLogic_medium,phys:AggressiveExplore,route:MoreGlobalIterations,post_route_phys:AggressiveExplore params=default
+c1-o5asm-mgi-repeat: configuration data 4045516 bytes sha256 04821fbbeb1a4aca8aacba3e0440e013516ea0b264ff9f72f454ba4ea7737305
+  wns_ns=0.373 whs_ns=0.024 directives=synth:Default,retime:0,over:0.5,place:AltSpreadLogic_medium,phys:AggressiveExplore,route:MoreGlobalIterations,post_route_phys:AggressiveExplore params=default
+c4k-o5asm-mgi: configuration data 4045516 bytes sha256 04821fbbeb1a4aca8aacba3e0440e013516ea0b264ff9f72f454ba4ea7737305
+  wns_ns=0.373 whs_ns=0.024 directives=synth:Default,retime:0,over:0.5,place:AltSpreadLogic_medium,phys:AggressiveExplore,route:MoreGlobalIterations,post_route_phys:AggressiveExplore params=default
+  -> identical
+
+c2k-o5eto: configuration data 4045516 bytes sha256 7403d3334c64aaf4d597812a1696b920dbeb99b0dbaa6365bebdf3e01496eb45
+  wns_ns=0.243 whs_ns=0.020 directives=synth:Default,retime:0,over:0.5,place:ExtraTimingOpt,phys:AggressiveExplore,route:Explore,post_route_phys:AggressiveExplore params=CACHE_BYTES=2048
+c2k-o5eto-repeat: configuration data 4045516 bytes sha256 7403d3334c64aaf4d597812a1696b920dbeb99b0dbaa6365bebdf3e01496eb45
+  wns_ns=0.243 whs_ns=0.020 directives=synth:Default,retime:0,over:0.5,place:ExtraTimingOpt,phys:AggressiveExplore,route:Explore,post_route_phys:AggressiveExplore params=CACHE_BYTES=2048
+  -> identical
+
+c8k-o5asm-mgi: configuration data 4045516 bytes sha256 0bf4b4c3e021b79d77eba70f81df430fac2b63a017bf4cf52f32de99afbd248b
+  wns_ns=0.306 whs_ns=0.040 directives=synth:Default,retime:0,over:0.5,place:AltSpreadLogic_medium,phys:AggressiveExplore,route:MoreGlobalIterations,post_route_phys:AggressiveExplore params=CACHE_BYTES=8192
+c8k-o5asm-mgi-repeat: configuration data 4045516 bytes sha256 0bf4b4c3e021b79d77eba70f81df430fac2b63a017bf4cf52f32de99afbd248b
+  wns_ns=0.306 whs_ns=0.040 directives=synth:Default,retime:0,over:0.5,place:AltSpreadLogic_medium,phys:AggressiveExplore,route:MoreGlobalIterations,post_route_phys:AggressiveExplore params=CACHE_BYTES=8192
+  -> identical

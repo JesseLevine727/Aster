@@ -1858,6 +1858,153 @@ alignment.
 **The copy helper** (`aster_copy`): the DMA or v1's fair copy, by size and offset.
 - **Its test** (`soc_copy`): 1,200 copies on two builds, every byte, guard and choice checked.
 
+### Step 2: the cache geometry (done; awaiting the owner's decision on the size)
+
+**The parameter** (tuning.md §4.2): `CACHE_BYTES`, each L1 cache's capacity, in both caches, the SoC and the
+board shim. It may be 2, 4 or 8 KiB (direct-mapped, 16-byte lines).
+- **Other values are refused:** a simulation stops at time 0, and the board build refuses them.
+- **ABI 4's `0x94`** reads the build's line count (128, 256, 512). Each record's count is checked against its
+  build's, in the runner and in soc-tests.
+- **The CPU shell's cache model** takes its size from the shell.
+
+**Verified at each size:**
+- **The L1 unit tests,** 200 seeds on every build. The pages and the remote region's offsets now scale with
+  the cache, so every kept tag bit is snooped alone at each size.
+  - The watchdog found a gap first: at 2 KiB, dropping bit 13 from the snoop compare was not caught. The
+    remote offsets were fixed for that.
+  - **The narrow-tag mutants:** 45 of 45 caught at 2, 4 and 8 KiB.
+- **The CPU shell** at 2 and 8 KiB, in lockstep with Spike: the suites (plain, stalled, long-stalled), the
+  random programs, v1's firmware and the kernels.
+- **soc-tests' two-hart programs** on `soc_l1_2k` and `soc_l1_8k`: litmus, the reset stress, dispatch and join,
+  the devices, the DMA, the copy helper and the v12 emitter.
+
+**4 KiB is unchanged:**
+- **The bitstream:** e86b47e's 4 KiB build on o5asm-mgi is byte-identical to step 1's (configuration data
+  sha256 04821fbb…).
+- **20.4's R firmware:** all 3,885 images give the same console and end on the new build.
+- **The CPU shell:** 879 of 879 runs are the same as 0d8bfa0's, cycle for cycle and RVFI record for record.
+- **The devices** run in lockstep with the golden ones, and soc-tests pass in full.
+
+**The capture**, from the clean commit f246a11 (`build/matrix/g2-geometry`, `g2-layouts`; the evidence is in
+`results/phase20/tuning-20.5/geometry/`):
+- **3,372 entries,** 1,124 at each size:
+  - every R warm entry on the default seed (1,087). That is 238 case-and-method pairs at every sweep point:
+    20.4's 234, which its 468 placeholders covered, and step 1's four stamped ECG twins;
+  - the gate workloads cold (37).
+
+  All are captured, none failed; determinism 85 of 85.
+- **The layouts:** the gate workloads warm and cold at each size and each of L0–L7: 1,776 entries.
+  - **1,752 captured, none failed;** determinism 44 of 44. The other 24 are GEMM 128×64×128 at L4, L6 and L7,
+    which do not fit main memory, as in step 1.
+  - **The 222 entries both captures share** are identical in firmware, simulation and records.
+  - **Each gate workload's e2e window against 4 KiB on every layout it fits.** The verdicts are the same on
+    the eight layouts and on decision 2's five:
+    - **8 KiB:** of the 74 (37 workloads, warm and cold), 64 are faster on every layout and 10 are never
+      slower (equal on some). None is slower on any layout.
+    - **2 KiB:** 68 are slower on every layout and 5 are never faster. One is mixed: v1's reduction on two
+      workers, cold, −0.01% at L4 and +0.07% elsewhere.
+  - **The gates hold on every layout at every size:**
+    - the scaling gate's lowest is 1.896× (8 KiB, L6);
+    - the v1 gate's lowest is 2.45× (2 KiB) and 3.13× (4 and 8 KiB).
+- **One oracle was 4 KiB's.** The DMA family's exact invalidation count held up to a 1 KiB destination,
+  which is a quarter of the 4 KiB cache.
+  - At 2 KiB, six 1 KiB copies came in one invalidation short. Every byte and guard of each copy was right.
+  - **The cause, inferred from the addresses rather than traced:** the destination, with its guards, sits at
+    0x800026C0, index 1,728 of 2,048. Its 1,216 bytes wrap the 2 KiB index across 76 of the cache's 128
+    lines, so a line the runtime touches after the warm-up can evict one of them.
+  - **The rule now:** a quarter of the cache at each size (512 bytes, 1 KiB, 2 KiB), and above it no more
+    than the destination's lines or the cache's. 4 KiB is as before, and stricter above 1 KiB. 8 KiB is
+    stricter, exact up to 2 KiB.
+  - **It passes** every DMA record of the capture, and all 11,232 of 20.4's.
+  - **The limit is the program's, not the hardware's:** at half the cache, 4 KiB is exact but 2 and 8 KiB are
+    one short. A change to the program can move it.
+
+**What the size does,** against 4 KiB, at R (every window of every entry):
+
+| Family | Windows | 2 KiB: faster / slower | 2 KiB: e2e median (range) | 8 KiB: faster / slower | 8 KiB: e2e median (range) |
+|---|---|---|---|---|---|
+| coherence | 136 | 14 / 72 | +0.00% (−1.6% to +17.7%) | 56 / 13 | +0.00% (−30.7% to +2.1%) |
+| cpu | 12 | 0 / 12 | +4.35% (+0.0% to +56.0%) | 8 / 0 | −0.01% (−1.4% to +0.0%) |
+| dma | 624 | 2 / 622 | +14.45% (−0.1% to +91.3%) | 38 / 2 | +0.00% (−24.0% to +0.1%) |
+| dsp | 140 | 1 / 76 | +0.06% (+0.0% to +16.0%) | 89 / 6 | −0.02% (−21.7% to +0.5%) |
+| ecg | 220 | 0 / 220 | +2.04% (+0.1% to +24.5%) | 165 / 3 | −0.11% (−12.7% to +0.0%) |
+| memory | 74 | 3 / 37 | +0.00% (−8.3% to +31.4%) | 17 / 5 | +0.00% (−15.1% to +0.0%) |
+| ml | 35 | 0 / 28 | +0.95% (+0.0% to +26.0%) | 28 / 0 | −1.51% (−8.1% to −0.1%) |
+| npu_gemm | 298 | 0 / 153 | +0.00% (+0.0% to +88.9%) | 149 / 34 | +0.00% (−48.7% to +1.3%) |
+
+- **8 KiB is faster or equal** in every family's e2e median. The largest gains:
+  - the NPU GEMMs: up to −49%;
+  - Conv2D and the DSP kernels: up to −32%;
+  - the contention cases: up to −31%;
+  - the DMA's copies: up to −24%;
+  - ECG: up to −13%;
+  - MNIST and CIFAR: −0.1% to −8.1% e2e.
+
+  **Two windows lose much:** the lr/sc and CAS counters' 1,024-item contention kernels, +59% and +44%. Their
+  kernel pass is 4 KiB's outlier, not 8 KiB's loss:
+  - 2 KiB is the same: 19,109 and 31,903 cycles, against 8 KiB's 19,101 and 31,913 and 4 KiB's 11,997 and
+    22,235;
+  - the same entries' e2e windows do not move (12,334 to 12,337 cycles for lr/sc);
+  - these are 20.4's layout-sensitive cases, which its layouts moved by −42% to +69%.
+
+  The other 61 slower windows are within +3.1%, a few cycles each.
+- **2 KiB is slower** in nearly everything:
+  - the CPU kernels: median +4.3%, up to +56%;
+  - the DMA's copies: median +14%. The largest, +91%, is a zero-byte CPU copy (23 cycles to 44);
+  - the CPU methods' large GEMMs, whose B no longer fits: up to +89% (64³ on two workers, 1.15 M cycles to
+    2.17 M).
+
+**The gates at each size** (R, L0). Every gate is met at every size: scaling at 1.8× or more, and v1 slower
+than v2 in all 11 workloads.
+
+| Gate | Floor, or v1's cycles | 2 KiB | 4 KiB | 8 KiB |
+|---|---|---|---|---|
+| scaling, reduce_fill (lowest e2e) | 1.8× | 2.037× | 1.941× | 1.944× |
+| scaling, gemm_dot8_64x64x64 (lowest e2e) | 1.8× | 1.911× | 1.957× | 1.928× |
+| scaling, gemm_dot8_96x96x96 (lowest e2e) | 1.8× | 1.982× | 1.982× | 1.976× |
+| scaling, gemm_dot8_128x64x128 (lowest e2e) | 1.8× | 1.917× | 1.948× | 1.996× |
+| v1: Conv2D 32x32 K=5, x4 | 4,837,408 | 84,593 (57.18×) | 84,551 (57.21×) | 84,551 (57.21×) |
+| v1: reduction, 1,024 words x4 (v1's) | 233,112 | 59,080 (3.95×) | 59,038 (3.95×) | 59,009 (3.95×) |
+| v1: MNIST MLP, per image | 433,903 | 6,076 (71.41×) | 6,019 (72.08×) | 5,840 (74.3×) |
+| v1: streaming ECG, 16 x 64 | 1,528,505 | 178,259 (8.57×) | 176,523 (8.66×) | 176,420 (8.66×) |
+| v1: CIFAR-10, 20 images | 65,568,218 | 4,090,594 (16.03×) | 4,085,916 (16.05×) | 4,081,886 (16.06×) |
+| v1: CoreMark (aster_minimal) | 1,922,272 | 487,313 (3.94×) | 467,475 (4.11×) | 462,851 (4.15×) |
+| v1: Dhrystone (aster_minimal) | 3,128,553 | 1,059,584 (2.95×) | 859,400 (3.64×) | 859,400 (3.64×) |
+| v1: sort/search (aster_minimal) | 2,183,301 | 696,902 (3.13×) | 696,883 (3.13×) | 696,883 (3.13×) |
+| v1: FFT (aster_minimal) | 3,057,473 | 331,188 (9.23×) | 317,346 (9.63×) | 317,346 (9.63×) |
+| v1: strided (aster_minimal) | 9,087 | 3,709 (2.45×) | 2,732 (3.33×) | 2,732 (3.33×) |
+| v1: Conv2D (aster_minimal) | 5,820,652 | 1,116,656 (5.21×) | 1,111,074 (5.24×) | 1,110,786 (5.24×) |
+
+- **2 KiB's reduce_fill scaling, 2.037×,** comes from its slower one-worker run (79,053 cycles, against
+  73,958), not a faster two-worker one.
+
+**Timing and area** (the board design in context at 10 ns, on step 1's ten strategies; `timing/builds.csv`).
+The 4 KiB row is step 1's builds (0d8bfa0's RTL); its o5asm-mgi was rebuilt on e86b47e, identical.
+
+| Cache | Worst slack, 10 strategies | Median | Best (reproduced) | LUTs | Block RAM tiles | DSPs |
+|---|---|---|---|---|---|---|
+| 2 KiB | +0.026 to +0.243 ns | +0.127 | o5eto +0.243 (hold +0.020) | 31,962 (60.08%) | 78 (55.71%) | 27 |
+| 4 KiB | +0.031 to +0.373 ns | +0.191 | o5asm-mgi +0.373 (hold +0.024) | 34,018 (63.94%) | 80 (57.14%) | 27 |
+| 8 KiB | +0.021 to +0.306 ns | +0.157 | o5asm-mgi +0.306 (hold +0.040) | 38,704 (72.75%) | 84 (60.00%) | 27 |
+
+- **The best builds reproduce,** rebuilt from the same sources: 2 KiB on o5eto and 8 KiB on o5asm-mgi each
+  give the same configuration data and slack.
+- **The near-critical endpoints** of each best build, under 0.4 ns:
+  - 8 KiB: 2, both in hart 1's core. The next is hart 1's data-cache valid bits, at +0.44 ns.
+  - 4 KiB: 8, from the run bit into the NPU buffer.
+  - 2 KiB: 26. 15 start in hart 0's data cache (into the DMA and the NPU buffer); the rest are the fabric's
+    (4), the NPU's reset (4), the NPU buffer's (2) and the NPU's (1).
+
+**For the owner:** adopt another size, or keep 4 KiB. soc.md §2's 4 KiB caches stay unless you adopt another.
+- **If another size is adopted,** tuning.md §4.2's consequences follow:
+  - soc.md §10.4's regression runs on a 4 KiB build of the same RTL;
+  - 18.7's board programs run against the CPU shell at the adopted size;
+  - the timing is re-checked by your rule.
+
+  Step 3's tuning would then be judged at that size.
+- **Still open:** the eight layouts in place of decision 2's five (step 1). No tuning change is judged until
+  you decide. The layout result above is shown both ways.
+
 ## Milestones and gates
 
 | Milestone | Scope | Exit |

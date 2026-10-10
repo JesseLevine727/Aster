@@ -88,6 +88,8 @@ if {$params ne ""} {
     foreach param [split $params ";"] {
         if {$param eq ""} continue
         lassign [split $param "="] pname pvalue
+        # (20.5: the caches' capacities built and tested; the RTL's own check is the simulation's)
+        if {$pname eq "CACHE_BYTES" && $pvalue ni {2048 4096 8192}} { error "CACHE_BYTES must be 2048, 4096 or 8192" }
         if {![regsub "(parameter integer $pname = )\\d+" $text "\\1$pvalue" text]} {
             error "the shim has no parameter $pname"
         }

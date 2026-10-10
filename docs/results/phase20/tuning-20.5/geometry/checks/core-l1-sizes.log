@@ -1,0 +1,16 @@
+Archive ar -rcs Vcore_ports__ALL.a Vcore_ports__ALL.o
+Archive ar -rcs Vcore_ports__ALL.a Vcore_ports__ALL.o
+c2 KiB: PASS: aster_l1 99/99 tests pass in lockstep and by signature (7 self-checking programs in the shell alone) with Spike (2 skipped); 3885909 instructions in 6118190 cycles
+c2 KiB: PASS: aster_l1 99/99 tests pass in lockstep and by signature (7 self-checking programs in the shell alone) with Spike (2 skipped, stall seed 5); 3884238 instructions in 6232092 cycles
+c2 KiB: PASS: aster_l1 99/99 tests pass in lockstep and by signature (7 self-checking programs in the shell alone) with Spike (2 skipped, stall seed 3); 3882763 instructions in 6572645 cycles
+c2 KiB: PASS: aster_l1 20/20 random programs pass in lockstep with Spike (seeds 1-20); 95642 instructions in 449039 cycles
+c2 KiB: PASS: aster_l1 20/20 random programs pass in lockstep with Spike (seeds 701-720, stall seed 17); 95907 instructions in 782044 cycles
+c2 KiB: PASS: aster_l1 3/3 v1 firmware programs pass with the ported runtime; 1020759 instructions in 2453272 cycles
+c2 KiB: PASS: aster_l1 9/9 CPU kernels pass in lockstep with Spike and match the Phase 17 baseline
+c8 KiB: PASS: aster_l1 99/99 tests pass in lockstep and by signature (7 self-checking programs in the shell alone) with Spike (2 skipped); 3885909 instructions in 6025092 cycles
+c8 KiB: PASS: aster_l1 99/99 tests pass in lockstep and by signature (7 self-checking programs in the shell alone) with Spike (2 skipped, stall seed 5); 3884238 instructions in 6104821 cycles
+c8 KiB: PASS: aster_l1 99/99 tests pass in lockstep and by signature (7 self-checking programs in the shell alone) with Spike (2 skipped, stall seed 3); 3882763 instructions in 6361200 cycles
+c8 KiB: PASS: aster_l1 20/20 random programs pass in lockstep with Spike (seeds 1-20); 95642 instructions in 442450 cycles
+c8 KiB: PASS: aster_l1 20/20 random programs pass in lockstep with Spike (seeds 701-720, stall seed 17); 95907 instructions in 763732 cycles
+c8 KiB: PASS: aster_l1 3/3 v1 firmware programs pass with the ported runtime; 1020759 instructions in 2453272 cycles
+c8 KiB: PASS: aster_l1 9/9 CPU kernels pass in lockstep with Spike and match the Phase 17 baseline

@@ -949,7 +949,9 @@ def oracle_dma(entry: Entry, records: list[dict]) -> str:
         lines = (a["dst_off"] % 16 + a["bytes"] + 15) // 16 if a["bytes"] else 0
         # a destination up to a quarter of the cache stays cached whole until the DMA's job (1 KiB at 4 KiB; 20.5:
         # 512 bytes at 2 KiB, 2 KiB at 8 KiB); a larger one aliases the program's other lines, and at most its own
-        # lines and the cache's are invalidated
+        # lines and the cache's are invalidated. (Measured in this program's layout, not a property of the
+        # hardware: a change to the program can move it. The count is both data caches' snoop hits; the copies
+        # have one worker, so only hart 0's cache holds the destination.)
         cache = soc_variants.VARIANTS[entry.sim]["CACHE_BYTES"]
         if cached and a["bytes"] <= cache // 4 and r["dma_invalidations"] != lines:
             raise asterbench_v12.ValidationError(f"{r['dma_invalidations']} invalidations, not the {lines} lines cached")

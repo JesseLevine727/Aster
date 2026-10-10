@@ -1,0 +1,273 @@
+{
+ "cache_kib": 4,
+ "layout": "L0",
+ "scaling": {
+  "reduce_fill": {
+   "pairs": 3,
+   "e2e_min": 1.9411,
+   "e2e_max": 1.96,
+   "r_warm": {
+    "e2e": [
+     73958,
+     37734,
+     1.96
+    ],
+    "kernel": [
+     36998,
+     19193,
+     1.9277
+    ]
+   },
+   "meets": true,
+   "rows": [
+    {
+     "config": "soc_dev {\"cache_state\": \"cold\", \"dcache\": 1, \"harts\": 2, \"memory_wait\": 0}",
+     "window": "e2e",
+     "sim": "soc_dev",
+     "cache_state": "cold",
+     "one": 75333,
+     "two": 38810,
+     "speedup": 1.9411
+    },
+    {
+     "config": "soc_dev {\"cache_state\": \"warm\", \"dcache\": 1, \"harts\": 2, \"memory_wait\": 0}",
+     "window": "e2e",
+     "sim": "soc_dev",
+     "cache_state": "warm",
+     "one": 73958,
+     "two": 37734,
+     "speedup": 1.96
+    },
+    {
+     "config": "soc_dev {\"cache_state\": \"warm\", \"dcache\": 1, \"harts\": 2, \"memory_wait\": 0}",
+     "window": "kernel",
+     "sim": "soc_dev",
+     "cache_state": "warm",
+     "one": 36998,
+     "two": 19193,
+     "speedup": 1.9277
+    }
+   ]
+  },
+  "gemm_dot8_64x64x64": {
+   "pairs": 3,
+   "e2e_min": 1.9568,
+   "e2e_max": 1.9735,
+   "r_warm": {
+    "e2e": [
+     215175,
+     109033,
+     1.9735
+    ],
+    "kernel": [
+     201219,
+     101873,
+     1.9752
+    ]
+   },
+   "meets": true,
+   "rows": [
+    {
+     "config": "soc_dev {\"cache_state\": \"cold\", \"dcache\": 1, \"harts\": 2, \"k\": 64, \"m\": 64, \"memory_wait\": 0, \"n\": 64}",
+     "window": "e2e",
+     "sim": "soc_dev",
+     "cache_state": "cold",
+     "one": 215896,
+     "two": 110330,
+     "speedup": 1.9568
+    },
+    {
+     "config": "soc_dev {\"cache_state\": \"warm\", \"dcache\": 1, \"harts\": 2, \"k\": 64, \"m\": 64, \"memory_wait\": 0, \"n\": 64}",
+     "window": "e2e",
+     "sim": "soc_dev",
+     "cache_state": "warm",
+     "one": 215175,
+     "two": 109033,
+     "speedup": 1.9735
+    },
+    {
+     "config": "soc_dev {\"cache_state\": \"warm\", \"dcache\": 1, \"harts\": 2, \"k\": 64, \"m\": 64, \"memory_wait\": 0, \"n\": 64}",
+     "window": "kernel",
+     "sim": "soc_dev",
+     "cache_state": "warm",
+     "one": 201219,
+     "two": 101873,
+     "speedup": 1.9752
+    }
+   ]
+  },
+  "gemm_dot8_96x96x96": {
+   "pairs": 3,
+   "e2e_min": 1.9825,
+   "e2e_max": 1.9863,
+   "r_warm": {
+    "e2e": [
+     703722,
+     354285,
+     1.9863
+    ],
+    "kernel": [
+     672634,
+     338491,
+     1.9872
+    ]
+   },
+   "meets": true,
+   "rows": [
+    {
+     "config": "soc_dev {\"cache_state\": \"cold\", \"dcache\": 1, \"harts\": 2, \"k\": 96, \"m\": 96, \"memory_wait\": 0, \"n\": 96}",
+     "window": "e2e",
+     "sim": "soc_dev",
+     "cache_state": "cold",
+     "one": 704442,
+     "two": 355331,
+     "speedup": 1.9825
+    },
+    {
+     "config": "soc_dev {\"cache_state\": \"warm\", \"dcache\": 1, \"harts\": 2, \"k\": 96, \"m\": 96, \"memory_wait\": 0, \"n\": 96}",
+     "window": "e2e",
+     "sim": "soc_dev",
+     "cache_state": "warm",
+     "one": 703722,
+     "two": 354285,
+     "speedup": 1.9863
+    },
+    {
+     "config": "soc_dev {\"cache_state\": \"warm\", \"dcache\": 1, \"harts\": 2, \"k\": 96, \"m\": 96, \"memory_wait\": 0, \"n\": 96}",
+     "window": "kernel",
+     "sim": "soc_dev",
+     "cache_state": "warm",
+     "one": 672634,
+     "two": 338491,
+     "speedup": 1.9872
+    }
+   ]
+  },
+  "gemm_dot8_128x64x128": {
+   "pairs": 3,
+   "e2e_min": 1.9483,
+   "e2e_max": 1.9655,
+   "r_warm": {
+    "e2e": [
+     843600,
+     429210,
+     1.9655
+    ],
+    "kernel": [
+     805370,
+     404472,
+     1.9912
+    ]
+   },
+   "meets": true,
+   "rows": [
+    {
+     "config": "soc_dev {\"cache_state\": \"cold\", \"dcache\": 1, \"harts\": 2, \"k\": 128, \"m\": 128, \"memory_wait\": 0, \"n\": 64}",
+     "window": "e2e",
+     "sim": "soc_dev",
+     "cache_state": "cold",
+     "one": 844284,
+     "two": 433353,
+     "speedup": 1.9483
+    },
+    {
+     "config": "soc_dev {\"cache_state\": \"warm\", \"dcache\": 1, \"harts\": 2, \"k\": 128, \"m\": 128, \"memory_wait\": 0, \"n\": 64}",
+     "window": "e2e",
+     "sim": "soc_dev",
+     "cache_state": "warm",
+     "one": 843600,
+     "two": 429210,
+     "speedup": 1.9655
+    },
+    {
+     "config": "soc_dev {\"cache_state\": \"warm\", \"dcache\": 1, \"harts\": 2, \"k\": 128, \"m\": 128, \"memory_wait\": 0, \"n\": 64}",
+     "window": "kernel",
+     "sim": "soc_dev",
+     "cache_state": "warm",
+     "one": 805370,
+     "two": 404472,
+     "speedup": 1.9912
+    }
+   ]
+  }
+ },
+ "against_v1": {
+  "Conv2D 32x32 K=5, x4": {
+   "v1": 4837408,
+   "v2": 84551.0,
+   "method": "dsp/conv2d_direct_npu/npu_direct/soc_dev/cold",
+   "ratio": 57.21,
+   "faster": true
+  },
+  "reduction, 1,024 words x4 (v1's)": {
+   "v1": 233112,
+   "v2": 59038.0,
+   "method": "coherence/reduce_v1/multicore/soc_dev/cold",
+   "ratio": 3.95,
+   "faster": true
+  },
+  "MNIST MLP, per image": {
+   "v1": 433903,
+   "v2": 6019.47,
+   "method": "ml/mnist_mlp_npu/npu/soc_dev/cold",
+   "ratio": 72.08,
+   "faster": true
+  },
+  "streaming ECG, 16 x 64": {
+   "v1": 1528505,
+   "v2": 176523.0,
+   "method": "ecg/ecg_pipeline_overlap/pipeline/soc_dev/cold",
+   "ratio": 8.66,
+   "faster": true
+  },
+  "CIFAR-10, 20 images": {
+   "v1": 65568218,
+   "v2": 4085916.0,
+   "method": "ml/cifar_cnn_npu_direct/npu_direct/soc_dev/cold",
+   "ratio": 16.05,
+   "faster": true
+  },
+  "CoreMark (aster_minimal)": {
+   "v1": 1922272,
+   "v2": 467475.0,
+   "method": "cpu/coremark/scalar/soc_dev/cold",
+   "ratio": 4.11,
+   "faster": true
+  },
+  "Dhrystone (aster_minimal)": {
+   "v1": 3128553,
+   "v2": 859400.0,
+   "method": "cpu/dhrystone/scalar/soc_dev/cold",
+   "ratio": 3.64,
+   "faster": true
+  },
+  "sort/search (aster_minimal)": {
+   "v1": 2183301,
+   "v2": 696883.0,
+   "method": "cpu/sort_search/scalar/soc_dev/cold",
+   "ratio": 3.13,
+   "faster": true
+  },
+  "FFT (aster_minimal)": {
+   "v1": 3057473,
+   "v2": 317346.0,
+   "method": "cpu/fft/scalar/soc_dev/cold",
+   "ratio": 9.63,
+   "faster": true
+  },
+  "strided (aster_minimal)": {
+   "v1": 9087,
+   "v2": 2732.0,
+   "method": "cpu/strided/scalar/soc_dev/cold",
+   "ratio": 3.33,
+   "faster": true
+  },
+  "Conv2D (aster_minimal)": {
+   "v1": 5820652,
+   "v2": 1111074.0,
+   "method": "cpu/conv2d/scalar/soc_dev/cold",
+   "ratio": 5.24,
+   "faster": true
+  }
+ }
+}

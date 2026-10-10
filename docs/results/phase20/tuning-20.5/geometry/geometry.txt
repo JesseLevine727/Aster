@@ -1,0 +1,43 @@
+revisions ['f246a11680f5fe06837b732c479a02a17571c20e']; 3268 entries paired with their 4 KiB twins, 4524 windows; 0 without a twin
+  coherence 2 KiB: 136 windows, 14 faster, 72 slower, 50 same; median +0.036%, -1.62% to +59.28%; e2e median +0.0%, -1.62% to +17.72%
+  cpu 2 KiB: 12 windows, 0 faster, 12 slower, 0 same; median +4.347%, +0.0% to +56.04%; e2e median +4.347%, +0.0% to +56.04%
+  dma 2 KiB: 624 windows, 2 faster, 622 slower, 0 same; median +14.451%, -0.09% to +91.3%; e2e median +14.451%, -0.09% to +91.3%
+  dsp 2 KiB: 140 windows, 1 faster, 76 slower, 63 same; median +0.023%, -0.0% to +17.58%; e2e median +0.064%, +0.0% to +16.0%
+  ecg 2 KiB: 220 windows, 0 faster, 220 slower, 0 same; median +1.967%, +0.02% to +24.46%; e2e median +2.041%, +0.12% to +24.46%
+  memory 2 KiB: 74 windows, 3 faster, 37 slower, 34 same; median +0.025%, -8.3% to +31.43%; e2e median +0.0%, -8.29% to +31.43%
+  ml 2 KiB: 35 windows, 0 faster, 28 slower, 7 same; median +0.803%, +0.0% to +29.8%; e2e median +0.953%, +0.02% to +25.98%
+  npu_gemm 2 KiB: 298 windows, 0 faster, 153 slower, 145 same; median +0.007%, +0.0% to +88.88%; e2e median +0.0%, +0.0% to +88.88%
+  coherence 8 KiB: 136 windows, 56 faster, 13 slower, 67 same; median +0.0%, -30.71% to +59.21%; e2e median +0.0%, -30.71% to +2.05%
+  cpu 8 KiB: 12 windows, 8 faster, 0 slower, 4 same; median -0.009%, -1.4% to +0.0%; e2e median -0.009%, -1.4% to +0.0%
+  dma 8 KiB: 624 windows, 38 faster, 2 slower, 584 same; median +0.0%, -23.96% to +0.13%; e2e median +0.0%, -23.96% to +0.13%
+  dsp 8 KiB: 140 windows, 89 faster, 6 slower, 45 same; median -0.036%, -31.7% to +0.73%; e2e median -0.025%, -21.72% to +0.53%
+  ecg 8 KiB: 220 windows, 165 faster, 3 slower, 52 same; median -0.063%, -12.7% to +0.01%; e2e median -0.108%, -12.7% to +0.0%
+  memory 8 KiB: 74 windows, 17 faster, 5 slower, 52 same; median +0.0%, -15.14% to +0.01%; e2e median +0.0%, -15.14% to +0.0%
+  ml 8 KiB: 35 windows, 28 faster, 0 slower, 7 same; median -0.701%, -9.32% to +0.0%; e2e median -1.513%, -8.13% to -0.08%
+  npu_gemm 8 KiB: 298 windows, 149 faster, 34 slower, 115 same; median -0.0%, -48.76% to +3.06%; e2e median +0.0%, -48.73% to +1.3%
+  gates 4 KiB L0: scaling lowest 1.9411 (meets 1.8x, 4 cases); v1 lowest 3.13x, 11 of 11 faster
+  gates 4 KiB L1: scaling lowest 1.9411 (meets 1.8x, 4 cases); v1 lowest 3.13x, 11 of 11 faster
+  gates 4 KiB L2: scaling lowest 1.9411 (meets 1.8x, 4 cases); v1 lowest 3.13x, 11 of 11 faster
+  gates 4 KiB L3: scaling lowest 1.941 (meets 1.8x, 4 cases); v1 lowest 3.13x, 11 of 11 faster
+  gates 4 KiB L4: scaling lowest 1.9411 (meets 1.8x, 3 cases); v1 lowest 3.13x, 11 of 11 faster
+  gates 4 KiB L5: scaling lowest 1.9411 (meets 1.8x, 4 cases); v1 lowest 3.13x, 11 of 11 faster
+  gates 4 KiB L6: scaling lowest 1.9411 (meets 1.8x, 3 cases); v1 lowest 3.13x, 11 of 11 faster
+  gates 4 KiB L7: scaling lowest 1.941 (meets 1.8x, 3 cases); v1 lowest 3.13x, 11 of 11 faster
+  gates 2 KiB L0: scaling lowest 1.9113 (meets 1.8x, 4 cases); v1 lowest 2.45x, 11 of 11 faster
+  gates 2 KiB L1: scaling lowest 1.9062 (meets 1.8x, 4 cases); v1 lowest 2.45x, 11 of 11 faster
+  gates 2 KiB L2: scaling lowest 1.9135 (meets 1.8x, 4 cases); v1 lowest 2.46x, 11 of 11 faster
+  gates 2 KiB L3: scaling lowest 1.9058 (meets 1.8x, 4 cases); v1 lowest 2.46x, 11 of 11 faster
+  gates 2 KiB L4: scaling lowest 1.9183 (meets 1.8x, 3 cases); v1 lowest 2.46x, 11 of 11 faster
+  gates 2 KiB L5: scaling lowest 1.9068 (meets 1.8x, 4 cases); v1 lowest 2.45x, 11 of 11 faster
+  gates 2 KiB L6: scaling lowest 1.9228 (meets 1.8x, 3 cases); v1 lowest 2.46x, 11 of 11 faster
+  gates 2 KiB L7: scaling lowest 1.9612 (meets 1.8x, 3 cases); v1 lowest 2.46x, 11 of 11 faster
+  gates 8 KiB L0: scaling lowest 1.928 (meets 1.8x, 4 cases); v1 lowest 3.13x, 11 of 11 faster
+  gates 8 KiB L1: scaling lowest 1.927 (meets 1.8x, 4 cases); v1 lowest 3.13x, 11 of 11 faster
+  gates 8 KiB L2: scaling lowest 1.9261 (meets 1.8x, 4 cases); v1 lowest 3.13x, 11 of 11 faster
+  gates 8 KiB L3: scaling lowest 1.9256 (meets 1.8x, 4 cases); v1 lowest 3.13x, 11 of 11 faster
+  gates 8 KiB L4: scaling lowest 1.9436 (meets 1.8x, 3 cases); v1 lowest 3.13x, 11 of 11 faster
+  gates 8 KiB L5: scaling lowest 1.9115 (meets 1.8x, 4 cases); v1 lowest 3.13x, 11 of 11 faster
+  gates 8 KiB L6: scaling lowest 1.8963 (meets 1.8x, 3 cases); v1 lowest 3.13x, 11 of 11 faster
+  gates 8 KiB L7: scaling lowest 1.9107 (meets 1.8x, 3 cases); v1 lowest 3.13x, 11 of 11 faster
+  across layouts at 2 KiB (the gate workloads' e2e): the eight {'slower on every layout': 68, 'mixed': 1, 'never faster': 5}; decision 2's five {'slower on every layout': 68, 'mixed': 1, 'never faster': 5}
+  across layouts at 8 KiB (the gate workloads' e2e): the eight {'faster on every layout': 64, 'never slower': 10}; decision 2's five {'faster on every layout': 64, 'never slower': 10}

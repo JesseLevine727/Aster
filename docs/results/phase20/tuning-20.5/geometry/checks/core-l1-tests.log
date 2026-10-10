@@ -1,0 +1,46 @@
+Archive ar -rcs Vcore_ports__ALL.a Vcore_ports__ALL.o
+PASS: aster 102/102 ACT4 programs pass (self-checking, expected values from Sail); 755349 instructions in 1337282 cycles
+PASS: aster 102/102 ACT4 programs pass (self-checking, expected values from Sail); 755345 instructions in 1337274 cycles
+PASS: aster 102/102 ACT4 programs pass (self-checking, expected values from Sail); 755353 instructions in 2026355 cycles
+PASS: aster 102/102 ACT4 programs pass (self-checking, expected values from Sail); 755349 instructions in 1720319 cycles
+PASS: aster 102/102 ACT4 programs pass (self-checking, expected values from Sail); 755357 instructions in 1910560 cycles
+PASS: aster 102/102 ACT4 programs pass (self-checking, expected values from Sail); 755357 instructions in 1908666 cycles
+PASS: aster_l1 99/99 tests pass in lockstep and by signature (7 self-checking programs in the shell alone) with Spike (2 skipped); 3885909 instructions in 6027959 cycles
+PASS: aster_l1 99/99 tests pass in lockstep and by signature (7 self-checking programs in the shell alone) with Spike (2 skipped); 3886683 instructions in 5994429 cycles
+PASS: aster_l1 99/99 tests pass in lockstep and by signature (7 self-checking programs in the shell alone) with Spike (2 skipped, stall seed 5); 3884238 instructions in 6109362 cycles
+PASS: aster_l1 99/99 tests pass in lockstep and by signature (7 self-checking programs in the shell alone) with Spike (2 skipped, stall seed 9); 3884464 instructions in 6074068 cycles
+PASS: aster_l1 99/99 tests pass in lockstep and by signature (7 self-checking programs in the shell alone) with Spike (2 skipped, stall seed 7); 3884195 instructions in 6109921 cycles
+PASS: aster_l1 99/99 tests pass in lockstep and by signature (7 self-checking programs in the shell alone) with Spike (2 skipped, stall seed 7); 3884195 instructions in 6109921 cycles
+PASS: aster_l1 99/99 tests pass in lockstep and by signature (7 self-checking programs in the shell alone) with Spike (2 skipped, stall seed 3); 3882763 instructions in 6369997 cycles
+PASS: aster_l1 72/72 riscv-arch-test programs pass in lockstep and by signature with Spike (0 skipped); 125214 instructions in 620313 cycles
+PASS: aster_l1 72/72 riscv-arch-test programs pass in lockstep and by signature with Spike (0 skipped); 125214 instructions in 551724 cycles
+PASS: aster_l1 20/20 random programs pass in lockstep with Spike (seeds 1-20); 95642 instructions in 443698 cycles
+PASS: aster_l1 20/20 random programs pass in lockstep with Spike (seeds 201-220); 97743 instructions in 410637 cycles
+PASS: aster_l1 20/20 random programs pass in lockstep with Spike (seeds 101-120, stall seed 11); 94403 instructions in 522150 cycles
+PASS: aster_l1 20/20 random programs pass in lockstep with Spike (seeds 701-720, stall seed 17); 95907 instructions in 766449 cycles
+PASS: aster_l1 71/71 tests pass in lockstep and by signature with Spike (0 skipped, random interrupts seed 7); 317062 instructions in 1000741 cycles
+PASS: aster_l1 20/20 random programs pass in lockstep with Spike (seeds 301-320); 486351 instructions in 1691495 cycles
+PASS: aster_l1 20/20 random programs pass in lockstep with Spike (seeds 501-520); 452279 instructions in 1493844 cycles
+PASS: aster_l1 20/20 random programs pass in lockstep with Spike (seeds 401-420, stall seed 13); 532259 instructions in 2030974 cycles
+PASS: aster_l1 20/20 random programs pass in lockstep with Spike (seeds 601-620, stall seed 19); 597537 instructions in 2858528 cycles
+PASS: aster_l1 102/102 ACT4 programs pass (self-checking, expected values from Sail); 755345 instructions in 2374631 cycles
+PASS: aster_l1 102/102 ACT4 programs pass (self-checking, expected values from Sail); 755345 instructions in 2159456 cycles
+PASS: aster_l1 102/102 ACT4 programs pass (self-checking, expected values from Sail); 755353 instructions in 2794352 cycles
+PASS: aster_l1 102/102 ACT4 programs pass (self-checking, expected values from Sail); 755353 instructions in 2580098 cycles
+PASS: aster_l1 102/102 ACT4 programs pass (self-checking, expected values from Sail); 755353 instructions in 2793492 cycles
+PASS: aster_l1 102/102 ACT4 programs pass (self-checking, expected values from Sail); 755353 instructions in 2793492 cycles
+PASS: aster_l1 102/102 ACT4 programs pass (self-checking, expected values from Sail); 755345 instructions in 3939154 cycles
+PASS: aster_l1 3/3 v1 firmware programs pass with the ported runtime; 1020759 instructions in 2453272 cycles
+PASS: aster_l1 3/3 v1 firmware programs pass with the ported runtime; 1021835 instructions in 2452733 cycles
+PASS: aster_l1 3/3 v1 firmware programs pass with the ported runtime; 1019452 instructions in 2521271 cycles
+PASS: aster_l1 3/3 v1 firmware programs pass with the ported runtime; 1020214 instructions in 2521273 cycles
+PASS: aster_l1 3/3 v1 firmware programs pass with the ported runtime; 1019474 instructions in 2521566 cycles
+PASS: aster_l1 3/3 v1 firmware programs pass with the ported runtime; 1019474 instructions in 2521566 cycles
+PASS: aster_l1 3/3 v1 firmware programs pass with the ported runtime; 1017379 instructions in 2756819 cycles
+PASS: aster_l1 9/9 CPU kernels pass in lockstep with Spike and match the Phase 17 baseline
+PASS: aster_l1 9/9 CPU kernels pass in lockstep with Spike and match the Phase 17 baseline
+PASS: rv32ui/lw with +duplicate_read=3: shell reported 'LOAD_MISMATCH cycles=313 retired=76 fetch_errors=0 interrupts=0 icache_hits=58 icache_misses=22 dcache_hits=3 dcache_misses=1', expected LOAD_MISMATCH
+PASS: rv32ui/fence_i with +cache_model_ignore_fencei: shell reported 'CACHE_MISMATCH cycles=231 retired=53 fetch_errors=0 interrupts=0 icache_hits=42 icache_misses=16 dcache_hits=1 dcache_misses=1', expected CACHE_MISMATCH
+PASS: rv32ui/sw with +selftest=1: shell reported 'D_REQ_UNSTABLE cycles=220 retired=50 fetch_errors=0 interrupts=0 core_d_waits=1 icache_hits=40 icache_misses=16 dcache_hits=0 dcache_misses=0', expected D_REQ_UNSTABLE
+PASS: rv32ui/add with +selftest=2: shell reported 'I_REQ_UNSTABLE cycles=3 retired=0 fetch_errors=0 interrupts=0 icache_hits=0 icache_misses=1 dcache_hits=0 dcache_misses=0', expected I_REQ_UNSTABLE
+PASS: rv32ui/lw with +selftest=4: shell reported 'D_REQ_MALFORMED cycles=205 retired=46 fetch_errors=0 interrupts=0 icache_hits=37 icache_misses=15 dcache_hits=0 dcache_misses=0', expected D_REQ_MALFORMED

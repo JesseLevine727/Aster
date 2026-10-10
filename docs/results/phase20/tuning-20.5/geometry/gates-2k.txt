@@ -1,0 +1,15 @@
+scaling reduce_fill: 3 pairs, e2e 2.0365 to 2.0864x (meets 1.8x); R warm {'e2e': (79053, 37890, 2.0864), 'kernel': (42088, 19371, 2.1727)}
+scaling gemm_dot8_64x64x64: 3 pairs, e2e 1.9113 to 1.9717x (meets 1.8x); R warm {'e2e': (247575, 125562, 1.9717), 'kernel': (228243, 115433, 1.9773)}
+scaling gemm_dot8_96x96x96: 3 pairs, e2e 1.9823 to 1.9869x (meets 1.8x); R warm {'e2e': (796993, 401132, 1.9869), 'kernel': (757841, 381516, 1.9864)}
+scaling gemm_dot8_128x64x128: 3 pairs, e2e 1.9171 to 1.9276x (meets 1.8x); R warm {'e2e': (950459, 493067, 1.9276), 'kernel': (912229, 461668, 1.9759)}
+v1 Conv2D 32x32 K=5, x4: v1 4,837,408, v2 84593.0 (dsp/conv2d_direct_npu/npu_direct/soc_l1_2k/cold): 57.18x
+v1 reduction, 1,024 words x4 (v1's): v1 233,112, v2 59080.0 (coherence/reduce_v1/multicore/soc_l1_2k/cold): 3.95x
+v1 MNIST MLP, per image: v1 433,903, v2 6075.81 (ml/mnist_mlp_npu/npu/soc_l1_2k/cold): 71.41x
+v1 streaming ECG, 16 x 64: v1 1,528,505, v2 178259.0 (ecg/ecg_scalar/scalar/soc_l1_2k/cold): 8.57x
+v1 CIFAR-10, 20 images: v1 65,568,218, v2 4090594.0 (ml/cifar_cnn_npu_direct/npu_direct/soc_l1_2k/cold): 16.03x
+v1 CoreMark (aster_minimal): v1 1,922,272, v2 487313.0 (cpu/coremark/scalar/soc_l1_2k/cold): 3.94x
+v1 Dhrystone (aster_minimal): v1 3,128,553, v2 1059584.0 (cpu/dhrystone/scalar/soc_l1_2k/cold): 2.95x
+v1 sort/search (aster_minimal): v1 2,183,301, v2 696902.0 (cpu/sort_search/scalar/soc_l1_2k/cold): 3.13x
+v1 FFT (aster_minimal): v1 3,057,473, v2 331188.0 (cpu/fft/scalar/soc_l1_2k/cold): 9.23x
+v1 strided (aster_minimal): v1 9,087, v2 3709.0 (cpu/strided/scalar/soc_l1_2k/cold): 2.45x
+v1 Conv2D (aster_minimal): v1 5,820,652, v2 1116656.0 (cpu/conv2d/scalar/soc_l1_2k/cold): 5.21x

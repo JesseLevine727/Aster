@@ -33,7 +33,7 @@
 `timescale 1 ns / 1 ps
 module shell_aster_ports #(
     parameter int unsigned L1 = 0,
-    parameter int unsigned CACHE_BYTES = 4096      // (20.5: each cache's capacity; the model's +cache_bytes)
+    parameter int unsigned CACHE_BYTES = 4096      // (20.5: each cache's capacity; the model is sized from cache_bytes)
 ) (
     input  logic        clk,
     input  logic        resetn,

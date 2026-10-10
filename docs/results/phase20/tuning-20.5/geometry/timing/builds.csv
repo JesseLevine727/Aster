@@ -1,0 +1,35 @@
+build,cache_bytes,strategy,directives,wns_ns,whs_ns,luts,luts_pct,bram_tiles,bram_pct,dsps,payload_sha256,rtl,timing
+c2k-def,2048,def,,0.212,0.032,31701,59.59,78,55.71,27,000edffbb658ee1f,e86b47e (f246a11's RTL),met 10 ns
+c2k-o3end,2048,o3end,over=0.3;place=ExtraNetDelay_high,0.083,0.034,31763,59.70,78,55.71,27,d79137e905076c34,e86b47e (f246a11's RTL),met 10 ns
+c2k-o4end,2048,o4end,over=0.4;place=ExtraNetDelay_high,0.036,0.022,31726,59.64,78,55.71,27,c3add764a3fd1eb3,e86b47e (f246a11's RTL),met 10 ns
+c2k-o5,2048,o5,over=0.5,0.176,0.036,31759,59.70,78,55.71,27,f7ebc67fb9277019,e86b47e (f246a11's RTL),met 10 ns
+c2k-o5asm,2048,o5asm,over=0.5;place=AltSpreadLogic_medium,0.190,0.033,31983,60.12,78,55.71,27,60646a592c807d51,e86b47e (f246a11's RTL),met 10 ns
+c2k-o5asm-mgi,2048,o5asm-mgi,over=0.5;place=AltSpreadLogic_medium;route=MoreGlobalIterations,0.048,0.033,31988,60.13,78,55.71,27,74fd67ca0f7380f0,e86b47e (f246a11's RTL),met 10 ns
+c2k-o5end,2048,o5end,over=0.5;place=ExtraNetDelay_high,0.109,0.015,31836,59.84,78,55.71,27,ffead6c89d86bde1,e86b47e (f246a11's RTL),met 10 ns
+c2k-o5enl,2048,o5enl,over=0.5;place=ExtraNetDelay_low,0.145,0.025,31785,59.75,78,55.71,27,7813b1b1476de751,e86b47e (f246a11's RTL),met 10 ns
+c2k-o5epo,2048,o5epo,over=0.5;place=ExtraPostPlacementOpt,0.026,0.020,31760,59.70,78,55.71,27,328df2bab0eba58c,e86b47e (f246a11's RTL),met 10 ns
+c2k-o5eto,2048,o5eto,over=0.5;place=ExtraTimingOpt,0.243,0.020,31962,60.08,78,55.71,27,7403d3334c64aaf4,e86b47e (f246a11's RTL),met 10 ns
+c1,4096,def,,0.121,0.036,33869,63.66,80,57.14,27,eeae11e48f9fdd47,step 1's (0d8bfa0's RTL),met 10 ns
+c1-o3end,4096,o3end,over=0.3;place=ExtraNetDelay_high,0.182,0.022,33948,63.81,80,57.14,27,93a2f4023f603d38,step 1's (0d8bfa0's RTL),met 10 ns
+c1-o4end,4096,o4end,over=0.4;place=ExtraNetDelay_high,0.156,0.034,33960,63.83,80,57.14,27,30c38e00ebad53b2,step 1's (0d8bfa0's RTL),met 10 ns
+c1-o5,4096,o5,over=0.5,0.061,0.034,33955,63.83,80,57.14,27,28356567dff51798,step 1's (0d8bfa0's RTL),met 10 ns
+c1-o5asm,4096,o5asm,over=0.5;place=AltSpreadLogic_medium,0.244,0.032,34018,63.94,80,57.14,27,6c9e56bcb6be7ac9,step 1's (0d8bfa0's RTL),met 10 ns
+c1-o5asm-mgi,4096,o5asm-mgi,over=0.5;place=AltSpreadLogic_medium;route=MoreGlobalIterations,0.373,0.024,34018,63.94,80,57.14,27,04821fbbeb1a4aca,step 1's (0d8bfa0's RTL),met 10 ns
+c1-o5end,4096,o5end,over=0.5;place=ExtraNetDelay_high,0.372,0.029,33898,63.72,80,57.14,27,82352a4c7885212b,step 1's (0d8bfa0's RTL),met 10 ns
+c1-o5enl,4096,o5enl,over=0.5;place=ExtraNetDelay_low,0.274,0.027,33970,63.85,80,57.14,27,2fe82a3abc9cc288,step 1's (0d8bfa0's RTL),met 10 ns
+c1-o5epo,4096,o5epo,over=0.5;place=ExtraPostPlacementOpt,0.200,0.030,33953,63.82,80,57.14,27,1f20738b9617a756,step 1's (0d8bfa0's RTL),met 10 ns
+c1-o5eto,4096,o5eto,over=0.5;place=ExtraTimingOpt,0.031,0.047,34181,64.25,80,57.14,27,ac42a7eee1c29aae,step 1's (0d8bfa0's RTL),met 10 ns
+c8k-def,8192,def,,0.046,0.009,38453,72.28,84,60.00,27,03ea20790a556a34,e86b47e (f246a11's RTL),met 10 ns
+c8k-o3end,8192,o3end,over=0.3;place=ExtraNetDelay_high,0.202,0.030,38567,72.49,84,60.00,27,5b1d8cc9ad50893f,e86b47e (f246a11's RTL),met 10 ns
+c8k-o4end,8192,o4end,over=0.4;place=ExtraNetDelay_high,0.302,0.034,38572,72.50,84,60.00,27,2fbbbc838bf938fb,e86b47e (f246a11's RTL),met 10 ns
+c8k-o5,8192,o5,over=0.5,0.197,0.027,38618,72.59,84,60.00,27,b533dc96344673e3,e86b47e (f246a11's RTL),met 10 ns
+c8k-o5asm,8192,o5asm,over=0.5;place=AltSpreadLogic_medium,0.221,0.035,38704,72.75,84,60.00,27,2e742e5004306842,e86b47e (f246a11's RTL),met 10 ns
+c8k-o5asm-mgi,8192,o5asm-mgi,over=0.5;place=AltSpreadLogic_medium;route=MoreGlobalIterations,0.306,0.040,38704,72.75,84,60.00,27,0bf4b4c3e021b79d,e86b47e (f246a11's RTL),met 10 ns
+c8k-o5end,8192,o5end,over=0.5;place=ExtraNetDelay_high,0.046,0.051,38580,72.52,84,60.00,27,b6b9b6c7251b934d,e86b47e (f246a11's RTL),met 10 ns
+c8k-o5enl,8192,o5enl,over=0.5;place=ExtraNetDelay_low,0.117,0.034,38700,72.74,84,60.00,27,7ff543fcd80e5e90,e86b47e (f246a11's RTL),met 10 ns
+c8k-o5epo,8192,o5epo,over=0.5;place=ExtraPostPlacementOpt,0.021,0.029,38615,72.58,84,60.00,27,60653f3997f3e89e,e86b47e (f246a11's RTL),met 10 ns
+c8k-o5eto,8192,o5eto,over=0.5;place=ExtraTimingOpt,0.023,0.034,38931,73.18,84,60.00,27,e33226d74f9eb08a,e86b47e (f246a11's RTL),met 10 ns
+c4k-o5asm-mgi,4096,o5asm-mgi,over=0.5;place=AltSpreadLogic_medium;route=MoreGlobalIterations,0.373,0.024,34018,63.94,80,57.14,27,04821fbbeb1a4aca,e86b47e (f246a11's RTL),met 10 ns
+c1-o5asm-mgi-repeat,4096,o5asm-mgi,over=0.5;place=AltSpreadLogic_medium;route=MoreGlobalIterations,0.373,0.024,34018,63.94,80,57.14,27,04821fbbeb1a4aca,step 1's (0d8bfa0's RTL),met 10 ns
+c2k-o5eto-repeat,2048,o5eto,over=0.5;place=ExtraTimingOpt,0.243,0.020,31962,60.08,78,55.71,27,7403d3334c64aaf4,e86b47e (f246a11's RTL),met 10 ns
+c8k-o5asm-mgi-repeat,8192,o5asm-mgi,over=0.5;place=AltSpreadLogic_medium;route=MoreGlobalIterations,0.306,0.040,38704,72.75,84,60.00,27,0bf4b4c3e021b79d,e86b47e (f246a11's RTL),met 10 ns

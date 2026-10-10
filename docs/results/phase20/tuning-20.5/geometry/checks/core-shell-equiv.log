@@ -1,0 +1,2 @@
+Archive ar -rcs Vcore_ports__ALL.a Vcore_ports__ALL.o
+PASS: 879/879 runs end the same in both shells (7 modes x the kernels and every suite, 4 random modes x 40 programs), cycle for cycle and RVFI record for record

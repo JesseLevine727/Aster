@@ -1,0 +1,8 @@
+    1   0.373 run_reg -> g_npu_buffer.e_addr_reg[1][11]
+    1   0.373 run_reg -> g_npu_buffer.e_addr_reg[1][12]
+    1   0.373 run_reg -> g_npu_buffer.e_addr_reg[1][15]
+    1   0.373 run_reg -> g_npu_buffer.e_addr_reg[1][18]
+    1   0.373 run_reg -> g_npu_buffer.e_addr_reg[1][21]
+    1   0.373 run_reg -> g_npu_buffer.e_addr_reg[1][25]
+    1   0.373 run_reg -> g_npu_buffer.e_addr_reg[1][5]
+    1   0.373 run_reg -> g_npu_buffer.e_addr_reg[1][6]

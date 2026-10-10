@@ -314,6 +314,39 @@ class Geometry(unittest.TestCase):
         lay = matrix_geometry.across_layouts(rows, allrec)
         self.assertEqual(lay["coherence/reduce_fill/scalar warm 2 KiB"]["verdict"], "mixed")
         self.assertEqual(lay["coherence/reduce_fill/scalar warm 8 KiB"]["verdict"], "faster on every layout")
+        self.assertEqual(lay["coherence/reduce_fill/scalar warm 8 KiB"]["layouts_five"], 2)     # (L0, L3)
+
+    def test_the_five_and_the_eight(self):
+        """Faster on decision 2's five layouts but slower on L6: mixed on the eight."""
+        allrec = {}
+        for layout in (None, "L1", "L2", "L3", "L4", "L5", "L6", "L7"):
+            for kib in (4, 8):
+                e = self.entry(matrix_gates.R_SIM[kib], layout, None if kib == 4 else kib)
+                other = {"L6": 1010, "L7": 1000}.get(layout, 990)
+                allrec[e["id"]] = (e, [self.rec(1000 if kib == 4 else other)])
+        rows, _ = matrix_geometry.twins(allrec)
+        v = matrix_geometry.across_layouts(rows, allrec)["coherence/reduce_fill/scalar warm 8 KiB"]
+        self.assertEqual((v["layouts"], v["verdict"], v["verdict_five"]), (8, "mixed", "faster on every layout"))
+        self.assertEqual(matrix_geometry.across_layouts([r for r in rows if r["layout"] != "L6"], allrec)
+                         ["coherence/reduce_fill/scalar warm 8 KiB"]["verdict"], "never slower")   # (L7 equal)
+
+    def test_a_sweep_point_at_l0_stands_apart(self):
+        """A sweep point captured at L0 alone (as ECG's other chunks and taps) neither replaces the default's L0
+        figure nor forms a verdict of its own."""
+        allrec = {}
+        for layout in (None, "L1", "L2"):
+            for kib in (4, 8):
+                e = self.entry(matrix_gates.R_SIM[kib], layout, None if kib == 4 else kib)
+                allrec[e["id"]] = (e, [self.rec(1000 if kib == 4 else 990)])
+        for kib in (4, 8):                                       # (sorted after the default)
+            e = self.entry(matrix_gates.R_SIM[kib], None, None if kib == 4 else kib)
+            e = dict(e, id=e["id"] + "/c64t8")
+            allrec[e["id"]] = (e, [self.rec(1000 if kib == 4 else 1500)])
+        rows, _ = matrix_geometry.twins(allrec)
+        lay = matrix_geometry.across_layouts(rows, allrec)
+        self.assertEqual(list(lay), ["coherence/reduce_fill/scalar warm 8 KiB"])
+        v = lay["coherence/reduce_fill/scalar warm 8 KiB"]
+        self.assertEqual((v["by_layout"]["L0"], v["verdict"]), (-1.0, "faster on every layout"))
 
 
 class Bundle(unittest.TestCase):

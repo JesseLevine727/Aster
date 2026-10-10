@@ -189,6 +189,17 @@ As in 20.4:
     warm, at 2 and 8 KiB);
   - cold, for the gate workloads;
   - the layouts (§3).
+
+  Amended in step 2: the capture covers more than the 468. It takes every R
+  warm entry on the default seed (1,087 at each size): every case and method
+  at every sweep point, now 238 pairs with step 1's stamped ECG twins. It adds
+  the gate workloads cold (37), and those warm and cold at every layout.
+  `matrix.py --r-only --caches 2,8` and `--gate-workloads`; compared by
+  `matrix_geometry.py`, the gates by `matrix_gates.py --cache-kib`.
+- **An oracle is judged at its own size.** The DMA family's exact
+  invalidation count was set at 4 KiB, for destinations up to a quarter of
+  the cache. Step 2 applies the same quarter at each size, and bounds the
+  count above it (phase20.md, 20.5 step 2).
 - **Adoption is the owner's sign-off,** with the data in hand: per family,
   the gate workloads, and timing and area. soc.md §2's 4 KiB caches stay
   unless the owner adopts another size.
@@ -466,7 +477,8 @@ Each step has its watchdog review before it is pushed.
 2. **Cache geometry:**
    - the parameter;
    - its tests and soc-tests at each size;
-   - the 468 combinations captured.
+   - the 468 combinations captured (done in step 2, with every sweep point
+     and the layouts: §4.2).
 
    Then the owner's decision (§4.2).
 3. **Tuning:** DMA thresholds, partitioning, placement and ECG.

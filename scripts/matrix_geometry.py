@@ -9,13 +9,16 @@ recorded gives the ratio of hart 0's cycles at that size to 4 KiB's. Reported:
   - the gates (matrix_gates.py) at each size and each layout run: the scaling gate's lowest e2e speedup, and the
     v1 gate's lowest ratio;
   - the layouts (tuning.md §3): each gate workload's e2e change at each size, on every layout it ran at, and
-    whether it is faster on every layout, slower on every layout, or mixed.
+    its verdict: faster (or slower) on every layout; never slower (or never faster), equal on some; or mixed,
+    faster on some and slower on others. On the eight (L0-L7) and on decision 2's five (L0-L4; the eight await
+    the owner's approval), each over the layouts the workload fits.
 No size is adopted here: that is the owner's sign-off (tuning.md §4.2).
 
   matrix_geometry.py RUN_DIR... [--json OUT]
 """
 import argparse
 import json
+import re
 import statistics
 import sys
 from collections import defaultdict
@@ -25,6 +28,7 @@ import matrix_gates
 from matrix_overlap import records_of
 
 SIZES = (2, 8)
+FIVE = ("L0", "L1", "L2", "L3", "L4")      # decision 2's layouts, as approved (step 1 added L5-L7, pending)
 
 
 def twins(allrec: dict) -> tuple[list[dict], list[str]]:
@@ -95,19 +99,37 @@ def across_layouts(rows: list[dict], allrec: dict) -> dict:
         if e["axes"].get("cache_kib") in SIZES and (e["case"] in matrix_gates.SCALING or any(
                 e["family"] == f and competes(e["case"]) for f, competes, _ in matrix_gates.V1.values())):
             gate_ids.add(ident)
-    seen = defaultdict(dict)
+    # (by configuration: the entry's id without its layout, so a sweep point captured at L0 alone, such as ECG's
+    # other chunks and taps, stands apart from the default the layouts ran)
+    seen, label = defaultdict(dict), {}
     for r in rows:
         if r["id"] in gate_ids and r["window"] == "e2e":
-            seen[(r["family"], r["case"], r["method"], r["cache_state"], r["kib"])][r["layout"]] = r["ratio"]
+            config = re.sub(r"/L\d$", "", r["id"])
+            seen[config][r["layout"]] = r["ratio"]
+            label[config] = (r["family"], r["case"], r["method"], r["cache_state"], r["kib"])
+    def verdict(ratios: list[float]) -> str:
+        if all(x < 1 for x in ratios):
+            return "faster on every layout"
+        if all(x > 1 for x in ratios):
+            return "slower on every layout"
+        if all(x <= 1 for x in ratios):
+            return "never slower"
+        if all(x >= 1 for x in ratios):
+            return "never faster"
+        return "mixed"
     out = {}
-    for (family, case, method, state, kib), by in sorted(seen.items()):
+    for config, by in sorted(seen.items()):
         if len(by) < 2:
             continue
-        verdict = "faster on every layout" if all(x < 1 for x in by.values()) else \
-            "slower on every layout" if all(x > 1 for x in by.values()) else "mixed"
-        out[f"{family}/{case}/{method} {state} {kib} KiB"] = dict(
+        family, case, method, state, kib = label[config]
+        name = f"{family}/{case}/{method} {state} {kib} KiB"
+        if name in out:
+            raise SystemExit(f"two configurations ran at the layouts as {name}")
+        five = [v for k, v in by.items() if k in FIVE]
+        out[name] = dict(config=config, 
             layouts=len(by), low=round((min(by.values()) - 1) * 100, 2), high=round((max(by.values()) - 1) * 100, 2),
-            verdict=verdict, by_layout={k: round((v - 1) * 100, 2) for k, v in sorted(by.items())})
+            verdict=verdict(list(by.values())), layouts_five=len(five), verdict_five=verdict(five) if len(five) >= 2 else None,
+            by_layout={k: round((v - 1) * 100, 2) for k, v in sorted(by.items())})
     return out
 
 
@@ -139,11 +161,15 @@ def main() -> int:
         print(f"  gates {name}: scaling lowest {g['scaling_lowest']} ({'meets' if g['scaling_meets'] else 'MISSES'} "
               f"{matrix_gates.SCALING_GATE}x, {g['scaling_cases']} cases); v1 lowest {g['v1_lowest']}x, "
               f"{g['v1_faster']} of {g['v1_measured']} faster")
-    verdicts = defaultdict(int)
-    for v in result["layouts"].values():
-        verdicts[v["verdict"]] += 1
-    if result["layouts"]:
-        print(f"  across layouts: {dict(verdicts)} (the gate workloads' e2e at 2 and 8 KiB)")
+    for kib in SIZES:
+        mine = [v for k, v in result["layouts"].items() if k.endswith(f" {kib} KiB")]
+        if mine:
+            eight, five = defaultdict(int), defaultdict(int)
+            for v in mine:
+                eight[v["verdict"]] += 1
+                five[v["verdict_five"]] += 1
+            print(f"  across layouts at {kib} KiB (the gate workloads' e2e): the eight {dict(eight)}; "
+                  f"decision 2's five {dict(five)}")
     return 0 if not dirty and len(revs) == 1 else 1
 
 
