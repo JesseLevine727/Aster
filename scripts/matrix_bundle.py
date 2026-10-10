@@ -32,6 +32,7 @@ from pathlib import Path
 
 import matrix_gates
 import matrix_overlap
+import soc_variants
 
 ROOT = Path(__file__).resolve().parents[1]
 SCHEMA = "aster.phase20.matrix.v1"
@@ -58,8 +59,10 @@ METHODS = [
     ("dma", lambda f, c: f in ("cpu", "dsp", "ml", "npu_gemm", "coherence"),
      "the DMA as a compute method: it only moves bytes; it is in the DMA family and ECG's pipeline (matrix.md §7)"),
 ]
-GEOMETRY = ("planned for 20.5: the 2 and 8 KiB caches (matrix.md §2, soc.md §9), with the L1 tests at each size "
-            "and ABI 4's line-geometry metadata following the parameter")
+GEOMETRY = ("planned: the caches at another size (matrix.md §2, tuning.md §4.2: matrix.py --caches), with the L1 tests "
+            "at each size and ABI 4's line-geometry metadata following the parameter")
+# the other sizes than R's (20.5: R's caches are 8 KiB since the owner adopted them; 4 KiB in 20.4)
+OTHER_KIB = tuple(k for k in (2, 4, 8) if k * 1024 != soc_variants.VARIANTS["soc_dev"]["CACHE_BYTES"])
 MTIME = 1791504000           # 2026-10-09 00:00 UTC: the archives' fixed time
 
 
@@ -144,12 +147,12 @@ def main() -> int:
                 entries.append(dict(id=f"{family}/{case}/{method}/soc_dev/warm", family=family, case=case,
                                     method=method, sim="soc_dev", axes=dict(cache_state="warm"), status="unsupported",
                                     reason=reason))
-    # the cache geometry axis (2 and 8 KiB) is 20.5's (matrix.md §2): each captured case and method, at R warm, planned
-    # until a run captures it at that size, warm and at L0 (tuning.md §4.2)
+    # the cache geometry axis (the sizes other than R's) is 20.5's (matrix.md §2): each captured case and method, at R
+    # warm, planned until a run captures it at that size, warm and at L0 (tuning.md §4.2)
     sized = {(e["family"], e["case"], e["method"], e["sim"]) for e in entries if e["status"] == "captured"
              and e["axes"].get("cache_state") == "warm" and not e["axes"].get("layout")}
     for family, case, method in captured:
-        for kib in (2, 8):
+        for kib in OTHER_KIB:
             if (family, case, method, f"soc_l1_{kib}k") in sized:
                 continue
             entries.append(dict(id=f"{family}/{case}/{method}/soc_l1_{kib}k/warm", family=family, case=case,

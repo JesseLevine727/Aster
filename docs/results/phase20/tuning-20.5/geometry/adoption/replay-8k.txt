@@ -1,0 +1,1 @@
+PASS: 1708 of 1708 of step 2's 8 KiB firmware images (soc_l1_8k, f246a11) give the same console and end on the new default build (soc_dev, 8 KiB)

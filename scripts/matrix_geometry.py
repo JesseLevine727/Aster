@@ -1,18 +1,19 @@
 #!/usr/bin/env python3
-"""20.5's cache geometry (docs/tuning.md §4.2): the L1 caches at 2 and 8 KiB against 4 KiB, from matrix runs made
-with --caches, all from one clean commit.
+"""20.5's cache geometry (docs/tuning.md §4.2): the L1 caches at the other sizes against R's own, from matrix runs
+made with --caches, all from one clean commit. Step 2 measured 2 and 8 KiB against 4 KiB, R's then; since the
+owner adopted 8 KiB, the other sizes are 2 and 4 KiB.
 
-Each entry captured at another size is paired with its 4 KiB twin (the same id at soc_dev), and each window both
-recorded gives the ratio of hart 0's cycles at that size to 4 KiB's. Reported:
+Each entry captured at another size (a soc_l1_<KiB>k build) is paired with its R twin (the same id at soc_dev), and
+each window both recorded gives the ratio of hart 0's cycles at that size to R's. Reported:
   - per family and size: the windows compared (all of them, and e2e alone), how many are faster, slower and
     unchanged, the median and the range of the change, and the largest moves;
   - the gates (matrix_gates.py) at each size and each layout run: the scaling gate's lowest e2e speedup, and the
     v1 gate's lowest ratio;
   - the layouts (tuning.md §3): each gate workload's e2e change at each size, on every layout it ran at, and
     its verdict: faster (or slower) on every layout; never slower (or never faster), equal on some; or mixed,
-    faster on some and slower on others. On the eight (L0-L7) and on decision 2's five (L0-L4; the eight await
-    the owner's approval), each over the layouts the workload fits.
-No size is adopted here: that is the owner's sign-off (tuning.md §4.2).
+    faster on some and slower on others. On the eight (L0-L7) and on decision 2's five (L0-L4; the owner approved
+    the eight on 10 October 2026), each over the layouts the workload fits.
+No size is adopted here: that is the owner's sign-off (tuning.md §4.2; 8 KiB was adopted after step 2).
 
   matrix_geometry.py RUN_DIR... [--json OUT]
 """
@@ -27,30 +28,33 @@ from pathlib import Path
 import matrix_gates
 from matrix_overlap import records_of
 
-SIZES = (2, 8)
-FIVE = ("L0", "L1", "L2", "L3", "L4")      # decision 2's layouts, as approved (step 1 added L5-L7, pending)
+FIVE = ("L0", "L1", "L2", "L3", "L4")      # decision 2's layouts (step 1 added L5-L7, the eight since approved)
 
 
 def twins(allrec: dict) -> tuple[list[dict], list[str]]:
-    """Each window of each entry at 2 or 8 KiB, with its 4 KiB twin's cycles; and the entries with no twin."""
+    """Each window of each entry at another size, with its R twin's cycles; and the entries with no twin."""
     rows, alone = [], []
     for ident, (e, recs) in sorted(allrec.items()):
-        kib = e["axes"].get("cache_kib")
-        if kib not in SIZES:
+        if not e["sim"].startswith(matrix_gates.GEOMETRY):
             continue
-        twin = allrec.get(ident.replace(f"/{matrix_gates.R_SIM[kib]}/", "/soc_dev/"))
+        twin = allrec.get(ident.replace(f"/{e['sim']}/", "/soc_dev/"))
         if twin is None:
             alone.append(ident)
             continue
         if [(r["name"], r["window"]) for r in recs] != [(r["name"], r["window"]) for r in twin[1]]:
-            raise SystemExit(f"{ident}: its records' windows differ from its 4 KiB twin's")
+            raise SystemExit(f"{ident}: its records' windows differ from its R twin's")
         for r, s in zip(recs, twin[1]):
-            four, other = int(s["h0_cycles"]), int(r["h0_cycles"])
-            if four:
-                rows.append(dict(id=ident, family=e["family"], case=e["case"], method=e["method"], kib=kib,
+            base, other = int(s["h0_cycles"]), int(r["h0_cycles"])
+            if base:
+                rows.append(dict(id=ident, family=e["family"], case=e["case"], method=e["method"],
+                                 kib=matrix_gates.size_of(e), base_kib=matrix_gates.size_of(twin[0]),
                                  layout=e["axes"].get("layout", "L0"), cache_state=e["axes"]["cache_state"],
-                                 window=r["window"], four=four, other=other, ratio=other / four))
+                                 window=r["window"], base=base, other=other, ratio=other / base))
     return rows, alone
+
+
+def sizes(rows: list[dict]) -> list[int]:
+    return sorted({r["kib"] for r in rows})
 
 
 def summary(rows: list[dict]) -> dict:
@@ -61,12 +65,12 @@ def summary(rows: list[dict]) -> dict:
     return dict(windows=len(rows), faster=sum(c < 0 for c in change), slower=sum(c > 0 for c in change),
                 unchanged=sum(c == 0 for c in change), median=round(statistics.median(change) * 100, 3),
                 low=round(min(change) * 100, 2), high=round(max(change) * 100, 2),
-                largest=[f"{r['id']} {r['window']} {r['four']} -> {r['other']}" for r in big])
+                largest=[f"{r['id']} {r['window']} {r['base']} -> {r['other']}" for r in big])
 
 
 def per_family(rows: list[dict]) -> dict:
     out = {}
-    for kib in SIZES:
+    for kib in sizes(rows):
         l0 = [r for r in rows if r["kib"] == kib and r["layout"] == "L0"]
         for family in sorted({r["family"] for r in l0}):
             mine = [r for r in l0 if r["family"] == family]
@@ -74,10 +78,13 @@ def per_family(rows: list[dict]) -> dict:
     return out
 
 
-def gates(allrec: dict) -> dict:
+def gates(allrec: dict, rows: list[dict]) -> dict:
     layouts = sorted({e["axes"].get("layout") for e, _ in allrec.values() if e["axes"].get("layout")})
+    own = sorted({r["base_kib"] for r in rows})
+    if len(own) > 1:
+        raise SystemExit(f"R at several cache sizes: {own} KiB")
     out = {}
-    for kib in (4, *SIZES):
+    for kib in (None, *sizes(rows)):
         for layout in (None, *layouts):
             s = matrix_gates.scaling(allrec, kib, layout)
             v = matrix_gates.against_v1(allrec, kib, layout)
@@ -85,7 +92,7 @@ def gates(allrec: dict) -> dict:
             ratios = {name: x["ratio"] for name, x in v.items() if x["ratio"] is not None}
             if not mins and not ratios:
                 continue
-            out[f"{kib} KiB {layout or 'L0'}"] = dict(
+            out[f"{kib or (own[0] if own else 'R')} KiB {layout or 'L0'}"] = dict(
                 scaling_lowest=min(mins, default=None), scaling_meets=bool(mins) and min(mins) >= matrix_gates.SCALING_GATE,
                 scaling_cases=sum(x["pairs"] > 0 for x in s.values()), v1_lowest=min(ratios.values(), default=None),
                 v1_faster=sum(x["faster"] for x in v.values()), v1_measured=len(ratios), v1=ratios)
@@ -96,7 +103,7 @@ def across_layouts(rows: list[dict], allrec: dict) -> dict:
     """Each gate workload's e2e change at each size, per layout."""
     gate_ids = set()
     for ident, (e, _) in allrec.items():
-        if e["axes"].get("cache_kib") in SIZES and (e["case"] in matrix_gates.SCALING or any(
+        if e["sim"].startswith(matrix_gates.GEOMETRY) and (e["case"] in matrix_gates.SCALING or any(
                 e["family"] == f and competes(e["case"]) for f, competes, _ in matrix_gates.V1.values())):
             gate_ids.add(ident)
     # (by configuration: the entry's id without its layout, so a sweep point captured at L0 alone, such as ECG's
@@ -145,12 +152,13 @@ def main() -> int:
         allrec.update(records_of(run))
     rows, alone = twins(allrec)
     result = dict(revisions=sorted(revs), dirty=dirty, pairs=len({r["id"] for r in rows}), windows=len(rows),
-                  without_twin=alone, families=per_family(rows), gates=gates(allrec),
+                  without_twin=alone, families=per_family(rows), gates=gates(allrec, rows),
                   layouts=across_layouts(rows, allrec))
     if args.json:
         args.json.write_text(json.dumps(result, indent=1) + "\n")
     print(f"revisions {result['revisions']}{' (DIRTY: ' + ', '.join(dirty) + ')' if dirty else ''}; "
-          f"{result['pairs']} entries paired with their 4 KiB twins, {result['windows']} windows; "
+          f"{result['pairs']} entries paired with their {'/'.join(f'{k} KiB' for k in sorted({r['base_kib'] for r in rows}))} "
+          f"twins, {result['windows']} windows; "
           f"{len(alone)} without a twin")
     for name, s in result["families"].items():
         a, e = s["all"], s["e2e"]
@@ -161,7 +169,7 @@ def main() -> int:
         print(f"  gates {name}: scaling lowest {g['scaling_lowest']} ({'meets' if g['scaling_meets'] else 'MISSES'} "
               f"{matrix_gates.SCALING_GATE}x, {g['scaling_cases']} cases); v1 lowest {g['v1_lowest']}x, "
               f"{g['v1_faster']} of {g['v1_measured']} faster")
-    for kib in SIZES:
+    for kib in sizes(rows):
         mine = [v for k, v in result["layouts"].items() if k.endswith(f" {kib} KiB")]
         if mine:
             eight, five = defaultdict(int), defaultdict(int)

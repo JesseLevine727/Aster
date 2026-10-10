@@ -26,7 +26,7 @@ with every engine, and at most 80% of the device's LUTs, block RAM and DSPs.
 | Block | What it is | From |
 | --- | --- | --- |
 | Harts 0 and 1 | Aster cores (RV32IMA, Zicsr, Zifencei, Xasterdot8; `HART_ID` 0 and 1) | Phase 18, unchanged |
-| Caches, per hart | 4 KiB instruction cache; 4 KiB write-through data cache, which gains a snoop port for each other writer (§4.6) | Phase 18 (18.6) |
+| Caches, per hart | 8 KiB instruction cache; 8 KiB write-through data cache, which gains a snoop port for each other writer (§4.6). 4 KiB until 20.5, when the owner adopted 8 KiB (tuning.md §4.2) | Phase 18 (18.6); 20.5 |
 | Main memory | 96 KiB in four banks of block RAM (§4.2) | The frozen memory point, now banked |
 | Fabric | Arbitration, atomics, reservations and snoops between seven requesters and the banks; the I/O bus (§4) | New |
 | NPU | The Phase 19 v2 NPU: 8×8, two A strip buffers, 64-bit port | Phase 19, unchanged |
@@ -389,7 +389,7 @@ scalar, one and two workers, DOT8, DMA and the NPU. The axes:
 | Harts and workers | 1 hart; 2 harts with 1 or 2 workers | RTL parameter (HART_COUNT); software |
 | Data cache | on; off (main memory uncached through the cache's I/O path) | RTL parameter |
 | Cache state | cold (the first pass after reset) and warm (a pass after a warm-up pass) | software |
-| Cache geometry | 4 KiB direct-mapped (the default); 2 and 8 KiB | RTL parameter (20.5): the caches' and the CPU shell's cache model's line count, verified by the L1 tests at each size |
+| Cache geometry | 8 KiB direct-mapped (the default since 20.5, adopted by the owner; 4 KiB before); 2 and 4 KiB | RTL parameter (20.5): the caches' and the CPU shell's cache model's line count, verified by the L1 tests at each size |
 | Memory | the physical two-cycle memory; +1, +2 and +4 wait cycles on every answer | RTL parameter, in simulation only |
 | NPU | 8×8 (64-bit port); 4×4 with a 32- or 64-bit port; one or two A strips | RTL parameters (npu.md §4.6) |
 | Methods | scalar, multicore, DOT8, DMA, NPU | software |
@@ -780,8 +780,9 @@ when it stopped hart 1).
   or 4 (RESUME), as in v1. Any other value is ignored.
 - **ABI 4's metadata:**
   - 0x8C reads 3 (caches on, synchronous memory);
-  - 0x90 reads 4 words a line and 0x94 the lines in each cache: 256 at 4 KiB
-    (since 20.5, the build's CACHE_BYTES / 16: 128 at 2 KiB, 512 at 8 KiB);
+  - 0x90 reads 4 words a line and 0x94 the lines in each cache: the build's
+    CACHE_BYTES / 16 since 20.5, 512 at 8 KiB (the default since the owner
+    adopted it), 256 at 4 KiB and 128 at 2 KiB;
   - 0x98, the memory's wait cycles, reads 1 + WAIT: v1's synchronous memory
     read 1, and the v2 memory is the same two-cycle block RAM.
   - Counter 0 (cycles) is the window's cycles, the same for both harts.
@@ -1081,8 +1082,8 @@ Milestone 20.3):
 [`tuning.md`](tuning.md), with its nine decisions as recommended:
 - **The console:** the 4 KiB ring kept if the board's drain stays within
   2 KiB of the writer, else 16 KiB.
-- **Tuning judged across five fixed layouts** (eight in step 1's amendment, pending the owner's approval:
-  tuning.md §3) that pad between the image's
+- **Tuning judged across five fixed layouts** (eight since step 1's amendment, approved by the owner on
+  10 October 2026: tuning.md §3) that pad between the image's
   parts, after alignment. They must first reproduce 20.4's moves; L0 is the
   layout of record.
 - **Tuned variants** are new cases under the existing methods, with the
@@ -1095,4 +1096,12 @@ Milestone 20.3):
   of the bitstream.
 - **Two-hart NPU variants** record the e2e window alone.
 - **Phase 21** stays a short phase on 20.5's board set.
+
+**Decided by the owner, 10 October 2026, after step 2** (phase20.md, 20.5 step 2):
+- **8 KiB caches adopted** (tuning.md §4.2): each hart's instruction and data caches are 8 KiB, the SoC's default
+  (§2). 2 and 4 KiB stay as the matrix's axis. §10.4's regression keeps 4 KiB builds, as its comparisons are defined
+  there; 18.7's board programs also run on the regression build at 8 KiB, against the CPU shell at 8 KiB. The
+  timing is signed off by the owner's rule on the final RTL (step 4).
+- **Eight layouts** (L0–L7) in place of decision 2's five: tuning is judged on all eight, each workload on the
+  layouts it fits.
 

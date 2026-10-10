@@ -56,9 +56,9 @@ PAD = "software/matrix/matrix_pad.S"
 LAYOUTS = {"L1": (16, 16, 16), "L2": (32, 32, 32), "L3": (48, 48, 48), "L4": (1024, 1024, 0),
            "L5": (16, 336, 16), "L6": (32, 672, 32), "L7": (48, 1008, 48)}
 LAYOUT_ANCHORS = ("__matrix_pad_code", "v12_emit", "aster_smp_dispatch", "aster_smp_worker")
-# 20.5's cache geometry (docs/tuning.md §4.2): the L1 caches at 2 and 8 KiB (4 KiB is soc_dev's, the default), the
-# builds named as 20.4's bundle planned them
-CACHE_SIMS = {2: "soc_l1_2k", 8: "soc_l1_8k"}
+# 20.5's cache geometry (docs/tuning.md §4.2): R's caches are 8 KiB since the owner adopted them; the other sizes'
+# builds, as 20.4's bundle named them (soc_l1_<KiB>k). Step 2 measured 2 and 8 KiB against 4 KiB (R's then).
+CACHE_SIMS = {2: "soc_l1_2k", 4: "soc_l1_4k"}
 MAX_CYCLES = 2_000_000_000
 SCHEMA = "aster.phase20.matrix.v1"
 
@@ -1219,6 +1219,12 @@ def gate_workload(e: Entry) -> bool:
     return any(e.family == family and competes(e.case) for family, competes, _ in matrix_gates.V1.values())
 
 
+def recorded_axes(e: Entry) -> dict:
+    """The entry's axes as the manifest records them: with its build's cache size in KiB (every entry's since 8 KiB's
+    adoption in 20.5; an earlier capture's entries without it are at 4 KiB, R's then)."""
+    return dict(e.axes, cache_kib=soc_variants.VARIANTS[e.sim]["CACHE_BYTES"] // 1024)
+
+
 def geometry_base(e: Entry) -> bool:
     """tuning.md §4.2's entries for the cache geometry: R on the default seed, warm, and cold for the gate
     workloads."""
@@ -1328,7 +1334,7 @@ def sha256(path: Path) -> str:
 
 def do_entry(entry: Entry, out: Path, prefix: str, soc_flags: list[str]) -> dict:
     result = dict(id=entry.id, family=entry.family, case=entry.case, method=entry.method, sim=entry.sim,
-                  axes=entry.axes)
+                  axes=recorded_axes(entry))
     started = time.time()
     try:
         if not (SIM_DIR / entry.sim).exists():
@@ -1423,7 +1429,8 @@ def main() -> int:
     if args.caches:
         kibs = [int(k) for k in args.caches.split(",")]
         if any(k not in CACHE_SIMS for k in kibs) or len(set(kibs)) != len(kibs):
-            parser.error(f"--caches: each of {', '.join(map(str, CACHE_SIMS))} at most once (4 KiB is the entries' own)")
+            own = soc_variants.VARIANTS["soc_dev"]["CACHE_BYTES"] // 1024
+            parser.error(f"--caches: each of {', '.join(map(str, CACHE_SIMS))} at most once ({own} KiB is R's own)")
         entries += with_caches(entries, kibs)
     if args.layouts:
         entries += [with_layout(e, name) for name in args.layouts.split(",") for e in list(entries)
@@ -1444,7 +1451,7 @@ def main() -> int:
     unsupported = [e for e in entries if e.status == "unsupported"]
     entries_to_run = [e for e in entries if e.status != "unsupported"]
     for e in unsupported:
-        results.append(dict(id=e.id, family=e.family, case=e.case, method=e.method, sim=e.sim, axes=e.axes,
+        results.append(dict(id=e.id, family=e.family, case=e.case, method=e.method, sim=e.sim, axes=recorded_axes(e),
                             status="unsupported", reason=e.reason))
     with concurrent.futures.ThreadPoolExecutor(args.jobs) as pool:
         futures = [pool.submit(do_entry, e, out, prefix, soc_flags) for e in entries_to_run]

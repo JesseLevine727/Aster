@@ -70,3 +70,17 @@ archives hold each entry's records and console.
   same sources, gives the same configuration data and slack.
 - **`paths-*/`:** the best builds' worst setup paths and their endpoints by
   block (`scripts/timing/soc_paths.tcl`, 200 paths, under 0.4 ns).
+
+**`adoption/`, after the owner adopted 8 KiB** (10 October 2026; the SoC's
+default is 8 KiB, 2 and 4 KiB the matrix's axis):
+- **`bitstream.txt`:** the default, built with no parameters on o5asm-mgi, is
+  byte-identical to step 2's 8 KiB build, so step 2's 8 KiB timing is the
+  default's. Its row is in `timing/builds.csv`.
+- **`replay-8k.txt`:** step 2's 8 KiB firmware, 1,708 images, gives the same
+  console and end on the new default build (`replay_8k.py`, with
+  `scripts/matrix_golden.py`'s replay).
+- **`soc-tests.log`:** `make soc-tests` in full. The regression builds keep
+  4 KiB (soc.md §10.4), and 18.7's 99 programs also run on the regression
+  build at 8 KiB against the CPU shell at 8 KiB.
+- **`matrix-variants.log`:** soc-tests' two-hart programs on every matrix
+  variant (now at 8 KiB) and on soc_l1_2k and soc_l1_4k: 102 checks.

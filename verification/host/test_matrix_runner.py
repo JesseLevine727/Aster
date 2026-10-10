@@ -262,7 +262,8 @@ class DmaInvalidations(unittest.TestCase):
     """20.5: the DMA oracle's exact count up to a quarter of the cache at each size, and its bound above."""
     def check(self, kib: int, size: int, off_by: int) -> None:
         base = next(e for e in matrix.dma_entries() if e.id == f"dma/copy/dma/soc_dev/warm/b{size}s0d0c1")
-        e = base if kib == 4 else matrix.with_caches([base], [kib])[0]
+        own = matrix.soc_variants.VARIANTS["soc_dev"]["CACHE_BYTES"] // 1024      # (R's: 8 KiB since 20.5)
+        e = base if kib == own else matrix.with_caches([base], [kib])[0]
         a, lines = e.axes, (size + 15) // 16
         r = dict(window="e2e", name="copy", size=size, iterations=1, param=(1 << 8), seed=a["seed"], workers=1,
                  checksum=matrix.dma_model(a, False), dma_jobs=1, dma_completed_jobs=1, dma_bytes=size,
@@ -286,6 +287,9 @@ class DmaInvalidations(unittest.TestCase):
             self.check(2, 4096, 129 - 256)                       # 129 invalidations: over 2 KiB's 128 lines
 
 
+STEP2_SIM = {4: "soc_dev", 2: "soc_l1_2k", 8: "soc_l1_8k"}       # (a capture of step 2's: R's caches at 4 KiB)
+
+
 class Geometry(unittest.TestCase):
     """20.5: each 2 and 8 KiB entry against its 4 KiB twin, and a gate workload judged on every layout."""
     def rec(self, cycles: int) -> dict:
@@ -301,7 +305,7 @@ class Geometry(unittest.TestCase):
         allrec = {}
         cycles = {(None, 4): 1000, (None, 2): 1100, (None, 8): 900, ("L3", 4): 1000, ("L3", 2): 990, ("L3", 8): 950}
         for (layout, kib), c in cycles.items():
-            e = self.entry(matrix_gates.R_SIM[kib], layout, None if kib == 4 else kib)
+            e = self.entry(STEP2_SIM[kib], layout, None if kib == 4 else kib)
             allrec[e["id"]] = (e, [self.rec(c)])
         lone = self.entry("soc_l1_2k", "L5", 2)
         allrec[lone["id"]] = (lone, [self.rec(5)])
@@ -321,7 +325,7 @@ class Geometry(unittest.TestCase):
         allrec = {}
         for layout in (None, "L1", "L2", "L3", "L4", "L5", "L6", "L7"):
             for kib in (4, 8):
-                e = self.entry(matrix_gates.R_SIM[kib], layout, None if kib == 4 else kib)
+                e = self.entry(STEP2_SIM[kib], layout, None if kib == 4 else kib)
                 other = {"L6": 1010, "L7": 1000}.get(layout, 990)
                 allrec[e["id"]] = (e, [self.rec(1000 if kib == 4 else other)])
         rows, _ = matrix_geometry.twins(allrec)
@@ -330,16 +334,30 @@ class Geometry(unittest.TestCase):
         self.assertEqual(matrix_geometry.across_layouts([r for r in rows if r["layout"] != "L6"], allrec)
                          ["coherence/reduce_fill/scalar warm 8 KiB"]["verdict"], "never slower")   # (L7 equal)
 
+    def test_after_8k_was_adopted(self):
+        """R at 8 KiB, every entry's size recorded: 2 and 4 KiB against it, the gates labelled by R's size."""
+        allrec = {}
+        for kib, sim, c in ((8, "soc_dev", 1000), (2, "soc_l1_2k", 1300), (4, "soc_l1_4k", 1100)):
+            e = self.entry(sim, None, kib)
+            allrec[e["id"]] = (e, [self.rec(c)])
+        rows, alone = matrix_geometry.twins(allrec)
+        self.assertEqual((alone, sorted((r["kib"], r["base_kib"], round(r["ratio"], 2)) for r in rows)),
+                         ([], [(2, 8, 1.3), (4, 8, 1.1)]))
+        self.assertEqual(sorted(matrix_geometry.per_family(rows)), ["coherence 2 KiB", "coherence 4 KiB"])
+        self.assertTrue(matrix_gates.at(allrec["coherence/reduce_fill/scalar/soc_dev/warm"][0], None, None))
+        self.assertFalse(matrix_gates.at(allrec["coherence/reduce_fill/scalar/soc_l1_4k/warm"][0], None, None))
+        self.assertTrue(matrix_gates.at(allrec["coherence/reduce_fill/scalar/soc_l1_4k/warm"][0], 4, None))
+
     def test_a_sweep_point_at_l0_stands_apart(self):
         """A sweep point captured at L0 alone (as ECG's other chunks and taps) neither replaces the default's L0
         figure nor forms a verdict of its own."""
         allrec = {}
         for layout in (None, "L1", "L2"):
             for kib in (4, 8):
-                e = self.entry(matrix_gates.R_SIM[kib], layout, None if kib == 4 else kib)
+                e = self.entry(STEP2_SIM[kib], layout, None if kib == 4 else kib)
                 allrec[e["id"]] = (e, [self.rec(1000 if kib == 4 else 990)])
         for kib in (4, 8):                                       # (sorted after the default)
-            e = self.entry(matrix_gates.R_SIM[kib], None, None if kib == 4 else kib)
+            e = self.entry(STEP2_SIM[kib], None, None if kib == 4 else kib)
             e = dict(e, id=e["id"] + "/c64t8")
             allrec[e["id"]] = (e, [self.rec(1000 if kib == 4 else 1500)])
         rows, _ = matrix_geometry.twins(allrec)
@@ -395,11 +413,11 @@ class Bundle(unittest.TestCase):
             e["axes"] = dict(e["axes"], cache_kib=2)
             self.assertEqual(e["method"], "scalar")
             m["entries"].append(e)
-            # (a cold one and a layout's at 8 KiB leave the warm L0 placeholder)
-            m["entries"].append(dict(e, id="coherence/reduce_fill/scalar/soc_l1_8k/cold", sim="soc_l1_8k",
-                                     axes=dict(e["axes"], cache_kib=8, cache_state="cold")))
-            m["entries"].append(dict(e, id="coherence/reduce_fill/scalar/soc_l1_8k/warm/L3", sim="soc_l1_8k",
-                                     axes=dict(e["axes"], cache_kib=8, layout="L3")))
+            # (a cold one and a layout's at 4 KiB leave the warm L0 placeholder)
+            m["entries"].append(dict(e, id="coherence/reduce_fill/scalar/soc_l1_4k/cold", sim="soc_l1_4k",
+                                     axes=dict(e["axes"], cache_kib=4, cache_state="cold")))
+            m["entries"].append(dict(e, id="coherence/reduce_fill/scalar/soc_l1_4k/warm/L3", sim="soc_l1_4k",
+                                     axes=dict(e["axes"], cache_kib=4, layout="L3")))
             m["counts"]["captured"] = 5
             (run / "manifest.json").write_text(matrix_overlap.json.dumps(m))
             out = Path(tmp) / "out"
@@ -413,8 +431,8 @@ class Bundle(unittest.TestCase):
                        if l.strip().startswith('{"')]
         planned = sorted(e["id"] for e in entries if e["status"] == "planned")
         self.assertEqual(planned, ["coherence/reduce_fill/multicore/soc_l1_2k/warm",
-                                   "coherence/reduce_fill/multicore/soc_l1_8k/warm",
-                                   "coherence/reduce_fill/scalar/soc_l1_8k/warm"])
+                                   "coherence/reduce_fill/multicore/soc_l1_4k/warm",
+                                   "coherence/reduce_fill/scalar/soc_l1_4k/warm"])
 
     def test_npu_exclusions_where_the_npu_ran(self):
         with tempfile.TemporaryDirectory() as tmp:
@@ -464,13 +482,13 @@ class LineCount(unittest.TestCase):
 
     def test_the_builds_count_passes(self):
         npu, soc = (8 << 16) | (8 << 8) | 2, 2
-        for build, count in (("soc_l1_2k", 128), ("soc_dev", 256), ("soc_l1_8k", 512)):
+        for build, count in (("soc_l1_2k", 128), ("soc_l1_4k", 256), ("soc_dev", 512), ("soc_shell", 256)):
             asterbench_v12.check_config(self.config(count), npu, soc, matrix.soc_variants.VARIANTS[build]["CACHE_BYTES"] // 16)
         asterbench_v12.check_config(self.config(128), npu, soc)        # (no build count given: not checked)
 
     def test_another_count_fails(self):
         npu, soc = (8 << 16) | (8 << 8) | 2, 2
-        for got, build in ((256, "soc_l1_2k"), (256, "soc_l1_8k"), (128, "soc_dev"), (512, "soc_dev")):
+        for got, build in ((256, "soc_l1_2k"), (512, "soc_l1_4k"), (256, "soc_dev"), (128, "soc_dev")):
             with self.assertRaisesRegex(asterbench_v12.ValidationError, "line_count"):
                 asterbench_v12.check_config(self.config(got), npu, soc, matrix.soc_variants.VARIANTS[build]["CACHE_BYTES"] // 16)
 

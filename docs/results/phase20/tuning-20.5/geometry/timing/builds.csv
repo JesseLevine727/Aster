@@ -33,3 +33,4 @@ c4k-o5asm-mgi,4096,o5asm-mgi,over=0.5;place=AltSpreadLogic_medium;route=MoreGlob
 c1-o5asm-mgi-repeat,4096,o5asm-mgi,over=0.5;place=AltSpreadLogic_medium;route=MoreGlobalIterations,0.373,0.024,34018,63.94,80,57.14,27,04821fbbeb1a4aca,step 1's (0d8bfa0's RTL),met 10 ns
 c2k-o5eto-repeat,2048,o5eto,over=0.5;place=ExtraTimingOpt,0.243,0.020,31962,60.08,78,55.71,27,7403d3334c64aaf4,e86b47e (f246a11's RTL),met 10 ns
 c8k-o5asm-mgi-repeat,8192,o5asm-mgi,over=0.5;place=AltSpreadLogic_medium;route=MoreGlobalIterations,0.306,0.040,38704,72.75,84,60.00,27,0bf4b4c3e021b79d,e86b47e (f246a11's RTL),met 10 ns
+c8k-default-o5asm-mgi,8192,o5asm-mgi,over=0.5;place=AltSpreadLogic_medium;route=MoreGlobalIterations,0.306,0.040,38704,72.75,84,60.00,27,0bf4b4c3e021b79d,"the adopted default (8 KiB), no parameters",met 10 ns

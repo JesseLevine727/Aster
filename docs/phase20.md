@@ -1818,7 +1818,7 @@ matrix.md §10.10–14, and its timing on m4-o5asm-mgi (soc.md §13). 20.5 begin
 5. the board run;
 6. the report and the closeout audit.
 
-### Step 1: the infrastructure (done; awaiting its review and the owner's word on the layouts)
+### Step 1: the infrastructure (done; its eight layouts approved by the owner, 10 October 2026)
 
 **The board.** The full two-hart SoC ran on the PYNQ-Z1 for the first time, through the new runner
 (`matrix_board.py`).
@@ -1840,7 +1840,7 @@ alignment.
   - the five approved layouts missed the 16×16×64 GEMM's 20.4 move (+12%; they moved it ±0.3%);
   - eight layouts reach at least half of 20.4's move in 261 of 262 windows. The one short is the 2-item lr/sc
     kernel window with the cache off, which 20.4 moved by 6 cycles.
-- **For the owner:** eight layouts instead of decision 2's five. No tuning change is judged until then.
+- **Approved by the owner (10 October 2026):** eight layouts instead of decision 2's five.
 
 **The overlap evidence** (tuning.md §6): both harts stamp their shares, on `MATRIX_SHARE` lines.
 - **Every two-worker program** now shows its overlap from stamps: the reductions, Conv2D, the dot, FIR and FFT,
@@ -1858,7 +1858,7 @@ alignment.
 **The copy helper** (`aster_copy`): the DMA or v1's fair copy, by size and offset.
 - **Its test** (`soc_copy`): 1,200 copies on two builds, every byte, guard and choice checked.
 
-### Step 2: the cache geometry (done; awaiting the owner's decision on the size)
+### Step 2: the cache geometry (done; 8 KiB adopted by the owner, 10 October 2026)
 
 **The parameter** (tuning.md §4.2): `CACHE_BYTES`, each L1 cache's capacity, in both caches, the SoC and the
 board shim. It may be 2, 4 or 8 KiB (direct-mapped, 16-byte lines).
@@ -1995,15 +1995,28 @@ The 4 KiB row is step 1's builds (0d8bfa0's RTL); its o5asm-mgi was rebuilt on e
   - 2 KiB: 26. 15 start in hart 0's data cache (into the DMA and the NPU buffer); the rest are the fabric's
     (4), the NPU's reset (4), the NPU buffer's (2) and the NPU's (1).
 
-**For the owner:** adopt another size, or keep 4 KiB. soc.md §2's 4 KiB caches stay unless you adopt another.
-- **If another size is adopted,** tuning.md §4.2's consequences follow:
-  - soc.md §10.4's regression runs on a 4 KiB build of the same RTL;
-  - 18.7's board programs run against the CPU shell at the adopted size;
-  - the timing is re-checked by your rule.
+**The owner's decisions (10 October 2026):** 8 KiB caches adopted, and the eight layouts approved. Step 3's tuning
+is judged at 8 KiB, on L0–L7.
 
-  Step 3's tuning would then be judged at that size.
-- **Still open:** the eight layouts in place of decision 2's five (step 1). No tuning change is judged until
-  you decide. The layout result above is shown both ways.
+**The adoption** (tuning.md §4.2's consequences; the evidence in `results/phase20/tuning-20.5/geometry/adoption/`):
+- **The SoC's caches are 8 KiB by default** (`aster_soc.sv`, the board shim and the simulation). 2 and 4 KiB stay
+  as the matrix's axis (`soc_l1_2k`, `soc_l1_4k`). Every matrix entry now records its cache size; ABI 4's `0x94`
+  reads 512 at R.
+- **The default is step 2's 8 KiB build:**
+  - its bitstream on o5asm-mgi, built with no parameters, is byte-identical to step 2's 8 KiB one (configuration
+    data sha256 0bf4b4c3…), so step 2's timing at 8 KiB is the default's: +0.021 to +0.306 ns on ten strategies;
+  - step 2's 8 KiB firmware gives the same console and end on it, 1,708 of 1,708 images.
+
+  The timing is signed off by your rule on the final RTL, in step 4.
+- **soc.md §10.4's regression keeps 4 KiB builds** (`soc_shell`, `soc_shell_p19`), as its comparisons are defined
+  there. Phase 19's gate programs end with the same cycle offsets as before, and 18.7's 99 programs match the 4 KiB
+  CPU shell.
+- **18.7's board programs at 8 KiB:** 99 of 99 end on the regression build at 8 KiB (`soc_shell_8k`) as in the CPU
+  shell at 8 KiB, cycle for cycle and RVFI record for record. This is now part of `make soc-tests`.
+- **soc-tests pass in full,** the two-hart programs on soc_dev and soc_dev_w3 now at 8 KiB.
+- **Every matrix variant,** now at 8 KiB, and soc_l1_2k and soc_l1_4k pass soc-tests' two-hart programs:
+  all 102 checks, the seven programs on each of the 14 two-hart builds and the one-hart program on each of
+  the 4 one-hart builds.
 
 ## Milestones and gates
 

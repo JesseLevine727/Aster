@@ -3129,9 +3129,13 @@ litmus-tests: $(LITMUS_DIR)/litmus_v2.elf
 # CPU shell's register page); soc_dev, the two-hart device build; soc_dev_w3,
 # the device build with three added answer cycles (WAIT = 3); and
 # soc_shell_p19, the regression build without the NPU's request buffer and
-# register stage, for soc-gates' comparison with the Phase 19 SoC.
+# register stage, for soc-gates' comparison with the Phase 19 SoC. 20.5 adopted
+# 8 KiB caches (the SoC's default): the regression builds keep 4 KiB, as
+# soc.md §10.4's comparisons are defined there (tuning.md §4.2), and
+# soc_shell_8k is the regression build at 8 KiB.
 # soc-tests runs 18.7's 99 programs on soc_shell, each as in the CPU shell,
 # cycle for cycle and record for record (scripts/aster_board.py --design soc),
+# and on soc_shell_8k against the CPU shell at 8 KiB,
 # and scripts/soc_tests.py's two-hart programs on the device builds: the
 # litmus shapes (classified by scripts/litmus.py), hart 1's reset stress, the
 # runtime's dispatch and join, the devices, and the DMA through v1's driver
@@ -3141,8 +3145,8 @@ ASTER_SOC_RTL := $(ASTER_CORE_RTL) $(ASTER_L1_RTL) $(NPU_V2_RTL) rtl/fabric/aste
 	rtl/soc/aster_soc_devices.sv rtl/soc/aster_soc.sv
 ASTER_SOC_TB := verification/aster_soc/sim_soc.sv verification/aster_soc/tb_soc.cpp verification/fabric/mem_checker.h \
 	verification/fabric/fabric_ref.h verification/npu/npu_model.h
-ASTER_SOC_BUILDS := soc_shell:-GSHELL_PAGE=1 soc_dev:-GSHELL_PAGE=0 soc_dev_w3:-GSHELL_PAGE=0,-GWAIT=3 \
-	soc_shell_p19:-GSHELL_PAGE=1,-GNPU_BUFFER=0,-GNPU_REG_Q=0
+ASTER_SOC_BUILDS := soc_shell:-GSHELL_PAGE=1,-GCACHE_BYTES=4096 soc_dev:-GSHELL_PAGE=0 soc_dev_w3:-GSHELL_PAGE=0,-GWAIT=3 \
+	soc_shell_p19:-GSHELL_PAGE=1,-GNPU_BUFFER=0,-GNPU_REG_Q=0,-GCACHE_BYTES=4096 soc_shell_8k:-GSHELL_PAGE=1
 # 20.4's matrix variants (docs/matrix.md §2): one hart, at each memory wait (§3's harts and workers x memory
 # cross); +1, +2 and +4 memory waits; the NPU's geometries
 # (8x8 with one strip; 4x4 on a 64- or 32-bit port, with two strips or one); the data caches off, alone and
@@ -3159,8 +3163,9 @@ ASTER_SOC_MATRIX_BUILDS := soc_h1:-GSHELL_PAGE=0,-GHARTS=1 soc_h1_w1:-GSHELL_PAG
 	soc_n4p4s1:-GSHELL_PAGE=0,-GNPU_DIM=4,-GNPU_PORT_BYTES=4,-GNPU_A_STRIPS=1 \
 	soc_dc0:-GSHELL_PAGE=0,-GDCACHE=0 soc_w1_dc0:-GSHELL_PAGE=0,-GWAIT=1,-GDCACHE=0 \
 	soc_w2_dc0:-GSHELL_PAGE=0,-GWAIT=2,-GDCACHE=0 soc_w4_dc0:-GSHELL_PAGE=0,-GWAIT=4,-GDCACHE=0 \
-	soc_l1_2k:-GSHELL_PAGE=0,-GCACHE_BYTES=2048 soc_l1_8k:-GSHELL_PAGE=0,-GCACHE_BYTES=8192
-# (20.5, docs/tuning.md §4.2: soc_l1_2k and soc_l1_8k, the L1 caches at 2 and 8 KiB)
+	soc_l1_2k:-GSHELL_PAGE=0,-GCACHE_BYTES=2048 soc_l1_4k:-GSHELL_PAGE=0,-GCACHE_BYTES=4096
+# (20.5, docs/tuning.md §4.2: soc_l1_2k and soc_l1_4k, the L1 caches at 2 and 4 KiB; R's are 8 KiB since the
+# owner adopted them)
 ASTER_SOC_BUILDS += $(ASTER_SOC_MATRIX_BUILDS)
 ASTER_SOC_MATRIX_SIMS := $(foreach b,$(ASTER_SOC_MATRIX_BUILDS),$(ASTER_SOC_DIR)/$(firstword $(subst :, ,$(b))))
 ASTER_SOC_SIMS := $(filter-out $(ASTER_SOC_MATRIX_SIMS),$(foreach b,$(ASTER_SOC_BUILDS),$(ASTER_SOC_DIR)/$(firstword $(subst :, ,$(b)))))
@@ -3243,12 +3248,16 @@ soc-gates: $(ASTER_SOC_SIMS) $(NPU_SOC_SIM)
 	@set -o pipefail; RISCV_PREFIX=$(RISCV_PREFIX) $(PYTHON) scripts/soc_gates.py --p19 $(NPU_SOC_SIM) \
 		--p20-base $(ASTER_SOC_DIR)/soc_shell_p19 --p20 $(ASTER_SOC_DIR)/soc_shell --build-dir $(ASTER_SOC_DIR)/gates \
 		| tee $(ASTER_SOC_DIR)/soc-gates.log
-soc-tests: $(ASTER_SOC_SIMS) $(ASTER_L1_SIM) $(ASTER_DOT8_PLUGIN) $(ASTER_DEVICES_EQUIV) soc-gates
+soc-tests: $(ASTER_SOC_SIMS) $(ASTER_L1_SIM) $(ASTER_L1_C8_SIM) $(ASTER_DOT8_PLUGIN) $(ASTER_DEVICES_EQUIV) soc-gates
 	@set -o pipefail; $(ASTER_DEVICES_EQUIV) | grep -E '^(PASS|FAIL)'
 	@set -o pipefail; RISCV_PREFIX=$(RISCV_PREFIX) $(PYTHON) scripts/aster_board.py --sim $(ASTER_SOC_DIR)/soc_shell --design soc \
 		--build-dir $(ASTER_SOC_DIR)/board_programs > $(ASTER_SOC_DIR)/soc-board.log \
 		|| { grep -v '^PASS' $(ASTER_SOC_DIR)/soc-board.log; exit 1; }; \
 		tail -1 $(ASTER_SOC_DIR)/soc-board.log | sed 's/on the board design in simulation/(18.7'"'"'s board programs) on the Phase 20 SoC'"'"'s regression build in simulation/'
+	@set -o pipefail; RISCV_PREFIX=$(RISCV_PREFIX) $(PYTHON) scripts/aster_board.py --sim $(ASTER_SOC_DIR)/soc_shell_8k --design soc \
+		--shell $(ASTER_L1_C8_SIM) --build-dir $(ASTER_SOC_DIR)/board_programs_8k > $(ASTER_SOC_DIR)/soc-board-8k.log \
+		|| { grep -v '^PASS' $(ASTER_SOC_DIR)/soc-board-8k.log; exit 1; }; \
+		tail -1 $(ASTER_SOC_DIR)/soc-board-8k.log | sed 's/on the board design in simulation/(18.7'"'"'s board programs) on the regression build at 8 KiB, against the CPU shell at 8 KiB,/'
 	@set -o pipefail; RISCV_PREFIX=$(RISCV_PREFIX) $(PYTHON) scripts/soc_tests.py --sim-dir $(ASTER_SOC_DIR) \
 		--build-dir $(ASTER_SOC_DIR)/programs --cflags "$(LITMUS_CFLAGS)" | tee $(ASTER_SOC_DIR)/soc-tests.log
 

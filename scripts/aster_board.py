@@ -216,7 +216,12 @@ def main() -> int:
     parser.add_argument("--only")
     parser.add_argument("--soc-sim", type=Path, default=ROOT / "build/npu/npu_soc",
                         help="--design npu --board: the SoC's simulation the gate programs are compared with")
+    parser.add_argument("--shell", type=Path, help="the CPU shell compared with (default: the 4 KiB one; 20.5: a "
+                                                   "shell at the design's cache size, e.g. core_ports_aster_l1_c8)")
     args = parser.parse_args()
+    if args.shell:
+        global SHELL
+        SHELL = args.shell.resolve()
     if sum(map(bool, (args.sim, args.board, args.report))) != 1:
         parser.error("give one of --sim, --board or --report")
     prefix = os.environ.get("RISCV_PREFIX", "riscv32-unknown-elf-")

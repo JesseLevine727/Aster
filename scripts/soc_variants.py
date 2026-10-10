@@ -5,12 +5,14 @@ scripts/asterbench_v12.check_config then checks against the testbench's readback
 
 from __future__ import annotations
 
-BASE = dict(HARTS=2, SHELL_PAGE=0, WAIT=0, NPU_DIM=8, NPU_PORT_BYTES=8, NPU_A_STRIPS=2, DCACHE=1, CACHE_BYTES=4096)
+# (CACHE_BYTES: 8 KiB since the owner adopted it in 20.5; the regression builds keep 4 KiB, docs/tuning.md §4.2)
+BASE = dict(HARTS=2, SHELL_PAGE=0, WAIT=0, NPU_DIM=8, NPU_PORT_BYTES=8, NPU_A_STRIPS=2, DCACHE=1, CACHE_BYTES=8192)
 
 VARIANTS: dict[str, dict[str, int]] = {
     "soc_dev": dict(BASE),
     "soc_dev_w3": dict(BASE, WAIT=3),
-    "soc_shell": dict(BASE, SHELL_PAGE=1),
+    "soc_shell": dict(BASE, SHELL_PAGE=1, CACHE_BYTES=4096),
+    "soc_shell_8k": dict(BASE, SHELL_PAGE=1),
     "soc_h1": dict(BASE, HARTS=1),
     "soc_h1_w1": dict(BASE, HARTS=1, WAIT=1),
     "soc_h1_w2": dict(BASE, HARTS=1, WAIT=2),
@@ -28,7 +30,7 @@ VARIANTS: dict[str, dict[str, int]] = {
     "soc_w2_dc0": dict(BASE, WAIT=2, DCACHE=0),
     "soc_w4_dc0": dict(BASE, WAIT=4, DCACHE=0),
     "soc_l1_2k": dict(BASE, CACHE_BYTES=2048),          # (20.5: the L1 caches at 2 KiB, docs/tuning.md §4.2)
-    "soc_l1_8k": dict(BASE, CACHE_BYTES=8192),          # (and at 8 KiB)
+    "soc_l1_4k": dict(BASE, CACHE_BYTES=4096),          # (and at 4 KiB, R's before 8 KiB was adopted)
 }
 
 

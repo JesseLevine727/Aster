@@ -108,10 +108,10 @@ As in 20.4:
       cache off, which 20.4 moved by 6 cycles (246 to 240). No layout moves
       it.
 
-  **Eight layouts instead of decision 2's five: pending the owner's
-  approval.** The change is made before any change is judged, and it only
-  makes the rule stricter, since a change must win on every layout. Until
-  the owner approves, no tuning change is judged.
+  **Eight layouts instead of decision 2's five: approved by the owner
+  (10 October 2026).** The change was made before any change was judged,
+  and it only makes the rule stricter, since a change must win on every
+  layout.
   - **The code pad and the CPU kernels:** v1's CPU kernels keep their hot code
     in `.text.benchmark`, linked ahead of all `.text`. So for them, the code
     pad moves the runtime and the data, not the kernel against the runtime.
@@ -203,6 +203,10 @@ As in 20.4:
 - **Adoption is the owner's sign-off,** with the data in hand: per family,
   the gate workloads, and timing and area. soc.md §2's 4 KiB caches stay
   unless the owner adopts another size.
+- **Adopted: 8 KiB** (the owner, 10 October 2026, after step 2's data). The
+  SoC's caches are 8 KiB by default; 2 and 4 KiB stay as the matrix's axis.
+  Step 3's tuning is judged at 8 KiB, and the consequences below were
+  carried out in step 2 (phase20.md).
 - **If another size is adopted:**
   - soc.md §10.4's regression runs on a 4 KiB build of the same RTL, as its
     comparisons are defined at 4 KiB;
@@ -480,7 +484,7 @@ Each step has its watchdog review before it is pushed.
    - the 468 combinations captured (done in step 2, with every sweep point
      and the layouts: §4.2).
 
-   Then the owner's decision (§4.2).
+   Then the owner's decision (§4.2): 8 KiB, adopted on 10 October 2026.
 3. **Tuning:** DMA thresholds, partitioning, placement and ECG.
    - The tuned variants are planned, added and judged across layouts.
    - The adopted set is fixed.

@@ -13,7 +13,7 @@ module aster_soc_ip #(
     parameter integer SHELL_PAGE = 0,                    // 1: the regression build (aster_soc.sv)
     parameter integer NPU_BUFFER = 1,                    // (aster_soc.sv)
     parameter integer NPU_REG_Q = 1,                     // (aster_soc.sv)
-    parameter integer CACHE_BYTES = 4096                 // each L1 cache's capacity (20.5: 2048, 4096 or 8192)
+    parameter integer CACHE_BYTES = 8192                 // each L1 cache's capacity (20.5: 8 KiB adopted; 2048 and 4096 also)
 ) (
     (* X_INTERFACE_INFO = "xilinx.com:signal:clock:1.0 aclk CLK",
        X_INTERFACE_PARAMETER = "ASSOCIATED_BUSIF s_axi, ASSOCIATED_RESET aresetn, FREQ_HZ 100000000" *)

@@ -23,7 +23,7 @@ module sim_soc #(
     parameter int unsigned NPU_PORT_BYTES = 8,
     parameter int unsigned NPU_A_STRIPS = 2,
     parameter int unsigned DCACHE = 1,
-    parameter int unsigned CACHE_BYTES = 4096              // (20.5: each L1 cache's capacity)
+    parameter int unsigned CACHE_BYTES = 8192              // (20.5: each L1 cache's capacity; 8 KiB adopted)
 ) (
     input  logic        aclk,
     input  logic        aresetn,

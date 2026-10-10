@@ -34,7 +34,7 @@ Every case is first run on **R**, the Phase 20 SoC as signed off:
 | Cache state | cold (the first pass after reset); **warm** (a pass after a warm-up pass) | software | — |
 | Memory | **+0** (the physical two-cycle read); +1, +2, +4 wait cycles on every answer | `WAIT` (RTL, simulation only; the SoC has been built at +3 only, and the DMA shell has not run at +4) | `soc_w1`, `soc_w2`, `soc_w4` |
 | NPU | **8×8, 64-bit port, 2 strips**; 8×8, 64-bit, 1 strip; 4×4, 64-bit, 2 and 1 strips; 4×4, 32-bit, 2 and 1 strips | `NPU_DIM`, `NPU_PORT_BYTES`, `NPU_A_STRIPS` (RTL; to be passed through the simulation's top). A 32-bit port needs a lane adapter on port N, which is 64 bits: new RTL, owner's decision §9 | `soc_n8s1`, `soc_n4p8s2`, … |
-| Cache geometry | 2 KiB, **4 KiB**, 8 KiB | RTL (soc.md §9: **20.5**, with the L1 tests at each size) | 20.5 |
+| Cache geometry | 2 KiB, **4 KiB**, 8 KiB (R's 8 KiB since 20.5, adopted by the owner) | RTL (soc.md §9: **20.5**, with the L1 tests at each size) | 20.5 |
 | Methods | scalar, multicore, DOT8, DMA, NPU | software | — |
 | Placement and size | per family (§4): aligned and unaligned, small and large working sets, several seeds | software | — |
 

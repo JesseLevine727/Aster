@@ -11,10 +11,12 @@ them; 20.5 requires them.
     batched NPU is throughput, not v1's latency, and is left out). ECG's is v1's case: 64-sample chunks, 16
     taps, v1's model. The CPU kernels compare with v1's aster_minimal figures.
 
-  - 20.5 (tuning.md §3, §4.2): each gate at one cache size and one layout (the defaults: 4 KiB and L0, the layout
-    of record), so that the 2 and 8 KiB caches and the layouts are judged on their own entries.
+  - 20.5 (tuning.md §3, §4.2): each gate at one cache size and one layout, so that each size and each layout is
+    judged on its own entries. The defaults: the matrix's own build (R's caches: 8 KiB since the owner adopted them,
+    4 KiB before) and L0, the layout of record. An entry's size is its cache_kib axis; a capture made before 8 KiB's
+    adoption records it only for the other sizes, so an entry without it is at 4 KiB.
 
-  matrix_gates.py RUN_DIR... [--cache-kib 4] [--layout L1] [--json OUT]
+  matrix_gates.py RUN_DIR... [--cache-kib 2|4|8] [--layout L1] [--json OUT]
 """
 import argparse
 import json
@@ -25,7 +27,8 @@ from matrix_overlap import records_of
 
 SCALING = ("reduce_fill", "gemm_dot8_64x64x64", "gemm_dot8_96x96x96", "gemm_dot8_128x64x128")
 SCALING_GATE = 1.8
-R_SIM = {4: "soc_dev", 2: "soc_l1_2k", 8: "soc_l1_8k"}      # (R at each cache size, 20.5)
+GEOMETRY = "soc_l1_"                                        # (20.5: the other cache sizes' builds, soc_l1_<KiB>k)
+R_SIMS = ("soc_dev", "soc_l1_2k", "soc_l1_4k", "soc_l1_8k")  # (R at each cache size)
 
 # v1's best (matrix.md §5): the family, the cases that compete, and v1's cycles
 V1 = {
@@ -50,12 +53,18 @@ def config(entry: dict) -> str:
     return entry["sim"] + " " + json.dumps(axes, sort_keys=True)
 
 
-def at(e: dict, kib: int, layout: str | None) -> bool:
-    """The entry is at this cache size and layout (None: L0, no pads)."""
-    return e["axes"].get("cache_kib", 4) == kib and e["axes"].get("layout") == layout
+def size_of(e: dict) -> int:
+    """The entry's cache size in KiB (4 when a capture before 8 KiB's adoption left it out)."""
+    return e["axes"].get("cache_kib", 4)
 
 
-def scaling(allrec: dict, kib: int = 4, layout: str | None = None) -> dict:
+def at(e: dict, kib: int | None, layout: str | None) -> bool:
+    """The entry is at this cache size (None: the matrix's own build, not another size's) and layout (None: L0)."""
+    own = not e["sim"].startswith(GEOMETRY) if kib is None else size_of(e) == kib
+    return own and e["axes"].get("layout") == layout
+
+
+def scaling(allrec: dict, kib: int | None = None, layout: str | None = None) -> dict:
     out = {}
     for case in SCALING:
         one, two = {}, {}
@@ -70,17 +79,17 @@ def scaling(allrec: dict, kib: int = 4, layout: str | None = None) -> dict:
         e2e = [r["speedup"] for r in rows if r["window"] == "e2e"]
         out[case] = dict(pairs=len(rows), e2e_min=min(e2e, default=None), e2e_max=max(e2e, default=None),
                          r_warm={r["window"]: (r["one"], r["two"], r["speedup"]) for r in rows
-                                 if r["sim"] == R_SIM[kib] and r["cache_state"] == "warm"},
+                                 if r["sim"] in R_SIMS and r["cache_state"] == "warm"},
                          meets=bool(e2e) and min(e2e) >= SCALING_GATE, rows=rows)
     return out
 
 
-def against_v1(allrec: dict, kib: int = 4, layout: str | None = None) -> dict:
+def against_v1(allrec: dict, kib: int | None = None, layout: str | None = None) -> dict:
     out = {}
     for name, (family, competes, v1) in V1.items():
         best = None
         for e, recs in allrec.values():
-            if e["family"] != family or not competes(e["case"]) or e["sim"] != R_SIM[kib] \
+            if e["family"] != family or not competes(e["case"]) or e["sim"] not in R_SIMS \
                     or e["axes"].get("cache_state") != "cold" or "/seed" in e["id"] or not at(e, kib, layout):
                 continue
             if family == "ecg" and (e["axes"].get("chunk"), e["axes"].get("taps")) != (64, 16):
@@ -100,7 +109,7 @@ def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument("runs", nargs="+", type=Path)
     parser.add_argument("--json", type=Path)
-    parser.add_argument("--cache-kib", type=int, default=4, choices=sorted(R_SIM))
+    parser.add_argument("--cache-kib", type=int, choices=(2, 4, 8), help="the default: the matrix's own build")
     parser.add_argument("--layout", help="a layout's entries (L1-L7); the default is L0, no pads")
     args = parser.parse_args()
     if args.layout == "L0":
@@ -108,7 +117,7 @@ def main() -> int:
     allrec = {}
     for run in args.runs:
         allrec.update(records_of(run))
-    result = dict(cache_kib=args.cache_kib, layout=args.layout or "L0",
+    result = dict(cache_kib=args.cache_kib or "the matrix's own", layout=args.layout or "L0",
                   scaling=scaling(allrec, args.cache_kib, args.layout),
                   against_v1=against_v1(allrec, args.cache_kib, args.layout))
     if args.json:

@@ -1,3 +1,8 @@
+9ae85f3f6a7ec7218bf3abd751ee3847af4f6fd34383b3f799de0a6aad6e5389  ./adoption/bitstream.txt
+c575446659a4e4ac55d3191ee2ab86492c83f5a6f371138434ae70cd9478ec81  ./adoption/matrix-variants.log
+fcacaa4c73eac717a99ff4afc2fc744854eec96b5c0abe83fb4e608d5f8bb346  ./adoption/replay_8k.py
+1abb003fd71977fcf84098f7ce5f4aa0ca6fcae9f96e197a983c5e18e0a66c11  ./adoption/replay-8k.txt
+e78d1bfa6b205983b2a23fe9ef3cb08f20431c14ddc97b101ac2ba840f0abf03  ./adoption/soc-tests.log
 690707800fc5e1353cb12125d99287149167890f5b83f8836418b0e7199855cf  ./checks/compare-shells.log.xz
 a09a1497a2961dab8b9844005fa3c1c27747ae2adc38cab85df10de469047660  ./checks/core-l1-sizes.log
 8fea2ca35e04a6869fd900a3b8502dcc86badb7d507f1c8d5df88352867b58a0  ./checks/core-l1-tests.log
@@ -21,9 +26,9 @@ ea1b6a84e3d87317abe78e00759c576e10ade03a7d637406b207791e5ec7a12d  ./manifest-g2-
 d96242a96086bce49584f6193db4cb085750e7ec33e08e24a28255764b7825c9  ./manifest-g2-layouts.json.xz
 480bb9cdec8eedf08aef9e7741a51d2de7f4a74447b14c5d43cb3bf005e32026  ./raw-g2-geometry.tar.xz
 8273495d36ee3e868059a672a613cfbabeae836ce26d743ca428a94b137b51e3  ./raw-g2-layouts.tar.xz
-716a728ee81ab63c351713cc5cff371b7f7227106c19af7e35014bc641b7ac74  ./README.md
+c94c6eb2fdfd6af25a384f68b8abffde7bd6be680e826625b7e1b843e82cc992  ./README.md
 0c74e105a69e5951e60dc6f70e416a5d8082e4ce9f2edeca7a0407ad974070f5  ./runs-identical.txt
-6b8b997ff6328bc7555b4b6f7dfe1c45a94510189b0194004c2b0f6714d7e0da  ./timing/builds.csv
+b8b188f3e32bec13f2f29ac14d3b73c06cc2e0742135b7285e5e70827bc6a1bf  ./timing/builds.csv
 306cf822d6c061f8d1ff687a32f0ecde163fab3998c66402d7d5c9f386c66250  ./timing/paths-c2k-o5eto/blocks.txt
 ff35d3e5e43ddb262095cbb4de63d775d61e3a7fceaccbf8c3f5b902dd3d8fbd  ./timing/paths-c2k-o5eto/paths.txt
 5f394c3a97dda3c1de77f7b778878a576e93fa6d73dfdbb7e8949bf2b3150f84  ./timing/paths-c4k-o5asm-mgi/blocks.txt

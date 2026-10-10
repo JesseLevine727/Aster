@@ -29,7 +29,8 @@ at a time:**
     [AsterBench v12](docs/asterbench-v12.md) records
     ([evidence](docs/results/phase20/matrix-20.4/README.md)).
   - **20.5 (tuning and the board run) is in progress,** its plan
-    ([`docs/tuning.md`](docs/tuning.md)) approved on 10 October; then Phase 21.
+    ([`docs/tuning.md`](docs/tuning.md)) approved on 10 October. Its step 2
+    grew the caches to 8 KiB, adopted by the owner. Then Phase 21.
 
 Measured at 100 MHz in the SoC's simulation (20.4's matrix; the board run
 is 20.5's). The NPU and two-core rows are kernel windows (the computation

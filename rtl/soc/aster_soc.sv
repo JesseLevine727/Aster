@@ -43,8 +43,9 @@ module aster_soc #(
     parameter int          NPU_DIM = 8,
     // The data caches on (1) or off (0; 20.4's matrix axis, simulation only: aster_l1d's DCACHE)
     parameter int unsigned DCACHE = 1,
-    // Each L1 cache's capacity: 2, 4 (the default) or 8 KiB (20.5's matrix axis, docs/tuning.md §4.2)
-    parameter int unsigned CACHE_BYTES = 4096,
+    // Each L1 cache's capacity: 8 KiB (the default, adopted by the owner in 20.5), or 2 or 4 KiB (the matrix's
+    // axis and the regression builds; docs/tuning.md §4.2)
+    parameter int unsigned CACHE_BYTES = 8192,
     parameter int unsigned HARTS = 2,
     parameter int unsigned SHELL_PAGE = 0,
     parameter int unsigned WAIT = 0,                    // the fabric's added answer cycles (simulation)

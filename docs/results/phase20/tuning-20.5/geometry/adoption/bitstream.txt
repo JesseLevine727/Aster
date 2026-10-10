@@ -1,0 +1,8 @@
+The adopted default (CACHE_BYTES 8192 in aster_soc.sv and the board shim), built with no parameters on o5asm-mgi,
+against step 2's 8 KiB build (SOC_PARAMS=CACHE_BYTES=8192). Configuration data from the sync word (0xAA995566).
+
+c8k-o5asm-mgi: configuration data 4045516 bytes sha256 0bf4b4c3e021b79d77eba70f81df430fac2b63a017bf4cf52f32de99afbd248b
+  wns_ns=0.306 whs_ns=0.040 directives=synth:Default,retime:0,over:0.5,place:AltSpreadLogic_medium,phys:AggressiveExplore,route:MoreGlobalIterations,post_route_phys:AggressiveExplore params=CACHE_BYTES=8192
+c8k-default-o5asm-mgi: configuration data 4045516 bytes sha256 0bf4b4c3e021b79d77eba70f81df430fac2b63a017bf4cf52f32de99afbd248b
+  wns_ns=0.306 whs_ns=0.040 directives=synth:Default,retime:0,over:0.5,place:AltSpreadLogic_medium,phys:AggressiveExplore,route:MoreGlobalIterations,post_route_phys:AggressiveExplore params=default
+  -> identical
