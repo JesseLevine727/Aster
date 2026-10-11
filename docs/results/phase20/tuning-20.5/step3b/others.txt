@@ -593,11 +593,11 @@ revisions ['6bc46c2']; 3880 variant configurations: {'loses': 112, 'wins': 2371,
   wins                 coherence/shared_mix__split_hot/multicore/soc_w1/n2: -66.41% to -35.37% over 1 layouts, warm, e2e/kernel
   wins                 coherence/shared_mix__split_hot/multicore/soc_w2/n2: -69.43% to -38.43% over 1 layouts, warm, e2e/kernel
   wins                 coherence/shared_mix__split_hot/multicore/soc_w4/n2: -74.06% to -44.63% over 1 layouts, warm, e2e/kernel
-  not distinguishable  coherence/smp_overhead__hot/multicore/soc_dc0: -0.26% to +6.83% over 1 layouts, warm, e2e; the spread over the layouts 2768.94% -> 2578.49%
-  not distinguishable  coherence/smp_overhead__hot/multicore/soc_dev: -2.25% to +6.51% over 1 layouts, cold/warm, e2e; the spread over the layouts 3007.69% -> 2817.78%
-  not distinguishable  coherence/smp_overhead__hot/multicore/soc_w1: +0.00% to +7.14% over 1 layouts, warm, e2e; the spread over the layouts 2963.74% -> 2759.49%
-  not distinguishable  coherence/smp_overhead__hot/multicore/soc_w2: +0.00% to +9.74% over 1 layouts, warm, e2e; the spread over the layouts 3056.92% -> 2776.64%
-  not distinguishable  coherence/smp_overhead__hot/multicore/soc_w4: +0.00% to +8.60% over 1 layouts, warm, e2e; the spread over the layouts 3090.95% -> 2838.33%
+  not distinguishable  coherence/smp_overhead__hot/multicore/soc_dc0: -0.26% to +6.83% over 1 layouts, warm, e2e/e2e#1
+  not distinguishable  coherence/smp_overhead__hot/multicore/soc_dev: -2.25% to +6.51% over 1 layouts, cold/warm, e2e/e2e#1
+  not distinguishable  coherence/smp_overhead__hot/multicore/soc_w1: +0.00% to +7.14% over 1 layouts, warm, e2e/e2e#1
+  not distinguishable  coherence/smp_overhead__hot/multicore/soc_w2: +0.00% to +9.74% over 1 layouts, warm, e2e/e2e#1
+  not distinguishable  coherence/smp_overhead__hot/multicore/soc_w4: +0.00% to +8.60% over 1 layouts, warm, e2e/e2e#1
   wins                 coherence/spsc_queue__hot/multicore/soc_dc0/n1024: -0.02% to -0.02% over 1 layouts, warm, e2e/kernel
   not distinguishable  coherence/spsc_queue__hot/multicore/soc_dc0/n129: -0.20% to +0.34% over 1 layouts, warm, e2e/kernel
   wins                 coherence/spsc_queue__hot/multicore/soc_dc0/n2: -4.46% to -1.94% over 1 layouts, warm, e2e/kernel
@@ -613,8 +613,8 @@ revisions ['6bc46c2']; 3880 variant configurations: {'loses': 112, 'wins': 2371,
   not distinguishable  coherence/spsc_queue__hot/multicore/soc_w4/n1024: -0.06% to +0.01% over 1 layouts, warm, e2e/kernel
   wins                 coherence/spsc_queue__hot/multicore/soc_w4/n129: -1.48% to -0.12% over 1 layouts, warm, e2e/kernel
   wins                 coherence/spsc_queue__hot/multicore/soc_w4/n2: -3.49% to -1.83% over 1 layouts, warm, e2e/kernel
-  not distinguishable  coherence/stamp_cost__hot/scalar/soc_dev: +0.00% to +0.00% over 1 layouts, warm, kernel; the spread over the layouts 152.29% -> 152.29%
-  not distinguishable  coherence/stamp_cost__hot/scalar/soc_w4: +0.00% to +0.00% over 1 layouts, warm, kernel; the spread over the layouts 186.76% -> 186.76%
+  not distinguishable  coherence/stamp_cost__hot/scalar/soc_dev: +0.00% to +0.00% over 1 layouts, warm, kernel/kernel#1
+  not distinguishable  coherence/stamp_cost__hot/scalar/soc_w4: +0.00% to +0.00% over 1 layouts, warm, kernel/kernel#1
   not distinguishable  dsp/conv2d_direct_dot8__hot/dot8/soc_dc0: +0.00% to +0.00% over 1 layouts, warm, e2e/kernel
   not distinguishable  dsp/conv2d_direct_dot8__hot/dot8/soc_dev: -0.00% to +0.00% over 1 layouts, cold/warm, e2e/kernel
   not distinguishable  dsp/conv2d_direct_dot8__hot/dot8/soc_dev/seed2468ace0: +0.00% to +0.00% over 1 layouts, warm, e2e/kernel

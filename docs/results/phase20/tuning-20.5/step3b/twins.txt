@@ -1,4 +1,4 @@
-The code-placement twins (tuning.md §4.4; __hot an original's, _hot an adopted variant's) against their bases, at R on the eight layouts, warm and cold, every window (t3b-judge, 6bc46c2; t3b-judge-more, 6e219a0): 375 configurations, {'loses': 3, 'not distinguishable': 366, 'wins': 6}
+The code-placement twins (tuning.md §4.4; __hot an original's, _hot an adopted variant's) against their bases, at R on the eight layouts, warm and cold, every window (t3b-judge, 6bc46c2; t3b-judge-more, 6e219a0; t3b-judge-dot, 5ae392b): 447 configurations, {'loses': 3, 'not distinguishable': 438, 'wins': 6}
 loses                coherence/atomic_add__hot/multicore/soc_dev/n1024 against its original (judge.json): +0.33% to +0.54% over 8 layouts
 not distinguishable  coherence/atomic_add__hot/multicore/soc_dev/n129 against its original (judge.json): -0.49% to +3.32% over 8 layouts
 wins                 coherence/atomic_add__hot/multicore/soc_dev/n2 against its original (judge.json): -6.20% to -3.43% over 8 layouts
@@ -104,6 +104,30 @@ not distinguishable  dsp/conv2d_im2col_npu__hot/npu_im2col/soc_dev/seed9e3779b9 
 not distinguishable  dsp/conv2d_im2col_scalar__hot/scalar/soc_dev against its original (judge-more.json): +0.00% to +0.00% over 8 layouts
 not distinguishable  dsp/conv2d_im2col_scalar__hot/scalar/soc_dev/seed2468ace0 against its original (judge-more.json): +0.00% to +0.00% over 8 layouts
 not distinguishable  dsp/conv2d_im2col_scalar__hot/scalar/soc_dev/seed9e3779b9 against its original (judge-more.json): +0.00% to +0.00% over 8 layouts
+not distinguishable  dsp/dot__hot/dot8/soc_dev/k0 against its original (judge-dot.json): -13.84% to +11.34% over 8 layouts
+not distinguishable  dsp/dot__hot/dot8/soc_dev/k0/seed2468ace0 against its original (judge-dot.json): -7.43% to +0.00% over 8 layouts
+not distinguishable  dsp/dot__hot/dot8/soc_dev/k0/seed9e3779b9 against its original (judge-dot.json): -7.43% to +0.00% over 8 layouts
+not distinguishable  dsp/dot__hot/dot8/soc_dev/k1 against its original (judge-dot.json): -6.59% to +8.41% over 8 layouts
+not distinguishable  dsp/dot__hot/dot8/soc_dev/k1/seed2468ace0 against its original (judge-dot.json): +0.00% to +0.00% over 8 layouts
+not distinguishable  dsp/dot__hot/dot8/soc_dev/k1/seed9e3779b9 against its original (judge-dot.json): +0.00% to +0.00% over 8 layouts
+not distinguishable  dsp/dot__hot/dot8/soc_dev/k1024 against its original (judge-dot.json): -0.14% to +0.20% over 8 layouts
+not distinguishable  dsp/dot__hot/dot8/soc_dev/k1024/seed2468ace0 against its original (judge-dot.json): -0.14% to +0.00% over 8 layouts
+not distinguishable  dsp/dot__hot/dot8/soc_dev/k1024/seed9e3779b9 against its original (judge-dot.json): -0.14% to +0.00% over 8 layouts
+not distinguishable  dsp/dot__hot/dot8/soc_dev/k256 against its original (judge-dot.json): -0.54% to +0.48% over 8 layouts
+not distinguishable  dsp/dot__hot/dot8/soc_dev/k256/seed2468ace0 against its original (judge-dot.json): -0.10% to +0.00% over 8 layouts
+not distinguishable  dsp/dot__hot/dot8/soc_dev/k256/seed9e3779b9 against its original (judge-dot.json): -0.10% to +0.00% over 8 layouts
+not distinguishable  dsp/dot__hot/dot8/soc_dev/k4096 against its original (judge-dot.json): +0.00% to +0.02% over 8 layouts
+not distinguishable  dsp/dot__hot/dot8/soc_dev/k4096/seed2468ace0 against its original (judge-dot.json): +0.00% to +0.00% over 8 layouts
+not distinguishable  dsp/dot__hot/dot8/soc_dev/k4096/seed9e3779b9 against its original (judge-dot.json): +0.00% to +0.00% over 8 layouts
+not distinguishable  dsp/dot__hot/dot8/soc_dev/k64 against its original (judge-dot.json): -1.75% to +1.24% over 8 layouts
+not distinguishable  dsp/dot__hot/dot8/soc_dev/k64/seed2468ace0 against its original (judge-dot.json): -0.32% to +0.00% over 8 layouts
+not distinguishable  dsp/dot__hot/dot8/soc_dev/k64/seed9e3779b9 against its original (judge-dot.json): -0.32% to +0.00% over 8 layouts
+not distinguishable  dsp/dot__hot/dot8/soc_dev/k7 against its original (judge-dot.json): +0.00% to +2.11% over 8 layouts
+not distinguishable  dsp/dot__hot/dot8/soc_dev/k7/seed2468ace0 against its original (judge-dot.json): -0.89% to +0.00% over 8 layouts
+not distinguishable  dsp/dot__hot/dot8/soc_dev/k7/seed9e3779b9 against its original (judge-dot.json): -0.89% to +0.00% over 8 layouts
+not distinguishable  dsp/dot__hot/dot8/soc_dev/k8 against its original (judge-dot.json): -4.80% to +2.30% over 8 layouts
+not distinguishable  dsp/dot__hot/dot8/soc_dev/k8/seed2468ace0 against its original (judge-dot.json): -0.91% to +0.00% over 8 layouts
+not distinguishable  dsp/dot__hot/dot8/soc_dev/k8/seed9e3779b9 against its original (judge-dot.json): -0.91% to +0.00% over 8 layouts
 not distinguishable  dsp/dot__hot/multicore/soc_dev/k0 against its original (judge.json): -8.84% to +1.29% over 8 layouts
 not distinguishable  dsp/dot__hot/multicore/soc_dev/k0/seed2468ace0 against its original (judge.json): -3.85% to +1.29% over 8 layouts
 not distinguishable  dsp/dot__hot/multicore/soc_dev/k0/seed9e3779b9 against its original (judge.json): -3.85% to +1.29% over 8 layouts
@@ -128,6 +152,54 @@ not distinguishable  dsp/dot__hot/multicore/soc_dev/k7/seed9e3779b9 against its 
 not distinguishable  dsp/dot__hot/multicore/soc_dev/k8 against its original (judge.json): -5.89% to +2.93% over 8 layouts
 not distinguishable  dsp/dot__hot/multicore/soc_dev/k8/seed2468ace0 against its original (judge.json): -4.05% to +2.65% over 8 layouts
 not distinguishable  dsp/dot__hot/multicore/soc_dev/k8/seed9e3779b9 against its original (judge.json): -4.05% to +2.65% over 8 layouts
+not distinguishable  dsp/dot__hot/npu/soc_dev/k0 against its original (judge-dot.json): -5.59% to +3.62% over 8 layouts
+not distinguishable  dsp/dot__hot/npu/soc_dev/k0/seed2468ace0 against its original (judge-dot.json): +0.00% to +0.00% over 8 layouts
+not distinguishable  dsp/dot__hot/npu/soc_dev/k0/seed9e3779b9 against its original (judge-dot.json): +0.00% to +0.00% over 8 layouts
+not distinguishable  dsp/dot__hot/npu/soc_dev/k1 against its original (judge-dot.json): -5.30% to +0.00% over 8 layouts
+not distinguishable  dsp/dot__hot/npu/soc_dev/k1/seed2468ace0 against its original (judge-dot.json): +0.00% to +0.00% over 8 layouts
+not distinguishable  dsp/dot__hot/npu/soc_dev/k1/seed9e3779b9 against its original (judge-dot.json): +0.00% to +0.00% over 8 layouts
+not distinguishable  dsp/dot__hot/npu/soc_dev/k1024 against its original (judge-dot.json): -0.38% to +0.56% over 8 layouts
+not distinguishable  dsp/dot__hot/npu/soc_dev/k1024/seed2468ace0 against its original (judge-dot.json): +0.00% to +0.00% over 8 layouts
+not distinguishable  dsp/dot__hot/npu/soc_dev/k1024/seed9e3779b9 against its original (judge-dot.json): +0.00% to +0.00% over 8 layouts
+not distinguishable  dsp/dot__hot/npu/soc_dev/k256 against its original (judge-dot.json): -0.42% to +4.42% over 8 layouts
+not distinguishable  dsp/dot__hot/npu/soc_dev/k256/seed2468ace0 against its original (judge-dot.json): +0.00% to +0.00% over 8 layouts
+not distinguishable  dsp/dot__hot/npu/soc_dev/k256/seed9e3779b9 against its original (judge-dot.json): +0.00% to +0.00% over 8 layouts
+not distinguishable  dsp/dot__hot/npu/soc_dev/k4096 against its original (judge-dot.json): +0.00% to +0.18% over 8 layouts
+not distinguishable  dsp/dot__hot/npu/soc_dev/k4096/seed2468ace0 against its original (judge-dot.json): +0.00% to +0.00% over 8 layouts
+not distinguishable  dsp/dot__hot/npu/soc_dev/k4096/seed9e3779b9 against its original (judge-dot.json): +0.00% to +0.00% over 8 layouts
+not distinguishable  dsp/dot__hot/npu/soc_dev/k64 against its original (judge-dot.json): -4.21% to +2.70% over 8 layouts
+not distinguishable  dsp/dot__hot/npu/soc_dev/k64/seed2468ace0 against its original (judge-dot.json): +0.00% to +0.00% over 8 layouts
+not distinguishable  dsp/dot__hot/npu/soc_dev/k64/seed9e3779b9 against its original (judge-dot.json): +0.00% to +0.00% over 8 layouts
+not distinguishable  dsp/dot__hot/npu/soc_dev/k7 against its original (judge-dot.json): +0.00% to +8.78% over 8 layouts
+not distinguishable  dsp/dot__hot/npu/soc_dev/k7/seed2468ace0 against its original (judge-dot.json): +0.00% to +0.00% over 8 layouts
+not distinguishable  dsp/dot__hot/npu/soc_dev/k7/seed9e3779b9 against its original (judge-dot.json): +0.00% to +0.00% over 8 layouts
+not distinguishable  dsp/dot__hot/npu/soc_dev/k8 against its original (judge-dot.json): +0.00% to +8.78% over 8 layouts
+not distinguishable  dsp/dot__hot/npu/soc_dev/k8/seed2468ace0 against its original (judge-dot.json): +0.00% to +0.00% over 8 layouts
+not distinguishable  dsp/dot__hot/npu/soc_dev/k8/seed9e3779b9 against its original (judge-dot.json): +0.00% to +0.00% over 8 layouts
+not distinguishable  dsp/dot__hot/scalar/soc_dev/k0 against its original (judge-dot.json): +0.00% to +8.00% over 8 layouts
+not distinguishable  dsp/dot__hot/scalar/soc_dev/k0/seed2468ace0 against its original (judge-dot.json): +0.00% to +0.00% over 8 layouts
+not distinguishable  dsp/dot__hot/scalar/soc_dev/k0/seed9e3779b9 against its original (judge-dot.json): +0.00% to +0.00% over 8 layouts
+not distinguishable  dsp/dot__hot/scalar/soc_dev/k1 against its original (judge-dot.json): +0.00% to +6.54% over 8 layouts
+not distinguishable  dsp/dot__hot/scalar/soc_dev/k1/seed2468ace0 against its original (judge-dot.json): +0.00% to +0.00% over 8 layouts
+not distinguishable  dsp/dot__hot/scalar/soc_dev/k1/seed9e3779b9 against its original (judge-dot.json): +0.00% to +0.00% over 8 layouts
+not distinguishable  dsp/dot__hot/scalar/soc_dev/k1024 against its original (judge-dot.json): +0.00% to +0.09% over 8 layouts
+not distinguishable  dsp/dot__hot/scalar/soc_dev/k1024/seed2468ace0 against its original (judge-dot.json): +0.00% to +0.00% over 8 layouts
+not distinguishable  dsp/dot__hot/scalar/soc_dev/k1024/seed9e3779b9 against its original (judge-dot.json): +0.00% to +0.00% over 8 layouts
+not distinguishable  dsp/dot__hot/scalar/soc_dev/k256 against its original (judge-dot.json): +0.00% to +0.34% over 8 layouts
+not distinguishable  dsp/dot__hot/scalar/soc_dev/k256/seed2468ace0 against its original (judge-dot.json): +0.00% to +0.00% over 8 layouts
+not distinguishable  dsp/dot__hot/scalar/soc_dev/k256/seed9e3779b9 against its original (judge-dot.json): +0.00% to +0.00% over 8 layouts
+not distinguishable  dsp/dot__hot/scalar/soc_dev/k4096 against its original (judge-dot.json): +0.00% to +0.02% over 8 layouts
+not distinguishable  dsp/dot__hot/scalar/soc_dev/k4096/seed2468ace0 against its original (judge-dot.json): +0.00% to +0.00% over 8 layouts
+not distinguishable  dsp/dot__hot/scalar/soc_dev/k4096/seed9e3779b9 against its original (judge-dot.json): +0.00% to +0.00% over 8 layouts
+not distinguishable  dsp/dot__hot/scalar/soc_dev/k64 against its original (judge-dot.json): +0.00% to +1.18% over 8 layouts
+not distinguishable  dsp/dot__hot/scalar/soc_dev/k64/seed2468ace0 against its original (judge-dot.json): +0.00% to +0.00% over 8 layouts
+not distinguishable  dsp/dot__hot/scalar/soc_dev/k64/seed9e3779b9 against its original (judge-dot.json): +0.00% to +0.00% over 8 layouts
+not distinguishable  dsp/dot__hot/scalar/soc_dev/k7 against its original (judge-dot.json): +0.00% to +4.57% over 8 layouts
+not distinguishable  dsp/dot__hot/scalar/soc_dev/k7/seed2468ace0 against its original (judge-dot.json): +0.00% to +0.00% over 8 layouts
+not distinguishable  dsp/dot__hot/scalar/soc_dev/k7/seed9e3779b9 against its original (judge-dot.json): +0.00% to +0.00% over 8 layouts
+not distinguishable  dsp/dot__hot/scalar/soc_dev/k8 against its original (judge-dot.json): +0.00% to +4.35% over 8 layouts
+not distinguishable  dsp/dot__hot/scalar/soc_dev/k8/seed2468ace0 against its original (judge-dot.json): +0.00% to +0.00% over 8 layouts
+not distinguishable  dsp/dot__hot/scalar/soc_dev/k8/seed9e3779b9 against its original (judge-dot.json): +0.00% to +0.00% over 8 layouts
 not distinguishable  dsp/dot__split_hot/multicore/soc_dev/k0 against dot__split (judge.json): +0.00% to +8.00% over 8 layouts
 not distinguishable  dsp/dot__split_hot/multicore/soc_dev/k0/seed2468ace0 against dot__split (judge.json): +0.00% to +0.00% over 8 layouts
 not distinguishable  dsp/dot__split_hot/multicore/soc_dev/k0/seed9e3779b9 against dot__split (judge.json): +0.00% to +0.00% over 8 layouts

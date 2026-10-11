@@ -2250,8 +2250,9 @@ the last clarified when asked):
 3. the copy policy keeps the worst case (no hint of the destination's cache state);
 4. §4.4's code against the instruction cache built now.
 
-**How it was judged** (tuning.md §3), every capture from the clean commit 6bc46c2 but `t3b-judge-more` (the
-remaining twins on the layouts, from 6e219a0, its firmware identical to 6bc46c2's); the evidence is in
+**How it was judged** (tuning.md §3), every capture from the clean commit 6bc46c2 but two, which judge the
+remaining twins on the layouts: `t3b-judge-more` from 6e219a0 and `t3b-judge-dot` from 5ae392b, their firmware
+identical to 6bc46c2's. The evidence is in
 `results/phase20/tuning-20.5/step3b/`, which supersedes step 3's where they differ:
 - **The layout judgment** (`t3b-judge`): 9,272 entries, the tuned variants, the twins below and their originals at R
   on the eight layouts, warm and cold. 456 variant configurations: 273 win, 178 are not distinguishable, 5 lose.
@@ -2318,10 +2319,13 @@ windows run placed first.
 - **The same placement for every layout and cache state:** one profile per program and configuration, at L0 and
   warm. So the layouts' code pad moves only the cold code.
 
-**The result** (`twins.txt`): 375 twin configurations were judged on the layouts, 262 in `t3b-judge` and 113 in
-`t3b-judge-more`. That second run covers the 19 twinned cases the first one's selection had left out: the CPU
-methods of CIFAR, MNIST and Conv2D, the FIR, the FFT and five coherence programs. Of the 375, 6 win, 3 lose and 366
-are not distinguishable.
+**The result** (`twins.txt`): every twin at R was judged on the layouts, 447 configurations:
+- 262 in `t3b-judge`;
+- 113 in `t3b-judge-more`, the 19 twinned cases the first one's selection had left out: the CPU methods of CIFAR,
+  MNIST and Conv2D, the FIR, the FFT and five coherence programs;
+- 72 in `t3b-judge-dot`, the dot product's scalar, DOT8 and NPU methods.
+
+Of the 447, 6 win, 3 lose and 438 are not distinguishable.
 - **Where a base has conflict misses, the twin removes them.** ECG's original overlap pipeline at 16 × 8: 640 misses
   on hart 1 → 0 at L0, its e2e window −2.7% and its kernel window −3.1%.
 - **Where the base has none, the twin is the same or differs by alignment alone.**
@@ -2331,8 +2335,9 @@ are not distinguishable.
     fetch. These programs' code fits the cache, so none of this is a conflict:
     - scalar atomic_add at 2 items takes one miss more in its e2e window: 46 → 56 cycles warm, on every layout
       (its kernel window is 46 in both);
-    - its two-worker run at 1,024 items takes two more on hart 1: +18 to +26 cycles.
-  - The dot's split at K = 0, cold, takes the same misses and 10 cycles more. That cause is not established.
+    - its two-worker run at 1,024 items takes two more on hart 1 (cold, hart 0 two more too): +17 to +26 cycles.
+  - The dot's split, cold, at every K where it is adopted (0, 1, 7 and 8), takes the same misses and 10 cycles more.
+    That cause is not established.
 - **Adopted at the 6 points where they win** (`ADOPTED_POINTS`):
 
   | Twin | Point | Against | Change |
@@ -2346,10 +2351,11 @@ are not distinguishable.
   Where the split variants and `__fir4` are adopted, they are faster than these twins. No twin changes a gate.
 - **Losses:** at 1,024 items, `atomic_add__hot` (+0.33% to +0.54%), `padded__hot` (+0.19% to +0.58%) and
   `atomic_add__split_hot` (+0.19% to +0.70%).
-- **The 19 other cases' twins** are all not distinguishable on the layouts, though some won at L0:
+- **The other cases' twins** are all not distinguishable on the layouts, though some won at L0:
   - the FIR −0.86% to +1.66%;
   - the coherence programs from −7.39% to +6.51% (producer_consumer's and smp_overhead's extremes);
-  - the FFT and the CPU methods of CIFAR, MNIST and Conv2D within ±0.02%.
+  - the FFT and the CPU methods of CIFAR, MNIST and Conv2D within ±0.02%;
+  - the dot product's scalar, DOT8 and NPU methods −13.8% to +11.3%.
 - **The judge's pairing:** smp_overhead and stamp_cost each emit two records in one window, and the judge first
   paired them wrongly. smp_overhead's twin showed +3,008%, its 64-trip round trip against its base's single
   handoff. The judge now pairs each record by its window and its place among that window's records. No earlier

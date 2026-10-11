@@ -179,7 +179,7 @@ As in 20.4:
 - **Step 3's and step 3b's outcome** (phase20.md, 20.5 steps 3 and 3b):
   - **The CPU's copy** (step 3b, the owner's decision of 11 October 2026):
     - at the same offset in a word, v1's fair copy stays, since no loop
-      beat it on Aster;
+      tried beat it at both alignments;
     - at different offsets, where v1's goes a byte at a time, the shift
       copy, from 15 bytes. It wins in every configuration from there, by
       3.8% to 73.5%.
@@ -294,8 +294,8 @@ Where code and data sit:
       are the base's.
     - **It removes the conflict misses,** but moving code also changes
       which code shares a line. So it wins on every layout, warm and cold,
-      at only 6 of 375 configurations, and is adopted there.
-    - **It loses at 3,** and 366 are not distinguishable (phase20.md, 20.5
+      at only 6 of the 447 at R, and is adopted there.
+    - **It loses at 3,** and 438 are not distinguishable (phase20.md, 20.5
       step 3b).
 
 ## 5. ECG

@@ -261,7 +261,8 @@
     "warm"
    ],
    "windows": [
-    "e2e"
+    "e2e",
+    "e2e#1"
    ],
    "low": -2.25,
    "high": 6.51,
@@ -271,6 +272,10 @@
      5167
     ],
     "warm e2e": [
+     5252,
+     5252
+    ],
+    "warm e2e#1": [
      169,
      180
     ]
@@ -283,8 +288,8 @@
     "cache_kib": 8,
     "case": "smp_overhead__hot"
    },
-   "spread_theirs": 3007.69,
-   "spread_mine": 2817.78
+   "spread_theirs": 0.0,
+   "spread_mine": 0.0
   },
   "coherence/spsc_queue__hot/multicore/soc_dev/n1024": {
    "verdict": "not distinguishable",
@@ -417,12 +422,17 @@
     "warm"
    ],
    "windows": [
-    "kernel"
+    "kernel",
+    "kernel#1"
    ],
    "low": 0.0,
    "high": 0.0,
    "l0": {
     "warm kernel": [
+     721,
+     721
+    ],
+    "warm kernel#1": [
      1819,
      1819
     ]
@@ -436,8 +446,8 @@
     "cache_kib": 8,
     "case": "stamp_cost__hot"
    },
-   "spread_theirs": 152.29,
-   "spread_mine": 152.29
+   "spread_theirs": 0.0,
+   "spread_mine": 0.0
   },
   "dsp/conv2d_direct_dot8__hot/dot8/soc_dev": {
    "verdict": "not distinguishable",

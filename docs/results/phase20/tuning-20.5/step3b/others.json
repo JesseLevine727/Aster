@@ -22040,12 +22040,17 @@
     "warm"
    ],
    "windows": [
-    "e2e"
+    "e2e",
+    "e2e#1"
    ],
    "low": -0.26,
    "high": 6.83,
    "l0": {
     "warm e2e": [
+     4619,
+     4607
+    ],
+    "warm e2e#1": [
      161,
      172
     ]
@@ -22058,8 +22063,8 @@
     "cache_kib": 8,
     "case": "smp_overhead__hot"
    },
-   "spread_theirs": 2768.94,
-   "spread_mine": 2578.49
+   "spread_theirs": null,
+   "spread_mine": null
   },
   "coherence/smp_overhead__hot/multicore/soc_dev": {
    "verdict": "not distinguishable",
@@ -22070,7 +22075,8 @@
     "warm"
    ],
    "windows": [
-    "e2e"
+    "e2e",
+    "e2e#1"
    ],
    "low": -2.25,
    "high": 6.51,
@@ -22080,6 +22086,10 @@
      5167
     ],
     "warm e2e": [
+     5252,
+     5252
+    ],
+    "warm e2e#1": [
      169,
      180
     ]
@@ -22092,8 +22102,8 @@
     "cache_kib": 8,
     "case": "smp_overhead__hot"
    },
-   "spread_theirs": 3007.69,
-   "spread_mine": 2817.78
+   "spread_theirs": null,
+   "spread_mine": null
   },
   "coherence/smp_overhead__hot/multicore/soc_w1": {
    "verdict": "not distinguishable",
@@ -22103,12 +22113,17 @@
     "warm"
    ],
    "windows": [
-    "e2e"
+    "e2e",
+    "e2e#1"
    ],
    "low": 0.0,
    "high": 7.14,
    "l0": {
     "warm e2e": [
+     5576,
+     5576
+    ],
+    "warm e2e#1": [
      182,
      195
     ]
@@ -22121,8 +22136,8 @@
     "cache_kib": 8,
     "case": "smp_overhead__hot"
    },
-   "spread_theirs": 2963.74,
-   "spread_mine": 2759.49
+   "spread_theirs": null,
+   "spread_mine": null
   },
   "coherence/smp_overhead__hot/multicore/soc_w2": {
    "verdict": "not distinguishable",
@@ -22132,12 +22147,17 @@
     "warm"
    ],
    "windows": [
-    "e2e"
+    "e2e",
+    "e2e#1"
    ],
    "low": 0.0,
    "high": 9.74,
    "l0": {
     "warm e2e": [
+     6156,
+     6156
+    ],
+    "warm e2e#1": [
      195,
      214
     ]
@@ -22150,8 +22170,8 @@
     "cache_kib": 8,
     "case": "smp_overhead__hot"
    },
-   "spread_theirs": 3056.92,
-   "spread_mine": 2776.64
+   "spread_theirs": null,
+   "spread_mine": null
   },
   "coherence/smp_overhead__hot/multicore/soc_w4": {
    "verdict": "not distinguishable",
@@ -22161,12 +22181,17 @@
     "warm"
    ],
    "windows": [
-    "e2e"
+    "e2e",
+    "e2e#1"
    ],
    "low": 0.0,
    "high": 8.6,
    "l0": {
     "warm e2e": [
+     7052,
+     7052
+    ],
+    "warm e2e#1": [
      221,
      240
     ]
@@ -22179,8 +22204,8 @@
     "cache_kib": 8,
     "case": "smp_overhead__hot"
    },
-   "spread_theirs": 3090.95,
-   "spread_mine": 2838.33
+   "spread_theirs": null,
+   "spread_mine": null
   },
   "coherence/spsc_queue__hot/multicore/soc_dc0/n1024": {
    "verdict": "wins",
@@ -22745,12 +22770,17 @@
     "warm"
    ],
    "windows": [
-    "kernel"
+    "kernel",
+    "kernel#1"
    ],
    "low": 0.0,
    "high": 0.0,
    "l0": {
     "warm kernel": [
+     721,
+     721
+    ],
+    "warm kernel#1": [
      1819,
      1819
     ]
@@ -22764,8 +22794,8 @@
     "cache_kib": 8,
     "case": "stamp_cost__hot"
    },
-   "spread_theirs": 152.29,
-   "spread_mine": 152.29
+   "spread_theirs": null,
+   "spread_mine": null
   },
   "coherence/stamp_cost__hot/scalar/soc_w4": {
    "verdict": "not distinguishable",
@@ -22775,12 +22805,17 @@
     "warm"
    ],
    "windows": [
-    "kernel"
+    "kernel",
+    "kernel#1"
    ],
    "low": 0.0,
    "high": 0.0,
    "l0": {
     "warm kernel": [
+     725,
+     725
+    ],
+    "warm kernel#1": [
      2079,
      2079
     ]
@@ -22794,8 +22829,8 @@
     "cache_kib": 8,
     "case": "stamp_cost__hot"
    },
-   "spread_theirs": 186.76,
-   "spread_mine": 186.76
+   "spread_theirs": null,
+   "spread_mine": null
   },
   "dsp/conv2d_direct_dot8__hot/dot8/soc_dc0": {
    "verdict": "not distinguishable",
