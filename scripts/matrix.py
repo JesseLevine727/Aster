@@ -984,9 +984,12 @@ def oracle_dma(entry: Entry, records: list[dict]) -> str:
         # 512 bytes at 2 KiB, 2 KiB at 8 KiB); a larger one aliases the program's other lines, and at most its own
         # lines and the cache's are invalidated. (Measured in this program's layout, not a property of the
         # hardware: a change to the program can move it. The count is both data caches' snoop hits; the copies
-        # have one worker, so only hart 0's cache holds the destination.)
+        # have one worker, so only hart 0's cache holds the destination. 20.5's step 3: at L4, destinations of 121
+        # to 160 bytes lose a line too, so the exact count is checked at L0, the layout where it was measured, and
+        # the bound on every layout; every byte of the copy is checked in the firmware.)
         cache = soc_variants.VARIANTS[entry.sim]["CACHE_BYTES"]
-        if cached and a["bytes"] <= cache // 4 and r["dma_invalidations"] != lines:
+        exact = a.get("layout", "L0") == "L0" and a["bytes"] <= cache // 4
+        if cached and exact and r["dma_invalidations"] != lines:
             raise asterbench_v12.ValidationError(f"{r['dma_invalidations']} invalidations, not the {lines} lines cached")
         if r["dma_invalidations"] > min(lines, cache // 16):
             raise asterbench_v12.ValidationError(f"{r['dma_invalidations']} invalidations, over the destination's "

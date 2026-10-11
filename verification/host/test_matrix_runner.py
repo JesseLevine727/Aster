@@ -260,8 +260,10 @@ class Gates(unittest.TestCase):
 
 class DmaInvalidations(unittest.TestCase):
     """20.5: the DMA oracle's exact count up to a quarter of the cache at each size, and its bound above."""
-    def check(self, kib: int, size: int, off_by: int) -> None:
+    def check(self, kib: int, size: int, off_by: int, layout: str | None = None) -> None:
         base = next(e for e in matrix.dma_entries() if e.id == f"dma/copy/dma/soc_dev/warm/b{size}s0d0c1")
+        if layout:
+            base = matrix.with_layout(base, layout)
         own = matrix.soc_variants.VARIANTS["soc_dev"]["CACHE_BYTES"] // 1024      # (R's: 8 KiB since 20.5)
         e = base if kib == own else matrix.with_caches([base], [kib])[0]
         a, lines = e.axes, (size + 15) // 16
@@ -277,6 +279,15 @@ class DmaInvalidations(unittest.TestCase):
             for off_by in (-1, 1):
                 with self.assertRaisesRegex(matrix.asterbench_v12.ValidationError, "invalidations"):
                     self.check(kib, size, off_by)
+
+    def test_exact_at_l0_bounded_elsewhere(self):
+        """20.5 step 3: at L4 a destination under a quarter of the cache can lose a line to the program's own (the
+        layouts move its lines): exact at L0, the bound on the other layouts."""
+        with self.assertRaisesRegex(matrix.asterbench_v12.ValidationError, "not the"):
+            self.check(8, 128, -1)
+        self.check(8, 128, -1, "L4")
+        with self.assertRaisesRegex(matrix.asterbench_v12.ValidationError, "over the destination"):
+            self.check(8, 128, 1, "L4")
 
     def test_bounded_above_it(self):
         self.check(2, 1024, -1)                                  # (a line aliased: 20.5's 2 KiB case)
