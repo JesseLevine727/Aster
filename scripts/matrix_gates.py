@@ -30,9 +30,18 @@ SCALING_GATE = 1.8
 GEOMETRY = "soc_l1_"                                        # (20.5: the other cache sizes' builds, soc_l1_<KiB>k)
 R_SIMS = ("soc_dev", "soc_l1_2k", "soc_l1_4k", "soc_l1_8k")  # (R at each cache size)
 
-# 20.5 step 3 (tuning.md §3): the tuned variants adopted (each a win on every layout it fits, warm and cold): only
-# these compete with their originals in the v1 gate; until step 3's judging fixes the set, none
-ADOPTED: frozenset = frozenset()
+# 20.5 step 3 (tuning.md §3; phase20.md, 20.5 step 3): the tuned variants adopted, each faster than its original in
+# every window, on every layout it fits, at R, warm and cold, and each change stacked on another variant faster than
+# that variant at R too (matrix_judge.py --stacked). Only these compete with their originals in the v1 gate. Not
+# adopted though faster than their originals: __fir4_copy (the copy policy not distinguishable from __fir4 alone),
+# ecg_pipeline_overlap_f8__fir4_split (its split not distinguishable from __fir4 at R), and __place (placement not
+# distinguishable from its control, __loop: the gain is the loops' code).
+ADOPTED: frozenset = frozenset({
+    "ecg_dot8__fir4", "ecg_dot8_f8__fir4", "ecg_pipeline_v1__fir4", "ecg_pipeline_v1_f8__fir4",
+    "ecg_pipeline_overlap__fir4", "ecg_pipeline_overlap_f8__fir4", "ecg_pipeline_overlap__fir4_split",
+    "cifar_cnn_npu_direct__2h", "cifar_cnn_npu_im2col__2h", "conv2d_direct_npu__2h", "conv2d_im2col_npu__2h",
+    "mnist_mlp_npu__2h", "mnist_mlp_npu_batched__2h", "reduce_fill__loop", "reduce_v1__loop", "lock_sum__split",
+})
 
 
 def competes(case: str, test) -> bool:

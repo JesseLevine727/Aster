@@ -30,12 +30,23 @@
 #ifndef CIFAR_SPLIT
 #define CIFAR_SPLIT 0
 #endif
+// On __2h (tuning.md §4.1, §4.3): CIFAR_COPY 1 builds "__2h_copy", each image staged by the copy helper (aster_copy:
+// by its policy, the DMA for an image's 768 bytes) in place of v1's byte loop; CIFAR_COPY 2 builds "__2h_next", the
+// next image's copy begun on the DMA as soon as this image's is in place, into the other of two buffers, while this
+// image's layers run, and finished before that image's turn (aster_copy_start, aster_copy_finish). Both stay in v1's
+// window (its staging is part of it).
+#ifndef CIFAR_COPY
+#define CIFAR_COPY 0
+#endif
 #define MATRIX_SHARES (CIFAR_METHOD == 1 || CIFAR_SPLIT)  // (the share stamps, the two-worker builds': matrix_window.h)
 
 #include <stdint.h>
 
 #include "matrix_layout.h"
 #include "aster.h"
+#if CIFAR_COPY
+#include "aster_copy.h"
+#endif
 #include "aster_npu2.h"
 #include "aster_smp.h"
 #include "asterbench_v12.h"
@@ -52,6 +63,7 @@
 #define DIRECT (CIFAR_METHOD == 4)
 #define WORKERS (CIFAR_METHOD == 1 || CIFAR_SPLIT ? 2u : 1u)
 _Static_assert(!CIFAR_SPLIT || NPU, "the split is the NPU methods' tuned variant");
+_Static_assert(!CIFAR_COPY || CIFAR_SPLIT, "the staging's variants are __2h's");
 #if DIRECT
 #include "cifar_hwc.h"
 #endif
@@ -67,8 +79,15 @@ _Static_assert(!CIFAR_SPLIT || NPU, "the split is the NPU methods' tuned variant
 
 enum { UNTIMED, E2E, KERNEL };
 
+#if CIFAR_COPY == 2
+MATRIX_ROOM(image, sizeof(int8_t[2u * IMAGE_BYTES]), 16);          // (two buffers: an image's and the next's)
+#define images MATRIX_AT(int8_t, image, 2u * IMAGE_BYTES)
+static volatile uint32_t image_slot;                   // this image's buffer (hart 1 reads it for its im2col rows)
+#define image (&images[image_slot * IMAGE_BYTES])
+#else
 MATRIX_ROOM(image, sizeof(int8_t[IMAGE_BYTES]), 16);
 #define image MATRIX_AT(int8_t, image, IMAGE_BYTES)
+#endif
 #if !DIRECT
 MATRIX_ROOM(im2col, sizeof(int8_t[C1_M * CIFAR_CONV1_K]), 16);
 #define im2col MATRIX_AT(int8_t, im2col, C1_M * CIFAR_CONV1_K)
@@ -317,13 +336,36 @@ static __attribute__((noinline)) void run_layer(const struct aster_npu2_job *job
 
 static uint32_t checksum, mismatches;                 // v1's, folded in its window as each image ends
 
+#if CIFAR_COPY
+static void stage(int8_t *destination, const int8_t *source) {     // an image staged by the copy helper, at once
+    enum aster_copy_engine used;
+    if (aster_copy(destination, source, IMAGE_BYTES, &used) != ASTER_DMA_OK) engine_failed = 1;
+    if (used == ASTER_COPY_DMA) v12_note_dma_job();
+}
+#endif
+
 static __attribute__((noinline)) void infer(uint32_t item, int mode) {
 #if DIRECT
     const int8_t *source = &cifar_test_images_hwc[item * IMAGE_BYTES];
 #else
     const int8_t *source = &cifar_test_images[item * IMAGE_BYTES];
 #endif
+#if CIFAR_COPY == 1
+    stage(image, source);                              // the staging, by the copy helper
+#elif CIFAR_COPY == 2
+    image_slot = item & 1u;
+    if (item == 0) stage(image, source);               // (the pass's first image: nothing begun before it)
+    else if (aster_copy_finish() != ASTER_DMA_OK) engine_failed = 1;    // (begun during the last image)
+    if (item + 1u < IMAGES) {                          // the next image's, begun into the other buffer
+        enum aster_copy_engine used;
+        const enum aster_dma_result r = aster_copy_start(&images[(image_slot ^ 1u) * IMAGE_BYTES],
+                                                         source + IMAGE_BYTES, IMAGE_BYTES, &used);
+        if (r != ASTER_DMA_OK && r != ASTER_DMA_PENDING) engine_failed = 1;
+        if (used == ASTER_COPY_DMA) v12_note_dma_job();
+    }
+#else
     for (uint32_t i = 0; i < IMAGE_BYTES; ++i) image[i] = source[i];      // the staging (v1's, in its window)
+#endif
     __asm__ volatile ("fence rw,rw" ::: "memory");
 
     // conv1: M = 196 output pixels, N = 16, K = 27
@@ -437,6 +479,11 @@ static void pass(int mode) {
 static int timed_pass(struct v12_record *record, int mode) {
     matrix_poison(logits, sizeof logits);
     matrix_poison(classes, sizeof classes);
+#if CIFAR_COPY == 2
+    matrix_poison(images, sizeof images);              // (each image's buffer the engine's to fill, not the warm-up's)
+#elif CIFAR_COPY
+    matrix_poison(image, sizeof image);
+#endif
     matrix_stamps_clear();
     v12_prepare();
     pass(mode);
@@ -456,8 +503,11 @@ static int timed_pass(struct v12_record *record, int mode) {
     static const char *const methods[] = {"scalar", "multicore", "dot8", "npu_im2col", "npu_direct"};
     record->name = names[CIFAR_METHOD]; record->family = "ml"; record->method = methods[CIFAR_METHOD];
 #if CIFAR_SPLIT
-    static const char *const split_names[] = {"", "", "", "cifar_cnn_npu_im2col__2h", "cifar_cnn_npu_direct__2h"};
-    record->name = split_names[CIFAR_METHOD];          // (a tuned variant's case, tuning.md §3)
+    static const char *const split_names[][5] = {
+        {"", "", "", "cifar_cnn_npu_im2col__2h", "cifar_cnn_npu_direct__2h"},
+        {"", "", "", "cifar_cnn_npu_im2col__2h_copy", "cifar_cnn_npu_direct__2h_copy"},
+        {"", "", "", "cifar_cnn_npu_im2col__2h_next", "cifar_cnn_npu_direct__2h_next"}};
+    record->name = split_names[CIFAR_COPY][CIFAR_METHOD];     // (a tuned variant's case, tuning.md §3)
 #endif
     record->window = mode == KERNEL ? "kernel" : "e2e"; record->cache_state = MATRIX_CACHE_STATE;
     record->size = IMAGE_BYTES; record->iterations = IMAGES; record->param = CIFAR_CONV1_OUT; record->seed = 0;

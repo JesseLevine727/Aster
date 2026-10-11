@@ -397,11 +397,18 @@ def cifar_entries() -> list[Entry]:
     # 20.5's tuned variants (tuning.md §4.3): __2h, hart 1 taking half of the CPU work around the NPU's jobs
     methods += [(number, method, 2, "__2h", ["-DCIFAR_SPLIT=1"]) for number, method in ((3, "npu_im2col"),
                                                                                        (4, "npu_direct"))]
+    # and on __2h (tuning.md §4.1, §4.3): __2h_copy, each image staged by the copy helper; __2h_next, the next
+    # image's copy begun on the DMA during this image's layers, into a second buffer
+    methods += [(number, method, 2, tag, ["-DCIFAR_SPLIT=1", f"-DCIFAR_COPY={copy}"])
+                for tag, copy in (("__2h_copy", 1), ("__2h_next", 2))
+                for number, method in ((3, "npu_im2col"), (4, "npu_direct"))]
     for number, method, workers, tag, tuning in methods:
         name = f"cifar_cnn_{method}{tag}"
+        copy = ["software/drivers/aster_dma.c", "software/runtime/aster_copy.c"] if "_copy" in tag or "_next" in tag \
+            else []
         for sim, cold, reason in axis_configs(method.startswith("npu"), workers):
             ident = f"ml/{name}/{method}/{sim}/{'cold' if cold else 'warm'}"
-            e = Entry(ident, "ml", name, method, sim, cold, [], "LITMUS_CFLAGS", [], [], "", sources,
+            e = Entry(ident, "ml", name, method, sim, cold, [], "LITMUS_CFLAGS", [], [], "", sources + copy,
                       soc_variants.v12_defines(sim) + [f"-DCIFAR_METHOD={number}", "-Isoftware/benchmarks"] + tuning
                       + (["-DMATRIX_COLD"] if cold else []), make_axes(sim, cold, workers), "cifar")
             if reason:
@@ -861,6 +868,14 @@ def oracle_cifar(entry: Entry, records: list[dict]) -> str:
         method_evidence(entry, r, dot8=dot8, npu_jobs=3 * ref["images"] if npu else 0)
         if npu and r["npu_macs"] != macs:
             raise asterbench_v12.ValidationError(f"{r['npu_macs']} NPU MACs, not {macs}")
+        # (the staging's variants: each image by the DMA, the copy policy's choice for 768 bytes at any alignment)
+        staged = entry.case.endswith(("__2h_copy", "__2h_next")) and r["window"] == "e2e"
+        if staged and 768 < max(copy_policy().values()):
+            raise asterbench_v12.ValidationError("the copy policy no longer stages an image by the DMA")
+        want = (ref["images"], ref["images"], 768 * ref["images"]) if staged else (0, 0, 0)
+        if (r["dma_jobs"], r["dma_completed_jobs"], r["dma_bytes"]) != want:
+            raise asterbench_v12.ValidationError(
+                f"DMA jobs {r['dma_jobs']}/{r['dma_completed_jobs']}, bytes {r['dma_bytes']}, not {want}")
     if ref["checksum"] != records[0]["checksum"]:
         raise asterbench_v12.ValidationError(
             f"checksum {records[0]['checksum']:#010x}, the model's {ref['checksum']:#010x}")

@@ -317,15 +317,20 @@ class TunedVariants(unittest.TestCase):
         self.assertTrue(matrix_gates.competes("mnist_mlp_npu", mnist))
         self.assertFalse(matrix_gates.competes("mnist_mlp_npu_batched", mnist))
         self.assertFalse(matrix_gates.competes("mnist_mlp_npu_batched__2h", mnist))   # (batched: never per image)
-        self.assertFalse(matrix_gates.competes("mnist_mlp_npu__2h", mnist))           # (not adopted)
         self.assertFalse(matrix_gates.competes("ecg_pipeline_overlap__fir4_stages",
                                                matrix_gates.V1["streaming ECG, 16 x 64"][1]))
+        saved = matrix_gates.ADOPTED
         try:
+            matrix_gates.ADOPTED = frozenset()
+            self.assertFalse(matrix_gates.competes("mnist_mlp_npu__2h", mnist))       # (not adopted)
             matrix_gates.ADOPTED = frozenset({"mnist_mlp_npu__2h"})
             self.assertTrue(matrix_gates.competes("mnist_mlp_npu__2h", mnist))
             self.assertFalse(matrix_gates.competes("mnist_mlp_npu_batched__2h", mnist))
         finally:
-            matrix_gates.ADOPTED = frozenset()
+            matrix_gates.ADOPTED = saved
+        ecg = matrix_gates.V1["streaming ECG, 16 x 64"][1]           # (step 3's set: the copy policy's variant left out)
+        self.assertTrue(matrix_gates.competes("ecg_pipeline_overlap__fir4_split", ecg))
+        self.assertFalse(matrix_gates.competes("ecg_pipeline_overlap__fir4_copy", ecg))
 
     def test_the_judging(self):
         def entry(case, layout, state, cycles):
@@ -341,6 +346,28 @@ class TunedVariants(unittest.TestCase):
         allrec.update([entry("mnist_mlp_npu__2h", "L3", "warm", 101)])
         rows, _ = matrix_judge.pairs(allrec)
         self.assertEqual(matrix_judge.verdict(rows["ml/mnist_mlp_npu__2h/npu/soc_dev"]), "not distinguishable")
+
+    def test_a_stacked_change_is_judged_against_the_variant_it_extends(self):
+        def entry(case, layout, state, cycles, chunk=64, taps=16):
+            axes = dict(cache_state=state, chunk=chunk, taps=taps) | ({} if layout == "L0" else dict(layout=layout))
+            e = dict(id=f"ecg/{case}/pipeline/soc_dev/{state}" + ("" if layout == "L0" else f"/{layout}"), case=case,
+                     axes=axes)
+            return e["id"], (e, [dict(window="e2e", h0_cycles=str(cycles))])
+        allrec = dict([entry("x__fir4", "L0", "warm", 100), entry("x__fir4_split", "L0", "warm", 90),
+                       entry("x__fir4", "L3", "cold", 100), entry("x__fir4_split", "L3", "cold", 101)])
+        self.assertEqual(matrix_judge.stacked(allrec, "x__fir4_split", "x__fir4")["c64t16"]["verdict"],
+                         "not distinguishable")
+        self.assertEqual(matrix_judge.stacked(allrec, "x__fir4_split", "x__none"), {})
+
+    def test_the_staging_variants(self):
+        plan = {e.case: e for e in matrix.cifar_entries() if e.sim == "soc_dev" and not e.cold}
+        for method in ("npu_direct", "npu_im2col"):
+            for tag, copy in (("__2h_copy", 1), ("__2h_next", 2)):
+                e = plan[f"cifar_cnn_{method}{tag}"]
+                self.assertIn("software/runtime/aster_copy.c", e.harness_sources)
+                self.assertIn(f"-DCIFAR_COPY={copy}", e.defines)
+                self.assertEqual(e.axes["workers"], 2)
+            self.assertNotIn("software/runtime/aster_copy.c", plan[f"cifar_cnn_{method}__2h"].harness_sources)
 
 
 class Policies(unittest.TestCase):
