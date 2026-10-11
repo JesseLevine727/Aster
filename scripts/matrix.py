@@ -1000,7 +1000,24 @@ def dma_model(axes: dict, overlap: bool) -> int:
     return checksum
 
 
-def oracle_dma(entry: Entry, records: list[dict]) -> str:
+DMA_STACK_TOP_BYTES = 64              # (hart 0's outermost frames: 20.5 step 3's sweep, every short count there)
+
+
+def dma_stack_aliased(entry: Entry, symbols: dict | None, cache: int) -> bool:
+    """Whether a copied line of the DMA program's destination shares a cache index with the top of hart 0's stack
+    (software/matrix/dma_bench.c: the room, the layout's data pad, its 64-byte guard and the offset)."""
+    if not symbols or "destination_room" not in symbols:
+        return False
+    a = entry.axes
+    pad = LAYOUTS[a["layout"]][1] if a.get("layout") in LAYOUTS else 0
+    start = symbols["destination_room"] + pad + 64 + a["dst_off"]
+    lines = cache // 16
+    copied = {(x // 16) % lines for x in range(start, start + a["bytes"])}
+    top = symbols["__stack0_top"]
+    return bool(copied & {(x // 16) % lines for x in range(top - DMA_STACK_TOP_BYTES, top)})
+
+
+def oracle_dma(entry: Entry, records: list[dict], symbols: dict | None = None) -> str:
     a = entry.axes
     if len(records) != 1 or records[0]["window"] != "e2e":
         raise asterbench_v12.ValidationError(f"{len(records)} records, not one e2e window")
@@ -1030,10 +1047,11 @@ def oracle_dma(entry: Entry, records: list[dict]) -> str:
         # lines and the cache's are invalidated. (Measured in this program's layout, not a property of the
         # hardware: a change to the program can move it. The count is both data caches' snoop hits; the copies
         # have one worker, so only hart 0's cache holds the destination. 20.5's step 3: at L4, destinations of 121
-        # to 160 bytes lose a line too, so the exact count is checked at L0, the layout where it was measured, and
-        # the bound on every layout; every byte of the copy is checked in the firmware.)
+        # to 160 bytes lose a line to the top of hart 0's stack, its outermost frames, which the program touches
+        # between the warm-up and the job; so the exact count is checked wherever no copied line shares a cache
+        # index with the stack's top 64 bytes, and the bound everywhere. Every byte is checked in the firmware.)
         cache = soc_variants.VARIANTS[entry.sim]["CACHE_BYTES"]
-        exact = a.get("layout", "L0") == "L0" and a["bytes"] <= cache // 4
+        exact = a["bytes"] <= cache // 4 and not dma_stack_aliased(entry, symbols, cache)
         if cached and exact and r["dma_invalidations"] != lines:
             raise asterbench_v12.ValidationError(f"{r['dma_invalidations']} invalidations, not the {lines} lines cached")
         if r["dma_invalidations"] > min(lines, cache // 16):
@@ -1048,6 +1066,9 @@ def oracle_dma(entry: Entry, records: list[dict]) -> str:
     if overlap and a["workers"] == 1 and not r["h0_work_end"] > r["h0_work_start"]:
         raise asterbench_v12.ValidationError("hart 0's work is not stamped")
     return f"checksum {want:#010x}: the model's; every byte and guard checked in the firmware"
+
+
+oracle_dma.wants_symbols = True
 
 
 def coherent_model(kind: int, items: int, workers: int, rounds: int = 4) -> tuple[int, int]:
@@ -1449,6 +1470,7 @@ def do_entry(entry: Entry, out: Path, prefix: str, soc_flags: list[str]) -> dict
             records.append(record)
         oracle = ORACLES[entry.oracle]
         result["oracle"] = oracle(entry, records, extras) if getattr(oracle, "wants_extras", False) \
+            else oracle(entry, records, symbols=symbols) if getattr(oracle, "wants_symbols", False) \
             else oracle(entry, records)
         result["totals"] = reconcile_totals(records, extras)
         result["lines"] = lines

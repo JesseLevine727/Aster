@@ -46,7 +46,8 @@ static uint32_t copy_checked(uint32_t bytes, uint32_t src_off, uint32_t dst_off,
     return used == ASTER_COPY_DMA;
 }
 
-static const uint32_t extra[] = {95u, 96u, 126u, 127u, 128u, 160u, 255u, 256u, 300u, 320u};
+// (each side of the policy's thresholds: 20.4's 127 and 63, and 20.5 step 3's 113 and 89; 21 within 0-64 above)
+static const uint32_t extra[] = {88u, 89u, 95u, 96u, 112u, 113u, 126u, 127u, 128u, 160u, 255u, 256u, 300u, 320u};
 
 static void hart1_copies(void *arg) {
     volatile uint32_t *dma = arg;

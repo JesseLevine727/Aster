@@ -85,7 +85,15 @@ def main() -> int:
     bad = [key for key, v in rows.items() if v["incomplete"]]
     if bad:
         print(f"  INCOMPLETE: {bad[:5]}")
-    return 0 if not result["dirty"] and not bad and manifest["counts"]["failed"] == 0 else 1
+    # (every size of the different offsets' class at all four of the sweep's pairs, every class a threshold)
+    short = [f"{key}/{s}" for key, by in data.items() if key[0] == "different_offsets"
+             for s, pairs in by.items() if len(pairs) != 4]
+    if short:
+        print(f"  SIZES WITHOUT ALL FOUR OFFSET PAIRS: {short[:5]}")
+    none = [k for k, p in policy.items() if p["threshold"] is None]
+    if none:
+        print(f"  NO THRESHOLD: {none}")
+    return 0 if not result["dirty"] and not bad and not short and not none and manifest["counts"]["failed"] == 0 else 1
 
 
 if __name__ == "__main__":

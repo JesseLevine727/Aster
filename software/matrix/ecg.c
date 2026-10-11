@@ -144,7 +144,8 @@ static __attribute__((noinline)) void fir(const int8_t *x, int32_t *out) {
         engine_failed = 1;
         return;
     }
-    const uint32_t *w = (const uint32_t *)(const void *)x;
+    typedef uint32_t chunk_word __attribute__((__may_alias__));   // (the chunk's bytes read a word at a time)
+    const chunk_word *w = (const chunk_word *)(const void *)x;
     uint32_t taps[TAP_WORDS];
 #pragma GCC unroll 8
     for (uint32_t j = 0; j < TAP_WORDS; ++j) taps[j] = aster_dot8_pack4((const uint8_t *)coef + 4u * j);

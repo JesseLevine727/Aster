@@ -261,7 +261,7 @@ class Gates(unittest.TestCase):
 
 class DmaInvalidations(unittest.TestCase):
     """20.5: the DMA oracle's exact count up to a quarter of the cache at each size, and its bound above."""
-    def check(self, kib: int, size: int, off_by: int, layout: str | None = None) -> None:
+    def check(self, kib: int, size: int, off_by: int, layout: str | None = None, symbols: dict | None = None) -> None:
         base = next(e for e in matrix.dma_entries() if e.id == f"dma/copy/dma/soc_dev/warm/b{size}s0d0c1")
         if layout:
             base = matrix.with_layout(base, layout)
@@ -272,7 +272,7 @@ class DmaInvalidations(unittest.TestCase):
                  checksum=matrix.dma_model(a, False), dma_jobs=1, dma_completed_jobs=1, dma_bytes=size,
                  dma_invalidations=lines + off_by, dma_reads=(size + 7) // 8, dma_writes=(size + 7) // 8,
                  h0_dot8_retire=0, h1_dot8_retire=0, npu_jobs=0, h1_retired=0, h1_work_start=0, h1_work_end=0)
-        matrix.oracle_dma(e, [r])
+        matrix.oracle_dma(e, [r], symbols=symbols)
 
     def test_exact_to_a_quarter(self):
         for kib, size in ((2, 512), (4, 1024), (8, 2048)):
@@ -281,14 +281,21 @@ class DmaInvalidations(unittest.TestCase):
                 with self.assertRaisesRegex(matrix.asterbench_v12.ValidationError, "invalidations"):
                     self.check(kib, size, off_by)
 
-    def test_exact_at_l0_bounded_elsewhere(self):
-        """20.5 step 3: at L4 a destination under a quarter of the cache can lose a line to the program's own (the
-        layouts move its lines): exact at L0, the bound on the other layouts."""
-        with self.assertRaisesRegex(matrix.asterbench_v12.ValidationError, "not the"):
-            self.check(8, 128, -1)
-        self.check(8, 128, -1, "L4")
+    def test_exact_unless_the_stack_top_aliases(self):
+        """20.5 step 3: a destination whose lines share a cache index with the top 64 bytes of hart 0's stack can lose
+        a line (L4's, in the sweep): there the bound, elsewhere the exact count, on any layout."""
+        top = 0x80017000
+        # (the copy begins 64 bytes below the stack top's index, 8 KiB down: its first 4 lines alias the top 64 bytes)
+        aliased = {"destination_room": top - 0x2000 - 64 - 1024 - 64, "__stack0_top": top}
+        clear = {"destination_room": top - 0x2000 - 64 - 1024 - 0x400, "__stack0_top": top}
+        self.assertTrue(matrix.dma_stack_aliased(matrix.with_layout(next(
+            e for e in matrix.dma_entries() if e.id == "dma/copy/dma/soc_dev/warm/b128s0d0c1"), "L4"), aliased, 8192))
+        self.check(8, 128, -1, "L4", aliased)
+        for symbols, layout in ((clear, "L4"), (clear, None), (None, None)):
+            with self.assertRaisesRegex(matrix.asterbench_v12.ValidationError, "not the"):
+                self.check(8, 128, -1, layout, symbols)
         with self.assertRaisesRegex(matrix.asterbench_v12.ValidationError, "over the destination"):
-            self.check(8, 128, 1, "L4")
+            self.check(8, 128, 1, "L4", aliased)
 
     def test_bounded_above_it(self):
         self.check(2, 1024, -1)                                  # (a line aliased: 20.5's 2 KiB case)
