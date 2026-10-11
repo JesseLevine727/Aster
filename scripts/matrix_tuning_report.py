@@ -13,6 +13,7 @@
 """
 import argparse
 import json
+import re
 import statistics
 import sys
 from collections import defaultdict
@@ -24,6 +25,14 @@ from matrix_overlap import records_of
 
 def revision(run: Path) -> str:
     return json.loads((run / "manifest.json").read_text())["source"]["revision"][:7]
+
+
+def incomplete(run: Path) -> list[str]:
+    """Why a run cannot be used: a dirty tree, or entries neither captured nor unsupported (each would narrow a
+    figure's range silently)."""
+    m = json.loads((run / "manifest.json").read_text())
+    bad = [e["id"] for e in m["entries"] if e["status"] not in ("captured", "unsupported")]
+    return (["the tree was dirty"] if m["source"]["dirty"] else []) + ([f"{len(bad)} entries {bad[:2]}"] if bad else [])
 
 
 def e2e(recs: list[dict]) -> dict:
@@ -106,7 +115,7 @@ def by_layout(judge: dict, select) -> dict:
     for ident, (e, recs) in judge.items():
         if not select(e):
             continue
-        config = ident.rsplit("/L", 1)[0] if ident.split("/")[-1].startswith("L") else ident
+        config = re.sub(r"/L\d$", "", ident)
         config = config.replace(f"/{e['axes']['cache_state']}", "", 1)
         for r in recs:
             out[(config, e["axes"]["cache_state"], r["window"])][e["axes"].get("layout", "L0")] = r
@@ -153,6 +162,10 @@ def main() -> int:
     parser.add_argument("out", type=Path)
     args = parser.parse_args()
     runs = {name: args.matrix / name for name in ("t3-ml", "t3-ecg", "t3-judge")}
+    problems = {name: why for name, run in runs.items() if (why := incomplete(run))}
+    if problems:
+        print(f"runs not usable: {problems}")
+        return 1
     revs = {name: revision(run) for name, run in runs.items()}
     if len(set(revs.values())) != 1:
         print(f"the runs' revisions differ: {revs}")

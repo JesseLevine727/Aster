@@ -158,7 +158,8 @@ def main() -> int:
     for run in args.runs:
         allrec.update(records_of(run))
     status = {e["id"]: e["status"] for m in manifests for e in m["entries"]}
-    failed = sorted(i for i, st in status.items() if st == "failed")    # (a failed entry would narrow a judgment)
+    # (an entry neither captured nor unsupported, failed or never run, would narrow a judgment)
+    failed = sorted(i for i, st in status.items() if st not in ("captured", "unsupported"))
     by_config, alone, axes = pairs(allrec)
     # (a variant's entry whose original cannot run there, unsupported with its reason, is the variant's alone: the
     # split variants on the one-hart SoC, below their thresholds; any other is a missing twin)
@@ -203,7 +204,7 @@ def main() -> int:
         for line in beside:
             print(f"  beside the win: {line}")
     if failed:
-        print(f"  FAILED entries in the runs: {len(failed)}, e.g. {failed[:3]}")
+        print(f"  entries neither captured nor unsupported in the runs: {len(failed)}, e.g. {failed[:3]}")
     return 0 if not dirty and len(revs) == 1 and not alone and not stack_alone and not problems and not failed else 1
 
 

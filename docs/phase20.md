@@ -2067,8 +2067,8 @@ is judged at 8 KiB, on L0–L7.
 - **Freed time** (`dma-freed.txt`): an image's DMA copy keeps the engine busy about 105 cycles.
   - `__2h_copy` and ECG's moves wait on it. Polling is not freed time, so their gain is the engine in place of the
     CPU's copy.
-  - `__2h_next` frees about 2,100 cycles over the 20 images, 0.09% of its window, less than its second buffer
-    costs.
+  - `__2h_next` frees about 2,100 cycles over the 20 images, 0.06% to 0.09% of its window, less than its second
+    buffer costs.
 - **v1's fair copy is slow on Aster** (a question for the owner). Its four back-to-back write-through stores queue,
   and it took about 245 cycles more for a 64-byte chunk than the compiler's interleaved word loop.
 
@@ -2161,7 +2161,7 @@ on all eight layouts, warm and cold:
 **Placement** (§4.4) found nothing to win in these programs.
 - **The fabric's bank conflicts** (`bank-conflicts.txt`) were few, so placement could win little:
   - in the original reductions' warm windows, at most 23 over the layouts, 0.07% of the cycles (their variants up
-    to 46, 0.23%);
+    to 46, 0.23%); cold, up to 0.67% (their variants up to 1.23%);
   - in the GEMMs' warm windows, at most 0.35%; cold, up to 0.90% (64³'s first pass).
 - **The reductions' `__place`** won 18–21%, but its control, `__loop` (the same loops with the halves where the
   original has them), wins the same. Placement against its control is not distinguishable (−0.8% to +0.5%).
@@ -2170,16 +2170,20 @@ on all eight layouts, warm and cold:
   - `__loop` is adopted as that, not as placement.
 - **The GEMMs' `__place`** loses by +0.0% to +0.1%, or is not distinguishable.
 - **The spread over the layouts before and after** (`judge.txt`; the largest in any one state and window):
-  - the GEMMs' `__place`: 64³ 2.37% → 2.78%, 96³ 0.38% → 0.38%, 128×64×128 0.06% → 0.03%;
-  - the reductions' `__place`: 0.01% → 0.71% (reduce_fill), 0.14% → 0.26% (reduce_v1).
+  - the GEMMs' `__place`: 64³ 2.37% → 2.78%, 96³ 0.38% → 0.38%, 128×64×128 0.06% → 0.03% (on its four
+    layouts);
+  - the reductions' `__place` against the originals: 0.01% → 0.71% (reduce_fill), 0.14% → 0.26% (reduce_v1). Their
+    new loops widened it. Against the control `__loop`, with the same loops, placement narrowed it: 1.53% → 0.71%
+    and 0.27% → 0.26%.
 
-  Placement did not make the two-hart figures less layout-dependent.
+  The spreads are small either way, under 3%, and placement did not win in any window.
 - **Code against the instruction cache: not tried** (a question for the owner). `icache.txt` measures what it
   could win.
   - **Of the 510 warm windows, 63 have 32 misses or more at L0.** In ECG's and ML's, L4's 1 KiB code pad removes
-    them, so they are conflicts, placement's to remove. The coherence cases' 32 to 41 move with no layout.
-  - **Where they cost most:** ECG's original overlap pipeline at 16 × 8, 640 misses on hart 1 and −2.8% to −4.0%
-    at L4. Its adopted `__fir4` variants do not show it.
+    them, so they are conflicts, placement's to remove. The coherence cases' 32 to 41 move by at most 2 with any
+    layout.
+  - **Where they cost most:** ECG's original overlap pipeline at 16 × 8, with 640 misses on hart 1 and −2.8% to
+    −2.9% at L4 (with 8 features, 512 misses and −3.8% to −4.0%). Its adopted `__fir4` variants do not show it.
   - **Among the adopted variants:** CIFAR im2col `__2h` (360 misses, −0.2% at L4), MNIST `__2h` (128, −0.7%) and
     batched `__2h` at 4 (155, −0.8%). L4 also moves the data, so those changes are not the misses' alone.
   - **The armed hand-over's own misses** (matrix.md §10.12), about eight lines and 70 cycles a two-worker kernel

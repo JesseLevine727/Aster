@@ -65,9 +65,11 @@ console.
     windows' instruction misses at L0 and their fewest over the layouts, for
     the originals and the adopted variants (`t3-judge`).
 
-Every figure in phase20.md's record comes from these files, with two
+Every figure in phase20.md's record comes from these files, with three
 exceptions:
 - the "features on hart 1" trial, which was not kept in the tree;
+- the 7,092 entries whose firmware 410fbce left unchanged and whose cycles
+  equal the 74bc781 capture's, which is not in this bundle;
 - the 160 short counts that led to the DMA oracle's stack exemption, found
   in an earlier capture of the sweep (472e822). The exemption applies here
   too; the oracle's message does not say which entries it covered.
