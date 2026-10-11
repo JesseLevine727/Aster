@@ -448,11 +448,14 @@ class CodePlacement(unittest.TestCase):
                          " .text.empty     0x0000000080000128        0x0 /tmp/cc1.o\n")
             self.assertEqual(matrix.input_sections(m), [(0x80000000, 0x40, ".text.init"),
                                                         (0x80000100, 0x20, ".text.foo"), (0x80000120, 8, ".text.bar")])
-            order = [dict(section=".text.foo", executed=9, bytes=30), dict(section=".text.bar", executed=5, bytes=8)]
-            placed = matrix.hot_link(order, 33, Path(d) / "l.ld")             # (30 rounds to 32: bar does not fit)
+            order = [dict(section=".text.foo", executed=9, bytes=32), dict(section=".text.bar", executed=5, bytes=8)]
+            placed = matrix.hot_link(order, 33, Path(d) / "l.ld", 0x80001c00)  # (bar does not fit after foo)
             self.assertEqual([x["section"] for x in placed], [".text.foo"])
             text = (Path(d) / "l.ld").read_text()
-            self.assertIn("__hot_start = .;\n        *(.text.foo)\n        __hot_end = .;", text)
+            self.assertIn("KEEP(*(.text.init))\n        __hot_start = .;\n        *(.text.foo)\n        __hot_end = .;",
+                          text)
+            self.assertNotIn("ALIGN(256)", text)                               # (no padding before the rest)
+            self.assertIn(".rodata 0x80001c00 : ALIGN(4)", text)              # (the data where the base's is)
             self.assertIn("ASSERT(__hot_end - __hot_start <= 33", text)
 
 

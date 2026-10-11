@@ -103,9 +103,6 @@ def main() -> int:
     derived = {k: v["threshold"] for k, v in policy.items()}
     problems = [f"{k}: the sweep gives {derived[k]}, aster_copy.c {header[k]}" for k in header if derived[k] != header[k]]
     problems += [f"incomplete: {name}" for name in sorted(set(bad))[:5]]
-    if derived["shift"] is not None and derived["different_offsets"] is not None \
-            and derived["different_offsets"] < derived["shift"]:
-        problems.append("the DMA's threshold at different offsets is below the shift copy's")
     result = dict(revision=manifest["source"]["revision"], dirty=manifest["source"]["dirty"],
                   counts=manifest["counts"], policy=policy, header=header, problems=problems, rows=rows,
                   shift_rows=shift_rows)

@@ -539,7 +539,9 @@ DMA_OVERLAP = ((0, "overlap_serial_h0", 1), (1, "overlap_h0", 1), (2, "overlap_s
 # the same offset in a word (20.4: from 127 and from 63), every size from 8 to 63 at different offsets (from 15 warm,
 # 31 cold); the destination cached or not; at R, warm and cold, on the default seed (and on the layouts, --layouts)
 DMA_FINE = [(size, src, dst) for src, dst in ((0, 0), (1, 1)) for size in range(32, 161)] + \
-           [(size, src, dst) for src, dst in ((1, 0), (0, 3), (3, 6), (1, 2)) for size in range(8, 128)]
+           [(size, src, dst) for src, dst in ((1, 0), (2, 0), (0, 3), (3, 6), (1, 2)) for size in range(8, 128)]
+# (after the destination's alignment, the source at offset 1 (1/0, 0/3, 3/6), 2 (2/0, step 3b) and 3 (1/2): the
+# shift copy's three shifts)
 
 
 def dma_fine_entries() -> list[Entry]:
@@ -1615,9 +1617,12 @@ def hot_order(entry: Entry, fw_root: Path, prefix: str, soc_flags: list[str]) ->
                 i = bisect.bisect_right(starts, at) - 1
                 if i >= 0 and at < sections[i][0] + sections[i][1]:
                     executed[sections[i][2]] = executed.get(sections[i][2], 0) + n
-        size = {name: bytes_ for _, bytes_, name in sections}
+        size = {}                                         # (a name's every input section: the pattern places all)
+        for _, bytes_, name in sections:
+            size[name] = size.get(name, 0) + ((bytes_ + 3) & ~3)
         order = [dict(section=name, executed=n, bytes=size[name])
-                 for name, n in sorted(executed.items(), key=lambda kv: (-kv[1], kv[0]))]
+                 for name, n in sorted(executed.items(), key=lambda kv: (-kv[1], kv[0]))
+                 if name != ".text.init"]                 # (the start-up code: first already, KEEP's)
         for fifo in fifos:
             fifo.unlink()
         shutil.rmtree(root / "work", ignore_errors=True)
@@ -1625,32 +1630,52 @@ def hot_order(entry: Entry, fw_root: Path, prefix: str, soc_flags: list[str]) ->
         return order
 
 
-def hot_link(order: list[dict], budget: int, path: Path) -> list[dict]:
+def hot_link(order: list[dict], budget: int, path: Path, rodata: int) -> list[dict]:
     """LINK with the hot sections first after the start-up code, most executed first, as many as fit the instruction
-    cache (`budget` bytes, each rounded to a word), contiguous so none evicts another; the rest where LINK puts them.
+    cache (`budget` bytes), contiguous so none evicts another; the rest where LINK puts them. The read-only data then
+    starts where the base's does (`rodata`, its address in the base's firmware), and every section after it follows
+    as in the base: only the code moves (build_firmware checks it). (LINK's 256-byte alignment of the v1 kernels'
+    section, empty in these families, is left out, so the twin's code is never longer than the base's; the address is
+    the section's, not a move of the location counter, since the linker's relaxation shortens the code after.)
     Returns the sections placed."""
     placed, used = [], 0
     for item in order:
-        need = (item["bytes"] + 3) & ~3
-        if used + need > budget:
+        if used + item["bytes"] > budget:
             break
         placed.append(item)
-        used += need
+        used += item["bytes"]
     text = (ROOT / LINK).read_text()
-    anchor = "        KEEP(*(.text.init))\n"
+    anchor = "        KEEP(*(.text.init))\n        . = ALIGN(256);\n"
     assert text.count(anchor) == 1
     group = "".join(f"        *({item['section']})\n" for item in placed)
-    text = text.replace(anchor, anchor + "        . = ALIGN(16);\n        __hot_start = .;\n" + group
+    text = text.replace(anchor, "        KEEP(*(.text.init))\n        __hot_start = .;\n" + group
                         + "        __hot_end = .;\n")
-    text += f'\nASSERT(__hot_end - __hot_start <= {budget}, "the hot code exceeds the instruction cache")\n'
+    rodata_anchor = "    .rodata : ALIGN(4)"
+    assert text.count(rodata_anchor) == 1
+    text = text.replace(rodata_anchor, f"    .rodata {rodata:#x} : ALIGN(4)")
+    text += (f'\nASSERT(__hot_end - __hot_start <= {budget}, "the hot code exceeds the instruction cache")\n'
+             f'ASSERT(__benchmark_end == __benchmark_start, "a twin has no v1 kernel section to align")\n')
     path.write_text(text)
     return placed
+
+
+def section_addresses(elf: Path, prefix: str) -> dict:
+    """Each allocated section's address and size in a firmware image (its section headers)."""
+    out = {}
+    for line in subprocess.run([tool(prefix, "size"), "-A", "-x", str(elf)], capture_output=True, text=True,
+                               check=True).stdout.splitlines():
+        parts = line.split()
+        if len(parts) == 3 and parts[0].startswith(".") and parts[2].startswith("0x") and int(parts[2], 16):
+            out[parts[0]] = (int(parts[2], 16), int(parts[1], 16))
+    return out
 
 
 def build_firmware(entry: Entry, fw_root: Path, prefix: str, soc_flags: list[str]) -> tuple[Path, dict, str]:
     """The entry's firmware, built once for every entry that shares its sources, flags and defines (a code-placement
     twin's linked by hot_link from its profile, hot_order)."""
-    digest = build_key(entry, prefix, soc_flags, *(["hot"] if entry.hot else []))
+    # (a twin's placement is its own simulation's: the profile run there, and its instruction cache the budget)
+    digest = build_key(entry, prefix, soc_flags, *(["hot", entry.sim, soc_variants.VARIANTS[entry.sim]["CACHE_BYTES"]]
+                                                   if entry.hot else []))
     out = fw_root / f"{entry.case}-{digest}"
     with _build_locks_lock:
         lock = _build_locks.setdefault(digest, threading.Lock())
@@ -1660,9 +1685,19 @@ def build_firmware(entry: Entry, fw_root: Path, prefix: str, soc_flags: list[str
             if entry.hot:
                 out.mkdir(parents=True, exist_ok=True)
                 order = hot_order(entry, fw_root, prefix, soc_flags)
-                placed = hot_link(order, soc_variants.VARIANTS[entry.sim]["CACHE_BYTES"], out / "link_hot.ld")
+                base = dataclasses.replace(entry, hot=False, case=program_case(entry.case))
+                base_sections = section_addresses(build_firmware(base, fw_root, prefix, soc_flags)[0], prefix)
+                placed = hot_link(order, soc_variants.VARIANTS[entry.sim]["CACHE_BYTES"], out / "link_hot.ld",
+                                  base_sections[".rodata"][0])
                 (out / "hot.json").write_text(json.dumps(dict(placed=placed, order=order), indent=1) + "\n")
-                compile_and_link(entry, out, prefix, soc_flags, ["-ffunction-sections"], out / "link_hot.ld", elf)
+                partial = out / f"{entry.case}.partial.elf"
+                compile_and_link(entry, out, prefix, soc_flags, ["-ffunction-sections"], out / "link_hot.ld", partial)
+                mine = section_addresses(partial, prefix)
+                moved = {k: (v, mine.get(k)) for k, v in base_sections.items() if k != ".text" and mine.get(k) != v}
+                if moved or mine[".text"][0] != base_sections[".text"][0]:
+                    raise RuntimeError(f"a code-placement twin moved its data: {moved}")
+                partial.rename(elf)
+                partial.with_suffix(".bin").rename(elf.with_suffix(".bin"))
             else:
                 compile_and_link(entry, out, prefix, soc_flags, [], ROOT / LINK, elf)
     symbols = {}

@@ -3,9 +3,10 @@
 
 #include <stdint.h>
 
-// 20.5 step 3's thresholds (docs/tuning.md §4.1): the finer sweep at R (8 KiB caches) on every layout, warm and cold,
-// the destination cached or not, the DMA where it wins on all of them (scripts/matrix_crossover.py; 20.4's crossovers
-// were 127, 63 and 15)
+// The thresholds (docs/tuning.md §4.1): the finer sweep at R (8 KiB caches) on every layout, warm and cold, the
+// destination cached or not, each copy where it wins on all of them (scripts/matrix_crossover.py checks them against
+// the sweep). Until step 3b's sweep sets them: step 3's three (20.4's crossovers were 127, 63 and 15), and the shift
+// copy's provisional 13 bytes from step 3b's sample at L0.
 struct aster_copy_policy aster_copy_policy = {113u, 89u, 21u, 13u};
 
 static enum aster_dma_result pending = ASTER_DMA_OK;              // (a started DMA copy's, until finished)

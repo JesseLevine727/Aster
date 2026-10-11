@@ -23,7 +23,8 @@ KINDS = {name: kind for kind, name, workers in matrix.COHERENT_KINDS if workers 
 
 def crossovers(run: Path) -> dict:
     """case -> (the smallest size from which two workers win at every larger size, or None; the sizes; the points
-    each size has; each size's verdict: one, two or mixed)"""
+    each size has; each size's verdict: one, two or mixed; the largest size to which one worker wins at every size,
+    or None)"""
     by = defaultdict(lambda: defaultdict(lambda: defaultdict(dict)))
     for e, recs in records_of(run).values():
         if e["family"] != "split_fine":
@@ -66,7 +67,8 @@ def main() -> int:
     for case, (first, sizes, points, verdicts, one_to) in sorted(found.items()):
         header = policy["dot_k"] if case == "dot" else policy["items"].get(KINDS.get(case))
         # (one worker to one_to; two from the next size up; never two where one wins at every size of the sweep)
-        derived = sizes[0] if one_to is None else never if one_to == sizes[-1] else one_to + 1
+        # (one worker not winning even at the smallest size: two everywhere, from 0)
+        derived = 0 if one_to is None else never if one_to == sizes[-1] else one_to + 1
         rows[case] = dict(derived=None if derived == never else derived, header=None if header == never else header,
                           sizes=sizes, points=points, verdicts=verdicts, two_from=first, one_to=one_to,
                           band=[s for s, v in verdicts.items() if v == "mixed"])
