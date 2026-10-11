@@ -36,15 +36,15 @@ R_SIMS = ("soc_dev", "soc_l1_2k", "soc_l1_4k", "soc_l1_8k")  # (R at each cache 
 # is adopted at those alone (ADOPTED_POINTS). matrix_judge.py --check-adopted checks all of it against a judgment. Only
 # these compete with their originals in the v1 gate. Not adopted though faster than their originals: __fir4_copy (the
 # copy policy not distinguishable from __fir4 alone: step 3b), __place (placement not distinguishable from its control,
-# __loop: the gain is the loops' code), and CIFAR's __2h_next (the next image's copy begun early not faster than
-# __2h_copy). Step 3b's code-placement twins (__hot, _hot; tuning.md §4.4) at the points where they win alone: 6 of
-# the 262 twin configurations judged (t3b-judge, 6bc46c2).
+# __loop: the gain is the loops' code), and CIFAR direct's __2h_next (the next image's copy begun early not faster
+# than __2h_copy; im2col's is, from step 3b). Step 3b's code-placement twins (__hot, _hot; tuning.md §4.4) at the points
+# where they win alone.
 ADOPTED: frozenset = frozenset({
     "ecg_dot8__fir4", "ecg_dot8_f8__fir4", "ecg_pipeline_v1__fir4", "ecg_pipeline_v1_f8__fir4",
     "ecg_pipeline_overlap__fir4", "ecg_pipeline_overlap_f8__fir4",
     "ecg_pipeline_overlap__fir4_split", "ecg_pipeline_overlap_f8__fir4_split",
     "cifar_cnn_npu_direct__2h", "cifar_cnn_npu_im2col__2h", "cifar_cnn_npu_direct__2h_copy",
-    "cifar_cnn_npu_im2col__2h_copy", "conv2d_direct_npu__2h", "conv2d_im2col_npu__2h",
+    "cifar_cnn_npu_im2col__2h_copy", "cifar_cnn_npu_im2col__2h_next", "conv2d_direct_npu__2h", "conv2d_im2col_npu__2h",
     "mnist_mlp_npu__2h", "mnist_mlp_npu_batched__2h", "reduce_fill__loop", "reduce_v1__loop", "lock_sum__split",
     "dot__split", "atomic_add__split", "cas_counter__split", "false_shared__split", "lrsc_counter__split",
     "padded__split", "shared_mix__split",
@@ -76,6 +76,39 @@ STACKED_ON: dict = {
     **{f"cifar_cnn_npu_{m}__2h_next": f"cifar_cnn_npu_{m}__2h_copy" for m in ("direct", "im2col")},
     **{f"reduce_{m}__place": f"reduce_{m}__loop" for m in ("fill", "v1")},
 }
+
+
+# the variants with code-placement twins (matrix.py's with_hot): the adopted set when step 3b planned its captures
+# (6bc46c2), frozen, so a plan stays the evidence's when adoption changes after a judgment
+TWINNED: frozenset = frozenset({
+    "atomic_add__split", "cas_counter__split", "cifar_cnn_npu_direct__2h", "cifar_cnn_npu_direct__2h_copy",
+    "cifar_cnn_npu_im2col__2h", "cifar_cnn_npu_im2col__2h_copy", "conv2d_direct_npu__2h", "conv2d_im2col_npu__2h",
+    "dot__split", "ecg_dot8__fir4", "ecg_dot8_f8__fir4", "ecg_pipeline_overlap__fir4", "ecg_pipeline_overlap__fir4_copy",
+    "ecg_pipeline_overlap__fir4_split", "ecg_pipeline_overlap_f8__fir4", "ecg_pipeline_overlap_f8__fir4_copy",
+    "ecg_pipeline_overlap_f8__fir4_split", "ecg_pipeline_v1__fir4", "ecg_pipeline_v1_f8__fir4", "false_shared__split",
+    "lock_sum__split", "lrsc_counter__split", "mnist_mlp_npu__2h", "mnist_mlp_npu_batched__2h", "padded__split",
+    "reduce_fill__loop", "reduce_v1__loop", "shared_mix__split",
+})
+TWINNED_POINTS: dict = {
+    "ecg_pipeline_overlap__fir4_split": (("chunk", "taps"), frozenset({(16, 8), (32, 8), (32, 16), (64, 8), (64, 16)})),
+    "ecg_pipeline_overlap_f8__fir4_split": (("chunk", "taps"), frozenset({(16, 8), (32, 8)})),
+    "ecg_pipeline_overlap__fir4_copy": (("chunk", "taps"), frozenset({(16, 8)})),
+    "ecg_pipeline_overlap_f8__fir4_copy": (("chunk", "taps"), frozenset({(16, 8)})),
+    "dot__split": (("k",), frozenset({(0,), (1,), (7,), (8,)})),
+    "atomic_add__split": (("items",), frozenset({(2,), (1024,)})),
+    **{f"{kind}__split": (("items",), frozenset({(2,)}))
+       for kind in ("cas_counter", "false_shared", "lrsc_counter", "padded", "shared_mix")},
+}
+
+
+def twinned_at(case: str, axes: dict | None) -> bool:
+    """Whether a tuned variant has a code-placement twin (at this entry's sweep point): TWINNED."""
+    if case not in TWINNED:
+        return False
+    if case not in TWINNED_POINTS:
+        return True
+    names, points = TWINNED_POINTS[case]
+    return axes is not None and tuple(axes.get(name) for name in names) in points
 
 
 def stacked_base(case: str) -> str | None:

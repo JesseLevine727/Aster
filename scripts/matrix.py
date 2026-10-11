@@ -675,10 +675,11 @@ def hot_twin(entry: Entry) -> Entry:
 
 
 def with_hot(entries: list[Entry]) -> list[Entry]:
-    """The entries and the code-placement twins of their originals and adopted variants (not the stamped twins)."""
+    """The entries and the code-placement twins of their originals and of the variants step 3b twinned (the adopted
+    set when it planned its captures: matrix_gates.TWINNED), not the stamped twins."""
     import matrix_gates                                   # (here: matrix_gates imports matrix's neighbours)
     return entries + [hot_twin(e) for e in entries if e.family in HOT_FAMILIES and not e.case.endswith("_stages")
-                      and ("__" not in e.case or matrix_gates.adopted_at(e.case, e.axes))]
+                      and ("__" not in e.case or matrix_gates.twinned_at(e.case, e.axes))]
 
 
 FAMILIES = {"cpu": cpu_entries, "coherence": lambda: with_hot(coherence_entries()),

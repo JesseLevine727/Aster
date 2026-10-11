@@ -434,7 +434,12 @@ class CodePlacement(unittest.TestCase):
         twin = ml["ml/mnist_mlp_npu_batched__2h_hot32/npu/soc_dev/warm"]
         self.assertEqual((twin.case, twin.hot), ("mnist_mlp_npu_batched__2h_hot", True))
         self.assertIn("ml/cifar_cnn_npu_direct__hot/npu_direct/soc_dev/warm", ml)
-        self.assertNotIn("ml/cifar_cnn_npu_direct__2h_next_hot/npu_direct/soc_dev/warm", ml)   # (not adopted)
+        self.assertNotIn("ml/cifar_cnn_npu_direct__2h_next_hot/npu_direct/soc_dev/warm", ml)   # (not twinned)
+        self.assertNotIn("ml/cifar_cnn_npu_im2col__2h_next_hot/npu_im2col/soc_dev/warm", ml)   # (adopted after step
+        # 3b's plan: the plan is frozen, matrix_gates.TWINNED)
+        ecg_ids = {e.id for e in matrix.FAMILIES["ecg"]()}
+        self.assertIn("ecg/ecg_pipeline_overlap__fir4_copy_hot/pipeline/soc_dev/warm/c16t8", ecg_ids)
+        self.assertNotIn("ecg/ecg_pipeline_overlap__fir4_copy_hot/pipeline/soc_dev/warm/c32t8", ecg_ids)
         ecg = [e for e in matrix.FAMILIES["ecg"]() if e.hot]
         self.assertFalse([e for e in ecg if e.case.endswith("_stages") or "stages" in e.case])
         self.assertFalse([e for e in matrix.FAMILIES["cpu"]() if e.hot])

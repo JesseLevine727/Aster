@@ -138,7 +138,8 @@ def bank_conflicts(judge: dict, rev: str) -> list[str]:
 
 def icache(judge: dict, rev: str) -> list[str]:
     lines = [f"The warm windows' instruction-cache misses (both harts) at L0, and the fewest over the layouts with that "
-             f"layout's cycles against L0's, for the originals and the adopted variants at their adopted points: "
+             f"layout's cycles against L0's, for the originals, the adopted variants at their adopted points and the "
+             f"code-placement twins of both (__hot, _hot): "
              f"each window with 32 misses or more at L0; t3-judge, {rev}. A layout that removes them shows conflict "
              f"misses (the code pad moves the program's code against the runtime's); misses no layout moves are not"]
     def judged(e: dict) -> bool:                       # (an original, an adopted variant, or the twin of either)
@@ -181,6 +182,8 @@ def main() -> int:
     for name, lines in (("mnist-batching.txt", mnist_batching(ml, rev)), ("ecg-stages.txt", ecg_stages(ecg_manifest, rev)),
                         ("ecg-outputs.txt", ecg_outputs(ecg, ecg_manifest, rev)), ("dma-freed.txt", dma_freed(ml, ecg, rev)),
                         ("bank-conflicts.txt", bank_conflicts(judge, rev)), ("icache.txt", icache(judge, rev))):
+        if args.prefix != "t3":                          # (the header names the captures it came from)
+            lines[0] = re.sub(r"\bt3-(ml|ecg|judge)\b", lambda m: f"{args.prefix}-{m.group(1)}", lines[0])
         (args.out / name).write_text("\n".join(lines) + "\n")
         print(f"{name}: {len(lines) - 1} lines")
     return 0
