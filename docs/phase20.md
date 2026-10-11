@@ -2014,6 +2014,13 @@ is judged at 8 KiB, on L0–L7.
 - **18.7's board programs at 8 KiB:** 99 of 99 end on the regression build at 8 KiB (`soc_shell_8k`) as in the CPU
   shell at 8 KiB, cycle for cycle and RVFI record for record. This is now part of `make soc-tests`.
 - **soc-tests pass in full,** the two-hart programs on soc_dev and soc_dev_w3 now at 8 KiB.
+  - **One check is weaker at 8 KiB:** the DMA program's contention. Hart 1's traffic passes over 8 KiB, which
+    was twice its 4 KiB cache and is now the cache's size, so its reads hit:
+    - hart 1's accepted requests fell from 43,154 to 25,200;
+    - the DMA's stalls fell from 199 to 156 (62 to 40 at +3 waits).
+
+    Its write-through stores still contend, and it passes. Growing the traffic to 16 KiB would restore the
+    check. That changes soc-tests' figures, so it waits for step 4's final RTL checks.
 - **Every matrix variant,** now at 8 KiB, and soc_l1_2k and soc_l1_4k pass soc-tests' two-hart programs:
   all 102 checks, the seven programs on each of the 14 two-hart builds and the one-hart program on each of
   the 4 one-hart builds.

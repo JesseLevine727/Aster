@@ -117,6 +117,10 @@ def main() -> int:
     allrec = {}
     for run in args.runs:
         allrec.update(records_of(run))
+    own = {size_of(e) for e, _ in allrec.values() if e["sim"] == "soc_dev"}
+    if len(own) > 1:
+        raise SystemExit(f"R at several cache sizes ({sorted(own)} KiB): captures from before and after 8 KiB's "
+                         f"adoption are not judged together")
     result = dict(cache_kib=args.cache_kib or "the matrix's own", layout=args.layout or "L0",
                   scaling=scaling(allrec, args.cache_kib, args.layout),
                   against_v1=against_v1(allrec, args.cache_kib, args.layout))

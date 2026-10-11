@@ -221,7 +221,7 @@ def scaling_run(out: Path, family: str, revision: str = "r", dirty: bool = False
         (out / "console" / f"{name}.console").write_text(line)
         entries.append(dict(id=f"{family}/reduce_fill/{method}/soc_dev/warm", family=family, case="reduce_fill",
                             method=method, sim="soc_dev", status="captured", records=f"records/{name}.record",
-                            axes=dict(workers=workers, cache_state="warm"), totals=dict(npu_fabric=1)))
+                            axes=dict(workers=workers, cache_state="warm", cache_kib=8), totals=dict(npu_fabric=1)))
     sample = dict(checked=1, identical=1, differ=[])
     (out / "manifest.json").write_text(matrix_overlap.json.dumps(dict(
         schema=matrix_bundle.SCHEMA, created="t", source=dict(revision=revision, dirty=dirty, changed=[]),

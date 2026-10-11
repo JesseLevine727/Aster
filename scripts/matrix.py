@@ -1201,7 +1201,7 @@ def with_layout(entry: Entry, name: str) -> Entry:
 def layout_addresses(entry: Entry, symbols: dict) -> dict:
     """Where the layout put things (tuning.md §3: read from the ELF and checked): each program buffer's address
     (its room's, plus the data pad) and the code anchors, with each address mod 64 (bank phase) and mod the
-    build's cache size (cache index: 4 KiB but at 20.5's other sizes)."""
+    build's cache size (the cache index)."""
     data = LAYOUTS[entry.axes["layout"]][1] if entry.axes.get("layout") in LAYOUTS else 0
     index = soc_variants.VARIANTS[entry.sim]["CACHE_BYTES"]
     at = {name[:-5]: address + data for name, address in symbols.items() if name.endswith("_room")}
@@ -1414,7 +1414,7 @@ def main() -> int:
     parser.add_argument("--r-only", action="store_true", help="only the R entries on the default seed (warm; cold "
                                                                   "for the gate workloads): the cache geometry's")
     parser.add_argument("--caches", help="also each of those (tuning.md §4.2) among the selected entries with the L1 "
-                                         "caches at these sizes in KiB, e.g. 2,8")
+                                         "caches at these sizes in KiB, e.g. 2,4")
     parser.add_argument("--layouts", help="also each selected entry at these layouts (tuning.md §3), e.g. L1,L2,L3,L4")
     parser.add_argument("--repeat-every", type=int, default=0,
                         help="determinism: run every Nth captured entry again and require identical records")

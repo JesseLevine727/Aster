@@ -495,7 +495,9 @@ consistency, as lockstep.py does.
 - **18.7's 99 programs** run on hart 0, with hart 1 held: in lockstep with
   Spike, and cycle for cycle as in the CPU shell (§4.3's lone-hart rule).
   They run on a build of the SoC whose register page is the shell's plain
-  memory, as the Phase 19 SoC's page was. Phase 19's exceptions carry over:
+  memory, as the Phase 19 SoC's page was. Since 20.5 that build keeps 4 KiB
+  caches, the CPU shell's (§13), and 18.7's programs also run on an 8 KiB one
+  against the CPU shell at 8 KiB. Phase 19's exceptions carry over:
   - `rv32ua/lrsc` differs from Spike at an sc Spike failed and the shell's
     reservation let succeed;
   - `selfcheck/dot8_arith` is self-checking, never compared with Spike;

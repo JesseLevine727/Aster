@@ -101,8 +101,9 @@ static void hart1_sums(void *arg) {
     *(volatile uint32_t *)arg = sum;
 }
 
-// hart 1's traffic: passes over 8 KiB of its private memory (twice its data cache), each word checked
-// and rewritten, until hart 0 stops it between passes
+// hart 1's traffic: passes over 8 KiB of its private memory, each word checked and rewritten, until hart 0
+// stops it between passes (twice its data cache at 4 KiB; at 20.5's 8 KiB, the cache's size, so its reads hit
+// and its write-through stores contend)
 static uint32_t traffic[2048] __attribute__((aligned(64), section(".private1")));
 static volatile uint32_t stop_traffic;
 static void hart1_traffic(void *arg) {

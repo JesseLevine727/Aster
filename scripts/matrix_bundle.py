@@ -9,7 +9,7 @@ Then it writes, into OUT (docs/results/phase20/matrix-20.4):
     with the runs' determinism, cold/warm pairs and totals summed and kept per family. matrix.md §7's unsupported
     configurations (each captured case and method) and methods (each case they name) are listed with their
     reasons, beside the runner's own; the cache geometry axis is 20.5's (matrix.md §2): each captured case and
-    method is also listed at 2 and 8 KiB, planned for 20.5;
+    method is also listed at the sizes other than R's, planned until captured;
   - raw-<family>.tar.xz: the family's raw records and console logs, and its determinism repeat's, packed
     reproducibly (sorted, fixed times and owners); each entry's `records` names its path inside;
   - overlap.json (scripts/matrix_overlap.py) and gates.json (scripts/matrix_gates.py);
@@ -32,7 +32,6 @@ from pathlib import Path
 
 import matrix_gates
 import matrix_overlap
-import soc_variants
 
 ROOT = Path(__file__).resolve().parents[1]
 SCHEMA = "aster.phase20.matrix.v1"
@@ -61,8 +60,7 @@ METHODS = [
 ]
 GEOMETRY = ("planned: the caches at another size (matrix.md §2, tuning.md §4.2: matrix.py --caches), with the L1 tests "
             "at each size and ABI 4's line-geometry metadata following the parameter")
-# the other sizes than R's (20.5: R's caches are 8 KiB since the owner adopted them; 4 KiB in 20.4)
-OTHER_KIB = tuple(k for k in (2, 4, 8) if k * 1024 != soc_variants.VARIANTS["soc_dev"]["CACHE_BYTES"])
+SIZES_KIB = (2, 4, 8)         # (20.5's cache geometry; R's is the captures' own: 8 KiB since the owner adopted it)
 MTIME = 1791504000           # 2026-10-09 00:00 UTC: the archives' fixed time
 
 
@@ -149,10 +147,14 @@ def main() -> int:
                                     reason=reason))
     # the cache geometry axis (the sizes other than R's) is 20.5's (matrix.md §2): each captured case and method, at R
     # warm, planned until a run captures it at that size, warm and at L0 (tuning.md §4.2)
+    own = {matrix_gates.size_of(e) for e in entries if e["status"] == "captured" and e["sim"] == "soc_dev"}
+    if len(own) > 1:
+        problems.append(f"R at several cache sizes: {sorted(own)} KiB")
+    other_kib = tuple(k for k in SIZES_KIB if k not in own)
     sized = {(e["family"], e["case"], e["method"], e["sim"]) for e in entries if e["status"] == "captured"
              and e["axes"].get("cache_state") == "warm" and not e["axes"].get("layout")}
     for family, case, method in captured:
-        for kib in OTHER_KIB:
+        for kib in other_kib:
             if (family, case, method, f"soc_l1_{kib}k") in sized:
                 continue
             entries.append(dict(id=f"{family}/{case}/{method}/soc_l1_{kib}k/warm", family=family, case=case,

@@ -205,8 +205,9 @@ As in 20.4:
   unless the owner adopts another size.
 - **Adopted: 8 KiB** (the owner, 10 October 2026, after step 2's data). The
   SoC's caches are 8 KiB by default; 2 and 4 KiB stay as the matrix's axis.
-  Step 3's tuning is judged at 8 KiB, and the consequences below were
-  carried out in step 2 (phase20.md).
+  Step 3's tuning is judged at 8 KiB. The first two consequences below were
+  carried out in step 2 (phase20.md). The timing, measured at 8 KiB in step
+  2, is signed off by the owner's rule on the final RTL in step 4.
 - **If another size is adopted:**
   - soc.md §10.4's regression runs on a 4 KiB build of the same RTL, as its
     comparisons are defined at 4 KiB;
@@ -503,7 +504,8 @@ Each step has its watchdog review before it is pushed.
 - **Layout noise can swamp a tuning win.** That is why §3 judges across
   layouts, and some changes may be published as not distinguishable.
 - **An 8 KiB cache may cost timing.** The tags and data arrays grow, and
-  the margin today is +0.333 ns on one placement.
+  the margin today is +0.333 ns on one placement. (Step 2: at 8 KiB,
+  +0.021 to +0.306 ns on ten strategies, against 4 KiB's +0.031 to +0.373.)
 - **The board:**
   - the two-hart SoC has not run on it yet;
   - about 3,900 programs, twice, with loading time unmeasured until the
