@@ -35,10 +35,10 @@
 #ifndef GEMM_PLACE
 #define GEMM_PLACE 0
 #endif
-_Static_assert(!GEMM_PLACE || GEMM_WORKERS == 2u, "the placement is the two workers'");
 #ifndef GEMM_WORKERS
 #define GEMM_WORKERS 2u
 #endif
+_Static_assert(!GEMM_PLACE || GEMM_WORKERS == 2u, "the placement is the two workers'");
 _Static_assert(GEMM_M % 8u == 0 && GEMM_N % 8u == 0 && GEMM_K % 8u == 0 && GEMM_K <= 680u, "the kernel's shapes");
 
 enum { SLOT = 4096, GROUP_BYTES = 3584 };

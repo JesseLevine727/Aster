@@ -1409,7 +1409,7 @@ def gate_workload(e: Entry) -> bool:
         return True
     if e.family == "ecg" and (e.axes.get("chunk"), e.axes.get("taps")) != (64, 16):
         return False
-    return any(e.family == family and matrix_gates.competes(e.case, test) for family, test, _ in matrix_gates.V1.values())
+    return any(e.family == family and matrix_gates.competes(e.case, test, e.axes) for family, test, _ in matrix_gates.V1.values())
 
 
 def recorded_axes(e: Entry) -> dict:

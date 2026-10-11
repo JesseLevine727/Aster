@@ -7,11 +7,13 @@ layout and cache state). Per configuration (the variant's id without its layout 
   - wins: faster in every window, on every layout, warm and cold (only a win is adopted);
   - loses: slower in all of them;
   - not distinguishable: faster in some and slower in others (published, not adopted).
-Reported with each configuration's range of change over the layouts, and L0's figures. With --stacked NEW:BASE, a
-variant whose change stacks on another's is judged the same way against that variant (each configuration by its chunk
-and taps, or "-"), for its own change alone: a stacked variant is adopted only where its own change wins.
+Reported with each configuration's range of change over the layouts, and L0's figures. A variant whose change stacks
+on another's (matrix_gates.STACKED_ON) is judged the same way against that variant, for its own change alone: it is
+adopted only where its own change wins too. With --check-adopted, matrix_gates.ADOPTED is checked against the
+judgment (each adopted variant a win at R where it is adopted), and the adopted variants' other configurations that do
+not win are listed, to be reported beside the win (tuning.md §3).
 
-  matrix_judge.py RUN_DIR... [--stacked NEW:BASE ...] [--json OUT]
+  matrix_judge.py RUN_DIR... [--check-adopted] [--json OUT]
 """
 import argparse
 import json
@@ -20,28 +22,40 @@ import sys
 from collections import defaultdict
 from pathlib import Path
 
+import matrix_gates
 from matrix_overlap import records_of
 
 
-def pairs(allrec: dict) -> tuple[dict, list[str]]:
-    """config -> [(layout, state, window, original, variant)], and the variants' entries with no original."""
-    out, alone = defaultdict(list), []
+def config_of(ident: str) -> str:
+    """An entry's configuration: its id without its layout and cache state."""
+    return re.sub(r"/(warm|cold)(/|$)", r"\2", re.sub(r"/L\d$", "", ident)).rstrip("/")
+
+
+def twin_of(ident: str, case: str, base: str | None = None) -> str:
+    """The id of an entry's twin: its original's (or base's), the same configuration, layout and cache state."""
+    return ident.replace(f"/{case}", f"/{base or case.split('__')[0]}", 1)
+
+
+def pairs(allrec: dict, new: str | None = None, base: str | None = None) -> tuple[dict, list[str], dict]:
+    """config -> [(layout, state, window, theirs, mine)]; the entries with no twin; config -> its axes (without the
+    layout and cache state). Each tuned variant against its original, or (with new and base) the variant `new`
+    against `base`, the variant it extends."""
+    out, alone, axes = defaultdict(list), [], {}
     for ident, (e, recs) in sorted(allrec.items()):
-        if "__" not in e["case"] or e["case"].endswith("_stages"):
+        if new is None and ("__" not in e["case"] or e["case"].endswith("_stages")) or new and e["case"] != new:
             continue
-        original = e["case"].split("__")[0]
-        twin = allrec.get(ident.replace(f"/{e['case']}", f"/{original}", 1))
+        twin = allrec.get(twin_of(ident, e["case"], base))
         if twin is None:
             alone.append(ident)
             continue
-        layout = e["axes"].get("layout", "L0")
-        state = e["axes"]["cache_state"]
-        config = re.sub(r"/(warm|cold)(/|$)", r"\2", re.sub(r"/L\d$", "", ident)).rstrip("/")
+        config = config_of(ident)
+        axes[config] = {k: v for k, v in e["axes"].items() if k not in ("layout", "cache_state")}
         theirs = {r["window"]: int(r["h0_cycles"]) for r in twin[1]}
         for r in recs:
             if r["window"] in theirs:
-                out[config].append((layout, state, r["window"], theirs[r["window"]], int(r["h0_cycles"])))
-    return out, alone
+                out[config].append((e["axes"].get("layout", "L0"), e["axes"]["cache_state"], r["window"],
+                                    theirs[r["window"]], int(r["h0_cycles"])))
+    return out, alone, axes
 
 
 def verdict(rows: list[tuple]) -> str:
@@ -52,29 +66,74 @@ def verdict(rows: list[tuple]) -> str:
     return "not distinguishable"
 
 
-def stacked(allrec: dict, new: str, base: str) -> dict:
-    """The variant `new` against `base` (the variant it extends), per configuration: the verdict and the range."""
-    rows = defaultdict(list)
-    for ident, (e, recs) in allrec.items():
-        if e["case"] != new:
-            continue
-        twin = allrec.get(ident.replace(f"/{new}/", f"/{base}/", 1))
-        if twin is None:
-            continue
-        a = e["axes"]
-        config = f"c{a['chunk']}t{a['taps']}" if "chunk" in a else "-"
-        theirs = {r["window"]: int(r["h0_cycles"]) for r in twin[1]}
-        rows[config] += [(a.get("layout", "L0"), a["cache_state"], r["window"], theirs[r["window"]], int(r["h0_cycles"]))
-                         for r in recs if r["window"] in theirs]
-    return {config: dict(verdict=verdict(v), points=len(v), low=round(min((x / o - 1) * 100 for *_, o, x in v), 2),
-                         high=round(max((x / o - 1) * 100 for *_, o, x in v), 2)) for config, v in sorted(rows.items())}
+def summary(by_config: dict, axes: dict) -> dict:
+    out = {}
+    for config, rows in sorted(by_config.items()):
+        change = [(v / o - 1) * 100 for *_, o, v in rows]
+        out[config] = dict(verdict=verdict(rows), points=len(rows), layouts=len({r[0] for r in rows}),
+                           states=sorted({r[1] for r in rows}), windows=sorted({r[2] for r in rows}),
+                           low=round(min(change), 2), high=round(max(change), 2),
+                           l0={f"{s} {w}": (o, v) for lay, s, w, o, v in rows if lay == "L0"}, axes=axes[config])
+    return out
+
+
+def stacked(allrec: dict, new: str, base: str) -> tuple[dict, list[str]]:
+    """The variant `new` against `base` (the variant it extends), per configuration; and new's entries without
+    base's twin."""
+    by_config, alone, axes = pairs(allrec, new, base)
+    return summary(by_config, axes), alone
+
+
+def case_of(config: str) -> str:
+    return config.split("/")[1]
+
+
+def is_r(config: str) -> bool:
+    return config.split("/")[3] == "soc_dev"
+
+
+def check_adopted(result: dict, stacks: dict) -> tuple[list[str], list[str]]:
+    """matrix_gates.ADOPTED against the judgment: at R, each adopted variant wins against its original at each of its
+    adopted sweep points, and its stacked change against the variant it extends there too; a variant adopted at some
+    points (ADOPTED_POINTS) at exactly those where both win. The problems, and the adopted variants' configurations
+    that do not win (other configurations, reported beside the win: tuning.md §3)."""
+    problems, beside = [], []
+    stacked_on = {new: (base, rows) for (new, base), rows in stacks.items()}
+    present = {case_of(c) for c in result}
+    for case in sorted(matrix_gates.ADOPTED & present):
+        base, srows = stacked_on.get(case, (None, {}))
+        if case in matrix_gates.STACKED_ON and base is None:
+            problems.append(f"{case}: stacked on {matrix_gates.STACKED_ON[case]}, not judged against it")
+        wins_at, on_layouts = set(), False
+        for config, v in result.items():
+            if case_of(config) != case:
+                continue
+            s = srows.get(config) if base else None
+            both = v["verdict"] == "wins" and (base is None or (s is not None and s["verdict"] == "wins"))
+            at = matrix_gates.adopted_at(case, v["axes"])
+            if is_r(config) and both:
+                wins_at.add((v["axes"].get("chunk"), v["axes"].get("taps")))
+            on_layouts |= is_r(config) and v["layouts"] > 1
+            if is_r(config) and at and not both:
+                problems.append(f"{config}: adopted, but {v['verdict']}"
+                                + (f", against {base} {s['verdict'] if s else 'not judged'}" if base else ""))
+            elif not both:
+                beside.append(f"{config}: {v['verdict']} ({v['low']:+.2f}% to {v['high']:+.2f}%)"
+                              + (f"; against {base} {s['verdict']} ({s['low']:+.2f}% to {s['high']:+.2f}%)"
+                                 if s else "") + ("" if at or not is_r(config) else " (not adopted at this point)"))
+        # (adopted at exactly its winning points, on the layouts' judgment; within them, on L0's alone)
+        points = matrix_gates.ADOPTED_POINTS.get(case)
+        if points is not None and (points != wins_at if on_layouts else not points <= wins_at):
+            problems.append(f"{case}: adopted at {sorted(points)}, wins at {sorted(wins_at)}")
+    return problems, beside
 
 
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument("runs", nargs="+", type=Path)
     parser.add_argument("--json", type=Path)
-    parser.add_argument("--stacked", nargs="*", default=[], metavar="NEW:BASE")
+    parser.add_argument("--check-adopted", action="store_true",
+                        help="matrix_gates.ADOPTED against this judgment (exit 1 on a problem)")
     args = parser.parse_args()
     manifests = [json.loads((run / "manifest.json").read_text()) for run in args.runs]
     revs = {m["source"]["revision"] for m in manifests}
@@ -82,35 +141,47 @@ def main() -> int:
     allrec = {}
     for run in args.runs:
         allrec.update(records_of(run))
-    by_config, alone = pairs(allrec)
-    result = {}
-    for config, rows in sorted(by_config.items()):
-        change = [(v / o - 1) * 100 for *_, o, v in rows]
-        l0 = {f"{s} {w}": (o, v) for lay, s, w, o, v in rows if lay == "L0"}
-        result[config] = dict(verdict=verdict(rows), points=len(rows), layouts=len({r[0] for r in rows}),
-                              states=sorted({r[1] for r in rows}), windows=sorted({r[2] for r in rows}),
-                              low=round(min(change), 2), high=round(max(change), 2), l0=l0)
-    stacks = {pair: stacked(allrec, *pair.split(":")) for pair in args.stacked}
-    out = dict(revisions=sorted(revs), dirty=dirty, without_original=alone, configs=result, stacked=stacks)
+    status = {e["id"]: e["status"] for m in manifests for e in m["entries"]}
+    by_config, alone, axes = pairs(allrec)
+    # (a variant's entry whose original cannot run there, unsupported with its reason, is the variant's alone: the
+    # split variants on the one-hart SoC, below their thresholds; any other is a missing twin)
+    unpaired = [i for i in alone if status.get(twin_of(i, allrec[i][0]["case"])) == "unsupported"]
+    alone = [i for i in alone if i not in unpaired]
+    result = summary(by_config, axes)
+    present = {case_of(c) for c in result}
+    stacks, stack_alone = {}, []
+    for new, base in sorted(matrix_gates.STACKED_ON.items()):
+        if new in present:
+            stacks[(new, base)], missing = stacked(allrec, new, base)
+            stack_alone += missing
+    problems, beside = check_adopted(result, stacks) if args.check_adopted else ([], [])
+    out = dict(revisions=sorted(revs), dirty=dirty, without_original=alone, original_unsupported=unpaired,
+               configs=result,
+               stacked={f"{n}:{b}": rows for (n, b), rows in stacks.items()}, stacked_without_base=stack_alone,
+               adopted_problems=problems, adopted_beside=beside)
     if args.json:
         args.json.write_text(json.dumps(out, indent=1) + "\n")
     counts = defaultdict(int)
     for v in result.values():
         counts[v["verdict"]] += 1
     print(f"revisions {[r[:7] for r in sorted(revs)]}{' (DIRTY)' if dirty else ''}; {len(result)} variant "
-          f"configurations: {dict(counts)}; {len(alone)} variant entries without an original")
+          f"configurations: {dict(counts)}; {len(alone)} variant entries without an original, {len(unpaired)} "
+          f"whose original cannot run there (unsupported), {len(stack_alone)} stacked without the variant they extend")
     for config, v in result.items():
-        if v["verdict"] != "wins" or "/c" not in config.split("/")[-1]:
-            print(f"  {v['verdict']:20} {config}: {v['low']:+.2f}% to {v['high']:+.2f}% over {v['layouts']} layouts, "
-                  f"{'/'.join(v['states'])}, {'/'.join(v['windows'])}")
-    for pair, rows in stacks.items():
-        counts = defaultdict(int)
-        for v in rows.values():
-            counts[v["verdict"]] += 1
-        print(f"  stacked {pair}: {dict(counts)}; " + " ".join(
-            f"{c}:{v['verdict']}({v['low']:+.1f}..{v['high']:+.1f}%)" for c, v in rows.items()))
-    missing = [pair for pair, rows in stacks.items() if not rows]
-    return 0 if not dirty and len(revs) == 1 and not alone and not missing else 1
+        print(f"  {v['verdict']:20} {config}: {v['low']:+.2f}% to {v['high']:+.2f}% over {v['layouts']} layouts, "
+              f"{'/'.join(v['states'])}, {'/'.join(v['windows'])}")
+    for (new, base), rows in stacks.items():
+        for config, v in rows.items():
+            print(f"  stacked {v['verdict']:20} {config} against {base}: {v['low']:+.2f}% to {v['high']:+.2f}% over "
+                  f"{v['layouts']} layouts")
+    if args.check_adopted:
+        print(f"the adopted set: {'PASS' if not problems else 'FAIL'}; {len(beside)} of the adopted variants' "
+              f"configurations do not win (reported beside the win)")
+        for line in problems:
+            print(f"  PROBLEM {line}")
+        for line in beside:
+            print(f"  beside the win: {line}")
+    return 0 if not dirty and len(revs) == 1 and not alone and not stack_alone and not problems else 1
 
 
 if __name__ == "__main__":

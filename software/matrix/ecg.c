@@ -249,12 +249,12 @@ static __attribute__((noinline)) const int8_t *bring(uint32_t chunk, uint32_t sl
     __asm__ volatile ("fence rw,rw" ::: "memory");
 #if ECG_COPY
     {                                                  // (the copy policy; on hart 1 always the CPU's fair copy)
-        enum aster_copy_engine used;
+        enum aster_copy_engine used = ASTER_COPY_CPU;
 #if ECG_STAGES
         const uint32_t submitted = aster_window_now();
 #endif
         if (aster_copy(moved[slot], raw, ECG_CHUNK, &used) != ASTER_DMA_OK) engine_failed = 1;
-        if (used == ASTER_COPY_DMA) {
+        else if (used == ASTER_COPY_DMA) {                          // (a DMA job noted only once it has run)
             STAGE_JOB(chunk, ST_DMA, submitted, aster_dma_job_cycles());
             v12_note_dma_job();
         }

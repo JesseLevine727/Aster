@@ -2,7 +2,8 @@
 """20.5's split policy (docs/tuning.md §4.3) re-derived from its sweep (matrix.py's split_fine, on every layout) and
 checked against software/runtime/aster_split.h: for the dot's K and each coherence kind's items, the size from which
 two workers beat one at every larger size of the sweep, in every window, on every layout, warm and cold (none:
-never). The header's thresholds must be these; it exits 1 otherwise.
+never). The header's thresholds must be these; it exits 1 otherwise. Each size's verdict is reported too: "one" (one
+worker faster at every point), "two", or "mixed" (the band below a threshold where neither wins everywhere).
 
   matrix_split.py RUN_DIR [--json OUT]
 """
@@ -20,7 +21,7 @@ KINDS = {name: kind for kind, name, workers in matrix.COHERENT_KINDS if workers 
 
 def crossovers(run: Path) -> dict:
     """case -> (the smallest size from which two workers win at every larger size, or None; the sizes; the points
-    each size has)"""
+    each size has; each size's verdict: one, two or mixed)"""
     by = defaultdict(lambda: defaultdict(lambda: defaultdict(dict)))
     for e, recs in records_of(run).values():
         if e["family"] != "split_fine":
@@ -38,7 +39,10 @@ def crossovers(run: Path) -> dict:
             if not wins[s]:
                 break
             first = s
-        out[case] = (first, sorted(sizes), {s: len(points) for s, points in sizes.items()})
+        ones = {s: all(p.get("scalar", 1 << 62) < p.get("multicore", -1) for p in points.values())
+                for s, points in sizes.items()}
+        verdicts = {s: "two" if wins[s] else "one" if ones[s] else "mixed" for s in sorted(sizes)}
+        out[case] = (first, sorted(sizes), {s: len(points) for s, points in sizes.items()}, verdicts)
     return out
 
 
@@ -52,11 +56,12 @@ def main() -> int:
     policy = matrix.split_policy()
     never = 0xFFFFFFFF
     rows, problems = {}, []
-    for case, (first, sizes, points) in sorted(found.items()):
+    for case, (first, sizes, points, verdicts) in sorted(found.items()):
         header = policy["dot_k"] if case == "dot" else policy["items"].get(KINDS.get(case))
         derived = never if first is None else first
         rows[case] = dict(derived=None if first is None else first, header=None if header == never else header,
-                          sizes=sizes, points=points)
+                          sizes=sizes, points=points, verdicts=verdicts,
+                          band=[s for s, v in verdicts.items() if v == "mixed"])
         if header != derived:
             problems.append(f"{case}: the sweep gives {rows[case]['derived']}, aster_split.h {rows[case]['header']}")
         if len(set(points.values())) != 1:
@@ -72,6 +77,8 @@ def main() -> int:
     print(f"{'PASS' if ok else 'FAIL'}: the split policy re-derived from {args.run.name} ({result['revision'][:7]}"
           f"{', DIRTY' if result['dirty'] else ''}): " + "; ".join(
               f"{case} {v['derived'] if v['derived'] is not None else 'never'}" for case, v in rows.items()))
+    for case, v in rows.items():
+        print(f"  {case}: " + " ".join(f"{s}:{x}" for s, x in v["verdicts"].items()))
     for p in problems:
         print(f"  {p}")
     return 0 if ok else 1

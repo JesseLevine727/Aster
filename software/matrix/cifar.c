@@ -338,9 +338,9 @@ static uint32_t checksum, mismatches;                 // v1's, folded in its win
 
 #if CIFAR_COPY
 static void stage(int8_t *destination, const int8_t *source) {     // an image staged by the copy helper, at once
-    enum aster_copy_engine used;
+    enum aster_copy_engine used = ASTER_COPY_CPU;
     if (aster_copy(destination, source, IMAGE_BYTES, &used) != ASTER_DMA_OK) engine_failed = 1;
-    if (used == ASTER_COPY_DMA) v12_note_dma_job();
+    else if (used == ASTER_COPY_DMA) v12_note_dma_job();            // (a DMA job noted only once it has run)
 }
 #endif
 
@@ -357,11 +357,11 @@ static __attribute__((noinline)) void infer(uint32_t item, int mode) {
     if (item == 0) stage(image, source);               // (the pass's first image: nothing begun before it)
     else if (aster_copy_finish() != ASTER_DMA_OK) engine_failed = 1;    // (begun during the last image)
     if (item + 1u < IMAGES) {                          // the next image's, begun into the other buffer
-        enum aster_copy_engine used;
+        enum aster_copy_engine used = ASTER_COPY_CPU;
         const enum aster_dma_result r = aster_copy_start(&images[(image_slot ^ 1u) * IMAGE_BYTES],
                                                          source + IMAGE_BYTES, IMAGE_BYTES, &used);
         if (r != ASTER_DMA_OK && r != ASTER_DMA_PENDING) engine_failed = 1;
-        if (used == ASTER_COPY_DMA) v12_note_dma_job();
+        else if (used == ASTER_COPY_DMA) v12_note_dma_job();        // (a DMA job noted only once it has started)
     }
 #else
     for (uint32_t i = 0; i < IMAGE_BYTES; ++i) image[i] = source[i];      // the staging (v1's, in its window)

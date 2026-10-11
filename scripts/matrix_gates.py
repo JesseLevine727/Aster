@@ -31,25 +31,52 @@ GEOMETRY = "soc_l1_"                                        # (20.5: the other c
 R_SIMS = ("soc_dev", "soc_l1_2k", "soc_l1_4k", "soc_l1_8k")  # (R at each cache size)
 
 # 20.5 step 3 (tuning.md §3; phase20.md, 20.5 step 3): the tuned variants adopted, each faster than its original in
-# every window, on every layout it fits, at R, warm and cold, and each change stacked on another variant faster than
-# that variant at R too (matrix_judge.py --stacked). Only these compete with their originals in the v1 gate. Not
-# adopted though faster than their originals: __fir4_copy (the copy policy not distinguishable from __fir4 alone),
-# ecg_pipeline_overlap_f8__fir4_split (its split not distinguishable from __fir4 at R), and __place (placement not
-# distinguishable from its control, __loop: the gain is the loops' code).
+# every window, on every layout it fits, at R (every sweep point of R's), warm and cold, and each change stacked on
+# another variant (STACKED_ON) faster than that variant there too; a variant that wins only at some of R's sweep points
+# is adopted at those alone (ADOPTED_POINTS). matrix_judge.py --check-adopted checks all of it against a judgment. Only
+# these compete with their originals in the v1 gate. Not adopted though faster than their originals: __fir4_copy (the
+# copy policy not distinguishable from __fir4 alone), __place (placement not distinguishable from its control,
+# __loop: the gain is the loops' code), and CIFAR's __2h_next (the next image's copy begun early not faster than
+# __2h_copy).
 ADOPTED: frozenset = frozenset({
     "ecg_dot8__fir4", "ecg_dot8_f8__fir4", "ecg_pipeline_v1__fir4", "ecg_pipeline_v1_f8__fir4",
-    "ecg_pipeline_overlap__fir4", "ecg_pipeline_overlap_f8__fir4", "ecg_pipeline_overlap__fir4_split",
-    "cifar_cnn_npu_direct__2h", "cifar_cnn_npu_im2col__2h", "conv2d_direct_npu__2h", "conv2d_im2col_npu__2h",
+    "ecg_pipeline_overlap__fir4", "ecg_pipeline_overlap_f8__fir4",
+    "ecg_pipeline_overlap__fir4_split", "ecg_pipeline_overlap_f8__fir4_split",
+    "cifar_cnn_npu_direct__2h", "cifar_cnn_npu_im2col__2h", "cifar_cnn_npu_direct__2h_copy",
+    "cifar_cnn_npu_im2col__2h_copy", "conv2d_direct_npu__2h", "conv2d_im2col_npu__2h",
     "mnist_mlp_npu__2h", "mnist_mlp_npu_batched__2h", "reduce_fill__loop", "reduce_v1__loop", "lock_sum__split",
 })
+# the variants adopted only at some of R's sweep points, ECG's (chunk, taps): the split beats __fir4 at these alone
+ADOPTED_POINTS: dict = {
+    "ecg_pipeline_overlap__fir4_split": frozenset({(16, 8), (32, 8), (32, 16), (64, 8), (64, 16)}),
+    "ecg_pipeline_overlap_f8__fir4_split": frozenset({(16, 8), (32, 8), (64, 8)}),
+}
+# each change stacked on another variant, and that variant: judged against it too (matrix_judge.py)
+STACKED_ON: dict = {
+    **{f"ecg_{m}{f}__fir4_copy": f"ecg_{m}{f}__fir4" for m in ("dot8", "pipeline_v1", "pipeline_overlap")
+       for f in ("", "_f8")},
+    **{f"ecg_pipeline_overlap{f}__fir4_split": f"ecg_pipeline_overlap{f}__fir4" for f in ("", "_f8")},
+    **{f"cifar_cnn_npu_{m}__2h_copy": f"cifar_cnn_npu_{m}__2h" for m in ("direct", "im2col")},
+    **{f"cifar_cnn_npu_{m}__2h_next": f"cifar_cnn_npu_{m}__2h_copy" for m in ("direct", "im2col")},
+    **{f"reduce_{m}__place": f"reduce_{m}__loop" for m in ("fill", "v1")},
+}
 
 
-def competes(case: str, test) -> bool:
+def adopted_at(case: str, axes: dict | None) -> bool:
+    """Whether a tuned variant is adopted (at this entry's sweep point, for one adopted at some alone)."""
+    if case not in ADOPTED:
+        return False
+    points = ADOPTED_POINTS.get(case)
+    return points is None or (axes is not None and (axes.get("chunk"), axes.get("taps")) in points)
+
+
+def competes(case: str, test, axes: dict | None = None) -> bool:
     """A case competes for a v1 workload when its original (the case before "__") passes the workload's test, and it
-    is the original or an adopted variant; the stamped twins (_stages: instrumented) never compete."""
+    is the original or a variant adopted (at the entry's sweep point: `axes`); the stamped twins (_stages:
+    instrumented) never compete."""
     if case.endswith("_stages"):
         return False
-    return test(case.split("__")[0]) and ("__" not in case or case in ADOPTED)
+    return test(case.split("__")[0]) and ("__" not in case or adopted_at(case, axes))
 
 
 # v1's best (matrix.md §5): the family, the test on a case's original name, and v1's cycles
@@ -110,7 +137,7 @@ def against_v1(allrec: dict, kib: int | None = None, layout: str | None = None) 
     for name, (family, test, v1) in V1.items():
         best = None
         for e, recs in allrec.values():
-            if e["family"] != family or not competes(e["case"], test) or e["sim"] not in R_SIMS \
+            if e["family"] != family or not competes(e["case"], test, e["axes"]) or e["sim"] not in R_SIMS \
                     or e["axes"].get("cache_state") != "cold" or "/seed" in e["id"] or not at(e, kib, layout):
                 continue
             if family == "ecg" and (e["axes"].get("chunk"), e["axes"].get("taps")) != (64, 16):

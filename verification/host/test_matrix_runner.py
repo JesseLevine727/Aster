@@ -329,7 +329,9 @@ class TunedVariants(unittest.TestCase):
         finally:
             matrix_gates.ADOPTED = saved
         ecg = matrix_gates.V1["streaming ECG, 16 x 64"][1]           # (step 3's set: the copy policy's variant left out)
-        self.assertTrue(matrix_gates.competes("ecg_pipeline_overlap__fir4_split", ecg))
+        self.assertTrue(matrix_gates.competes("ecg_pipeline_overlap__fir4_split", ecg, dict(chunk=64, taps=16)))
+        self.assertFalse(matrix_gates.competes("ecg_pipeline_overlap__fir4_split", ecg, dict(chunk=64, taps=32)))
+        self.assertFalse(matrix_gates.competes("ecg_pipeline_overlap__fir4_split", ecg))     # (its point unknown)
         self.assertFalse(matrix_gates.competes("ecg_pipeline_overlap__fir4_copy", ecg))
 
     def test_the_judging(self):
@@ -340,24 +342,50 @@ class TunedVariants(unittest.TestCase):
         allrec = dict([entry("mnist_mlp_npu", "L0", "warm", 100), entry("mnist_mlp_npu__2h", "L0", "warm", 90),
                        entry("mnist_mlp_npu", "L3", "warm", 100), entry("mnist_mlp_npu__2h", "L3", "warm", 95),
                        entry("mnist_mlp_npu", "L0", "cold", 100), entry("mnist_mlp_npu__2h", "L0", "cold", 99)])
-        rows, alone = matrix_judge.pairs(allrec)
+        rows, alone, _ = matrix_judge.pairs(allrec)
         self.assertEqual((list(rows), alone), (["ml/mnist_mlp_npu__2h/npu/soc_dev"], []))
         self.assertEqual(matrix_judge.verdict(rows["ml/mnist_mlp_npu__2h/npu/soc_dev"]), "wins")
         allrec.update([entry("mnist_mlp_npu__2h", "L3", "warm", 101)])
-        rows, _ = matrix_judge.pairs(allrec)
+        rows, _, _ = matrix_judge.pairs(allrec)
         self.assertEqual(matrix_judge.verdict(rows["ml/mnist_mlp_npu__2h/npu/soc_dev"]), "not distinguishable")
 
     def test_a_stacked_change_is_judged_against_the_variant_it_extends(self):
         def entry(case, layout, state, cycles, chunk=64, taps=16):
             axes = dict(cache_state=state, chunk=chunk, taps=taps) | ({} if layout == "L0" else dict(layout=layout))
-            e = dict(id=f"ecg/{case}/pipeline/soc_dev/{state}" + ("" if layout == "L0" else f"/{layout}"), case=case,
-                     axes=axes)
+            e = dict(id=f"ecg/{case}/pipeline/soc_dev/{state}" + ("" if (chunk, taps) == (64, 16) else
+                                                                 f"/c{chunk}t{taps}")
+                     + ("" if layout == "L0" else f"/{layout}"), case=case, axes=axes)
             return e["id"], (e, [dict(window="e2e", h0_cycles=str(cycles))])
         allrec = dict([entry("x__fir4", "L0", "warm", 100), entry("x__fir4_split", "L0", "warm", 90),
-                       entry("x__fir4", "L3", "cold", 100), entry("x__fir4_split", "L3", "cold", 101)])
-        self.assertEqual(matrix_judge.stacked(allrec, "x__fir4_split", "x__fir4")["c64t16"]["verdict"],
-                         "not distinguishable")
-        self.assertEqual(matrix_judge.stacked(allrec, "x__fir4_split", "x__none"), {})
+                       entry("x__fir4", "L3", "cold", 100), entry("x__fir4_split", "L3", "cold", 101),
+                       entry("x__fir4", "L0", "warm", 100, 32, 8), entry("x__fir4_split", "L0", "warm", 90, 32, 8)])
+        rows, alone = matrix_judge.stacked(allrec, "x__fir4_split", "x__fir4")
+        # (each configuration its own: the default point's id has no suffix, the others theirs)
+        self.assertEqual({c: v["verdict"] for c, v in rows.items()},
+                         {"ecg/x__fir4_split/pipeline/soc_dev": "not distinguishable",
+                          "ecg/x__fir4_split/pipeline/soc_dev/c32t8": "wins"})
+        self.assertEqual(alone, [])
+        rows, alone = matrix_judge.stacked(allrec, "x__fir4_split", "x__none")
+        self.assertEqual((rows, len(alone)), ({}, 3))
+
+    def test_the_adopted_set_checked(self):
+        def config(case, verdict, chunk=64, taps=16, sim="soc_dev", layouts=8):
+            suffix = "" if (chunk, taps) == (64, 16) else f"/c{chunk}t{taps}"
+            return f"ecg/{case}/pipeline/{sim}{suffix}", dict(verdict=verdict, axes=dict(chunk=chunk, taps=taps),
+                                                               layouts=layouts, low=-1.0, high=1.0)
+        split, fir4 = "ecg_pipeline_overlap__fir4_split", "ecg_pipeline_overlap__fir4"
+        points = sorted(matrix_gates.ADOPTED_POINTS[split])
+        result = dict(config(split, "wins", c, t) for c, t in points + [(64, 32)])
+        good = {(split, fir4): dict(config(split, "wins", c, t) for c, t in points)
+                | dict([config(split, "loses", 64, 32)])}
+        problems, beside = matrix_judge.check_adopted(result, good)
+        self.assertEqual(problems, [])
+        self.assertEqual(len(beside), 1)                               # (32 taps: reported, not adopted there)
+        bad = {(split, fir4): {**good[(split, fir4)], **dict([config(split, "loses", 64, 16)])}}
+        problems, _ = matrix_judge.check_adopted(result, bad)
+        self.assertEqual(len(problems), 2)                             # (adopted at 64/16 but loses; the points)
+        problems, _ = matrix_judge.check_adopted(result, {})
+        self.assertEqual(len(problems), 2)             # (stacked but not judged against __fir4; then its points)
 
     def test_the_staging_variants(self):
         plan = {e.case: e for e in matrix.cifar_entries() if e.sim == "soc_dev" and not e.cold}
