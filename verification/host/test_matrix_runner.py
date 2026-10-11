@@ -407,7 +407,7 @@ class TunedVariants(unittest.TestCase):
 class Policies(unittest.TestCase):
     """20.5 step 3: the runner reads the copy and split policies from the sources the firmware is built from."""
     def test_the_headers_values(self):
-        self.assertEqual(matrix.copy_policy(), dict(aligned=113, same_offset=89, different_offsets=21, shift=13))
+        self.assertEqual(matrix.copy_policy(), dict(aligned=113, same_offset=89, different_offsets=61, shift=14))
         split = matrix.split_policy()                  # (step 3b: one worker only where it wins, the bands two)
         self.assertEqual(split["dot_k"], 33)
         self.assertEqual(split["items"], {0: 33, 1: 17, 2: 9, 3: 0xFFFFFFFF, 4: 33, 5: 33, 8: 5})

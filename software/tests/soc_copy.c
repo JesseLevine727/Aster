@@ -46,12 +46,18 @@ static uint32_t copy_checked(uint32_t bytes, uint32_t src_off, uint32_t dst_off,
     return used == ASTER_COPY_DMA;
 }
 
-// (each side of the policy's thresholds: 20.4's 127 and 63, and 20.5 step 3's 113 and 89; 21 within 0-64 above)
+// (each side of the policy's thresholds: 20.4's 127 and 63, and 20.5's 113 and 89; at different offsets step 3's 21,
+// step 3b's 61 and the shift copy's 14 within 0-64 above)
 static const uint32_t extra[] = {88u, 89u, 95u, 96u, 112u, 113u, 126u, 127u, 128u, 160u, 255u, 256u, 300u, 320u};
 
+// hart 1's copies, every length above at all 16 offset pairs (20.5 step 3b: so the shift copy runs at lengths the DMA
+// takes on hart 0)
+#define HART1_COPIES (16u * (sizeof extra / sizeof extra[0]))
 static void hart1_copies(void *arg) {
     volatile uint32_t *dma = arg;
-    for (uint32_t k = 0; k < sizeof extra / sizeof extra[0]; ++k) *dma += copy_checked(extra[k], 0, 0, 1, 4);
+    for (uint32_t s = 0; s < 4u; ++s)
+        for (uint32_t d = 0; d < 4u; ++d)
+            for (uint32_t k = 0; k < sizeof extra / sizeof extra[0]; ++k) *dma += copy_checked(extra[k], s, d, 1, 4);
 }
 
 int main(void) {
@@ -81,7 +87,7 @@ int main(void) {
     aster_smp_join();
     check(hart1_dma == 0u, 4);
     aster_puts("SOC COPY copies="); aster_put_u32(copies); aster_puts(" dma="); aster_put_u32(by_dma);
-    aster_puts(" hart1_copies="); aster_put_u32(sizeof extra / sizeof extra[0]);
+    aster_puts(" hart1_copies="); aster_put_u32(HART1_COPIES);
     aster_puts(status ? " FAIL check=" : " PASS");
     if (status) aster_put_u32((uint32_t)status);
     aster_puts("\n");
