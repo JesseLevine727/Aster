@@ -379,13 +379,18 @@ class TunedVariants(unittest.TestCase):
         result = dict(config(split, "wins", c, t) for c, t in points + [(64, 32)])
         good = {(split, fir4): dict(config(split, "wins", c, t) for c, t in points)
                 | dict([config(split, "loses", 64, 32)])}
-        problems, beside = matrix_judge.check_adopted(result, good)
+        def check(stacks):                             # (the judgment holds this case alone: the others missing)
+            problems, beside = matrix_judge.check_adopted(result, stacks)
+            missing = [p for p in problems if p.endswith("not in the judgment")]
+            self.assertEqual(len(missing), len(matrix_gates.ADOPTED) - 1)
+            return [p for p in problems if p not in missing], beside
+        problems, beside = check(good)
         self.assertEqual(problems, [])
         self.assertEqual(len(beside), 1)                               # (32 taps: reported, not adopted there)
         bad = {(split, fir4): {**good[(split, fir4)], **dict([config(split, "loses", 64, 16)])}}
-        problems, _ = matrix_judge.check_adopted(result, bad)
+        problems, _ = check(bad)
         self.assertEqual(len(problems), 2)                             # (adopted at 64/16 but loses; the points)
-        problems, _ = matrix_judge.check_adopted(result, {})
+        problems, _ = check({})
         self.assertEqual(len(problems), 2)             # (stacked but not judged against __fir4; then its points)
 
     def test_the_staging_variants(self):

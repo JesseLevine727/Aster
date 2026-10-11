@@ -43,7 +43,9 @@
     "kind": 0,
     "cache_kib": 8,
     "case": "atomic_add__split"
-   }
+   },
+   "spread_theirs": 0.12,
+   "spread_mine": 0.1
   },
   "coherence/atomic_add__split/multicore/soc_dev/n129": {
    "verdict": "not distinguishable",
@@ -82,7 +84,9 @@
     "kind": 0,
     "cache_kib": 8,
     "case": "atomic_add__split"
-   }
+   },
+   "spread_theirs": 1.01,
+   "spread_mine": 0.98
   },
   "coherence/atomic_add__split/multicore/soc_dev/n2": {
    "verdict": "wins",
@@ -121,7 +125,9 @@
     "kind": 0,
     "cache_kib": 8,
     "case": "atomic_add__split"
-   }
+   },
+   "spread_theirs": 0.19,
+   "spread_mine": 0.0
   },
   "coherence/cas_counter__split/multicore/soc_dev/n1024": {
    "verdict": "not distinguishable",
@@ -160,7 +166,9 @@
     "kind": 2,
     "cache_kib": 8,
     "case": "cas_counter__split"
-   }
+   },
+   "spread_theirs": 43.51,
+   "spread_mine": 42.41
   },
   "coherence/cas_counter__split/multicore/soc_dev/n129": {
    "verdict": "not distinguishable",
@@ -199,7 +207,9 @@
     "kind": 2,
     "cache_kib": 8,
     "case": "cas_counter__split"
-   }
+   },
+   "spread_theirs": 34.01,
+   "spread_mine": 66.69
   },
   "coherence/cas_counter__split/multicore/soc_dev/n2": {
    "verdict": "wins",
@@ -238,7 +248,9 @@
     "kind": 2,
     "cache_kib": 8,
     "case": "cas_counter__split"
-   }
+   },
+   "spread_theirs": 1.72,
+   "spread_mine": 0.0
   },
   "coherence/false_shared__split/multicore/soc_dev/n1024": {
    "verdict": "not distinguishable",
@@ -277,7 +289,9 @@
     "kind": 4,
     "cache_kib": 8,
     "case": "false_shared__split"
-   }
+   },
+   "spread_theirs": 0.45,
+   "spread_mine": 0.56
   },
   "coherence/false_shared__split/multicore/soc_dev/n129": {
    "verdict": "not distinguishable",
@@ -316,7 +330,9 @@
     "kind": 4,
     "cache_kib": 8,
     "case": "false_shared__split"
-   }
+   },
+   "spread_theirs": 3.19,
+   "spread_mine": 4.86
   },
   "coherence/false_shared__split/multicore/soc_dev/n2": {
    "verdict": "wins",
@@ -355,7 +371,9 @@
     "kind": 4,
     "cache_kib": 8,
     "case": "false_shared__split"
-   }
+   },
+   "spread_theirs": 2.79,
+   "spread_mine": 4.88
   },
   "coherence/gemm_dot8_128x64x128__place/multicore/soc_dev": {
    "verdict": "loses",
@@ -395,7 +413,9 @@
     "k": 128,
     "cache_kib": 8,
     "case": "gemm_dot8_128x64x128__place"
-   }
+   },
+   "spread_theirs": 0.06,
+   "spread_mine": 0.03
   },
   "coherence/gemm_dot8_64x64x64__place/multicore/soc_dev": {
    "verdict": "not distinguishable",
@@ -435,7 +455,9 @@
     "k": 64,
     "cache_kib": 8,
     "case": "gemm_dot8_64x64x64__place"
-   }
+   },
+   "spread_theirs": 2.37,
+   "spread_mine": 2.78
   },
   "coherence/gemm_dot8_96x96x96__place/multicore/soc_dev": {
    "verdict": "loses",
@@ -475,7 +497,9 @@
     "k": 96,
     "cache_kib": 8,
     "case": "gemm_dot8_96x96x96__place"
-   }
+   },
+   "spread_theirs": 0.38,
+   "spread_mine": 0.38
   },
   "coherence/lock_sum__split/multicore/soc_dev/n1024": {
    "verdict": "wins",
@@ -514,7 +538,9 @@
     "kind": 3,
     "cache_kib": 8,
     "case": "lock_sum__split"
-   }
+   },
+   "spread_theirs": 14.14,
+   "spread_mine": 0.0
   },
   "coherence/lock_sum__split/multicore/soc_dev/n129": {
    "verdict": "wins",
@@ -553,7 +579,9 @@
     "kind": 3,
     "cache_kib": 8,
     "case": "lock_sum__split"
-   }
+   },
+   "spread_theirs": 13.31,
+   "spread_mine": 0.0
   },
   "coherence/lock_sum__split/multicore/soc_dev/n2": {
    "verdict": "wins",
@@ -592,7 +620,9 @@
     "kind": 3,
     "cache_kib": 8,
     "case": "lock_sum__split"
-   }
+   },
+   "spread_theirs": 0.76,
+   "spread_mine": 0.0
   },
   "coherence/lrsc_counter__split/multicore/soc_dev/n1024": {
    "verdict": "not distinguishable",
@@ -631,7 +661,9 @@
     "kind": 1,
     "cache_kib": 8,
     "case": "lrsc_counter__split"
-   }
+   },
+   "spread_theirs": 59.21,
+   "spread_mine": 56.77
   },
   "coherence/lrsc_counter__split/multicore/soc_dev/n129": {
    "verdict": "not distinguishable",
@@ -670,7 +702,9 @@
     "kind": 1,
     "cache_kib": 8,
     "case": "lrsc_counter__split"
-   }
+   },
+   "spread_theirs": 34.81,
+   "spread_mine": 49.56
   },
   "coherence/lrsc_counter__split/multicore/soc_dev/n2": {
    "verdict": "wins",
@@ -709,7 +743,9 @@
     "kind": 1,
     "cache_kib": 8,
     "case": "lrsc_counter__split"
-   }
+   },
+   "spread_theirs": 0.92,
+   "spread_mine": 0.0
   },
   "coherence/padded__split/multicore/soc_dev/n1024": {
    "verdict": "not distinguishable",
@@ -748,7 +784,9 @@
     "kind": 5,
     "cache_kib": 8,
     "case": "padded__split"
-   }
+   },
+   "spread_theirs": 0.37,
+   "spread_mine": 0.3
   },
   "coherence/padded__split/multicore/soc_dev/n129": {
    "verdict": "not distinguishable",
@@ -787,7 +825,9 @@
     "kind": 5,
     "cache_kib": 8,
     "case": "padded__split"
-   }
+   },
+   "spread_theirs": 1.88,
+   "spread_mine": 2.02
   },
   "coherence/padded__split/multicore/soc_dev/n2": {
    "verdict": "wins",
@@ -826,7 +866,9 @@
     "kind": 5,
     "cache_kib": 8,
     "case": "padded__split"
-   }
+   },
+   "spread_theirs": 4.72,
+   "spread_mine": 11.9
   },
   "coherence/reduce_fill__loop/multicore/soc_dev": {
    "verdict": "wins",
@@ -863,7 +905,9 @@
     "workers": 2,
     "cache_kib": 8,
     "case": "reduce_fill__loop"
-   }
+   },
+   "spread_theirs": 0.01,
+   "spread_mine": 1.53
   },
   "coherence/reduce_fill__place/multicore/soc_dev": {
    "verdict": "wins",
@@ -900,7 +944,9 @@
     "workers": 2,
     "cache_kib": 8,
     "case": "reduce_fill__place"
-   }
+   },
+   "spread_theirs": 0.01,
+   "spread_mine": 0.71
   },
   "coherence/reduce_v1__loop/multicore/soc_dev": {
    "verdict": "wins",
@@ -937,7 +983,9 @@
     "workers": 2,
     "cache_kib": 8,
     "case": "reduce_v1__loop"
-   }
+   },
+   "spread_theirs": 0.14,
+   "spread_mine": 0.27
   },
   "coherence/reduce_v1__place/multicore/soc_dev": {
    "verdict": "wins",
@@ -974,7 +1022,9 @@
     "workers": 2,
     "cache_kib": 8,
     "case": "reduce_v1__place"
-   }
+   },
+   "spread_theirs": 0.14,
+   "spread_mine": 0.26
   },
   "coherence/shared_mix__split/multicore/soc_dev/n1024": {
    "verdict": "not distinguishable",
@@ -1013,7 +1063,9 @@
     "kind": 8,
     "cache_kib": 8,
     "case": "shared_mix__split"
-   }
+   },
+   "spread_theirs": 0.01,
+   "spread_mine": 0.01
   },
   "coherence/shared_mix__split/multicore/soc_dev/n129": {
    "verdict": "not distinguishable",
@@ -1052,7 +1104,9 @@
     "kind": 8,
     "cache_kib": 8,
     "case": "shared_mix__split"
-   }
+   },
+   "spread_theirs": 0.31,
+   "spread_mine": 0.21
   },
   "coherence/shared_mix__split/multicore/soc_dev/n2": {
    "verdict": "wins",
@@ -1091,7 +1145,9 @@
     "kind": 8,
     "cache_kib": 8,
     "case": "shared_mix__split"
-   }
+   },
+   "spread_theirs": 1.04,
+   "spread_mine": 0.0
   },
   "dsp/conv2d_direct_npu__2h/npu_direct/soc_dev": {
    "verdict": "wins",
@@ -1125,7 +1181,9 @@
     "seed": 324468736,
     "cache_kib": 8,
     "case": "conv2d_direct_npu__2h"
-   }
+   },
+   "spread_theirs": 0.07,
+   "spread_mine": 0.21
   },
   "dsp/conv2d_direct_npu__2h/npu_direct/soc_dev/seed2468ace0": {
    "verdict": "wins",
@@ -1154,7 +1212,9 @@
     "seed": 610839776,
     "cache_kib": 8,
     "case": "conv2d_direct_npu__2h"
-   }
+   },
+   "spread_theirs": 0.04,
+   "spread_mine": 0.15
   },
   "dsp/conv2d_direct_npu__2h/npu_direct/soc_dev/seed9e3779b9": {
    "verdict": "wins",
@@ -1183,7 +1243,9 @@
     "seed": 2654435769,
     "cache_kib": 8,
     "case": "conv2d_direct_npu__2h"
-   }
+   },
+   "spread_theirs": 0.04,
+   "spread_mine": 0.15
   },
   "dsp/conv2d_im2col_npu__2h/npu_im2col/soc_dev": {
    "verdict": "wins",
@@ -1217,7 +1279,9 @@
     "seed": 324468736,
     "cache_kib": 8,
     "case": "conv2d_im2col_npu__2h"
-   }
+   },
+   "spread_theirs": 0.36,
+   "spread_mine": 0.2
   },
   "dsp/conv2d_im2col_npu__2h/npu_im2col/soc_dev/seed2468ace0": {
    "verdict": "wins",
@@ -1246,7 +1310,9 @@
     "seed": 610839776,
     "cache_kib": 8,
     "case": "conv2d_im2col_npu__2h"
-   }
+   },
+   "spread_theirs": 0.36,
+   "spread_mine": 0.19
   },
   "dsp/conv2d_im2col_npu__2h/npu_im2col/soc_dev/seed9e3779b9": {
    "verdict": "wins",
@@ -1275,7 +1341,9 @@
     "seed": 2654435769,
     "cache_kib": 8,
     "case": "conv2d_im2col_npu__2h"
-   }
+   },
+   "spread_theirs": 0.36,
+   "spread_mine": 0.19
   },
   "dsp/dot__split/multicore/soc_dev/k0": {
    "verdict": "wins",
@@ -1315,7 +1383,9 @@
     "seed": 324468736,
     "cache_kib": 8,
     "case": "dot__split"
-   }
+   },
+   "spread_theirs": 6.15,
+   "spread_mine": 0.0
   },
   "dsp/dot__split/multicore/soc_dev/k0/seed2468ace0": {
    "verdict": "wins",
@@ -1350,7 +1420,9 @@
     "seed": 610839776,
     "cache_kib": 8,
     "case": "dot__split"
-   }
+   },
+   "spread_theirs": 4.0,
+   "spread_mine": 0.0
   },
   "dsp/dot__split/multicore/soc_dev/k0/seed9e3779b9": {
    "verdict": "wins",
@@ -1385,7 +1457,9 @@
     "seed": 2654435769,
     "cache_kib": 8,
     "case": "dot__split"
-   }
+   },
+   "spread_theirs": 4.0,
+   "spread_mine": 0.0
   },
   "dsp/dot__split/multicore/soc_dev/k1": {
    "verdict": "wins",
@@ -1425,7 +1499,9 @@
     "seed": 324468736,
     "cache_kib": 8,
     "case": "dot__split"
-   }
+   },
+   "spread_theirs": 3.64,
+   "spread_mine": 0.0
   },
   "dsp/dot__split/multicore/soc_dev/k1/seed2468ace0": {
    "verdict": "wins",
@@ -1460,7 +1536,9 @@
     "seed": 610839776,
     "cache_kib": 8,
     "case": "dot__split"
-   }
+   },
+   "spread_theirs": 3.51,
+   "spread_mine": 0.0
   },
   "dsp/dot__split/multicore/soc_dev/k1/seed9e3779b9": {
    "verdict": "wins",
@@ -1495,7 +1573,9 @@
     "seed": 2654435769,
     "cache_kib": 8,
     "case": "dot__split"
-   }
+   },
+   "spread_theirs": 3.51,
+   "spread_mine": 0.0
   },
   "dsp/dot__split/multicore/soc_dev/k1024": {
    "verdict": "not distinguishable",
@@ -1535,7 +1615,9 @@
     "seed": 324468736,
     "cache_kib": 8,
     "case": "dot__split"
-   }
+   },
+   "spread_theirs": 1.48,
+   "spread_mine": 1.48
   },
   "dsp/dot__split/multicore/soc_dev/k1024/seed2468ace0": {
    "verdict": "not distinguishable",
@@ -1570,7 +1652,9 @@
     "seed": 610839776,
     "cache_kib": 8,
     "case": "dot__split"
-   }
+   },
+   "spread_theirs": 1.48,
+   "spread_mine": 1.41
   },
   "dsp/dot__split/multicore/soc_dev/k1024/seed9e3779b9": {
    "verdict": "not distinguishable",
@@ -1605,7 +1689,9 @@
     "seed": 2654435769,
     "cache_kib": 8,
     "case": "dot__split"
-   }
+   },
+   "spread_theirs": 1.48,
+   "spread_mine": 1.48
   },
   "dsp/dot__split/multicore/soc_dev/k256": {
    "verdict": "not distinguishable",
@@ -1645,7 +1731,9 @@
     "seed": 324468736,
     "cache_kib": 8,
     "case": "dot__split"
-   }
+   },
+   "spread_theirs": 0.75,
+   "spread_mine": 0.86
   },
   "dsp/dot__split/multicore/soc_dev/k256/seed2468ace0": {
    "verdict": "not distinguishable",
@@ -1680,7 +1768,9 @@
     "seed": 610839776,
     "cache_kib": 8,
     "case": "dot__split"
-   }
+   },
+   "spread_theirs": 0.86,
+   "spread_mine": 0.92
   },
   "dsp/dot__split/multicore/soc_dev/k256/seed9e3779b9": {
    "verdict": "not distinguishable",
@@ -1715,7 +1805,9 @@
     "seed": 2654435769,
     "cache_kib": 8,
     "case": "dot__split"
-   }
+   },
+   "spread_theirs": 0.86,
+   "spread_mine": 0.92
   },
   "dsp/dot__split/multicore/soc_dev/k4096": {
    "verdict": "not distinguishable",
@@ -1755,7 +1847,9 @@
     "seed": 324468736,
     "cache_kib": 8,
     "case": "dot__split"
-   }
+   },
+   "spread_theirs": 0.67,
+   "spread_mine": 0.67
   },
   "dsp/dot__split/multicore/soc_dev/k4096/seed2468ace0": {
    "verdict": "not distinguishable",
@@ -1790,7 +1884,9 @@
     "seed": 610839776,
     "cache_kib": 8,
     "case": "dot__split"
-   }
+   },
+   "spread_theirs": 0.67,
+   "spread_mine": 0.71
   },
   "dsp/dot__split/multicore/soc_dev/k4096/seed9e3779b9": {
    "verdict": "not distinguishable",
@@ -1825,7 +1921,9 @@
     "seed": 2654435769,
     "cache_kib": 8,
     "case": "dot__split"
-   }
+   },
+   "spread_theirs": 0.67,
+   "spread_mine": 0.7
   },
   "dsp/dot__split/multicore/soc_dev/k64": {
    "verdict": "not distinguishable",
@@ -1865,7 +1963,9 @@
     "seed": 324468736,
     "cache_kib": 8,
     "case": "dot__split"
-   }
+   },
+   "spread_theirs": 1.31,
+   "spread_mine": 8.34
   },
   "dsp/dot__split/multicore/soc_dev/k64/seed2468ace0": {
    "verdict": "loses",
@@ -1900,7 +2000,9 @@
     "seed": 610839776,
     "cache_kib": 8,
     "case": "dot__split"
-   }
+   },
+   "spread_theirs": 2.33,
+   "spread_mine": 8.34
   },
   "dsp/dot__split/multicore/soc_dev/k64/seed9e3779b9": {
    "verdict": "loses",
@@ -1935,7 +2037,9 @@
     "seed": 2654435769,
     "cache_kib": 8,
     "case": "dot__split"
-   }
+   },
+   "spread_theirs": 2.33,
+   "spread_mine": 8.34
   },
   "dsp/dot__split/multicore/soc_dev/k7": {
    "verdict": "wins",
@@ -1975,7 +2079,9 @@
     "seed": 324468736,
     "cache_kib": 8,
     "case": "dot__split"
-   }
+   },
+   "spread_theirs": 5.51,
+   "spread_mine": 13.07
   },
   "dsp/dot__split/multicore/soc_dev/k7/seed2468ace0": {
    "verdict": "wins",
@@ -2010,7 +2116,9 @@
     "seed": 610839776,
     "cache_kib": 8,
     "case": "dot__split"
-   }
+   },
+   "spread_theirs": 7.96,
+   "spread_mine": 17.3
   },
   "dsp/dot__split/multicore/soc_dev/k7/seed9e3779b9": {
    "verdict": "wins",
@@ -2045,7 +2153,9 @@
     "seed": 2654435769,
     "cache_kib": 8,
     "case": "dot__split"
-   }
+   },
+   "spread_theirs": 7.96,
+   "spread_mine": 17.3
   },
   "dsp/dot__split/multicore/soc_dev/k8": {
    "verdict": "wins",
@@ -2085,7 +2195,9 @@
     "seed": 324468736,
     "cache_kib": 8,
     "case": "dot__split"
-   }
+   },
+   "spread_theirs": 5.52,
+   "spread_mine": 16.33
   },
   "dsp/dot__split/multicore/soc_dev/k8/seed2468ace0": {
    "verdict": "wins",
@@ -2120,7 +2232,9 @@
     "seed": 610839776,
     "cache_kib": 8,
     "case": "dot__split"
-   }
+   },
+   "spread_theirs": 4.77,
+   "spread_mine": 16.33
   },
   "dsp/dot__split/multicore/soc_dev/k8/seed9e3779b9": {
    "verdict": "wins",
@@ -2155,7 +2269,9 @@
     "seed": 2654435769,
     "cache_kib": 8,
     "case": "dot__split"
-   }
+   },
+   "spread_theirs": 4.77,
+   "spread_mine": 16.33
   },
   "ecg/ecg_dot8__fir4/dot8/soc_dev": {
    "verdict": "wins",
@@ -2196,7 +2312,9 @@
     "features": 4,
     "cache_kib": 8,
     "case": "ecg_dot8__fir4"
-   }
+   },
+   "spread_theirs": 0.05,
+   "spread_mine": 0.3
   },
   "ecg/ecg_dot8__fir4/dot8/soc_dev/c128t16": {
    "verdict": "wins",
@@ -2237,7 +2355,9 @@
     "features": 4,
     "cache_kib": 8,
     "case": "ecg_dot8__fir4"
-   }
+   },
+   "spread_theirs": 0.04,
+   "spread_mine": 0.42
   },
   "ecg/ecg_dot8__fir4/dot8/soc_dev/c128t32": {
    "verdict": "wins",
@@ -2278,7 +2398,9 @@
     "features": 4,
     "cache_kib": 8,
     "case": "ecg_dot8__fir4"
-   }
+   },
+   "spread_theirs": 0.14,
+   "spread_mine": 1.13
   },
   "ecg/ecg_dot8__fir4/dot8/soc_dev/c128t8": {
    "verdict": "wins",
@@ -2319,7 +2441,9 @@
     "features": 4,
     "cache_kib": 8,
     "case": "ecg_dot8__fir4"
-   }
+   },
+   "spread_theirs": 0.13,
+   "spread_mine": 1.1
   },
   "ecg/ecg_dot8__fir4/dot8/soc_dev/c16t8": {
    "verdict": "wins",
@@ -2360,7 +2484,9 @@
     "features": 4,
     "cache_kib": 8,
     "case": "ecg_dot8__fir4"
-   }
+   },
+   "spread_theirs": 0.23,
+   "spread_mine": 0.76
   },
   "ecg/ecg_dot8__fir4/dot8/soc_dev/c32t16": {
    "verdict": "wins",
@@ -2401,7 +2527,9 @@
     "features": 4,
     "cache_kib": 8,
     "case": "ecg_dot8__fir4"
-   }
+   },
+   "spread_theirs": 0.15,
+   "spread_mine": 1.61
   },
   "ecg/ecg_dot8__fir4/dot8/soc_dev/c32t8": {
    "verdict": "wins",
@@ -2442,7 +2570,9 @@
     "features": 4,
     "cache_kib": 8,
     "case": "ecg_dot8__fir4"
-   }
+   },
+   "spread_theirs": 0.16,
+   "spread_mine": 1.24
   },
   "ecg/ecg_dot8__fir4/dot8/soc_dev/c64t32": {
    "verdict": "wins",
@@ -2483,7 +2613,9 @@
     "features": 4,
     "cache_kib": 8,
     "case": "ecg_dot8__fir4"
-   }
+   },
+   "spread_theirs": 0.09,
+   "spread_mine": 0.27
   },
   "ecg/ecg_dot8__fir4/dot8/soc_dev/c64t8": {
    "verdict": "wins",
@@ -2524,7 +2656,9 @@
     "features": 4,
     "cache_kib": 8,
     "case": "ecg_dot8__fir4"
-   }
+   },
+   "spread_theirs": 0.41,
+   "spread_mine": 0.19
   },
   "ecg/ecg_dot8__fir4_copy/dot8/soc_dev": {
    "verdict": "wins",
@@ -2565,7 +2699,9 @@
     "features": 4,
     "cache_kib": 8,
     "case": "ecg_dot8__fir4_copy"
-   }
+   },
+   "spread_theirs": 0.05,
+   "spread_mine": 8.74
   },
   "ecg/ecg_dot8__fir4_copy/dot8/soc_dev/c128t16": {
    "verdict": "wins",
@@ -2606,7 +2742,9 @@
     "features": 4,
     "cache_kib": 8,
     "case": "ecg_dot8__fir4_copy"
-   }
+   },
+   "spread_theirs": 0.04,
+   "spread_mine": 2.6
   },
   "ecg/ecg_dot8__fir4_copy/dot8/soc_dev/c128t32": {
    "verdict": "wins",
@@ -2647,7 +2785,9 @@
     "features": 4,
     "cache_kib": 8,
     "case": "ecg_dot8__fir4_copy"
-   }
+   },
+   "spread_theirs": 0.14,
+   "spread_mine": 2.45
   },
   "ecg/ecg_dot8__fir4_copy/dot8/soc_dev/c128t8": {
    "verdict": "wins",
@@ -2688,7 +2828,9 @@
     "features": 4,
     "cache_kib": 8,
     "case": "ecg_dot8__fir4_copy"
-   }
+   },
+   "spread_theirs": 0.13,
+   "spread_mine": 3.19
   },
   "ecg/ecg_dot8__fir4_copy/dot8/soc_dev/c16t8": {
    "verdict": "wins",
@@ -2729,7 +2871,9 @@
     "features": 4,
     "cache_kib": 8,
     "case": "ecg_dot8__fir4_copy"
-   }
+   },
+   "spread_theirs": 0.23,
+   "spread_mine": 16.56
   },
   "ecg/ecg_dot8__fir4_copy/dot8/soc_dev/c32t16": {
    "verdict": "wins",
@@ -2770,7 +2914,9 @@
     "features": 4,
     "cache_kib": 8,
     "case": "ecg_dot8__fir4_copy"
-   }
+   },
+   "spread_theirs": 0.15,
+   "spread_mine": 11.39
   },
   "ecg/ecg_dot8__fir4_copy/dot8/soc_dev/c32t8": {
    "verdict": "wins",
@@ -2811,7 +2957,9 @@
     "features": 4,
     "cache_kib": 8,
     "case": "ecg_dot8__fir4_copy"
-   }
+   },
+   "spread_theirs": 0.16,
+   "spread_mine": 10.53
   },
   "ecg/ecg_dot8__fir4_copy/dot8/soc_dev/c64t32": {
    "verdict": "wins",
@@ -2852,7 +3000,9 @@
     "features": 4,
     "cache_kib": 8,
     "case": "ecg_dot8__fir4_copy"
-   }
+   },
+   "spread_theirs": 0.09,
+   "spread_mine": 6.87
   },
   "ecg/ecg_dot8__fir4_copy/dot8/soc_dev/c64t8": {
    "verdict": "wins",
@@ -2893,7 +3043,9 @@
     "features": 4,
     "cache_kib": 8,
     "case": "ecg_dot8__fir4_copy"
-   }
+   },
+   "spread_theirs": 0.41,
+   "spread_mine": 7.52
   },
   "ecg/ecg_dot8_f8__fir4/dot8/soc_dev": {
    "verdict": "wins",
@@ -2934,7 +3086,9 @@
     "features": 8,
     "cache_kib": 8,
     "case": "ecg_dot8_f8__fir4"
-   }
+   },
+   "spread_theirs": 0.49,
+   "spread_mine": 0.28
   },
   "ecg/ecg_dot8_f8__fir4/dot8/soc_dev/c128t16": {
    "verdict": "wins",
@@ -2975,7 +3129,9 @@
     "features": 8,
     "cache_kib": 8,
     "case": "ecg_dot8_f8__fir4"
-   }
+   },
+   "spread_theirs": 0.03,
+   "spread_mine": 0.51
   },
   "ecg/ecg_dot8_f8__fir4/dot8/soc_dev/c128t32": {
    "verdict": "wins",
@@ -3016,7 +3172,9 @@
     "features": 8,
     "cache_kib": 8,
     "case": "ecg_dot8_f8__fir4"
-   }
+   },
+   "spread_theirs": 0.14,
+   "spread_mine": 1.74
   },
   "ecg/ecg_dot8_f8__fir4/dot8/soc_dev/c128t8": {
    "verdict": "wins",
@@ -3057,7 +3215,9 @@
     "features": 8,
     "cache_kib": 8,
     "case": "ecg_dot8_f8__fir4"
-   }
+   },
+   "spread_theirs": 0.15,
+   "spread_mine": 0.47
   },
   "ecg/ecg_dot8_f8__fir4/dot8/soc_dev/c16t8": {
    "verdict": "wins",
@@ -3098,7 +3258,9 @@
     "features": 8,
     "cache_kib": 8,
     "case": "ecg_dot8_f8__fir4"
-   }
+   },
+   "spread_theirs": 0.32,
+   "spread_mine": 1.27
   },
   "ecg/ecg_dot8_f8__fir4/dot8/soc_dev/c32t16": {
    "verdict": "wins",
@@ -3139,7 +3301,9 @@
     "features": 8,
     "cache_kib": 8,
     "case": "ecg_dot8_f8__fir4"
-   }
+   },
+   "spread_theirs": 0.16,
+   "spread_mine": 0.71
   },
   "ecg/ecg_dot8_f8__fir4/dot8/soc_dev/c32t8": {
    "verdict": "wins",
@@ -3180,7 +3344,9 @@
     "features": 8,
     "cache_kib": 8,
     "case": "ecg_dot8_f8__fir4"
-   }
+   },
+   "spread_theirs": 0.16,
+   "spread_mine": 0.38
   },
   "ecg/ecg_dot8_f8__fir4/dot8/soc_dev/c64t32": {
    "verdict": "wins",
@@ -3221,7 +3387,9 @@
     "features": 8,
     "cache_kib": 8,
     "case": "ecg_dot8_f8__fir4"
-   }
+   },
+   "spread_theirs": 0.07,
+   "spread_mine": 0.28
   },
   "ecg/ecg_dot8_f8__fir4/dot8/soc_dev/c64t8": {
    "verdict": "wins",
@@ -3262,7 +3430,9 @@
     "features": 8,
     "cache_kib": 8,
     "case": "ecg_dot8_f8__fir4"
-   }
+   },
+   "spread_theirs": 0.08,
+   "spread_mine": 0.23
   },
   "ecg/ecg_dot8_f8__fir4_copy/dot8/soc_dev": {
    "verdict": "wins",
@@ -3303,7 +3473,9 @@
     "features": 8,
     "cache_kib": 8,
     "case": "ecg_dot8_f8__fir4_copy"
-   }
+   },
+   "spread_theirs": 0.49,
+   "spread_mine": 6.89
   },
   "ecg/ecg_dot8_f8__fir4_copy/dot8/soc_dev/c128t16": {
    "verdict": "wins",
@@ -3344,7 +3516,9 @@
     "features": 8,
     "cache_kib": 8,
     "case": "ecg_dot8_f8__fir4_copy"
-   }
+   },
+   "spread_theirs": 0.03,
+   "spread_mine": 2.66
   },
   "ecg/ecg_dot8_f8__fir4_copy/dot8/soc_dev/c128t32": {
    "verdict": "wins",
@@ -3385,7 +3559,9 @@
     "features": 8,
     "cache_kib": 8,
     "case": "ecg_dot8_f8__fir4_copy"
-   }
+   },
+   "spread_theirs": 0.14,
+   "spread_mine": 1.32
   },
   "ecg/ecg_dot8_f8__fir4_copy/dot8/soc_dev/c128t8": {
    "verdict": "wins",
@@ -3426,7 +3602,9 @@
     "features": 8,
     "cache_kib": 8,
     "case": "ecg_dot8_f8__fir4_copy"
-   }
+   },
+   "spread_theirs": 0.15,
+   "spread_mine": 2.37
   },
   "ecg/ecg_dot8_f8__fir4_copy/dot8/soc_dev/c16t8": {
    "verdict": "wins",
@@ -3467,7 +3645,9 @@
     "features": 8,
     "cache_kib": 8,
     "case": "ecg_dot8_f8__fir4_copy"
-   }
+   },
+   "spread_theirs": 0.32,
+   "spread_mine": 13.08
   },
   "ecg/ecg_dot8_f8__fir4_copy/dot8/soc_dev/c32t16": {
    "verdict": "wins",
@@ -3508,7 +3688,9 @@
     "features": 8,
     "cache_kib": 8,
     "case": "ecg_dot8_f8__fir4_copy"
-   }
+   },
+   "spread_theirs": 0.16,
+   "spread_mine": 13.25
   },
   "ecg/ecg_dot8_f8__fir4_copy/dot8/soc_dev/c32t8": {
    "verdict": "wins",
@@ -3549,7 +3731,9 @@
     "features": 8,
     "cache_kib": 8,
     "case": "ecg_dot8_f8__fir4_copy"
-   }
+   },
+   "spread_theirs": 0.16,
+   "spread_mine": 6.11
   },
   "ecg/ecg_dot8_f8__fir4_copy/dot8/soc_dev/c64t32": {
    "verdict": "wins",
@@ -3590,7 +3774,9 @@
     "features": 8,
     "cache_kib": 8,
     "case": "ecg_dot8_f8__fir4_copy"
-   }
+   },
+   "spread_theirs": 0.07,
+   "spread_mine": 6.81
   },
   "ecg/ecg_dot8_f8__fir4_copy/dot8/soc_dev/c64t8": {
    "verdict": "wins",
@@ -3631,7 +3817,9 @@
     "features": 8,
     "cache_kib": 8,
     "case": "ecg_dot8_f8__fir4_copy"
-   }
+   },
+   "spread_theirs": 0.08,
+   "spread_mine": 7.33
   },
   "ecg/ecg_pipeline_overlap__fir4/pipeline/soc_dev": {
    "verdict": "wins",
@@ -3672,7 +3860,9 @@
     "features": 4,
     "cache_kib": 8,
     "case": "ecg_pipeline_overlap__fir4"
-   }
+   },
+   "spread_theirs": 0.83,
+   "spread_mine": 0.81
   },
   "ecg/ecg_pipeline_overlap__fir4/pipeline/soc_dev/c128t16": {
    "verdict": "wins",
@@ -3713,7 +3903,9 @@
     "features": 4,
     "cache_kib": 8,
     "case": "ecg_pipeline_overlap__fir4"
-   }
+   },
+   "spread_theirs": 0.75,
+   "spread_mine": 1.38
   },
   "ecg/ecg_pipeline_overlap__fir4/pipeline/soc_dev/c128t32": {
    "verdict": "wins",
@@ -3754,7 +3946,9 @@
     "features": 4,
     "cache_kib": 8,
     "case": "ecg_pipeline_overlap__fir4"
-   }
+   },
+   "spread_theirs": 0.73,
+   "spread_mine": 0.77
   },
   "ecg/ecg_pipeline_overlap__fir4/pipeline/soc_dev/c128t8": {
    "verdict": "wins",
@@ -3795,7 +3989,9 @@
     "features": 4,
     "cache_kib": 8,
     "case": "ecg_pipeline_overlap__fir4"
-   }
+   },
+   "spread_theirs": 0.71,
+   "spread_mine": 1.1
   },
   "ecg/ecg_pipeline_overlap__fir4/pipeline/soc_dev/c16t8": {
    "verdict": "wins",
@@ -3836,7 +4032,9 @@
     "features": 4,
     "cache_kib": 8,
     "case": "ecg_pipeline_overlap__fir4"
-   }
+   },
+   "spread_theirs": 5.14,
+   "spread_mine": 0.74
   },
   "ecg/ecg_pipeline_overlap__fir4/pipeline/soc_dev/c32t16": {
    "verdict": "wins",
@@ -3877,7 +4075,9 @@
     "features": 4,
     "cache_kib": 8,
     "case": "ecg_pipeline_overlap__fir4"
-   }
+   },
+   "spread_theirs": 1.79,
+   "spread_mine": 0.98
   },
   "ecg/ecg_pipeline_overlap__fir4/pipeline/soc_dev/c32t8": {
    "verdict": "wins",
@@ -3918,7 +4118,9 @@
     "features": 4,
     "cache_kib": 8,
     "case": "ecg_pipeline_overlap__fir4"
-   }
+   },
+   "spread_theirs": 1.89,
+   "spread_mine": 0.7
   },
   "ecg/ecg_pipeline_overlap__fir4/pipeline/soc_dev/c64t32": {
    "verdict": "wins",
@@ -3959,7 +4161,9 @@
     "features": 4,
     "cache_kib": 8,
     "case": "ecg_pipeline_overlap__fir4"
-   }
+   },
+   "spread_theirs": 0.89,
+   "spread_mine": 1.07
   },
   "ecg/ecg_pipeline_overlap__fir4/pipeline/soc_dev/c64t8": {
    "verdict": "wins",
@@ -4000,7 +4204,9 @@
     "features": 4,
     "cache_kib": 8,
     "case": "ecg_pipeline_overlap__fir4"
-   }
+   },
+   "spread_theirs": 1.04,
+   "spread_mine": 0.85
   },
   "ecg/ecg_pipeline_overlap__fir4_copy/pipeline/soc_dev": {
    "verdict": "wins",
@@ -4041,7 +4247,9 @@
     "features": 4,
     "cache_kib": 8,
     "case": "ecg_pipeline_overlap__fir4_copy"
-   }
+   },
+   "spread_theirs": 0.83,
+   "spread_mine": 1.31
   },
   "ecg/ecg_pipeline_overlap__fir4_copy/pipeline/soc_dev/c128t16": {
    "verdict": "wins",
@@ -4082,7 +4290,9 @@
     "features": 4,
     "cache_kib": 8,
     "case": "ecg_pipeline_overlap__fir4_copy"
-   }
+   },
+   "spread_theirs": 0.75,
+   "spread_mine": 5.13
   },
   "ecg/ecg_pipeline_overlap__fir4_copy/pipeline/soc_dev/c128t32": {
    "verdict": "wins",
@@ -4123,7 +4333,9 @@
     "features": 4,
     "cache_kib": 8,
     "case": "ecg_pipeline_overlap__fir4_copy"
-   }
+   },
+   "spread_theirs": 0.73,
+   "spread_mine": 3.91
   },
   "ecg/ecg_pipeline_overlap__fir4_copy/pipeline/soc_dev/c128t8": {
    "verdict": "wins",
@@ -4164,7 +4376,9 @@
     "features": 4,
     "cache_kib": 8,
     "case": "ecg_pipeline_overlap__fir4_copy"
-   }
+   },
+   "spread_theirs": 0.71,
+   "spread_mine": 3.98
   },
   "ecg/ecg_pipeline_overlap__fir4_copy/pipeline/soc_dev/c16t8": {
    "verdict": "wins",
@@ -4205,7 +4419,9 @@
     "features": 4,
     "cache_kib": 8,
     "case": "ecg_pipeline_overlap__fir4_copy"
-   }
+   },
+   "spread_theirs": 5.14,
+   "spread_mine": 2.27
   },
   "ecg/ecg_pipeline_overlap__fir4_copy/pipeline/soc_dev/c32t16": {
    "verdict": "wins",
@@ -4246,7 +4462,9 @@
     "features": 4,
     "cache_kib": 8,
     "case": "ecg_pipeline_overlap__fir4_copy"
-   }
+   },
+   "spread_theirs": 1.79,
+   "spread_mine": 1.85
   },
   "ecg/ecg_pipeline_overlap__fir4_copy/pipeline/soc_dev/c32t8": {
    "verdict": "wins",
@@ -4287,7 +4505,9 @@
     "features": 4,
     "cache_kib": 8,
     "case": "ecg_pipeline_overlap__fir4_copy"
-   }
+   },
+   "spread_theirs": 1.89,
+   "spread_mine": 1.32
   },
   "ecg/ecg_pipeline_overlap__fir4_copy/pipeline/soc_dev/c64t32": {
    "verdict": "wins",
@@ -4328,7 +4548,9 @@
     "features": 4,
     "cache_kib": 8,
     "case": "ecg_pipeline_overlap__fir4_copy"
-   }
+   },
+   "spread_theirs": 0.89,
+   "spread_mine": 1.37
   },
   "ecg/ecg_pipeline_overlap__fir4_copy/pipeline/soc_dev/c64t8": {
    "verdict": "wins",
@@ -4369,7 +4591,9 @@
     "features": 4,
     "cache_kib": 8,
     "case": "ecg_pipeline_overlap__fir4_copy"
-   }
+   },
+   "spread_theirs": 1.04,
+   "spread_mine": 1.12
   },
   "ecg/ecg_pipeline_overlap__fir4_split/pipeline/soc_dev": {
    "verdict": "wins",
@@ -4410,7 +4634,9 @@
     "features": 4,
     "cache_kib": 8,
     "case": "ecg_pipeline_overlap__fir4_split"
-   }
+   },
+   "spread_theirs": 0.83,
+   "spread_mine": 0.55
   },
   "ecg/ecg_pipeline_overlap__fir4_split/pipeline/soc_dev/c128t16": {
    "verdict": "wins",
@@ -4451,7 +4677,9 @@
     "features": 4,
     "cache_kib": 8,
     "case": "ecg_pipeline_overlap__fir4_split"
-   }
+   },
+   "spread_theirs": 0.75,
+   "spread_mine": 0.38
   },
   "ecg/ecg_pipeline_overlap__fir4_split/pipeline/soc_dev/c128t32": {
    "verdict": "wins",
@@ -4492,7 +4720,9 @@
     "features": 4,
     "cache_kib": 8,
     "case": "ecg_pipeline_overlap__fir4_split"
-   }
+   },
+   "spread_theirs": 0.73,
+   "spread_mine": 0.58
   },
   "ecg/ecg_pipeline_overlap__fir4_split/pipeline/soc_dev/c128t8": {
    "verdict": "wins",
@@ -4533,7 +4763,9 @@
     "features": 4,
     "cache_kib": 8,
     "case": "ecg_pipeline_overlap__fir4_split"
-   }
+   },
+   "spread_theirs": 0.71,
+   "spread_mine": 0.26
   },
   "ecg/ecg_pipeline_overlap__fir4_split/pipeline/soc_dev/c16t8": {
    "verdict": "wins",
@@ -4574,7 +4806,9 @@
     "features": 4,
     "cache_kib": 8,
     "case": "ecg_pipeline_overlap__fir4_split"
-   }
+   },
+   "spread_theirs": 5.14,
+   "spread_mine": 0.91
   },
   "ecg/ecg_pipeline_overlap__fir4_split/pipeline/soc_dev/c32t16": {
    "verdict": "wins",
@@ -4615,7 +4849,9 @@
     "features": 4,
     "cache_kib": 8,
     "case": "ecg_pipeline_overlap__fir4_split"
-   }
+   },
+   "spread_theirs": 1.79,
+   "spread_mine": 0.93
   },
   "ecg/ecg_pipeline_overlap__fir4_split/pipeline/soc_dev/c32t8": {
    "verdict": "wins",
@@ -4656,7 +4892,9 @@
     "features": 4,
     "cache_kib": 8,
     "case": "ecg_pipeline_overlap__fir4_split"
-   }
+   },
+   "spread_theirs": 1.89,
+   "spread_mine": 0.65
   },
   "ecg/ecg_pipeline_overlap__fir4_split/pipeline/soc_dev/c64t32": {
    "verdict": "wins",
@@ -4697,7 +4935,9 @@
     "features": 4,
     "cache_kib": 8,
     "case": "ecg_pipeline_overlap__fir4_split"
-   }
+   },
+   "spread_theirs": 0.89,
+   "spread_mine": 0.72
   },
   "ecg/ecg_pipeline_overlap__fir4_split/pipeline/soc_dev/c64t8": {
    "verdict": "wins",
@@ -4738,7 +4978,9 @@
     "features": 4,
     "cache_kib": 8,
     "case": "ecg_pipeline_overlap__fir4_split"
-   }
+   },
+   "spread_theirs": 1.04,
+   "spread_mine": 0.33
   },
   "ecg/ecg_pipeline_overlap_f8__fir4/pipeline/soc_dev": {
    "verdict": "wins",
@@ -4779,7 +5021,9 @@
     "features": 8,
     "cache_kib": 8,
     "case": "ecg_pipeline_overlap_f8__fir4"
-   }
+   },
+   "spread_theirs": 0.66,
+   "spread_mine": 1.18
   },
   "ecg/ecg_pipeline_overlap_f8__fir4/pipeline/soc_dev/c128t16": {
    "verdict": "wins",
@@ -4820,7 +5064,9 @@
     "features": 8,
     "cache_kib": 8,
     "case": "ecg_pipeline_overlap_f8__fir4"
-   }
+   },
+   "spread_theirs": 0.68,
+   "spread_mine": 1.46
   },
   "ecg/ecg_pipeline_overlap_f8__fir4/pipeline/soc_dev/c128t32": {
    "verdict": "wins",
@@ -4861,7 +5107,9 @@
     "features": 8,
     "cache_kib": 8,
     "case": "ecg_pipeline_overlap_f8__fir4"
-   }
+   },
+   "spread_theirs": 0.4,
+   "spread_mine": 0.91
   },
   "ecg/ecg_pipeline_overlap_f8__fir4/pipeline/soc_dev/c128t8": {
    "verdict": "wins",
@@ -4902,7 +5150,9 @@
     "features": 8,
     "cache_kib": 8,
     "case": "ecg_pipeline_overlap_f8__fir4"
-   }
+   },
+   "spread_theirs": 0.84,
+   "spread_mine": 1.15
   },
   "ecg/ecg_pipeline_overlap_f8__fir4/pipeline/soc_dev/c16t8": {
    "verdict": "wins",
@@ -4943,7 +5193,9 @@
     "features": 8,
     "cache_kib": 8,
     "case": "ecg_pipeline_overlap_f8__fir4"
-   }
+   },
+   "spread_theirs": 4.4,
+   "spread_mine": 3.55
   },
   "ecg/ecg_pipeline_overlap_f8__fir4/pipeline/soc_dev/c32t16": {
    "verdict": "wins",
@@ -4984,7 +5236,9 @@
     "features": 8,
     "cache_kib": 8,
     "case": "ecg_pipeline_overlap_f8__fir4"
-   }
+   },
+   "spread_theirs": 1.86,
+   "spread_mine": 2.63
   },
   "ecg/ecg_pipeline_overlap_f8__fir4/pipeline/soc_dev/c32t8": {
    "verdict": "wins",
@@ -5025,7 +5279,9 @@
     "features": 8,
     "cache_kib": 8,
     "case": "ecg_pipeline_overlap_f8__fir4"
-   }
+   },
+   "spread_theirs": 1.89,
+   "spread_mine": 0.74
   },
   "ecg/ecg_pipeline_overlap_f8__fir4/pipeline/soc_dev/c64t32": {
    "verdict": "wins",
@@ -5066,7 +5322,9 @@
     "features": 8,
     "cache_kib": 8,
     "case": "ecg_pipeline_overlap_f8__fir4"
-   }
+   },
+   "spread_theirs": 1.27,
+   "spread_mine": 1.92
   },
   "ecg/ecg_pipeline_overlap_f8__fir4/pipeline/soc_dev/c64t8": {
    "verdict": "wins",
@@ -5107,7 +5365,9 @@
     "features": 8,
     "cache_kib": 8,
     "case": "ecg_pipeline_overlap_f8__fir4"
-   }
+   },
+   "spread_theirs": 0.76,
+   "spread_mine": 1.24
   },
   "ecg/ecg_pipeline_overlap_f8__fir4_copy/pipeline/soc_dev": {
    "verdict": "wins",
@@ -5148,7 +5408,9 @@
     "features": 8,
     "cache_kib": 8,
     "case": "ecg_pipeline_overlap_f8__fir4_copy"
-   }
+   },
+   "spread_theirs": 0.66,
+   "spread_mine": 3.7
   },
   "ecg/ecg_pipeline_overlap_f8__fir4_copy/pipeline/soc_dev/c128t16": {
    "verdict": "wins",
@@ -5189,7 +5451,9 @@
     "features": 8,
     "cache_kib": 8,
     "case": "ecg_pipeline_overlap_f8__fir4_copy"
-   }
+   },
+   "spread_theirs": 0.68,
+   "spread_mine": 3.32
   },
   "ecg/ecg_pipeline_overlap_f8__fir4_copy/pipeline/soc_dev/c128t32": {
    "verdict": "wins",
@@ -5230,7 +5494,9 @@
     "features": 8,
     "cache_kib": 8,
     "case": "ecg_pipeline_overlap_f8__fir4_copy"
-   }
+   },
+   "spread_theirs": 0.4,
+   "spread_mine": 3.41
   },
   "ecg/ecg_pipeline_overlap_f8__fir4_copy/pipeline/soc_dev/c128t8": {
    "verdict": "wins",
@@ -5271,7 +5537,9 @@
     "features": 8,
     "cache_kib": 8,
     "case": "ecg_pipeline_overlap_f8__fir4_copy"
-   }
+   },
+   "spread_theirs": 0.84,
+   "spread_mine": 4.21
   },
   "ecg/ecg_pipeline_overlap_f8__fir4_copy/pipeline/soc_dev/c16t8": {
    "verdict": "wins",
@@ -5312,7 +5580,9 @@
     "features": 8,
     "cache_kib": 8,
     "case": "ecg_pipeline_overlap_f8__fir4_copy"
-   }
+   },
+   "spread_theirs": 4.4,
+   "spread_mine": 2.14
   },
   "ecg/ecg_pipeline_overlap_f8__fir4_copy/pipeline/soc_dev/c32t16": {
    "verdict": "wins",
@@ -5353,7 +5623,9 @@
     "features": 8,
     "cache_kib": 8,
     "case": "ecg_pipeline_overlap_f8__fir4_copy"
-   }
+   },
+   "spread_theirs": 1.86,
+   "spread_mine": 5.53
   },
   "ecg/ecg_pipeline_overlap_f8__fir4_copy/pipeline/soc_dev/c32t8": {
    "verdict": "wins",
@@ -5394,7 +5666,9 @@
     "features": 8,
     "cache_kib": 8,
     "case": "ecg_pipeline_overlap_f8__fir4_copy"
-   }
+   },
+   "spread_theirs": 1.89,
+   "spread_mine": 1.56
   },
   "ecg/ecg_pipeline_overlap_f8__fir4_copy/pipeline/soc_dev/c64t32": {
    "verdict": "wins",
@@ -5435,7 +5709,9 @@
     "features": 8,
     "cache_kib": 8,
     "case": "ecg_pipeline_overlap_f8__fir4_copy"
-   }
+   },
+   "spread_theirs": 1.27,
+   "spread_mine": 1.05
   },
   "ecg/ecg_pipeline_overlap_f8__fir4_copy/pipeline/soc_dev/c64t8": {
    "verdict": "wins",
@@ -5476,7 +5752,9 @@
     "features": 8,
     "cache_kib": 8,
     "case": "ecg_pipeline_overlap_f8__fir4_copy"
-   }
+   },
+   "spread_theirs": 0.76,
+   "spread_mine": 1.51
   },
   "ecg/ecg_pipeline_overlap_f8__fir4_split/pipeline/soc_dev": {
    "verdict": "wins",
@@ -5517,7 +5795,9 @@
     "features": 8,
     "cache_kib": 8,
     "case": "ecg_pipeline_overlap_f8__fir4_split"
-   }
+   },
+   "spread_theirs": 0.66,
+   "spread_mine": 7.11
   },
   "ecg/ecg_pipeline_overlap_f8__fir4_split/pipeline/soc_dev/c128t16": {
    "verdict": "wins",
@@ -5558,7 +5838,9 @@
     "features": 8,
     "cache_kib": 8,
     "case": "ecg_pipeline_overlap_f8__fir4_split"
-   }
+   },
+   "spread_theirs": 0.68,
+   "spread_mine": 3.57
   },
   "ecg/ecg_pipeline_overlap_f8__fir4_split/pipeline/soc_dev/c128t32": {
    "verdict": "wins",
@@ -5599,7 +5881,9 @@
     "features": 8,
     "cache_kib": 8,
     "case": "ecg_pipeline_overlap_f8__fir4_split"
-   }
+   },
+   "spread_theirs": 0.4,
+   "spread_mine": 0.61
   },
   "ecg/ecg_pipeline_overlap_f8__fir4_split/pipeline/soc_dev/c128t8": {
    "verdict": "wins",
@@ -5640,7 +5924,9 @@
     "features": 8,
     "cache_kib": 8,
     "case": "ecg_pipeline_overlap_f8__fir4_split"
-   }
+   },
+   "spread_theirs": 0.84,
+   "spread_mine": 0.57
   },
   "ecg/ecg_pipeline_overlap_f8__fir4_split/pipeline/soc_dev/c16t8": {
    "verdict": "wins",
@@ -5681,7 +5967,9 @@
     "features": 8,
     "cache_kib": 8,
     "case": "ecg_pipeline_overlap_f8__fir4_split"
-   }
+   },
+   "spread_theirs": 4.4,
+   "spread_mine": 2.45
   },
   "ecg/ecg_pipeline_overlap_f8__fir4_split/pipeline/soc_dev/c32t16": {
    "verdict": "wins",
@@ -5722,7 +6010,9 @@
     "features": 8,
     "cache_kib": 8,
     "case": "ecg_pipeline_overlap_f8__fir4_split"
-   }
+   },
+   "spread_theirs": 1.86,
+   "spread_mine": 12.48
   },
   "ecg/ecg_pipeline_overlap_f8__fir4_split/pipeline/soc_dev/c32t8": {
    "verdict": "wins",
@@ -5763,7 +6053,9 @@
     "features": 8,
     "cache_kib": 8,
     "case": "ecg_pipeline_overlap_f8__fir4_split"
-   }
+   },
+   "spread_theirs": 1.89,
+   "spread_mine": 1.02
   },
   "ecg/ecg_pipeline_overlap_f8__fir4_split/pipeline/soc_dev/c64t32": {
    "verdict": "wins",
@@ -5804,7 +6096,9 @@
     "features": 8,
     "cache_kib": 8,
     "case": "ecg_pipeline_overlap_f8__fir4_split"
-   }
+   },
+   "spread_theirs": 1.27,
+   "spread_mine": 2.23
   },
   "ecg/ecg_pipeline_overlap_f8__fir4_split/pipeline/soc_dev/c64t8": {
    "verdict": "wins",
@@ -5845,7 +6139,9 @@
     "features": 8,
     "cache_kib": 8,
     "case": "ecg_pipeline_overlap_f8__fir4_split"
-   }
+   },
+   "spread_theirs": 0.76,
+   "spread_mine": 0.9
   },
   "ecg/ecg_pipeline_v1__fir4/pipeline/soc_dev": {
    "verdict": "wins",
@@ -5886,7 +6182,9 @@
     "features": 4,
     "cache_kib": 8,
     "case": "ecg_pipeline_v1__fir4"
-   }
+   },
+   "spread_theirs": 0.53,
+   "spread_mine": 0.81
   },
   "ecg/ecg_pipeline_v1__fir4/pipeline/soc_dev/c128t16": {
    "verdict": "wins",
@@ -5927,7 +6225,9 @@
     "features": 4,
     "cache_kib": 8,
     "case": "ecg_pipeline_v1__fir4"
-   }
+   },
+   "spread_theirs": 0.47,
+   "spread_mine": 0.4
   },
   "ecg/ecg_pipeline_v1__fir4/pipeline/soc_dev/c128t32": {
    "verdict": "wins",
@@ -5968,7 +6268,9 @@
     "features": 4,
     "cache_kib": 8,
     "case": "ecg_pipeline_v1__fir4"
-   }
+   },
+   "spread_theirs": 0.46,
+   "spread_mine": 2.71
   },
   "ecg/ecg_pipeline_v1__fir4/pipeline/soc_dev/c128t8": {
    "verdict": "wins",
@@ -6009,7 +6311,9 @@
     "features": 4,
     "cache_kib": 8,
     "case": "ecg_pipeline_v1__fir4"
-   }
+   },
+   "spread_theirs": 0.43,
+   "spread_mine": 0.45
   },
   "ecg/ecg_pipeline_v1__fir4/pipeline/soc_dev/c16t8": {
    "verdict": "wins",
@@ -6050,7 +6354,9 @@
     "features": 4,
     "cache_kib": 8,
     "case": "ecg_pipeline_v1__fir4"
-   }
+   },
+   "spread_theirs": 0.94,
+   "spread_mine": 2.43
   },
   "ecg/ecg_pipeline_v1__fir4/pipeline/soc_dev/c32t16": {
    "verdict": "wins",
@@ -6091,7 +6397,9 @@
     "features": 4,
     "cache_kib": 8,
     "case": "ecg_pipeline_v1__fir4"
-   }
+   },
+   "spread_theirs": 1.12,
+   "spread_mine": 0.91
   },
   "ecg/ecg_pipeline_v1__fir4/pipeline/soc_dev/c32t8": {
    "verdict": "wins",
@@ -6132,7 +6440,9 @@
     "features": 4,
     "cache_kib": 8,
     "case": "ecg_pipeline_v1__fir4"
-   }
+   },
+   "spread_theirs": 0.8,
+   "spread_mine": 0.68
   },
   "ecg/ecg_pipeline_v1__fir4/pipeline/soc_dev/c64t32": {
    "verdict": "wins",
@@ -6173,7 +6483,9 @@
     "features": 4,
     "cache_kib": 8,
     "case": "ecg_pipeline_v1__fir4"
-   }
+   },
+   "spread_theirs": 0.58,
+   "spread_mine": 5.44
   },
   "ecg/ecg_pipeline_v1__fir4/pipeline/soc_dev/c64t8": {
    "verdict": "wins",
@@ -6214,7 +6526,9 @@
     "features": 4,
     "cache_kib": 8,
     "case": "ecg_pipeline_v1__fir4"
-   }
+   },
+   "spread_theirs": 0.54,
+   "spread_mine": 0.71
   },
   "ecg/ecg_pipeline_v1__fir4_copy/pipeline/soc_dev": {
    "verdict": "wins",
@@ -6255,7 +6569,9 @@
     "features": 4,
     "cache_kib": 8,
     "case": "ecg_pipeline_v1__fir4_copy"
-   }
+   },
+   "spread_theirs": 0.53,
+   "spread_mine": 0.9
   },
   "ecg/ecg_pipeline_v1__fir4_copy/pipeline/soc_dev/c128t16": {
    "verdict": "wins",
@@ -6296,7 +6612,9 @@
     "features": 4,
     "cache_kib": 8,
     "case": "ecg_pipeline_v1__fir4_copy"
-   }
+   },
+   "spread_theirs": 0.47,
+   "spread_mine": 2.68
   },
   "ecg/ecg_pipeline_v1__fir4_copy/pipeline/soc_dev/c128t32": {
    "verdict": "wins",
@@ -6337,7 +6655,9 @@
     "features": 4,
     "cache_kib": 8,
     "case": "ecg_pipeline_v1__fir4_copy"
-   }
+   },
+   "spread_theirs": 0.46,
+   "spread_mine": 0.97
   },
   "ecg/ecg_pipeline_v1__fir4_copy/pipeline/soc_dev/c128t8": {
    "verdict": "wins",
@@ -6378,7 +6698,9 @@
     "features": 4,
     "cache_kib": 8,
     "case": "ecg_pipeline_v1__fir4_copy"
-   }
+   },
+   "spread_theirs": 0.43,
+   "spread_mine": 2.5
   },
   "ecg/ecg_pipeline_v1__fir4_copy/pipeline/soc_dev/c16t8": {
    "verdict": "wins",
@@ -6419,7 +6741,9 @@
     "features": 4,
     "cache_kib": 8,
     "case": "ecg_pipeline_v1__fir4_copy"
-   }
+   },
+   "spread_theirs": 0.94,
+   "spread_mine": 4.7
   },
   "ecg/ecg_pipeline_v1__fir4_copy/pipeline/soc_dev/c32t16": {
    "verdict": "wins",
@@ -6460,7 +6784,9 @@
     "features": 4,
     "cache_kib": 8,
     "case": "ecg_pipeline_v1__fir4_copy"
-   }
+   },
+   "spread_theirs": 1.12,
+   "spread_mine": 1.76
   },
   "ecg/ecg_pipeline_v1__fir4_copy/pipeline/soc_dev/c32t8": {
    "verdict": "wins",
@@ -6501,7 +6827,9 @@
     "features": 4,
     "cache_kib": 8,
     "case": "ecg_pipeline_v1__fir4_copy"
-   }
+   },
+   "spread_theirs": 0.8,
+   "spread_mine": 1.32
   },
   "ecg/ecg_pipeline_v1__fir4_copy/pipeline/soc_dev/c64t32": {
    "verdict": "wins",
@@ -6542,7 +6870,9 @@
     "features": 4,
     "cache_kib": 8,
     "case": "ecg_pipeline_v1__fir4_copy"
-   }
+   },
+   "spread_theirs": 0.58,
+   "spread_mine": 4.4
   },
   "ecg/ecg_pipeline_v1__fir4_copy/pipeline/soc_dev/c64t8": {
    "verdict": "wins",
@@ -6583,7 +6913,9 @@
     "features": 4,
     "cache_kib": 8,
     "case": "ecg_pipeline_v1__fir4_copy"
-   }
+   },
+   "spread_theirs": 0.54,
+   "spread_mine": 0.62
   },
   "ecg/ecg_pipeline_v1_f8__fir4/pipeline/soc_dev": {
    "verdict": "wins",
@@ -6624,7 +6956,9 @@
     "features": 8,
     "cache_kib": 8,
     "case": "ecg_pipeline_v1_f8__fir4"
-   }
+   },
+   "spread_theirs": 0.47,
+   "spread_mine": 0.37
   },
   "ecg/ecg_pipeline_v1_f8__fir4/pipeline/soc_dev/c128t16": {
    "verdict": "wins",
@@ -6665,7 +6999,9 @@
     "features": 8,
     "cache_kib": 8,
     "case": "ecg_pipeline_v1_f8__fir4"
-   }
+   },
+   "spread_theirs": 2.86,
+   "spread_mine": 0.4
   },
   "ecg/ecg_pipeline_v1_f8__fir4/pipeline/soc_dev/c128t32": {
    "verdict": "wins",
@@ -6706,7 +7042,9 @@
     "features": 8,
     "cache_kib": 8,
     "case": "ecg_pipeline_v1_f8__fir4"
-   }
+   },
+   "spread_theirs": 2.21,
+   "spread_mine": 2.86
   },
   "ecg/ecg_pipeline_v1_f8__fir4/pipeline/soc_dev/c128t8": {
    "verdict": "wins",
@@ -6747,7 +7085,9 @@
     "features": 8,
     "cache_kib": 8,
     "case": "ecg_pipeline_v1_f8__fir4"
-   }
+   },
+   "spread_theirs": 2.81,
+   "spread_mine": 0.46
   },
   "ecg/ecg_pipeline_v1_f8__fir4/pipeline/soc_dev/c16t8": {
    "verdict": "wins",
@@ -6788,7 +7128,9 @@
     "features": 8,
     "cache_kib": 8,
     "case": "ecg_pipeline_v1_f8__fir4"
-   }
+   },
+   "spread_theirs": 1.52,
+   "spread_mine": 2.26
   },
   "ecg/ecg_pipeline_v1_f8__fir4/pipeline/soc_dev/c32t16": {
    "verdict": "wins",
@@ -6829,7 +7171,9 @@
     "features": 8,
     "cache_kib": 8,
     "case": "ecg_pipeline_v1_f8__fir4"
-   }
+   },
+   "spread_theirs": 1.39,
+   "spread_mine": 1.64
   },
   "ecg/ecg_pipeline_v1_f8__fir4/pipeline/soc_dev/c32t8": {
    "verdict": "wins",
@@ -6870,7 +7214,9 @@
     "features": 8,
     "cache_kib": 8,
     "case": "ecg_pipeline_v1_f8__fir4"
-   }
+   },
+   "spread_theirs": 0.84,
+   "spread_mine": 0.54
   },
   "ecg/ecg_pipeline_v1_f8__fir4/pipeline/soc_dev/c64t32": {
    "verdict": "wins",
@@ -6911,7 +7257,9 @@
     "features": 8,
     "cache_kib": 8,
     "case": "ecg_pipeline_v1_f8__fir4"
-   }
+   },
+   "spread_theirs": 0.48,
+   "spread_mine": 6.66
   },
   "ecg/ecg_pipeline_v1_f8__fir4/pipeline/soc_dev/c64t8": {
    "verdict": "wins",
@@ -6952,7 +7300,9 @@
     "features": 8,
     "cache_kib": 8,
     "case": "ecg_pipeline_v1_f8__fir4"
-   }
+   },
+   "spread_theirs": 0.39,
+   "spread_mine": 0.76
   },
   "ecg/ecg_pipeline_v1_f8__fir4_copy/pipeline/soc_dev": {
    "verdict": "wins",
@@ -6993,7 +7343,9 @@
     "features": 8,
     "cache_kib": 8,
     "case": "ecg_pipeline_v1_f8__fir4_copy"
-   }
+   },
+   "spread_theirs": 0.47,
+   "spread_mine": 0.76
   },
   "ecg/ecg_pipeline_v1_f8__fir4_copy/pipeline/soc_dev/c128t16": {
    "verdict": "wins",
@@ -7034,7 +7386,9 @@
     "features": 8,
     "cache_kib": 8,
     "case": "ecg_pipeline_v1_f8__fir4_copy"
-   }
+   },
+   "spread_theirs": 2.86,
+   "spread_mine": 2.31
   },
   "ecg/ecg_pipeline_v1_f8__fir4_copy/pipeline/soc_dev/c128t32": {
    "verdict": "wins",
@@ -7075,7 +7429,9 @@
     "features": 8,
     "cache_kib": 8,
     "case": "ecg_pipeline_v1_f8__fir4_copy"
-   }
+   },
+   "spread_theirs": 2.21,
+   "spread_mine": 2.16
   },
   "ecg/ecg_pipeline_v1_f8__fir4_copy/pipeline/soc_dev/c128t8": {
    "verdict": "wins",
@@ -7116,7 +7472,9 @@
     "features": 8,
     "cache_kib": 8,
     "case": "ecg_pipeline_v1_f8__fir4_copy"
-   }
+   },
+   "spread_theirs": 2.81,
+   "spread_mine": 2.49
   },
   "ecg/ecg_pipeline_v1_f8__fir4_copy/pipeline/soc_dev/c16t8": {
    "verdict": "wins",
@@ -7157,7 +7515,9 @@
     "features": 8,
     "cache_kib": 8,
     "case": "ecg_pipeline_v1_f8__fir4_copy"
-   }
+   },
+   "spread_theirs": 1.52,
+   "spread_mine": 1.76
   },
   "ecg/ecg_pipeline_v1_f8__fir4_copy/pipeline/soc_dev/c32t16": {
    "verdict": "wins",
@@ -7198,7 +7558,9 @@
     "features": 8,
     "cache_kib": 8,
     "case": "ecg_pipeline_v1_f8__fir4_copy"
-   }
+   },
+   "spread_theirs": 1.39,
+   "spread_mine": 1.53
   },
   "ecg/ecg_pipeline_v1_f8__fir4_copy/pipeline/soc_dev/c32t8": {
    "verdict": "wins",
@@ -7239,7 +7601,9 @@
     "features": 8,
     "cache_kib": 8,
     "case": "ecg_pipeline_v1_f8__fir4_copy"
-   }
+   },
+   "spread_theirs": 0.84,
+   "spread_mine": 1.2
   },
   "ecg/ecg_pipeline_v1_f8__fir4_copy/pipeline/soc_dev/c64t32": {
    "verdict": "wins",
@@ -7280,7 +7644,9 @@
     "features": 8,
     "cache_kib": 8,
     "case": "ecg_pipeline_v1_f8__fir4_copy"
-   }
+   },
+   "spread_theirs": 0.48,
+   "spread_mine": 5.01
   },
   "ecg/ecg_pipeline_v1_f8__fir4_copy/pipeline/soc_dev/c64t8": {
    "verdict": "wins",
@@ -7321,7 +7687,9 @@
     "features": 8,
     "cache_kib": 8,
     "case": "ecg_pipeline_v1_f8__fir4_copy"
-   }
+   },
+   "spread_theirs": 0.39,
+   "spread_mine": 0.97
   },
   "ml/cifar_cnn_npu_direct__2h/npu_direct/soc_dev": {
    "verdict": "wins",
@@ -7354,7 +7722,9 @@
     "npu": "8x8/64b/2s",
     "cache_kib": 8,
     "case": "cifar_cnn_npu_direct__2h"
-   }
+   },
+   "spread_theirs": 0.11,
+   "spread_mine": 0.07
   },
   "ml/cifar_cnn_npu_direct__2h_copy/npu_direct/soc_dev": {
    "verdict": "wins",
@@ -7387,7 +7757,9 @@
     "npu": "8x8/64b/2s",
     "cache_kib": 8,
     "case": "cifar_cnn_npu_direct__2h_copy"
-   }
+   },
+   "spread_theirs": 0.11,
+   "spread_mine": 0.11
   },
   "ml/cifar_cnn_npu_direct__2h_next/npu_direct/soc_dev": {
    "verdict": "wins",
@@ -7420,7 +7792,9 @@
     "npu": "8x8/64b/2s",
     "cache_kib": 8,
     "case": "cifar_cnn_npu_direct__2h_next"
-   }
+   },
+   "spread_theirs": 0.11,
+   "spread_mine": 0.35
   },
   "ml/cifar_cnn_npu_im2col__2h/npu_im2col/soc_dev": {
    "verdict": "wins",
@@ -7453,7 +7827,9 @@
     "npu": "8x8/64b/2s",
     "cache_kib": 8,
     "case": "cifar_cnn_npu_im2col__2h"
-   }
+   },
+   "spread_theirs": 0.2,
+   "spread_mine": 0.18
   },
   "ml/cifar_cnn_npu_im2col__2h_copy/npu_im2col/soc_dev": {
    "verdict": "wins",
@@ -7486,7 +7862,9 @@
     "npu": "8x8/64b/2s",
     "cache_kib": 8,
     "case": "cifar_cnn_npu_im2col__2h_copy"
-   }
+   },
+   "spread_theirs": 0.2,
+   "spread_mine": 0.09
   },
   "ml/cifar_cnn_npu_im2col__2h_next/npu_im2col/soc_dev": {
    "verdict": "wins",
@@ -7519,7 +7897,9 @@
     "npu": "8x8/64b/2s",
     "cache_kib": 8,
     "case": "cifar_cnn_npu_im2col__2h_next"
-   }
+   },
+   "spread_theirs": 0.2,
+   "spread_mine": 0.06
   },
   "ml/mnist_mlp_npu__2h/npu/soc_dev": {
    "verdict": "wins",
@@ -7553,7 +7933,9 @@
     "batch": 1,
     "cache_kib": 8,
     "case": "mnist_mlp_npu__2h"
-   }
+   },
+   "spread_theirs": 3.49,
+   "spread_mine": 1.28
   },
   "ml/mnist_mlp_npu_batched__2h32/npu/soc_dev": {
    "verdict": "wins",
@@ -7587,7 +7969,9 @@
     "batch": 32,
     "cache_kib": 8,
     "case": "mnist_mlp_npu_batched__2h"
-   }
+   },
+   "spread_theirs": 0.11,
+   "spread_mine": 0.41
   },
   "ml/mnist_mlp_npu_batched__2h4/npu/soc_dev": {
    "verdict": "wins",
@@ -7621,7 +8005,9 @@
     "batch": 4,
     "cache_kib": 8,
     "case": "mnist_mlp_npu_batched__2h"
-   }
+   },
+   "spread_theirs": 0.34,
+   "spread_mine": 0.93
   },
   "ml/mnist_mlp_npu_batched__2h8/npu/soc_dev": {
    "verdict": "wins",
@@ -7655,7 +8041,9 @@
     "batch": 8,
     "cache_kib": 8,
     "case": "mnist_mlp_npu_batched__2h"
-   }
+   },
+   "spread_theirs": 0.58,
+   "spread_mine": 0.66
   }
  },
  "stacked": {
@@ -7691,7 +8079,9 @@
      "npu": "8x8/64b/2s",
      "cache_kib": 8,
      "case": "cifar_cnn_npu_direct__2h_copy"
-    }
+    },
+    "spread_theirs": 0.07,
+    "spread_mine": 0.11
    }
   },
   "cifar_cnn_npu_direct__2h_next:cifar_cnn_npu_direct__2h_copy": {
@@ -7726,7 +8116,9 @@
      "npu": "8x8/64b/2s",
      "cache_kib": 8,
      "case": "cifar_cnn_npu_direct__2h_next"
-    }
+    },
+    "spread_theirs": 0.11,
+    "spread_mine": 0.35
    }
   },
   "cifar_cnn_npu_im2col__2h_copy:cifar_cnn_npu_im2col__2h": {
@@ -7761,7 +8153,9 @@
      "npu": "8x8/64b/2s",
      "cache_kib": 8,
      "case": "cifar_cnn_npu_im2col__2h_copy"
-    }
+    },
+    "spread_theirs": 0.18,
+    "spread_mine": 0.09
    }
   },
   "cifar_cnn_npu_im2col__2h_next:cifar_cnn_npu_im2col__2h_copy": {
@@ -7796,7 +8190,9 @@
      "npu": "8x8/64b/2s",
      "cache_kib": 8,
      "case": "cifar_cnn_npu_im2col__2h_next"
-    }
+    },
+    "spread_theirs": 0.09,
+    "spread_mine": 0.06
    }
   },
   "ecg_dot8__fir4_copy:ecg_dot8__fir4": {
@@ -7839,7 +8235,9 @@
      "features": 4,
      "cache_kib": 8,
      "case": "ecg_dot8__fir4_copy"
-    }
+    },
+    "spread_theirs": 0.3,
+    "spread_mine": 8.74
    },
    "ecg/ecg_dot8__fir4_copy/dot8/soc_dev/c128t16": {
     "verdict": "not distinguishable",
@@ -7880,7 +8278,9 @@
      "features": 4,
      "cache_kib": 8,
      "case": "ecg_dot8__fir4_copy"
-    }
+    },
+    "spread_theirs": 0.42,
+    "spread_mine": 2.6
    },
    "ecg/ecg_dot8__fir4_copy/dot8/soc_dev/c128t32": {
     "verdict": "not distinguishable",
@@ -7921,7 +8321,9 @@
      "features": 4,
      "cache_kib": 8,
      "case": "ecg_dot8__fir4_copy"
-    }
+    },
+    "spread_theirs": 1.13,
+    "spread_mine": 2.45
    },
    "ecg/ecg_dot8__fir4_copy/dot8/soc_dev/c128t8": {
     "verdict": "not distinguishable",
@@ -7962,7 +8364,9 @@
      "features": 4,
      "cache_kib": 8,
      "case": "ecg_dot8__fir4_copy"
-    }
+    },
+    "spread_theirs": 1.1,
+    "spread_mine": 3.19
    },
    "ecg/ecg_dot8__fir4_copy/dot8/soc_dev/c16t8": {
     "verdict": "not distinguishable",
@@ -8003,7 +8407,9 @@
      "features": 4,
      "cache_kib": 8,
      "case": "ecg_dot8__fir4_copy"
-    }
+    },
+    "spread_theirs": 0.76,
+    "spread_mine": 16.56
    },
    "ecg/ecg_dot8__fir4_copy/dot8/soc_dev/c32t16": {
     "verdict": "not distinguishable",
@@ -8044,7 +8450,9 @@
      "features": 4,
      "cache_kib": 8,
      "case": "ecg_dot8__fir4_copy"
-    }
+    },
+    "spread_theirs": 1.61,
+    "spread_mine": 11.39
    },
    "ecg/ecg_dot8__fir4_copy/dot8/soc_dev/c32t8": {
     "verdict": "not distinguishable",
@@ -8085,7 +8493,9 @@
      "features": 4,
      "cache_kib": 8,
      "case": "ecg_dot8__fir4_copy"
-    }
+    },
+    "spread_theirs": 1.24,
+    "spread_mine": 10.53
    },
    "ecg/ecg_dot8__fir4_copy/dot8/soc_dev/c64t32": {
     "verdict": "not distinguishable",
@@ -8126,7 +8536,9 @@
      "features": 4,
      "cache_kib": 8,
      "case": "ecg_dot8__fir4_copy"
-    }
+    },
+    "spread_theirs": 0.27,
+    "spread_mine": 6.87
    },
    "ecg/ecg_dot8__fir4_copy/dot8/soc_dev/c64t8": {
     "verdict": "not distinguishable",
@@ -8167,7 +8579,9 @@
      "features": 4,
      "cache_kib": 8,
      "case": "ecg_dot8__fir4_copy"
-    }
+    },
+    "spread_theirs": 0.19,
+    "spread_mine": 7.52
    }
   },
   "ecg_dot8_f8__fir4_copy:ecg_dot8_f8__fir4": {
@@ -8210,7 +8624,9 @@
      "features": 8,
      "cache_kib": 8,
      "case": "ecg_dot8_f8__fir4_copy"
-    }
+    },
+    "spread_theirs": 0.28,
+    "spread_mine": 6.89
    },
    "ecg/ecg_dot8_f8__fir4_copy/dot8/soc_dev/c128t16": {
     "verdict": "not distinguishable",
@@ -8251,7 +8667,9 @@
      "features": 8,
      "cache_kib": 8,
      "case": "ecg_dot8_f8__fir4_copy"
-    }
+    },
+    "spread_theirs": 0.51,
+    "spread_mine": 2.66
    },
    "ecg/ecg_dot8_f8__fir4_copy/dot8/soc_dev/c128t32": {
     "verdict": "not distinguishable",
@@ -8292,7 +8710,9 @@
      "features": 8,
      "cache_kib": 8,
      "case": "ecg_dot8_f8__fir4_copy"
-    }
+    },
+    "spread_theirs": 1.74,
+    "spread_mine": 1.32
    },
    "ecg/ecg_dot8_f8__fir4_copy/dot8/soc_dev/c128t8": {
     "verdict": "not distinguishable",
@@ -8333,7 +8753,9 @@
      "features": 8,
      "cache_kib": 8,
      "case": "ecg_dot8_f8__fir4_copy"
-    }
+    },
+    "spread_theirs": 0.47,
+    "spread_mine": 2.37
    },
    "ecg/ecg_dot8_f8__fir4_copy/dot8/soc_dev/c16t8": {
     "verdict": "not distinguishable",
@@ -8374,7 +8796,9 @@
      "features": 8,
      "cache_kib": 8,
      "case": "ecg_dot8_f8__fir4_copy"
-    }
+    },
+    "spread_theirs": 1.27,
+    "spread_mine": 13.08
    },
    "ecg/ecg_dot8_f8__fir4_copy/dot8/soc_dev/c32t16": {
     "verdict": "not distinguishable",
@@ -8415,7 +8839,9 @@
      "features": 8,
      "cache_kib": 8,
      "case": "ecg_dot8_f8__fir4_copy"
-    }
+    },
+    "spread_theirs": 0.71,
+    "spread_mine": 13.25
    },
    "ecg/ecg_dot8_f8__fir4_copy/dot8/soc_dev/c32t8": {
     "verdict": "not distinguishable",
@@ -8456,7 +8882,9 @@
      "features": 8,
      "cache_kib": 8,
      "case": "ecg_dot8_f8__fir4_copy"
-    }
+    },
+    "spread_theirs": 0.38,
+    "spread_mine": 6.11
    },
    "ecg/ecg_dot8_f8__fir4_copy/dot8/soc_dev/c64t32": {
     "verdict": "not distinguishable",
@@ -8497,7 +8925,9 @@
      "features": 8,
      "cache_kib": 8,
      "case": "ecg_dot8_f8__fir4_copy"
-    }
+    },
+    "spread_theirs": 0.28,
+    "spread_mine": 6.81
    },
    "ecg/ecg_dot8_f8__fir4_copy/dot8/soc_dev/c64t8": {
     "verdict": "not distinguishable",
@@ -8538,7 +8968,9 @@
      "features": 8,
      "cache_kib": 8,
      "case": "ecg_dot8_f8__fir4_copy"
-    }
+    },
+    "spread_theirs": 0.23,
+    "spread_mine": 7.33
    }
   },
   "ecg_pipeline_overlap__fir4_copy:ecg_pipeline_overlap__fir4": {
@@ -8581,7 +9013,9 @@
      "features": 4,
      "cache_kib": 8,
      "case": "ecg_pipeline_overlap__fir4_copy"
-    }
+    },
+    "spread_theirs": 0.81,
+    "spread_mine": 1.31
    },
    "ecg/ecg_pipeline_overlap__fir4_copy/pipeline/soc_dev/c128t16": {
     "verdict": "not distinguishable",
@@ -8622,7 +9056,9 @@
      "features": 4,
      "cache_kib": 8,
      "case": "ecg_pipeline_overlap__fir4_copy"
-    }
+    },
+    "spread_theirs": 1.38,
+    "spread_mine": 5.13
    },
    "ecg/ecg_pipeline_overlap__fir4_copy/pipeline/soc_dev/c128t32": {
     "verdict": "not distinguishable",
@@ -8663,7 +9099,9 @@
      "features": 4,
      "cache_kib": 8,
      "case": "ecg_pipeline_overlap__fir4_copy"
-    }
+    },
+    "spread_theirs": 0.77,
+    "spread_mine": 3.91
    },
    "ecg/ecg_pipeline_overlap__fir4_copy/pipeline/soc_dev/c128t8": {
     "verdict": "not distinguishable",
@@ -8704,7 +9142,9 @@
      "features": 4,
      "cache_kib": 8,
      "case": "ecg_pipeline_overlap__fir4_copy"
-    }
+    },
+    "spread_theirs": 1.1,
+    "spread_mine": 3.98
    },
    "ecg/ecg_pipeline_overlap__fir4_copy/pipeline/soc_dev/c16t8": {
     "verdict": "wins",
@@ -8745,7 +9185,9 @@
      "features": 4,
      "cache_kib": 8,
      "case": "ecg_pipeline_overlap__fir4_copy"
-    }
+    },
+    "spread_theirs": 0.74,
+    "spread_mine": 2.27
    },
    "ecg/ecg_pipeline_overlap__fir4_copy/pipeline/soc_dev/c32t16": {
     "verdict": "not distinguishable",
@@ -8786,7 +9228,9 @@
      "features": 4,
      "cache_kib": 8,
      "case": "ecg_pipeline_overlap__fir4_copy"
-    }
+    },
+    "spread_theirs": 0.98,
+    "spread_mine": 1.85
    },
    "ecg/ecg_pipeline_overlap__fir4_copy/pipeline/soc_dev/c32t8": {
     "verdict": "not distinguishable",
@@ -8827,7 +9271,9 @@
      "features": 4,
      "cache_kib": 8,
      "case": "ecg_pipeline_overlap__fir4_copy"
-    }
+    },
+    "spread_theirs": 0.7,
+    "spread_mine": 1.32
    },
    "ecg/ecg_pipeline_overlap__fir4_copy/pipeline/soc_dev/c64t32": {
     "verdict": "not distinguishable",
@@ -8868,7 +9314,9 @@
      "features": 4,
      "cache_kib": 8,
      "case": "ecg_pipeline_overlap__fir4_copy"
-    }
+    },
+    "spread_theirs": 1.07,
+    "spread_mine": 1.37
    },
    "ecg/ecg_pipeline_overlap__fir4_copy/pipeline/soc_dev/c64t8": {
     "verdict": "not distinguishable",
@@ -8909,7 +9357,9 @@
      "features": 4,
      "cache_kib": 8,
      "case": "ecg_pipeline_overlap__fir4_copy"
-    }
+    },
+    "spread_theirs": 0.85,
+    "spread_mine": 1.12
    }
   },
   "ecg_pipeline_overlap__fir4_split:ecg_pipeline_overlap__fir4": {
@@ -8952,7 +9402,9 @@
      "features": 4,
      "cache_kib": 8,
      "case": "ecg_pipeline_overlap__fir4_split"
-    }
+    },
+    "spread_theirs": 0.81,
+    "spread_mine": 0.55
    },
    "ecg/ecg_pipeline_overlap__fir4_split/pipeline/soc_dev/c128t16": {
     "verdict": "not distinguishable",
@@ -8993,7 +9445,9 @@
      "features": 4,
      "cache_kib": 8,
      "case": "ecg_pipeline_overlap__fir4_split"
-    }
+    },
+    "spread_theirs": 1.38,
+    "spread_mine": 0.38
    },
    "ecg/ecg_pipeline_overlap__fir4_split/pipeline/soc_dev/c128t32": {
     "verdict": "loses",
@@ -9034,7 +9488,9 @@
      "features": 4,
      "cache_kib": 8,
      "case": "ecg_pipeline_overlap__fir4_split"
-    }
+    },
+    "spread_theirs": 0.77,
+    "spread_mine": 0.58
    },
    "ecg/ecg_pipeline_overlap__fir4_split/pipeline/soc_dev/c128t8": {
     "verdict": "not distinguishable",
@@ -9075,7 +9531,9 @@
      "features": 4,
      "cache_kib": 8,
      "case": "ecg_pipeline_overlap__fir4_split"
-    }
+    },
+    "spread_theirs": 1.1,
+    "spread_mine": 0.26
    },
    "ecg/ecg_pipeline_overlap__fir4_split/pipeline/soc_dev/c16t8": {
     "verdict": "wins",
@@ -9116,7 +9574,9 @@
      "features": 4,
      "cache_kib": 8,
      "case": "ecg_pipeline_overlap__fir4_split"
-    }
+    },
+    "spread_theirs": 0.74,
+    "spread_mine": 0.91
    },
    "ecg/ecg_pipeline_overlap__fir4_split/pipeline/soc_dev/c32t16": {
     "verdict": "wins",
@@ -9157,7 +9617,9 @@
      "features": 4,
      "cache_kib": 8,
      "case": "ecg_pipeline_overlap__fir4_split"
-    }
+    },
+    "spread_theirs": 0.98,
+    "spread_mine": 0.93
    },
    "ecg/ecg_pipeline_overlap__fir4_split/pipeline/soc_dev/c32t8": {
     "verdict": "wins",
@@ -9198,7 +9660,9 @@
      "features": 4,
      "cache_kib": 8,
      "case": "ecg_pipeline_overlap__fir4_split"
-    }
+    },
+    "spread_theirs": 0.7,
+    "spread_mine": 0.65
    },
    "ecg/ecg_pipeline_overlap__fir4_split/pipeline/soc_dev/c64t32": {
     "verdict": "loses",
@@ -9239,7 +9703,9 @@
      "features": 4,
      "cache_kib": 8,
      "case": "ecg_pipeline_overlap__fir4_split"
-    }
+    },
+    "spread_theirs": 1.07,
+    "spread_mine": 0.72
    },
    "ecg/ecg_pipeline_overlap__fir4_split/pipeline/soc_dev/c64t8": {
     "verdict": "wins",
@@ -9280,7 +9746,9 @@
      "features": 4,
      "cache_kib": 8,
      "case": "ecg_pipeline_overlap__fir4_split"
-    }
+    },
+    "spread_theirs": 0.85,
+    "spread_mine": 0.33
    }
   },
   "ecg_pipeline_overlap_f8__fir4_copy:ecg_pipeline_overlap_f8__fir4": {
@@ -9323,7 +9791,9 @@
      "features": 8,
      "cache_kib": 8,
      "case": "ecg_pipeline_overlap_f8__fir4_copy"
-    }
+    },
+    "spread_theirs": 1.18,
+    "spread_mine": 3.7
    },
    "ecg/ecg_pipeline_overlap_f8__fir4_copy/pipeline/soc_dev/c128t16": {
     "verdict": "not distinguishable",
@@ -9364,7 +9834,9 @@
      "features": 8,
      "cache_kib": 8,
      "case": "ecg_pipeline_overlap_f8__fir4_copy"
-    }
+    },
+    "spread_theirs": 1.46,
+    "spread_mine": 3.32
    },
    "ecg/ecg_pipeline_overlap_f8__fir4_copy/pipeline/soc_dev/c128t32": {
     "verdict": "not distinguishable",
@@ -9405,7 +9877,9 @@
      "features": 8,
      "cache_kib": 8,
      "case": "ecg_pipeline_overlap_f8__fir4_copy"
-    }
+    },
+    "spread_theirs": 0.91,
+    "spread_mine": 3.41
    },
    "ecg/ecg_pipeline_overlap_f8__fir4_copy/pipeline/soc_dev/c128t8": {
     "verdict": "not distinguishable",
@@ -9446,7 +9920,9 @@
      "features": 8,
      "cache_kib": 8,
      "case": "ecg_pipeline_overlap_f8__fir4_copy"
-    }
+    },
+    "spread_theirs": 1.15,
+    "spread_mine": 4.21
    },
    "ecg/ecg_pipeline_overlap_f8__fir4_copy/pipeline/soc_dev/c16t8": {
     "verdict": "wins",
@@ -9487,7 +9963,9 @@
      "features": 8,
      "cache_kib": 8,
      "case": "ecg_pipeline_overlap_f8__fir4_copy"
-    }
+    },
+    "spread_theirs": 3.55,
+    "spread_mine": 2.14
    },
    "ecg/ecg_pipeline_overlap_f8__fir4_copy/pipeline/soc_dev/c32t16": {
     "verdict": "not distinguishable",
@@ -9528,7 +10006,9 @@
      "features": 8,
      "cache_kib": 8,
      "case": "ecg_pipeline_overlap_f8__fir4_copy"
-    }
+    },
+    "spread_theirs": 2.63,
+    "spread_mine": 5.53
    },
    "ecg/ecg_pipeline_overlap_f8__fir4_copy/pipeline/soc_dev/c32t8": {
     "verdict": "not distinguishable",
@@ -9569,7 +10049,9 @@
      "features": 8,
      "cache_kib": 8,
      "case": "ecg_pipeline_overlap_f8__fir4_copy"
-    }
+    },
+    "spread_theirs": 0.74,
+    "spread_mine": 1.56
    },
    "ecg/ecg_pipeline_overlap_f8__fir4_copy/pipeline/soc_dev/c64t32": {
     "verdict": "not distinguishable",
@@ -9610,7 +10092,9 @@
      "features": 8,
      "cache_kib": 8,
      "case": "ecg_pipeline_overlap_f8__fir4_copy"
-    }
+    },
+    "spread_theirs": 1.92,
+    "spread_mine": 1.05
    },
    "ecg/ecg_pipeline_overlap_f8__fir4_copy/pipeline/soc_dev/c64t8": {
     "verdict": "not distinguishable",
@@ -9651,7 +10135,9 @@
      "features": 8,
      "cache_kib": 8,
      "case": "ecg_pipeline_overlap_f8__fir4_copy"
-    }
+    },
+    "spread_theirs": 1.24,
+    "spread_mine": 1.51
    }
   },
   "ecg_pipeline_overlap_f8__fir4_split:ecg_pipeline_overlap_f8__fir4": {
@@ -9694,7 +10180,9 @@
      "features": 8,
      "cache_kib": 8,
      "case": "ecg_pipeline_overlap_f8__fir4_split"
-    }
+    },
+    "spread_theirs": 1.18,
+    "spread_mine": 7.11
    },
    "ecg/ecg_pipeline_overlap_f8__fir4_split/pipeline/soc_dev/c128t16": {
     "verdict": "not distinguishable",
@@ -9735,7 +10223,9 @@
      "features": 8,
      "cache_kib": 8,
      "case": "ecg_pipeline_overlap_f8__fir4_split"
-    }
+    },
+    "spread_theirs": 1.46,
+    "spread_mine": 3.57
    },
    "ecg/ecg_pipeline_overlap_f8__fir4_split/pipeline/soc_dev/c128t32": {
     "verdict": "loses",
@@ -9776,7 +10266,9 @@
      "features": 8,
      "cache_kib": 8,
      "case": "ecg_pipeline_overlap_f8__fir4_split"
-    }
+    },
+    "spread_theirs": 0.91,
+    "spread_mine": 0.61
    },
    "ecg/ecg_pipeline_overlap_f8__fir4_split/pipeline/soc_dev/c128t8": {
     "verdict": "not distinguishable",
@@ -9817,7 +10309,9 @@
      "features": 8,
      "cache_kib": 8,
      "case": "ecg_pipeline_overlap_f8__fir4_split"
-    }
+    },
+    "spread_theirs": 1.15,
+    "spread_mine": 0.57
    },
    "ecg/ecg_pipeline_overlap_f8__fir4_split/pipeline/soc_dev/c16t8": {
     "verdict": "wins",
@@ -9858,7 +10352,9 @@
      "features": 8,
      "cache_kib": 8,
      "case": "ecg_pipeline_overlap_f8__fir4_split"
-    }
+    },
+    "spread_theirs": 3.55,
+    "spread_mine": 2.45
    },
    "ecg/ecg_pipeline_overlap_f8__fir4_split/pipeline/soc_dev/c32t16": {
     "verdict": "not distinguishable",
@@ -9899,7 +10395,9 @@
      "features": 8,
      "cache_kib": 8,
      "case": "ecg_pipeline_overlap_f8__fir4_split"
-    }
+    },
+    "spread_theirs": 2.63,
+    "spread_mine": 12.48
    },
    "ecg/ecg_pipeline_overlap_f8__fir4_split/pipeline/soc_dev/c32t8": {
     "verdict": "wins",
@@ -9940,7 +10438,9 @@
      "features": 8,
      "cache_kib": 8,
      "case": "ecg_pipeline_overlap_f8__fir4_split"
-    }
+    },
+    "spread_theirs": 0.74,
+    "spread_mine": 1.02
    },
    "ecg/ecg_pipeline_overlap_f8__fir4_split/pipeline/soc_dev/c64t32": {
     "verdict": "loses",
@@ -9981,7 +10481,9 @@
      "features": 8,
      "cache_kib": 8,
      "case": "ecg_pipeline_overlap_f8__fir4_split"
-    }
+    },
+    "spread_theirs": 1.92,
+    "spread_mine": 2.23
    },
    "ecg/ecg_pipeline_overlap_f8__fir4_split/pipeline/soc_dev/c64t8": {
     "verdict": "not distinguishable",
@@ -10022,7 +10524,9 @@
      "features": 8,
      "cache_kib": 8,
      "case": "ecg_pipeline_overlap_f8__fir4_split"
-    }
+    },
+    "spread_theirs": 1.24,
+    "spread_mine": 0.9
    }
   },
   "ecg_pipeline_v1__fir4_copy:ecg_pipeline_v1__fir4": {
@@ -10065,7 +10569,9 @@
      "features": 4,
      "cache_kib": 8,
      "case": "ecg_pipeline_v1__fir4_copy"
-    }
+    },
+    "spread_theirs": 0.81,
+    "spread_mine": 0.9
    },
    "ecg/ecg_pipeline_v1__fir4_copy/pipeline/soc_dev/c128t16": {
     "verdict": "not distinguishable",
@@ -10106,7 +10612,9 @@
      "features": 4,
      "cache_kib": 8,
      "case": "ecg_pipeline_v1__fir4_copy"
-    }
+    },
+    "spread_theirs": 0.4,
+    "spread_mine": 2.68
    },
    "ecg/ecg_pipeline_v1__fir4_copy/pipeline/soc_dev/c128t32": {
     "verdict": "not distinguishable",
@@ -10147,7 +10655,9 @@
      "features": 4,
      "cache_kib": 8,
      "case": "ecg_pipeline_v1__fir4_copy"
-    }
+    },
+    "spread_theirs": 2.71,
+    "spread_mine": 0.97
    },
    "ecg/ecg_pipeline_v1__fir4_copy/pipeline/soc_dev/c128t8": {
     "verdict": "not distinguishable",
@@ -10188,7 +10698,9 @@
      "features": 4,
      "cache_kib": 8,
      "case": "ecg_pipeline_v1__fir4_copy"
-    }
+    },
+    "spread_theirs": 0.45,
+    "spread_mine": 2.5
    },
    "ecg/ecg_pipeline_v1__fir4_copy/pipeline/soc_dev/c16t8": {
     "verdict": "not distinguishable",
@@ -10229,7 +10741,9 @@
      "features": 4,
      "cache_kib": 8,
      "case": "ecg_pipeline_v1__fir4_copy"
-    }
+    },
+    "spread_theirs": 2.43,
+    "spread_mine": 4.7
    },
    "ecg/ecg_pipeline_v1__fir4_copy/pipeline/soc_dev/c32t16": {
     "verdict": "not distinguishable",
@@ -10270,7 +10784,9 @@
      "features": 4,
      "cache_kib": 8,
      "case": "ecg_pipeline_v1__fir4_copy"
-    }
+    },
+    "spread_theirs": 0.91,
+    "spread_mine": 1.76
    },
    "ecg/ecg_pipeline_v1__fir4_copy/pipeline/soc_dev/c32t8": {
     "verdict": "not distinguishable",
@@ -10311,7 +10827,9 @@
      "features": 4,
      "cache_kib": 8,
      "case": "ecg_pipeline_v1__fir4_copy"
-    }
+    },
+    "spread_theirs": 0.68,
+    "spread_mine": 1.32
    },
    "ecg/ecg_pipeline_v1__fir4_copy/pipeline/soc_dev/c64t32": {
     "verdict": "not distinguishable",
@@ -10352,7 +10870,9 @@
      "features": 4,
      "cache_kib": 8,
      "case": "ecg_pipeline_v1__fir4_copy"
-    }
+    },
+    "spread_theirs": 5.44,
+    "spread_mine": 4.4
    },
    "ecg/ecg_pipeline_v1__fir4_copy/pipeline/soc_dev/c64t8": {
     "verdict": "not distinguishable",
@@ -10393,7 +10913,9 @@
      "features": 4,
      "cache_kib": 8,
      "case": "ecg_pipeline_v1__fir4_copy"
-    }
+    },
+    "spread_theirs": 0.71,
+    "spread_mine": 0.62
    }
   },
   "ecg_pipeline_v1_f8__fir4_copy:ecg_pipeline_v1_f8__fir4": {
@@ -10436,7 +10958,9 @@
      "features": 8,
      "cache_kib": 8,
      "case": "ecg_pipeline_v1_f8__fir4_copy"
-    }
+    },
+    "spread_theirs": 0.37,
+    "spread_mine": 0.76
    },
    "ecg/ecg_pipeline_v1_f8__fir4_copy/pipeline/soc_dev/c128t16": {
     "verdict": "not distinguishable",
@@ -10477,7 +11001,9 @@
      "features": 8,
      "cache_kib": 8,
      "case": "ecg_pipeline_v1_f8__fir4_copy"
-    }
+    },
+    "spread_theirs": 0.4,
+    "spread_mine": 2.31
    },
    "ecg/ecg_pipeline_v1_f8__fir4_copy/pipeline/soc_dev/c128t32": {
     "verdict": "not distinguishable",
@@ -10518,7 +11044,9 @@
      "features": 8,
      "cache_kib": 8,
      "case": "ecg_pipeline_v1_f8__fir4_copy"
-    }
+    },
+    "spread_theirs": 2.86,
+    "spread_mine": 2.16
    },
    "ecg/ecg_pipeline_v1_f8__fir4_copy/pipeline/soc_dev/c128t8": {
     "verdict": "not distinguishable",
@@ -10559,7 +11087,9 @@
      "features": 8,
      "cache_kib": 8,
      "case": "ecg_pipeline_v1_f8__fir4_copy"
-    }
+    },
+    "spread_theirs": 0.46,
+    "spread_mine": 2.49
    },
    "ecg/ecg_pipeline_v1_f8__fir4_copy/pipeline/soc_dev/c16t8": {
     "verdict": "not distinguishable",
@@ -10600,7 +11130,9 @@
      "features": 8,
      "cache_kib": 8,
      "case": "ecg_pipeline_v1_f8__fir4_copy"
-    }
+    },
+    "spread_theirs": 2.26,
+    "spread_mine": 1.76
    },
    "ecg/ecg_pipeline_v1_f8__fir4_copy/pipeline/soc_dev/c32t16": {
     "verdict": "not distinguishable",
@@ -10641,7 +11173,9 @@
      "features": 8,
      "cache_kib": 8,
      "case": "ecg_pipeline_v1_f8__fir4_copy"
-    }
+    },
+    "spread_theirs": 1.64,
+    "spread_mine": 1.53
    },
    "ecg/ecg_pipeline_v1_f8__fir4_copy/pipeline/soc_dev/c32t8": {
     "verdict": "not distinguishable",
@@ -10682,7 +11216,9 @@
      "features": 8,
      "cache_kib": 8,
      "case": "ecg_pipeline_v1_f8__fir4_copy"
-    }
+    },
+    "spread_theirs": 0.54,
+    "spread_mine": 1.2
    },
    "ecg/ecg_pipeline_v1_f8__fir4_copy/pipeline/soc_dev/c64t32": {
     "verdict": "not distinguishable",
@@ -10723,7 +11259,9 @@
      "features": 8,
      "cache_kib": 8,
      "case": "ecg_pipeline_v1_f8__fir4_copy"
-    }
+    },
+    "spread_theirs": 6.66,
+    "spread_mine": 5.01
    },
    "ecg/ecg_pipeline_v1_f8__fir4_copy/pipeline/soc_dev/c64t8": {
     "verdict": "not distinguishable",
@@ -10764,7 +11302,9 @@
      "features": 8,
      "cache_kib": 8,
      "case": "ecg_pipeline_v1_f8__fir4_copy"
-    }
+    },
+    "spread_theirs": 0.76,
+    "spread_mine": 0.97
    }
   },
   "reduce_fill__place:reduce_fill__loop": {
@@ -10803,7 +11343,9 @@
      "workers": 2,
      "cache_kib": 8,
      "case": "reduce_fill__place"
-    }
+    },
+    "spread_theirs": 1.53,
+    "spread_mine": 0.71
    }
   },
   "reduce_v1__place:reduce_v1__loop": {
@@ -10842,7 +11384,9 @@
      "workers": 2,
      "cache_kib": 8,
      "case": "reduce_v1__place"
-    }
+    },
+    "spread_theirs": 0.27,
+    "spread_mine": 0.26
    }
   }
  },

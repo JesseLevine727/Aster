@@ -66,6 +66,16 @@ def verdict(rows: list[tuple]) -> str:
     return "not distinguishable"
 
 
+def spread(rows: list[tuple], side: int) -> float | None:
+    """The largest spread over the layouts (max/min - 1, %) in any one cache state and window, of the original (side
+    3) or the variant (4); None on one layout."""
+    by = defaultdict(list)
+    for r in rows:
+        by[(r[1], r[2])].append(r[side])
+    spreads = [max(v) / min(v) - 1 for v in by.values() if len(v) > 1]
+    return round(max(spreads) * 100, 2) if spreads else None
+
+
 def summary(by_config: dict, axes: dict) -> dict:
     out = {}
     for config, rows in sorted(by_config.items()):
@@ -73,7 +83,8 @@ def summary(by_config: dict, axes: dict) -> dict:
         out[config] = dict(verdict=verdict(rows), points=len(rows), layouts=len({r[0] for r in rows}),
                            states=sorted({r[1] for r in rows}), windows=sorted({r[2] for r in rows}),
                            low=round(min(change), 2), high=round(max(change), 2),
-                           l0={f"{s} {w}": (o, v) for lay, s, w, o, v in rows if lay == "L0"}, axes=axes[config])
+                           l0={f"{s} {w}": (o, v) for lay, s, w, o, v in rows if lay == "L0"}, axes=axes[config],
+                           spread_theirs=spread(rows, 3), spread_mine=spread(rows, 4))
     return out
 
 
@@ -102,19 +113,21 @@ def check_adopted(result: dict, stacks: dict) -> tuple[list[str], list[str]]:
     problems, beside = [], []
     stacked_on = {new: (base, rows) for (new, base), rows in stacks.items()}
     present = {case_of(v) for v in result.values()}
+    problems += [f"{case}: adopted, but not in the judgment" for case in sorted(matrix_gates.ADOPTED - present)]
     for case in sorted(matrix_gates.ADOPTED & present):
         base, srows = stacked_on.get(case, (None, {}))
         if case in matrix_gates.STACKED_ON and base is None:
             problems.append(f"{case}: stacked on {matrix_gates.STACKED_ON[case]}, not judged against it")
-        wins_at, on_layouts = set(), False
+        point_wins, on_layouts = {}, False                # (a point won only where every configuration there wins)
         for config, v in result.items():
             if case_of(v) != case:
                 continue
             s = srows.get(config) if base else None
             both = v["verdict"] == "wins" and (base is None or (s is not None and s["verdict"] == "wins"))
             at = matrix_gates.adopted_at(case, v["axes"])
-            if is_r(config) and both and case in matrix_gates.ADOPTED_POINTS:
-                wins_at.add(matrix_gates.point_of(case, v["axes"]))
+            if is_r(config) and case in matrix_gates.ADOPTED_POINTS:
+                point = matrix_gates.point_of(case, v["axes"])
+                point_wins[point] = point_wins.get(point, True) and both
             on_layouts |= is_r(config) and v["layouts"] > 1
             if is_r(config) and at and not both:
                 problems.append(f"{config}: adopted, but {v['verdict']}"
@@ -124,6 +137,7 @@ def check_adopted(result: dict, stacks: dict) -> tuple[list[str], list[str]]:
                               + (f"; against {base} {s['verdict']} ({s['low']:+.2f}% to {s['high']:+.2f}%)"
                                  if s else "") + ("" if at or not is_r(config) else " (not adopted at this point)"))
         # (adopted at exactly its winning points, on the layouts' judgment; within them, on L0's alone)
+        wins_at = {point for point, won in point_wins.items() if won}
         points = matrix_gates.ADOPTED_POINTS.get(case, (None, None))[1]
         if points is not None and (points != wins_at if on_layouts else not points <= wins_at):
             problems.append(f"{case}: adopted at {sorted(points)}, wins at {sorted(wins_at)}")
@@ -144,6 +158,7 @@ def main() -> int:
     for run in args.runs:
         allrec.update(records_of(run))
     status = {e["id"]: e["status"] for m in manifests for e in m["entries"]}
+    failed = sorted(i for i, st in status.items() if st == "failed")    # (a failed entry would narrow a judgment)
     by_config, alone, axes = pairs(allrec)
     # (a variant's entry whose original cannot run there, unsupported with its reason, is the variant's alone: the
     # split variants on the one-hart SoC, below their thresholds; any other is a missing twin)
@@ -171,7 +186,9 @@ def main() -> int:
           f"whose original cannot run there (unsupported), {len(stack_alone)} stacked without the variant they extend")
     for config, v in result.items():
         print(f"  {v['verdict']:20} {config}: {v['low']:+.2f}% to {v['high']:+.2f}% over {v['layouts']} layouts, "
-              f"{'/'.join(v['states'])}, {'/'.join(v['windows'])}")
+              f"{'/'.join(v['states'])}, {'/'.join(v['windows'])}" + (
+                  f"; the spread over the layouts {v['spread_theirs']}% -> {v['spread_mine']}%"
+                  if v["spread_theirs"] is not None else ""))
     for (new, base), rows in stacks.items():
         for config, v in rows.items():
             print(f"  stacked {v['verdict']:20} {config} against {base}: {v['low']:+.2f}% to {v['high']:+.2f}% over "
@@ -185,7 +202,9 @@ def main() -> int:
             print(f"  PROBLEM {line}")
         for line in beside:
             print(f"  beside the win: {line}")
-    return 0 if not dirty and len(revs) == 1 and not alone and not stack_alone and not problems else 1
+    if failed:
+        print(f"  FAILED entries in the runs: {len(failed)}, e.g. {failed[:3]}")
+    return 0 if not dirty and len(revs) == 1 and not alone and not stack_alone and not problems and not failed else 1
 
 
 if __name__ == "__main__":

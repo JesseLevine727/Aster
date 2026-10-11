@@ -18,9 +18,11 @@ console.
   ECG 2,142 captured and 126 unsupported, DSP 752 and 22, coherence 708 and 217, ML 234 and 12, none failed. Every unsupported entry carries its reason (the one-hart SoC
   for two-hart programs, and the like). `--family F --repeat-every 30`.
 - **`t3-judge`:** the tuned variants and their originals at R on the eight
-  layouts, warm and cold: 5,344 captured, 16 unsupported, none failed, determinism 54 of 54. The unsupported are GEMM 128×64×128 and
-  its `__place` at the layouts that do not fit main memory (L4, L6 and L7;
-  `__place` also L5), so that GEMM is judged on four layouts.
+  layouts, warm and cold: 5,344 captured, 16 unsupported, none failed,
+  determinism 54 of 54. The unsupported are GEMM 128×64×128 at the layouts
+  that do not fit main memory: its two-worker original at L4, L6 and L7, its
+  one-worker method at L4, and `__place` at L4 to L7. So `__place` is judged
+  on four layouts.
   `--family ecg --family ml --family dsp --family coherence --sims soc_dev
   --no-stamped --layouts L1,...,L7 --repeat-every 100`, with
   `--match '^(ecg/|ml/(cifar_cnn_npu|mnist_mlp_npu)|dsp/(conv2d_\w+_npu|dot(__split)?/multicore)|coherence/(reduce_|gemm_dot8_|atomic_add|lrsc_counter|cas_counter|lock_sum|false_shared|padded|shared_mix))'`.
@@ -48,10 +50,24 @@ console.
   with the adopted set (`matrix_gates.py` over the four families' runs).
   The CPU kernels are not in these runs, since step 3 changed none of them.
   Their v1 figures are step 2's at 8 KiB (`../geometry/gates-8k.txt`).
-- **`mnist-batching.txt`:** MNIST's cycles an image and a batch's latency,
-  per batch size, on one and two harts (`t3-ml`).
-- **`ecg-stages.txt`:** the stamped ECG pipelines' median stage times and
-  chunk period at v1's case (`t3-ecg`).
+- **From `matrix_tuning_report.py build/matrix OUT`:**
+  - **`mnist-batching.txt`:** MNIST's cycles an image and a batch's
+    latency, per batch size, on one and two harts (`t3-ml`).
+  - **`ecg-stages.txt`:** the stamped ECG pipelines' median stage times and
+    chunk period at v1's case (`t3-ecg`).
+  - **`ecg-outputs.txt`:** §5's outputs at v1's case: samples a second, and
+    each chunk's worst and mean latency against its 360 Hz deadline.
+  - **`dma-freed.txt`:** §4.1's freed time: the DMA's busy cycles in the
+    variants' copies.
+  - **`bank-conflicts.txt`:** §4.4: the fabric's bank conflicts in the
+    reductions and the GEMMs, at L0 and over the layouts (`t3-judge`).
+  - **`icache.txt`:** §4.4's code against the instruction cache: the warm
+    windows' instruction misses at L0 and their fewest over the layouts, for
+    the originals and the adopted variants (`t3-judge`).
 
-Every figure in phase20.md's record comes from these files. The one
-exception is the "features on hart 1" trial, which was not kept in the tree.
+Every figure in phase20.md's record comes from these files, with two
+exceptions:
+- the "features on hart 1" trial, which was not kept in the tree;
+- the 160 short counts that led to the DMA oracle's stack exemption, found
+  in an earlier capture of the sweep (472e822). The exemption applies here
+  too; the oracle's message does not say which entries it covered.

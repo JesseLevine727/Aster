@@ -268,10 +268,16 @@ Where code and data sit:
 - **Measured** across layouts (§3): placement aims to make two-hart figures
   faster and less layout-dependent. The spread before and after is
   published.
-- **Step 3's outcome:** placement had nothing to win in these programs.
-  The fabric's bank conflicts were 0 in the reductions and at most 0.16% of
-  the GEMMs' cycles. The reductions' gain was their loops' code, shown by
-  a control variant (`__loop`) with the same loops on the original layout.
+- **Step 3's outcome:**
+  - **Data placement had little to win.** The fabric's bank conflicts in
+    the warm windows were at most 0.07% of the original reductions' cycles
+    and 0.35% of the GEMMs'. The reductions' gain was their loops' code,
+    shown by a control variant (`__loop`) with the same loops on the
+    original layout.
+  - **Code against the instruction cache was not tried.** The layouts show
+    conflict misses worth up to about 1% in the adopted variants, more in
+    ECG's original pipeline. The owner decides whether to add it
+    (phase20.md, 20.5 step 3).
 
 ## 5. ECG
 
@@ -522,7 +528,8 @@ Each step has its watchdog review before it is pushed.
 3. **Tuning:** DMA thresholds, partitioning, placement and ECG.
    - The tuned variants are planned, added and judged across layouts.
    - The adopted set is fixed (`matrix_gates.ADOPTED`; phase20.md, 20.5
-     step 3), with three questions for the owner.
+     step 3), with four questions for the owner. §4.4's code placement was
+     not tried, only measured.
 4. **The final configuration:**
    - soc.md §10's checks on the final RTL (§2);
    - the full matrix captured from one clean commit, as 20.4's step 4, with

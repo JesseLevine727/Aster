@@ -2025,7 +2025,7 @@ is judged at 8 KiB, on L0–L7.
   all 102 checks, the seven programs on each of the 14 two-hart builds and the one-hart program on each of
   the 4 one-hart builds.
 
-### Step 3: the tuning (done; three questions for the owner)
+### Step 3: the tuning (done but for §4.4's code placement; four questions for the owner)
 
 **How it was judged** (tuning.md §3), every capture from the clean commit 410fbce; the evidence is in
 `results/phase20/tuning-20.5/step3/`:
@@ -2040,8 +2040,10 @@ is judged at 8 KiB, on L0–L7.
 - **Each variant's other configurations,** in the families' full captures (`t3-ecg`, `t3-ml`, `t3-dsp`,
   `t3-coherence`): every entry captured or unsupported with its reason, none failed. The adopted variants' losses
   there are listed below, beside their wins.
-- **The originals are unchanged:** every original's firmware at R, 281 builds, is byte-identical to step 2's
-  capture.
+- **The originals are unchanged.** Step 2's capture has 281 of the originals' R builds, matched by entry id, and
+  each is byte-identical here. The other 350 R builds of the originals here are not in step 2's capture. The 410fbce
+  recapture changed only the copy-using variants' firmware: every entry with the same firmware as in the 74bc781
+  capture (7,092) gave the same cycles.
 
 **The copy helper** (§4.1), from the finer sweep: 30,848 entries, on eight layouts (`t3-dma-fine`).
 - **Its thresholds:** the DMA from 113 bytes aligned, 89 at the same offset, 21 at different offsets (20.4's: 127,
@@ -2051,8 +2053,9 @@ is judged at 8 KiB, on L0–L7.
   so it takes the worst case (a question for the owner).
 - **The helper's hart number** is now its `mhartid`, not a device read.
 - **The DMA oracle's exact count** is checked wherever no copied line shares a cache index with the top 64 bytes of
-  hart 0's stack. Those lines, used between the warm-up and the job, cost 160 of the sweep's copies a line at L4.
-  The cause was confirmed from the addresses; every byte is checked in the firmware.
+  hart 0's stack. Those lines, used between the warm-up and the job, cost 160 of the sweep's copies a line at L4,
+  in an earlier capture of the sweep (472e822). The cause was confirmed from the addresses; every byte is checked
+  in the firmware.
 - **The ML staging** (§4.1): only CIFAR stages inside a window. MNIST copies each image before its interval opens,
   or reads its images in place.
   - **`__2h_copy`,** each image staged by the helper (the DMA, for its 768 bytes) on `__2h`: −0.8% to −1.3%
@@ -2061,13 +2064,18 @@ is judged at 8 KiB, on L0–L7.
     faster than `__2h_copy`. In the direct method it is not distinguishable (−0.15% to +0.30% over the layouts;
     +0.3% at L0), and in im2col it loses (+0.04% to +0.13%). The copy takes far less time than an image's layers,
     so starting it early gains nothing. Not adopted.
+- **Freed time** (`dma-freed.txt`): an image's DMA copy keeps the engine busy about 105 cycles.
+  - `__2h_copy` and ECG's moves wait on it. Polling is not freed time, so their gain is the engine in place of the
+    CPU's copy.
+  - `__2h_next` frees about 2,100 cycles over the 20 images, 0.09% of its window, less than its second buffer
+    costs.
 - **v1's fair copy is slow on Aster** (a question for the owner). Its four back-to-back write-through stores queue,
   and it took about 245 cycles more for a 64-byte chunk than the compiler's interleaved word loop.
 
 **ECG** (§5): its stamped twins (`ecg-stages.txt`) show where each chunk's time goes.
 - **`__fir4`, the FIR on DOT8 directly:** each product of four taps is one word of the chunk shifted in registers;
-  v1's generic GEMM gathered every operand byte by byte. 10,421 cycles a chunk → 1,302. Every DOT8 method wins in
-  every configuration: −28% to −85%.
+  v1's generic GEMM gathered every operand byte by byte. 10,421 cycles a chunk → 1,302. Every DOT8 method wins at
+  every one of R's sweep points on every layout (−28% to −85%), and in every other configuration too (to −88.9%).
 - **`__fir4_split`, the stages balanced:** with the FIR fast, hart 0 bound the period, so hart 1 also stages and
   moves the next chunk. The period is 2,252 → 1,894 cycles at v1's case.
   - **Hart 1's move** goes through the helper, which on hart 1 is always v1's fair copy: only hart 0 programs the
@@ -2078,7 +2086,8 @@ is judged at 8 KiB, on L0–L7.
   - **It loses at 32 taps** (+0.7% to +4.3%), where hart 1's FIR is already the longer stage. It is not
     distinguishable at 128-sample chunks.
   - **With 8 features** (`ecg_pipeline_overlap_f8__fir4_split`) it wins at 8 taps with chunks of 16 and 32, and is
-    adopted there. Elsewhere, v1's chunk and taps among them (−10.8% to +5.3%), that case keeps `__fir4`.
+    adopted there. It loses at 32 taps (+0.5% to +4.7%) and is not distinguishable elsewhere (−16.3% to +7.8%;
+    v1's chunk and taps −10.8% to +5.3%), where that case keeps `__fir4`.
 - **`__fir4_copy`, the chunks moved by the copy policy:** not distinguishable from `__fir4` alone at 52 of its 54
   configurations. It is up to +27% slower in the one-hart DOT8 method at 16-sample chunks, where the fair copy is
   slower than the word loop it replaces.
@@ -2088,6 +2097,11 @@ is judged at 8 KiB, on L0–L7.
 - **Tried and lost** (a trial, not kept): the features on hart 1 too. That made hart 1 the bound, a period of 3,156
   at v1's case.
 - **v1's case, cold e2e:** 176,420 → 32,882 cycles. The v1 gate's ECG figure is 8.66× → 46.5×.
+- **§5's outputs** (`ecg-outputs.txt`, v1's case, cold):
+  - the overlap pipeline sustains 580,433 samples a second, 2,776,272 with `__fir4` and 3,114,166 with the split;
+  - each chunk is far inside its 360 Hz deadline of 17,777,777 cycles: worst 14,264 → 5,066 with `__fir4`;
+  - the split's worst is 5,194, a little above `__fir4`'s, since a chunk's clock now starts at its staging on
+    hart 1.
 
 **Partitioning** (§4.3): hart 1 takes CPU work around the NPU's jobs (`__2h`; the e2e window alone, §6). Each wins
 on all eight layouts, warm and cold:
@@ -2145,14 +2159,33 @@ on all eight layouts, warm and cold:
     swings.
 
 **Placement** (§4.4) found nothing to win in these programs.
-- **The fabric's bank conflicts** were 0 in the reductions. In the GEMMs' kernel windows they were 41, 334 and 603,
-  at most 0.16% of the cycles.
+- **The fabric's bank conflicts** (`bank-conflicts.txt`) were few, so placement could win little:
+  - in the original reductions' warm windows, at most 23 over the layouts, 0.07% of the cycles (their variants up
+    to 46, 0.23%);
+  - in the GEMMs' warm windows, at most 0.35%; cold, up to 0.90% (64³'s first pass).
 - **The reductions' `__place`** won 18–21%, but its control, `__loop` (the same loops with the halves where the
   original has them), wins the same. Placement against its control is not distinguishable (−0.8% to +0.5%).
   - The gain is the loops' code. Each range's base is fetched once, so each word's address is an increment: two
     instructions a word fewer (the sum's loop 6 → 4, the fill's 7 → 5).
   - `__loop` is adopted as that, not as placement.
 - **The GEMMs' `__place`** loses by +0.0% to +0.1%, or is not distinguishable.
+- **The spread over the layouts before and after** (`judge.txt`; the largest in any one state and window):
+  - the GEMMs' `__place`: 64³ 2.37% → 2.78%, 96³ 0.38% → 0.38%, 128×64×128 0.06% → 0.03%;
+  - the reductions' `__place`: 0.01% → 0.71% (reduce_fill), 0.14% → 0.26% (reduce_v1).
+
+  Placement did not make the two-hart figures less layout-dependent.
+- **Code against the instruction cache: not tried** (a question for the owner). `icache.txt` measures what it
+  could win.
+  - **Of the 510 warm windows, 63 have 32 misses or more at L0.** In ECG's and ML's, L4's 1 KiB code pad removes
+    them, so they are conflicts, placement's to remove. The coherence cases' 32 to 41 move with no layout.
+  - **Where they cost most:** ECG's original overlap pipeline at 16 × 8, 640 misses on hart 1 and −2.8% to −4.0%
+    at L4. Its adopted `__fir4` variants do not show it.
+  - **Among the adopted variants:** CIFAR im2col `__2h` (360 misses, −0.2% at L4), MNIST `__2h` (128, −0.7%) and
+    batched `__2h` at 4 (155, −0.8%). L4 also moves the data, so those changes are not the misses' alone.
+  - **The armed hand-over's own misses** (matrix.md §10.12), about eight lines and 70 cycles a two-worker kernel
+    window, would be another source.
+  - **A variant must win on every layout,** and the layouts move the code. So the hot code would have to be made
+    contiguous within the 8 KiB cache, for each program, not merely moved.
 
 **The adopted set** (`matrix_gates.ADOPTED`): each variant wins against its original at R on every layout, warm
 and cold, and each change stacked on another variant wins against that variant too.
@@ -2194,6 +2227,8 @@ batched MNIST variants never compete per image.
    loses warm.
 3. **The destination's cache state in the copy policy:** keep the worst case, or let a caller say whether the
    destination is cached (97 bytes against 113, aligned).
+4. **Code against the instruction cache** (§4.4, not tried): add it now, as variants that keep each program's hot
+   code contiguous, for at most about 1% in the adopted set; or close it on this measurement.
 
 ## Milestones and gates
 
