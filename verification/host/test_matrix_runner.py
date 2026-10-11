@@ -407,27 +407,63 @@ class TunedVariants(unittest.TestCase):
 class Policies(unittest.TestCase):
     """20.5 step 3: the runner reads the copy and split policies from the sources the firmware is built from."""
     def test_the_headers_values(self):
-        self.assertEqual(matrix.copy_policy(), dict(aligned=113, same_offset=89, different_offsets=21))
-        split = matrix.split_policy()
-        self.assertEqual(split["dot_k"], 128)
-        self.assertEqual(split["items"], {0: 129, 1: 64, 2: 64, 3: 0xFFFFFFFF, 4: 129, 5: 129, 8: 16})
+        self.assertEqual(matrix.copy_policy(), dict(aligned=113, same_offset=89, different_offsets=21, shift=13))
+        split = matrix.split_policy()                  # (step 3b: one worker only where it wins, the bands two)
+        self.assertEqual(split["dot_k"], 33)
+        self.assertEqual(split["items"], {0: 33, 1: 17, 2: 9, 3: 0xFFFFFFFF, 4: 33, 5: 33, 8: 5})
 
     def test_split_variants_planned_by_the_policy(self):
         dot = {e.axes["k"]: e.axes["workers"] for e in matrix.dsp_more_entries()
                if e.case == "dot__split" and e.sim == "soc_dev" and not e.cold and "/seed" not in e.id}
-        self.assertEqual(dot, {0: 1, 1: 1, 7: 1, 8: 1, 64: 1, 256: 2, 1024: 2, 4096: 2})
+        self.assertEqual(dot, {0: 1, 1: 1, 7: 1, 8: 1, 64: 2, 256: 2, 1024: 2, 4096: 2})
         lock = {e.axes["items"]: e.axes["workers"] for e in matrix.coherence_entries()
                 if e.case == "lock_sum__split" and e.sim == "soc_dev" and not e.cold}
         self.assertEqual(lock, {2: 1, 129: 1, 1024: 1})
 
 
+class CodePlacement(unittest.TestCase):
+    """20.5 step 3b (tuning.md §4.4): the code-placement twins, their names, profile and link."""
+    def test_names_and_twins(self):
+        self.assertEqual((matrix.hot_case("reduce_v1"), matrix.hot_case("reduce_v1__loop")),
+                         ("reduce_v1__hot", "reduce_v1__loop_hot"))
+        self.assertEqual([matrix.program_case(c) for c in ("reduce_v1__hot", "reduce_v1__loop_hot", "reduce_v1__loop")],
+                         ["reduce_v1", "reduce_v1__loop", "reduce_v1__loop"])
+        self.assertEqual(matrix_gates.stacked_base("mnist_mlp_npu_batched__2h_hot"), "mnist_mlp_npu_batched__2h")
+        self.assertIsNone(matrix_gates.stacked_base("reduce_v1__hot"))          # (judged against its original)
+        ml = {e.id: e for e in matrix.FAMILIES["ml"]() if e.sim == "soc_dev" and not e.cold}
+        twin = ml["ml/mnist_mlp_npu_batched__2h_hot32/npu/soc_dev/warm"]
+        self.assertEqual((twin.case, twin.hot), ("mnist_mlp_npu_batched__2h_hot", True))
+        self.assertIn("ml/cifar_cnn_npu_direct__hot/npu_direct/soc_dev/warm", ml)
+        self.assertNotIn("ml/cifar_cnn_npu_direct__2h_next_hot/npu_direct/soc_dev/warm", ml)   # (not adopted)
+        ecg = [e for e in matrix.FAMILIES["ecg"]() if e.hot]
+        self.assertFalse([e for e in ecg if e.case.endswith("_stages") or "stages" in e.case])
+        self.assertFalse([e for e in matrix.FAMILIES["cpu"]() if e.hot])
+
+    def test_the_map_and_the_link(self):
+        with tempfile.TemporaryDirectory() as d:
+            m = Path(d) / "x.map"
+            m.write_text(" .text.init     0x0000000080000000       0x40 start.o\n"
+                         " .text.foo\n                0x0000000080000100       0x20 /tmp/cc1.o\n"
+                         " .text.bar       0x0000000080000120        0x8 /tmp/cc1.o\n"
+                         " .text.empty     0x0000000080000128        0x0 /tmp/cc1.o\n")
+            self.assertEqual(matrix.input_sections(m), [(0x80000000, 0x40, ".text.init"),
+                                                        (0x80000100, 0x20, ".text.foo"), (0x80000120, 8, ".text.bar")])
+            order = [dict(section=".text.foo", executed=9, bytes=30), dict(section=".text.bar", executed=5, bytes=8)]
+            placed = matrix.hot_link(order, 33, Path(d) / "l.ld")             # (30 rounds to 32: bar does not fit)
+            self.assertEqual([x["section"] for x in placed], [".text.foo"])
+            text = (Path(d) / "l.ld").read_text()
+            self.assertIn("__hot_start = .;\n        *(.text.foo)\n        __hot_end = .;", text)
+            self.assertIn("ASSERT(__hot_end - __hot_start <= 33", text)
+
+
 class Crossover(unittest.TestCase):
     """20.5 step 3: the copy helper's threshold, the size from which the DMA wins at every larger size."""
     def test_from_which_the_dma_wins(self):
-        by = {s: {(0, 0): dict(dma=100, cpu_copy=c)} for s, c in ((60, 90), (61, 101), (62, 99), (63, 120), (64, 130))}
-        self.assertEqual(matrix_crossover.crossover(by), (63, [61]))      # (61's win is isolated: not taken)
-        by[64][(1, 0)] = dict(dma=200, cpu_copy=150)                     # (every offset pair must win)
-        self.assertEqual(matrix_crossover.crossover(by), (None, [61, 63]))
+        dma = lambda s, p: p["dma"] < p["fair"]
+        by = {s: {(0, 0): dict(dma=100, fair=c)} for s, c in ((60, 90), (61, 101), (62, 99), (63, 120), (64, 130))}
+        self.assertEqual(matrix_crossover.crossover(by, dma), (63, [61]))  # (61's win is isolated: not taken)
+        by[64][(1, 0)] = dict(dma=200, fair=150)                           # (every offset pair must win)
+        self.assertEqual(matrix_crossover.crossover(by, dma), (None, [61, 63]))
         self.assertEqual([matrix_crossover.klass(*o) for o in ((0, 0), (1, 1), (3, 6))],
                          ["aligned", "same_offset", "different_offsets"])
 

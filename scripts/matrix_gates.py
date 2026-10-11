@@ -73,6 +73,17 @@ STACKED_ON: dict = {
 }
 
 
+def stacked_base(case: str) -> str | None:
+    """The variant a case's change stacks on, if any (STACKED_ON; a tuned variant's code-placement twin,
+    "<variant>_hot", on the variant itself: matrix.py's hot_case. An original's twin, "<original>__hot", is judged
+    against its original directly)."""
+    if case in STACKED_ON:
+        return STACKED_ON[case]
+    if case.endswith("_hot") and not case.endswith("__hot") and "__" in case:
+        return case[:-len("_hot")]
+    return None
+
+
 def point_of(case: str, axes: dict) -> tuple:
     """An entry's sweep point, on the axes its case is adopted by (ADOPTED_POINTS)."""
     return tuple(axes.get(name) for name in ADOPTED_POINTS[case][0])

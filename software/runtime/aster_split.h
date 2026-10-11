@@ -1,7 +1,9 @@
-// 20.5's split policy (docs/tuning.md §4.3): two workers only from the sizes at which two beat one at R on every
-// layout, warm and cold, in every window (step 3's finer sweep, scripts/matrix.py's split_fine): the runtime's
-// default for tuned variants. Below them, one hart does the work. Sizes are a program's build constants, so the
-// thresholds are macros its preprocessor can test.
+// 20.5's split policy (docs/tuning.md §4.3): one worker only at the sizes where one beats two at R on every layout,
+// warm and cold, in every window, at that size and every smaller one of step 3's finer sweep (scripts/matrix.py's
+// split_fine); from the next size up, the original's two workers. Below each kind's threshold there was a band
+// where neither won everywhere; there the original's two workers stay (the owner's decision, 11 October 2026: only
+// a win is adopted, tuning.md §3). The runtime's default for tuned variants. Sizes are a program's build constants,
+// so the thresholds are macros its preprocessor can test.
 #ifndef ASTER_SPLIT_H
 #define ASTER_SPLIT_H
 
@@ -9,17 +11,17 @@
 
 #define ASTER_SPLIT_NEVER 0xFFFFFFFFu                   // (the harts serialise: one worker at every size)
 
-// the dot product's K (software/matrix/dsp.c): the cold run binds (warm, two workers win from about 40)
-#define ASTER_SPLIT_DOT_K 128u
+// the dot product's K (software/matrix/dsp.c): one worker wins to K = 32 (the band, 40 to 96, keeps two)
+#define ASTER_SPLIT_DOT_K 33u
 
 // the coherence kinds' items (software/matrix/coherent.c's kinds; the sweep's sizes 2 to 129)
-#define ASTER_SPLIT_ITEMS_0 129u                        // atomic_add
-#define ASTER_SPLIT_ITEMS_1 64u                         // lrsc_counter
-#define ASTER_SPLIT_ITEMS_2 64u                         // cas_counter
-#define ASTER_SPLIT_ITEMS_3 ASTER_SPLIT_NEVER           // lock_sum
-#define ASTER_SPLIT_ITEMS_4 129u                        // false_shared
-#define ASTER_SPLIT_ITEMS_5 129u                        // padded
-#define ASTER_SPLIT_ITEMS_8 16u                         // shared_mix
+#define ASTER_SPLIT_ITEMS_0 33u                         // atomic_add (one worker to 32 items)
+#define ASTER_SPLIT_ITEMS_1 17u                         // lrsc_counter (to 16)
+#define ASTER_SPLIT_ITEMS_2 9u                          // cas_counter (to 8)
+#define ASTER_SPLIT_ITEMS_3 ASTER_SPLIT_NEVER           // lock_sum (one worker at every size)
+#define ASTER_SPLIT_ITEMS_4 33u                         // false_shared (to 32)
+#define ASTER_SPLIT_ITEMS_5 33u                         // padded (to 32)
+#define ASTER_SPLIT_ITEMS_8 5u                          // shared_mix (to 4)
 #define ASTER_SPLIT_ITEMS__(kind) ASTER_SPLIT_ITEMS_##kind   // (kinds 6, 7 and 9 are two-hart cases: none)
 #define ASTER_SPLIT_ITEMS(kind) ASTER_SPLIT_ITEMS__(kind)
 

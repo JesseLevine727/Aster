@@ -116,8 +116,8 @@ def check_adopted(result: dict, stacks: dict) -> tuple[list[str], list[str]]:
     problems += [f"{case}: adopted, but not in the judgment" for case in sorted(matrix_gates.ADOPTED - present)]
     for case in sorted(matrix_gates.ADOPTED & present):
         base, srows = stacked_on.get(case, (None, {}))
-        if case in matrix_gates.STACKED_ON and base is None:
-            problems.append(f"{case}: stacked on {matrix_gates.STACKED_ON[case]}, not judged against it")
+        if matrix_gates.stacked_base(case) is not None and base is None:
+            problems.append(f"{case}: stacked on {matrix_gates.stacked_base(case)}, not judged against it")
         point_wins, on_layouts = {}, False                # (a point won only where every configuration there wins)
         for config, v in result.items():
             if case_of(v) != case:
@@ -168,8 +168,9 @@ def main() -> int:
     result = summary(by_config, axes)
     present = {case_of(v) for v in result.values()}
     stacks, stack_alone = {}, []
-    for new, base in sorted(matrix_gates.STACKED_ON.items()):
-        if new in present:
+    for new in sorted(present):
+        base = matrix_gates.stacked_base(new)
+        if base is not None:
             stacks[(new, base)], missing = stacked(allrec, new, base)
             stack_alone += missing
     problems, beside = check_adopted(result, stacks) if args.check_adopted else ([], [])

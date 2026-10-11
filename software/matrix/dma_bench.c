@@ -1,7 +1,8 @@
 // 20.4's matrix: the DMA (docs/matrix.md §4.3), one point in each simulation, through v1's driver
 // (software/drivers/aster_dma.c, unchanged). DMA_CASE:
 //   1 a copy, v1's window (software/benchmarks/dma.c): DMA_METHOD 0 v1's fair CPU copy, 1 the DMA
-//     (aster_dma_copy); DMA_BYTES from source offset DMA_SRC_OFF to destination offset DMA_DST_OFF, with
+//     (aster_dma_copy), 2 (20.5 step 3b's "copy__aster", a tuned variant of the CPU copy, at different offsets in a
+//     word) the shift copy, tuned for Aster (software/runtime/aster_copy.c's aster_shift_copy); DMA_BYTES from source offset DMA_SRC_OFF to destination offset DMA_DST_OFF, with
 //     DMA_DST_CACHED 1 the destination's lines read into hart 0's data cache just before the window
 //   2 the overlap (new): a DMA copy of DMA_BYTES and an unrelated checksum over DMA_WORK words, DMA_METHOD
 //     0 the copy then the checksum on hart 0, 1 the checksum on hart 0 while the DMA copies,
@@ -19,6 +20,9 @@
 #include "aster.h"
 #include "aster_dma.h"
 #include "aster_smp.h"
+#if DMA_CASE == 1 && DMA_METHOD == 2
+#include "aster_copy.h"
+#endif
 #include "asterbench_v12.h"
 #include "matrix_cold.h"
 #include "matrix_window.h"
@@ -130,6 +134,8 @@ static __attribute__((noinline)) void run(void) {
 #if DMA_METHOD == 1
     if (aster_dma_copy(dst_at, src_at, DMA_BYTES, 8000000u) != ASTER_DMA_OK) driver_failed = 1;
     v12_note_dma_job();
+#elif DMA_METHOD == 2
+    aster_shift_copy(dst_at, src_at, DMA_BYTES);
 #else
     cpu_memcpy(dst_at, src_at, DMA_BYTES);
 #endif
@@ -187,7 +193,7 @@ int main(void) {
     v12_prepare();
     window();
     v12_end(&record);
-#if DMA_CASE == 1 && DMA_METHOD == 0
+#if DMA_CASE == 1 && DMA_METHOD != 1
     matrix_hart0_whole(&record);                       // (the CPU copy is hart 0's, all of the window)
 #elif DMA_CASE == 1 || HART1_WORK
     matrix_hart0_none(&record);                        // (hart 0 only submits, dispatches and polls)
@@ -203,7 +209,7 @@ int main(void) {
 #if DMA_CASE == 2
     checksum = (checksum * 33u) ^ work_sum;
 #endif
-    static const char *const names[2][4] = {{"copy", "copy", "", ""},
+    static const char *const names[2][4] = {{"copy", "copy", "copy__aster", ""},
                                             {"overlap_serial_h0", "overlap_h0", "overlap_serial_h1", "overlap_h1"}};
     record.name = names[DMA_CASE - 1][DMA_METHOD]; record.family = "dma";
     record.method = USES_DMA ? "dma" : "cpu_copy"; record.window = "e2e"; record.cache_state = MATRIX_CACHE_STATE;

@@ -25,6 +25,7 @@ matrix_cold.h).
 from __future__ import annotations
 
 import argparse
+import bisect
 import concurrent.futures
 import dataclasses
 import hashlib
@@ -87,6 +88,7 @@ class Entry:
     oracle: str                        # the oracle's name (ORACLES)
     status: str = "planned"
     reason: str = ""
+    hot: bool = False                  # 20.5 step 3b: linked with the code its windows run first (hot_link)
 
 
 def cpu_entries() -> list[Entry]:
@@ -537,24 +539,31 @@ DMA_OVERLAP = ((0, "overlap_serial_h0", 1), (1, "overlap_h0", 1), (2, "overlap_s
 # the same offset in a word (20.4: from 127 and from 63), every size from 8 to 63 at different offsets (from 15 warm,
 # 31 cold); the destination cached or not; at R, warm and cold, on the default seed (and on the layouts, --layouts)
 DMA_FINE = [(size, src, dst) for src, dst in ((0, 0), (1, 1)) for size in range(32, 161)] + \
-           [(size, src, dst) for src, dst in ((1, 0), (0, 3), (3, 6), (1, 2)) for size in range(8, 64)]
+           [(size, src, dst) for src, dst in ((1, 0), (0, 3), (3, 6), (1, 2)) for size in range(8, 128)]
 
 
 def dma_fine_entries() -> list[Entry]:
-    """tuning.md §4.1: the copy helper's thresholds, the DMA through v1's driver against v1's fair CPU copy (as the
-    DMA family's copies, matrix.md §4.3) at DMA_FINE's sizes and offsets, at R, warm and cold."""
+    """tuning.md §4.1: the copy helper's thresholds, the DMA through v1's driver against the helper's CPU copy, at
+    DMA_FINE's sizes and offsets, at R, warm and cold: v1's fair CPU copy (as the DMA family's copies, matrix.md §4.3)
+    at the same offset in a word, and at different offsets step 3b's shift copy, tuned for Aster ("copy__aster", a
+    tuned variant of the fair copy, which is captured there too, as its original)."""
     sources = ["software/matrix/dma_bench.c", "software/drivers/aster_dma.c", "software/runtime/asterbench_v12.c",
                "software/runtime/aster_smp.c"]
     entries = []
     for size, src, dst in DMA_FINE:
         for cached in (0, 1):
-            for method_number, method in ((0, "cpu_copy"), (1, "dma")):
+            for method_number, method, case in ((0, "cpu_copy", "copy"), (1, "dma", "copy"),
+                                                (2, "cpu_copy", "copy__aster")):
+                if case == "copy__aster" and (src - dst) % 4 == 0:
+                    continue                                    # (the helper keeps v1's copy at the same offset)
                 for cold in (False, True):
                     sim, tag = "soc_dev", f"b{size}s{src}d{dst}c{cached}"
                     axes = make_axes(sim, cold, 1)
                     axes.update(bytes=size, src_off=src, dst_off=dst, cached=cached, seed=MEMORY_SEEDS[0])
-                    entries.append(Entry(f"dma_fine/copy/{method}/{sim}/{'cold' if cold else 'warm'}/{tag}", "dma_fine",
-                                         "copy", method, sim, cold, [], "LITMUS_CFLAGS", [], [], "", list(sources),
+                    helper = ["software/runtime/aster_copy.c"] if method_number == 2 else []
+                    entries.append(Entry(f"dma_fine/{case}/{method}/{sim}/{'cold' if cold else 'warm'}/{tag}",
+                                         "dma_fine", case, method, sim, cold, [], "LITMUS_CFLAGS", [], [], "",
+                                         list(sources) + helper,
                                          soc_variants.v12_defines(sim) + [
                                              "-DDMA_CASE=1", f"-DDMA_METHOD={method_number}",
                                              f"-DDMA_SEED={MEMORY_SEEDS[0]:#010x}u", f"-DDMA_BYTES={size}u",
@@ -641,8 +650,38 @@ def npu_gemm_entries() -> list[Entry]:
     return entries
 
 
-FAMILIES = {"cpu": cpu_entries, "coherence": coherence_entries, "dsp": dsp_family, "ml": ml_family,
-            "ecg": ecg_entries, "memory": memory_entries, "dma": dma_entries, "npu_gemm": npu_gemm_entries}
+# 20.5 step 3b (tuning.md §4.4, code against the instruction cache; the owner's decision, 11 October 2026): each
+# original and each adopted tuned variant of these families has a twin linked with the code its windows run first,
+# contiguous within the instruction cache ("<original>__hot", "<variant>_hot"): the same program and objects, placed.
+HOT_FAMILIES = ("coherence", "dsp", "ecg", "ml")
+
+
+def hot_case(case: str) -> str:
+    return case + ("_hot" if "__" in case else "__hot")
+
+
+def program_case(case: str) -> str:
+    """The program a case's firmware is (its records' name): a code-placement twin's is its base's."""
+    return case[:-len("__hot")] if case.endswith("__hot") else case[:-len("_hot")] if case.endswith("_hot") else case
+
+
+def hot_twin(entry: Entry) -> Entry:
+    parts = entry.id.split("/")
+    parts[1] = parts[1].replace(entry.case, hot_case(entry.case), 1)
+    return dataclasses.replace(entry, id="/".join(parts), case=hot_case(entry.case), hot=True)
+
+
+def with_hot(entries: list[Entry]) -> list[Entry]:
+    """The entries and the code-placement twins of their originals and adopted variants (not the stamped twins)."""
+    import matrix_gates                                   # (here: matrix_gates imports matrix's neighbours)
+    return entries + [hot_twin(e) for e in entries if e.family in HOT_FAMILIES and not e.case.endswith("_stages")
+                      and ("__" not in e.case or matrix_gates.adopted_at(e.case, e.axes))]
+
+
+FAMILIES = {"cpu": cpu_entries, "coherence": lambda: with_hot(coherence_entries()),
+            "dsp": lambda: with_hot(dsp_family()), "ml": lambda: with_hot(ml_family()),
+            "ecg": lambda: with_hot(ecg_entries()), "memory": memory_entries, "dma": dma_entries,
+            "npu_gemm": npu_gemm_entries}
 # 20.5's tuning measurements (docs/tuning.md §4): run when named (--family), not part of the full matrix
 TUNING = {"dma_fine": lambda: dma_fine_entries(), "split_fine": lambda: split_fine_entries()}
 
@@ -870,7 +909,7 @@ def oracle_cifar(entry: Entry, records: list[dict]) -> str:
             raise asterbench_v12.ValidationError(f"{r['npu_macs']} NPU MACs, not {macs}")
         # (the staging's variants: each image by the DMA, the copy policy's choice for 768 bytes at any alignment)
         staged = entry.case.endswith(("__2h_copy", "__2h_next")) and r["window"] == "e2e"
-        if staged and 768 < max(copy_policy().values()):
+        if staged and 768 < max(v for k, v in copy_policy().items() if k != "shift"):
             raise asterbench_v12.ValidationError("the copy policy no longer stages an image by the DMA")
         want = (ref["images"], ref["images"], 768 * ref["images"]) if staged else (0, 0, 0)
         if (r["dma_jobs"], r["dma_completed_jobs"], r["dma_bytes"]) != want:
@@ -949,10 +988,11 @@ def split_policy() -> dict:
 
 def copy_policy() -> dict:
     """The copy helper's thresholds (software/runtime/aster_copy.c's aster_copy_policy: the bytes from which the DMA
-    copies), read from the source the firmware is built from."""
+    copies, by alignment, and from which the CPU's shift copy does at different offsets), read from the source the
+    firmware is built from."""
     text = (ROOT / "software/runtime/aster_copy.c").read_text()
-    m = re.search(r"struct aster_copy_policy aster_copy_policy = \{(\d+)u, (\d+)u, (\d+)u\}", text)
-    return dict(zip(("aligned", "same_offset", "different_offsets"), map(int, m.groups())))
+    m = re.search(r"struct aster_copy_policy aster_copy_policy = \{(\d+)u, (\d+)u, (\d+)u, (\d+)u\}", text)
+    return dict(zip(("aligned", "same_offset", "different_offsets", "shift"), map(int, m.groups())))
 
 
 def ecg_dma_moves(entry: Entry, chunk: int) -> bool:
@@ -1433,45 +1473,198 @@ def with_caches(entries: list[Entry], kibs: list[int]) -> list[Entry]:
                                 axes=dict(e.axes, cache_kib=kib)) for kib in kibs for e in r]
 
 
-def build_firmware(entry: Entry, fw_root: Path, prefix: str, soc_flags: list[str]) -> tuple[Path, dict, str]:
-    """The entry's firmware, built once for every entry that shares its sources, flags and defines."""
+def compile_and_link(entry: Entry, out: Path, prefix: str, soc_flags: list[str], extra: list[str], link: Path,
+                     elf: Path, map_file: Path | None = None) -> None:
+    """The entry's objects compiled (with `extra`) and linked by `link` into `elf` (and its .bin)."""
+    harness = with_pad(entry.harness_sources)
+    kflags = make_variable(entry.kernel_flags, entry.kernel_overrides)
+    vflags = make_variable(entry.vendor_flags, []) if entry.vendor_sources else []
+    work = out / "work"
+    if work.exists():
+        shutil.rmtree(work)
+    work.mkdir(parents=True)
+    objects = []
+    for source in entry.kernel_sources:
+        # (a copy, so a quoted #include "workload.h" finds the compatibility layer's, not the copy's
+        # neighbour in software/benchmarks)
+        src = ROOT / source
+        copy = work / src.name
+        shutil.copy(src, copy)
+        obj = work / (src.stem + ".o")
+        run_command([tool(prefix, "gcc"), "-Isoftware/matrix/compat", f"-I{src.parent.relative_to(ROOT)}",
+                     *kflags, *extra, "-Dmain=v1_main", "-c", "-o", str(obj), str(copy)])
+        objects.append(str(obj))
+    for source in entry.vendor_sources:
+        obj = work / (Path(source).stem + ".o")
+        run_command([tool(prefix, "gcc"), *vflags, *extra, "-Dmain=v1_main", "-c", "-o", str(obj), source])
+        objects.append(str(obj))
+    run_command([tool(prefix, "gcc"), *soc_flags, *entry.defines, *extra, "-Isoftware/runtime", "-Isoftware/drivers",
+                 f"-T{link}", "-Wl,--no-warn-rwx-segments", *([f"-Wl,-Map={map_file}"] if map_file else []),
+                 "-o", str(elf), *RUNTIME, *harness, *objects, "-lgcc"])
+    run_command([tool(prefix, "objcopy"), "-O", "binary", str(elf), str(elf.with_suffix(".bin"))])
+
+
+def build_key(entry: Entry, prefix: str, soc_flags: list[str], *more) -> str:
     harness = with_pad(entry.harness_sources)
     kflags = make_variable(entry.kernel_flags, entry.kernel_overrides)
     vflags = make_variable(entry.vendor_flags, []) if entry.vendor_sources else []
     key_text = json.dumps([entry.kernel_sources, kflags, entry.vendor_sources, vflags, harness,
-                           entry.defines, soc_flags, RUNTIME, LINK, headers_digest(prefix)])
+                           entry.defines, soc_flags, RUNTIME, LINK, headers_digest(prefix), *more])
     digest = hashlib.sha256(key_text.encode()).hexdigest()[:16]
     for path in entry.kernel_sources + entry.vendor_sources + harness + RUNTIME + [LINK]:
         digest = hashlib.sha256((digest + hashlib.sha256((ROOT / path).read_bytes()).hexdigest()).encode()).hexdigest()[:16]
+    return digest
+
+
+# 20.5 step 3b's code placement (tuning.md §4.4): a window opens and closes by hart 0's stores to ABI 4's command
+# register (aster_counters.h): START (1) or RESUME (4) opens, FREEZE (2) closes
+ABI4_COMMAND, ABI4_OPEN, ABI4_FREEZE = 0x20003080, (1, 4), 2
+
+
+def input_sections(map_file: Path) -> list[tuple[int, int, str]]:
+    """The functions' own input sections (.text.<name>, -ffunction-sections) the linker map places: (address,
+    bytes, section), by address."""
+    out, pending = [], None
+    for line in map_file.read_text().splitlines():
+        parts = line.split()
+        if pending and len(parts) >= 2 and parts[0].startswith("0x"):
+            address, size = int(parts[0], 16), int(parts[1], 16)
+            if size:
+                out.append((address, size, pending))
+            pending = None
+            continue
+        pending = None
+        if parts and parts[0].startswith(".text.") and line.startswith(" ."):
+            if len(parts) >= 3 and parts[1].startswith("0x"):
+                address, size = int(parts[1], 16), int(parts[2], 16)
+                if size:
+                    out.append((address, size, parts[0]))
+            else:
+                pending = parts[0]
+    return sorted(out)
+
+
+def count_trace(fifo: Path, counts: dict, window_only: bool) -> None:
+    """Each PC's instructions in one hart's RVFI trace (tb_soc.cpp's +trace: order, pc, insn, trap, rd, rd_wdata,
+    mem_addr, rmask, wmask, rdata, wdata); hart 0's (window_only) only while a window is open."""
+    command = f"{ABI4_COMMAND:08x}"
+    is_open = not window_only
+    with open(fifo) as f:
+        for line in f:
+            if window_only and command in line:
+                parts = line.split()
+                if parts[6] == command and parts[8] != "0":
+                    value = int(parts[10], 16)
+                    is_open = True if value in ABI4_OPEN else False if value == ABI4_FREEZE else is_open
+                    continue
+            if is_open:
+                pc = line.split(maxsplit=2)[1]
+                counts[pc] = counts.get(pc, 0) + 1
+
+
+def hot_order(entry: Entry, fw_root: Path, prefix: str, soc_flags: list[str]) -> list[dict]:
+    """The input sections the entry's windows run, each with its instructions executed and its bytes, most executed
+    first: hart 0's while a window is open, all of hart 1's (it runs its shares, and its armed and idle loops). From
+    one run of the program built with each function in a section of its own and linked as usual, at L0 and warm, so
+    the order is the same for every layout and cache state (and cached across them)."""
+    base = dataclasses.replace(entry, hot=False, defines=[d for d in entry.defines
+                                                          if not d.startswith("-DMATRIX_PAD_") and d != "-DMATRIX_COLD"])
+    key = build_key(base, prefix, soc_flags, "profile", entry.sim)
+    root = fw_root / "hot" / f"{program_case(entry.case)}-{key}"
+    with _build_locks_lock:
+        lock = _build_locks.setdefault("hot" + key, threading.Lock())
+    with lock:
+        order_file = root / "order.json"
+        if order_file.exists():
+            return json.loads(order_file.read_text())
+        root.mkdir(parents=True, exist_ok=True)
+        elf, map_file = root / "profile.elf", root / "profile.map"
+        compile_and_link(base, root, prefix, soc_flags, ["-ffunction-sections"], ROOT / LINK, elf, map_file)
+        tohost = next(int(line.split()[0], 16) for line in subprocess.run(
+            [tool(prefix, "nm"), str(elf)], capture_output=True, text=True, check=True).stdout.splitlines()
+            if line.split()[-1] == "tohost")
+        fifos = [root / "trace0", root / "trace1"]
+        for fifo in fifos:
+            if fifo.exists():
+                fifo.unlink()
+            os.mkfifo(fifo)
+        counts = [{}, {}]
+        readers = [threading.Thread(target=count_trace, args=(fifos[h], counts[h], h == 0)) for h in (0, 1)]
+        for reader in readers:
+            reader.start()
+        result = subprocess.run([str(SIM_DIR / entry.sim), f"+bin={elf.with_suffix('.bin')}", f"+tohost={tohost:x}",
+                                 f"+console={root / 'console.txt'}", f"+max_cycles={MAX_CYCLES}",
+                                 f"+trace={fifos[0]}", f"+trace1={fifos[1]}"], capture_output=True, text=True,
+                                timeout=36000)
+        for fifo, reader in zip(fifos, readers):         # (a reader the simulation never opened: released)
+            if reader.is_alive():
+                try:
+                    os.close(os.open(fifo, os.O_WRONLY | os.O_NONBLOCK))
+                except OSError:
+                    pass
+            reader.join()
+        line = next((l for l in result.stdout.splitlines() if l.startswith("SOC ")), "")
+        if not line.startswith("SOC PASS"):
+            raise RuntimeError(f"the profile run of {entry.id}: {line or result.stderr[-300:]}")
+        sections = input_sections(map_file)
+        starts = [s[0] for s in sections]
+        executed = {}
+        for h in (0, 1):
+            for pc, n in counts[h].items():
+                at = int(pc, 16)
+                i = bisect.bisect_right(starts, at) - 1
+                if i >= 0 and at < sections[i][0] + sections[i][1]:
+                    executed[sections[i][2]] = executed.get(sections[i][2], 0) + n
+        size = {name: bytes_ for _, bytes_, name in sections}
+        order = [dict(section=name, executed=n, bytes=size[name])
+                 for name, n in sorted(executed.items(), key=lambda kv: (-kv[1], kv[0]))]
+        for fifo in fifos:
+            fifo.unlink()
+        shutil.rmtree(root / "work", ignore_errors=True)
+        order_file.write_text(json.dumps(order, indent=1) + "\n")
+        return order
+
+
+def hot_link(order: list[dict], budget: int, path: Path) -> list[dict]:
+    """LINK with the hot sections first after the start-up code, most executed first, as many as fit the instruction
+    cache (`budget` bytes, each rounded to a word), contiguous so none evicts another; the rest where LINK puts them.
+    Returns the sections placed."""
+    placed, used = [], 0
+    for item in order:
+        need = (item["bytes"] + 3) & ~3
+        if used + need > budget:
+            break
+        placed.append(item)
+        used += need
+    text = (ROOT / LINK).read_text()
+    anchor = "        KEEP(*(.text.init))\n"
+    assert text.count(anchor) == 1
+    group = "".join(f"        *({item['section']})\n" for item in placed)
+    text = text.replace(anchor, anchor + "        . = ALIGN(16);\n        __hot_start = .;\n" + group
+                        + "        __hot_end = .;\n")
+    text += f'\nASSERT(__hot_end - __hot_start <= {budget}, "the hot code exceeds the instruction cache")\n'
+    path.write_text(text)
+    return placed
+
+
+def build_firmware(entry: Entry, fw_root: Path, prefix: str, soc_flags: list[str]) -> tuple[Path, dict, str]:
+    """The entry's firmware, built once for every entry that shares its sources, flags and defines (a code-placement
+    twin's linked by hot_link from its profile, hot_order)."""
+    digest = build_key(entry, prefix, soc_flags, *(["hot"] if entry.hot else []))
     out = fw_root / f"{entry.case}-{digest}"
     with _build_locks_lock:
         lock = _build_locks.setdefault(digest, threading.Lock())
     with lock:
         elf = out / f"{entry.case}.elf"
         if not elf.exists():
-            work = out / "work"
-            if work.exists():
-                shutil.rmtree(work)
-            work.mkdir(parents=True)
-            objects = []
-            for source in entry.kernel_sources:
-                # (a copy, so a quoted #include "workload.h" finds the compatibility layer's, not the copy's
-                # neighbour in software/benchmarks)
-                src = ROOT / source
-                copy = work / src.name
-                shutil.copy(src, copy)
-                obj = work / (src.stem + ".o")
-                run_command([tool(prefix, "gcc"), "-Isoftware/matrix/compat", f"-I{src.parent.relative_to(ROOT)}",
-                             *kflags, "-Dmain=v1_main", "-c", "-o", str(obj), str(copy)])
-                objects.append(str(obj))
-            for source in entry.vendor_sources:
-                obj = work / (Path(source).stem + ".o")
-                run_command([tool(prefix, "gcc"), *vflags, "-Dmain=v1_main", "-c", "-o", str(obj), source])
-                objects.append(str(obj))
-            run_command([tool(prefix, "gcc"), *soc_flags, *entry.defines, "-Isoftware/runtime", "-Isoftware/drivers",
-                         f"-T{LINK}", "-Wl,--no-warn-rwx-segments", "-o", str(elf), *RUNTIME, *harness,
-                         *objects, "-lgcc"])
-            run_command([tool(prefix, "objcopy"), "-O", "binary", str(elf), str(elf.with_suffix(".bin"))])
+            if entry.hot:
+                out.mkdir(parents=True, exist_ok=True)
+                order = hot_order(entry, fw_root, prefix, soc_flags)
+                placed = hot_link(order, soc_variants.VARIANTS[entry.sim]["CACHE_BYTES"], out / "link_hot.ld")
+                (out / "hot.json").write_text(json.dumps(dict(placed=placed, order=order), indent=1) + "\n")
+                compile_and_link(entry, out, prefix, soc_flags, ["-ffunction-sections"], out / "link_hot.ld", elf)
+            else:
+                compile_and_link(entry, out, prefix, soc_flags, [], ROOT / LINK, elf)
     symbols = {}
     nm = subprocess.run([tool(prefix, "nm"), str(elf)], capture_output=True, text=True, check=True).stdout
     for line in nm.splitlines():
@@ -1560,9 +1753,11 @@ def do_entry(entry: Entry, out: Path, prefix: str, soc_flags: list[str]) -> dict
                 raise asterbench_v12.ValidationError("the record's cache state differs from the entry's")
             records.append(record)
         oracle = ORACLES[entry.oracle]
-        result["oracle"] = oracle(entry, records, extras) if getattr(oracle, "wants_extras", False) \
-            else oracle(entry, records, symbols=symbols) if getattr(oracle, "wants_symbols", False) \
-            else oracle(entry, records)
+        # (a code-placement twin is its base's program, linked otherwise: its records are the base's, by name too)
+        program = dataclasses.replace(entry, case=program_case(entry.case)) if entry.hot else entry
+        result["oracle"] = oracle(program, records, extras) if getattr(oracle, "wants_extras", False) \
+            else oracle(program, records, symbols=symbols) if getattr(oracle, "wants_symbols", False) \
+            else oracle(program, records)
         result["totals"] = reconcile_totals(records, extras)
         result["lines"] = lines
         result["status"] = "captured"
