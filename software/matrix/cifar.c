@@ -23,7 +23,14 @@
 #ifndef CIFAR_METHOD
 #define CIFAR_METHOD 3
 #endif
-#define MATRIX_SHARES (CIFAR_METHOD == 1)                // (the share stamps, its two-worker builds': matrix_window.h)
+// 20.5's tuned variant (tuning.md §4.3): CIFAR_SPLIT 1 (the NPU methods) builds "__2h": hart 1 takes half of the CPU
+// work around the NPU's jobs, each convolution's requantization, ReLU and pooling (the upper half of its output
+// channels) and, through im2col, half of its im2col rows; hart 0 does the other half and starts the jobs. Its record
+// is the e2e window alone (tuning.md §6: in a kernel window hart 1 has nothing of the job's to do).
+#ifndef CIFAR_SPLIT
+#define CIFAR_SPLIT 0
+#endif
+#define MATRIX_SHARES (CIFAR_METHOD == 1 || CIFAR_SPLIT)  // (the share stamps, the two-worker builds': matrix_window.h)
 
 #include <stdint.h>
 
@@ -43,7 +50,8 @@
 #endif
 #define NPU (CIFAR_METHOD >= 3)
 #define DIRECT (CIFAR_METHOD == 4)
-#define WORKERS (CIFAR_METHOD == 1 ? 2u : 1u)
+#define WORKERS (CIFAR_METHOD == 1 || CIFAR_SPLIT ? 2u : 1u)
+_Static_assert(!CIFAR_SPLIT || NPU, "the split is the NPU methods' tuned variant");
 #if DIRECT
 #include "cifar_hwc.h"
 #endif
@@ -115,6 +123,94 @@ static __attribute__((noinline)) void build_layer_rows(int layer, uint32_t row0,
 }
 #endif
 
+#if CIFAR_SPLIT
+// each convolution's requantization, ReLU and 2x2 max pool, for output channels [n0, n1): the same computation as
+// the single-worker loops (each value independent), its halves on the two harts
+static __attribute__((noinline)) void post_conv1(uint32_t n0, uint32_t n1) {
+    for (uint32_t row = 0; row < C1_M; ++row)
+        for (uint32_t n = n0; n < n1; ++n) {
+            const int8_t value = requant(conv_acc[row * CIFAR_CONV1_OUT + n], CIFAR_CONV1_MULT, CIFAR_CONV1_SHIFT,
+                                         cifar_conv1_bias_q[n]);
+            conv_q[n * C1_M + row] = value > 0 ? value : 0;
+        }
+    for (uint32_t n = n0; n < n1; ++n)
+        for (uint32_t py = 0; py < 7u; ++py)
+            for (uint32_t px = 0; px < 7u; ++px) {
+                int8_t best = -128;
+                for (uint32_t dy = 0; dy < 2u; ++dy)
+                    for (uint32_t dx = 0; dx < 2u; ++dx) {
+                        const int8_t v = conv_q[n * C1_M + (2u * py + dy) * C1_OH + (2u * px + dx)];
+                        if (v > best) best = v;
+                    }
+#if DIRECT
+                pool1[(py * 7u + px) * CIFAR_CONV1_OUT + n] = best;                    // channels last
+#else
+                pool1[n * 49u + py * 7u + px] = best;
+#endif
+            }
+}
+
+static __attribute__((noinline)) void post_conv2(uint32_t n0, uint32_t n1) {
+    for (uint32_t row = 0; row < C2_M; ++row)
+        for (uint32_t n = n0; n < n1; ++n) {
+            const int8_t value = requant(conv_acc[row * CIFAR_CONV2_OUT + n], CIFAR_CONV2_MULT, CIFAR_CONV2_SHIFT,
+                                         cifar_conv2_bias_q[n]);
+            conv_q[n * C2_M + row] = value > 0 ? value : 0;
+        }
+    for (uint32_t n = n0; n < n1; ++n)
+        for (uint32_t py = 0; py < 2u; ++py)
+            for (uint32_t px = 0; px < 2u; ++px) {
+                int8_t best = -128;
+                for (uint32_t dy = 0; dy < 2u; ++dy)
+                    for (uint32_t dx = 0; dx < 2u; ++dx) {
+                        const int8_t v = conv_q[n * C2_M + (2u * py + dy) * C2_OH + (2u * px + dx)];
+                        if (v > best) best = v;
+                    }
+                pool2[n * 4u + py * 2u + px] = best;
+            }
+}
+
+static volatile uint32_t split_layer, split_rows;     // (the layer whose upper half hart 1 takes)
+
+static void upper_post(void *arg) {                    // hart 1: the upper channels' requantization and pooling
+    (void)arg;
+    matrix_stamp_start(1);
+    if (split_layer == 1) {
+        matrix_share_begin(1);                         // (the shares: the last image's first layer, tuning.md §6)
+        post_conv1(CIFAR_CONV1_OUT / 2u, CIFAR_CONV1_OUT);
+        matrix_share_end(1);
+    } else {
+        post_conv2(CIFAR_CONV2_OUT / 2u, CIFAR_CONV2_OUT);
+    }
+    matrix_stamp_end(1);
+}
+
+// both halves of a convolution's requantization and pooling (layer 1 or 2)
+static void post_split(int layer) {
+    split_layer = (uint32_t)layer;
+    __asm__ volatile ("fence rw,rw" ::: "memory");
+    aster_smp_dispatch(upper_post, 0);
+    if (layer == 1) {
+        matrix_share_begin(0);
+        post_conv1(0, CIFAR_CONV1_OUT / 2u);
+        matrix_share_end(0);
+    } else {
+        post_conv2(0, CIFAR_CONV2_OUT / 2u);
+    }
+    aster_smp_join();
+    __asm__ volatile ("fence rw,rw" ::: "memory");
+}
+
+#if !DIRECT
+static void upper_im2col(void *arg) {                  // hart 1: a layer's upper im2col rows
+    (void)arg;
+    matrix_stamp_start(1);
+    build_layer_rows((int)split_layer, (split_rows + 1u) / 2u, split_rows);
+    matrix_stamp_end(1);
+}
+#endif
+#endif
+
 #if NPU
 static void npu_outcome(uint32_t status) {             // a job's outcome noted, and acknowledged
     v12_note_npu_job(status);
@@ -123,7 +219,7 @@ static void npu_outcome(uint32_t status) {             // a job's outcome noted,
 }
 #endif
 
-#if WORKERS == 2
+#if WORKERS == 2 && !NPU
 static struct aster_npu_gemm shared_job;               // the layer in hand (hart 1 takes its upper rows)
 
 static void upper_rows(void *layer) {                  // (layer: its im2col rows built too; 0 in the kernel window)
@@ -149,6 +245,15 @@ static __attribute__((noinline)) void run_layer(const struct aster_npu2_job *job
 #if NPU
 #if DIRECT
     (void)layer;
+#elif CIFAR_SPLIT
+    if (layer != 0) {                                  // (hart 1 builds the upper im2col rows)
+        split_rows = job->m;
+        split_layer = layer;
+        __asm__ volatile ("fence rw,rw" ::: "memory");
+        aster_smp_dispatch(upper_im2col, 0);
+        build_layer_rows(layer, 0, (job->m + 1u) / 2u);
+        aster_smp_join();
+    }
 #else
     build_layer_rows(layer, 0, job->m);                // (v1's: im2col, then the job)
 #endif
@@ -233,13 +338,18 @@ static __attribute__((noinline)) void infer(uint32_t item, int mode) {
                                          4u * CIFAR_CONV1_OUT, C1_M, CIFAR_CONV1_OUT, CIFAR_CONV1_K, 0, 0, 0, 0, 0};
 #endif
     matrix_last = 0;
-#if WORKERS == 2
+#if WORKERS == 2 && !CIFAR_SPLIT
     MATRIX_SHARE_ON(item == IMAGES - 1u);             // (the shares: the last image's first layer, tuning.md §6)
 #endif
     run_layer(&conv1, 1, mode);
-#if WORKERS == 2
+#if WORKERS == 2 && !CIFAR_SPLIT
     MATRIX_SHARE_ON(0);
 #endif
+#if CIFAR_SPLIT
+    MATRIX_SHARE_ON(item == IMAGES - 1u);             // (the shares: the last image's conv1 requantization and pool)
+    post_split(1);
+    MATRIX_SHARE_ON(0);
+#else
     for (uint32_t row = 0; row < C1_M; ++row)
         for (uint32_t n = 0; n < CIFAR_CONV1_OUT; ++n) {
             const int8_t value = requant(conv_acc[row * CIFAR_CONV1_OUT + n], CIFAR_CONV1_MULT, CIFAR_CONV1_SHIFT,
@@ -262,6 +372,7 @@ static __attribute__((noinline)) void infer(uint32_t item, int mode) {
 #endif
             }
     __asm__ volatile ("fence rw,rw" ::: "memory");
+#endif
 
     // conv2: M = 25, N = 32, K = 144 over pool1
 #if DIRECT
@@ -274,6 +385,10 @@ static __attribute__((noinline)) void infer(uint32_t item, int mode) {
                                          4u * CIFAR_CONV2_OUT, C2_M, CIFAR_CONV2_OUT, CIFAR_CONV2_K, 0, 0, 0, 0, 0};
 #endif
     run_layer(&conv2, 2, mode);
+#if CIFAR_SPLIT
+    matrix_last = item == IMAGES - 1u;                 // (hart 1's last stretch: its end stamp, matrix_window.h)
+    post_split(2);
+#else
     for (uint32_t row = 0; row < C2_M; ++row)
         for (uint32_t n = 0; n < CIFAR_CONV2_OUT; ++n) {
             const int8_t value = requant(conv_acc[row * CIFAR_CONV2_OUT + n], CIFAR_CONV2_MULT, CIFAR_CONV2_SHIFT,
@@ -292,6 +407,7 @@ static __attribute__((noinline)) void infer(uint32_t item, int mode) {
                 pool2[n * 4u + py * 2u + px] = best;
             }
     __asm__ volatile ("fence rw,rw" ::: "memory");
+#endif
 
     // fc: M = 10, N = 1, K = 128
     const struct aster_npu2_job fc = {cifar_fc_weights, pool2, fc_acc, CIFAR_FC_IN, 1u, 4u, CIFAR_FC_OUT, 1u,
@@ -339,6 +455,10 @@ static int timed_pass(struct v12_record *record, int mode) {
                                         "cifar_cnn_npu_im2col", "cifar_cnn_npu_direct"};
     static const char *const methods[] = {"scalar", "multicore", "dot8", "npu_im2col", "npu_direct"};
     record->name = names[CIFAR_METHOD]; record->family = "ml"; record->method = methods[CIFAR_METHOD];
+#if CIFAR_SPLIT
+    static const char *const split_names[] = {"", "", "", "cifar_cnn_npu_im2col__2h", "cifar_cnn_npu_direct__2h"};
+    record->name = split_names[CIFAR_METHOD];          // (a tuned variant's case, tuning.md §3)
+#endif
     record->window = mode == KERNEL ? "kernel" : "e2e"; record->cache_state = MATRIX_CACHE_STATE;
     record->size = IMAGE_BYTES; record->iterations = IMAGES; record->param = CIFAR_CONV1_OUT; record->seed = 0;
     record->checksum = checksum; record->workers = WORKERS;
@@ -358,7 +478,7 @@ int main(void) {
     if (!matrix_cold) pass(E2E);                       // the e2e window's warm-up (the same code)
     engine_failed = 0;
     int failed = timed_pass(&record, E2E);
-    if (!matrix_cold) {
+    if (!matrix_cold && !CIFAR_SPLIT) {                // (CIFAR_SPLIT: the e2e window alone)
         pass(KERNEL);                                  // the kernel window's warm-up
         failed |= timed_pass(&record, KERNEL);
     }

@@ -270,7 +270,11 @@ def dsp_entries() -> list[Entry]:
                7: ("conv2d_direct_dot8", "dot8", 1), 8: ("conv2d_direct_npu", "npu_direct", 1)}
     sources = ["software/matrix/conv2d.c", "software/benchmarks/xe_kernels.c", "software/drivers/aster_npu.c",
                "software/runtime/asterbench_v12.c", "software/runtime/aster_smp.c"]
-    for number, (name, method, workers) in methods.items():
+    # 20.5's tuned variants (tuning.md §4.3): __2h, hart 1 taking CPU work around the NPU's jobs (conv2d.c)
+    variants = [(number, name, method, workers, []) for number, (name, method, workers) in methods.items()]
+    variants += [(number, name + "__2h", method, 2, ["-DCONV_SPLIT=1"]) for number, (name, method, workers)
+                 in methods.items() if method.startswith("npu")]
+    for number, name, method, workers, tuning in variants:
         configs = [(sim, cold, reason, CONV_SEEDS[0]) for sim, cold, reason in
                    axis_configs(method.startswith("npu"), workers)]
         configs += [("soc_dev", False, "", seed) for seed in CONV_SEEDS[1:]]     # §3: three seeds at R
@@ -281,7 +285,7 @@ def dsp_entries() -> list[Entry]:
             axes["seed"] = seed
             e = Entry(ident, "dsp", name, method, sim, cold, [], "LITMUS_CFLAGS", [], [], "", sources,
                       soc_variants.v12_defines(sim) + [f"-DCONV_METHOD={number}", f"-DCONV_SEED={seed:#010x}u",
-                                                       "-Isoftware/benchmarks"]
+                                                       "-Isoftware/benchmarks"] + tuning
                       + (["-DMATRIX_COLD"] if cold else []), axes, "conv2d")
             if reason:
                 e.status, e.reason = "unsupported", reason
@@ -296,17 +300,21 @@ def ml_entries() -> list[Entry]:
     entries = []
     sources = ["software/matrix/mnist.c", "software/benchmarks/xe_kernels.c", "software/drivers/aster_npu.c",
                "software/runtime/asterbench_v12.c", "software/runtime/aster_smp.c"]
-    methods = [(0, 1, "scalar", 1), (1, 1, "multicore", 2), (2, 1, "dot8", 1), (3, 1, "npu", 1),
-               (4, 1, "npu", 1), (4, 4, "npu", 1), (4, 8, "npu", 1), (4, 32, "npu", 1)]
-    for number, batch, method, workers in methods:
-        name = "mnist_mlp_npu_batched" if number == 4 else f"mnist_mlp_{method}"
+    methods = [(0, 1, "scalar", 1, "", []), (1, 1, "multicore", 2, "", []), (2, 1, "dot8", 1, "", []),
+               (3, 1, "npu", 1, "", []), (4, 1, "npu", 1, "", []), (4, 4, "npu", 1, "", []), (4, 8, "npu", 1, "", []),
+               (4, 32, "npu", 1, "", [])]
+    # 20.5's tuned variants (tuning.md §4.3): __2h, hart 1 taking half of the requantization inside each interval
+    methods += [(3, 1, "npu", 2, "__2h", ["-DMNIST_SPLIT=1"])]
+    methods += [(4, batch, "npu", 2, "__2h", ["-DMNIST_SPLIT=1"]) for batch in (4, 8, 32)]
+    for number, batch, method, workers, tag, tuning in methods:
+        name = ("mnist_mlp_npu_batched" if number == 4 else f"mnist_mlp_{method}") + tag
         for sim, cold, reason in axis_configs(method == "npu", workers):
             ident = f"ml/{name}{batch if number == 4 else ''}/{method}/{sim}/{'cold' if cold else 'warm'}"
             axes = make_axes(sim, cold, workers)
             axes["batch"] = batch
             e = Entry(ident, "ml", name, method, sim, cold, [], "LITMUS_CFLAGS", [], [], "", sources,
                       soc_variants.v12_defines(sim) + [f"-DMNIST_METHOD={number}", f"-DMNIST_BATCH={batch}u",
-                                                       "-Isoftware/benchmarks"]
+                                                       "-Isoftware/benchmarks"] + tuning
                       + (["-DMATRIX_COLD"] if cold else []), axes, "mnist")
             if reason:
                 e.status, e.reason = "unsupported", reason
@@ -320,13 +328,17 @@ def cifar_entries() -> list[Entry]:
     entries = []
     sources = ["software/matrix/cifar.c", "software/benchmarks/xe_kernels.c", "software/drivers/aster_npu.c",
                "software/runtime/asterbench_v12.c", "software/runtime/aster_smp.c"]
-    for number, (method, workers) in enumerate((("scalar", 1), ("multicore", 2), ("dot8", 1), ("npu_im2col", 1),
-                                                 ("npu_direct", 1))):
-        name = f"cifar_cnn_{method}"
+    methods = [(number, method, workers, "", []) for number, (method, workers) in enumerate(
+        (("scalar", 1), ("multicore", 2), ("dot8", 1), ("npu_im2col", 1), ("npu_direct", 1)))]
+    # 20.5's tuned variants (tuning.md §4.3): __2h, hart 1 taking half of the CPU work around the NPU's jobs
+    methods += [(number, method, 2, "__2h", ["-DCIFAR_SPLIT=1"]) for number, method in ((3, "npu_im2col"),
+                                                                                       (4, "npu_direct"))]
+    for number, method, workers, tag, tuning in methods:
+        name = f"cifar_cnn_{method}{tag}"
         for sim, cold, reason in axis_configs(method.startswith("npu"), workers):
             ident = f"ml/{name}/{method}/{sim}/{'cold' if cold else 'warm'}"
             e = Entry(ident, "ml", name, method, sim, cold, [], "LITMUS_CFLAGS", [], [], "", sources,
-                      soc_variants.v12_defines(sim) + [f"-DCIFAR_METHOD={number}", "-Isoftware/benchmarks"]
+                      soc_variants.v12_defines(sim) + [f"-DCIFAR_METHOD={number}", "-Isoftware/benchmarks"] + tuning
                       + (["-DMATRIX_COLD"] if cold else []), make_axes(sim, cold, workers), "cifar")
             if reason:
                 e.status, e.reason = "unsupported", reason
@@ -594,7 +606,9 @@ IDENTITY = ("name", "size", "iterations", "param", "seed", "workers", "checksum"
 def two_windows(entry: Entry, records: list[dict]) -> list[dict]:
     """matrix.md §4: a warm run's e2e and kernel windows (in that order), a cold run's e2e alone; one identity
     and one checksum for both (the same computation)."""
-    want = ["e2e"] if entry.cold else ["e2e", "kernel"]
+    # (a two-worker NPU variant records the e2e window alone: tuning.md §6, approved by the owner)
+    e2e_only = entry.cold or (entry.method.startswith("npu") and entry.axes["workers"] == 2)
+    want = ["e2e"] if e2e_only else ["e2e", "kernel"]
     if [r["window"] for r in records] != want:
         raise asterbench_v12.ValidationError(f"windows {[r['window'] for r in records]}, not {want}")
     if any(tuple(r[k] for k in IDENTITY) != tuple(records[0][k] for k in IDENTITY) for r in records):
@@ -1480,6 +1494,9 @@ def main() -> int:
     parser.add_argument("--only", help="entries whose id starts with this (applied before --caches and --layouts)")
     parser.add_argument("--gate-workloads", action="store_true", help="only the scaling and v1 gates' cases")
     parser.add_argument("--sims", help="only entries on these builds, e.g. soc_dev (tuning.md §3's judging at R)")
+    parser.add_argument("--match", help="only entries whose id matches this regular expression")
+    parser.add_argument("--no-stamped", action="store_true",
+                        help="without the stamped twins (_stages: instrumented, not judged; tuning.md §5)")
     parser.add_argument("--r-only", action="store_true", help="only the R entries on the default seed (warm; cold "
                                                                   "for the gate workloads): the cache geometry's")
     parser.add_argument("--caches", help="also each of those (tuning.md §4.2) among the selected entries with the L1 "
@@ -1495,6 +1512,10 @@ def main() -> int:
         entries = [e for e in entries if gate_workload(e)]
     if args.sims:
         entries = [e for e in entries if e.sim in args.sims.split(",")]
+    if args.match:
+        entries = [e for e in entries if re.search(args.match, e.id)]
+    if args.no_stamped:
+        entries = [e for e in entries if not e.case.endswith("_stages")]
     if args.r_only:
         entries = [e for e in entries if geometry_base(e)]
     if args.caches:

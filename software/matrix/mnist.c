@@ -20,7 +20,14 @@
 #ifndef MNIST_METHOD
 #define MNIST_METHOD 3
 #endif
-#define MATRIX_SHARES (MNIST_METHOD == 1)                // (the share stamps, its two-worker builds': matrix_window.h)
+// 20.5's tuned variant (tuning.md §4.3): MNIST_SPLIT 1 (the NPU methods) builds "__2h", hart 1 taking half of the
+// requantization around the NPU's jobs inside each interval: an image's fc1 outputs (method 3), or each batch's
+// images for both layers (method 4). v1's per-image interval stays (the work inside it split, not pipelined across
+// images). Its record is the e2e window alone (tuning.md §6).
+#ifndef MNIST_SPLIT
+#define MNIST_SPLIT 0
+#endif
+#define MATRIX_SHARES (MNIST_METHOD == 1 || MNIST_SPLIT)  // (the share stamps, the two-worker builds': matrix_window.h)
 
 #include <stdint.h>
 #include <stdatomic.h>
@@ -43,6 +50,7 @@
 #define MNIST_BATCH 1u
 #endif
 #define NPU (MNIST_METHOD >= 3)
+_Static_assert(!MNIST_SPLIT || (NPU && (MNIST_METHOD == 3 || MNIST_BATCH >= 2u)), "the split's halves");
 #define IMAGES PHASE11_TEST_COUNT
 #define FC1_IN PHASE11_FC1_IN
 #define FC1_OUT PHASE11_FC1_OUT
@@ -171,6 +179,32 @@ struct io {
 MATRIX_ROOM(io, sizeof(struct io), 64);
 #define io MATRIX_OBJECT(struct io, io)
 
+#if MNIST_SPLIT
+static __attribute__((noinline)) void hidden_rows(uint32_t o0, uint32_t o1) {    // fc1's requantization and ReLU
+    for (uint32_t o = o0; o < o1; ++o) {
+        const int8_t value = requant(io.acc1[o], PHASE11_FC1_MULT, PHASE11_FC1_SHIFT, phase11_fc1_bias_q[o]);
+        io.hidden[o] = value > 0 ? value : 0;
+    }
+}
+static void hidden_upper(void *arg) {                  // hart 1: the upper half of fc1's outputs
+    (void)arg;
+    matrix_stamp_start(1);
+    matrix_share_begin(1);
+    hidden_rows(FC1_OUT / 2u, FC1_OUT);
+    matrix_share_end(1);
+    matrix_stamp_end(1);
+}
+static void hidden_split(void) {
+    __asm__ volatile ("fence rw,rw" ::: "memory");
+    aster_smp_dispatch(hidden_upper, 0);
+    matrix_share_begin(0);
+    hidden_rows(0, FC1_OUT / 2u);
+    matrix_share_end(0);
+    aster_smp_join();
+    __asm__ volatile ("fence rw,rw" ::: "memory");
+}
+#endif
+
 static __attribute__((noinline)) void infer(uint32_t image, int mode) {
     for (uint32_t i = 0; i < FC1_IN; ++i) io.input[i] = phase11_test_images[image * FC1_IN + i];
     __asm__ volatile ("fence iorw,iorw" ::: "memory");
@@ -184,10 +218,16 @@ static __attribute__((noinline)) void infer(uint32_t image, int mode) {
 #if MNIST_METHOD == 1
     MATRIX_SHARE_ON(0);
 #endif
+#if MNIST_SPLIT
+    matrix_last = image == IMAGES - 1u;                // (hart 1's last stretch: its end stamp and the shares)
+    hidden_split();
+    matrix_last = 0;
+#else
     for (uint32_t o = 0; o < FC1_OUT; ++o) {
         const int8_t value = requant(io.acc1[o], PHASE11_FC1_MULT, PHASE11_FC1_SHIFT, phase11_fc1_bias_q[o]);
         io.hidden[o] = value > 0 ? value : 0;
     }
+#endif
     const struct aster_npu2_job fc2 = {w2, io.hidden, io.acc2, FC2_IN, 1u, 4u, FC2_OUT, 1u, FC2_IN, 0, 0, 0, 0, 0};
     matrix_last = image == IMAGES - 1u;                // (the window's last stretch: hart 1's end stamp)
     layer(&fc2, mode);
@@ -216,21 +256,74 @@ MATRIX_ROOM(hidden, sizeof(int8_t[MNIST_BATCH * FC1_OUT]), 16);
 MATRIX_ROOM(acc2, sizeof(int32_t[MNIST_BATCH * FC2_OUT]), 16);
 #define acc2 MATRIX_AT(int32_t, acc2, MNIST_BATCH * FC2_OUT)
 
+#if MNIST_SPLIT
+// a batch's requantization for images [i0, i1): fc1's (layer 1: requantization and ReLU into hidden) or fc2's
+// (layer 2: the logits and the class)
+static __attribute__((noinline)) void batch_rows(int layer_number, uint32_t first, uint32_t i0, uint32_t i1) {
+    for (uint32_t i = i0; i < i1; ++i) {
+        if (layer_number == 1) {
+            for (uint32_t o = 0; o < FC1_OUT; ++o) {
+                const int8_t value = requant(acc1[i * FC1_OUT + o], PHASE11_FC1_MULT, PHASE11_FC1_SHIFT,
+                                             phase11_fc1_bias_q[o]);
+                hidden[i * FC1_OUT + o] = value > 0 ? value : 0;
+            }
+        } else {
+            int best = 0;
+            for (uint32_t o = 0; o < FC2_OUT; ++o) {
+                logits[first + i][o] = requant(acc2[i * FC2_OUT + o], PHASE11_FC2_MULT, PHASE11_FC2_SHIFT,
+                                               phase11_fc2_bias_q[o]);
+                if (logits[first + i][o] > logits[first + i][best]) best = (int)o;
+            }
+            classes[first + i] = best;
+        }
+    }
+}
+static volatile uint32_t split_layer, split_first;
+static void batch_upper(void *arg) {                   // hart 1: the batch's upper half of images
+    (void)arg;
+    matrix_stamp_start(1);
+    matrix_share_begin(1);
+    batch_rows((int)split_layer, split_first, MNIST_BATCH / 2u, MNIST_BATCH);
+    matrix_share_end(1);
+    matrix_stamp_end(1);
+}
+static void batch_split(int layer_number, uint32_t first) {
+    split_layer = (uint32_t)layer_number;
+    split_first = first;
+    __asm__ volatile ("fence rw,rw" ::: "memory");
+    aster_smp_dispatch(batch_upper, 0);
+    matrix_share_begin(0);
+    batch_rows(layer_number, first, 0, MNIST_BATCH / 2u);
+    matrix_share_end(0);
+    aster_smp_join();
+    __asm__ volatile ("fence rw,rw" ::: "memory");
+}
+#endif
+
 static __attribute__((noinline)) void infer_batch(uint32_t first, int mode) {
     if (mode == E2E) interval_open();
     // fc1: (batch x 784) images in place x W1^T (784 x 32)
     const struct aster_npu2_job fc1 = {&phase11_test_images[first * FC1_IN], phase11_fc1_weights_t, acc1, FC1_IN,
                                        FC1_OUT, 4u * FC1_OUT, MNIST_BATCH, FC1_OUT, FC1_IN, 0, 0, 0, 0, 0};
     layer(&fc1, mode);
+#if MNIST_SPLIT
+    batch_split(1, first);
+#else
     for (uint32_t i = 0; i < MNIST_BATCH; ++i)
         for (uint32_t o = 0; o < FC1_OUT; ++o) {
             const int8_t value = requant(acc1[i * FC1_OUT + o], PHASE11_FC1_MULT, PHASE11_FC1_SHIFT,
                                          phase11_fc1_bias_q[o]);
             hidden[i * FC1_OUT + o] = value > 0 ? value : 0;
         }
+#endif
     const struct aster_npu2_job fc2 = {hidden, phase11_fc2_weights_t, acc2, FC2_IN, FC2_OUT, 4u * FC2_OUT, MNIST_BATCH,
                                        FC2_OUT, FC2_IN, 0, 0, 0, 0, 0};
     layer(&fc2, mode);
+#if MNIST_SPLIT
+    matrix_last = first + MNIST_BATCH == IMAGES;       // (hart 1's last stretch: its end stamp and the shares)
+    batch_split(2, first);
+    matrix_last = 0;
+#else
     for (uint32_t i = 0; i < MNIST_BATCH; ++i) {
         int best = 0;
         for (uint32_t o = 0; o < FC2_OUT; ++o) {
@@ -240,6 +333,7 @@ static __attribute__((noinline)) void infer_batch(uint32_t first, int mode) {
         }
         classes[first + i] = best;
     }
+#endif
     if (mode == E2E) interval_close();
 }
 
@@ -281,12 +375,15 @@ static void timed_pass(struct v12_record *record, int mode) {
                                         "mnist_mlp_npu_batched"};
     static const char *const methods[] = {"scalar", "multicore", "dot8", "npu", "npu"};
     record->name = names[MNIST_METHOD]; record->family = "ml"; record->method = methods[MNIST_METHOD];
+#if MNIST_SPLIT
+    record->name = MNIST_METHOD == 3 ? "mnist_mlp_npu__2h" : "mnist_mlp_npu_batched__2h";    // (tuning.md §3)
+#endif
     record->window = mode == KERNEL ? "kernel" : "e2e"; record->cache_state = MATRIX_CACHE_STATE;
     record->size = FC1_IN; record->iterations = IMAGES; record->param = MNIST_BATCH; record->seed = 0;
-    record->checksum = checksum; record->workers = MNIST_METHOD == 1 ? 2u : 1u;
+    record->checksum = checksum; record->workers = MNIST_METHOD == 1 || MNIST_SPLIT ? 2u : 1u;
     record->pass = logits_ok && !engine_failed;
     v12_emit(record);
-#if MNIST_METHOD == 1
+#if MNIST_METHOD == 1 || MNIST_SPLIT
     matrix_share_emit(record->window);                 // (each hart's last share, beside the record: tuning.md §6)
 #endif
 }
@@ -295,12 +392,14 @@ int main(void) {
     static struct v12_record record;
 #if MNIST_METHOD == 1
     *(volatile uint32_t *)0x20002004u = 1u;            // v1's: the secondary released once, before any window
+#elif MNIST_SPLIT
+    aster_smp_start();
 #endif
     if (!matrix_cold) pass(E2E);                       // the e2e window's warm-up (the same code)
     engine_failed = 0;
     timed_pass(&record, E2E);
     int failed = !record.pass;
-    if (!matrix_cold) {
+    if (!matrix_cold && !MNIST_SPLIT) {                // (MNIST_SPLIT: the e2e window alone)
         pass(KERNEL);                                  // the kernel window's warm-up
         timed_pass(&record, KERNEL);
         failed |= !record.pass;

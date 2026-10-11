@@ -17,7 +17,15 @@
 #ifndef CONV_METHOD
 #define CONV_METHOD 1
 #endif
-#define MATRIX_SHARES (CONV_METHOD == 2 || CONV_METHOD == 6)                // (the share stamps, its two-worker builds': matrix_window.h)
+// 20.5's tuned variant (tuning.md §4.3): CONV_SPLIT 1 (the NPU methods) builds "__2h", hart 1 taking CPU work around
+// the NPU's jobs. Direct: a pipeline, each iteration's inputs built by hart 1 into the other buffers while the NPU
+// runs the iteration before, whose predecessor's output hart 0 folds meanwhile (the checksum in order). Through
+// im2col (whose matrix is too large to double): the image and the im2col rows built by halves on the two harts.
+// Its record is v1's window alone (tuning.md §6: in the kernel window hart 1 has nothing of the job's to do).
+#ifndef CONV_SPLIT
+#define CONV_SPLIT 0
+#endif
+#define MATRIX_SHARES (CONV_METHOD == 2 || CONV_METHOD == 6 || CONV_SPLIT)  // (the share stamps, the two-worker builds': matrix_window.h)
 
 #include <stdint.h>
 
@@ -47,7 +55,8 @@
 #define CONV_KK (CONV_K * CONV_K)
 #define IM2COL (CONV_METHOD <= 4)
 #define NPU (CONV_METHOD == 4 || CONV_METHOD == 8)
-#define WORKERS ((CONV_METHOD == 2 || CONV_METHOD == 6) ? 2u : 1u)
+#define WORKERS ((CONV_METHOD == 2 || CONV_METHOD == 6 || CONV_SPLIT) ? 2u : 1u)
+_Static_assert(!CONV_SPLIT || NPU, "the split is the NPU methods' tuned variant");
 
 MATRIX_ROOM(image, sizeof(int8_t[CONV_H * CONV_W]), 16);
 #define image MATRIX_AT(int8_t, image, CONV_H * CONV_W)
@@ -125,7 +134,7 @@ static void npu_outcome(uint32_t status) {             // a job's outcome noted,
 static uint32_t npu_status;                            // the kernel window's job: its end, noted after the window
 #endif
 
-#if WORKERS == 2
+#if WORKERS == 2 && !NPU
 // hart 1's share: the upper half of the rows (arg nonzero: the e2e window's, its im2col rows too)
 static void upper_rows(void *arg) {
     matrix_stamp_start(1);
@@ -169,6 +178,107 @@ static void engine(void) {
 #endif
 }
 
+#if CONV_SPLIT
+#if IM2COL
+// the image by halves of its rows, the kernel with hart 0's; then the im2col rows by halves
+static void image_rows(uint32_t row0, uint32_t row1) {
+    for (uint32_t i = row0 * CONV_W; i < row1 * CONV_W; ++i) image[i] = (int8_t)((CONV_SEED ^ (i * 0x1021u)) & 0xffu);
+}
+static volatile uint32_t split_phase;                  // 0 the image's upper rows, 1 the im2col's upper rows
+static void upper_build(void *arg) {
+    (void)arg;
+    matrix_stamp_start(1);
+    if (split_phase == 0) {
+        image_rows(CONV_H / 2u, CONV_H);
+    } else {
+        matrix_share_begin(1);
+        build_im2col(CONV_M / 2u, CONV_M);
+        matrix_share_end(1);
+    }
+    matrix_stamp_end(1);
+}
+static void split_iteration(void) {
+    split_phase = 0;
+    __asm__ volatile ("fence rw,rw" ::: "memory");
+    aster_smp_dispatch(upper_build, 0);
+    image_rows(0, CONV_H / 2u);
+    for (uint32_t i = 0; i < CONV_KK; ++i) kernel[i] = (int8_t)((CONV_SEED ^ (i * 0x9e3779b9u)) & 0xffu);
+    aster_smp_join();
+    split_phase = 1;
+    __asm__ volatile ("fence rw,rw" ::: "memory");
+    aster_smp_dispatch(upper_build, 0);
+    matrix_share_begin(0);
+    build_im2col(0, CONV_M / 2u);
+    matrix_share_end(0);
+    aster_smp_join();
+    __asm__ volatile ("fence rw,rw" ::: "memory");
+    aster_npu2_start(&job);
+    npu_outcome(aster_npu2_wait());
+    __asm__ volatile ("fence rw,rw" ::: "memory");
+}
+#else
+// the pipeline's second buffers: iteration i's inputs and output in slot i % 2 (slot 0: the rooms above)
+MATRIX_ROOM(image_b, sizeof(int8_t[CONV_H * CONV_W]), 16);
+MATRIX_ROOM(kernel_b, sizeof(int8_t[CONV_KK]), 16);
+MATRIX_ROOM(output_b, sizeof(int32_t[CONV_M]), 16);
+static int8_t *slot_image(uint32_t s) { return s ? MATRIX_AT(int8_t, image_b, CONV_H * CONV_W) : image; }
+static int8_t *slot_kernel(uint32_t s) { return s ? MATRIX_AT(int8_t, kernel_b, CONV_KK) : kernel; }
+static int32_t *slot_output(uint32_t s) { return s ? MATRIX_AT(int32_t, output_b, CONV_M) : output; }
+
+static __attribute__((noinline)) void build_inputs(uint32_t s) {      // build_image_and_kernel's, into slot s
+    int8_t *img = slot_image(s), *ker = slot_kernel(s);
+    for (uint32_t i = 0; i < CONV_H * CONV_W; ++i) img[i] = (int8_t)((CONV_SEED ^ (i * 0x1021u)) & 0xffu);
+    for (uint32_t i = 0; i < CONV_KK; ++i) ker[i] = (int8_t)((CONV_SEED ^ (i * 0x9e3779b9u)) & 0xffu);
+}
+static __attribute__((noinline)) uint32_t fold_slot(uint32_t checksum, uint32_t s) {         // fold's, of slot s
+    const int32_t *out = slot_output(s);
+    for (uint32_t i = 0; i < CONV_M; ++i) checksum = (checksum * 33u) ^ (uint32_t)out[i];
+    return checksum;
+}
+static volatile uint32_t build_slot;
+static void build_next(void *arg) {                    // hart 1: the next iteration's inputs
+    (void)arg;
+    matrix_stamp_start(1);
+    matrix_share_begin(1);
+    build_inputs(build_slot);
+    matrix_share_end(1);
+    matrix_stamp_end(1);
+}
+// v1's window's four iterations, pipelined: the job i runs while hart 1 builds inputs i + 1 and hart 0 folds
+// output i - 1
+static uint32_t run_pipelined(void) {
+    uint32_t checksum = 0;
+    build_inputs(0);
+    for (uint32_t i = 0; i < CONV_ITERATIONS; ++i) {
+        const uint32_t s = i & 1u;
+        struct aster_npu2_job slot_job = job;
+        slot_job.a = slot_image(s);
+        slot_job.b = slot_kernel(s);
+        slot_job.c = slot_output(s);
+        __asm__ volatile ("fence rw,rw" ::: "memory");
+        aster_npu2_start(&slot_job);
+        const int next = i + 1u < CONV_ITERATIONS;
+        matrix_last = i + 2u == CONV_ITERATIONS;       // (the last inputs' build: hart 1's end stamp, the shares)
+        if (next) {
+            build_slot = s ^ 1u;
+            aster_smp_dispatch(build_next, 0);
+        }
+        if (i > 0) {
+            matrix_share_begin(0);
+            checksum = fold_slot(checksum, s ^ 1u);
+            matrix_share_end(0);
+        }
+        npu_outcome(aster_npu2_wait());
+        if (next) aster_smp_join();
+        matrix_last = 0;
+    }
+    __asm__ volatile ("fence rw,rw" ::: "memory");
+    return fold_slot(checksum, (CONV_ITERATIONS - 1u) & 1u);
+}
+#endif
+#endif
+
+#if !CONV_SPLIT
 // one iteration of v1's window: the inputs built, the engine, as v1
 static void iteration_e2e(void) {
     build_image_and_kernel();
@@ -198,6 +308,7 @@ static void iteration_e2e(void) {
 #endif
     __asm__ volatile ("fence rw, rw" ::: "memory");
 }
+#endif
 
 static __attribute__((noinline)) uint32_t fold(uint32_t checksum) {              // v1's: each output in turn, across the iterations
     for (uint32_t i = 0; i < CONV_M; ++i) checksum = (checksum * 33u) ^ (uint32_t)output[i];
@@ -241,13 +352,21 @@ static void poison_all(void) {
 }
 
 static uint32_t run_e2e(void) {
+#if CONV_SPLIT && !IM2COL
+    return run_pipelined();
+#else
     uint32_t checksum = 0;
     for (uint32_t iteration = 0; iteration < CONV_ITERATIONS; ++iteration) {
         matrix_last = iteration == CONV_ITERATIONS - 1u;
+#if CONV_SPLIT
+        split_iteration();
+#else
         iteration_e2e();
+#endif
         checksum = fold(checksum);
     }
     return checksum;
+#endif
 }
 
 static uint32_t run_kernel(void) {
@@ -293,6 +412,9 @@ static void emit(struct v12_record *record, const char *window, uint32_t checksu
     static const char *const methods[] = {"", "scalar", "multicore", "dot8", "npu_im2col", "scalar", "multicore",
                                           "dot8", "npu_direct"};
     record->name = names[CONV_METHOD]; record->family = "dsp"; record->method = methods[CONV_METHOD];
+#if CONV_SPLIT
+    record->name = CONV_METHOD == 4 ? "conv2d_im2col_npu__2h" : "conv2d_direct_npu__2h";   // (tuning.md §3)
+#endif
     record->window = window; record->cache_state = MATRIX_CACHE_STATE;
     record->size = CONV_H * CONV_W; record->iterations = CONV_ITERATIONS; record->param = CONV_K;
     record->seed = CONV_SEED; record->checksum = checksum; record->workers = WORKERS; record->pass = !engine_failed;
@@ -316,7 +438,7 @@ int main(void) {
     v12_end(&record);
     matrix_hart0_whole(&record);                       // (v1's window ends in hart 0's checksum)
     emit(&record, "e2e", e2e);
-    if (!matrix_cold) {
+    if (!matrix_cold && !CONV_SPLIT) {                 // (CONV_SPLIT: v1's window alone)
         (void)run_kernel();                            // the kernel window's warm-up
         poison_all();
         matrix_stamps_clear();
