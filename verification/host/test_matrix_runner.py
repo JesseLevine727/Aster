@@ -309,6 +309,23 @@ class DmaInvalidations(unittest.TestCase):
 STEP2_SIM = {4: "soc_dev", 2: "soc_l1_2k", 8: "soc_l1_8k"}       # (a capture of step 2's: R's caches at 4 KiB)
 
 
+class Policies(unittest.TestCase):
+    """20.5 step 3: the runner reads the copy and split policies from the sources the firmware is built from."""
+    def test_the_headers_values(self):
+        self.assertEqual(matrix.copy_policy(), dict(aligned=113, same_offset=89, different_offsets=21))
+        split = matrix.split_policy()
+        self.assertEqual(split["dot_k"], 128)
+        self.assertEqual(split["items"], {0: 129, 1: 64, 2: 64, 3: 0xFFFFFFFF, 4: 129, 5: 129, 8: 16})
+
+    def test_split_variants_planned_by_the_policy(self):
+        dot = {e.axes["k"]: e.axes["workers"] for e in matrix.dsp_more_entries()
+               if e.case == "dot__split" and e.sim == "soc_dev" and not e.cold and "/seed" not in e.id}
+        self.assertEqual(dot, {0: 1, 1: 1, 7: 1, 8: 1, 64: 1, 256: 2, 1024: 2, 4096: 2})
+        lock = {e.axes["items"]: e.axes["workers"] for e in matrix.coherence_entries()
+                if e.case == "lock_sum__split" and e.sim == "soc_dev" and not e.cold}
+        self.assertEqual(lock, {2: 1, 129: 1, 1024: 1})
+
+
 class Crossover(unittest.TestCase):
     """20.5 step 3: the copy helper's threshold, the size from which the DMA wins at every larger size."""
     def test_from_which_the_dma_wins(self):

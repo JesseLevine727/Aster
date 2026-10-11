@@ -23,6 +23,7 @@
 #include <stdint.h>
 #include <stdatomic.h>
 
+#include "matrix_layout.h"
 #include "aster.h"
 #include "aster_smp.h"
 #include "asterbench_v12.h"
@@ -40,9 +41,42 @@
 #define REDUCE_SEED 0x13570000u
 
 _Static_assert(REDUCE_WORKERS == 1u || REDUCE_WORKERS == 2u, "workers must be 1 or 2");
+// 20.5's tuned variant (tuning.md §4.4): REDUCE_PLACE 1 (two workers) builds "__place": each hart's half in a buffer
+// of its own, hart 0's on a 64-byte boundary and hart 1's 16 bytes past one (MATRIX_ROOM_HART: the layouts' hart pad
+// moves it too), so that the two harts' streams, in lockstep, meet in different banks (address bits [5:4]) where
+// the array's halves, 2 KiB apart, met in the same bank. The same computation and checksum.
+#ifndef REDUCE_PLACE
+#define REDUCE_PLACE 0
+#endif
+_Static_assert(!REDUCE_PLACE || REDUCE_WORKERS == 2u, "the placement is the two workers'");
 
-static volatile uint32_t array[REDUCE_WORDS];
 static volatile uint32_t upper_sum;                    // hart 1's partial sum
+
+#if REDUCE_PLACE
+#define HALF (REDUCE_WORDS / 2u)
+MATRIX_ROOM(lower, sizeof(uint32_t[HALF]), 64);
+MATRIX_ROOM_HART(upper, 16u + sizeof(uint32_t[HALF]), 64);
+// the base from which a range within one half is indexed by its words' numbers in the whole array
+static volatile uint32_t *half_base(uint32_t begin) {
+    return begin < HALF ? (volatile uint32_t *)(void *)&MATRIX_AT(uint8_t, lower, 4u * HALF)[0]
+                        : (volatile uint32_t *)(void *)&MATRIX_AT_HART(uint8_t, upper, 16u + 4u * HALF)[16] - HALF;
+}
+
+// (the computation's functions out of line, noinline; each call's range within one half)
+static __attribute__((noinline)) uint32_t sum_range(uint32_t begin, uint32_t end) {
+    volatile uint32_t *const array = half_base(begin);
+    uint32_t sum = 0;
+    for (uint32_t i = begin; i < end; ++i) sum += array[i];
+    return sum;
+}
+
+static __attribute__((noinline)) void fill_range(uint32_t begin, uint32_t end) {
+    volatile uint32_t *const array = half_base(begin);
+    for (uint32_t i = begin; i < end; ++i) array[i] = REDUCE_SEED ^ (i * 0x1021u);
+}
+#define FILL_ALL() (fill_range(0, HALF), fill_range(HALF, REDUCE_WORDS))
+#else
+static volatile uint32_t array[REDUCE_WORDS];
 
 // (the computation's functions out of line, noinline, so that their code is the same in every caller and build)
 static __attribute__((noinline)) uint32_t sum_range(uint32_t begin, uint32_t end) {
@@ -54,6 +88,8 @@ static __attribute__((noinline)) uint32_t sum_range(uint32_t begin, uint32_t end
 static __attribute__((noinline)) void fill_range(uint32_t begin, uint32_t end) {
     for (uint32_t i = begin; i < end; ++i) array[i] = REDUCE_SEED ^ (i * 0x1021u);
 }
+#define FILL_ALL() fill_range(0, REDUCE_WORDS)
+#endif
 
 #if REDUCE_VERSION == 1
 // v1's: hart 1 sums the upper half for each new epoch
@@ -97,7 +133,7 @@ static uint32_t run_e2e(void) {
     uint32_t checksum = 0;
     for (uint32_t iteration = 1; iteration <= REDUCE_ITERATIONS; ++iteration) {
         matrix_last = iteration == REDUCE_ITERATIONS;
-        fill_range(0, REDUCE_WORDS);
+        FILL_ALL();
         __asm__ volatile ("fence rw,rw" ::: "memory");
         checksum = (checksum * 33u) ^ sum_all();
     }
@@ -107,7 +143,7 @@ static uint32_t run_e2e(void) {
 static uint32_t run_kernel(void) {
     uint32_t checksum = 0;
     for (uint32_t iteration = 1; iteration <= REDUCE_ITERATIONS; ++iteration) {
-        fill_range(0, REDUCE_WORDS);                   // (outside: v1's fill, by hart 0)
+        FILL_ALL();                                    // (outside: v1's fill, by hart 0)
         matrix_last = iteration == REDUCE_ITERATIONS;
         matrix_open(iteration == 1);
         const uint32_t total = sum_all();
@@ -204,6 +240,9 @@ static __attribute__((noinline)) uint32_t window_e2e(void) {
 static void emit(struct v12_record *record, const char *window, uint32_t checksum) {
     matrix_hart0_whole(record);                        // (every window ends in hart 0's add and fold)
     record->name = REDUCE_VERSION == 1 ? "reduce_v1" : "reduce_fill";
+#if REDUCE_PLACE
+    record->name = REDUCE_VERSION == 1 ? "reduce_v1__place" : "reduce_fill__place";     // (tuning.md §3)
+#endif
     record->family = "coherence";
     record->method = REDUCE_WORKERS == 2 ? "multicore" : "scalar";
     record->window = window;
@@ -219,7 +258,11 @@ static void emit(struct v12_record *record, const char *window, uint32_t checksu
 #if REDUCE_VERSION == 2 && REDUCE_WORKERS == 2
 static void upper_poison(void *arg) {                  // (hart 1's half and its sum, by hart 1: matrix_window.h)
     (void)arg;
+#if REDUCE_PLACE
+    matrix_poison((void *)&half_base(HALF)[HALF], 4u * HALF);
+#else
     matrix_poison((void *)&array[REDUCE_WORDS / 2u], sizeof array / 2u);
+#endif
     upper_sum = 0xA5A5A5A5u;
 }
 #endif
@@ -227,8 +270,17 @@ static void upper_poison(void *arg) {                  // (hart 1's half and its
 static void poison(void) {
 #if REDUCE_VERSION == 2 && REDUCE_WORKERS == 2
     aster_smp_dispatch(upper_poison, 0);
+#if REDUCE_PLACE
+    matrix_poison((void *)half_base(0), 4u * HALF);
+#else
     matrix_poison((void *)array, sizeof array / 2u);
+#endif
     aster_smp_join();
+#elif REDUCE_PLACE
+    // (v1's: hart 0 refills the whole array in every iteration; hart 1's sum is one word)
+    matrix_poison((void *)half_base(0), 4u * HALF);
+    matrix_poison((void *)&half_base(HALF)[HALF], 4u * HALF);
+    upper_sum = 0xA5A5A5A5u;
 #else
     // (v1's: hart 0 refills the whole array in every iteration; hart 1's sum is one word)
     matrix_poison((void *)array, sizeof array);

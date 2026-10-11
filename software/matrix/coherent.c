@@ -37,6 +37,20 @@
 #ifndef COHERENT_WORKERS
 #define COHERENT_WORKERS 2
 #endif
+// 20.5's tuned variant (tuning.md §4.3): COHERENT_SPLIT 1 builds "<kind>__split", two workers only from the split
+// policy's items for its kind (aster_split.h), one below them
+#ifndef COHERENT_SPLIT
+#define COHERENT_SPLIT 0
+#endif
+#if COHERENT_SPLIT
+#include "aster_split.h"
+#undef COHERENT_WORKERS
+#if COHERENT_ITEMS >= ASTER_SPLIT_ITEMS(COHERENT_KIND)
+#define COHERENT_WORKERS 2
+#else
+#define COHERENT_WORKERS 1
+#endif
+#endif
 #ifndef COHERENT_SEED
 #define COHERENT_SEED 0x13570000u
 #endif
@@ -357,6 +371,15 @@ static int timed_pass(struct v12_record *record, int mode) {
     static const char *const names[] = {"atomic_add", "lrsc_counter", "cas_counter", "lock_sum", "false_shared",
                                         "padded", "ping_pong", "spsc_queue", "shared_mix", "producer_consumer"};
     record->name = names[COHERENT_KIND]; record->family = "coherence";
+#if COHERENT_SPLIT
+    static char named[32];                             // (a tuned variant's case: the kind's name, "__split")
+    if (!named[0]) {
+        int n = 0;
+        for (const char *c = names[COHERENT_KIND]; *c; ++c) named[n++] = *c;
+        for (const char *c = "__split"; *c; ++c) named[n++] = *c;
+    }
+    record->name = named;
+#endif
     record->method = COHERENT_WORKERS == 2 ? "multicore" : "scalar";
     record->window = mode == KERNEL ? "kernel" : "e2e"; record->cache_state = MATRIX_CACHE_STATE;
     record->size = COHERENT_ITEMS; record->iterations = 1; record->param = COHERENT_ROUNDS;

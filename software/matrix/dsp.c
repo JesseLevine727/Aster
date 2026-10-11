@@ -47,7 +47,18 @@
 #ifndef DSP_SEED
 #define DSP_SEED 0x13570000u
 #endif
+// 20.5's tuned variant (tuning.md §4.3): DSP_SPLIT 1 (the dot's two workers) builds "dot__split", two workers only
+// from the split policy's K (aster_split.h), one below it
+#ifndef DSP_SPLIT
+#define DSP_SPLIT 0
+#endif
+_Static_assert(!DSP_SPLIT || (DSP_METHOD == 1 && DSP_CASE == 1), "the split policy's variant is the dot's two workers'");
+#if DSP_SPLIT
+#include "aster_split.h"
+#define WORKERS (DSP_K >= ASTER_SPLIT_DOT_K ? 2u : 1u)
+#else
 #define WORKERS (DSP_METHOD == 1 ? 2u : 1u)
+#endif
 #define NPU (DSP_METHOD == 3)
 #define POISON 0xA5u
 
@@ -400,6 +411,9 @@ static int timed_pass(struct v12_record *record, int mode) {
     static const char *const names[] = {"", "dot", "fir", "fft"};
     static const char *const methods[] = {"scalar", "multicore", "dot8", "npu"};
     record->name = names[DSP_CASE]; record->family = "dsp"; record->method = methods[DSP_METHOD];
+#if DSP_SPLIT
+    record->name = "dot__split";                        // (tuning.md §3: under its original's method, multicore)
+#endif
     record->window = mode == KERNEL ? "kernel" : "e2e"; record->cache_state = MATRIX_CACHE_STATE;
 #if DSP_CASE == 3
     record->size = FFT_N * 4u; record->iterations = FFT_ITERATIONS; record->param = FFT_N;

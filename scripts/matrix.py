@@ -135,22 +135,31 @@ def coherence_entries() -> list[Entry]:
             e.status, e.reason = "unsupported", "two workers need two harts"
         return e
 
-    for version, name in ((1, "reduce_v1"), (2, "reduce_fill")):
+    # (20.5's tuned variant, tuning.md §4.4: __place, the two workers' halves a bank apart; reduce.c)
+    for version, name, tag, tuning in ((1, "reduce_v1", "", []), (2, "reduce_fill", "", []),
+                                       (1, "reduce_v1", "__place", ["-DREDUCE_PLACE=1"]),
+                                       (2, "reduce_fill", "__place", ["-DREDUCE_PLACE=1"])):
         for wait, dcache, cold, sim, workers in configs + unsupported_h1:
+            if tag and workers != 2:
+                continue
             harts = soc_variants.VARIANTS[sim]["HARTS"]
             method = "multicore" if workers == 2 else "scalar"
             axes = dict(memory_wait=wait, dcache=dcache, cache_state="cold" if cold else "warm", harts=harts,
                         workers=workers)
-            ident = f"coherence/{name}/{method}/{sim}/{'cold' if cold else 'warm'}"
-            entries.append(mark(Entry(ident, "coherence", name, method, sim, cold, [], "LITMUS_CFLAGS", [], [], "",
+            ident = f"coherence/{name}{tag}/{method}/{sim}/{'cold' if cold else 'warm'}"
+            entries.append(mark(Entry(ident, "coherence", name + tag, method, sim, cold, [], "LITMUS_CFLAGS", [], [], "",
                                       sources, soc_variants.v12_defines(sim) + [f"-DREDUCE_VERSION={version}",
-                                                                                f"-DREDUCE_WORKERS={workers}u"]
+                                                                                f"-DREDUCE_WORKERS={workers}u"] + tuning
                                       + (["-DMATRIX_COLD"] if cold else []), axes, "reduce")))
     # the multicore GEMM with DOT8 (the scaling gate's): npu.md §7's cases, one firmware each
     gemm_sources = ["software/matrix/gemm_mc.c", "software/runtime/asterbench_v12.c", "software/runtime/aster_smp.c"]
-    for m, n, k in ((64, 64, 64), (96, 96, 96), (128, 64, 128)):
-        name = f"gemm_dot8_{m}x{n}x{k}"
+    # (20.5's tuned variant, tuning.md §4.4: __place, hart 1's rows of A and C a bank further along; gemm_mc.c)
+    for (m, n, k), tag, tuning in [(shape, tag, tuning) for shape in ((64, 64, 64), (96, 96, 96), (128, 64, 128))
+                                   for tag, tuning in (("", []), ("__place", ["-DGEMM_PLACE=1"]))]:
+        name = f"gemm_dot8_{m}x{n}x{k}{tag}"
         for wait, dcache, cold, sim, workers in configs + unsupported_h1:
+            if tag and workers != 2:
+                continue
             harts = soc_variants.VARIANTS[sim]["HARTS"]
             method = "multicore" if workers == 2 else "dot8"
             axes = dict(memory_wait=wait, dcache=dcache, cache_state="cold" if cold else "warm", harts=harts,
@@ -159,7 +168,7 @@ def coherence_entries() -> list[Entry]:
             entries.append(mark(Entry(ident, "coherence", name, method, sim, cold, [], "LITMUS_CFLAGS", [], [], "",
                                       gemm_sources, soc_variants.v12_defines(sim)
                                       + [f"-DGEMM_M={m}u", f"-DGEMM_N={n}u", f"-DGEMM_K={k}u", f"-DGEMM_WORKERS={workers}u"]
-                                      + (["-DMATRIX_COLD"] if cold else []), axes, "gemm")))
+                                      + tuning + (["-DMATRIX_COLD"] if cold else []), axes, "gemm")))
     smp_sources = ["software/matrix/smp_overhead.c", "software/runtime/asterbench_v12.c", "software/runtime/aster_smp.c"]
     smp_configs = [(w, 1, False, VARIANT_OF[(w, 1)]) for w in (0, 1, 2, 4)]
     smp_configs += [(0, 1, True, "soc_dev"), (0, 0, False, "soc_dc0")]
@@ -171,23 +180,28 @@ def coherence_entries() -> list[Entry]:
                              axes, "smp"))
     # v1's coherence kernels (software/benchmarks/coherent.c) and producer/consumer, at v1's sizes
     coherent_sources = ["software/matrix/coherent.c", "software/runtime/asterbench_v12.c", "software/runtime/aster_smp.c"]
-    for kind, name, worker_counts in COHERENT_KINDS:
+    split_items = split_policy()["items"]
+    # (20.5's tuned variants, tuning.md §4.3: <kind>__split, the two workers' method by the split policy)
+    for kind, name, worker_counts, tag in [(k, n, w, "") for k, n, w in COHERENT_KINDS] + \
+            [(k, n, (2,), "__split") for k, n, w in COHERENT_KINDS if w == (1, 2)]:
         for items in (2, 129, 1024):
             for workers in worker_counts:
                 method = "multicore" if workers == 2 else "scalar"
+                planned = workers if not tag else (2 if items >= split_items[kind] else 1)
                 kconfigs = [c for c in configs if c[4] == workers]
                 if workers == 2:
                     kconfigs += [(w, 1, False, H1_OF[w], 2) for w in (0, 1, 2, 4)]
                 for wait, dcache, cold, sim, _ in kconfigs:
                     harts = soc_variants.VARIANTS[sim]["HARTS"]
                     axes = dict(memory_wait=wait, dcache=dcache, cache_state="cold" if cold else "warm", harts=harts,
-                                workers=workers, items=items, kind=kind)
-                    ident = f"coherence/{name}/{method}/{sim}/{'cold' if cold else 'warm'}/n{items}"
-                    e = Entry(ident, "coherence", name, method, sim, cold, [], "LITMUS_CFLAGS", [], [], "",
+                                workers=planned, items=items, kind=kind)
+                    ident = f"coherence/{name}{tag}/{method}/{sim}/{'cold' if cold else 'warm'}/n{items}"
+                    e = Entry(ident, "coherence", name + tag, method, sim, cold, [], "LITMUS_CFLAGS", [], [], "",
                               coherent_sources, soc_variants.v12_defines(sim)
-                              + [f"-DCOHERENT_KIND={kind}", f"-DCOHERENT_ITEMS={items}", f"-DCOHERENT_WORKERS={workers}"]
+                              + [f"-DCOHERENT_KIND={kind}", f"-DCOHERENT_ITEMS={items}"]
+                              + ([f"-DCOHERENT_WORKERS={workers}"] if not tag else ["-DCOHERENT_SPLIT=1"])
                               + (["-DMATRIX_COLD"] if cold else []), axes, "coherent")
-                    if harts == 1 and workers == 2:
+                    if harts == 1 and planned == 2:
                         e.status, e.reason = "unsupported", "two workers need two harts"
                     entries.append(e)
     for sim in ("soc_dev", "soc_w4"):                  # a work stamp's cost (the figure phase20.md quotes)
@@ -236,9 +250,14 @@ def dsp_more_entries() -> list[Entry]:
                "software/runtime/asterbench_v12.c", "software/runtime/aster_smp.c"]
     methods = ((0, "scalar", 1), (1, "multicore", 2), (2, "dot8", 1), (3, "npu", 1))
     cases = [(1, "dot", k, m) for k in (0, 1, 7, 8, 64, 256, 1024, 4096) for m in methods]
+    # (20.5's tuned variant, tuning.md §4.3: dot__split, the two workers' method by the split policy, aster_split.h)
+    cases += [(1, "dot__split", k, (1, "multicore", 2)) for k in (0, 1, 7, 8, 64, 256, 1024, 4096)]
     cases += [(2, "fir", t, m) for t in (4, 8, 16, 32, 64, 256) for m in methods]
     cases += [(3, "fft", 256, m) for m in methods[:2]]
+    split_dot_k = split_policy()["dot_k"]
     for case, name, k, (number, method, workers) in cases:
+        if name.endswith("__split"):
+            workers = 2 if k >= split_dot_k else 1
         configs = [(sim, cold, reason, CONV_SEEDS[0]) for sim, cold, reason in axis_configs(number == 3, workers)]
         configs += [("soc_dev", False, "", seed) for seed in CONV_SEEDS[1:]]
         for sim, cold, reason, seed in configs:
@@ -249,10 +268,52 @@ def dsp_more_entries() -> list[Entry]:
             e = Entry(ident, "dsp", name, method, sim, cold, [], "LITMUS_CFLAGS", [], [], "", sources,
                       soc_variants.v12_defines(sim) + [f"-DDSP_CASE={case}", f"-DDSP_METHOD={number}", f"-DDSP_K={k}u",
                                                        f"-DDSP_SEED={seed:#010x}u", "-Isoftware/benchmarks"]
+                      + (["-DDSP_SPLIT=1"] if name.endswith("__split") else [])
                       + (["-DMATRIX_COLD"] if cold else []), axes, "dsp")
             if reason:
                 e.status, e.reason = "unsupported", reason
             entries.append(e)
+    return entries
+
+
+# 20.5's split policy (docs/tuning.md §4.3: two workers only above measured sizes): the finer sweep between 20.4's
+# points where two workers lose and win, at R, warm and cold (and on the layouts, --layouts): the dot's K (two workers
+# against scalar), and the coherence kinds' items (two against one)
+SPLIT_DOT_K = (8, 12, 16, 20, 24, 28, 32, 40, 48, 56, 64, 80, 96, 128, 160, 192, 256)
+SPLIT_ITEMS = (2, 4, 8, 16, 32, 64, 129)
+
+
+def split_fine_entries() -> list[Entry]:
+    entries = []
+    dsp_sources = ["software/matrix/dsp.c", "software/benchmarks/xe_kernels.c", "software/drivers/aster_npu.c",
+                   "software/runtime/asterbench_v12.c", "software/runtime/aster_smp.c"]
+    for k in SPLIT_DOT_K:
+        for number, method, workers in ((0, "scalar", 1), (1, "multicore", 2)):
+            for cold in (False, True):
+                axes = make_axes("soc_dev", cold, workers)
+                axes.update(k=k, seed=CONV_SEEDS[0])
+                entries.append(Entry(f"split_fine/dot/{method}/soc_dev/{'cold' if cold else 'warm'}/k{k}", "split_fine",
+                                     "dot", method, "soc_dev", cold, [], "LITMUS_CFLAGS", [], [], "", dsp_sources,
+                                     soc_variants.v12_defines("soc_dev") + [
+                                         "-DDSP_CASE=1", f"-DDSP_METHOD={number}", f"-DDSP_K={k}u",
+                                         f"-DDSP_SEED={CONV_SEEDS[0]:#010x}u", "-Isoftware/benchmarks"]
+                                     + (["-DMATRIX_COLD"] if cold else []), axes, "dsp"))
+    coherent_sources = ["software/matrix/coherent.c", "software/runtime/asterbench_v12.c", "software/runtime/aster_smp.c"]
+    for kind, name, worker_counts in COHERENT_KINDS:
+        if worker_counts != (1, 2):
+            continue
+        for items in SPLIT_ITEMS:
+            for workers in (1, 2):
+                method = "multicore" if workers == 2 else "scalar"
+                for cold in (False, True):
+                    axes = dict(memory_wait=0, dcache=1, cache_state="cold" if cold else "warm", harts=2,
+                                workers=workers, items=items, kind=kind)
+                    entries.append(Entry(f"split_fine/{name}/{method}/soc_dev/{'cold' if cold else 'warm'}/n{items}",
+                                         "split_fine", name, method, "soc_dev", cold, [], "LITMUS_CFLAGS", [], [], "",
+                                         coherent_sources, soc_variants.v12_defines("soc_dev") + [
+                                             f"-DCOHERENT_KIND={kind}", f"-DCOHERENT_ITEMS={items}",
+                                             f"-DCOHERENT_WORKERS={workers}"] + (["-DMATRIX_COLD"] if cold else []),
+                                         axes, "coherent"))
     return entries
 
 
@@ -573,7 +634,7 @@ def npu_gemm_entries() -> list[Entry]:
 FAMILIES = {"cpu": cpu_entries, "coherence": coherence_entries, "dsp": dsp_family, "ml": ml_family,
             "ecg": ecg_entries, "memory": memory_entries, "dma": dma_entries, "npu_gemm": npu_gemm_entries}
 # 20.5's tuning measurements (docs/tuning.md §4): run when named (--family), not part of the full matrix
-TUNING = {"dma_fine": lambda: dma_fine_entries()}
+TUNING = {"dma_fine": lambda: dma_fine_entries(), "split_fine": lambda: split_fine_entries()}
 
 # v1's baseline records (Phase 17, sync1), the cases' identity the v12 record must keep
 BASELINE = run_core_tests.BASELINE
@@ -855,6 +916,17 @@ def ecg_model(chunk: int, taps: int, features: int, seed: int = 0x13570000) -> i
             checksum = ((checksum * 33) ^ (v & mask)) & mask
         checksum = ((checksum * 33) ^ best) & mask
     return checksum
+
+
+def split_policy() -> dict:
+    """The split policy's thresholds (software/runtime/aster_split.h): the dot's K and each coherence kind's items
+    from which two workers run (ASTER_SPLIT_NEVER: none), read from the source the firmware is built from."""
+    text = (ROOT / "software/runtime/aster_split.h").read_text()
+    never = 0xFFFFFFFF
+    value = lambda v: never if v == "ASTER_SPLIT_NEVER" else int(v.rstrip("u"))
+    items = {int(k): value(v) for k, v in re.findall(r"#define ASTER_SPLIT_ITEMS_(\d+) (\w+)", text)}
+    dot = value(re.search(r"#define ASTER_SPLIT_DOT_K (\w+)", text).group(1))
+    return dict(dot_k=dot, items=items)
 
 
 def copy_policy() -> dict:
@@ -1150,9 +1222,10 @@ def dsp_model(case: str, k: int, seed: int) -> int:
 
 def oracle_dsp(entry: Entry, records: list[dict]) -> str:
     a = entry.axes
-    want = dsp_model(entry.case, a["k"], a["seed"])
-    m = 256 if entry.case == "fir" else 1
-    size, iterations, param = {"dot": (a["k"], 1, 0), "fir": (256, 1, a["k"]), "fft": (1024, 4, 256)}[entry.case]
+    case = entry.case.split("__")[0]                   # (a tuned variant computes its original's case)
+    want = dsp_model(case, a["k"], a["seed"])
+    m = 256 if case == "fir" else 1
+    size, iterations, param = {"dot": (a["k"], 1, 0), "fir": (256, 1, a["k"]), "fft": (1024, 4, 256)}[case]
     dot8 = m * (a["k"] // 4) if entry.method == "dot8" else 0
     npu = entry.method == "npu"
     for r in two_windows(entry, records):
@@ -1164,7 +1237,7 @@ def oracle_dsp(entry: Entry, records: list[dict]) -> str:
             raise asterbench_v12.ValidationError(f"{r['npu_macs']} NPU MACs, not {m * a['k']}")
     if want != records[0]["checksum"]:
         raise asterbench_v12.ValidationError(f"checksum {records[0]['checksum']:#010x}, the model's {want:#010x}")
-    note = "" if entry.case == "fft" else "; the outputs and guards checked in the firmware against v1's scalar"
+    note = "" if case == "fft" else "; the outputs and guards checked in the firmware against v1's scalar"
     return f"checksum {want:#010x}: the model's{note}"
 
 
