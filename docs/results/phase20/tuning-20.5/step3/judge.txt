@@ -1,0 +1,324 @@
+revisions ['410fbce']; 194 variant configurations: {'wins': 168, 'not distinguishable': 22, 'loses': 4}; 0 variant entries without an original, 0 whose original cannot run there (unsupported), 0 stacked without the variant they extend
+  wins                 coherence/atomic_add__split/multicore/soc_dev/n1024: -0.25% to -0.06% over 8 layouts, cold/warm, e2e/kernel
+  not distinguishable  coherence/atomic_add__split/multicore/soc_dev/n129: +0.00% to +1.35% over 8 layouts, cold/warm, e2e/kernel
+  wins                 coherence/atomic_add__split/multicore/soc_dev/n2: -90.94% to -80.26% over 8 layouts, cold/warm, e2e/kernel
+  not distinguishable  coherence/cas_counter__split/multicore/soc_dev/n1024: -0.33% to +43.46% over 8 layouts, cold/warm, e2e/kernel
+  not distinguishable  coherence/cas_counter__split/multicore/soc_dev/n129: -28.25% to +34.07% over 8 layouts, cold/warm, e2e/kernel
+  wins                 coherence/cas_counter__split/multicore/soc_dev/n2: -79.54% to -54.86% over 8 layouts, cold/warm, e2e/kernel
+  not distinguishable  coherence/false_shared__split/multicore/soc_dev/n1024: -0.26% to +0.42% over 8 layouts, cold/warm, e2e/kernel
+  not distinguishable  coherence/false_shared__split/multicore/soc_dev/n129: -1.98% to +1.44% over 8 layouts, cold/warm, e2e/kernel
+  wins                 coherence/false_shared__split/multicore/soc_dev/n2: -92.32% to -81.22% over 8 layouts, cold/warm, e2e/kernel
+  loses                coherence/gemm_dot8_128x64x128__place/multicore/soc_dev: +0.02% to +0.12% over 4 layouts, cold/warm, e2e/kernel
+  not distinguishable  coherence/gemm_dot8_64x64x64__place/multicore/soc_dev: -0.06% to +0.53% over 8 layouts, cold/warm, e2e/kernel
+  loses                coherence/gemm_dot8_96x96x96__place/multicore/soc_dev: +0.04% to +0.13% over 8 layouts, cold/warm, e2e/kernel
+  wins                 coherence/lock_sum__split/multicore/soc_dev/n1024: -31.79% to -22.04% over 8 layouts, cold/warm, e2e/kernel
+  wins                 coherence/lock_sum__split/multicore/soc_dev/n129: -33.96% to -24.61% over 8 layouts, cold/warm, e2e/kernel
+  wins                 coherence/lock_sum__split/multicore/soc_dev/n2: -81.87% to -60.23% over 8 layouts, cold/warm, e2e/kernel
+  not distinguishable  coherence/lrsc_counter__split/multicore/soc_dev/n1024: -36.18% to +59.31% over 8 layouts, cold/warm, e2e/kernel
+  not distinguishable  coherence/lrsc_counter__split/multicore/soc_dev/n129: -33.45% to +34.51% over 8 layouts, cold/warm, e2e/kernel
+  wins                 coherence/lrsc_counter__split/multicore/soc_dev/n2: -86.47% to -72.73% over 8 layouts, cold/warm, e2e/kernel
+  not distinguishable  coherence/padded__split/multicore/soc_dev/n1024: -0.32% to +0.26% over 8 layouts, cold/warm, e2e/kernel
+  not distinguishable  coherence/padded__split/multicore/soc_dev/n129: -1.98% to +1.48% over 8 layouts, cold/warm, e2e/kernel
+  wins                 coherence/padded__split/multicore/soc_dev/n2: -92.16% to -80.74% over 8 layouts, cold/warm, e2e/kernel
+  wins                 coherence/reduce_fill__loop/multicore/soc_dev: -21.27% to -19.82% over 8 layouts, cold/warm, e2e/kernel
+  wins                 coherence/reduce_fill__place/multicore/soc_dev: -21.17% to -20.26% over 8 layouts, cold/warm, e2e/kernel
+  wins                 coherence/reduce_v1__loop/multicore/soc_dev: -20.33% to -18.35% over 8 layouts, cold/warm, e2e/kernel
+  wins                 coherence/reduce_v1__place/multicore/soc_dev: -20.34% to -18.31% over 8 layouts, cold/warm, e2e/kernel
+  not distinguishable  coherence/shared_mix__split/multicore/soc_dev/n1024: -0.05% to +0.00% over 8 layouts, cold/warm, e2e/kernel
+  not distinguishable  coherence/shared_mix__split/multicore/soc_dev/n129: -0.07% to +0.25% over 8 layouts, cold/warm, e2e/kernel
+  wins                 coherence/shared_mix__split/multicore/soc_dev/n2: -62.82% to -31.25% over 8 layouts, cold/warm, e2e/kernel
+  wins                 dsp/conv2d_direct_npu__2h/npu_direct/soc_dev: -46.76% to -46.38% over 8 layouts, cold/warm, e2e
+  wins                 dsp/conv2d_direct_npu__2h/npu_direct/soc_dev/seed2468ace0: -47.46% to -47.39% over 8 layouts, warm, e2e
+  wins                 dsp/conv2d_direct_npu__2h/npu_direct/soc_dev/seed9e3779b9: -47.46% to -47.39% over 8 layouts, warm, e2e
+  wins                 dsp/conv2d_im2col_npu__2h/npu_im2col/soc_dev: -45.54% to -45.41% over 8 layouts, cold/warm, e2e
+  wins                 dsp/conv2d_im2col_npu__2h/npu_im2col/soc_dev/seed2468ace0: -45.57% to -45.44% over 8 layouts, warm, e2e
+  wins                 dsp/conv2d_im2col_npu__2h/npu_im2col/soc_dev/seed9e3779b9: -45.57% to -45.44% over 8 layouts, warm, e2e
+  wins                 dsp/dot__split/multicore/soc_dev/k0: -81.88% to -69.23% over 8 layouts, cold/warm, e2e/kernel
+  wins                 dsp/dot__split/multicore/soc_dev/k0/seed2468ace0: -71.02% to -69.23% over 8 layouts, warm, e2e/kernel
+  wins                 dsp/dot__split/multicore/soc_dev/k0/seed9e3779b9: -71.02% to -69.23% over 8 layouts, warm, e2e/kernel
+  wins                 dsp/dot__split/multicore/soc_dev/k1: -79.32% to -65.20% over 8 layouts, cold/warm, e2e/kernel
+  wins                 dsp/dot__split/multicore/soc_dev/k1/seed2468ace0: -67.46% to -65.20% over 8 layouts, warm, e2e/kernel
+  wins                 dsp/dot__split/multicore/soc_dev/k1/seed9e3779b9: -67.46% to -65.20% over 8 layouts, warm, e2e/kernel
+  not distinguishable  dsp/dot__split/multicore/soc_dev/k1024: -0.07% to +0.07% over 8 layouts, cold/warm, e2e/kernel
+  not distinguishable  dsp/dot__split/multicore/soc_dev/k1024/seed2468ace0: -0.07% to +0.10% over 8 layouts, warm, e2e/kernel
+  not distinguishable  dsp/dot__split/multicore/soc_dev/k1024/seed9e3779b9: -0.07% to +0.10% over 8 layouts, warm, e2e/kernel
+  not distinguishable  dsp/dot__split/multicore/soc_dev/k256: -0.23% to +0.23% over 8 layouts, cold/warm, e2e/kernel
+  not distinguishable  dsp/dot__split/multicore/soc_dev/k256/seed2468ace0: -0.23% to +0.58% over 8 layouts, warm, e2e/kernel
+  not distinguishable  dsp/dot__split/multicore/soc_dev/k256/seed9e3779b9: -0.23% to +0.58% over 8 layouts, warm, e2e/kernel
+  not distinguishable  dsp/dot__split/multicore/soc_dev/k4096: -0.00% to +0.04% over 8 layouts, cold/warm, e2e/kernel
+  not distinguishable  dsp/dot__split/multicore/soc_dev/k4096/seed2468ace0: -0.04% to +0.01% over 8 layouts, warm, e2e/kernel
+  not distinguishable  dsp/dot__split/multicore/soc_dev/k4096/seed9e3779b9: -0.03% to +0.02% over 8 layouts, warm, e2e/kernel
+  not distinguishable  dsp/dot__split/multicore/soc_dev/k64: -22.24% to +28.51% over 8 layouts, cold/warm, e2e/kernel
+  loses                dsp/dot__split/multicore/soc_dev/k64/seed2468ace0: +17.17% to +28.51% over 8 layouts, warm, e2e/kernel
+  loses                dsp/dot__split/multicore/soc_dev/k64/seed9e3779b9: +17.17% to +27.75% over 8 layouts, warm, e2e/kernel
+  wins                 dsp/dot__split/multicore/soc_dev/k7: -71.34% to -42.29% over 8 layouts, cold/warm, e2e/kernel
+  wins                 dsp/dot__split/multicore/soc_dev/k7/seed2468ace0: -54.05% to -43.64% over 8 layouts, warm, e2e/kernel
+  wins                 dsp/dot__split/multicore/soc_dev/k7/seed9e3779b9: -54.05% to -43.64% over 8 layouts, warm, e2e/kernel
+  wins                 dsp/dot__split/multicore/soc_dev/k8: -69.90% to -39.84% over 8 layouts, cold/warm, e2e/kernel
+  wins                 dsp/dot__split/multicore/soc_dev/k8/seed2468ace0: -48.91% to -42.28% over 8 layouts, warm, e2e/kernel
+  wins                 dsp/dot__split/multicore/soc_dev/k8/seed9e3779b9: -49.46% to -41.99% over 8 layouts, warm, e2e/kernel
+  wins                 ecg/ecg_dot8__fir4/dot8/soc_dev: -74.25% to -72.33% over 8 layouts, cold/warm, e2e/kernel
+  wins                 ecg/ecg_dot8__fir4/dot8/soc_dev/c128t16: -76.63% to -74.79% over 8 layouts, cold/warm, e2e/kernel
+  wins                 ecg/ecg_dot8__fir4/dot8/soc_dev/c128t32: -78.62% to -76.95% over 8 layouts, cold/warm, e2e/kernel
+  wins                 ecg/ecg_dot8__fir4/dot8/soc_dev/c128t8: -69.67% to -67.50% over 8 layouts, cold/warm, e2e/kernel
+  wins                 ecg/ecg_dot8__fir4/dot8/soc_dev/c16t8: -51.47% to -49.44% over 8 layouts, cold/warm, e2e/kernel
+  wins                 ecg/ecg_dot8__fir4/dot8/soc_dev/c32t16: -67.32% to -64.59% over 8 layouts, cold/warm, e2e/kernel
+  wins                 ecg/ecg_dot8__fir4/dot8/soc_dev/c32t8: -62.64% to -60.37% over 8 layouts, cold/warm, e2e/kernel
+  wins                 ecg/ecg_dot8__fir4/dot8/soc_dev/c64t32: -75.77% to -73.77% over 8 layouts, cold/warm, e2e/kernel
+  wins                 ecg/ecg_dot8__fir4/dot8/soc_dev/c64t8: -67.70% to -65.71% over 8 layouts, cold/warm, e2e/kernel
+  wins                 ecg/ecg_dot8__fir4_copy/dot8/soc_dev: -74.26% to -69.14% over 8 layouts, cold/warm, e2e/kernel
+  wins                 ecg/ecg_dot8__fir4_copy/dot8/soc_dev/c128t16: -76.63% to -73.86% over 8 layouts, cold/warm, e2e/kernel
+  wins                 ecg/ecg_dot8__fir4_copy/dot8/soc_dev/c128t32: -78.61% to -76.35% over 8 layouts, cold/warm, e2e/kernel
+  wins                 ecg/ecg_dot8__fir4_copy/dot8/soc_dev/c128t8: -69.67% to -66.39% over 8 layouts, cold/warm, e2e/kernel
+  wins                 ecg/ecg_dot8__fir4_copy/dot8/soc_dev/c16t8: -51.48% to -36.50% over 8 layouts, cold/warm, e2e/kernel
+  wins                 ecg/ecg_dot8__fir4_copy/dot8/soc_dev/c32t16: -67.33% to -58.46% over 8 layouts, cold/warm, e2e/kernel
+  wins                 ecg/ecg_dot8__fir4_copy/dot8/soc_dev/c32t8: -62.65% to -54.66% over 8 layouts, cold/warm, e2e/kernel
+  wins                 ecg/ecg_dot8__fir4_copy/dot8/soc_dev/c64t32: -75.77% to -71.20% over 8 layouts, cold/warm, e2e/kernel
+  wins                 ecg/ecg_dot8__fir4_copy/dot8/soc_dev/c64t8: -67.70% to -62.33% over 8 layouts, cold/warm, e2e/kernel
+  wins                 ecg/ecg_dot8_f8__fir4/dot8/soc_dev: -72.40% to -70.52% over 8 layouts, cold/warm, e2e/kernel
+  wins                 ecg/ecg_dot8_f8__fir4/dot8/soc_dev/c128t16: -75.73% to -73.88% over 8 layouts, cold/warm, e2e/kernel
+  wins                 ecg/ecg_dot8_f8__fir4/dot8/soc_dev/c128t32: -77.92% to -76.15% over 8 layouts, cold/warm, e2e/kernel
+  wins                 ecg/ecg_dot8_f8__fir4/dot8/soc_dev/c128t8: -68.67% to -66.75% over 8 layouts, cold/warm, e2e/kernel
+  wins                 ecg/ecg_dot8_f8__fir4/dot8/soc_dev/c16t8: -45.11% to -43.07% over 8 layouts, cold/warm, e2e/kernel
+  wins                 ecg/ecg_dot8_f8__fir4/dot8/soc_dev/c32t16: -62.99% to -60.78% over 8 layouts, cold/warm, e2e/kernel
+  wins                 ecg/ecg_dot8_f8__fir4/dot8/soc_dev/c32t8: -58.95% to -57.20% over 8 layouts, cold/warm, e2e/kernel
+  wins                 ecg/ecg_dot8_f8__fir4/dot8/soc_dev/c64t32: -73.88% to -71.95% over 8 layouts, cold/warm, e2e/kernel
+  wins                 ecg/ecg_dot8_f8__fir4/dot8/soc_dev/c64t8: -65.65% to -63.86% over 8 layouts, cold/warm, e2e/kernel
+  wins                 ecg/ecg_dot8_f8__fir4_copy/dot8/soc_dev: -72.36% to -67.86% over 8 layouts, cold/warm, e2e/kernel
+  wins                 ecg/ecg_dot8_f8__fir4_copy/dot8/soc_dev/c128t16: -75.74% to -72.97% over 8 layouts, cold/warm, e2e/kernel
+  wins                 ecg/ecg_dot8_f8__fir4_copy/dot8/soc_dev/c128t32: -77.92% to -75.67% over 8 layouts, cold/warm, e2e/kernel
+  wins                 ecg/ecg_dot8_f8__fir4_copy/dot8/soc_dev/c128t8: -68.68% to -65.66% over 8 layouts, cold/warm, e2e/kernel
+  wins                 ecg/ecg_dot8_f8__fir4_copy/dot8/soc_dev/c16t8: -45.12% to -32.04% over 8 layouts, cold/warm, e2e/kernel
+  wins                 ecg/ecg_dot8_f8__fir4_copy/dot8/soc_dev/c32t16: -62.99% to -53.69% over 8 layouts, cold/warm, e2e/kernel
+  wins                 ecg/ecg_dot8_f8__fir4_copy/dot8/soc_dev/c32t8: -58.95% to -51.60% over 8 layouts, cold/warm, e2e/kernel
+  wins                 ecg/ecg_dot8_f8__fir4_copy/dot8/soc_dev/c64t32: -73.88% to -69.31% over 8 layouts, cold/warm, e2e/kernel
+  wins                 ecg/ecg_dot8_f8__fir4_copy/dot8/soc_dev/c64t8: -65.65% to -60.41% over 8 layouts, cold/warm, e2e/kernel
+  wins                 ecg/ecg_pipeline_overlap__fir4/pipeline/soc_dev: -81.94% to -78.93% over 8 layouts, cold/warm, e2e/kernel
+  wins                 ecg/ecg_pipeline_overlap__fir4/pipeline/soc_dev/c128t16: -83.67% to -81.50% over 8 layouts, cold/warm, e2e/kernel
+  wins                 ecg/ecg_pipeline_overlap__fir4/pipeline/soc_dev/c128t32: -84.97% to -83.27% over 8 layouts, cold/warm, e2e/kernel
+  wins                 ecg/ecg_pipeline_overlap__fir4/pipeline/soc_dev/c128t8: -71.48% to -69.10% over 8 layouts, cold/warm, e2e/kernel
+  wins                 ecg/ecg_pipeline_overlap__fir4/pipeline/soc_dev/c16t8: -50.41% to -41.87% over 8 layouts, cold/warm, e2e/kernel
+  wins                 ecg/ecg_pipeline_overlap__fir4/pipeline/soc_dev/c32t16: -75.08% to -69.53% over 8 layouts, cold/warm, e2e/kernel
+  wins                 ecg/ecg_pipeline_overlap__fir4/pipeline/soc_dev/c32t8: -64.17% to -59.42% over 8 layouts, cold/warm, e2e/kernel
+  wins                 ecg/ecg_pipeline_overlap__fir4/pipeline/soc_dev/c64t32: -84.26% to -81.15% over 8 layouts, cold/warm, e2e/kernel
+  wins                 ecg/ecg_pipeline_overlap__fir4/pipeline/soc_dev/c64t8: -69.26% to -66.22% over 8 layouts, cold/warm, e2e/kernel
+  wins                 ecg/ecg_pipeline_overlap__fir4_copy/pipeline/soc_dev: -82.02% to -78.59% over 8 layouts, cold/warm, e2e/kernel
+  wins                 ecg/ecg_pipeline_overlap__fir4_copy/pipeline/soc_dev/c128t16: -83.67% to -80.51% over 8 layouts, cold/warm, e2e/kernel
+  wins                 ecg/ecg_pipeline_overlap__fir4_copy/pipeline/soc_dev/c128t32: -84.97% to -82.46% over 8 layouts, cold/warm, e2e/kernel
+  wins                 ecg/ecg_pipeline_overlap__fir4_copy/pipeline/soc_dev/c128t8: -71.48% to -67.80% over 8 layouts, cold/warm, e2e/kernel
+  wins                 ecg/ecg_pipeline_overlap__fir4_copy/pipeline/soc_dev/c16t8: -50.88% to -44.02% over 8 layouts, cold/warm, e2e/kernel
+  wins                 ecg/ecg_pipeline_overlap__fir4_copy/pipeline/soc_dev/c32t16: -75.29% to -69.79% over 8 layouts, cold/warm, e2e/kernel
+  wins                 ecg/ecg_pipeline_overlap__fir4_copy/pipeline/soc_dev/c32t8: -64.41% to -59.78% over 8 layouts, cold/warm, e2e/kernel
+  wins                 ecg/ecg_pipeline_overlap__fir4_copy/pipeline/soc_dev/c64t32: -84.33% to -80.79% over 8 layouts, cold/warm, e2e/kernel
+  wins                 ecg/ecg_pipeline_overlap__fir4_copy/pipeline/soc_dev/c64t8: -69.47% to -65.85% over 8 layouts, cold/warm, e2e/kernel
+  wins                 ecg/ecg_pipeline_overlap__fir4_split/pipeline/soc_dev: -82.14% to -81.24% over 8 layouts, cold/warm, e2e/kernel
+  wins                 ecg/ecg_pipeline_overlap__fir4_split/pipeline/soc_dev/c128t16: -83.63% to -82.54% over 8 layouts, cold/warm, e2e/kernel
+  wins                 ecg/ecg_pipeline_overlap__fir4_split/pipeline/soc_dev/c128t32: -84.83% to -82.67% over 8 layouts, cold/warm, e2e/kernel
+  wins                 ecg/ecg_pipeline_overlap__fir4_split/pipeline/soc_dev/c128t8: -71.46% to -70.45% over 8 layouts, cold/warm, e2e/kernel
+  wins                 ecg/ecg_pipeline_overlap__fir4_split/pipeline/soc_dev/c16t8: -56.89% to -48.73% over 8 layouts, cold/warm, e2e/kernel
+  wins                 ecg/ecg_pipeline_overlap__fir4_split/pipeline/soc_dev/c32t16: -76.53% to -74.94% over 8 layouts, cold/warm, e2e/kernel
+  wins                 ecg/ecg_pipeline_overlap__fir4_split/pipeline/soc_dev/c32t8: -66.19% to -63.85% over 8 layouts, cold/warm, e2e/kernel
+  wins                 ecg/ecg_pipeline_overlap__fir4_split/pipeline/soc_dev/c64t32: -83.94% to -80.64% over 8 layouts, cold/warm, e2e/kernel
+  wins                 ecg/ecg_pipeline_overlap__fir4_split/pipeline/soc_dev/c64t8: -69.99% to -69.02% over 8 layouts, cold/warm, e2e/kernel
+  wins                 ecg/ecg_pipeline_overlap_f8__fir4/pipeline/soc_dev: -79.74% to -76.69% over 8 layouts, cold/warm, e2e/kernel
+  wins                 ecg/ecg_pipeline_overlap_f8__fir4/pipeline/soc_dev/c128t16: -82.71% to -80.60% over 8 layouts, cold/warm, e2e/kernel
+  wins                 ecg/ecg_pipeline_overlap_f8__fir4/pipeline/soc_dev/c128t32: -84.84% to -83.21% over 8 layouts, cold/warm, e2e/kernel
+  wins                 ecg/ecg_pipeline_overlap_f8__fir4/pipeline/soc_dev/c128t8: -70.27% to -67.86% over 8 layouts, cold/warm, e2e/kernel
+  wins                 ecg/ecg_pipeline_overlap_f8__fir4/pipeline/soc_dev/c16t8: -35.36% to -27.80% over 8 layouts, cold/warm, e2e/kernel
+  wins                 ecg/ecg_pipeline_overlap_f8__fir4/pipeline/soc_dev/c32t16: -69.11% to -63.29% over 8 layouts, cold/warm, e2e/kernel
+  wins                 ecg/ecg_pipeline_overlap_f8__fir4/pipeline/soc_dev/c32t8: -58.38% to -53.56% over 8 layouts, cold/warm, e2e/kernel
+  wins                 ecg/ecg_pipeline_overlap_f8__fir4/pipeline/soc_dev/c64t32: -84.12% to -80.75% over 8 layouts, cold/warm, e2e/kernel
+  wins                 ecg/ecg_pipeline_overlap_f8__fir4/pipeline/soc_dev/c64t8: -66.68% to -63.55% over 8 layouts, cold/warm, e2e/kernel
+  wins                 ecg/ecg_pipeline_overlap_f8__fir4_copy/pipeline/soc_dev: -79.82% to -75.84% over 8 layouts, cold/warm, e2e/kernel
+  wins                 ecg/ecg_pipeline_overlap_f8__fir4_copy/pipeline/soc_dev/c128t16: -82.68% to -79.65% over 8 layouts, cold/warm, e2e/kernel
+  wins                 ecg/ecg_pipeline_overlap_f8__fir4_copy/pipeline/soc_dev/c128t32: -84.84% to -82.47% over 8 layouts, cold/warm, e2e/kernel
+  wins                 ecg/ecg_pipeline_overlap_f8__fir4_copy/pipeline/soc_dev/c128t8: -70.21% to -66.47% over 8 layouts, cold/warm, e2e/kernel
+  wins                 ecg/ecg_pipeline_overlap_f8__fir4_copy/pipeline/soc_dev/c16t8: -35.85% to -29.95% over 8 layouts, cold/warm, e2e/kernel
+  wins                 ecg/ecg_pipeline_overlap_f8__fir4_copy/pipeline/soc_dev/c32t16: -69.33% to -62.84% over 8 layouts, cold/warm, e2e/kernel
+  wins                 ecg/ecg_pipeline_overlap_f8__fir4_copy/pipeline/soc_dev/c32t8: -58.59% to -53.90% over 8 layouts, cold/warm, e2e/kernel
+  wins                 ecg/ecg_pipeline_overlap_f8__fir4_copy/pipeline/soc_dev/c64t32: -84.22% to -80.67% over 8 layouts, cold/warm, e2e/kernel
+  wins                 ecg/ecg_pipeline_overlap_f8__fir4_copy/pipeline/soc_dev/c64t8: -66.78% to -63.08% over 8 layouts, cold/warm, e2e/kernel
+  wins                 ecg/ecg_pipeline_overlap_f8__fir4_split/pipeline/soc_dev: -80.08% to -77.91% over 8 layouts, cold/warm, e2e/kernel
+  wins                 ecg/ecg_pipeline_overlap_f8__fir4_split/pipeline/soc_dev/c128t16: -82.68% to -81.17% over 8 layouts, cold/warm, e2e/kernel
+  wins                 ecg/ecg_pipeline_overlap_f8__fir4_split/pipeline/soc_dev/c128t32: -84.70% to -82.59% over 8 layouts, cold/warm, e2e/kernel
+  wins                 ecg/ecg_pipeline_overlap_f8__fir4_split/pipeline/soc_dev/c128t8: -70.18% to -69.10% over 8 layouts, cold/warm, e2e/kernel
+  wins                 ecg/ecg_pipeline_overlap_f8__fir4_split/pipeline/soc_dev/c16t8: -43.44% to -32.42% over 8 layouts, cold/warm, e2e/kernel
+  wins                 ecg/ecg_pipeline_overlap_f8__fir4_split/pipeline/soc_dev/c32t16: -71.06% to -65.44% over 8 layouts, cold/warm, e2e/kernel
+  wins                 ecg/ecg_pipeline_overlap_f8__fir4_split/pipeline/soc_dev/c32t8: -60.84% to -57.74% over 8 layouts, cold/warm, e2e/kernel
+  wins                 ecg/ecg_pipeline_overlap_f8__fir4_split/pipeline/soc_dev/c64t32: -83.94% to -80.31% over 8 layouts, cold/warm, e2e/kernel
+  wins                 ecg/ecg_pipeline_overlap_f8__fir4_split/pipeline/soc_dev/c64t8: -67.51% to -66.22% over 8 layouts, cold/warm, e2e/kernel
+  wins                 ecg/ecg_pipeline_v1__fir4/pipeline/soc_dev: -74.62% to -72.01% over 8 layouts, cold/warm, e2e/kernel
+  wins                 ecg/ecg_pipeline_v1__fir4/pipeline/soc_dev/c128t16: -76.54% to -74.69% over 8 layouts, cold/warm, e2e/kernel
+  wins                 ecg/ecg_pipeline_v1__fir4/pipeline/soc_dev/c128t32: -78.62% to -76.61% over 8 layouts, cold/warm, e2e/kernel
+  wins                 ecg/ecg_pipeline_v1__fir4/pipeline/soc_dev/c128t8: -69.55% to -67.59% over 8 layouts, cold/warm, e2e/kernel
+  wins                 ecg/ecg_pipeline_v1__fir4/pipeline/soc_dev/c16t8: -54.46% to -48.14% over 8 layouts, cold/warm, e2e/kernel
+  wins                 ecg/ecg_pipeline_v1__fir4/pipeline/soc_dev/c32t16: -69.02% to -64.61% over 8 layouts, cold/warm, e2e/kernel
+  wins                 ecg/ecg_pipeline_v1__fir4/pipeline/soc_dev/c32t8: -63.88% to -60.26% over 8 layouts, cold/warm, e2e/kernel
+  wins                 ecg/ecg_pipeline_v1__fir4/pipeline/soc_dev/c64t32: -76.34% to -72.49% over 8 layouts, cold/warm, e2e/kernel
+  wins                 ecg/ecg_pipeline_v1__fir4/pipeline/soc_dev/c64t8: -67.91% to -65.28% over 8 layouts, cold/warm, e2e/kernel
+  wins                 ecg/ecg_pipeline_v1__fir4_copy/pipeline/soc_dev: -74.62% to -71.75% over 8 layouts, cold/warm, e2e/kernel
+  wins                 ecg/ecg_pipeline_v1__fir4_copy/pipeline/soc_dev/c128t16: -76.56% to -73.80% over 8 layouts, cold/warm, e2e/kernel
+  wins                 ecg/ecg_pipeline_v1__fir4_copy/pipeline/soc_dev/c128t32: -78.59% to -76.35% over 8 layouts, cold/warm, e2e/kernel
+  wins                 ecg/ecg_pipeline_v1__fir4_copy/pipeline/soc_dev/c128t8: -69.57% to -66.51% over 8 layouts, cold/warm, e2e/kernel
+  wins                 ecg/ecg_pipeline_v1__fir4_copy/pipeline/soc_dev/c16t8: -54.43% to -48.78% over 8 layouts, cold/warm, e2e/kernel
+  wins                 ecg/ecg_pipeline_v1__fir4_copy/pipeline/soc_dev/c32t16: -69.01% to -64.58% over 8 layouts, cold/warm, e2e/kernel
+  wins                 ecg/ecg_pipeline_v1__fir4_copy/pipeline/soc_dev/c32t8: -63.90% to -60.35% over 8 layouts, cold/warm, e2e/kernel
+  wins                 ecg/ecg_pipeline_v1__fir4_copy/pipeline/soc_dev/c64t32: -76.32% to -72.45% over 8 layouts, cold/warm, e2e/kernel
+  wins                 ecg/ecg_pipeline_v1__fir4_copy/pipeline/soc_dev/c64t8: -67.91% to -65.06% over 8 layouts, cold/warm, e2e/kernel
+  wins                 ecg/ecg_pipeline_v1_f8__fir4/pipeline/soc_dev: -73.19% to -70.75% over 8 layouts, cold/warm, e2e/kernel
+  wins                 ecg/ecg_pipeline_v1_f8__fir4/pipeline/soc_dev/c128t16: -75.89% to -74.06% over 8 layouts, cold/warm, e2e/kernel
+  wins                 ecg/ecg_pipeline_v1_f8__fir4/pipeline/soc_dev/c128t32: -78.10% to -76.08% over 8 layouts, cold/warm, e2e/kernel
+  wins                 ecg/ecg_pipeline_v1_f8__fir4/pipeline/soc_dev/c128t8: -68.82% to -66.89% over 8 layouts, cold/warm, e2e/kernel
+  wins                 ecg/ecg_pipeline_v1_f8__fir4/pipeline/soc_dev/c16t8: -49.50% to -43.95% over 8 layouts, cold/warm, e2e/kernel
+  wins                 ecg/ecg_pipeline_v1_f8__fir4/pipeline/soc_dev/c32t16: -65.74% to -61.22% over 8 layouts, cold/warm, e2e/kernel
+  wins                 ecg/ecg_pipeline_v1_f8__fir4/pipeline/soc_dev/c32t8: -61.03% to -57.76% over 8 layouts, cold/warm, e2e/kernel
+  wins                 ecg/ecg_pipeline_v1_f8__fir4/pipeline/soc_dev/c64t32: -74.86% to -70.73% over 8 layouts, cold/warm, e2e/kernel
+  wins                 ecg/ecg_pipeline_v1_f8__fir4/pipeline/soc_dev/c64t8: -66.45% to -63.95% over 8 layouts, cold/warm, e2e/kernel
+  wins                 ecg/ecg_pipeline_v1_f8__fir4_copy/pipeline/soc_dev: -73.18% to -70.40% over 8 layouts, cold/warm, e2e/kernel
+  wins                 ecg/ecg_pipeline_v1_f8__fir4_copy/pipeline/soc_dev/c128t16: -75.90% to -73.17% over 8 layouts, cold/warm, e2e/kernel
+  wins                 ecg/ecg_pipeline_v1_f8__fir4_copy/pipeline/soc_dev/c128t32: -78.08% to -75.89% over 8 layouts, cold/warm, e2e/kernel
+  wins                 ecg/ecg_pipeline_v1_f8__fir4_copy/pipeline/soc_dev/c128t8: -68.85% to -65.79% over 8 layouts, cold/warm, e2e/kernel
+  wins                 ecg/ecg_pipeline_v1_f8__fir4_copy/pipeline/soc_dev/c16t8: -49.50% to -45.30% over 8 layouts, cold/warm, e2e/kernel
+  wins                 ecg/ecg_pipeline_v1_f8__fir4_copy/pipeline/soc_dev/c32t16: -65.71% to -61.73% over 8 layouts, cold/warm, e2e/kernel
+  wins                 ecg/ecg_pipeline_v1_f8__fir4_copy/pipeline/soc_dev/c32t8: -61.02% to -57.75% over 8 layouts, cold/warm, e2e/kernel
+  wins                 ecg/ecg_pipeline_v1_f8__fir4_copy/pipeline/soc_dev/c64t32: -74.86% to -71.38% over 8 layouts, cold/warm, e2e/kernel
+  wins                 ecg/ecg_pipeline_v1_f8__fir4_copy/pipeline/soc_dev/c64t8: -66.44% to -63.61% over 8 layouts, cold/warm, e2e/kernel
+  wins                 ml/cifar_cnn_npu_direct__2h/npu_direct/soc_dev: -44.44% to -44.35% over 8 layouts, cold/warm, e2e
+  wins                 ml/cifar_cnn_npu_direct__2h_copy/npu_direct/soc_dev: -45.13% to -45.00% over 8 layouts, cold/warm, e2e
+  wins                 ml/cifar_cnn_npu_direct__2h_next/npu_direct/soc_dev: -45.17% to -44.91% over 8 layouts, cold/warm, e2e
+  wins                 ml/cifar_cnn_npu_im2col__2h/npu_im2col/soc_dev: -45.96% to -45.82% over 8 layouts, cold/warm, e2e
+  wins                 ml/cifar_cnn_npu_im2col__2h_copy/npu_im2col/soc_dev: -46.44% to -46.30% over 8 layouts, cold/warm, e2e
+  wins                 ml/cifar_cnn_npu_im2col__2h_next/npu_im2col/soc_dev: -46.42% to -46.27% over 8 layouts, cold/warm, e2e
+  wins                 ml/mnist_mlp_npu__2h/npu/soc_dev: -10.71% to -7.25% over 8 layouts, cold/warm, e2e
+  wins                 ml/mnist_mlp_npu_batched__2h32/npu/soc_dev: -32.66% to -31.64% over 8 layouts, cold/warm, e2e
+  wins                 ml/mnist_mlp_npu_batched__2h4/npu/soc_dev: -17.93% to -16.51% over 8 layouts, cold/warm, e2e
+  wins                 ml/mnist_mlp_npu_batched__2h8/npu/soc_dev: -25.68% to -24.43% over 8 layouts, cold/warm, e2e
+  stacked wins                 ml/cifar_cnn_npu_direct__2h_copy/npu_direct/soc_dev against cifar_cnn_npu_direct__2h: -1.30% to -1.16% over 8 layouts
+  stacked not distinguishable  ml/cifar_cnn_npu_direct__2h_next/npu_direct/soc_dev against cifar_cnn_npu_direct__2h_copy: -0.15% to +0.30% over 8 layouts
+  stacked wins                 ml/cifar_cnn_npu_im2col__2h_copy/npu_im2col/soc_dev against cifar_cnn_npu_im2col__2h: -0.93% to -0.76% over 8 layouts
+  stacked loses                ml/cifar_cnn_npu_im2col__2h_next/npu_im2col/soc_dev against cifar_cnn_npu_im2col__2h_copy: +0.04% to +0.13% over 8 layouts
+  stacked not distinguishable  ecg/ecg_dot8__fir4_copy/dot8/soc_dev against ecg_dot8__fir4: -0.11% to +11.93% over 8 layouts
+  stacked not distinguishable  ecg/ecg_dot8__fir4_copy/dot8/soc_dev/c128t16 against ecg_dot8__fir4: -0.06% to +4.08% over 8 layouts
+  stacked not distinguishable  ecg/ecg_dot8__fir4_copy/dot8/soc_dev/c128t32 against ecg_dot8__fir4: -0.52% to +3.62% over 8 layouts
+  stacked not distinguishable  ecg/ecg_dot8__fir4_copy/dot8/soc_dev/c128t8 against ecg_dot8__fir4: -0.88% to +4.54% over 8 layouts
+  stacked not distinguishable  ecg/ecg_dot8__fir4_copy/dot8/soc_dev/c16t8 against ecg_dot8__fir4: -0.11% to +26.56% over 8 layouts
+  stacked not distinguishable  ecg/ecg_dot8__fir4_copy/dot8/soc_dev/c32t16 against ecg_dot8__fir4: -1.20% to +19.35% over 8 layouts
+  stacked not distinguishable  ecg/ecg_dot8__fir4_copy/dot8/soc_dev/c32t8 against ecg_dot8__fir4: -1.20% to +15.95% over 8 layouts
+  stacked not distinguishable  ecg/ecg_dot8__fir4_copy/dot8/soc_dev/c64t32 against ecg_dot8__fir4: -0.03% to +10.25% over 8 layouts
+  stacked not distinguishable  ecg/ecg_dot8__fir4_copy/dot8/soc_dev/c64t8 against ecg_dot8__fir4: -0.09% to +10.32% over 8 layouts
+  stacked not distinguishable  ecg/ecg_dot8_f8__fir4_copy/dot8/soc_dev against ecg_dot8_f8__fir4: -0.01% to +9.74% over 8 layouts
+  stacked not distinguishable  ecg/ecg_dot8_f8__fir4_copy/dot8/soc_dev/c128t16 against ecg_dot8_f8__fir4: -0.55% to +4.08% over 8 layouts
+  stacked not distinguishable  ecg/ecg_dot8_f8__fir4_copy/dot8/soc_dev/c128t32 against ecg_dot8_f8__fir4: -1.21% to +3.48% over 8 layouts
+  stacked not distinguishable  ecg/ecg_dot8_f8__fir4_copy/dot8/soc_dev/c128t8 against ecg_dot8_f8__fir4: -0.19% to +3.60% over 8 layouts
+  stacked not distinguishable  ecg/ecg_dot8_f8__fir4_copy/dot8/soc_dev/c16t8 against ecg_dot8_f8__fir4: -1.07% to +20.96% over 8 layouts
+  stacked not distinguishable  ecg/ecg_dot8_f8__fir4_copy/dot8/soc_dev/c32t16 against ecg_dot8_f8__fir4: -0.65% to +18.71% over 8 layouts
+  stacked not distinguishable  ecg/ecg_dot8_f8__fir4_copy/dot8/soc_dev/c32t8 against ecg_dot8_f8__fir4: -0.02% to +13.53% over 8 layouts
+  stacked not distinguishable  ecg/ecg_dot8_f8__fir4_copy/dot8/soc_dev/c64t32 against ecg_dot8_f8__fir4: -0.01% to +9.77% over 8 layouts
+  stacked not distinguishable  ecg/ecg_dot8_f8__fir4_copy/dot8/soc_dev/c64t8 against ecg_dot8_f8__fir4: -0.02% to +9.88% over 8 layouts
+  stacked not distinguishable  ecg/ecg_pipeline_overlap__fir4_copy/pipeline/soc_dev against ecg_pipeline_overlap__fir4: -0.52% to +2.35% over 8 layouts
+  stacked not distinguishable  ecg/ecg_pipeline_overlap__fir4_copy/pipeline/soc_dev/c128t16 against ecg_pipeline_overlap__fir4: -0.01% to +6.48% over 8 layouts
+  stacked not distinguishable  ecg/ecg_pipeline_overlap__fir4_copy/pipeline/soc_dev/c128t32 against ecg_pipeline_overlap__fir4: -0.17% to +5.20% over 8 layouts
+  stacked not distinguishable  ecg/ecg_pipeline_overlap__fir4_copy/pipeline/soc_dev/c128t8 against ecg_pipeline_overlap__fir4: -0.00% to +5.11% over 8 layouts
+  stacked wins                 ecg/ecg_pipeline_overlap__fir4_copy/pipeline/soc_dev/c16t8 against ecg_pipeline_overlap__fir4: -3.96% to -0.95% over 8 layouts
+  stacked not distinguishable  ecg/ecg_pipeline_overlap__fir4_copy/pipeline/soc_dev/c32t16 against ecg_pipeline_overlap__fir4: -1.55% to +0.37% over 8 layouts
+  stacked not distinguishable  ecg/ecg_pipeline_overlap__fir4_copy/pipeline/soc_dev/c32t8 against ecg_pipeline_overlap__fir4: -1.05% to +0.30% over 8 layouts
+  stacked not distinguishable  ecg/ecg_pipeline_overlap__fir4_copy/pipeline/soc_dev/c64t32 against ecg_pipeline_overlap__fir4: -0.76% to +2.54% over 8 layouts
+  stacked not distinguishable  ecg/ecg_pipeline_overlap__fir4_copy/pipeline/soc_dev/c64t8 against ecg_pipeline_overlap__fir4: -0.69% to +1.69% over 8 layouts
+  stacked wins                 ecg/ecg_pipeline_overlap__fir4_split/pipeline/soc_dev against ecg_pipeline_overlap__fir4: -11.94% to -0.44% over 8 layouts
+  stacked not distinguishable  ecg/ecg_pipeline_overlap__fir4_split/pipeline/soc_dev/c128t16 against ecg_pipeline_overlap__fir4: -6.93% to +0.42% over 8 layouts
+  stacked loses                ecg/ecg_pipeline_overlap__fir4_split/pipeline/soc_dev/c128t32 against ecg_pipeline_overlap__fir4: +0.72% to +4.26% over 8 layouts
+  stacked not distinguishable  ecg/ecg_pipeline_overlap__fir4_split/pipeline/soc_dev/c128t8 against ecg_pipeline_overlap__fir4: -5.36% to +0.35% over 8 layouts
+  stacked wins                 ecg/ecg_pipeline_overlap__fir4_split/pipeline/soc_dev/c16t8 against ecg_pipeline_overlap__fir4: -21.16% to -2.29% over 8 layouts
+  stacked wins                 ecg/ecg_pipeline_overlap__fir4_split/pipeline/soc_dev/c32t16 against ecg_pipeline_overlap__fir4: -19.43% to -1.66% over 8 layouts
+  stacked wins                 ecg/ecg_pipeline_overlap__fir4_split/pipeline/soc_dev/c32t8 against ecg_pipeline_overlap__fir4: -13.99% to -1.06% over 8 layouts
+  stacked loses                ecg/ecg_pipeline_overlap__fir4_split/pipeline/soc_dev/c64t32 against ecg_pipeline_overlap__fir4: +1.07% to +3.15% over 8 layouts
+  stacked wins                 ecg/ecg_pipeline_overlap__fir4_split/pipeline/soc_dev/c64t8 against ecg_pipeline_overlap__fir4: -9.15% to -0.35% over 8 layouts
+  stacked not distinguishable  ecg/ecg_pipeline_overlap_f8__fir4_copy/pipeline/soc_dev against ecg_pipeline_overlap_f8__fir4: -0.43% to +3.69% over 8 layouts
+  stacked not distinguishable  ecg/ecg_pipeline_overlap_f8__fir4_copy/pipeline/soc_dev/c128t16 against ecg_pipeline_overlap_f8__fir4: -0.06% to +6.37% over 8 layouts
+  stacked not distinguishable  ecg/ecg_pipeline_overlap_f8__fir4_copy/pipeline/soc_dev/c128t32 against ecg_pipeline_overlap_f8__fir4: -0.12% to +5.12% over 8 layouts
+  stacked not distinguishable  ecg/ecg_pipeline_overlap_f8__fir4_copy/pipeline/soc_dev/c128t8 against ecg_pipeline_overlap_f8__fir4: -0.14% to +5.03% over 8 layouts
+  stacked wins                 ecg/ecg_pipeline_overlap_f8__fir4_copy/pipeline/soc_dev/c16t8 against ecg_pipeline_overlap_f8__fir4: -4.59% to -0.74% over 8 layouts
+  stacked not distinguishable  ecg/ecg_pipeline_overlap_f8__fir4_copy/pipeline/soc_dev/c32t16 against ecg_pipeline_overlap_f8__fir4: -1.26% to +2.10% over 8 layouts
+  stacked not distinguishable  ecg/ecg_pipeline_overlap_f8__fir4_copy/pipeline/soc_dev/c32t8 against ecg_pipeline_overlap_f8__fir4: -0.89% to +0.33% over 8 layouts
+  stacked not distinguishable  ecg/ecg_pipeline_overlap_f8__fir4_copy/pipeline/soc_dev/c64t32 against ecg_pipeline_overlap_f8__fir4: -0.97% to +2.29% over 8 layouts
+  stacked not distinguishable  ecg/ecg_pipeline_overlap_f8__fir4_copy/pipeline/soc_dev/c64t8 against ecg_pipeline_overlap_f8__fir4: -1.25% to +2.13% over 8 layouts
+  stacked not distinguishable  ecg/ecg_pipeline_overlap_f8__fir4_split/pipeline/soc_dev against ecg_pipeline_overlap_f8__fir4: -10.79% to +5.33% over 8 layouts
+  stacked not distinguishable  ecg/ecg_pipeline_overlap_f8__fir4_split/pipeline/soc_dev/c128t16 against ecg_pipeline_overlap_f8__fir4: -6.76% to +3.04% over 8 layouts
+  stacked loses                ecg/ecg_pipeline_overlap_f8__fir4_split/pipeline/soc_dev/c128t32 against ecg_pipeline_overlap_f8__fir4: +0.58% to +4.39% over 8 layouts
+  stacked not distinguishable  ecg/ecg_pipeline_overlap_f8__fir4_split/pipeline/soc_dev/c128t8 against ecg_pipeline_overlap_f8__fir4: -5.24% to +0.42% over 8 layouts
+  stacked wins                 ecg/ecg_pipeline_overlap_f8__fir4_split/pipeline/soc_dev/c16t8 against ecg_pipeline_overlap_f8__fir4: -18.64% to -0.77% over 8 layouts
+  stacked not distinguishable  ecg/ecg_pipeline_overlap_f8__fir4_split/pipeline/soc_dev/c32t16 against ecg_pipeline_overlap_f8__fir4: -16.33% to +7.81% over 8 layouts
+  stacked wins                 ecg/ecg_pipeline_overlap_f8__fir4_split/pipeline/soc_dev/c32t8 against ecg_pipeline_overlap_f8__fir4: -12.21% to -0.90% over 8 layouts
+  stacked loses                ecg/ecg_pipeline_overlap_f8__fir4_split/pipeline/soc_dev/c64t32 against ecg_pipeline_overlap_f8__fir4: +0.45% to +4.68% over 8 layouts
+  stacked not distinguishable  ecg/ecg_pipeline_overlap_f8__fir4_split/pipeline/soc_dev/c64t8 against ecg_pipeline_overlap_f8__fir4: -8.63% to +0.03% over 8 layouts
+  stacked not distinguishable  ecg/ecg_pipeline_v1__fir4_copy/pipeline/soc_dev against ecg_pipeline_v1__fir4: -0.69% to +1.43% over 8 layouts
+  stacked not distinguishable  ecg/ecg_pipeline_v1__fir4_copy/pipeline/soc_dev/c128t16 against ecg_pipeline_v1__fir4: -0.29% to +4.09% over 8 layouts
+  stacked not distinguishable  ecg/ecg_pipeline_v1__fir4_copy/pipeline/soc_dev/c128t32 against ecg_pipeline_v1__fir4: -0.26% to +3.49% over 8 layouts
+  stacked not distinguishable  ecg/ecg_pipeline_v1__fir4_copy/pipeline/soc_dev/c128t8 against ecg_pipeline_v1__fir4: -0.06% to +3.82% over 8 layouts
+  stacked not distinguishable  ecg/ecg_pipeline_v1__fir4_copy/pipeline/soc_dev/c16t8 against ecg_pipeline_v1__fir4: -4.57% to +1.83% over 8 layouts
+  stacked not distinguishable  ecg/ecg_pipeline_v1__fir4_copy/pipeline/soc_dev/c32t16 against ecg_pipeline_v1__fir4: -1.43% to +0.17% over 8 layouts
+  stacked not distinguishable  ecg/ecg_pipeline_v1__fir4_copy/pipeline/soc_dev/c32t8 against ecg_pipeline_v1__fir4: -1.43% to +0.08% over 8 layouts
+  stacked not distinguishable  ecg/ecg_pipeline_v1__fir4_copy/pipeline/soc_dev/c64t32 against ecg_pipeline_v1__fir4: -0.31% to +2.13% over 8 layouts
+  stacked not distinguishable  ecg/ecg_pipeline_v1__fir4_copy/pipeline/soc_dev/c64t8 against ecg_pipeline_v1__fir4: -0.62% to +1.23% over 8 layouts
+  stacked not distinguishable  ecg/ecg_pipeline_v1_f8__fir4_copy/pipeline/soc_dev against ecg_pipeline_v1_f8__fir4: -0.24% to +1.29% over 8 layouts
+  stacked not distinguishable  ecg/ecg_pipeline_v1_f8__fir4_copy/pipeline/soc_dev/c128t16 against ecg_pipeline_v1_f8__fir4: -0.37% to +3.89% over 8 layouts
+  stacked not distinguishable  ecg/ecg_pipeline_v1_f8__fir4_copy/pipeline/soc_dev/c128t32 against ecg_pipeline_v1_f8__fir4: -0.07% to +3.42% over 8 layouts
+  stacked not distinguishable  ecg/ecg_pipeline_v1_f8__fir4_copy/pipeline/soc_dev/c128t8 against ecg_pipeline_v1_f8__fir4: -0.21% to +3.67% over 8 layouts
+  stacked not distinguishable  ecg/ecg_pipeline_v1_f8__fir4_copy/pipeline/soc_dev/c16t8 against ecg_pipeline_v1_f8__fir4: -3.60% to +0.05% over 8 layouts
+  stacked not distinguishable  ecg/ecg_pipeline_v1_f8__fir4_copy/pipeline/soc_dev/c32t16 against ecg_pipeline_v1_f8__fir4: -1.89% to +0.15% over 8 layouts
+  stacked not distinguishable  ecg/ecg_pipeline_v1_f8__fir4_copy/pipeline/soc_dev/c32t8 against ecg_pipeline_v1_f8__fir4: -0.93% to +0.16% over 8 layouts
+  stacked not distinguishable  ecg/ecg_pipeline_v1_f8__fir4_copy/pipeline/soc_dev/c64t32 against ecg_pipeline_v1_f8__fir4: -2.57% to +1.27% over 8 layouts
+  stacked not distinguishable  ecg/ecg_pipeline_v1_f8__fir4_copy/pipeline/soc_dev/c64t8 against ecg_pipeline_v1_f8__fir4: -0.48% to +1.37% over 8 layouts
+  stacked not distinguishable  coherence/reduce_fill__place/multicore/soc_dev against reduce_fill__loop: -0.85% to +0.52% over 8 layouts
+  stacked not distinguishable  coherence/reduce_v1__place/multicore/soc_dev against reduce_v1__loop: -0.21% to +0.32% over 8 layouts
+the adopted set: PASS; of the adopted variants' configurations that do not win, 50 are R's points where they are not adopted, 0 other configurations at points where they are (reported beside the win)
+  beside the win: coherence/atomic_add__split/multicore/soc_dev/n129: not distinguishable (+0.00% to +1.35%) (not adopted at this point)
+  beside the win: coherence/cas_counter__split/multicore/soc_dev/n1024: not distinguishable (-0.33% to +43.46%) (not adopted at this point)
+  beside the win: coherence/cas_counter__split/multicore/soc_dev/n129: not distinguishable (-28.25% to +34.07%) (not adopted at this point)
+  beside the win: dsp/dot__split/multicore/soc_dev/k1024: not distinguishable (-0.07% to +0.07%) (not adopted at this point)
+  beside the win: dsp/dot__split/multicore/soc_dev/k1024/seed2468ace0: not distinguishable (-0.07% to +0.10%) (not adopted at this point)
+  beside the win: dsp/dot__split/multicore/soc_dev/k1024/seed9e3779b9: not distinguishable (-0.07% to +0.10%) (not adopted at this point)
+  beside the win: dsp/dot__split/multicore/soc_dev/k256: not distinguishable (-0.23% to +0.23%) (not adopted at this point)
+  beside the win: dsp/dot__split/multicore/soc_dev/k256/seed2468ace0: not distinguishable (-0.23% to +0.58%) (not adopted at this point)
+  beside the win: dsp/dot__split/multicore/soc_dev/k256/seed9e3779b9: not distinguishable (-0.23% to +0.58%) (not adopted at this point)
+  beside the win: dsp/dot__split/multicore/soc_dev/k4096: not distinguishable (-0.00% to +0.04%) (not adopted at this point)
+  beside the win: dsp/dot__split/multicore/soc_dev/k4096/seed2468ace0: not distinguishable (-0.04% to +0.01%) (not adopted at this point)
+  beside the win: dsp/dot__split/multicore/soc_dev/k4096/seed9e3779b9: not distinguishable (-0.03% to +0.02%) (not adopted at this point)
+  beside the win: dsp/dot__split/multicore/soc_dev/k64: not distinguishable (-22.24% to +28.51%) (not adopted at this point)
+  beside the win: dsp/dot__split/multicore/soc_dev/k64/seed2468ace0: loses (+17.17% to +28.51%) (not adopted at this point)
+  beside the win: dsp/dot__split/multicore/soc_dev/k64/seed9e3779b9: loses (+17.17% to +27.75%) (not adopted at this point)
+  beside the win: ecg/ecg_pipeline_overlap__fir4_copy/pipeline/soc_dev: wins (-82.02% to -78.59%); against ecg_pipeline_overlap__fir4 not distinguishable (-0.52% to +2.35%) (not adopted at this point)
+  beside the win: ecg/ecg_pipeline_overlap__fir4_copy/pipeline/soc_dev/c128t16: wins (-83.67% to -80.51%); against ecg_pipeline_overlap__fir4 not distinguishable (-0.01% to +6.48%) (not adopted at this point)
+  beside the win: ecg/ecg_pipeline_overlap__fir4_copy/pipeline/soc_dev/c128t32: wins (-84.97% to -82.46%); against ecg_pipeline_overlap__fir4 not distinguishable (-0.17% to +5.20%) (not adopted at this point)
+  beside the win: ecg/ecg_pipeline_overlap__fir4_copy/pipeline/soc_dev/c128t8: wins (-71.48% to -67.80%); against ecg_pipeline_overlap__fir4 not distinguishable (-0.00% to +5.11%) (not adopted at this point)
+  beside the win: ecg/ecg_pipeline_overlap__fir4_copy/pipeline/soc_dev/c32t16: wins (-75.29% to -69.79%); against ecg_pipeline_overlap__fir4 not distinguishable (-1.55% to +0.37%) (not adopted at this point)
+  beside the win: ecg/ecg_pipeline_overlap__fir4_copy/pipeline/soc_dev/c32t8: wins (-64.41% to -59.78%); against ecg_pipeline_overlap__fir4 not distinguishable (-1.05% to +0.30%) (not adopted at this point)
+  beside the win: ecg/ecg_pipeline_overlap__fir4_copy/pipeline/soc_dev/c64t32: wins (-84.33% to -80.79%); against ecg_pipeline_overlap__fir4 not distinguishable (-0.76% to +2.54%) (not adopted at this point)
+  beside the win: ecg/ecg_pipeline_overlap__fir4_copy/pipeline/soc_dev/c64t8: wins (-69.47% to -65.85%); against ecg_pipeline_overlap__fir4 not distinguishable (-0.69% to +1.69%) (not adopted at this point)
+  beside the win: ecg/ecg_pipeline_overlap__fir4_split/pipeline/soc_dev/c128t16: wins (-83.63% to -82.54%); against ecg_pipeline_overlap__fir4 not distinguishable (-6.93% to +0.42%) (not adopted at this point)
+  beside the win: ecg/ecg_pipeline_overlap__fir4_split/pipeline/soc_dev/c128t32: wins (-84.83% to -82.67%); against ecg_pipeline_overlap__fir4 loses (+0.72% to +4.26%) (not adopted at this point)
+  beside the win: ecg/ecg_pipeline_overlap__fir4_split/pipeline/soc_dev/c128t8: wins (-71.46% to -70.45%); against ecg_pipeline_overlap__fir4 not distinguishable (-5.36% to +0.35%) (not adopted at this point)
+  beside the win: ecg/ecg_pipeline_overlap__fir4_split/pipeline/soc_dev/c64t32: wins (-83.94% to -80.64%); against ecg_pipeline_overlap__fir4 loses (+1.07% to +3.15%) (not adopted at this point)
+  beside the win: ecg/ecg_pipeline_overlap_f8__fir4_copy/pipeline/soc_dev: wins (-79.82% to -75.84%); against ecg_pipeline_overlap_f8__fir4 not distinguishable (-0.43% to +3.69%) (not adopted at this point)
+  beside the win: ecg/ecg_pipeline_overlap_f8__fir4_copy/pipeline/soc_dev/c128t16: wins (-82.68% to -79.65%); against ecg_pipeline_overlap_f8__fir4 not distinguishable (-0.06% to +6.37%) (not adopted at this point)
+  beside the win: ecg/ecg_pipeline_overlap_f8__fir4_copy/pipeline/soc_dev/c128t32: wins (-84.84% to -82.47%); against ecg_pipeline_overlap_f8__fir4 not distinguishable (-0.12% to +5.12%) (not adopted at this point)
+  beside the win: ecg/ecg_pipeline_overlap_f8__fir4_copy/pipeline/soc_dev/c128t8: wins (-70.21% to -66.47%); against ecg_pipeline_overlap_f8__fir4 not distinguishable (-0.14% to +5.03%) (not adopted at this point)
+  beside the win: ecg/ecg_pipeline_overlap_f8__fir4_copy/pipeline/soc_dev/c32t16: wins (-69.33% to -62.84%); against ecg_pipeline_overlap_f8__fir4 not distinguishable (-1.26% to +2.10%) (not adopted at this point)
+  beside the win: ecg/ecg_pipeline_overlap_f8__fir4_copy/pipeline/soc_dev/c32t8: wins (-58.59% to -53.90%); against ecg_pipeline_overlap_f8__fir4 not distinguishable (-0.89% to +0.33%) (not adopted at this point)
+  beside the win: ecg/ecg_pipeline_overlap_f8__fir4_copy/pipeline/soc_dev/c64t32: wins (-84.22% to -80.67%); against ecg_pipeline_overlap_f8__fir4 not distinguishable (-0.97% to +2.29%) (not adopted at this point)
+  beside the win: ecg/ecg_pipeline_overlap_f8__fir4_copy/pipeline/soc_dev/c64t8: wins (-66.78% to -63.08%); against ecg_pipeline_overlap_f8__fir4 not distinguishable (-1.25% to +2.13%) (not adopted at this point)
+  beside the win: ecg/ecg_pipeline_overlap_f8__fir4_split/pipeline/soc_dev: wins (-80.08% to -77.91%); against ecg_pipeline_overlap_f8__fir4 not distinguishable (-10.79% to +5.33%) (not adopted at this point)
+  beside the win: ecg/ecg_pipeline_overlap_f8__fir4_split/pipeline/soc_dev/c128t16: wins (-82.68% to -81.17%); against ecg_pipeline_overlap_f8__fir4 not distinguishable (-6.76% to +3.04%) (not adopted at this point)
+  beside the win: ecg/ecg_pipeline_overlap_f8__fir4_split/pipeline/soc_dev/c128t32: wins (-84.70% to -82.59%); against ecg_pipeline_overlap_f8__fir4 loses (+0.58% to +4.39%) (not adopted at this point)
+  beside the win: ecg/ecg_pipeline_overlap_f8__fir4_split/pipeline/soc_dev/c128t8: wins (-70.18% to -69.10%); against ecg_pipeline_overlap_f8__fir4 not distinguishable (-5.24% to +0.42%) (not adopted at this point)
+  beside the win: ecg/ecg_pipeline_overlap_f8__fir4_split/pipeline/soc_dev/c32t16: wins (-71.06% to -65.44%); against ecg_pipeline_overlap_f8__fir4 not distinguishable (-16.33% to +7.81%) (not adopted at this point)
+  beside the win: ecg/ecg_pipeline_overlap_f8__fir4_split/pipeline/soc_dev/c64t32: wins (-83.94% to -80.31%); against ecg_pipeline_overlap_f8__fir4 loses (+0.45% to +4.68%) (not adopted at this point)
+  beside the win: ecg/ecg_pipeline_overlap_f8__fir4_split/pipeline/soc_dev/c64t8: wins (-67.51% to -66.22%); against ecg_pipeline_overlap_f8__fir4 not distinguishable (-8.63% to +0.03%) (not adopted at this point)
+  beside the win: coherence/false_shared__split/multicore/soc_dev/n1024: not distinguishable (-0.26% to +0.42%) (not adopted at this point)
+  beside the win: coherence/false_shared__split/multicore/soc_dev/n129: not distinguishable (-1.98% to +1.44%) (not adopted at this point)
+  beside the win: coherence/lrsc_counter__split/multicore/soc_dev/n1024: not distinguishable (-36.18% to +59.31%) (not adopted at this point)
+  beside the win: coherence/lrsc_counter__split/multicore/soc_dev/n129: not distinguishable (-33.45% to +34.51%) (not adopted at this point)
+  beside the win: coherence/padded__split/multicore/soc_dev/n1024: not distinguishable (-0.32% to +0.26%) (not adopted at this point)
+  beside the win: coherence/padded__split/multicore/soc_dev/n129: not distinguishable (-1.98% to +1.48%) (not adopted at this point)
+  beside the win: coherence/shared_mix__split/multicore/soc_dev/n1024: not distinguishable (-0.05% to +0.00%) (not adopted at this point)
+  beside the win: coherence/shared_mix__split/multicore/soc_dev/n129: not distinguishable (-0.07% to +0.25%) (not adopted at this point)

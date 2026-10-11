@@ -371,10 +371,11 @@ class TunedVariants(unittest.TestCase):
     def test_the_adopted_set_checked(self):
         def config(case, verdict, chunk=64, taps=16, sim="soc_dev", layouts=8):
             suffix = "" if (chunk, taps) == (64, 16) else f"/c{chunk}t{taps}"
-            return f"ecg/{case}/pipeline/{sim}{suffix}", dict(verdict=verdict, axes=dict(chunk=chunk, taps=taps),
+            return f"ecg/{case}/pipeline/{sim}{suffix}", dict(verdict=verdict, axes=dict(chunk=chunk, taps=taps,
+                                                                                        case=case),
                                                                layouts=layouts, low=-1.0, high=1.0)
         split, fir4 = "ecg_pipeline_overlap__fir4_split", "ecg_pipeline_overlap__fir4"
-        points = sorted(matrix_gates.ADOPTED_POINTS[split])
+        points = sorted(matrix_gates.ADOPTED_POINTS[split][1])
         result = dict(config(split, "wins", c, t) for c, t in points + [(64, 32)])
         good = {(split, fir4): dict(config(split, "wins", c, t) for c, t in points)
                 | dict([config(split, "loses", 64, 32)])}

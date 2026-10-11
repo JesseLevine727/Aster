@@ -2025,6 +2025,176 @@ is judged at 8 KiB, on L0–L7.
   all 102 checks, the seven programs on each of the 14 two-hart builds and the one-hart program on each of
   the 4 one-hart builds.
 
+### Step 3: the tuning (done; three questions for the owner)
+
+**How it was judged** (tuning.md §3), every capture from the clean commit 410fbce; the evidence is in
+`results/phase20/tuning-20.5/step3/`:
+- **Each tuned variant** (`<original>__<tag>`) against its original at R, on every layout it fits (L0–L7), warm and
+  cold, in every window it has: 5,344 entries (`t3-judge`; the other 16 planned are GEMM 128×64×128 at the
+  layouts that do not fit main memory).
+  - **194 variant configurations:** 168 win, 22 are not distinguishable, 4 lose.
+  - **A variant that stacks changes** is judged again against the variant it extends, so that each change is
+    adopted only where it wins itself (`matrix_gates.STACKED_ON`).
+  - **The adopted set is checked against the judgment** (`matrix_judge.py --check-adopted`): each adopted variant
+    wins at R where it is adopted, its stacked change too. PASS.
+- **Each variant's other configurations,** in the families' full captures (`t3-ecg`, `t3-ml`, `t3-dsp`,
+  `t3-coherence`): every entry captured or unsupported with its reason, none failed. The adopted variants' losses
+  there are listed below, beside their wins.
+- **The originals are unchanged:** every original's firmware at R, 281 builds, is byte-identical to step 2's
+  capture.
+
+**The copy helper** (§4.1), from the finer sweep: 30,848 entries, on eight layouts (`t3-dma-fine`).
+- **Its thresholds:** the DMA from 113 bytes aligned, 89 at the same offset, 21 at different offsets (20.4's: 127,
+  63 and 15). Each is where the DMA wins on every layout, warm and cold, cached or not (the crossovers: 70–113, 60–89,
+  15–21; `matrix_crossover.py`). 113 rests on a single loss at 112 bytes.
+- **The destination's cache state** moves the aligned crossover to 97 bytes when cached. The helper cannot see it,
+  so it takes the worst case (a question for the owner).
+- **The helper's hart number** is now its `mhartid`, not a device read.
+- **The DMA oracle's exact count** is checked wherever no copied line shares a cache index with the top 64 bytes of
+  hart 0's stack. Those lines, used between the warm-up and the job, cost 160 of the sweep's copies a line at L4.
+  The cause was confirmed from the addresses; every byte is checked in the firmware.
+- **The ML staging** (§4.1): only CIFAR stages inside a window. MNIST copies each image before its interval opens,
+  or reads its images in place.
+  - **`__2h_copy`,** each image staged by the helper (the DMA, for its 768 bytes) on `__2h`: −0.8% to −1.3%
+    against `__2h` on all eight layouts, warm and cold. Adopted.
+  - **`__2h_next`,** the next image's copy begun on the DMA during this image's layers, into a second buffer: not
+    faster than `__2h_copy`. In the direct method it is not distinguishable (−0.15% to +0.30% over the layouts;
+    +0.3% at L0), and in im2col it loses (+0.04% to +0.13%). The copy takes far less time than an image's layers,
+    so starting it early gains nothing. Not adopted.
+- **v1's fair copy is slow on Aster** (a question for the owner). Its four back-to-back write-through stores queue,
+  and it took about 245 cycles more for a 64-byte chunk than the compiler's interleaved word loop.
+
+**ECG** (§5): its stamped twins (`ecg-stages.txt`) show where each chunk's time goes.
+- **`__fir4`, the FIR on DOT8 directly:** each product of four taps is one word of the chunk shifted in registers;
+  v1's generic GEMM gathered every operand byte by byte. 10,421 cycles a chunk → 1,302. Every DOT8 method wins in
+  every configuration: −28% to −85%.
+- **`__fir4_split`, the stages balanced:** with the FIR fast, hart 0 bound the period, so hart 1 also stages and
+  moves the next chunk. The period is 2,252 → 1,894 cycles at v1's case.
+  - **Hart 1's move** goes through the helper, which on hart 1 is always v1's fair copy: only hart 0 programs the
+    DMA. So the split is judged with that copy's cost in it.
+  - **Against `__fir4`** it wins at 5 of R's 9 sweep points (−0.35% to −21.2%): 8 taps at chunks of 16 to 64 samples,
+    and 16 taps at 32 and 64, v1's case among them. It is adopted at those points alone
+    (`matrix_gates.ADOPTED_POINTS`).
+  - **It loses at 32 taps** (+0.7% to +4.3%), where hart 1's FIR is already the longer stage. It is not
+    distinguishable at 128-sample chunks.
+  - **With 8 features** (`ecg_pipeline_overlap_f8__fir4_split`) it wins at 8 taps with chunks of 16 and 32, and is
+    adopted there. Elsewhere, v1's chunk and taps among them (−10.8% to +5.3%), that case keeps `__fir4`.
+- **`__fir4_copy`, the chunks moved by the copy policy:** not distinguishable from `__fir4` alone at 52 of its 54
+  configurations. It is up to +27% slower in the one-hart DOT8 method at 16-sample chunks, where the fair copy is
+  slower than the word loop it replaces.
+  - **The exception:** in the overlap pipelines at 16 × 8, −0.7% to −4.6% with either feature count. There the
+    policy copies each 16-byte chunk on the CPU, below every threshold, in place of `__fir4`'s DMA move. It is
+    adopted at that point alone, where the split is faster still.
+- **Tried and lost** (a trial, not kept): the features on hart 1 too. That made hart 1 the bound, a period of 3,156
+  at v1's case.
+- **v1's case, cold e2e:** 176,420 → 32,882 cycles. The v1 gate's ECG figure is 8.66× → 46.5×.
+
+**Partitioning** (§4.3): hart 1 takes CPU work around the NPU's jobs (`__2h`; the e2e window alone, §6). Each wins
+on all eight layouts, warm and cold:
+
+| Variant | Original → tuned (cold e2e, L0) | Over the layouts |
+|---|---|---|
+| CIFAR, NPU direct: requantization and pooling by channel halves | 4,081,886 → 2,271,435 | −44.4% |
+| CIFAR, NPU im2col: and the im2col rows | 6,430,047 → 3,477,866 | −45.8% to −46.0% |
+| CIFAR, NPU direct, `__2h_copy`: and each image staged by the DMA | 4,081,886 → 2,241,914 | −45.0% to −45.1% |
+| CIFAR, NPU im2col, `__2h_copy` | 6,430,047 → 3,445,861 | −46.3% to −46.4% |
+| Conv2D, NPU direct: a pipeline (the next inputs built and the last output folded during each job) | 84,551 → 45,292 | −46.4% to −46.8% |
+| Conv2D, NPU im2col: the image and im2col rows by halves | 574,056 → 313,393 | −45.4% to −45.5% |
+| MNIST, an image at a time: fc1's requantization by halves | 186,881 → 172,435 (5,840 → 5,389 an image) | −7.2% to −10.7% |
+| MNIST, batched 32: each batch's images by halves | 71,996 → 49,066 (2,250 → 1,533 an image) | −31.6% to −32.7% |
+
+- **MNIST's batch size** (`mnist-batching.txt`):
+  - the best throughput is a batch of 32 on two harts: 1,533 cycles an image, 0.49 ms a batch;
+  - a batch of 8 gives 2,020 an image at 0.16 ms;
+  - an image at a time gives 5,389, 54 µs.
+
+  The throughput method is batch 32 on two harts. The latency method, and v1's comparison, is an image at a time.
+- **The split policy** (`aster_split.h`): two workers only from the sizes at which two beat one on every layout, warm
+  and cold, in every window.
+  - **From the finer sweep** (`t3-split-fine`; `matrix_split.py` re-derives the thresholds and checks the header):
+    - the dot: K 128;
+    - shared_mix: 16 items;
+    - the lr/sc and CAS counters: 64;
+    - atomic_add, false_shared and padded: 129;
+    - lock_sum: never, since its harts serialise.
+  - **Its variants** (`dot__split`, `<kind>__split`) win below the bands, where they run one worker: −31% to −92%
+    at 2 items, −40% to −82% for the dot at K up to 8, and lock_sum −22% to −82% at every size.
+    - In the dot's band (K = 64) they are not distinguishable.
+    - At and above the thresholds they run the original's two workers and are not distinguishable from it. The
+      one exception is atomic_add at 1,024 items, 0.06% to 0.25% faster on the same method: its code's placement,
+      not the policy.
+  - **Below each threshold, a band where neither wins** on every layout, warm and cold (a question for the
+    owner). The sweep's points in the bands:
+    - the dot: K 40 to 96;
+    - atomic_add, false_shared and padded: 64 items;
+    - the CAS counter: 16 and 32;
+    - the lr/sc counter: 32;
+    - shared_mix: 8.
+
+    One worker wins everywhere below those; lock_sum has no band. The header puts the bands on one worker.
+    By §3's rule, a change that does not win is not adopted, which would keep the original's two workers there.
+  - **The dot's band** splits by cache state: at K = 64 the policy's one worker is −19% to −22% cold and +18% to
+    +29% warm. The judgment's two losses are K = 64 at the other two seeds, which are captured warm only.
+  - **The contended counters** (lr/sc and CAS) at 129 and 1,024 items run two workers in both builds, yet differ
+    by up to +59%. Each settles into one of a few interleavings:
+    - at 1,024 items, CAS about 22,600 or 32,100 cycles, lr/sc about 12,300 or 19,200;
+    - at 129, CAS about 3,270 or 4,360.
+
+    The originals change mode with the layout too (at 1,024 items their kernel window at L3 and L7; at 129, CAS's
+    e2e window), and the variant's code changes which mode each layout falls in. The policy does not cause these
+    swings.
+
+**Placement** (§4.4) found nothing to win in these programs.
+- **The fabric's bank conflicts** were 0 in the reductions. In the GEMMs' kernel windows they were 41, 334 and 603,
+  at most 0.16% of the cycles.
+- **The reductions' `__place`** won 18–21%, but its control, `__loop` (the same loops with the halves where the
+  original has them), wins the same. Placement against its control is not distinguishable (−0.8% to +0.5%).
+  - The gain is the loops' code. Each range's base is fetched once, so each word's address is an increment: two
+    instructions a word fewer (the sum's loop 6 → 4, the fill's 7 → 5).
+  - `__loop` is adopted as that, not as placement.
+- **The GEMMs' `__place`** loses by +0.0% to +0.1%, or is not distinguishable.
+
+**The adopted set** (`matrix_gates.ADOPTED`): each variant wins against its original at R on every layout, warm
+and cold, and each change stacked on another variant wins against that variant too.
+- `__fir4`, in the six DOT8 cases;
+- at some sweep points only (`ADOPTED_POINTS`):
+  - the two ECG splits, where they beat `__fir4`;
+  - the overlap pipelines' `__fir4_copy` at 16 × 8;
+  - the split policy's variants at the sizes where they win: 2 items, the dot at K up to 8, and atomic_add at
+    1,024 items too (the original's two workers: its code's placement);
+- the four CIFAR and Conv2D `__2h`, CIFAR's two `__2h_copy`, the two MNIST `__2h`;
+- the reductions' `__loop`;
+- `lock_sum__split`, at every size.
+
+The v1 gate counts a tuned variant only where it is adopted, and matches each case by its original's name. The
+batched MNIST variants never compete per image.
+
+**Beside the wins** (tuning.md §3: the adopted variants' other configurations, at L0; `others.txt`):
+- **The ECG split at 4 waits, 64 × 8,** is not distinguishable from `__fir4` (−8.5% to +0.04%).
+- **`lock_sum__split`** loses with the cache off: +4.9% to +8.8% at 129 items, and +13.8% to +14.3% at 1,024.
+- **Every other adopted variant** wins at its adopted points in every configuration where its original runs: the
+  waits, the cache off, the NPU geometries. (On the one-hart SoC the split variants run alone, their two-worker
+  originals unsupported there.)
+
+**The gates at R** (8 KiB):
+- **Scaling,** on the original programs in all eleven configurations: 1.911× to 2.016×.
+- **v1:**
+  - Conv2D 57.2× → 106.8×;
+  - the reduction 3.95× → 4.94×;
+  - MNIST an image 74.3× → 80.5×;
+  - ECG 8.66× → 46.5×;
+  - CIFAR 16.1× → 29.2×;
+  - the CPU kernels, unchanged, 3.13× to 9.63× (step 2's capture).
+
+**For the owner:**
+1. **The copy helper's CPU path:** keep v1's fair copy, as tuning.md §4.1 names it, or replace it with a copy tuned
+   for Aster (interleaved loads and stores), with a new sweep for the thresholds.
+2. **The split policy's bands:** keep the original's two workers inside each kind's band (§3: only a win is
+   adopted), or one worker as the header has it now. For the dot, two workers lose cold there, and one worker
+   loses warm.
+3. **The destination's cache state in the copy policy:** keep the worst case, or let a caller say whether the
+   destination is cached (97 bytes against 113, aligned).
+
 ## Milestones and gates
 
 | Milestone | Scope | Exit |

@@ -176,6 +176,23 @@ As in 20.4:
   - any copy the partitioning below adds.
 
   Each is a tuned variant (§3).
+- **Step 3's outcome** (phase20.md, 20.5 step 3):
+  - **The thresholds:** the DMA from 113 bytes aligned, 89 at the same
+    offset and 21 at different offsets, where it wins on all eight layouts,
+    warm and cold, cached or not (30,848 entries).
+  - **The destination's cache state** moves the aligned crossover to 97
+    bytes when cached. The helper cannot see that state, so it takes the
+    worst case, pending the owner.
+  - **ECG's chunk moves** by the helper (`__fir4_copy`): not
+    distinguishable from `__fir4` alone except at 16 × 8 in the overlap
+    pipelines, where it is adopted. v1's fair copy is slower on Aster than
+    the compiler's word loop (a question for the owner).
+  - **The ML staging:** only CIFAR stages inside a window. MNIST copies
+    each image before its interval, or reads its images in place.
+    - CIFAR's staging by the helper on `__2h` (`__2h_copy`) wins, −0.8%
+      to −1.3% on every layout, warm and cold, and is adopted.
+    - Beginning the next image's copy during the current image's layers
+      (`__2h_next`) is not faster than that, so it is not adopted.
 
 ### 4.2 Cache geometry
 
@@ -229,6 +246,12 @@ Which engine and which hart does which part of a workload:
 - **Two workers only above measured sizes:** a split policy from 20.4's
   losses (the dot below K = 64, the small GEMMs, the 2-item coherence
   cases), as the runtime's default for tuned variants.
+
+  Step 3's thresholds (`aster_split.h`; `matrix_split.py`): the sizes from
+  which two workers beat one at every larger size on all eight layouts,
+  warm and cold. Below each is a band where neither wins everywhere, for
+  example the dot at K 40 to 127. The owner decides what the policy does
+  there (phase20.md, 20.5 step 3).
 - **MNIST batching:** the batch size by throughput and latency. 20.4 gave
   8,920 cycles an image at batch 1 and 2,242 at 32 on the batched method,
   and 6,005 warm on the per-image method. v1's comparison keeps the
@@ -245,6 +268,10 @@ Where code and data sit:
 - **Measured** across layouts (§3): placement aims to make two-hart figures
   faster and less layout-dependent. The spread before and after is
   published.
+- **Step 3's outcome:** placement had nothing to win in these programs.
+  The fabric's bank conflicts were 0 in the reductions and at most 0.16% of
+  the GEMMs' cycles. The reductions' gain was their loops' code, shown by
+  a control variant (`__loop`) with the same loops on the original layout.
 
 ## 5. ECG
 
@@ -278,6 +305,12 @@ Where code and data sit:
 
   Samples a second, and each chunk's latency against its 360 Hz deadline,
   stay the outputs.
+- **Step 3's outcome** (phase20.md, 20.5 step 3): the DOT8 FIR (`__fir4`)
+  is adopted in every DOT8 method. The stages' balance (`__fir4_split`) is
+  adopted at the sweep points where it beats `__fir4`: 8 taps at chunks of
+  16 to 64 samples, and 16 taps at 32 and 64 (with 8 features, 8 taps at
+  16 and 32 only). It loses at 32 taps. The chunk moves by the copy policy
+  are adopted only at 16 × 8 in the overlap pipelines.
 
 ## 6. Overlap evidence (matrix.md §10.14)
 
@@ -488,7 +521,8 @@ Each step has its watchdog review before it is pushed.
    Then the owner's decision (§4.2): 8 KiB, adopted on 10 October 2026.
 3. **Tuning:** DMA thresholds, partitioning, placement and ECG.
    - The tuned variants are planned, added and judged across layouts.
-   - The adopted set is fixed.
+   - The adopted set is fixed (`matrix_gates.ADOPTED`; phase20.md, 20.5
+     step 3), with three questions for the owner.
 4. **The final configuration:**
    - soc.md §10's checks on the final RTL (§2);
    - the full matrix captured from one clean commit, as 20.4's step 4, with

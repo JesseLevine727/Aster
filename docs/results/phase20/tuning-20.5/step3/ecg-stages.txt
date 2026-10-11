@@ -1,0 +1,7 @@
+ECG's stamped twins at R, warm, e2e, v1's case (64 samples, 16 taps): each stage's median a chunk (cycles), and the chunk period (classify to classify); t3-ecg, 410fbce
+ecg_pipeline_overlap_stages: {'bring': 349.0, 'fir': 10421.0, 'classify': 1743.5, 'dma': 14.0, 'npu': 44.0}, period 10954
+ecg_pipeline_overlap__fir4_stages: {'bring': 349.0, 'fir': 1302.0, 'classify': 1757.5, 'dma': 14.0, 'npu': 44.0}, period 2252
+ecg_pipeline_overlap__fir4_copy_stages: {'bring': 349.0, 'fir': 1302.0, 'classify': 1752.0, 'dma': 0.0, 'npu': 44.0}, period 2245
+ecg_pipeline_overlap__fir4_split_stages: {'bring': 359.5, 'fir': 1268.5, 'classify': 1759.0, 'dma': 0.0, 'npu': 44.0}, period 1894
+ecg_pipeline_v1_stages: {'bring': 354.0, 'fir': 10389.0, 'classify': 1757.0, 'dma': 14.0, 'npu': 44.0}, period 12676
+ecg_pipeline_v1__fir4_stages: {'bring': 354.0, 'fir': 1289.0, 'classify': 1757.0, 'dma': 14.0, 'npu': 44.0}, period 3577

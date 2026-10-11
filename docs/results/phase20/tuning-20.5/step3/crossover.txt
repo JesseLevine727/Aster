@@ -1,0 +1,4 @@
+revision 410fbce; {'captured': 30848, 'failed': 0, 'unsupported': 0, 'planned': 0}
+  aligned: threshold 113 bytes (the crossovers 70 to 113 over 32 points: cached 0/1 113/97); no crossover in the sweep: 0
+  same_offset: threshold 89 bytes (the crossovers 60 to 89 over 32 points: cached 0/1 89/84); no crossover in the sweep: 0
+  different_offsets: threshold 21 bytes (the crossovers 15 to 21 over 32 points: cached 0/1 21/21); no crossover in the sweep: 0

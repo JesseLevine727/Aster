@@ -40,7 +40,7 @@ def pairs(allrec: dict, new: str | None = None, base: str | None = None) -> tupl
     """config -> [(layout, state, window, theirs, mine)]; the entries with no twin; config -> its axes (without the
     layout and cache state). Each tuned variant against its original, or (with new and base) the variant `new`
     against `base`, the variant it extends."""
-    out, alone, axes = defaultdict(list), [], {}
+    out, alone, axes = defaultdict(list), [], {}             # (axes: each configuration's, its case among them)
     for ident, (e, recs) in sorted(allrec.items()):
         if new is None and ("__" not in e["case"] or e["case"].endswith("_stages")) or new and e["case"] != new:
             continue
@@ -49,7 +49,7 @@ def pairs(allrec: dict, new: str | None = None, base: str | None = None) -> tupl
             alone.append(ident)
             continue
         config = config_of(ident)
-        axes[config] = {k: v for k, v in e["axes"].items() if k not in ("layout", "cache_state")}
+        axes[config] = {k: v for k, v in e["axes"].items() if k not in ("layout", "cache_state")} | {"case": e["case"]}
         theirs = {r["window"]: int(r["h0_cycles"]) for r in twin[1]}
         for r in recs:
             if r["window"] in theirs:
@@ -84,8 +84,9 @@ def stacked(allrec: dict, new: str, base: str) -> tuple[dict, list[str]]:
     return summary(by_config, axes), alone
 
 
-def case_of(config: str) -> str:
-    return config.split("/")[1]
+def case_of(v: dict) -> str:
+    """A configuration's case (its entries' case: the id's name can carry a sweep point, the batched MNIST's)."""
+    return v["axes"]["case"]
 
 
 def is_r(config: str) -> bool:
@@ -96,33 +97,34 @@ def check_adopted(result: dict, stacks: dict) -> tuple[list[str], list[str]]:
     """matrix_gates.ADOPTED against the judgment: at R, each adopted variant wins against its original at each of its
     adopted sweep points, and its stacked change against the variant it extends there too; a variant adopted at some
     points (ADOPTED_POINTS) at exactly those where both win. The problems, and the adopted variants' configurations
-    that do not win (other configurations, reported beside the win: tuning.md §3)."""
+    that do not win: R's points where they are not adopted, and the other configurations at the points where they
+    are (reported beside the win: tuning.md §3)."""
     problems, beside = [], []
     stacked_on = {new: (base, rows) for (new, base), rows in stacks.items()}
-    present = {case_of(c) for c in result}
+    present = {case_of(v) for v in result.values()}
     for case in sorted(matrix_gates.ADOPTED & present):
         base, srows = stacked_on.get(case, (None, {}))
         if case in matrix_gates.STACKED_ON and base is None:
             problems.append(f"{case}: stacked on {matrix_gates.STACKED_ON[case]}, not judged against it")
         wins_at, on_layouts = set(), False
         for config, v in result.items():
-            if case_of(config) != case:
+            if case_of(v) != case:
                 continue
             s = srows.get(config) if base else None
             both = v["verdict"] == "wins" and (base is None or (s is not None and s["verdict"] == "wins"))
             at = matrix_gates.adopted_at(case, v["axes"])
-            if is_r(config) and both:
-                wins_at.add((v["axes"].get("chunk"), v["axes"].get("taps")))
+            if is_r(config) and both and case in matrix_gates.ADOPTED_POINTS:
+                wins_at.add(matrix_gates.point_of(case, v["axes"]))
             on_layouts |= is_r(config) and v["layouts"] > 1
             if is_r(config) and at and not both:
                 problems.append(f"{config}: adopted, but {v['verdict']}"
                                 + (f", against {base} {s['verdict'] if s else 'not judged'}" if base else ""))
-            elif not both:
+            elif not both and (at or is_r(config)):           # (another configuration: where it is adopted)
                 beside.append(f"{config}: {v['verdict']} ({v['low']:+.2f}% to {v['high']:+.2f}%)"
                               + (f"; against {base} {s['verdict']} ({s['low']:+.2f}% to {s['high']:+.2f}%)"
                                  if s else "") + ("" if at or not is_r(config) else " (not adopted at this point)"))
         # (adopted at exactly its winning points, on the layouts' judgment; within them, on L0's alone)
-        points = matrix_gates.ADOPTED_POINTS.get(case)
+        points = matrix_gates.ADOPTED_POINTS.get(case, (None, None))[1]
         if points is not None and (points != wins_at if on_layouts else not points <= wins_at):
             problems.append(f"{case}: adopted at {sorted(points)}, wins at {sorted(wins_at)}")
     return problems, beside
@@ -148,7 +150,7 @@ def main() -> int:
     unpaired = [i for i in alone if status.get(twin_of(i, allrec[i][0]["case"])) == "unsupported"]
     alone = [i for i in alone if i not in unpaired]
     result = summary(by_config, axes)
-    present = {case_of(c) for c in result}
+    present = {case_of(v) for v in result.values()}
     stacks, stack_alone = {}, []
     for new, base in sorted(matrix_gates.STACKED_ON.items()):
         if new in present:
@@ -175,8 +177,10 @@ def main() -> int:
             print(f"  stacked {v['verdict']:20} {config} against {base}: {v['low']:+.2f}% to {v['high']:+.2f}% over "
                   f"{v['layouts']} layouts")
     if args.check_adopted:
-        print(f"the adopted set: {'PASS' if not problems else 'FAIL'}; {len(beside)} of the adopted variants' "
-              f"configurations do not win (reported beside the win)")
+        unadopted = sum(line.endswith("(not adopted at this point)") for line in beside)
+        print(f"the adopted set: {'PASS' if not problems else 'FAIL'}; of the adopted variants' configurations that do "
+              f"not win, {unadopted} are R's points where they are not adopted, {len(beside) - unadopted} other "
+              f"configurations at points where they are (reported beside the win)")
         for line in problems:
             print(f"  PROBLEM {line}")
         for line in beside:

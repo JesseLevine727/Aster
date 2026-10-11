@@ -35,21 +35,32 @@ R_SIMS = ("soc_dev", "soc_l1_2k", "soc_l1_4k", "soc_l1_8k")  # (R at each cache 
 # another variant (STACKED_ON) faster than that variant there too; a variant that wins only at some of R's sweep points
 # is adopted at those alone (ADOPTED_POINTS). matrix_judge.py --check-adopted checks all of it against a judgment. Only
 # these compete with their originals in the v1 gate. Not adopted though faster than their originals: __fir4_copy (the
-# copy policy not distinguishable from __fir4 alone), __place (placement not distinguishable from its control,
-# __loop: the gain is the loops' code), and CIFAR's __2h_next (the next image's copy begun early not faster than
-# __2h_copy).
+# copy policy not distinguishable from __fir4 alone but at 16 x 8 in the overlap pipelines, where it is adopted),
+# __place (placement not distinguishable from its control, __loop: the gain is the loops' code), and CIFAR's
+# __2h_next (the next image's copy begun early not faster than __2h_copy).
 ADOPTED: frozenset = frozenset({
     "ecg_dot8__fir4", "ecg_dot8_f8__fir4", "ecg_pipeline_v1__fir4", "ecg_pipeline_v1_f8__fir4",
     "ecg_pipeline_overlap__fir4", "ecg_pipeline_overlap_f8__fir4",
     "ecg_pipeline_overlap__fir4_split", "ecg_pipeline_overlap_f8__fir4_split",
+    "ecg_pipeline_overlap__fir4_copy", "ecg_pipeline_overlap_f8__fir4_copy",
     "cifar_cnn_npu_direct__2h", "cifar_cnn_npu_im2col__2h", "cifar_cnn_npu_direct__2h_copy",
     "cifar_cnn_npu_im2col__2h_copy", "conv2d_direct_npu__2h", "conv2d_im2col_npu__2h",
     "mnist_mlp_npu__2h", "mnist_mlp_npu_batched__2h", "reduce_fill__loop", "reduce_v1__loop", "lock_sum__split",
+    "dot__split", "atomic_add__split", "cas_counter__split", "false_shared__split", "lrsc_counter__split",
+    "padded__split", "shared_mix__split",
 })
-# the variants adopted only at some of R's sweep points, ECG's (chunk, taps): the split beats __fir4 at these alone
+# the variants adopted only at some of R's sweep points (the sweep's axes, and the points): at these alone. ECG's
+# split and copy where they beat __fir4; the split policy's variants at the sizes where they win, below its bands
+# (where they run one worker), and atomic_add at 1,024 items too (the original's two workers: its code's placement)
 ADOPTED_POINTS: dict = {
-    "ecg_pipeline_overlap__fir4_split": frozenset({(16, 8), (32, 8), (32, 16), (64, 8), (64, 16)}),
-    "ecg_pipeline_overlap_f8__fir4_split": frozenset({(16, 8), (32, 8), (64, 8)}),
+    "ecg_pipeline_overlap__fir4_split": (("chunk", "taps"), frozenset({(16, 8), (32, 8), (32, 16), (64, 8), (64, 16)})),
+    "ecg_pipeline_overlap_f8__fir4_split": (("chunk", "taps"), frozenset({(16, 8), (32, 8)})),
+    "ecg_pipeline_overlap__fir4_copy": (("chunk", "taps"), frozenset({(16, 8)})),
+    "ecg_pipeline_overlap_f8__fir4_copy": (("chunk", "taps"), frozenset({(16, 8)})),
+    "dot__split": (("k",), frozenset({(0,), (1,), (7,), (8,)})),
+    "atomic_add__split": (("items",), frozenset({(2,), (1024,)})),
+    **{f"{kind}__split": (("items",), frozenset({(2,)}))
+       for kind in ("cas_counter", "false_shared", "lrsc_counter", "padded", "shared_mix")},
 }
 # each change stacked on another variant, and that variant: judged against it too (matrix_judge.py)
 STACKED_ON: dict = {
@@ -62,12 +73,18 @@ STACKED_ON: dict = {
 }
 
 
+def point_of(case: str, axes: dict) -> tuple:
+    """An entry's sweep point, on the axes its case is adopted by (ADOPTED_POINTS)."""
+    return tuple(axes.get(name) for name in ADOPTED_POINTS[case][0])
+
+
 def adopted_at(case: str, axes: dict | None) -> bool:
     """Whether a tuned variant is adopted (at this entry's sweep point, for one adopted at some alone)."""
     if case not in ADOPTED:
         return False
-    points = ADOPTED_POINTS.get(case)
-    return points is None or (axes is not None and (axes.get("chunk"), axes.get("taps")) in points)
+    if case not in ADOPTED_POINTS:
+        return True
+    return axes is not None and point_of(case, axes) in ADOPTED_POINTS[case][1]
 
 
 def competes(case: str, test, axes: dict | None = None) -> bool:
