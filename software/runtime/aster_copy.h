@@ -2,7 +2,7 @@
 // unchanged) or by the CPU, chosen by size and alignment. The CPU's copy (step 3b): at the same offset in a word, v1's
 // fair copy (software/benchmarks/dma.c, verbatim); at different offsets, the shift copy, tuned for Aster.
 // The thresholds (the bytes from which the DMA copies) are 20.5 step 3b's (aster_copy.c: 113 bytes aligned, 89 at the
-// same offset, 61 at different offsets, and the shift copy from 14; 20.4's crossovers were 127, 63 and 15); a program
+// same offset, 61 at different offsets, and the shift copy from 15; 20.4's crossovers were 127, 63 and 15); a program
 // may set its own. Only hart 0 programs the DMA (v1's driver checks it), so hart 1 always copies itself.
 #ifndef ASTER_COPY_H
 #define ASTER_COPY_H

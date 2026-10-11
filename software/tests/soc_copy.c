@@ -47,7 +47,7 @@ static uint32_t copy_checked(uint32_t bytes, uint32_t src_off, uint32_t dst_off,
 }
 
 // (each side of the policy's thresholds: 20.4's 127 and 63, and 20.5's 113 and 89; at different offsets step 3's 21,
-// step 3b's 61 and the shift copy's 14 within 0-64 above)
+// step 3b's 61 and the shift copy's 15 within 0-64 above)
 static const uint32_t extra[] = {88u, 89u, 95u, 96u, 112u, 113u, 126u, 127u, 128u, 160u, 255u, 256u, 300u, 320u};
 
 // hart 1's copies, every length above at all 16 offset pairs (20.5 step 3b: so the shift copy runs at lengths the DMA

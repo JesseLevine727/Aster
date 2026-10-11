@@ -7,8 +7,8 @@
 // cold, the destination cached or not: each copy where it wins on all of them (scripts/matrix_crossover.py checks
 // them against the sweep). The DMA from 113 bytes aligned and 89 at the same offset (against v1's fair copy, as in
 // step 3), and from 61 at different offsets (against the shift copy: step 3's 21 was against v1's byte path); the
-// shift copy from 14 bytes. (20.4's crossovers were 127, 63 and 15.)
-struct aster_copy_policy aster_copy_policy = {113u, 89u, 61u, 14u};
+// shift copy from 15 bytes. (20.4's crossovers were 127, 63 and 15.)
+struct aster_copy_policy aster_copy_policy = {113u, 89u, 61u, 15u};
 
 static enum aster_dma_result pending = ASTER_DMA_OK;              // (a started DMA copy's, until finished)
 

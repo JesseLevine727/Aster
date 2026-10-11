@@ -9,7 +9,7 @@
   icache.txt           §4.4's code against the instruction cache: the warm windows' instruction misses at L0 and
                        their fewest over the layouts, for the originals and the adopted variants (t3-judge)
 
-  matrix_tuning_report.py MATRIX_DIR OUT_DIR    (MATRIX_DIR holds t3-ml, t3-ecg and t3-judge)
+  matrix_tuning_report.py MATRIX_DIR OUT_DIR [--prefix t3b]    (MATRIX_DIR holds PREFIX-ml, -ecg and -judge)
 """
 import argparse
 import json
@@ -19,6 +19,7 @@ import sys
 from collections import defaultdict
 from pathlib import Path
 
+import matrix
 import matrix_gates
 from matrix_overlap import records_of
 
@@ -140,8 +141,11 @@ def icache(judge: dict, rev: str) -> list[str]:
              f"layout's cycles against L0's, for the originals and the adopted variants at their adopted points: "
              f"each window with 32 misses or more at L0; t3-judge, {rev}. A layout that removes them shows conflict "
              f"misses (the code pad moves the program's code against the runtime's); misses no layout moves are not"]
+    def judged(e: dict) -> bool:                       # (an original, an adopted variant, or the twin of either)
+        case = matrix.program_case(e["case"])
+        return "__" not in case or matrix_gates.adopted_at(case, e["axes"])
     rows = by_layout(judge, lambda e: e["axes"]["cache_state"] == "warm" and not e["case"].endswith("_stages")
-                     and ("__" not in e["case"] or matrix_gates.adopted_at(e["case"], e["axes"])))
+                     and judged(e))
     found = []
     for (config, state, window), lay in rows.items():
         misses = {k: int(r["h0_icache_misses"]) + int(r.get("h1_icache_misses") or 0) for k, r in lay.items()}
@@ -160,8 +164,9 @@ def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument("matrix", type=Path)
     parser.add_argument("out", type=Path)
+    parser.add_argument("--prefix", default="t3", help="the captures' prefix (t3: step 3's; t3b: step 3b's)")
     args = parser.parse_args()
-    runs = {name: args.matrix / name for name in ("t3-ml", "t3-ecg", "t3-judge")}
+    runs = {name: args.matrix / f"{args.prefix}-{name[3:]}" for name in ("t3-ml", "t3-ecg", "t3-judge")}
     problems = {name: why for name, run in runs.items() if (why := incomplete(run))}
     if problems:
         print(f"runs not usable: {problems}")

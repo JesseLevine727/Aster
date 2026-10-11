@@ -6,7 +6,7 @@ The helper (software/runtime/aster_copy.c) classes a copy by word alignment: bot
 or different offsets. Its CPU copy (step 3b) is v1's fair copy at the same offset; at different offsets, the shift
 copy ("copy__aster" in the sweep) from the policy's `shift` bytes, v1's below. For each class, the destination cached
 or not, warm and cold, and each layout, a crossover is the smallest size from which one copy is faster at every
-larger size of the sweep (for different offsets, at all four of the sweep's offset pairs). A threshold is the largest
+larger size of the sweep (for different offsets, at all six of the sweep's offset pairs). A threshold is the largest
 crossover over the destination's state, warm and cold, and the layouts: tuning.md §3's rule, a change only where it
 wins on all of them.
 - shift: the shift copy against v1's fair copy, at different offsets;

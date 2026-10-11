@@ -536,12 +536,13 @@ DMA_OVERLAP = ((0, "overlap_serial_h0", 1), (1, "overlap_h0", 1), (2, "overlap_s
 
 
 # 20.5's finer sweep around 20.4's crossovers (docs/tuning.md §4.1): every size from 32 to 160 bytes aligned and at
-# the same offset in a word (20.4: from 127 and from 63), every size from 8 to 63 at different offsets (from 15 warm,
-# 31 cold); the destination cached or not; at R, warm and cold, on the default seed (and on the layouts, --layouts)
+# the same offset in a word (20.4: from 127 and from 63), every size from 8 to 127 at different offsets (from 15 warm,
+# 31 cold in 20.4; step 3b's shift copy moves the DMA's crossover up), at six offset pairs; the destination cached or
+# not; at R, warm and cold, on the default seed (and on the layouts, --layouts)
 DMA_FINE = [(size, src, dst) for src, dst in ((0, 0), (1, 1)) for size in range(32, 161)] + \
-           [(size, src, dst) for src, dst in ((1, 0), (2, 0), (0, 3), (3, 6), (1, 2)) for size in range(8, 128)]
-# (after the destination's alignment, the source at offset 1 (1/0, 0/3, 3/6), 2 (2/0, step 3b) and 3 (1/2): the
-# shift copy's three shifts)
+           [(size, src, dst) for src, dst in ((1, 0), (2, 0), (0, 3), (3, 6), (1, 2), (0, 1)) for size in range(8, 128)]
+# (after the destination's alignment, the source at offset 1 (1/0, 0/3, 3/6), 2 (2/0, step 3b) and 3 (1/2, 0/1): the
+# shift copy's three shifts; and the destination's leading bytes 0 (1/0, 2/0), 1 (0/3), 2 (3/6, 1/2) and 3 (0/1))
 
 
 def dma_fine_entries() -> list[Entry]:
