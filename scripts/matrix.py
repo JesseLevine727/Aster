@@ -439,6 +439,37 @@ DMA_ALIGNMENTS = ((0, 0), (1, 0), (0, 3), (3, 6), (1, 1), (1, 2))
 DMA_OVERLAP = ((0, "overlap_serial_h0", 1), (1, "overlap_h0", 1), (2, "overlap_serial_h1", 2), (3, "overlap_h1", 2))
 
 
+# 20.5's finer sweep around 20.4's crossovers (docs/tuning.md §4.1): every size from 32 to 160 bytes aligned and at
+# the same offset in a word (20.4: from 127 and from 63), every size from 8 to 63 at different offsets (from 15 warm,
+# 31 cold); the destination cached or not; at R, warm and cold, on the default seed (and on the layouts, --layouts)
+DMA_FINE = [(size, src, dst) for src, dst in ((0, 0), (1, 1)) for size in range(32, 161)] + \
+           [(size, src, dst) for src, dst in ((1, 0), (0, 3), (3, 6), (1, 2)) for size in range(8, 64)]
+
+
+def dma_fine_entries() -> list[Entry]:
+    """tuning.md §4.1: the copy helper's thresholds, the DMA through v1's driver against v1's fair CPU copy (as the
+    DMA family's copies, matrix.md §4.3) at DMA_FINE's sizes and offsets, at R, warm and cold."""
+    sources = ["software/matrix/dma_bench.c", "software/drivers/aster_dma.c", "software/runtime/asterbench_v12.c",
+               "software/runtime/aster_smp.c"]
+    entries = []
+    for size, src, dst in DMA_FINE:
+        for cached in (0, 1):
+            for method_number, method in ((0, "cpu_copy"), (1, "dma")):
+                for cold in (False, True):
+                    sim, tag = "soc_dev", f"b{size}s{src}d{dst}c{cached}"
+                    axes = make_axes(sim, cold, 1)
+                    axes.update(bytes=size, src_off=src, dst_off=dst, cached=cached, seed=MEMORY_SEEDS[0])
+                    entries.append(Entry(f"dma_fine/copy/{method}/{sim}/{'cold' if cold else 'warm'}/{tag}", "dma_fine",
+                                         "copy", method, sim, cold, [], "LITMUS_CFLAGS", [], [], "", list(sources),
+                                         soc_variants.v12_defines(sim) + [
+                                             "-DDMA_CASE=1", f"-DDMA_METHOD={method_number}",
+                                             f"-DDMA_SEED={MEMORY_SEEDS[0]:#010x}u", f"-DDMA_BYTES={size}u",
+                                             f"-DDMA_SRC_OFF={src}u", f"-DDMA_DST_OFF={dst}u",
+                                             f"-DDMA_DST_CACHED={cached}u"] + (["-DMATRIX_COLD"] if cold else []),
+                                         axes, "dma"))
+    return entries
+
+
 def dma_entries() -> list[Entry]:
     """matrix.md §4.3: the DMA through v1's driver against v1's fair CPU copy, every size x alignment x the
     destination cached or not; the overlap of a copy with unrelated work on hart 0, then hart 1, against the same
@@ -518,6 +549,8 @@ def npu_gemm_entries() -> list[Entry]:
 
 FAMILIES = {"cpu": cpu_entries, "coherence": coherence_entries, "dsp": dsp_family, "ml": ml_family,
             "ecg": ecg_entries, "memory": memory_entries, "dma": dma_entries, "npu_gemm": npu_gemm_entries}
+# 20.5's tuning measurements (docs/tuning.md §4): run when named (--family), not part of the full matrix
+TUNING = {"dma_fine": lambda: dma_fine_entries()}
 
 # v1's baseline records (Phase 17, sync1), the cases' identity the v12 record must keep
 BASELINE = run_core_tests.BASELINE
@@ -1406,7 +1439,8 @@ def toolchain(prefix: str) -> dict:
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument("action", choices=["plan", "run"])
-    parser.add_argument("--family", action="append", choices=sorted(FAMILIES))
+    parser.add_argument("--family", action="append", choices=sorted(FAMILIES) + sorted(TUNING),
+                        help="a family (each by default), or a tuning measurement, run only when named")
     parser.add_argument("--out", type=Path)
     parser.add_argument("--jobs", type=int, default=max(1, (os.cpu_count() or 2) - 4))
     parser.add_argument("--only", help="entries whose id starts with this (applied before --caches and --layouts)")
@@ -1419,7 +1453,7 @@ def main() -> int:
     parser.add_argument("--repeat-every", type=int, default=0,
                         help="determinism: run every Nth captured entry again and require identical records")
     args = parser.parse_args()
-    entries = [e for f in (args.family or sorted(FAMILIES)) for e in FAMILIES[f]()]
+    entries = [e for f in (args.family or sorted(FAMILIES)) for e in {**FAMILIES, **TUNING}[f]()]
     if args.only:
         entries = [e for e in entries if e.id.startswith(args.only)]
     if args.gate_workloads:
