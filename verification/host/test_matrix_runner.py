@@ -17,6 +17,7 @@ import matrix_compare  # noqa: E402
 import matrix_crossover  # noqa: E402
 import matrix_gates  # noqa: E402
 import matrix_geometry  # noqa: E402
+import matrix_judge  # noqa: E402
 import matrix_golden  # noqa: E402
 import matrix_overlap  # noqa: E402
 
@@ -307,6 +308,39 @@ class DmaInvalidations(unittest.TestCase):
 
 
 STEP2_SIM = {4: "soc_dev", 2: "soc_l1_2k", 8: "soc_l1_8k"}       # (a capture of step 2's: R's caches at 4 KiB)
+
+
+class TunedVariants(unittest.TestCase):
+    """20.5 step 3: the v1 gate's matching by a case's original name, tuned variants only once adopted; the judging."""
+    def test_the_gate_admits_only_adopted_variants(self):
+        mnist = matrix_gates.V1["MNIST MLP, per image"][1]
+        self.assertTrue(matrix_gates.competes("mnist_mlp_npu", mnist))
+        self.assertFalse(matrix_gates.competes("mnist_mlp_npu_batched", mnist))
+        self.assertFalse(matrix_gates.competes("mnist_mlp_npu_batched__2h", mnist))   # (batched: never per image)
+        self.assertFalse(matrix_gates.competes("mnist_mlp_npu__2h", mnist))           # (not adopted)
+        self.assertFalse(matrix_gates.competes("ecg_pipeline_overlap__fir4_stages",
+                                               matrix_gates.V1["streaming ECG, 16 x 64"][1]))
+        try:
+            matrix_gates.ADOPTED = frozenset({"mnist_mlp_npu__2h"})
+            self.assertTrue(matrix_gates.competes("mnist_mlp_npu__2h", mnist))
+            self.assertFalse(matrix_gates.competes("mnist_mlp_npu_batched__2h", mnist))
+        finally:
+            matrix_gates.ADOPTED = frozenset()
+
+    def test_the_judging(self):
+        def entry(case, layout, state, cycles):
+            e = dict(id=f"ml/{case}/npu/soc_dev/{state}" + (f"/{layout}" if layout != "L0" else ""), case=case,
+                     axes=dict(layout=layout, cache_state=state) if layout != "L0" else dict(cache_state=state))
+            return e["id"], (e, [dict(window="e2e", h0_cycles=str(cycles))])
+        allrec = dict([entry("mnist_mlp_npu", "L0", "warm", 100), entry("mnist_mlp_npu__2h", "L0", "warm", 90),
+                       entry("mnist_mlp_npu", "L3", "warm", 100), entry("mnist_mlp_npu__2h", "L3", "warm", 95),
+                       entry("mnist_mlp_npu", "L0", "cold", 100), entry("mnist_mlp_npu__2h", "L0", "cold", 99)])
+        rows, alone = matrix_judge.pairs(allrec)
+        self.assertEqual((list(rows), alone), (["ml/mnist_mlp_npu__2h/npu/soc_dev"], []))
+        self.assertEqual(matrix_judge.verdict(rows["ml/mnist_mlp_npu__2h/npu/soc_dev"]), "wins")
+        allrec.update([entry("mnist_mlp_npu__2h", "L3", "warm", 101)])
+        rows, _ = matrix_judge.pairs(allrec)
+        self.assertEqual(matrix_judge.verdict(rows["ml/mnist_mlp_npu__2h/npu/soc_dev"]), "not distinguishable")
 
 
 class Policies(unittest.TestCase):

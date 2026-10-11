@@ -44,6 +44,9 @@
 #endif
 #if COHERENT_SPLIT
 #include "aster_split.h"
+#if COHERENT_KIND == 6 || COHERENT_KIND == 7 || COHERENT_KIND == 9
+#error "a two-hart case has no split threshold"
+#endif
 #undef COHERENT_WORKERS
 #if COHERENT_ITEMS >= ASTER_SPLIT_ITEMS(COHERENT_KIND)
 #define COHERENT_WORKERS 2

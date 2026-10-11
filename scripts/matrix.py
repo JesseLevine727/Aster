@@ -135,10 +135,13 @@ def coherence_entries() -> list[Entry]:
             e.status, e.reason = "unsupported", "two workers need two harts"
         return e
 
-    # (20.5's tuned variant, tuning.md §4.4: __place, the two workers' halves a bank apart; reduce.c)
+    # (20.5's tuned variants, tuning.md §4.4: __place, the two workers' halves a bank apart, and __loop, its control,
+    # the same loops with the halves where the original has them; reduce.c)
     for version, name, tag, tuning in ((1, "reduce_v1", "", []), (2, "reduce_fill", "", []),
                                        (1, "reduce_v1", "__place", ["-DREDUCE_PLACE=1"]),
-                                       (2, "reduce_fill", "__place", ["-DREDUCE_PLACE=1"])):
+                                       (2, "reduce_fill", "__place", ["-DREDUCE_PLACE=1"]),
+                                       (1, "reduce_v1", "__loop", ["-DREDUCE_PLACE=2"]),
+                                       (2, "reduce_fill", "__loop", ["-DREDUCE_PLACE=2"])):
         for wait, dcache, cold, sim, workers in configs + unsupported_h1:
             if tag and workers != 2:
                 continue
@@ -668,7 +671,7 @@ def two_windows(entry: Entry, records: list[dict]) -> list[dict]:
     """matrix.md §4: a warm run's e2e and kernel windows (in that order), a cold run's e2e alone; one identity
     and one checksum for both (the same computation)."""
     # (a two-worker NPU variant records the e2e window alone: tuning.md §6, approved by the owner)
-    e2e_only = entry.cold or (entry.method.startswith("npu") and entry.axes["workers"] == 2)
+    e2e_only = entry.cold or ("__" in entry.case and entry.method.startswith("npu") and entry.axes["workers"] == 2)
     want = ["e2e"] if e2e_only else ["e2e", "kernel"]
     if [r["window"] for r in records] != want:
         raise asterbench_v12.ValidationError(f"windows {[r['window'] for r in records]}, not {want}")
@@ -1391,7 +1394,7 @@ def gate_workload(e: Entry) -> bool:
         return True
     if e.family == "ecg" and (e.axes.get("chunk"), e.axes.get("taps")) != (64, 16):
         return False
-    return any(e.family == family and competes(e.case) for family, competes, _ in matrix_gates.V1.values())
+    return any(e.family == family and matrix_gates.competes(e.case, test) for family, test, _ in matrix_gates.V1.values())
 
 
 def recorded_axes(e: Entry) -> dict:

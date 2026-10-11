@@ -181,7 +181,7 @@ static void engine(void) {
 #if CONV_SPLIT
 #if IM2COL
 // the image by halves of its rows, the kernel with hart 0's; then the im2col rows by halves
-static void image_rows(uint32_t row0, uint32_t row1) {
+static __attribute__((noinline)) void image_rows(uint32_t row0, uint32_t row1) {
     for (uint32_t i = row0 * CONV_W; i < row1 * CONV_W; ++i) image[i] = (int8_t)((CONV_SEED ^ (i * 0x1021u)) & 0xffu);
 }
 static volatile uint32_t split_phase;                  // 0 the image's upper rows, 1 the im2col's upper rows
@@ -345,10 +345,23 @@ static void poison_outputs(int all) {
 #endif
 }
 
+#if CONV_SPLIT && !IM2COL
+static void slot1_poison(void *arg) {                  // (the pipeline's second inputs: hart 1 writes them)
+    (void)arg;
+    matrix_poison(slot_image(1), sizeof(int8_t[CONV_H * CONV_W]));
+    matrix_poison(slot_kernel(1), sizeof(int8_t[CONV_KK]));
+}
+#endif
+
 static void poison_all(void) {
     matrix_poison(image, sizeof image);
     matrix_poison(kernel, sizeof kernel);
     poison_outputs(1);
+#if CONV_SPLIT && !IM2COL
+    aster_smp_dispatch(slot1_poison, 0);               // (each hart its own lines: matrix_window.h)
+    matrix_poison(slot_output(1), sizeof(int32_t[CONV_M]));
+    aster_smp_join();
+#endif
 }
 
 static uint32_t run_e2e(void) {

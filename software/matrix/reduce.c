@@ -41,10 +41,14 @@
 #define REDUCE_SEED 0x13570000u
 
 _Static_assert(REDUCE_WORKERS == 1u || REDUCE_WORKERS == 2u, "workers must be 1 or 2");
-// 20.5's tuned variant (tuning.md §4.4): REDUCE_PLACE 1 (two workers) builds "__place": each hart's half in a buffer
-// of its own, hart 0's on a 64-byte boundary and hart 1's 16 bytes past one (MATRIX_ROOM_HART: the layouts' hart pad
-// moves it too), so that the two harts' streams, in lockstep, meet in different banks (address bits [5:4]) where
-// the array's halves, 2 KiB apart, met in the same bank. The same computation and checksum.
+// 20.5's tuned variants (tuning.md §4.4), two workers:
+//   REDUCE_PLACE 1 "__place": each hart's half in a buffer of its own, hart 0's on a 64-byte boundary and hart 1's 16
+//     bytes past one (MATRIX_ROOM_HART: the layouts' hart pad moves it too), so that the two harts' streams, in
+//     lockstep, meet in different banks (address bits [5:4]) where the array's halves, 2 KiB apart, met in one bank
+//   REDUCE_PLACE 2 "__loop": its control, the same loops (each range's base fetched once, out of line) over one array
+//     whose halves stay 2 KiB apart, so that __place against __loop is the placement alone (20.5 step 3's watchdog:
+//     the loops' code, a word's address an increment, was __place's whole gain; the fabric's bank conflicts were 0)
+// The same computation and checksum.
 #ifndef REDUCE_PLACE
 #define REDUCE_PLACE 0
 #endif
@@ -54,13 +58,22 @@ static volatile uint32_t upper_sum;                    // hart 1's partial sum
 
 #if REDUCE_PLACE
 #define HALF (REDUCE_WORDS / 2u)
+#if REDUCE_PLACE == 1
 MATRIX_ROOM(lower, sizeof(uint32_t[HALF]), 64);
 MATRIX_ROOM_HART(upper, 16u + sizeof(uint32_t[HALF]), 64);
-// the base from which a range within one half is indexed by its words' numbers in the whole array
-static volatile uint32_t *half_base(uint32_t begin) {
+// the base from which a range within one half is indexed by its words' numbers in the whole array (out of line: the
+// same loops as the control's)
+static __attribute__((noinline)) volatile uint32_t *half_base(uint32_t begin) {
     return begin < HALF ? (volatile uint32_t *)(void *)&MATRIX_AT(uint8_t, lower, 4u * HALF)[0]
                         : (volatile uint32_t *)(void *)&MATRIX_AT_HART(uint8_t, upper, 16u + 4u * HALF)[16] - HALF;
 }
+#else
+MATRIX_ROOM(whole, sizeof(uint32_t[REDUCE_WORDS]), 64);
+static __attribute__((noinline)) volatile uint32_t *half_base(uint32_t begin) {     // (the control: one array)
+    (void)begin;
+    return (volatile uint32_t *)(void *)&MATRIX_AT(uint8_t, whole, 4u * REDUCE_WORDS)[0];
+}
+#endif
 
 // (the computation's functions out of line, noinline; each call's range within one half)
 static __attribute__((noinline)) uint32_t sum_range(uint32_t begin, uint32_t end) {
@@ -240,8 +253,10 @@ static __attribute__((noinline)) uint32_t window_e2e(void) {
 static void emit(struct v12_record *record, const char *window, uint32_t checksum) {
     matrix_hart0_whole(record);                        // (every window ends in hart 0's add and fold)
     record->name = REDUCE_VERSION == 1 ? "reduce_v1" : "reduce_fill";
-#if REDUCE_PLACE
+#if REDUCE_PLACE == 1
     record->name = REDUCE_VERSION == 1 ? "reduce_v1__place" : "reduce_fill__place";     // (tuning.md §3)
+#elif REDUCE_PLACE == 2
+    record->name = REDUCE_VERSION == 1 ? "reduce_v1__loop" : "reduce_fill__loop";
 #endif
     record->family = "coherence";
     record->method = REDUCE_WORKERS == 2 ? "multicore" : "scalar";

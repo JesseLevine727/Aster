@@ -30,14 +30,26 @@ SCALING_GATE = 1.8
 GEOMETRY = "soc_l1_"                                        # (20.5: the other cache sizes' builds, soc_l1_<KiB>k)
 R_SIMS = ("soc_dev", "soc_l1_2k", "soc_l1_4k", "soc_l1_8k")  # (R at each cache size)
 
-# v1's best (matrix.md §5): the family, the cases that compete, and v1's cycles
+# 20.5 step 3 (tuning.md §3): the tuned variants adopted (each a win on every layout it fits, warm and cold): only
+# these compete with their originals in the v1 gate; until step 3's judging fixes the set, none
+ADOPTED: frozenset = frozenset()
+
+
+def competes(case: str, test) -> bool:
+    """A case competes for a v1 workload when its original (the case before "__") passes the workload's test, and it
+    is the original or an adopted variant; the stamped twins (_stages: instrumented) never compete."""
+    if case.endswith("_stages"):
+        return False
+    return test(case.split("__")[0]) and ("__" not in case or case in ADOPTED)
+
+
+# v1's best (matrix.md §5): the family, the test on a case's original name, and v1's cycles
 V1 = {
     "Conv2D 32x32 K=5, x4": ("dsp", lambda c: c.startswith("conv2d_"), 4_837_408),
     "reduction, 1,024 words x4 (v1's)": ("coherence", lambda c: c == "reduce_v1", 233_112),
     "MNIST MLP, per image": ("ml", lambda c: c.startswith("mnist_mlp_") and c != "mnist_mlp_npu_batched", 433_903),
-    # (v1's model, not the 8-feature one; tuned variants count, the stamped twins do not)
-    "streaming ECG, 16 x 64": ("ecg", lambda c: c.startswith("ecg_") and not c.split("__")[0].endswith("_f8")
-                               and not c.endswith("_stages"), 1_528_505),
+    # (v1's model, not the 8-feature one)
+    "streaming ECG, 16 x 64": ("ecg", lambda c: c.startswith("ecg_") and not c.endswith("_f8"), 1_528_505),
     "CIFAR-10, 20 images": ("ml", lambda c: c.startswith("cifar_cnn_"), 65_568_218),
     "CoreMark (aster_minimal)": ("cpu", lambda c: c == "coremark", 1_922_272),
     "Dhrystone (aster_minimal)": ("cpu", lambda c: c == "dhrystone", 3_128_553),
@@ -86,10 +98,10 @@ def scaling(allrec: dict, kib: int | None = None, layout: str | None = None) -> 
 
 def against_v1(allrec: dict, kib: int | None = None, layout: str | None = None) -> dict:
     out = {}
-    for name, (family, competes, v1) in V1.items():
+    for name, (family, test, v1) in V1.items():
         best = None
         for e, recs in allrec.values():
-            if e["family"] != family or not competes(e["case"]) or e["sim"] not in R_SIMS \
+            if e["family"] != family or not competes(e["case"], test) or e["sim"] not in R_SIMS \
                     or e["axes"].get("cache_state") != "cold" or "/seed" in e["id"] or not at(e, kib, layout):
                 continue
             if family == "ecg" and (e["axes"].get("chunk"), e["axes"].get("taps")) != (64, 16):

@@ -20,7 +20,7 @@
 #define ASTER_SPLIT_ITEMS_4 129u                        // false_shared
 #define ASTER_SPLIT_ITEMS_5 129u                        // padded
 #define ASTER_SPLIT_ITEMS_8 16u                         // shared_mix
-#define ASTER_SPLIT_ITEMS__(kind) ASTER_SPLIT_ITEMS_##kind
+#define ASTER_SPLIT_ITEMS__(kind) ASTER_SPLIT_ITEMS_##kind   // (kinds 6, 7 and 9 are two-hart cases: none)
 #define ASTER_SPLIT_ITEMS(kind) ASTER_SPLIT_ITEMS__(kind)
 
 static inline uint32_t aster_split_workers(uint32_t size, uint32_t from) { return size >= from ? 2u : 1u; }

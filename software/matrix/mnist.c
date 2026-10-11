@@ -295,6 +295,7 @@ static void batch_split(int layer_number, uint32_t first) {
     matrix_share_begin(0);
     batch_rows(layer_number, first, 0, MNIST_BATCH / 2u);
     matrix_share_end(0);
+    if (layer_number == 2) matrix_stamp_end(0);        // (matrix.md §10.7: after the last one hart 0 only waits)
     aster_smp_join();
     __asm__ volatile ("fence rw,rw" ::: "memory");
 }
@@ -357,7 +358,11 @@ static void timed_pass(struct v12_record *record, int mode) {
     v12_prepare();
     pass(mode);
     v12_end(record);
+#if MNIST_SPLIT && MNIST_METHOD == 4
+    if (mode == E2E) {}                                // (hart 0's interval: its last share's end, stamped)
+#else
     if (mode == E2E) matrix_hart0_whole(record);       // (v1's window ends in hart 0's class)
+#endif
 #if NPU
     else matrix_hart0_none(record);                    // (hart 0 only starts each job and polls it)
 #elif MNIST_METHOD != 1

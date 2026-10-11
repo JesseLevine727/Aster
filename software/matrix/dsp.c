@@ -16,7 +16,12 @@
 #ifndef DSP_METHOD
 #define DSP_METHOD 0
 #endif
+#if defined(DSP_SPLIT) && DSP_SPLIT                   // (the split policy's variant: two workers from its K only)
+#include "aster_split.h"
+#define MATRIX_SHARES (DSP_METHOD == 1 && DSP_K >= ASTER_SPLIT_DOT_K)
+#else
 #define MATRIX_SHARES (DSP_METHOD == 1)                // (the share stamps, its two-worker builds': matrix_window.h)
+#endif
 
 #include <stdint.h>
 

@@ -104,7 +104,7 @@ def across_layouts(rows: list[dict], allrec: dict) -> dict:
     gate_ids = set()
     for ident, (e, _) in allrec.items():
         if e["sim"].startswith(matrix_gates.GEOMETRY) and (e["case"] in matrix_gates.SCALING or any(
-                e["family"] == f and competes(e["case"]) for f, competes, _ in matrix_gates.V1.values())):
+                e["family"] == f and matrix_gates.competes(e["case"], test) for f, test, _ in matrix_gates.V1.values())):
             gate_ids.add(ident)
     # (by configuration: the entry's id without its layout, so a sweep point captured at L0 alone, such as ECG's
     # other chunks and taps, stands apart from the default the layouts ran)
