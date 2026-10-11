@@ -54,8 +54,9 @@ def pairs(allrec: dict, new: str | None = None, base: str | None = None) -> tupl
         # window, smp_overhead's round trip and handoff, stamp_cost's)
         theirs = dict(zip(record_keys(twin[1]), (int(r["h0_cycles"]) for r in twin[1])))
         for key, r in zip(record_keys(recs), recs):
-            if key in theirs:
-                out[config].append((e["axes"].get("layout", "L0"), e["axes"]["cache_state"], key[0],
+            if key in theirs:                             # (a window's second record labelled e2e#1, and so on)
+                label = key[0] if key[1] == 0 else f"{key[0]}#{key[1]}"
+                out[config].append((e["axes"].get("layout", "L0"), e["axes"]["cache_state"], label,
                                     theirs[key], int(r["h0_cycles"])))
     return out, alone, axes
 

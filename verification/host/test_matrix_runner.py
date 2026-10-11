@@ -374,9 +374,20 @@ class TunedVariants(unittest.TestCase):
             e = dict(id=f"coherence/{case}/multicore/soc_dev/warm", case=case, axes=dict(cache_state="warm"))
             return e["id"], (e, [dict(window="e2e", h0_cycles=str(c)) for c in cycles])
         allrec = dict([entry("smp_overhead", (5252, 169)), entry("smp_overhead__hot", (5252, 180))])
-        rows, _, _ = matrix_judge.pairs(allrec)
-        self.assertEqual(sorted((o, v) for *_, o, v in rows["coherence/smp_overhead__hot/multicore/soc_dev"]),
-                         [(169, 180), (5252, 5252)])
+        rows, _, axes = matrix_judge.pairs(allrec)
+        config = "coherence/smp_overhead__hot/multicore/soc_dev"
+        self.assertEqual(sorted((w, o, v) for _, _, w, o, v in rows[config]), [("e2e", 5252, 5252), ("e2e#1", 169, 180)])
+        l0 = matrix_judge.summary(rows, axes)[config]["l0"]                # (each record its own, in the L0 table)
+        self.assertEqual(l0, {"warm e2e": (5252, 5252), "warm e2e#1": (169, 180)})
+        twin = dict([entry("smp_overhead", (5252, 169)), entry("smp_overhead__hot", (5252, 180))])
+        for case, cycles in (("smp_overhead", (5252, 169)), ("smp_overhead__hot", (5252, 180))):
+            ident = f"coherence/{case}/multicore/soc_dev/warm/L3"          # (the same on a second layout)
+            e = dict(id=ident, case=case, axes=dict(cache_state="warm", layout="L3"))
+            twin[ident] = (e, [dict(window="e2e", h0_cycles=str(c)) for c in cycles])
+        rows, _, axes = matrix_judge.pairs(twin)
+        summary = matrix_judge.summary(rows, axes)[config]
+        self.assertEqual((summary["spread_theirs"], summary["spread_mine"]), (0.0, 0.0))   # (not one record's
+        # cycles against the other's)
 
     def test_the_adopted_set_checked(self):
         def config(case, verdict, chunk=64, taps=16, sim="soc_dev", layouts=8):
