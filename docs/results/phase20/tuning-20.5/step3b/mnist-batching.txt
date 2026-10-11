@@ -1,0 +1,10 @@
+MNIST at R (8 KiB), e2e: cycles an image and a batch interval's latency (100 MHz); t3-ml, 6bc46c2
+mnist_mlp_npu: warm 5,822 an image, 5,822 a batch (58.2 us); cold 5,840 an image, 5,840 a batch (58.4 us)
+mnist_mlp_npu__2h: warm 5,364 an image, 5,364 a batch (53.6 us); cold 5,389 an image, 5,389 a batch (53.9 us)
+mnist_mlp_npu_batched1: warm 8,754 an image, 8,754 a batch (87.5 us); cold 8,771 an image, 8,771 a batch (87.7 us)
+mnist_mlp_npu_batched4: warm 3,536 an image, 14,144 a batch (141.4 us); cold 3,555 an image, 14,221 a batch (142.2 us)
+mnist_mlp_npu_batched__2h4: warm 2,934 an image, 11,735 a batch (117.4 us); cold 2,964 an image, 11,858 a batch (118.6 us)
+mnist_mlp_npu_batched8: warm 2,669 an image, 21,351 a batch (213.5 us); cold 2,688 an image, 21,506 a batch (215.1 us)
+mnist_mlp_npu_batched__2h8: warm 1,990 an image, 15,918 a batch (159.2 us); cold 2,020 an image, 16,164 a batch (161.6 us)
+mnist_mlp_npu_batched32: warm 2,234 an image, 71,497 a batch (715.0 us); cold 2,250 an image, 71,996 a batch (720.0 us)
+mnist_mlp_npu_batched__2h32: warm 1,505 an image, 48,146 a batch (481.5 us); cold 1,533 an image, 49,066 a batch (490.7 us)

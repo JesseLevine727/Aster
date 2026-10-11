@@ -1,0 +1,5 @@
+PASS: the copy policy re-derived from t3b-dma-fine (6bc46c2): aligned 113; same_offset 89; different_offsets 61; shift 15
+  aligned: 113 bytes (the crossovers 70 to 113 over 32 points: cached 0/1 113/97); no crossover in the sweep: 0
+  same_offset: 89 bytes (the crossovers 60 to 89 over 32 points: cached 0/1 89/84); no crossover in the sweep: 0
+  different_offsets: 61 bytes (the crossovers 37 to 61 over 32 points: cached 0/1 61/61); no crossover in the sweep: 0
+  shift: 15 bytes (the crossovers 8 to 15 over 32 points: cached 0/1 15/15); no crossover in the sweep: 0

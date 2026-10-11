@@ -176,17 +176,25 @@ As in 20.4:
   - any copy the partitioning below adds.
 
   Each is a tuned variant (§3).
-- **Step 3's outcome** (phase20.md, 20.5 step 3):
-  - **The thresholds:** the DMA from 113 bytes aligned, 89 at the same
-    offset and 21 at different offsets, where it wins on all eight layouts,
-    warm and cold, cached or not (30,848 entries).
+- **Step 3's and step 3b's outcome** (phase20.md, 20.5 steps 3 and 3b):
+  - **The CPU's copy** (step 3b, the owner's decision of 11 October 2026):
+    - at the same offset in a word, v1's fair copy stays, since no loop
+      beat it on Aster;
+    - at different offsets, where v1's goes a byte at a time, the shift
+      copy, from 15 bytes. It wins in every configuration from there, by
+      3.8% to 73.5%.
+  - **The thresholds:** the DMA from 113 bytes aligned and 89 at the same
+    offset (step 3, unchanged), and from 61 at different offsets (step 3b,
+    against the shift copy). Each is where it wins on all eight layouts,
+    warm and cold, cached or not.
   - **The destination's cache state** moves the aligned crossover to 97
     bytes when cached. The helper cannot see that state, so it takes the
-    worst case, pending the owner.
+    worst case: the owner's decision, 11 October 2026.
   - **ECG's chunk moves** by the helper (`__fir4_copy`): not
-    distinguishable from `__fir4` alone except at 16 × 8 in the overlap
-    pipelines, where it is adopted. v1's fair copy is slower on Aster than
-    the compiler's word loop (a question for the owner).
+    distinguishable from `__fir4` alone, and not adopted.
+    - Step 3 blamed v1's copy, which was wrong.
+    - The losses were instruction-cache conflicts at L0 and the helper's
+      fixed cost on small chunks.
   - **The ML staging:** only CIFAR stages inside a window. MNIST copies
     each image before its interval, or reads its images in place.
     - CIFAR's staging by the helper on `__2h` (`__2h_copy`) wins, −0.8%
@@ -247,11 +255,14 @@ Which engine and which hart does which part of a workload:
   losses (the dot below K = 64, the small GEMMs, the 2-item coherence
   cases), as the runtime's default for tuned variants.
 
-  Step 3's thresholds (`aster_split.h`; `matrix_split.py`): the sizes from
-  which two workers beat one at every larger size on all eight layouts,
-  warm and cold. Below each is a band where neither wins everywhere, for
-  example the dot at K 40 to 127. The owner decides what the policy does
-  there (phase20.md, 20.5 step 3).
+  Step 3b's thresholds (`aster_split.h`; `matrix_split.py`): one worker
+  only where it beats two at that size and every smaller one of the sweep,
+  on all eight layouts, warm and cold. In the bands above, where neither
+  wins everywhere, the original's two workers stay (the owner's decision,
+  11 October 2026).
+  - Two workers from: the dot's K 33; atomic_add, false_shared and padded
+    33 items; the lr/sc counter 17; the CAS counter 9; shared_mix 5.
+  - lock_sum: never.
 - **MNIST batching:** the batch size by throughput and latency. 20.4 gave
   8,920 cycles an image at batch 1 and 2,242 at 32 on the batched method,
   and 6,005 warm on the per-image method. v1's comparison keeps the
@@ -274,10 +285,17 @@ Where code and data sit:
     and 0.35% of the GEMMs'. The reductions' gain was their loops' code,
     shown by a control variant (`__loop`) with the same loops on the
     original layout.
-  - **Code against the instruction cache was not tried.** The layouts show
-    conflict misses worth up to about 1% in the adopted variants, more in
-    ECG's original pipeline. The owner decides whether to add it
-    (phase20.md, 20.5 step 3).
+  - **Code against the instruction cache: built in step 3b** (the owner's
+    decision, 11 October 2026). Each original and adopted variant of four
+    families has a twin (`__hot`, `_hot`).
+    - **The twin:** the code its windows run is placed first, from a
+      profile, contiguous within the cache. The instructions and the data
+      are the base's.
+    - **It removes the conflict misses,** but moving code also moves loops
+      within the instruction lines. So it wins on every layout, warm and
+      cold, at 6 of 262 configurations, and is adopted there.
+    - **It loses at 3,** and 253 are not distinguishable (phase20.md, 20.5
+      step 3b).
 
 ## 5. ECG
 
@@ -316,7 +334,7 @@ Where code and data sit:
   adopted at the sweep points where it beats `__fir4`: 8 taps at chunks of
   16 to 64 samples, and 16 taps at 32 and 64 (with 8 features, 8 taps at
   16 and 32 only). It loses at 32 taps. The chunk moves by the copy policy
-  are adopted only at 16 × 8 in the overlap pipelines.
+  are not adopted (step 3b).
 
 ## 6. Overlap evidence (matrix.md §10.14)
 
@@ -504,6 +522,14 @@ Each was approved as recommended, the first option of each.
    - **Alternatively,** fold it into 20.5. That amends soc.md §10.6 and the
      roadmap.
 
+**On step 3's questions** (the owner, 11 October 2026; phase20.md, 20.5
+step 3b):
+1. **The copy helper's CPU copy:** tuned for Aster.
+2. **The split policy's bands:** keep the original's two workers.
+3. **The copy policy:** keeps the worst case (no hint of the destination's
+   cache state).
+4. **§4.4's code against the instruction cache:** built now.
+
 ## 11. The steps of 20.5
 
 Each step has its watchdog review before it is pushed.
@@ -528,8 +554,13 @@ Each step has its watchdog review before it is pushed.
 3. **Tuning:** DMA thresholds, partitioning, placement and ECG.
    - The tuned variants are planned, added and judged across layouts.
    - The adopted set is fixed (`matrix_gates.ADOPTED`; phase20.md, 20.5
-     step 3), with four questions for the owner. §4.4's code placement was
-     not tried, only measured.
+     step 3).
+   - **3b:** the owner's decisions on step 3's four questions (11 October
+     2026), carried out and judged the same way. Done with:
+     - the CPU's copy tuned;
+     - the split policy's bands kept on two workers;
+     - the copy policy's worst case kept;
+     - §4.4's code placement built.
 4. **The final configuration:**
    - soc.md §10's checks on the final RTL (§2);
    - the full matrix captured from one clean commit, as 20.4's step 4, with

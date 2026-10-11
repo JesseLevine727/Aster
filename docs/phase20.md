@@ -2025,7 +2025,7 @@ is judged at 8 KiB, on L0–L7.
   all 102 checks, the seven programs on each of the 14 two-hart builds and the one-hart program on each of
   the 4 one-hart builds.
 
-### Step 3: the tuning (done but for §4.4's code placement; four questions for the owner)
+### Step 3: the tuning (the owner's four questions decided on 11 October 2026: step 3b, below)
 
 **How it was judged** (tuning.md §3), every capture from the clean commit 410fbce; the evidence is in
 `results/phase20/tuning-20.5/step3/`:
@@ -2069,8 +2069,11 @@ is judged at 8 KiB, on L0–L7.
     CPU's copy.
   - `__2h_next` frees about 2,100 cycles over the 20 images, 0.06% to 0.09% of its window, less than its second
     buffer costs.
-- **v1's fair copy is slow on Aster** (a question for the owner). Its four back-to-back write-through stores queue,
-  and it took about 245 cycles more for a 64-byte chunk than the compiler's interleaved word loop.
+- **v1's fair copy** (a question for the owner). *Corrected in step 3b:* this said v1's fair copy was slow on Aster,
+  its stores queuing, about 245 cycles more for a 64-byte chunk than the compiler's word loop. That was wrong. At the
+  same offset in a word no loop beats it on Aster; it is slow only at different offsets, a byte at a time. The 245
+  cycles were `__fir4_copy`'s losses at L0, which are instruction-cache conflicts and the helper's fixed cost
+  (below, and step 3b).
 
 **ECG** (§5): its stamped twins (`ecg-stages.txt`) show where each chunk's time goes.
 - **`__fir4`, the FIR on DOT8 directly:** each product of four taps is one word of the chunk shifted in registers;
@@ -2089,11 +2092,14 @@ is judged at 8 KiB, on L0–L7.
     adopted there. It loses at 32 taps (+0.5% to +4.7%) and is not distinguishable elsewhere (−16.3% to +7.8%;
     v1's chunk and taps −10.8% to +5.3%), where that case keeps `__fir4`.
 - **`__fir4_copy`, the chunks moved by the copy policy:** not distinguishable from `__fir4` alone at 52 of its 54
-  configurations. It is up to +27% slower in the one-hart DOT8 method at 16-sample chunks, where the fair copy is
-  slower than the word loop it replaces.
+  configurations. It is up to +27% slower in the one-hart DOT8 method at 16-sample chunks. *Corrected in step 3b:*
+  not because the fair copy is slower than the loop it replaces. At L0 the helper's code put the FIR's in conflict in
+  the instruction cache: 1,408 misses at 16 × 8, and none at L4. Without them, at L4, the helper's fixed cost
+  remains: about 100 cycles a chunk, two calls, the choice and the copy's set-up against the inline loop.
   - **The exception:** in the overlap pipelines at 16 × 8, −0.7% to −4.6% with either feature count. There the
-    policy copies each 16-byte chunk on the CPU, below every threshold, in place of `__fir4`'s DMA move. It is
-    adopted at that point alone, where the split is faster still.
+    policy copies each 16-byte chunk on the CPU, below every threshold, in place of `__fir4`'s DMA move. It was
+    adopted at that point alone, where the split is faster still. (Step 3b: no longer a win with step 3b's helper,
+    and not adopted.)
 - **Tried and lost** (a trial, not kept): the features on hart 1 too. That made hart 1 the bound, a period of 3,156
   at v1's case.
 - **v1's case, cold e2e:** 176,420 → 32,882 cycles. The v1 gate's ECG figure is 8.66× → 46.5×.
@@ -2233,6 +2239,127 @@ batched MNIST variants never compete per image.
    destination is cached (97 bytes against 113, aligned).
 4. **Code against the instruction cache** (§4.4, not tried): add it now, as variants that keep each program's hot
    code contiguous, for at most about 1% in the adopted set; or close it on this measurement.
+
+### Step 3b: the owner's four decisions (11 October 2026)
+
+**The decisions** (verbatim: "switch to aster-tuned copy. okoko keepthe OG two workers. and i agree with 3 adn 4",
+the last clarified when asked):
+1. the copy helper's CPU path tuned for Aster, with a new sweep for its thresholds;
+2. the split policy keeps the original's two workers in the bands below its thresholds;
+3. the copy policy keeps the worst case (no hint of the destination's cache state);
+4. §4.4's code against the instruction cache built now.
+
+**How it was judged** (tuning.md §3), every capture from the clean commit 6bc46c2; the evidence is in
+`results/phase20/tuning-20.5/step3b/`, which supersedes step 3's where they differ:
+- **The layout judgment** (`t3b-judge`): 9,272 entries, the tuned variants, the twins below and their originals at R
+  on the eight layouts, warm and cold. 456 variant configurations: 273 win, 178 are not distinguishable, 5 lose.
+- **The families in full** (`t3b-ecg`, `t3b-dsp`, `t3b-coherence`, `t3b-ml`): 6,647 entries captured, the rest
+  unsupported with their reasons, none failed.
+- **The adopted set is checked** against both (`matrix_judge.py --check-adopted`): PASS.
+
+**1. The copy helper's CPU copy.**
+- **v1's fair copy is not slow on Aster at the same offset in a word.** Its stores bind, about 5.5 cycles a word.
+  Three alternatives were tried, in a scratch sample at L0, warm (not in the evidence):
+  - each load followed by its store, unrolled four times: 12 cycles slower aligned, 2 faster at the same nonzero
+    offset;
+  - the same a word a pass: slower from 64 bytes;
+  - v1's loops inlined beside the shift copy: 4 cycles slower aligned, 20 at the same nonzero offset.
+
+  None won both, so the helper keeps v1's fair copy there, as its own function.
+- **At different offsets v1's copy goes a byte at a time.** The helper now uses the shift copy there: aligned
+  words loaded and merged by shifts, one aligned store a word.
+  - Its correctness: the watchdog's host check (not in the evidence) ran every source and destination offset from
+    0 to 7 and every size from 0 to 200 bytes against memcpy, with the address sanitizer and guard pages. 38,592
+    cases, no failure.
+  - In the sweep (`t3b-dma-fine`, 85,632 entries on the eight layouts, six offset pairs, so every shift and every
+    destination offset) it wins in all 1,356 configurations from 15 bytes: −3.8% to −73.5% (`copy-judge.txt`).
+  - Below 15 bytes it is not distinguishable, since its larger code costs cold misses. There the helper keeps v1's.
+- **The thresholds** (`crossover.txt`, re-derived and checked: PASS):
+  - the DMA from 113 bytes aligned and 89 at the same offset, unchanged;
+  - from 61 at different offsets: the crossovers are 37 to 61 against the shift copy, where step 3's 21 was
+    against v1's byte path;
+  - the shift copy from 15 bytes.
+- **soc_copy** checks every byte, guard and choice: 1,264 copies on hart 0 and 224 on hart 1, now at all 16 offset
+  pairs. PASS on soc_dev and soc_dev_w3.
+- **What it changed for the adopted variants:**
+  - `__fir4_copy` no longer wins anywhere and is not adopted.
+  - The ECG split's hart 1 moves each 64-byte chunk through the helper's CPU path, now behind the offset test: v1's
+    case is 32,882 → 33,023 cycles cold, and the v1 gate's ECG 46.5× → 46.3×.
+  - CIFAR's `__2h_copy` stages by the DMA as before: 29.2×.
+
+**2. The split policy** (`aster_split.h`): one worker only where it beats two at that size and every smaller one of
+the sweep, on every layout, warm and cold. From the next size up, and in the bands, the original's two workers.
+- **The thresholds** (`split.txt`, re-derived and checked: PASS): two workers from:
+  - the dot's K 33;
+  - atomic_add, false_shared and padded 33 items;
+  - the lr/sc counter 17, the CAS counter 9, shared_mix 5;
+  - lock_sum never.
+- **Its variants are adopted where they win:** 2 items, the dot to K 8 (and atomic_add at 1,024 items, by its
+  code's placement). At K = 64 the dot now runs the original's two workers.
+
+**3. The copy policy's worst case is kept:** 113 bytes aligned, cached or not (97 cached).
+
+**4. Code against the instruction cache** (§4.4). Every original and adopted variant of the coherence, DSP, ECG and
+ML families has a twin, `<original>__hot` or `<variant>_hot`. It is the same program, linked with the code its
+windows run placed first.
+- **The profile:** one run of the program with each function in a section of its own (`-ffunction-sections`),
+  traced by the testbench (`+trace`). It counts hart 0's instructions between START and FREEZE, and all of
+  hart 1's.
+- **The placement:** the functions those windows run, most executed first, contiguous right after the start-up
+  code and within the instruction cache. None evicts another.
+- **The same instructions:** every function's bytes and size are as in the base.
+- **The same data:** `.rodata` is pinned to the base's address, and every data section is checked equal in each
+  build. Only the code moves.
+- **The same placement for every layout and cache state:** one profile per program and configuration, at L0 and
+  warm. So the layouts' code pad moves only the cold code.
+
+**The result** (`twins.txt`): of 262 twin configurations, 6 win, 3 lose and 253 are not distinguishable.
+- **Where a base has conflict misses, the twin removes them.** ECG's original overlap pipeline at 16 × 8: 640 misses
+  on hart 1 → 0, and −2.7% at L0.
+- **Where the base has none, the twin is the same or differs by alignment alone.**
+  - At L4 the same pipeline's base has no misses, and the twin's cycles are identical: so it is not
+    distinguishable (−3.7% to +0.0%).
+  - Moving code also moves loops within the 16-byte instruction lines. Scalar atomic_add's kernel moved from 8 bytes
+    into its line to 4: 46 → 56 cycles warm, on every layout, in a program whose code fits the cache.
+- **Adopted at the 6 points where they win** (`ADOPTED_POINTS`):
+
+  | Twin | Point | Against | Change |
+  |---|---|---|---|
+  | `atomic_add__hot` | two workers, 2 items | its original | −3.4% to −6.2% |
+  | `padded__hot` | two workers, 2 items | its original | −3.0% to −8.2% |
+  | `reduce_fill__hot` | two workers | its original | −0.01% to −0.42% |
+  | `ecg_pipeline_overlap__hot` | 32 × 8 and 128 × 8 | its original | −0.00% to −1.27% |
+  | `mnist_mlp_npu_batched__2h_hot` | batch 8 | `__2h` | −0.01% to −0.56% |
+
+  Where the split variants and `__fir4` are adopted, they are faster than these twins. No twin changes a gate.
+- **Losses:** at 1,024 items, `atomic_add__hot` (+0.33% to +0.54%), `padded__hot` (+0.19% to +0.58%) and
+  `atomic_add__split_hot` (+0.19% to +0.70%).
+- **Beside the wins** (`others.txt`): `reduce_fill__hot` at 2 and 4 waits is not distinguishable (−0.06% to +0.00%,
+  −0.10% to +0.01%).
+- **A further step, not taken:** keeping each moved function at its base's offset within its line would remove
+  the alignment effect. It needs padding the base's slack (44 bytes in the reduction) cannot hold, so the data
+  would move too.
+
+**The adopted set now** (`matrix_gates.ADOPTED`):
+- step 3's, less `__fir4_copy`;
+- with the split policy's variants at their new points;
+- and the 6 twin points.
+
+Every other step 3 result stands, re-measured here:
+- the losses beside the wins: `lock_sum__split` with the cache off, +4.9% to +14.3%; the ECG split at 4 waits,
+  64 × 8;
+- placement of data (`__place`): no win;
+- CIFAR's `__2h_next`: no win.
+
+**The gates at R** (8 KiB):
+- **Scaling,** in all eleven configurations: 1.911× to 2.016×.
+- **v1:**
+  - Conv2D 106.8×;
+  - the reduction 4.94×;
+  - MNIST an image 80.5×;
+  - ECG 46.3×;
+  - CIFAR 29.2×;
+  - the CPU kernels 3.13× to 9.63× (step 2's).
 
 ## Milestones and gates
 

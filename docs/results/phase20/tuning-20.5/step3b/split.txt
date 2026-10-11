@@ -1,0 +1,9 @@
+PASS: the split policy re-derived from t3b-split-fine (6bc46c2): atomic_add 33; cas_counter 9; dot 33; false_shared 33; lock_sum never; lrsc_counter 17; padded 33; shared_mix 5
+  atomic_add: 2:one 4:one 8:one 16:one 32:one 64:mixed 129:two
+  cas_counter: 2:one 4:one 8:one 16:mixed 32:mixed 64:two 129:two
+  dot: 8:one 12:one 16:one 20:one 24:one 28:one 32:one 40:mixed 48:mixed 56:mixed 64:mixed 80:mixed 96:mixed 128:two 160:two 192:two 256:two
+  false_shared: 2:one 4:one 8:one 16:one 32:one 64:mixed 129:two
+  lock_sum: 2:one 4:one 8:one 16:one 32:one 64:one 129:one
+  lrsc_counter: 2:one 4:one 8:one 16:one 32:mixed 64:two 129:two
+  padded: 2:one 4:one 8:one 16:one 32:one 64:mixed 129:two
+  shared_mix: 2:one 4:one 8:mixed 16:two 32:two 64:two 129:two

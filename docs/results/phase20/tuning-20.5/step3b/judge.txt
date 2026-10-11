@@ -1,0 +1,691 @@
+revisions ['6bc46c2']; 456 variant configurations: {'loses': 5, 'not distinguishable': 178, 'wins': 273}; 0 variant entries without an original, 0 whose original cannot run there (unsupported), 0 stacked without the variant they extend
+  loses                coherence/atomic_add__hot/multicore/soc_dev/n1024: +0.33% to +0.54% over 8 layouts, cold/warm, e2e/kernel; the spread over the layouts 0.12% -> 0.08%
+  not distinguishable  coherence/atomic_add__hot/multicore/soc_dev/n129: -0.49% to +3.32% over 8 layouts, cold/warm, e2e/kernel; the spread over the layouts 1.01% -> 3.45%
+  wins                 coherence/atomic_add__hot/multicore/soc_dev/n2: -6.20% to -3.43% over 8 layouts, cold/warm, e2e/kernel; the spread over the layouts 0.19% -> 1.81%
+  not distinguishable  coherence/atomic_add__hot/scalar/soc_dev/n1024: +0.00% to +0.09% over 8 layouts, cold/warm, e2e/kernel; the spread over the layouts 0.0% -> 0.0%
+  not distinguishable  coherence/atomic_add__hot/scalar/soc_dev/n129: +0.00% to +1.68% over 8 layouts, cold/warm, e2e/kernel; the spread over the layouts 0.0% -> 0.0%
+  not distinguishable  coherence/atomic_add__hot/scalar/soc_dev/n2: +0.00% to +21.74% over 8 layouts, cold/warm, e2e/kernel; the spread over the layouts 0.0% -> 0.0%
+  wins                 coherence/atomic_add__split/multicore/soc_dev/n1024: -0.25% to -0.06% over 8 layouts, cold/warm, e2e/kernel; the spread over the layouts 0.12% -> 0.1%
+  not distinguishable  coherence/atomic_add__split/multicore/soc_dev/n129: +0.00% to +1.35% over 8 layouts, cold/warm, e2e/kernel; the spread over the layouts 1.01% -> 0.98%
+  wins                 coherence/atomic_add__split/multicore/soc_dev/n2: -90.94% to -80.26% over 8 layouts, cold/warm, e2e/kernel; the spread over the layouts 0.19% -> 0.0%
+  loses                coherence/atomic_add__split_hot/multicore/soc_dev/n1024: +0.02% to +0.56% over 8 layouts, cold/warm, e2e/kernel; the spread over the layouts 0.12% -> 0.5%
+  wins                 coherence/atomic_add__split_hot/multicore/soc_dev/n2: -88.98% to -79.61% over 8 layouts, cold/warm, e2e/kernel; the spread over the layouts 0.19% -> 0.0%
+  not distinguishable  coherence/cas_counter__hot/multicore/soc_dev/n1024: -0.25% to +42.28% over 8 layouts, cold/warm, e2e/kernel; the spread over the layouts 43.51% -> 72.95%
+  not distinguishable  coherence/cas_counter__hot/multicore/soc_dev/n129: -27.19% to +34.62% over 8 layouts, cold/warm, e2e/kernel; the spread over the layouts 34.01% -> 38.14%
+  not distinguishable  coherence/cas_counter__hot/multicore/soc_dev/n2: -1.35% to +8.95% over 8 layouts, cold/warm, e2e/kernel; the spread over the layouts 1.72% -> 0.0%
+  not distinguishable  coherence/cas_counter__hot/scalar/soc_dev/n1024: +0.00% to +0.02% over 8 layouts, cold/warm, e2e/kernel; the spread over the layouts 0.0% -> 0.0%
+  not distinguishable  coherence/cas_counter__hot/scalar/soc_dev/n129: +0.00% to +0.41% over 8 layouts, cold/warm, e2e/kernel; the spread over the layouts 0.0% -> 0.0%
+  not distinguishable  coherence/cas_counter__hot/scalar/soc_dev/n2: +0.00% to +10.67% over 8 layouts, cold/warm, e2e/kernel; the spread over the layouts 0.0% -> 0.0%
+  not distinguishable  coherence/cas_counter__split/multicore/soc_dev/n1024: -0.33% to +43.46% over 8 layouts, cold/warm, e2e/kernel; the spread over the layouts 43.51% -> 42.41%
+  not distinguishable  coherence/cas_counter__split/multicore/soc_dev/n129: -28.25% to +34.07% over 8 layouts, cold/warm, e2e/kernel; the spread over the layouts 34.01% -> 66.69%
+  wins                 coherence/cas_counter__split/multicore/soc_dev/n2: -79.54% to -54.86% over 8 layouts, cold/warm, e2e/kernel; the spread over the layouts 1.72% -> 0.0%
+  wins                 coherence/cas_counter__split_hot/multicore/soc_dev/n2: -79.54% to -54.86% over 8 layouts, cold/warm, e2e/kernel; the spread over the layouts 1.72% -> 0.0%
+  not distinguishable  coherence/false_shared__hot/multicore/soc_dev/n1024: -0.51% to +0.67% over 8 layouts, cold/warm, e2e/kernel; the spread over the layouts 0.45% -> 0.77%
+  not distinguishable  coherence/false_shared__hot/multicore/soc_dev/n129: -4.25% to +2.37% over 8 layouts, cold/warm, e2e/kernel; the spread over the layouts 3.19% -> 4.9%
+  not distinguishable  coherence/false_shared__hot/multicore/soc_dev/n2: -4.81% to +5.19% over 8 layouts, cold/warm, e2e/kernel; the spread over the layouts 2.79% -> 8.0%
+  not distinguishable  coherence/false_shared__hot/scalar/soc_dev/n1024: +0.00% to +0.13% over 8 layouts, cold/warm, e2e/kernel; the spread over the layouts 12.56% -> 12.56%
+  not distinguishable  coherence/false_shared__hot/scalar/soc_dev/n129: +0.00% to +1.96% over 8 layouts, cold/warm, e2e/kernel; the spread over the layouts 12.4% -> 12.04%
+  not distinguishable  coherence/false_shared__hot/scalar/soc_dev/n2: +0.00% to +24.39% over 8 layouts, cold/warm, e2e/kernel; the spread over the layouts 4.88% -> 18.6%
+  not distinguishable  coherence/false_shared__split/multicore/soc_dev/n1024: -0.26% to +0.42% over 8 layouts, cold/warm, e2e/kernel; the spread over the layouts 0.45% -> 0.56%
+  not distinguishable  coherence/false_shared__split/multicore/soc_dev/n129: -1.98% to +1.44% over 8 layouts, cold/warm, e2e/kernel; the spread over the layouts 3.19% -> 4.86%
+  wins                 coherence/false_shared__split/multicore/soc_dev/n2: -92.32% to -81.22% over 8 layouts, cold/warm, e2e/kernel; the spread over the layouts 2.79% -> 4.88%
+  wins                 coherence/false_shared__split_hot/multicore/soc_dev/n2: -91.89% to -77.84% over 8 layouts, cold/warm, e2e/kernel; the spread over the layouts 2.79% -> 18.6%
+  not distinguishable  coherence/gemm_dot8_128x64x128__hot/dot8/soc_dev: +0.00% to +0.00% over 7 layouts, cold/warm, e2e/kernel; the spread over the layouts 0.08% -> 0.08%
+  not distinguishable  coherence/gemm_dot8_128x64x128__hot/multicore/soc_dev: -0.04% to +0.03% over 5 layouts, cold/warm, e2e/kernel; the spread over the layouts 0.07% -> 0.07%
+  loses                coherence/gemm_dot8_128x64x128__place/multicore/soc_dev: +0.02% to +0.12% over 4 layouts, cold/warm, e2e/kernel; the spread over the layouts 0.06% -> 0.03%
+  not distinguishable  coherence/gemm_dot8_64x64x64__hot/dot8/soc_dev: +0.00% to +0.01% over 8 layouts, cold/warm, e2e/kernel; the spread over the layouts 3.74% -> 3.74%
+  not distinguishable  coherence/gemm_dot8_64x64x64__hot/multicore/soc_dev: -0.10% to +0.02% over 8 layouts, cold/warm, e2e/kernel; the spread over the layouts 2.37% -> 2.39%
+  not distinguishable  coherence/gemm_dot8_64x64x64__place/multicore/soc_dev: -0.06% to +0.53% over 8 layouts, cold/warm, e2e/kernel; the spread over the layouts 2.37% -> 2.78%
+  not distinguishable  coherence/gemm_dot8_96x96x96__hot/dot8/soc_dev: +0.00% to +0.00% over 8 layouts, cold/warm, e2e/kernel; the spread over the layouts 0.15% -> 0.15%
+  not distinguishable  coherence/gemm_dot8_96x96x96__hot/multicore/soc_dev: -0.06% to +0.02% over 8 layouts, cold/warm, e2e/kernel; the spread over the layouts 0.38% -> 0.38%
+  loses                coherence/gemm_dot8_96x96x96__place/multicore/soc_dev: +0.04% to +0.13% over 8 layouts, cold/warm, e2e/kernel; the spread over the layouts 0.38% -> 0.38%
+  not distinguishable  coherence/lock_sum__hot/multicore/soc_dev/n1024: -0.03% to +0.16% over 8 layouts, cold/warm, e2e/kernel; the spread over the layouts 14.14% -> 14.16%
+  not distinguishable  coherence/lock_sum__hot/multicore/soc_dev/n129: -0.71% to +0.97% over 8 layouts, cold/warm, e2e/kernel; the spread over the layouts 13.31% -> 13.84%
+  not distinguishable  coherence/lock_sum__hot/multicore/soc_dev/n2: -3.38% to +0.00% over 8 layouts, cold/warm, e2e/kernel; the spread over the layouts 0.76% -> 0.76%
+  not distinguishable  coherence/lock_sum__hot/scalar/soc_dev/n1024: -0.03% to +0.05% over 8 layouts, cold/warm, e2e/kernel; the spread over the layouts 0.0% -> 0.0%
+  not distinguishable  coherence/lock_sum__hot/scalar/soc_dev/n129: +0.00% to +0.23% over 8 layouts, cold/warm, e2e/kernel; the spread over the layouts 0.0% -> 0.0%
+  not distinguishable  coherence/lock_sum__hot/scalar/soc_dev/n2: +0.00% to +9.52% over 8 layouts, cold/warm, e2e/kernel; the spread over the layouts 0.0% -> 0.0%
+  wins                 coherence/lock_sum__split/multicore/soc_dev/n1024: -31.79% to -22.04% over 8 layouts, cold/warm, e2e/kernel; the spread over the layouts 14.14% -> 0.0%
+  wins                 coherence/lock_sum__split/multicore/soc_dev/n129: -33.96% to -24.61% over 8 layouts, cold/warm, e2e/kernel; the spread over the layouts 13.31% -> 0.0%
+  wins                 coherence/lock_sum__split/multicore/soc_dev/n2: -81.87% to -60.23% over 8 layouts, cold/warm, e2e/kernel; the spread over the layouts 0.76% -> 0.0%
+  wins                 coherence/lock_sum__split_hot/multicore/soc_dev/n1024: -31.79% to -22.04% over 8 layouts, cold/warm, e2e/kernel; the spread over the layouts 14.14% -> 0.0%
+  wins                 coherence/lock_sum__split_hot/multicore/soc_dev/n129: -33.96% to -24.61% over 8 layouts, cold/warm, e2e/kernel; the spread over the layouts 13.31% -> 0.0%
+  wins                 coherence/lock_sum__split_hot/multicore/soc_dev/n2: -80.14% to -60.23% over 8 layouts, cold/warm, e2e/kernel; the spread over the layouts 0.76% -> 0.0%
+  not distinguishable  coherence/lrsc_counter__hot/multicore/soc_dev/n1024: -37.13% to +55.99% over 8 layouts, cold/warm, e2e/kernel; the spread over the layouts 59.21% -> 0.03%
+  not distinguishable  coherence/lrsc_counter__hot/multicore/soc_dev/n129: -32.98% to +35.92% over 8 layouts, cold/warm, e2e/kernel; the spread over the layouts 34.81% -> 48.45%
+  not distinguishable  coherence/lrsc_counter__hot/multicore/soc_dev/n2: -1.52% to +2.07% over 8 layouts, cold/warm, e2e/kernel; the spread over the layouts 0.92% -> 1.54%
+  not distinguishable  coherence/lrsc_counter__hot/scalar/soc_dev/n1024: +0.00% to +0.05% over 8 layouts, cold/warm, e2e/kernel; the spread over the layouts 0.0% -> 0.0%
+  not distinguishable  coherence/lrsc_counter__hot/scalar/soc_dev/n129: +0.00% to +0.69% over 8 layouts, cold/warm, e2e/kernel; the spread over the layouts 0.0% -> 0.0%
+  not distinguishable  coherence/lrsc_counter__hot/scalar/soc_dev/n2: +0.00% to +13.89% over 8 layouts, cold/warm, e2e/kernel; the spread over the layouts 0.0% -> 0.0%
+  not distinguishable  coherence/lrsc_counter__split/multicore/soc_dev/n1024: -36.18% to +59.31% over 8 layouts, cold/warm, e2e/kernel; the spread over the layouts 59.21% -> 56.77%
+  not distinguishable  coherence/lrsc_counter__split/multicore/soc_dev/n129: -33.45% to +34.51% over 8 layouts, cold/warm, e2e/kernel; the spread over the layouts 34.81% -> 49.56%
+  wins                 coherence/lrsc_counter__split/multicore/soc_dev/n2: -86.47% to -72.73% over 8 layouts, cold/warm, e2e/kernel; the spread over the layouts 0.92% -> 0.0%
+  wins                 coherence/lrsc_counter__split_hot/multicore/soc_dev/n2: -84.59% to -72.73% over 8 layouts, cold/warm, e2e/kernel; the spread over the layouts 0.92% -> 0.0%
+  loses                coherence/padded__hot/multicore/soc_dev/n1024: +0.19% to +0.58% over 8 layouts, cold/warm, e2e/kernel; the spread over the layouts 0.37% -> 0.42%
+  not distinguishable  coherence/padded__hot/multicore/soc_dev/n129: -0.80% to +3.10% over 8 layouts, cold/warm, e2e/kernel; the spread over the layouts 1.88% -> 3.91%
+  wins                 coherence/padded__hot/multicore/soc_dev/n2: -8.20% to -2.95% over 8 layouts, cold/warm, e2e/kernel; the spread over the layouts 4.72% -> 2.53%
+  not distinguishable  coherence/padded__hot/scalar/soc_dev/n1024: +0.00% to +0.12% over 8 layouts, cold/warm, e2e/kernel; the spread over the layouts 0.0% -> 0.0%
+  not distinguishable  coherence/padded__hot/scalar/soc_dev/n129: +0.00% to +1.76% over 8 layouts, cold/warm, e2e/kernel; the spread over the layouts 0.42% -> 0.42%
+  not distinguishable  coherence/padded__hot/scalar/soc_dev/n2: +0.00% to +23.96% over 8 layouts, cold/warm, e2e/kernel; the spread over the layouts 11.9% -> 11.9%
+  not distinguishable  coherence/padded__split/multicore/soc_dev/n1024: -0.32% to +0.26% over 8 layouts, cold/warm, e2e/kernel; the spread over the layouts 0.37% -> 0.3%
+  not distinguishable  coherence/padded__split/multicore/soc_dev/n129: -1.98% to +1.48% over 8 layouts, cold/warm, e2e/kernel; the spread over the layouts 1.88% -> 2.02%
+  wins                 coherence/padded__split/multicore/soc_dev/n2: -92.16% to -80.74% over 8 layouts, cold/warm, e2e/kernel; the spread over the layouts 4.72% -> 11.9%
+  wins                 coherence/padded__split_hot/multicore/soc_dev/n2: -92.16% to -78.08% over 8 layouts, cold/warm, e2e/kernel; the spread over the layouts 4.72% -> 11.9%
+  wins                 coherence/reduce_fill__hot/multicore/soc_dev: -0.42% to -0.01% over 8 layouts, cold/warm, e2e/kernel; the spread over the layouts 0.01% -> 0.0%
+  not distinguishable  coherence/reduce_fill__hot/scalar/soc_dev: +0.00% to +0.00% over 8 layouts, cold/warm, e2e/kernel; the spread over the layouts 0.0% -> 0.0%
+  wins                 coherence/reduce_fill__loop/multicore/soc_dev: -21.27% to -19.82% over 8 layouts, cold/warm, e2e/kernel; the spread over the layouts 0.01% -> 1.53%
+  wins                 coherence/reduce_fill__loop_hot/multicore/soc_dev: -21.27% to -20.01% over 8 layouts, cold/warm, e2e/kernel; the spread over the layouts 0.01% -> 1.35%
+  wins                 coherence/reduce_fill__place/multicore/soc_dev: -21.17% to -20.26% over 8 layouts, cold/warm, e2e/kernel; the spread over the layouts 0.01% -> 0.71%
+  not distinguishable  coherence/reduce_v1__hot/multicore/soc_dev: -0.07% to +0.00% over 8 layouts, cold/warm, e2e/kernel; the spread over the layouts 0.14% -> 0.15%
+  not distinguishable  coherence/reduce_v1__hot/scalar/soc_dev: -0.00% to +0.00% over 8 layouts, cold/warm, e2e/kernel; the spread over the layouts 0.0% -> 0.0%
+  wins                 coherence/reduce_v1__loop/multicore/soc_dev: -20.33% to -18.35% over 8 layouts, cold/warm, e2e/kernel; the spread over the layouts 0.14% -> 0.27%
+  wins                 coherence/reduce_v1__loop_hot/multicore/soc_dev: -20.35% to -18.35% over 8 layouts, cold/warm, e2e/kernel; the spread over the layouts 0.14% -> 0.27%
+  wins                 coherence/reduce_v1__place/multicore/soc_dev: -20.34% to -18.31% over 8 layouts, cold/warm, e2e/kernel; the spread over the layouts 0.14% -> 0.26%
+  not distinguishable  coherence/shared_mix__hot/multicore/soc_dev/n1024: -0.01% to +0.05% over 8 layouts, cold/warm, e2e/kernel; the spread over the layouts 0.01% -> 0.01%
+  not distinguishable  coherence/shared_mix__hot/multicore/soc_dev/n129: +0.00% to +0.29% over 8 layouts, cold/warm, e2e/kernel; the spread over the layouts 0.31% -> 0.21%
+  not distinguishable  coherence/shared_mix__hot/multicore/soc_dev/n2: -2.08% to +5.85% over 8 layouts, cold/warm, e2e/kernel; the spread over the layouts 1.04% -> 1.06%
+  not distinguishable  coherence/shared_mix__hot/scalar/soc_dev/n1024: +0.00% to +0.02% over 8 layouts, cold/warm, e2e/kernel; the spread over the layouts 0.0% -> 0.0%
+  not distinguishable  coherence/shared_mix__hot/scalar/soc_dev/n129: +0.00% to +0.08% over 8 layouts, cold/warm, e2e/kernel; the spread over the layouts 0.0% -> 0.0%
+  not distinguishable  coherence/shared_mix__hot/scalar/soc_dev/n2: +0.00% to +5.08% over 8 layouts, cold/warm, e2e/kernel; the spread over the layouts 0.0% -> 0.0%
+  not distinguishable  coherence/shared_mix__split/multicore/soc_dev/n1024: -0.05% to +0.00% over 8 layouts, cold/warm, e2e/kernel; the spread over the layouts 0.01% -> 0.01%
+  not distinguishable  coherence/shared_mix__split/multicore/soc_dev/n129: -0.07% to +0.25% over 8 layouts, cold/warm, e2e/kernel; the spread over the layouts 0.31% -> 0.21%
+  wins                 coherence/shared_mix__split/multicore/soc_dev/n2: -62.82% to -31.25% over 8 layouts, cold/warm, e2e/kernel; the spread over the layouts 1.04% -> 0.0%
+  wins                 coherence/shared_mix__split_hot/multicore/soc_dev/n2: -62.82% to -31.25% over 8 layouts, cold/warm, e2e/kernel; the spread over the layouts 1.04% -> 0.0%
+  wins                 dsp/conv2d_direct_npu__2h/npu_direct/soc_dev: -46.76% to -46.38% over 8 layouts, cold/warm, e2e; the spread over the layouts 0.07% -> 0.21%
+  wins                 dsp/conv2d_direct_npu__2h/npu_direct/soc_dev/seed2468ace0: -47.46% to -47.39% over 8 layouts, warm, e2e; the spread over the layouts 0.04% -> 0.15%
+  wins                 dsp/conv2d_direct_npu__2h/npu_direct/soc_dev/seed9e3779b9: -47.46% to -47.39% over 8 layouts, warm, e2e; the spread over the layouts 0.04% -> 0.15%
+  wins                 dsp/conv2d_direct_npu__2h_hot/npu_direct/soc_dev: -46.77% to -46.41% over 8 layouts, cold/warm, e2e; the spread over the layouts 0.07% -> 0.19%
+  wins                 dsp/conv2d_direct_npu__2h_hot/npu_direct/soc_dev/seed2468ace0: -47.48% to -47.42% over 8 layouts, warm, e2e; the spread over the layouts 0.04% -> 0.09%
+  wins                 dsp/conv2d_direct_npu__2h_hot/npu_direct/soc_dev/seed9e3779b9: -47.48% to -47.42% over 8 layouts, warm, e2e; the spread over the layouts 0.04% -> 0.09%
+  not distinguishable  dsp/conv2d_direct_npu__hot/npu_direct/soc_dev: -0.01% to +0.01% over 8 layouts, cold/warm, e2e/kernel; the spread over the layouts 0.07% -> 0.06%
+  not distinguishable  dsp/conv2d_direct_npu__hot/npu_direct/soc_dev/seed2468ace0: +0.00% to +0.00% over 8 layouts, warm, e2e/kernel; the spread over the layouts 0.04% -> 0.04%
+  not distinguishable  dsp/conv2d_direct_npu__hot/npu_direct/soc_dev/seed9e3779b9: +0.00% to +0.00% over 8 layouts, warm, e2e/kernel; the spread over the layouts 0.04% -> 0.04%
+  wins                 dsp/conv2d_im2col_npu__2h/npu_im2col/soc_dev: -45.54% to -45.41% over 8 layouts, cold/warm, e2e; the spread over the layouts 0.36% -> 0.2%
+  wins                 dsp/conv2d_im2col_npu__2h/npu_im2col/soc_dev/seed2468ace0: -45.57% to -45.44% over 8 layouts, warm, e2e; the spread over the layouts 0.36% -> 0.19%
+  wins                 dsp/conv2d_im2col_npu__2h/npu_im2col/soc_dev/seed9e3779b9: -45.57% to -45.44% over 8 layouts, warm, e2e; the spread over the layouts 0.36% -> 0.19%
+  wins                 dsp/conv2d_im2col_npu__2h_hot/npu_im2col/soc_dev: -45.54% to -45.41% over 8 layouts, cold/warm, e2e; the spread over the layouts 0.36% -> 0.19%
+  wins                 dsp/conv2d_im2col_npu__2h_hot/npu_im2col/soc_dev/seed2468ace0: -45.57% to -45.44% over 8 layouts, warm, e2e; the spread over the layouts 0.36% -> 0.19%
+  wins                 dsp/conv2d_im2col_npu__2h_hot/npu_im2col/soc_dev/seed9e3779b9: -45.57% to -45.44% over 8 layouts, warm, e2e; the spread over the layouts 0.36% -> 0.19%
+  not distinguishable  dsp/conv2d_im2col_npu__hot/npu_im2col/soc_dev: -0.00% to +0.00% over 8 layouts, cold/warm, e2e/kernel; the spread over the layouts 0.36% -> 0.36%
+  not distinguishable  dsp/conv2d_im2col_npu__hot/npu_im2col/soc_dev/seed2468ace0: +0.00% to +0.00% over 8 layouts, warm, e2e/kernel; the spread over the layouts 0.36% -> 0.36%
+  not distinguishable  dsp/conv2d_im2col_npu__hot/npu_im2col/soc_dev/seed9e3779b9: +0.00% to +0.00% over 8 layouts, warm, e2e/kernel; the spread over the layouts 0.36% -> 0.36%
+  not distinguishable  dsp/dot__hot/multicore/soc_dev/k0: -8.84% to +1.29% over 8 layouts, cold/warm, e2e/kernel; the spread over the layouts 6.15% -> 1.29%
+  not distinguishable  dsp/dot__hot/multicore/soc_dev/k0/seed2468ace0: -3.85% to +1.29% over 8 layouts, warm, e2e/kernel; the spread over the layouts 4.0% -> 1.29%
+  not distinguishable  dsp/dot__hot/multicore/soc_dev/k0/seed9e3779b9: -3.85% to +1.29% over 8 layouts, warm, e2e/kernel; the spread over the layouts 4.0% -> 1.29%
+  not distinguishable  dsp/dot__hot/multicore/soc_dev/k1: -9.59% to +1.21% over 8 layouts, cold/warm, e2e/kernel; the spread over the layouts 3.64% -> 3.64%
+  not distinguishable  dsp/dot__hot/multicore/soc_dev/k1/seed2468ace0: -2.26% to +1.21% over 8 layouts, warm, e2e/kernel; the spread over the layouts 3.51% -> 3.64%
+  not distinguishable  dsp/dot__hot/multicore/soc_dev/k1/seed9e3779b9: -2.26% to +1.21% over 8 layouts, warm, e2e/kernel; the spread over the layouts 3.51% -> 3.64%
+  not distinguishable  dsp/dot__hot/multicore/soc_dev/k1024: -0.66% to +0.08% over 8 layouts, cold/warm, e2e/kernel; the spread over the layouts 1.48% -> 1.48%
+  not distinguishable  dsp/dot__hot/multicore/soc_dev/k1024/seed2468ace0: -0.22% to +0.18% over 8 layouts, warm, e2e/kernel; the spread over the layouts 1.48% -> 1.48%
+  not distinguishable  dsp/dot__hot/multicore/soc_dev/k1024/seed9e3779b9: -0.22% to +0.18% over 8 layouts, warm, e2e/kernel; the spread over the layouts 1.48% -> 1.48%
+  not distinguishable  dsp/dot__hot/multicore/soc_dev/k256: -2.51% to +0.52% over 8 layouts, cold/warm, e2e/kernel; the spread over the layouts 0.75% -> 0.69%
+  not distinguishable  dsp/dot__hot/multicore/soc_dev/k256/seed2468ace0: -0.23% to +0.63% over 8 layouts, warm, e2e/kernel; the spread over the layouts 0.86% -> 0.69%
+  not distinguishable  dsp/dot__hot/multicore/soc_dev/k256/seed9e3779b9: -0.23% to +0.63% over 8 layouts, warm, e2e/kernel; the spread over the layouts 0.86% -> 0.69%
+  not distinguishable  dsp/dot__hot/multicore/soc_dev/k4096: -0.16% to +0.04% over 8 layouts, cold/warm, e2e/kernel; the spread over the layouts 0.67% -> 0.67%
+  not distinguishable  dsp/dot__hot/multicore/soc_dev/k4096/seed2468ace0: -0.00% to +0.02% over 8 layouts, warm, e2e/kernel; the spread over the layouts 0.67% -> 0.67%
+  not distinguishable  dsp/dot__hot/multicore/soc_dev/k4096/seed9e3779b9: -0.00% to +0.02% over 8 layouts, warm, e2e/kernel; the spread over the layouts 0.67% -> 0.67%
+  not distinguishable  dsp/dot__hot/multicore/soc_dev/k64: -4.17% to +1.31% over 8 layouts, cold/warm, e2e/kernel; the spread over the layouts 1.31% -> 1.76%
+  not distinguishable  dsp/dot__hot/multicore/soc_dev/k64/seed2468ace0: -2.28% to +0.87% over 8 layouts, warm, e2e/kernel; the spread over the layouts 2.33% -> 1.76%
+  not distinguishable  dsp/dot__hot/multicore/soc_dev/k64/seed9e3779b9: -2.28% to +0.87% over 8 layouts, warm, e2e/kernel; the spread over the layouts 2.33% -> 1.76%
+  not distinguishable  dsp/dot__hot/multicore/soc_dev/k7: -6.32% to +2.12% over 8 layouts, cold/warm, e2e/kernel; the spread over the layouts 5.51% -> 6.93%
+  not distinguishable  dsp/dot__hot/multicore/soc_dev/k7/seed2468ace0: -4.91% to +2.65% over 8 layouts, warm, e2e/kernel; the spread over the layouts 7.96% -> 7.18%
+  not distinguishable  dsp/dot__hot/multicore/soc_dev/k7/seed9e3779b9: -4.91% to +2.65% over 8 layouts, warm, e2e/kernel; the spread over the layouts 7.96% -> 7.18%
+  not distinguishable  dsp/dot__hot/multicore/soc_dev/k8: -5.89% to +2.93% over 8 layouts, cold/warm, e2e/kernel; the spread over the layouts 5.52% -> 7.47%
+  not distinguishable  dsp/dot__hot/multicore/soc_dev/k8/seed2468ace0: -4.05% to +2.65% over 8 layouts, warm, e2e/kernel; the spread over the layouts 4.77% -> 2.75%
+  not distinguishable  dsp/dot__hot/multicore/soc_dev/k8/seed9e3779b9: -4.05% to +2.65% over 8 layouts, warm, e2e/kernel; the spread over the layouts 4.77% -> 3.04%
+  wins                 dsp/dot__split/multicore/soc_dev/k0: -81.88% to -69.23% over 8 layouts, cold/warm, e2e/kernel; the spread over the layouts 6.15% -> 0.0%
+  wins                 dsp/dot__split/multicore/soc_dev/k0/seed2468ace0: -71.02% to -69.23% over 8 layouts, warm, e2e/kernel; the spread over the layouts 4.0% -> 0.0%
+  wins                 dsp/dot__split/multicore/soc_dev/k0/seed9e3779b9: -71.02% to -69.23% over 8 layouts, warm, e2e/kernel; the spread over the layouts 4.0% -> 0.0%
+  wins                 dsp/dot__split/multicore/soc_dev/k1: -79.32% to -65.20% over 8 layouts, cold/warm, e2e/kernel; the spread over the layouts 3.64% -> 0.0%
+  wins                 dsp/dot__split/multicore/soc_dev/k1/seed2468ace0: -67.46% to -65.20% over 8 layouts, warm, e2e/kernel; the spread over the layouts 3.51% -> 0.0%
+  wins                 dsp/dot__split/multicore/soc_dev/k1/seed9e3779b9: -67.46% to -65.20% over 8 layouts, warm, e2e/kernel; the spread over the layouts 3.51% -> 0.0%
+  not distinguishable  dsp/dot__split/multicore/soc_dev/k1024: -0.07% to +0.07% over 8 layouts, cold/warm, e2e/kernel; the spread over the layouts 1.48% -> 1.48%
+  not distinguishable  dsp/dot__split/multicore/soc_dev/k1024/seed2468ace0: -0.07% to +0.10% over 8 layouts, warm, e2e/kernel; the spread over the layouts 1.48% -> 1.41%
+  not distinguishable  dsp/dot__split/multicore/soc_dev/k1024/seed9e3779b9: -0.07% to +0.10% over 8 layouts, warm, e2e/kernel; the spread over the layouts 1.48% -> 1.48%
+  not distinguishable  dsp/dot__split/multicore/soc_dev/k256: -0.23% to +0.23% over 8 layouts, cold/warm, e2e/kernel; the spread over the layouts 0.75% -> 0.86%
+  not distinguishable  dsp/dot__split/multicore/soc_dev/k256/seed2468ace0: -0.23% to +0.58% over 8 layouts, warm, e2e/kernel; the spread over the layouts 0.86% -> 0.92%
+  not distinguishable  dsp/dot__split/multicore/soc_dev/k256/seed9e3779b9: -0.23% to +0.58% over 8 layouts, warm, e2e/kernel; the spread over the layouts 0.86% -> 0.92%
+  not distinguishable  dsp/dot__split/multicore/soc_dev/k4096: -0.00% to +0.04% over 8 layouts, cold/warm, e2e/kernel; the spread over the layouts 0.67% -> 0.67%
+  not distinguishable  dsp/dot__split/multicore/soc_dev/k4096/seed2468ace0: -0.04% to +0.01% over 8 layouts, warm, e2e/kernel; the spread over the layouts 0.67% -> 0.71%
+  not distinguishable  dsp/dot__split/multicore/soc_dev/k4096/seed9e3779b9: -0.03% to +0.02% over 8 layouts, warm, e2e/kernel; the spread over the layouts 0.67% -> 0.7%
+  not distinguishable  dsp/dot__split/multicore/soc_dev/k64: -0.29% to +0.60% over 8 layouts, cold/warm, e2e/kernel; the spread over the layouts 1.31% -> 1.64%
+  not distinguishable  dsp/dot__split/multicore/soc_dev/k64/seed2468ace0: -0.43% to +1.49% over 8 layouts, warm, e2e/kernel; the spread over the layouts 2.33% -> 2.63%
+  not distinguishable  dsp/dot__split/multicore/soc_dev/k64/seed9e3779b9: -0.59% to +0.89% over 8 layouts, warm, e2e/kernel; the spread over the layouts 2.33% -> 2.63%
+  wins                 dsp/dot__split/multicore/soc_dev/k7: -71.34% to -42.29% over 8 layouts, cold/warm, e2e/kernel; the spread over the layouts 5.51% -> 13.07%
+  wins                 dsp/dot__split/multicore/soc_dev/k7/seed2468ace0: -54.05% to -43.64% over 8 layouts, warm, e2e/kernel; the spread over the layouts 7.96% -> 17.3%
+  wins                 dsp/dot__split/multicore/soc_dev/k7/seed9e3779b9: -54.05% to -43.64% over 8 layouts, warm, e2e/kernel; the spread over the layouts 7.96% -> 17.3%
+  wins                 dsp/dot__split/multicore/soc_dev/k8: -69.90% to -39.84% over 8 layouts, cold/warm, e2e/kernel; the spread over the layouts 5.52% -> 16.33%
+  wins                 dsp/dot__split/multicore/soc_dev/k8/seed2468ace0: -48.91% to -42.28% over 8 layouts, warm, e2e/kernel; the spread over the layouts 4.77% -> 16.33%
+  wins                 dsp/dot__split/multicore/soc_dev/k8/seed9e3779b9: -49.46% to -41.99% over 8 layouts, warm, e2e/kernel; the spread over the layouts 4.77% -> 16.33%
+  wins                 dsp/dot__split_hot/multicore/soc_dev/k0: -80.43% to -69.23% over 8 layouts, cold/warm, e2e/kernel; the spread over the layouts 6.15% -> 0.0%
+  wins                 dsp/dot__split_hot/multicore/soc_dev/k0/seed2468ace0: -71.02% to -69.23% over 8 layouts, warm, e2e/kernel; the spread over the layouts 4.0% -> 0.0%
+  wins                 dsp/dot__split_hot/multicore/soc_dev/k0/seed9e3779b9: -71.02% to -69.23% over 8 layouts, warm, e2e/kernel; the spread over the layouts 4.0% -> 0.0%
+  wins                 dsp/dot__split_hot/multicore/soc_dev/k1: -77.97% to -65.20% over 8 layouts, cold/warm, e2e/kernel; the spread over the layouts 3.64% -> 0.0%
+  wins                 dsp/dot__split_hot/multicore/soc_dev/k1/seed2468ace0: -67.46% to -65.20% over 8 layouts, warm, e2e/kernel; the spread over the layouts 3.51% -> 0.0%
+  wins                 dsp/dot__split_hot/multicore/soc_dev/k1/seed9e3779b9: -67.46% to -65.20% over 8 layouts, warm, e2e/kernel; the spread over the layouts 3.51% -> 0.0%
+  wins                 dsp/dot__split_hot/multicore/soc_dev/k7: -70.03% to -42.29% over 8 layouts, cold/warm, e2e/kernel; the spread over the layouts 5.51% -> 13.07%
+  wins                 dsp/dot__split_hot/multicore/soc_dev/k7/seed2468ace0: -54.05% to -43.64% over 8 layouts, warm, e2e/kernel; the spread over the layouts 7.96% -> 17.3%
+  wins                 dsp/dot__split_hot/multicore/soc_dev/k7/seed9e3779b9: -54.05% to -43.64% over 8 layouts, warm, e2e/kernel; the spread over the layouts 7.96% -> 17.3%
+  wins                 dsp/dot__split_hot/multicore/soc_dev/k8: -68.59% to -39.84% over 8 layouts, cold/warm, e2e/kernel; the spread over the layouts 5.52% -> 16.33%
+  wins                 dsp/dot__split_hot/multicore/soc_dev/k8/seed2468ace0: -48.91% to -42.28% over 8 layouts, warm, e2e/kernel; the spread over the layouts 4.77% -> 16.33%
+  wins                 dsp/dot__split_hot/multicore/soc_dev/k8/seed9e3779b9: -49.46% to -41.99% over 8 layouts, warm, e2e/kernel; the spread over the layouts 4.77% -> 16.33%
+  wins                 ecg/ecg_dot8__fir4/dot8/soc_dev: -74.25% to -72.33% over 8 layouts, cold/warm, e2e/kernel; the spread over the layouts 0.05% -> 0.3%
+  wins                 ecg/ecg_dot8__fir4/dot8/soc_dev/c128t16: -76.63% to -74.79% over 8 layouts, cold/warm, e2e/kernel; the spread over the layouts 0.04% -> 0.42%
+  wins                 ecg/ecg_dot8__fir4/dot8/soc_dev/c128t32: -78.62% to -76.95% over 8 layouts, cold/warm, e2e/kernel; the spread over the layouts 0.14% -> 1.13%
+  wins                 ecg/ecg_dot8__fir4/dot8/soc_dev/c128t8: -69.67% to -67.50% over 8 layouts, cold/warm, e2e/kernel; the spread over the layouts 0.13% -> 1.1%
+  wins                 ecg/ecg_dot8__fir4/dot8/soc_dev/c16t8: -51.47% to -49.44% over 8 layouts, cold/warm, e2e/kernel; the spread over the layouts 0.23% -> 0.76%
+  wins                 ecg/ecg_dot8__fir4/dot8/soc_dev/c32t16: -67.32% to -64.59% over 8 layouts, cold/warm, e2e/kernel; the spread over the layouts 0.15% -> 1.61%
+  wins                 ecg/ecg_dot8__fir4/dot8/soc_dev/c32t8: -62.64% to -60.37% over 8 layouts, cold/warm, e2e/kernel; the spread over the layouts 0.16% -> 1.24%
+  wins                 ecg/ecg_dot8__fir4/dot8/soc_dev/c64t32: -75.77% to -73.77% over 8 layouts, cold/warm, e2e/kernel; the spread over the layouts 0.09% -> 0.27%
+  wins                 ecg/ecg_dot8__fir4/dot8/soc_dev/c64t8: -67.70% to -65.71% over 8 layouts, cold/warm, e2e/kernel; the spread over the layouts 0.41% -> 0.19%
+  wins                 ecg/ecg_dot8__fir4_copy/dot8/soc_dev: -74.26% to -69.45% over 8 layouts, cold/warm, e2e/kernel; the spread over the layouts 0.05% -> 6.83%
+  wins                 ecg/ecg_dot8__fir4_copy/dot8/soc_dev/c128t16: -76.63% to -73.98% over 8 layouts, cold/warm, e2e/kernel; the spread over the layouts 0.04% -> 1.5%
+  wins                 ecg/ecg_dot8__fir4_copy/dot8/soc_dev/c128t32: -78.61% to -76.38% over 8 layouts, cold/warm, e2e/kernel; the spread over the layouts 0.14% -> 1.45%
+  wins                 ecg/ecg_dot8__fir4_copy/dot8/soc_dev/c128t8: -69.67% to -66.62% over 8 layouts, cold/warm, e2e/kernel; the spread over the layouts 0.13% -> 1.89%
+  wins                 ecg/ecg_dot8__fir4_copy/dot8/soc_dev/c16t8: -51.48% to -35.59% over 8 layouts, cold/warm, e2e/kernel; the spread over the layouts 0.23% -> 16.25%
+  wins                 ecg/ecg_dot8__fir4_copy/dot8/soc_dev/c32t16: -67.33% to -56.68% over 8 layouts, cold/warm, e2e/kernel; the spread over the layouts 0.15% -> 15.81%
+  wins                 ecg/ecg_dot8__fir4_copy/dot8/soc_dev/c32t8: -62.65% to -54.16% over 8 layouts, cold/warm, e2e/kernel; the spread over the layouts 0.16% -> 10.61%
+  wins                 ecg/ecg_dot8__fir4_copy/dot8/soc_dev/c64t32: -75.77% to -71.01% over 8 layouts, cold/warm, e2e/kernel; the spread over the layouts 0.09% -> 6.8%
+  wins                 ecg/ecg_dot8__fir4_copy/dot8/soc_dev/c64t8: -67.70% to -62.32% over 8 layouts, cold/warm, e2e/kernel; the spread over the layouts 0.41% -> 6.95%
+  wins                 ecg/ecg_dot8__fir4_hot/dot8/soc_dev: -74.25% to -72.34% over 8 layouts, cold/warm, e2e/kernel; the spread over the layouts 0.05% -> 0.29%
+  wins                 ecg/ecg_dot8__fir4_hot/dot8/soc_dev/c128t16: -76.63% to -74.79% over 8 layouts, cold/warm, e2e/kernel; the spread over the layouts 0.04% -> 0.42%
+  wins                 ecg/ecg_dot8__fir4_hot/dot8/soc_dev/c128t32: -78.62% to -76.95% over 8 layouts, cold/warm, e2e/kernel; the spread over the layouts 0.14% -> 1.13%
+  wins                 ecg/ecg_dot8__fir4_hot/dot8/soc_dev/c128t8: -69.67% to -67.50% over 8 layouts, cold/warm, e2e/kernel; the spread over the layouts 0.13% -> 1.1%
+  wins                 ecg/ecg_dot8__fir4_hot/dot8/soc_dev/c16t8: -51.47% to -49.45% over 8 layouts, cold/warm, e2e/kernel; the spread over the layouts 0.23% -> 0.75%
+  wins                 ecg/ecg_dot8__fir4_hot/dot8/soc_dev/c32t16: -67.32% to -64.60% over 8 layouts, cold/warm, e2e/kernel; the spread over the layouts 0.15% -> 1.61%
+  wins                 ecg/ecg_dot8__fir4_hot/dot8/soc_dev/c32t8: -62.64% to -60.38% over 8 layouts, cold/warm, e2e/kernel; the spread over the layouts 0.16% -> 1.24%
+  wins                 ecg/ecg_dot8__fir4_hot/dot8/soc_dev/c64t32: -75.77% to -73.76% over 8 layouts, cold/warm, e2e/kernel; the spread over the layouts 0.09% -> 0.29%
+  wins                 ecg/ecg_dot8__fir4_hot/dot8/soc_dev/c64t8: -67.70% to -65.72% over 8 layouts, cold/warm, e2e/kernel; the spread over the layouts 0.41% -> 0.2%
+  not distinguishable  ecg/ecg_dot8__hot/dot8/soc_dev: -0.02% to +0.00% over 8 layouts, cold/warm, e2e/kernel; the spread over the layouts 0.05% -> 0.05%
+  not distinguishable  ecg/ecg_dot8__hot/dot8/soc_dev/c128t16: -0.02% to +0.00% over 8 layouts, cold/warm, e2e/kernel; the spread over the layouts 0.04% -> 0.04%
+  not distinguishable  ecg/ecg_dot8__hot/dot8/soc_dev/c128t32: -0.02% to +0.00% over 8 layouts, cold/warm, e2e/kernel; the spread over the layouts 0.14% -> 0.14%
+  not distinguishable  ecg/ecg_dot8__hot/dot8/soc_dev/c128t8: -0.03% to +0.00% over 8 layouts, cold/warm, e2e/kernel; the spread over the layouts 0.13% -> 0.13%
+  not distinguishable  ecg/ecg_dot8__hot/dot8/soc_dev/c16t8: -0.02% to +0.00% over 8 layouts, cold/warm, e2e/kernel; the spread over the layouts 0.23% -> 0.23%
+  not distinguishable  ecg/ecg_dot8__hot/dot8/soc_dev/c32t16: -0.02% to +0.00% over 8 layouts, cold/warm, e2e/kernel; the spread over the layouts 0.15% -> 0.15%
+  not distinguishable  ecg/ecg_dot8__hot/dot8/soc_dev/c32t8: -0.03% to +0.00% over 8 layouts, cold/warm, e2e/kernel; the spread over the layouts 0.16% -> 0.16%
+  not distinguishable  ecg/ecg_dot8__hot/dot8/soc_dev/c64t32: -0.02% to +0.00% over 8 layouts, cold/warm, e2e/kernel; the spread over the layouts 0.09% -> 0.09%
+  not distinguishable  ecg/ecg_dot8__hot/dot8/soc_dev/c64t8: -0.02% to +0.00% over 8 layouts, cold/warm, e2e/kernel; the spread over the layouts 0.41% -> 0.41%
+  wins                 ecg/ecg_dot8_f8__fir4/dot8/soc_dev: -72.40% to -70.52% over 8 layouts, cold/warm, e2e/kernel; the spread over the layouts 0.49% -> 0.28%
+  wins                 ecg/ecg_dot8_f8__fir4/dot8/soc_dev/c128t16: -75.73% to -73.88% over 8 layouts, cold/warm, e2e/kernel; the spread over the layouts 0.03% -> 0.51%
+  wins                 ecg/ecg_dot8_f8__fir4/dot8/soc_dev/c128t32: -77.92% to -76.15% over 8 layouts, cold/warm, e2e/kernel; the spread over the layouts 0.14% -> 1.74%
+  wins                 ecg/ecg_dot8_f8__fir4/dot8/soc_dev/c128t8: -68.67% to -66.75% over 8 layouts, cold/warm, e2e/kernel; the spread over the layouts 0.15% -> 0.47%
+  wins                 ecg/ecg_dot8_f8__fir4/dot8/soc_dev/c16t8: -45.11% to -43.07% over 8 layouts, cold/warm, e2e/kernel; the spread over the layouts 0.32% -> 1.27%
+  wins                 ecg/ecg_dot8_f8__fir4/dot8/soc_dev/c32t16: -62.99% to -60.78% over 8 layouts, cold/warm, e2e/kernel; the spread over the layouts 0.16% -> 0.71%
+  wins                 ecg/ecg_dot8_f8__fir4/dot8/soc_dev/c32t8: -58.95% to -57.20% over 8 layouts, cold/warm, e2e/kernel; the spread over the layouts 0.16% -> 0.38%
+  wins                 ecg/ecg_dot8_f8__fir4/dot8/soc_dev/c64t32: -73.88% to -71.95% over 8 layouts, cold/warm, e2e/kernel; the spread over the layouts 0.07% -> 0.28%
+  wins                 ecg/ecg_dot8_f8__fir4/dot8/soc_dev/c64t8: -65.65% to -63.86% over 8 layouts, cold/warm, e2e/kernel; the spread over the layouts 0.08% -> 0.23%
+  wins                 ecg/ecg_dot8_f8__fir4_copy/dot8/soc_dev: -72.41% to -67.79% over 8 layouts, cold/warm, e2e/kernel; the spread over the layouts 0.49% -> 5.74%
+  wins                 ecg/ecg_dot8_f8__fir4_copy/dot8/soc_dev/c128t16: -75.74% to -73.09% over 8 layouts, cold/warm, e2e/kernel; the spread over the layouts 0.03% -> 1.62%
+  wins                 ecg/ecg_dot8_f8__fir4_copy/dot8/soc_dev/c128t32: -77.91% to -75.71% over 8 layouts, cold/warm, e2e/kernel; the spread over the layouts 0.14% -> 1.28%
+  wins                 ecg/ecg_dot8_f8__fir4_copy/dot8/soc_dev/c128t8: -68.68% to -65.69% over 8 layouts, cold/warm, e2e/kernel; the spread over the layouts 0.15% -> 1.85%
+  wins                 ecg/ecg_dot8_f8__fir4_copy/dot8/soc_dev/c16t8: -45.12% to -30.52% over 8 layouts, cold/warm, e2e/kernel; the spread over the layouts 0.32% -> 7.63%
+  wins                 ecg/ecg_dot8_f8__fir4_copy/dot8/soc_dev/c32t16: -62.99% to -54.17% over 8 layouts, cold/warm, e2e/kernel; the spread over the layouts 0.16% -> 10.64%
+  wins                 ecg/ecg_dot8_f8__fir4_copy/dot8/soc_dev/c32t8: -58.95% to -50.09% over 8 layouts, cold/warm, e2e/kernel; the spread over the layouts 0.16% -> 11.5%
+  wins                 ecg/ecg_dot8_f8__fir4_copy/dot8/soc_dev/c64t32: -73.88% to -69.26% over 8 layouts, cold/warm, e2e/kernel; the spread over the layouts 0.07% -> 6.21%
+  wins                 ecg/ecg_dot8_f8__fir4_copy/dot8/soc_dev/c64t8: -65.65% to -60.96% over 8 layouts, cold/warm, e2e/kernel; the spread over the layouts 0.08% -> 5.1%
+  wins                 ecg/ecg_dot8_f8__fir4_hot/dot8/soc_dev: -72.40% to -70.53% over 8 layouts, cold/warm, e2e/kernel; the spread over the layouts 0.49% -> 0.27%
+  wins                 ecg/ecg_dot8_f8__fir4_hot/dot8/soc_dev/c128t16: -75.73% to -73.89% over 8 layouts, cold/warm, e2e/kernel; the spread over the layouts 0.03% -> 0.51%
+  wins                 ecg/ecg_dot8_f8__fir4_hot/dot8/soc_dev/c128t32: -77.92% to -76.15% over 8 layouts, cold/warm, e2e/kernel; the spread over the layouts 0.14% -> 1.74%
+  wins                 ecg/ecg_dot8_f8__fir4_hot/dot8/soc_dev/c128t8: -68.67% to -66.75% over 8 layouts, cold/warm, e2e/kernel; the spread over the layouts 0.15% -> 0.47%
+  wins                 ecg/ecg_dot8_f8__fir4_hot/dot8/soc_dev/c16t8: -45.11% to -43.09% over 8 layouts, cold/warm, e2e/kernel; the spread over the layouts 0.32% -> 1.27%
+  wins                 ecg/ecg_dot8_f8__fir4_hot/dot8/soc_dev/c32t16: -62.99% to -60.78% over 8 layouts, cold/warm, e2e/kernel; the spread over the layouts 0.16% -> 0.71%
+  wins                 ecg/ecg_dot8_f8__fir4_hot/dot8/soc_dev/c32t8: -58.95% to -57.21% over 8 layouts, cold/warm, e2e/kernel; the spread over the layouts 0.16% -> 0.4%
+  wins                 ecg/ecg_dot8_f8__fir4_hot/dot8/soc_dev/c64t32: -73.88% to -71.96% over 8 layouts, cold/warm, e2e/kernel; the spread over the layouts 0.07% -> 0.29%
+  wins                 ecg/ecg_dot8_f8__fir4_hot/dot8/soc_dev/c64t8: -65.65% to -63.86% over 8 layouts, cold/warm, e2e/kernel; the spread over the layouts 0.08% -> 0.23%
+  not distinguishable  ecg/ecg_dot8_f8__hot/dot8/soc_dev: -0.02% to +0.00% over 8 layouts, cold/warm, e2e/kernel; the spread over the layouts 0.49% -> 0.48%
+  not distinguishable  ecg/ecg_dot8_f8__hot/dot8/soc_dev/c128t16: -0.01% to +0.00% over 8 layouts, cold/warm, e2e/kernel; the spread over the layouts 0.03% -> 0.04%
+  not distinguishable  ecg/ecg_dot8_f8__hot/dot8/soc_dev/c128t32: -0.01% to +0.00% over 8 layouts, cold/warm, e2e/kernel; the spread over the layouts 0.14% -> 0.14%
+  not distinguishable  ecg/ecg_dot8_f8__hot/dot8/soc_dev/c128t8: -0.02% to +0.00% over 8 layouts, cold/warm, e2e/kernel; the spread over the layouts 0.15% -> 0.15%
+  not distinguishable  ecg/ecg_dot8_f8__hot/dot8/soc_dev/c16t8: -0.02% to +0.00% over 8 layouts, cold/warm, e2e/kernel; the spread over the layouts 0.32% -> 0.32%
+  not distinguishable  ecg/ecg_dot8_f8__hot/dot8/soc_dev/c32t16: -0.02% to +0.00% over 8 layouts, cold/warm, e2e/kernel; the spread over the layouts 0.16% -> 0.18%
+  not distinguishable  ecg/ecg_dot8_f8__hot/dot8/soc_dev/c32t8: -0.02% to +0.00% over 8 layouts, cold/warm, e2e/kernel; the spread over the layouts 0.16% -> 0.17%
+  not distinguishable  ecg/ecg_dot8_f8__hot/dot8/soc_dev/c64t32: -0.02% to +0.00% over 8 layouts, cold/warm, e2e/kernel; the spread over the layouts 0.07% -> 0.07%
+  not distinguishable  ecg/ecg_dot8_f8__hot/dot8/soc_dev/c64t8: -0.02% to +0.00% over 8 layouts, cold/warm, e2e/kernel; the spread over the layouts 0.08% -> 0.09%
+  wins                 ecg/ecg_pipeline_overlap__fir4/pipeline/soc_dev: -81.94% to -78.93% over 8 layouts, cold/warm, e2e/kernel; the spread over the layouts 0.83% -> 0.81%
+  wins                 ecg/ecg_pipeline_overlap__fir4/pipeline/soc_dev/c128t16: -83.67% to -81.50% over 8 layouts, cold/warm, e2e/kernel; the spread over the layouts 0.75% -> 1.38%
+  wins                 ecg/ecg_pipeline_overlap__fir4/pipeline/soc_dev/c128t32: -84.97% to -83.27% over 8 layouts, cold/warm, e2e/kernel; the spread over the layouts 0.73% -> 0.77%
+  wins                 ecg/ecg_pipeline_overlap__fir4/pipeline/soc_dev/c128t8: -71.48% to -69.10% over 8 layouts, cold/warm, e2e/kernel; the spread over the layouts 0.71% -> 1.1%
+  wins                 ecg/ecg_pipeline_overlap__fir4/pipeline/soc_dev/c16t8: -50.41% to -41.87% over 8 layouts, cold/warm, e2e/kernel; the spread over the layouts 5.14% -> 0.74%
+  wins                 ecg/ecg_pipeline_overlap__fir4/pipeline/soc_dev/c32t16: -75.08% to -69.53% over 8 layouts, cold/warm, e2e/kernel; the spread over the layouts 1.79% -> 0.98%
+  wins                 ecg/ecg_pipeline_overlap__fir4/pipeline/soc_dev/c32t8: -64.17% to -59.42% over 8 layouts, cold/warm, e2e/kernel; the spread over the layouts 1.89% -> 0.7%
+  wins                 ecg/ecg_pipeline_overlap__fir4/pipeline/soc_dev/c64t32: -84.26% to -81.15% over 8 layouts, cold/warm, e2e/kernel; the spread over the layouts 0.89% -> 1.07%
+  wins                 ecg/ecg_pipeline_overlap__fir4/pipeline/soc_dev/c64t8: -69.26% to -66.22% over 8 layouts, cold/warm, e2e/kernel; the spread over the layouts 1.04% -> 0.85%
+  wins                 ecg/ecg_pipeline_overlap__fir4_copy/pipeline/soc_dev: -82.02% to -78.35% over 8 layouts, cold/warm, e2e/kernel; the spread over the layouts 0.83% -> 1.49%
+  wins                 ecg/ecg_pipeline_overlap__fir4_copy/pipeline/soc_dev/c128t16: -83.60% to -80.52% over 8 layouts, cold/warm, e2e/kernel; the spread over the layouts 0.75% -> 4.19%
+  wins                 ecg/ecg_pipeline_overlap__fir4_copy/pipeline/soc_dev/c128t32: -84.97% to -82.57% over 8 layouts, cold/warm, e2e/kernel; the spread over the layouts 0.73% -> 2.67%
+  wins                 ecg/ecg_pipeline_overlap__fir4_copy/pipeline/soc_dev/c128t8: -71.47% to -67.91% over 8 layouts, cold/warm, e2e/kernel; the spread over the layouts 0.71% -> 2.95%
+  wins                 ecg/ecg_pipeline_overlap__fir4_copy/pipeline/soc_dev/c16t8: -50.89% to -42.73% over 8 layouts, cold/warm, e2e/kernel; the spread over the layouts 5.14% -> 2.78%
+  wins                 ecg/ecg_pipeline_overlap__fir4_copy/pipeline/soc_dev/c32t16: -75.29% to -69.24% over 8 layouts, cold/warm, e2e/kernel; the spread over the layouts 1.79% -> 2.08%
+  wins                 ecg/ecg_pipeline_overlap__fir4_copy/pipeline/soc_dev/c32t8: -64.41% to -59.23% over 8 layouts, cold/warm, e2e/kernel; the spread over the layouts 1.89% -> 1.56%
+  wins                 ecg/ecg_pipeline_overlap__fir4_copy/pipeline/soc_dev/c64t32: -84.33% to -80.64% over 8 layouts, cold/warm, e2e/kernel; the spread over the layouts 0.89% -> 1.07%
+  wins                 ecg/ecg_pipeline_overlap__fir4_copy/pipeline/soc_dev/c64t8: -69.47% to -65.59% over 8 layouts, cold/warm, e2e/kernel; the spread over the layouts 1.04% -> 0.88%
+  wins                 ecg/ecg_pipeline_overlap__fir4_copy_hot/pipeline/soc_dev/c16t8: -50.88% to -42.78% over 8 layouts, cold/warm, e2e/kernel; the spread over the layouts 5.14% -> 0.73%
+  wins                 ecg/ecg_pipeline_overlap__fir4_hot/pipeline/soc_dev: -81.94% to -78.96% over 8 layouts, cold/warm, e2e/kernel; the spread over the layouts 0.83% -> 0.65%
+  wins                 ecg/ecg_pipeline_overlap__fir4_hot/pipeline/soc_dev/c128t16: -83.67% to -81.50% over 8 layouts, cold/warm, e2e/kernel; the spread over the layouts 0.75% -> 1.37%
+  wins                 ecg/ecg_pipeline_overlap__fir4_hot/pipeline/soc_dev/c128t32: -84.98% to -83.29% over 8 layouts, cold/warm, e2e/kernel; the spread over the layouts 0.73% -> 0.8%
+  wins                 ecg/ecg_pipeline_overlap__fir4_hot/pipeline/soc_dev/c128t8: -71.48% to -69.11% over 8 layouts, cold/warm, e2e/kernel; the spread over the layouts 0.71% -> 1.11%
+  wins                 ecg/ecg_pipeline_overlap__fir4_hot/pipeline/soc_dev/c16t8: -50.40% to -41.89% over 8 layouts, cold/warm, e2e/kernel; the spread over the layouts 5.14% -> 0.75%
+  wins                 ecg/ecg_pipeline_overlap__fir4_hot/pipeline/soc_dev/c32t16: -75.08% to -69.57% over 8 layouts, cold/warm, e2e/kernel; the spread over the layouts 1.79% -> 0.84%
+  wins                 ecg/ecg_pipeline_overlap__fir4_hot/pipeline/soc_dev/c32t8: -64.18% to -59.42% over 8 layouts, cold/warm, e2e/kernel; the spread over the layouts 1.89% -> 0.72%
+  wins                 ecg/ecg_pipeline_overlap__fir4_hot/pipeline/soc_dev/c64t32: -84.26% to -81.16% over 8 layouts, cold/warm, e2e/kernel; the spread over the layouts 0.89% -> 1.09%
+  wins                 ecg/ecg_pipeline_overlap__fir4_hot/pipeline/soc_dev/c64t8: -69.26% to -66.24% over 8 layouts, cold/warm, e2e/kernel; the spread over the layouts 1.04% -> 0.85%
+  wins                 ecg/ecg_pipeline_overlap__fir4_split/pipeline/soc_dev: -82.12% to -81.05% over 8 layouts, cold/warm, e2e/kernel; the spread over the layouts 0.83% -> 1.36%
+  wins                 ecg/ecg_pipeline_overlap__fir4_split/pipeline/soc_dev/c128t16: -83.65% to -82.44% over 8 layouts, cold/warm, e2e/kernel; the spread over the layouts 0.75% -> 0.57%
+  wins                 ecg/ecg_pipeline_overlap__fir4_split/pipeline/soc_dev/c128t32: -84.83% to -82.52% over 8 layouts, cold/warm, e2e/kernel; the spread over the layouts 0.73% -> 0.86%
+  wins                 ecg/ecg_pipeline_overlap__fir4_split/pipeline/soc_dev/c128t8: -71.37% to -70.38% over 8 layouts, cold/warm, e2e/kernel; the spread over the layouts 0.71% -> 0.42%
+  wins                 ecg/ecg_pipeline_overlap__fir4_split/pipeline/soc_dev/c16t8: -56.85% to -48.74% over 8 layouts, cold/warm, e2e/kernel; the spread over the layouts 5.14% -> 0.94%
+  wins                 ecg/ecg_pipeline_overlap__fir4_split/pipeline/soc_dev/c32t16: -76.49% to -74.93% over 8 layouts, cold/warm, e2e/kernel; the spread over the layouts 1.79% -> 1.19%
+  wins                 ecg/ecg_pipeline_overlap__fir4_split/pipeline/soc_dev/c32t8: -66.16% to -63.85% over 8 layouts, cold/warm, e2e/kernel; the spread over the layouts 1.89% -> 0.65%
+  wins                 ecg/ecg_pipeline_overlap__fir4_split/pipeline/soc_dev/c64t32: -83.94% to -80.35% over 8 layouts, cold/warm, e2e/kernel; the spread over the layouts 0.89% -> 1.02%
+  wins                 ecg/ecg_pipeline_overlap__fir4_split/pipeline/soc_dev/c64t8: -69.96% to -68.95% over 8 layouts, cold/warm, e2e/kernel; the spread over the layouts 1.04% -> 0.33%
+  wins                 ecg/ecg_pipeline_overlap__fir4_split_hot/pipeline/soc_dev: -82.12% to -81.06% over 8 layouts, cold/warm, e2e/kernel; the spread over the layouts 0.83% -> 1.31%
+  wins                 ecg/ecg_pipeline_overlap__fir4_split_hot/pipeline/soc_dev/c16t8: -56.85% to -48.71% over 8 layouts, cold/warm, e2e/kernel; the spread over the layouts 5.14% -> 0.94%
+  wins                 ecg/ecg_pipeline_overlap__fir4_split_hot/pipeline/soc_dev/c32t16: -76.49% to -74.87% over 8 layouts, cold/warm, e2e/kernel; the spread over the layouts 1.79% -> 1.21%
+  wins                 ecg/ecg_pipeline_overlap__fir4_split_hot/pipeline/soc_dev/c32t8: -66.16% to -63.83% over 8 layouts, cold/warm, e2e/kernel; the spread over the layouts 1.89% -> 0.61%
+  wins                 ecg/ecg_pipeline_overlap__fir4_split_hot/pipeline/soc_dev/c64t8: -69.96% to -68.95% over 8 layouts, cold/warm, e2e/kernel; the spread over the layouts 1.04% -> 0.41%
+  not distinguishable  ecg/ecg_pipeline_overlap__hot/pipeline/soc_dev: -0.56% to +0.00% over 8 layouts, cold/warm, e2e/kernel; the spread over the layouts 0.83% -> 0.37%
+  not distinguishable  ecg/ecg_pipeline_overlap__hot/pipeline/soc_dev/c128t16: -0.23% to +0.00% over 8 layouts, cold/warm, e2e/kernel; the spread over the layouts 0.75% -> 0.57%
+  not distinguishable  ecg/ecg_pipeline_overlap__hot/pipeline/soc_dev/c128t32: -0.18% to +0.00% over 8 layouts, cold/warm, e2e/kernel; the spread over the layouts 0.73% -> 0.6%
+  wins                 ecg/ecg_pipeline_overlap__hot/pipeline/soc_dev/c128t8: -0.27% to -0.00% over 8 layouts, cold/warm, e2e/kernel; the spread over the layouts 0.71% -> 0.48%
+  not distinguishable  ecg/ecg_pipeline_overlap__hot/pipeline/soc_dev/c16t8: -3.67% to +0.00% over 8 layouts, cold/warm, e2e/kernel; the spread over the layouts 5.14% -> 1.93%
+  not distinguishable  ecg/ecg_pipeline_overlap__hot/pipeline/soc_dev/c32t16: -1.31% to +0.01% over 8 layouts, cold/warm, e2e/kernel; the spread over the layouts 1.79% -> 0.56%
+  wins                 ecg/ecg_pipeline_overlap__hot/pipeline/soc_dev/c32t8: -1.27% to -0.00% over 8 layouts, cold/warm, e2e/kernel; the spread over the layouts 1.89% -> 0.66%
+  not distinguishable  ecg/ecg_pipeline_overlap__hot/pipeline/soc_dev/c64t32: -0.53% to +0.00% over 8 layouts, cold/warm, e2e/kernel; the spread over the layouts 0.89% -> 0.5%
+  not distinguishable  ecg/ecg_pipeline_overlap__hot/pipeline/soc_dev/c64t8: -0.62% to +0.00% over 8 layouts, cold/warm, e2e/kernel; the spread over the layouts 1.04% -> 0.54%
+  wins                 ecg/ecg_pipeline_overlap_f8__fir4/pipeline/soc_dev: -79.74% to -76.69% over 8 layouts, cold/warm, e2e/kernel; the spread over the layouts 0.66% -> 1.18%
+  wins                 ecg/ecg_pipeline_overlap_f8__fir4/pipeline/soc_dev/c128t16: -82.71% to -80.60% over 8 layouts, cold/warm, e2e/kernel; the spread over the layouts 0.68% -> 1.46%
+  wins                 ecg/ecg_pipeline_overlap_f8__fir4/pipeline/soc_dev/c128t32: -84.84% to -83.21% over 8 layouts, cold/warm, e2e/kernel; the spread over the layouts 0.4% -> 0.91%
+  wins                 ecg/ecg_pipeline_overlap_f8__fir4/pipeline/soc_dev/c128t8: -70.27% to -67.86% over 8 layouts, cold/warm, e2e/kernel; the spread over the layouts 0.84% -> 1.15%
+  wins                 ecg/ecg_pipeline_overlap_f8__fir4/pipeline/soc_dev/c16t8: -35.36% to -27.80% over 8 layouts, cold/warm, e2e/kernel; the spread over the layouts 4.4% -> 3.55%
+  wins                 ecg/ecg_pipeline_overlap_f8__fir4/pipeline/soc_dev/c32t16: -69.11% to -63.29% over 8 layouts, cold/warm, e2e/kernel; the spread over the layouts 1.86% -> 2.63%
+  wins                 ecg/ecg_pipeline_overlap_f8__fir4/pipeline/soc_dev/c32t8: -58.38% to -53.56% over 8 layouts, cold/warm, e2e/kernel; the spread over the layouts 1.89% -> 0.74%
+  wins                 ecg/ecg_pipeline_overlap_f8__fir4/pipeline/soc_dev/c64t32: -84.12% to -80.75% over 8 layouts, cold/warm, e2e/kernel; the spread over the layouts 1.27% -> 1.92%
+  wins                 ecg/ecg_pipeline_overlap_f8__fir4/pipeline/soc_dev/c64t8: -66.68% to -63.55% over 8 layouts, cold/warm, e2e/kernel; the spread over the layouts 0.76% -> 1.24%
+  wins                 ecg/ecg_pipeline_overlap_f8__fir4_copy/pipeline/soc_dev: -79.82% to -75.64% over 8 layouts, cold/warm, e2e/kernel; the spread over the layouts 0.66% -> 3.5%
+  wins                 ecg/ecg_pipeline_overlap_f8__fir4_copy/pipeline/soc_dev/c128t16: -82.68% to -79.73% over 8 layouts, cold/warm, e2e/kernel; the spread over the layouts 0.68% -> 1.67%
+  wins                 ecg/ecg_pipeline_overlap_f8__fir4_copy/pipeline/soc_dev/c128t32: -84.84% to -82.52% over 8 layouts, cold/warm, e2e/kernel; the spread over the layouts 0.4% -> 2.69%
+  wins                 ecg/ecg_pipeline_overlap_f8__fir4_copy/pipeline/soc_dev/c128t8: -70.21% to -66.68% over 8 layouts, cold/warm, e2e/kernel; the spread over the layouts 0.84% -> 2.3%
+  wins                 ecg/ecg_pipeline_overlap_f8__fir4_copy/pipeline/soc_dev/c16t8: -35.86% to -28.67% over 8 layouts, cold/warm, e2e/kernel; the spread over the layouts 4.4% -> 2.11%
+  wins                 ecg/ecg_pipeline_overlap_f8__fir4_copy/pipeline/soc_dev/c32t16: -69.33% to -62.27% over 8 layouts, cold/warm, e2e/kernel; the spread over the layouts 1.86% -> 5.53%
+  wins                 ecg/ecg_pipeline_overlap_f8__fir4_copy/pipeline/soc_dev/c32t8: -58.58% to -53.34% over 8 layouts, cold/warm, e2e/kernel; the spread over the layouts 1.89% -> 1.55%
+  wins                 ecg/ecg_pipeline_overlap_f8__fir4_copy/pipeline/soc_dev/c64t32: -84.22% to -80.46% over 8 layouts, cold/warm, e2e/kernel; the spread over the layouts 1.27% -> 1.1%
+  wins                 ecg/ecg_pipeline_overlap_f8__fir4_copy/pipeline/soc_dev/c64t8: -66.78% to -62.82% over 8 layouts, cold/warm, e2e/kernel; the spread over the layouts 0.76% -> 1.46%
+  wins                 ecg/ecg_pipeline_overlap_f8__fir4_copy_hot/pipeline/soc_dev/c16t8: -35.86% to -28.67% over 8 layouts, cold/warm, e2e/kernel; the spread over the layouts 4.4% -> 1.3%
+  wins                 ecg/ecg_pipeline_overlap_f8__fir4_hot/pipeline/soc_dev: -79.74% to -76.80% over 8 layouts, cold/warm, e2e/kernel; the spread over the layouts 0.66% -> 0.86%
+  wins                 ecg/ecg_pipeline_overlap_f8__fir4_hot/pipeline/soc_dev/c128t16: -82.71% to -80.58% over 8 layouts, cold/warm, e2e/kernel; the spread over the layouts 0.68% -> 1.48%
+  wins                 ecg/ecg_pipeline_overlap_f8__fir4_hot/pipeline/soc_dev/c128t32: -84.85% to -83.24% over 8 layouts, cold/warm, e2e/kernel; the spread over the layouts 0.4% -> 0.89%
+  wins                 ecg/ecg_pipeline_overlap_f8__fir4_hot/pipeline/soc_dev/c128t8: -70.28% to -67.88% over 8 layouts, cold/warm, e2e/kernel; the spread over the layouts 0.84% -> 1.15%
+  wins                 ecg/ecg_pipeline_overlap_f8__fir4_hot/pipeline/soc_dev/c16t8: -35.36% to -27.77% over 8 layouts, cold/warm, e2e/kernel; the spread over the layouts 4.4% -> 3.55%
+  wins                 ecg/ecg_pipeline_overlap_f8__fir4_hot/pipeline/soc_dev/c32t16: -69.11% to -63.73% over 8 layouts, cold/warm, e2e/kernel; the spread over the layouts 1.86% -> 1.06%
+  wins                 ecg/ecg_pipeline_overlap_f8__fir4_hot/pipeline/soc_dev/c32t8: -58.38% to -53.55% over 8 layouts, cold/warm, e2e/kernel; the spread over the layouts 1.89% -> 0.85%
+  wins                 ecg/ecg_pipeline_overlap_f8__fir4_hot/pipeline/soc_dev/c64t32: -84.22% to -81.02% over 8 layouts, cold/warm, e2e/kernel; the spread over the layouts 1.27% -> 0.54%
+  wins                 ecg/ecg_pipeline_overlap_f8__fir4_hot/pipeline/soc_dev/c64t8: -66.68% to -63.54% over 8 layouts, cold/warm, e2e/kernel; the spread over the layouts 0.76% -> 1.24%
+  wins                 ecg/ecg_pipeline_overlap_f8__fir4_split/pipeline/soc_dev: -80.05% to -77.85% over 8 layouts, cold/warm, e2e/kernel; the spread over the layouts 0.66% -> 7.14%
+  wins                 ecg/ecg_pipeline_overlap_f8__fir4_split/pipeline/soc_dev/c128t16: -82.68% to -81.06% over 8 layouts, cold/warm, e2e/kernel; the spread over the layouts 0.68% -> 4.03%
+  wins                 ecg/ecg_pipeline_overlap_f8__fir4_split/pipeline/soc_dev/c128t32: -84.70% to -82.38% over 8 layouts, cold/warm, e2e/kernel; the spread over the layouts 0.4% -> 1.34%
+  wins                 ecg/ecg_pipeline_overlap_f8__fir4_split/pipeline/soc_dev/c128t8: -70.19% to -68.96% over 8 layouts, cold/warm, e2e/kernel; the spread over the layouts 0.84% -> 0.83%
+  wins                 ecg/ecg_pipeline_overlap_f8__fir4_split/pipeline/soc_dev/c16t8: -43.39% to -32.42% over 8 layouts, cold/warm, e2e/kernel; the spread over the layouts 4.4% -> 2.45%
+  wins                 ecg/ecg_pipeline_overlap_f8__fir4_split/pipeline/soc_dev/c32t16: -71.03% to -65.45% over 8 layouts, cold/warm, e2e/kernel; the spread over the layouts 1.86% -> 12.46%
+  wins                 ecg/ecg_pipeline_overlap_f8__fir4_split/pipeline/soc_dev/c32t8: -60.81% to -57.74% over 8 layouts, cold/warm, e2e/kernel; the spread over the layouts 1.89% -> 1.02%
+  wins                 ecg/ecg_pipeline_overlap_f8__fir4_split/pipeline/soc_dev/c64t32: -83.94% to -79.99% over 8 layouts, cold/warm, e2e/kernel; the spread over the layouts 1.27% -> 3.25%
+  wins                 ecg/ecg_pipeline_overlap_f8__fir4_split/pipeline/soc_dev/c64t8: -67.48% to -66.14% over 8 layouts, cold/warm, e2e/kernel; the spread over the layouts 0.76% -> 0.91%
+  wins                 ecg/ecg_pipeline_overlap_f8__fir4_split_hot/pipeline/soc_dev/c16t8: -43.39% to -33.00% over 8 layouts, cold/warm, e2e/kernel; the spread over the layouts 4.4% -> 1.57%
+  wins                 ecg/ecg_pipeline_overlap_f8__fir4_split_hot/pipeline/soc_dev/c32t8: -60.81% to -57.70% over 8 layouts, cold/warm, e2e/kernel; the spread over the layouts 1.89% -> 1.06%
+  not distinguishable  ecg/ecg_pipeline_overlap_f8__hot/pipeline/soc_dev: -0.57% to +0.00% over 8 layouts, cold/warm, e2e/kernel; the spread over the layouts 0.66% -> 0.92%
+  not distinguishable  ecg/ecg_pipeline_overlap_f8__hot/pipeline/soc_dev/c128t16: -0.24% to +0.00% over 8 layouts, cold/warm, e2e/kernel; the spread over the layouts 0.68% -> 0.52%
+  not distinguishable  ecg/ecg_pipeline_overlap_f8__hot/pipeline/soc_dev/c128t32: -0.17% to +0.00% over 8 layouts, cold/warm, e2e/kernel; the spread over the layouts 0.4% -> 0.27%
+  not distinguishable  ecg/ecg_pipeline_overlap_f8__hot/pipeline/soc_dev/c128t8: -0.35% to +0.00% over 8 layouts, cold/warm, e2e/kernel; the spread over the layouts 0.84% -> 0.56%
+  not distinguishable  ecg/ecg_pipeline_overlap_f8__hot/pipeline/soc_dev/c16t8: -3.34% to +0.00% over 8 layouts, cold/warm, e2e/kernel; the spread over the layouts 4.4% -> 2.36%
+  not distinguishable  ecg/ecg_pipeline_overlap_f8__hot/pipeline/soc_dev/c32t16: -1.56% to +0.00% over 8 layouts, cold/warm, e2e/kernel; the spread over the layouts 1.86% -> 0.78%
+  not distinguishable  ecg/ecg_pipeline_overlap_f8__hot/pipeline/soc_dev/c32t8: -1.37% to +0.02% over 8 layouts, cold/warm, e2e/kernel; the spread over the layouts 1.89% -> 1.15%
+  not distinguishable  ecg/ecg_pipeline_overlap_f8__hot/pipeline/soc_dev/c64t32: -0.49% to +0.00% over 8 layouts, cold/warm, e2e/kernel; the spread over the layouts 1.27% -> 1.64%
+  not distinguishable  ecg/ecg_pipeline_overlap_f8__hot/pipeline/soc_dev/c64t8: -0.64% to +0.00% over 8 layouts, cold/warm, e2e/kernel; the spread over the layouts 0.76% -> 0.6%
+  wins                 ecg/ecg_pipeline_v1__fir4/pipeline/soc_dev: -74.62% to -72.01% over 8 layouts, cold/warm, e2e/kernel; the spread over the layouts 0.53% -> 0.81%
+  wins                 ecg/ecg_pipeline_v1__fir4/pipeline/soc_dev/c128t16: -76.54% to -74.69% over 8 layouts, cold/warm, e2e/kernel; the spread over the layouts 0.47% -> 0.4%
+  wins                 ecg/ecg_pipeline_v1__fir4/pipeline/soc_dev/c128t32: -78.62% to -76.61% over 8 layouts, cold/warm, e2e/kernel; the spread over the layouts 0.46% -> 2.71%
+  wins                 ecg/ecg_pipeline_v1__fir4/pipeline/soc_dev/c128t8: -69.55% to -67.59% over 8 layouts, cold/warm, e2e/kernel; the spread over the layouts 0.43% -> 0.45%
+  wins                 ecg/ecg_pipeline_v1__fir4/pipeline/soc_dev/c16t8: -54.46% to -48.14% over 8 layouts, cold/warm, e2e/kernel; the spread over the layouts 0.94% -> 2.43%
+  wins                 ecg/ecg_pipeline_v1__fir4/pipeline/soc_dev/c32t16: -69.02% to -64.61% over 8 layouts, cold/warm, e2e/kernel; the spread over the layouts 1.12% -> 0.91%
+  wins                 ecg/ecg_pipeline_v1__fir4/pipeline/soc_dev/c32t8: -63.88% to -60.26% over 8 layouts, cold/warm, e2e/kernel; the spread over the layouts 0.8% -> 0.68%
+  wins                 ecg/ecg_pipeline_v1__fir4/pipeline/soc_dev/c64t32: -76.34% to -72.49% over 8 layouts, cold/warm, e2e/kernel; the spread over the layouts 0.58% -> 5.44%
+  wins                 ecg/ecg_pipeline_v1__fir4/pipeline/soc_dev/c64t8: -67.91% to -65.28% over 8 layouts, cold/warm, e2e/kernel; the spread over the layouts 0.54% -> 0.71%
+  wins                 ecg/ecg_pipeline_v1__fir4_copy/pipeline/soc_dev: -74.62% to -71.56% over 8 layouts, cold/warm, e2e/kernel; the spread over the layouts 0.53% -> 0.9%
+  wins                 ecg/ecg_pipeline_v1__fir4_copy/pipeline/soc_dev/c128t16: -76.56% to -73.81% over 8 layouts, cold/warm, e2e/kernel; the spread over the layouts 0.47% -> 1.8%
+  wins                 ecg/ecg_pipeline_v1__fir4_copy/pipeline/soc_dev/c128t32: -78.57% to -76.29% over 8 layouts, cold/warm, e2e/kernel; the spread over the layouts 0.46% -> 1.07%
+  wins                 ecg/ecg_pipeline_v1__fir4_copy/pipeline/soc_dev/c128t8: -69.57% to -66.60% over 8 layouts, cold/warm, e2e/kernel; the spread over the layouts 0.43% -> 1.65%
+  wins                 ecg/ecg_pipeline_v1__fir4_copy/pipeline/soc_dev/c16t8: -54.43% to -48.86% over 8 layouts, cold/warm, e2e/kernel; the spread over the layouts 0.94% -> 2.87%
+  wins                 ecg/ecg_pipeline_v1__fir4_copy/pipeline/soc_dev/c32t16: -69.01% to -64.12% over 8 layouts, cold/warm, e2e/kernel; the spread over the layouts 1.12% -> 1.73%
+  wins                 ecg/ecg_pipeline_v1__fir4_copy/pipeline/soc_dev/c32t8: -63.90% to -59.93% over 8 layouts, cold/warm, e2e/kernel; the spread over the layouts 0.8% -> 1.22%
+  wins                 ecg/ecg_pipeline_v1__fir4_copy/pipeline/soc_dev/c64t32: -76.32% to -72.26% over 8 layouts, cold/warm, e2e/kernel; the spread over the layouts 0.58% -> 4.54%
+  wins                 ecg/ecg_pipeline_v1__fir4_copy/pipeline/soc_dev/c64t8: -67.91% to -64.83% over 8 layouts, cold/warm, e2e/kernel; the spread over the layouts 0.54% -> 0.6%
+  wins                 ecg/ecg_pipeline_v1__fir4_hot/pipeline/soc_dev: -74.63% to -71.99% over 8 layouts, cold/warm, e2e/kernel; the spread over the layouts 0.53% -> 0.79%
+  wins                 ecg/ecg_pipeline_v1__fir4_hot/pipeline/soc_dev/c128t16: -76.55% to -74.69% over 8 layouts, cold/warm, e2e/kernel; the spread over the layouts 0.47% -> 0.41%
+  wins                 ecg/ecg_pipeline_v1__fir4_hot/pipeline/soc_dev/c128t32: -78.62% to -77.02% over 8 layouts, cold/warm, e2e/kernel; the spread over the layouts 0.46% -> 0.59%
+  wins                 ecg/ecg_pipeline_v1__fir4_hot/pipeline/soc_dev/c128t8: -69.55% to -67.58% over 8 layouts, cold/warm, e2e/kernel; the spread over the layouts 0.43% -> 0.43%
+  wins                 ecg/ecg_pipeline_v1__fir4_hot/pipeline/soc_dev/c16t8: -54.51% to -48.10% over 8 layouts, cold/warm, e2e/kernel; the spread over the layouts 0.94% -> 2.41%
+  wins                 ecg/ecg_pipeline_v1__fir4_hot/pipeline/soc_dev/c32t16: -69.02% to -64.59% over 8 layouts, cold/warm, e2e/kernel; the spread over the layouts 1.12% -> 0.99%
+  wins                 ecg/ecg_pipeline_v1__fir4_hot/pipeline/soc_dev/c32t8: -63.82% to -60.24% over 8 layouts, cold/warm, e2e/kernel; the spread over the layouts 0.8% -> 0.71%
+  wins                 ecg/ecg_pipeline_v1__fir4_hot/pipeline/soc_dev/c64t32: -76.32% to -73.58% over 8 layouts, cold/warm, e2e/kernel; the spread over the layouts 0.58% -> 0.71%
+  wins                 ecg/ecg_pipeline_v1__fir4_hot/pipeline/soc_dev/c64t8: -67.92% to -65.28% over 8 layouts, cold/warm, e2e/kernel; the spread over the layouts 0.54% -> 0.68%
+  not distinguishable  ecg/ecg_pipeline_v1__hot/pipeline/soc_dev: -0.03% to +0.03% over 8 layouts, cold/warm, e2e/kernel; the spread over the layouts 0.53% -> 0.54%
+  not distinguishable  ecg/ecg_pipeline_v1__hot/pipeline/soc_dev/c128t16: -0.02% to +0.03% over 8 layouts, cold/warm, e2e/kernel; the spread over the layouts 0.47% -> 0.5%
+  not distinguishable  ecg/ecg_pipeline_v1__hot/pipeline/soc_dev/c128t32: -0.01% to +0.02% over 8 layouts, cold/warm, e2e/kernel; the spread over the layouts 0.46% -> 0.46%
+  not distinguishable  ecg/ecg_pipeline_v1__hot/pipeline/soc_dev/c128t8: -0.02% to +0.03% over 8 layouts, cold/warm, e2e/kernel; the spread over the layouts 0.43% -> 0.43%
+  not distinguishable  ecg/ecg_pipeline_v1__hot/pipeline/soc_dev/c16t8: -0.05% to +0.06% over 8 layouts, cold/warm, e2e/kernel; the spread over the layouts 0.94% -> 0.94%
+  not distinguishable  ecg/ecg_pipeline_v1__hot/pipeline/soc_dev/c32t16: -0.02% to +0.06% over 8 layouts, cold/warm, e2e/kernel; the spread over the layouts 1.12% -> 1.12%
+  not distinguishable  ecg/ecg_pipeline_v1__hot/pipeline/soc_dev/c32t8: -0.04% to +0.07% over 8 layouts, cold/warm, e2e/kernel; the spread over the layouts 0.8% -> 0.81%
+  not distinguishable  ecg/ecg_pipeline_v1__hot/pipeline/soc_dev/c64t32: -0.01% to +0.03% over 8 layouts, cold/warm, e2e/kernel; the spread over the layouts 0.58% -> 0.56%
+  not distinguishable  ecg/ecg_pipeline_v1__hot/pipeline/soc_dev/c64t8: -0.02% to +0.03% over 8 layouts, cold/warm, e2e/kernel; the spread over the layouts 0.54% -> 0.53%
+  wins                 ecg/ecg_pipeline_v1_f8__fir4/pipeline/soc_dev: -73.19% to -70.75% over 8 layouts, cold/warm, e2e/kernel; the spread over the layouts 0.47% -> 0.37%
+  wins                 ecg/ecg_pipeline_v1_f8__fir4/pipeline/soc_dev/c128t16: -75.89% to -74.06% over 8 layouts, cold/warm, e2e/kernel; the spread over the layouts 2.86% -> 0.4%
+  wins                 ecg/ecg_pipeline_v1_f8__fir4/pipeline/soc_dev/c128t32: -78.10% to -76.08% over 8 layouts, cold/warm, e2e/kernel; the spread over the layouts 2.21% -> 2.86%
+  wins                 ecg/ecg_pipeline_v1_f8__fir4/pipeline/soc_dev/c128t8: -68.82% to -66.89% over 8 layouts, cold/warm, e2e/kernel; the spread over the layouts 2.81% -> 0.46%
+  wins                 ecg/ecg_pipeline_v1_f8__fir4/pipeline/soc_dev/c16t8: -49.50% to -43.95% over 8 layouts, cold/warm, e2e/kernel; the spread over the layouts 1.52% -> 2.26%
+  wins                 ecg/ecg_pipeline_v1_f8__fir4/pipeline/soc_dev/c32t16: -65.74% to -61.22% over 8 layouts, cold/warm, e2e/kernel; the spread over the layouts 1.39% -> 1.64%
+  wins                 ecg/ecg_pipeline_v1_f8__fir4/pipeline/soc_dev/c32t8: -61.03% to -57.76% over 8 layouts, cold/warm, e2e/kernel; the spread over the layouts 0.84% -> 0.54%
+  wins                 ecg/ecg_pipeline_v1_f8__fir4/pipeline/soc_dev/c64t32: -74.86% to -70.73% over 8 layouts, cold/warm, e2e/kernel; the spread over the layouts 0.48% -> 6.66%
+  wins                 ecg/ecg_pipeline_v1_f8__fir4/pipeline/soc_dev/c64t8: -66.45% to -63.95% over 8 layouts, cold/warm, e2e/kernel; the spread over the layouts 0.39% -> 0.76%
+  wins                 ecg/ecg_pipeline_v1_f8__fir4_copy/pipeline/soc_dev: -73.19% to -70.03% over 8 layouts, cold/warm, e2e/kernel; the spread over the layouts 0.47% -> 1.41%
+  wins                 ecg/ecg_pipeline_v1_f8__fir4_copy/pipeline/soc_dev/c128t16: -75.85% to -73.19% over 8 layouts, cold/warm, e2e/kernel; the spread over the layouts 2.86% -> 1.65%
+  wins                 ecg/ecg_pipeline_v1_f8__fir4_copy/pipeline/soc_dev/c128t32: -78.12% to -75.89% over 8 layouts, cold/warm, e2e/kernel; the spread over the layouts 2.21% -> 2.07%
+  wins                 ecg/ecg_pipeline_v1_f8__fir4_copy/pipeline/soc_dev/c128t8: -68.84% to -65.84% over 8 layouts, cold/warm, e2e/kernel; the spread over the layouts 2.81% -> 1.5%
+  wins                 ecg/ecg_pipeline_v1_f8__fir4_copy/pipeline/soc_dev/c16t8: -49.50% to -43.99% over 8 layouts, cold/warm, e2e/kernel; the spread over the layouts 1.52% -> 2.62%
+  wins                 ecg/ecg_pipeline_v1_f8__fir4_copy/pipeline/soc_dev/c32t16: -65.71% to -61.26% over 8 layouts, cold/warm, e2e/kernel; the spread over the layouts 1.39% -> 1.61%
+  wins                 ecg/ecg_pipeline_v1_f8__fir4_copy/pipeline/soc_dev/c32t8: -61.02% to -57.36% over 8 layouts, cold/warm, e2e/kernel; the spread over the layouts 0.84% -> 1.15%
+  wins                 ecg/ecg_pipeline_v1_f8__fir4_copy/pipeline/soc_dev/c64t32: -74.86% to -71.03% over 8 layouts, cold/warm, e2e/kernel; the spread over the layouts 0.48% -> 5.19%
+  wins                 ecg/ecg_pipeline_v1_f8__fir4_copy/pipeline/soc_dev/c64t8: -66.44% to -63.47% over 8 layouts, cold/warm, e2e/kernel; the spread over the layouts 0.39% -> 0.84%
+  wins                 ecg/ecg_pipeline_v1_f8__fir4_hot/pipeline/soc_dev: -73.19% to -70.74% over 8 layouts, cold/warm, e2e/kernel; the spread over the layouts 0.47% -> 0.36%
+  wins                 ecg/ecg_pipeline_v1_f8__fir4_hot/pipeline/soc_dev/c128t16: -75.89% to -74.08% over 8 layouts, cold/warm, e2e/kernel; the spread over the layouts 2.86% -> 0.4%
+  wins                 ecg/ecg_pipeline_v1_f8__fir4_hot/pipeline/soc_dev/c128t32: -78.10% to -76.56% over 8 layouts, cold/warm, e2e/kernel; the spread over the layouts 2.21% -> 0.37%
+  wins                 ecg/ecg_pipeline_v1_f8__fir4_hot/pipeline/soc_dev/c128t8: -68.82% to -66.89% over 8 layouts, cold/warm, e2e/kernel; the spread over the layouts 2.81% -> 0.33%
+  wins                 ecg/ecg_pipeline_v1_f8__fir4_hot/pipeline/soc_dev/c16t8: -49.50% to -43.92% over 8 layouts, cold/warm, e2e/kernel; the spread over the layouts 1.52% -> 2.23%
+  wins                 ecg/ecg_pipeline_v1_f8__fir4_hot/pipeline/soc_dev/c32t16: -65.72% to -61.23% over 8 layouts, cold/warm, e2e/kernel; the spread over the layouts 1.39% -> 1.66%
+  wins                 ecg/ecg_pipeline_v1_f8__fir4_hot/pipeline/soc_dev/c32t8: -61.03% to -57.72% over 8 layouts, cold/warm, e2e/kernel; the spread over the layouts 0.84% -> 0.59%
+  wins                 ecg/ecg_pipeline_v1_f8__fir4_hot/pipeline/soc_dev/c64t32: -74.86% to -72.16% over 8 layouts, cold/warm, e2e/kernel; the spread over the layouts 0.48% -> 0.94%
+  wins                 ecg/ecg_pipeline_v1_f8__fir4_hot/pipeline/soc_dev/c64t8: -66.44% to -63.91% over 8 layouts, cold/warm, e2e/kernel; the spread over the layouts 0.39% -> 0.71%
+  not distinguishable  ecg/ecg_pipeline_v1_f8__hot/pipeline/soc_dev: -0.04% to +0.04% over 8 layouts, cold/warm, e2e/kernel; the spread over the layouts 0.47% -> 0.46%
+  not distinguishable  ecg/ecg_pipeline_v1_f8__hot/pipeline/soc_dev/c128t16: -0.02% to +0.02% over 8 layouts, cold/warm, e2e/kernel; the spread over the layouts 2.86% -> 2.87%
+  not distinguishable  ecg/ecg_pipeline_v1_f8__hot/pipeline/soc_dev/c128t32: -0.01% to +0.02% over 8 layouts, cold/warm, e2e/kernel; the spread over the layouts 2.21% -> 2.2%
+  not distinguishable  ecg/ecg_pipeline_v1_f8__hot/pipeline/soc_dev/c128t8: -0.02% to +0.04% over 8 layouts, cold/warm, e2e/kernel; the spread over the layouts 2.81% -> 2.81%
+  not distinguishable  ecg/ecg_pipeline_v1_f8__hot/pipeline/soc_dev/c16t8: -0.02% to +0.04% over 8 layouts, cold/warm, e2e/kernel; the spread over the layouts 1.52% -> 1.55%
+  not distinguishable  ecg/ecg_pipeline_v1_f8__hot/pipeline/soc_dev/c32t16: -0.04% to +0.05% over 8 layouts, cold/warm, e2e/kernel; the spread over the layouts 1.39% -> 1.44%
+  not distinguishable  ecg/ecg_pipeline_v1_f8__hot/pipeline/soc_dev/c32t8: -0.03% to +0.04% over 8 layouts, cold/warm, e2e/kernel; the spread over the layouts 0.84% -> 0.83%
+  not distinguishable  ecg/ecg_pipeline_v1_f8__hot/pipeline/soc_dev/c64t32: -0.02% to +0.05% over 8 layouts, cold/warm, e2e/kernel; the spread over the layouts 0.48% -> 0.51%
+  not distinguishable  ecg/ecg_pipeline_v1_f8__hot/pipeline/soc_dev/c64t8: -0.02% to +0.04% over 8 layouts, cold/warm, e2e/kernel; the spread over the layouts 0.39% -> 0.4%
+  not distinguishable  ecg/ecg_scalar__hot/scalar/soc_dev: -0.01% to +0.01% over 8 layouts, cold/warm, e2e/kernel; the spread over the layouts 0.06% -> 0.06%
+  not distinguishable  ecg/ecg_scalar__hot/scalar/soc_dev/c128t16: -0.00% to +0.01% over 8 layouts, cold/warm, e2e/kernel; the spread over the layouts 15.09% -> 15.09%
+  not distinguishable  ecg/ecg_scalar__hot/scalar/soc_dev/c128t32: -0.00% to +0.00% over 8 layouts, cold/warm, e2e/kernel; the spread over the layouts 0.76% -> 0.76%
+  not distinguishable  ecg/ecg_scalar__hot/scalar/soc_dev/c128t8: -0.01% to +0.01% over 8 layouts, cold/warm, e2e/kernel; the spread over the layouts 0.07% -> 0.07%
+  not distinguishable  ecg/ecg_scalar__hot/scalar/soc_dev/c16t8: -0.02% to +0.01% over 8 layouts, cold/warm, e2e/kernel; the spread over the layouts 0.41% -> 0.42%
+  not distinguishable  ecg/ecg_scalar__hot/scalar/soc_dev/c32t16: -0.02% to +0.01% over 8 layouts, cold/warm, e2e/kernel; the spread over the layouts 0.22% -> 0.21%
+  not distinguishable  ecg/ecg_scalar__hot/scalar/soc_dev/c32t8: -0.01% to +0.01% over 8 layouts, cold/warm, e2e/kernel; the spread over the layouts 0.43% -> 0.42%
+  not distinguishable  ecg/ecg_scalar__hot/scalar/soc_dev/c64t32: -0.00% to +0.01% over 8 layouts, cold/warm, e2e/kernel; the spread over the layouts 0.06% -> 0.06%
+  not distinguishable  ecg/ecg_scalar__hot/scalar/soc_dev/c64t8: -0.01% to +0.00% over 8 layouts, cold/warm, e2e/kernel; the spread over the layouts 0.09% -> 0.09%
+  not distinguishable  ecg/ecg_scalar_f8__hot/scalar/soc_dev: -0.01% to +0.01% over 8 layouts, cold/warm, e2e/kernel; the spread over the layouts 0.07% -> 0.07%
+  not distinguishable  ecg/ecg_scalar_f8__hot/scalar/soc_dev/c128t16: -0.01% to +0.01% over 8 layouts, cold/warm, e2e/kernel; the spread over the layouts 5.29% -> 5.29%
+  not distinguishable  ecg/ecg_scalar_f8__hot/scalar/soc_dev/c128t32: -0.01% to +0.01% over 8 layouts, cold/warm, e2e/kernel; the spread over the layouts 2.53% -> 2.53%
+  not distinguishable  ecg/ecg_scalar_f8__hot/scalar/soc_dev/c128t8: -0.01% to +0.01% over 8 layouts, cold/warm, e2e/kernel; the spread over the layouts 0.08% -> 0.08%
+  not distinguishable  ecg/ecg_scalar_f8__hot/scalar/soc_dev/c16t8: -0.01% to +0.01% over 8 layouts, cold/warm, e2e/kernel; the spread over the layouts 0.35% -> 0.37%
+  not distinguishable  ecg/ecg_scalar_f8__hot/scalar/soc_dev/c32t16: -0.01% to +0.01% over 8 layouts, cold/warm, e2e/kernel; the spread over the layouts 0.21% -> 0.21%
+  not distinguishable  ecg/ecg_scalar_f8__hot/scalar/soc_dev/c32t8: -0.01% to +0.01% over 8 layouts, cold/warm, e2e/kernel; the spread over the layouts 0.18% -> 0.19%
+  not distinguishable  ecg/ecg_scalar_f8__hot/scalar/soc_dev/c64t32: -0.00% to +0.00% over 8 layouts, cold/warm, e2e/kernel; the spread over the layouts 0.07% -> 0.06%
+  not distinguishable  ecg/ecg_scalar_f8__hot/scalar/soc_dev/c64t8: -0.01% to +0.02% over 8 layouts, cold/warm, e2e/kernel; the spread over the layouts 0.24% -> 0.24%
+  wins                 ml/cifar_cnn_npu_direct__2h/npu_direct/soc_dev: -44.44% to -44.35% over 8 layouts, cold/warm, e2e; the spread over the layouts 0.11% -> 0.07%
+  wins                 ml/cifar_cnn_npu_direct__2h_copy/npu_direct/soc_dev: -45.13% to -44.91% over 8 layouts, cold/warm, e2e; the spread over the layouts 0.11% -> 0.36%
+  wins                 ml/cifar_cnn_npu_direct__2h_copy_hot/npu_direct/soc_dev: -45.13% to -44.92% over 8 layouts, cold/warm, e2e; the spread over the layouts 0.11% -> 0.35%
+  wins                 ml/cifar_cnn_npu_direct__2h_hot/npu_direct/soc_dev: -44.44% to -44.35% over 8 layouts, cold/warm, e2e; the spread over the layouts 0.11% -> 0.07%
+  wins                 ml/cifar_cnn_npu_direct__2h_next/npu_direct/soc_dev: -45.17% to -45.07% over 8 layouts, cold/warm, e2e; the spread over the layouts 0.11% -> 0.15%
+  not distinguishable  ml/cifar_cnn_npu_direct__hot/npu_direct/soc_dev: -0.00% to +0.00% over 8 layouts, cold/warm, e2e/kernel; the spread over the layouts 0.11% -> 0.11%
+  wins                 ml/cifar_cnn_npu_im2col__2h/npu_im2col/soc_dev: -45.96% to -45.82% over 8 layouts, cold/warm, e2e; the spread over the layouts 0.2% -> 0.18%
+  wins                 ml/cifar_cnn_npu_im2col__2h_copy/npu_im2col/soc_dev: -46.39% to -46.25% over 8 layouts, cold/warm, e2e; the spread over the layouts 0.2% -> 0.14%
+  wins                 ml/cifar_cnn_npu_im2col__2h_copy_hot/npu_im2col/soc_dev: -46.40% to -46.25% over 8 layouts, cold/warm, e2e; the spread over the layouts 0.2% -> 0.15%
+  wins                 ml/cifar_cnn_npu_im2col__2h_hot/npu_im2col/soc_dev: -45.96% to -45.82% over 8 layouts, cold/warm, e2e; the spread over the layouts 0.2% -> 0.18%
+  wins                 ml/cifar_cnn_npu_im2col__2h_next/npu_im2col/soc_dev: -46.47% to -46.33% over 8 layouts, cold/warm, e2e; the spread over the layouts 0.2% -> 0.1%
+  not distinguishable  ml/cifar_cnn_npu_im2col__hot/npu_im2col/soc_dev: +0.00% to +0.00% over 8 layouts, cold/warm, e2e/kernel; the spread over the layouts 2.43% -> 2.43%
+  wins                 ml/mnist_mlp_npu__2h/npu/soc_dev: -10.71% to -7.25% over 8 layouts, cold/warm, e2e; the spread over the layouts 3.49% -> 1.28%
+  wins                 ml/mnist_mlp_npu__2h_hot/npu/soc_dev: -10.71% to -7.98% over 8 layouts, cold/warm, e2e; the spread over the layouts 3.49% -> 1.14%
+  not distinguishable  ml/mnist_mlp_npu__hot/npu/soc_dev: +0.00% to +0.01% over 8 layouts, cold/warm, e2e/kernel; the spread over the layouts 3.49% -> 3.49%
+  wins                 ml/mnist_mlp_npu_batched__2h32/npu/soc_dev: -32.66% to -31.64% over 8 layouts, cold/warm, e2e; the spread over the layouts 0.11% -> 0.41%
+  wins                 ml/mnist_mlp_npu_batched__2h4/npu/soc_dev: -17.93% to -16.51% over 8 layouts, cold/warm, e2e; the spread over the layouts 0.34% -> 0.93%
+  wins                 ml/mnist_mlp_npu_batched__2h8/npu/soc_dev: -25.68% to -24.43% over 8 layouts, cold/warm, e2e; the spread over the layouts 0.58% -> 0.66%
+  wins                 ml/mnist_mlp_npu_batched__2h_hot32/npu/soc_dev: -32.75% to -31.75% over 8 layouts, cold/warm, e2e; the spread over the layouts 0.11% -> 0.34%
+  wins                 ml/mnist_mlp_npu_batched__2h_hot4/npu/soc_dev: -17.93% to -17.24% over 8 layouts, cold/warm, e2e; the spread over the layouts 0.34% -> 0.09%
+  wins                 ml/mnist_mlp_npu_batched__2h_hot8/npu/soc_dev: -25.73% to -24.84% over 8 layouts, cold/warm, e2e; the spread over the layouts 0.58% -> 0.6%
+  not distinguishable  ml/mnist_mlp_npu_batched__hot1/npu/soc_dev: +0.00% to +0.01% over 8 layouts, cold/warm, e2e/kernel; the spread over the layouts 1.07% -> 1.07%
+  not distinguishable  ml/mnist_mlp_npu_batched__hot32/npu/soc_dev: -0.01% to +0.00% over 8 layouts, cold/warm, e2e/kernel; the spread over the layouts 0.11% -> 0.11%
+  not distinguishable  ml/mnist_mlp_npu_batched__hot4/npu/soc_dev: -0.00% to +0.01% over 8 layouts, cold/warm, e2e/kernel; the spread over the layouts 0.34% -> 0.34%
+  not distinguishable  ml/mnist_mlp_npu_batched__hot8/npu/soc_dev: -0.01% to +0.03% over 8 layouts, cold/warm, e2e/kernel; the spread over the layouts 0.58% -> 0.58%
+  stacked loses                coherence/atomic_add__split_hot/multicore/soc_dev/n1024 against atomic_add__split: +0.19% to +0.70% over 8 layouts
+  stacked not distinguishable  coherence/atomic_add__split_hot/multicore/soc_dev/n2 against atomic_add__split: +0.00% to +21.74% over 8 layouts
+  stacked not distinguishable  coherence/cas_counter__split_hot/multicore/soc_dev/n2 against cas_counter__split: +0.00% to +10.67% over 8 layouts
+  stacked wins                 ml/cifar_cnn_npu_direct__2h_copy/npu_direct/soc_dev against cifar_cnn_npu_direct__2h: -1.30% to -0.98% over 8 layouts
+  stacked not distinguishable  ml/cifar_cnn_npu_direct__2h_copy_hot/npu_direct/soc_dev against cifar_cnn_npu_direct__2h_copy: -0.02% to +0.00% over 8 layouts
+  stacked not distinguishable  ml/cifar_cnn_npu_direct__2h_hot/npu_direct/soc_dev against cifar_cnn_npu_direct__2h: -0.00% to +0.00% over 8 layouts
+  stacked not distinguishable  ml/cifar_cnn_npu_direct__2h_next/npu_direct/soc_dev against cifar_cnn_npu_direct__2h_copy: -0.40% to +0.04% over 8 layouts
+  stacked wins                 ml/cifar_cnn_npu_im2col__2h_copy/npu_im2col/soc_dev against cifar_cnn_npu_im2col__2h: -0.93% to -0.66% over 8 layouts
+  stacked not distinguishable  ml/cifar_cnn_npu_im2col__2h_copy_hot/npu_im2col/soc_dev against cifar_cnn_npu_im2col__2h_copy: -0.01% to +0.00% over 8 layouts
+  stacked not distinguishable  ml/cifar_cnn_npu_im2col__2h_hot/npu_im2col/soc_dev against cifar_cnn_npu_im2col__2h: -0.01% to +0.00% over 8 layouts
+  stacked wins                 ml/cifar_cnn_npu_im2col__2h_next/npu_im2col/soc_dev against cifar_cnn_npu_im2col__2h_copy: -0.21% to -0.02% over 8 layouts
+  stacked not distinguishable  dsp/conv2d_direct_npu__2h_hot/npu_direct/soc_dev against conv2d_direct_npu__2h: -0.06% to +0.02% over 8 layouts
+  stacked not distinguishable  dsp/conv2d_direct_npu__2h_hot/npu_direct/soc_dev/seed2468ace0 against conv2d_direct_npu__2h: -0.10% to +0.02% over 8 layouts
+  stacked not distinguishable  dsp/conv2d_direct_npu__2h_hot/npu_direct/soc_dev/seed9e3779b9 against conv2d_direct_npu__2h: -0.10% to +0.02% over 8 layouts
+  stacked not distinguishable  dsp/conv2d_im2col_npu__2h_hot/npu_im2col/soc_dev against conv2d_im2col_npu__2h: -0.02% to +0.01% over 8 layouts
+  stacked not distinguishable  dsp/conv2d_im2col_npu__2h_hot/npu_im2col/soc_dev/seed2468ace0 against conv2d_im2col_npu__2h: -0.00% to +0.00% over 8 layouts
+  stacked not distinguishable  dsp/conv2d_im2col_npu__2h_hot/npu_im2col/soc_dev/seed9e3779b9 against conv2d_im2col_npu__2h: -0.00% to +0.00% over 8 layouts
+  stacked not distinguishable  dsp/dot__split_hot/multicore/soc_dev/k0 against dot__split: +0.00% to +8.00% over 8 layouts
+  stacked not distinguishable  dsp/dot__split_hot/multicore/soc_dev/k0/seed2468ace0 against dot__split: +0.00% to +0.00% over 8 layouts
+  stacked not distinguishable  dsp/dot__split_hot/multicore/soc_dev/k0/seed9e3779b9 against dot__split: +0.00% to +0.00% over 8 layouts
+  stacked not distinguishable  dsp/dot__split_hot/multicore/soc_dev/k1 against dot__split: +0.00% to +6.54% over 8 layouts
+  stacked not distinguishable  dsp/dot__split_hot/multicore/soc_dev/k1/seed2468ace0 against dot__split: +0.00% to +0.00% over 8 layouts
+  stacked not distinguishable  dsp/dot__split_hot/multicore/soc_dev/k1/seed9e3779b9 against dot__split: +0.00% to +0.00% over 8 layouts
+  stacked not distinguishable  dsp/dot__split_hot/multicore/soc_dev/k7 against dot__split: +0.00% to +4.57% over 8 layouts
+  stacked not distinguishable  dsp/dot__split_hot/multicore/soc_dev/k7/seed2468ace0 against dot__split: +0.00% to +0.00% over 8 layouts
+  stacked not distinguishable  dsp/dot__split_hot/multicore/soc_dev/k7/seed9e3779b9 against dot__split: +0.00% to +0.00% over 8 layouts
+  stacked not distinguishable  dsp/dot__split_hot/multicore/soc_dev/k8 against dot__split: +0.00% to +4.35% over 8 layouts
+  stacked not distinguishable  dsp/dot__split_hot/multicore/soc_dev/k8/seed2468ace0 against dot__split: +0.00% to +0.00% over 8 layouts
+  stacked not distinguishable  dsp/dot__split_hot/multicore/soc_dev/k8/seed9e3779b9 against dot__split: +0.00% to +0.00% over 8 layouts
+  stacked not distinguishable  ecg/ecg_dot8__fir4_copy/dot8/soc_dev against ecg_dot8__fir4: -0.11% to +10.68% over 8 layouts
+  stacked not distinguishable  ecg/ecg_dot8__fir4_copy/dot8/soc_dev/c128t16 against ecg_dot8__fir4: -0.06% to +3.41% over 8 layouts
+  stacked not distinguishable  ecg/ecg_dot8__fir4_copy/dot8/soc_dev/c128t32 against ecg_dot8__fir4: -0.52% to +3.40% over 8 layouts
+  stacked not distinguishable  ecg/ecg_dot8__fir4_copy/dot8/soc_dev/c128t8 against ecg_dot8__fir4: -0.88% to +3.63% over 8 layouts
+  stacked not distinguishable  ecg/ecg_dot8__fir4_copy/dot8/soc_dev/c16t8 against ecg_dot8__fir4: -0.11% to +28.37% over 8 layouts
+  stacked not distinguishable  ecg/ecg_dot8__fir4_copy/dot8/soc_dev/c32t16 against ecg_dot8__fir4: -0.10% to +22.77% over 8 layouts
+  stacked not distinguishable  ecg/ecg_dot8__fir4_copy/dot8/soc_dev/c32t8 against ecg_dot8__fir4: -1.20% to +17.19% over 8 layouts
+  stacked not distinguishable  ecg/ecg_dot8__fir4_copy/dot8/soc_dev/c64t32 against ecg_dot8__fir4: -0.03% to +10.92% over 8 layouts
+  stacked not distinguishable  ecg/ecg_dot8__fir4_copy/dot8/soc_dev/c64t8 against ecg_dot8__fir4: -0.09% to +10.34% over 8 layouts
+  stacked not distinguishable  ecg/ecg_dot8__fir4_hot/dot8/soc_dev against ecg_dot8__fir4: -0.06% to +0.00% over 8 layouts
+  stacked not distinguishable  ecg/ecg_dot8__fir4_hot/dot8/soc_dev/c128t16 against ecg_dot8__fir4: -0.06% to +0.01% over 8 layouts
+  stacked not distinguishable  ecg/ecg_dot8__fir4_hot/dot8/soc_dev/c128t32 against ecg_dot8__fir4: -0.02% to +0.00% over 8 layouts
+  stacked not distinguishable  ecg/ecg_dot8__fir4_hot/dot8/soc_dev/c128t8 against ecg_dot8__fir4: -0.04% to +0.00% over 8 layouts
+  stacked not distinguishable  ecg/ecg_dot8__fir4_hot/dot8/soc_dev/c16t8 against ecg_dot8__fir4: -0.05% to +0.00% over 8 layouts
+  stacked not distinguishable  ecg/ecg_dot8__fir4_hot/dot8/soc_dev/c32t16 against ecg_dot8__fir4: -0.06% to +0.00% over 8 layouts
+  stacked not distinguishable  ecg/ecg_dot8__fir4_hot/dot8/soc_dev/c32t8 against ecg_dot8__fir4: -0.06% to +0.00% over 8 layouts
+  stacked not distinguishable  ecg/ecg_dot8__fir4_hot/dot8/soc_dev/c64t32 against ecg_dot8__fir4: -0.04% to +0.02% over 8 layouts
+  stacked not distinguishable  ecg/ecg_dot8__fir4_hot/dot8/soc_dev/c64t8 against ecg_dot8__fir4: -0.04% to +0.00% over 8 layouts
+  stacked not distinguishable  ecg/ecg_dot8_f8__fir4_copy/dot8/soc_dev against ecg_dot8_f8__fir4: -0.01% to +9.42% over 8 layouts
+  stacked not distinguishable  ecg/ecg_dot8_f8__fir4_copy/dot8/soc_dev/c128t16 against ecg_dot8_f8__fir4: -0.55% to +3.50% over 8 layouts
+  stacked not distinguishable  ecg/ecg_dot8_f8__fir4_copy/dot8/soc_dev/c128t32 against ecg_dot8_f8__fir4: -1.21% to +3.27% over 8 layouts
+  stacked not distinguishable  ecg/ecg_dot8_f8__fir4_copy/dot8/soc_dev/c128t8 against ecg_dot8_f8__fir4: -0.19% to +3.47% over 8 layouts
+  stacked not distinguishable  ecg/ecg_dot8_f8__fir4_copy/dot8/soc_dev/c16t8 against ecg_dot8_f8__fir4: -0.01% to +23.17% over 8 layouts
+  stacked not distinguishable  ecg/ecg_dot8_f8__fir4_copy/dot8/soc_dev/c32t16 against ecg_dot8_f8__fir4: -0.66% to +17.70% over 8 layouts
+  stacked not distinguishable  ecg/ecg_dot8_f8__fir4_copy/dot8/soc_dev/c32t8 against ecg_dot8_f8__fir4: -0.29% to +16.83% over 8 layouts
+  stacked not distinguishable  ecg/ecg_dot8_f8__fir4_copy/dot8/soc_dev/c64t32 against ecg_dot8_f8__fir4: -0.01% to +9.94% over 8 layouts
+  stacked not distinguishable  ecg/ecg_dot8_f8__fir4_copy/dot8/soc_dev/c64t8 against ecg_dot8_f8__fir4: -0.02% to +8.12% over 8 layouts
+  stacked not distinguishable  ecg/ecg_dot8_f8__fir4_hot/dot8/soc_dev against ecg_dot8_f8__fir4: -0.05% to +0.00% over 8 layouts
+  stacked not distinguishable  ecg/ecg_dot8_f8__fir4_hot/dot8/soc_dev/c128t16 against ecg_dot8_f8__fir4: -0.08% to +0.00% over 8 layouts
+  stacked not distinguishable  ecg/ecg_dot8_f8__fir4_hot/dot8/soc_dev/c128t32 against ecg_dot8_f8__fir4: -0.03% to +0.02% over 8 layouts
+  stacked not distinguishable  ecg/ecg_dot8_f8__fir4_hot/dot8/soc_dev/c128t8 against ecg_dot8_f8__fir4: -0.05% to +0.00% over 8 layouts
+  stacked not distinguishable  ecg/ecg_dot8_f8__fir4_hot/dot8/soc_dev/c16t8 against ecg_dot8_f8__fir4: -0.04% to +0.00% over 8 layouts
+  stacked not distinguishable  ecg/ecg_dot8_f8__fir4_hot/dot8/soc_dev/c32t16 against ecg_dot8_f8__fir4: -0.05% to +0.00% over 8 layouts
+  stacked not distinguishable  ecg/ecg_dot8_f8__fir4_hot/dot8/soc_dev/c32t8 against ecg_dot8_f8__fir4: -0.04% to +0.01% over 8 layouts
+  stacked not distinguishable  ecg/ecg_dot8_f8__fir4_hot/dot8/soc_dev/c64t32 against ecg_dot8_f8__fir4: -0.06% to +0.01% over 8 layouts
+  stacked not distinguishable  ecg/ecg_dot8_f8__fir4_hot/dot8/soc_dev/c64t8 against ecg_dot8_f8__fir4: -0.06% to +0.01% over 8 layouts
+  stacked not distinguishable  ecg/ecg_pipeline_overlap__fir4_copy/pipeline/soc_dev against ecg_pipeline_overlap__fir4: -0.53% to +3.47% over 8 layouts
+  stacked not distinguishable  ecg/ecg_pipeline_overlap__fir4_copy/pipeline/soc_dev/c128t16 against ecg_pipeline_overlap__fir4: +0.00% to +6.11% over 8 layouts
+  stacked not distinguishable  ecg/ecg_pipeline_overlap__fir4_copy/pipeline/soc_dev/c128t32 against ecg_pipeline_overlap__fir4: -0.00% to +4.69% over 8 layouts
+  stacked not distinguishable  ecg/ecg_pipeline_overlap__fir4_copy/pipeline/soc_dev/c128t8 against ecg_pipeline_overlap__fir4: -0.03% to +4.70% over 8 layouts
+  stacked not distinguishable  ecg/ecg_pipeline_overlap__fir4_copy/pipeline/soc_dev/c16t8 against ecg_pipeline_overlap__fir4: -1.80% to +0.53% over 8 layouts
+  stacked not distinguishable  ecg/ecg_pipeline_overlap__fir4_copy/pipeline/soc_dev/c32t16 against ecg_pipeline_overlap__fir4: -0.88% to +2.28% over 8 layouts
+  stacked not distinguishable  ecg/ecg_pipeline_overlap__fir4_copy/pipeline/soc_dev/c32t8 against ecg_pipeline_overlap__fir4: -0.65% to +1.75% over 8 layouts
+  stacked not distinguishable  ecg/ecg_pipeline_overlap__fir4_copy/pipeline/soc_dev/c64t32 against ecg_pipeline_overlap__fir4: -0.78% to +3.60% over 8 layouts
+  stacked not distinguishable  ecg/ecg_pipeline_overlap__fir4_copy/pipeline/soc_dev/c64t8 against ecg_pipeline_overlap__fir4: -0.69% to +2.52% over 8 layouts
+  stacked not distinguishable  ecg/ecg_pipeline_overlap__fir4_copy_hot/pipeline/soc_dev/c16t8 against ecg_pipeline_overlap__fir4_copy: -2.14% to +0.01% over 8 layouts
+  stacked not distinguishable  ecg/ecg_pipeline_overlap__fir4_hot/pipeline/soc_dev against ecg_pipeline_overlap__fir4: -0.14% to +0.14% over 8 layouts
+  stacked not distinguishable  ecg/ecg_pipeline_overlap__fir4_hot/pipeline/soc_dev/c128t16 against ecg_pipeline_overlap__fir4: -0.17% to +0.01% over 8 layouts
+  stacked not distinguishable  ecg/ecg_pipeline_overlap__fir4_hot/pipeline/soc_dev/c128t32 against ecg_pipeline_overlap__fir4: -0.25% to +0.01% over 8 layouts
+  stacked not distinguishable  ecg/ecg_pipeline_overlap__fir4_hot/pipeline/soc_dev/c128t8 against ecg_pipeline_overlap__fir4: -0.05% to +0.13% over 8 layouts
+  stacked not distinguishable  ecg/ecg_pipeline_overlap__fir4_hot/pipeline/soc_dev/c16t8 against ecg_pipeline_overlap__fir4: -0.03% to +0.08% over 8 layouts
+  stacked not distinguishable  ecg/ecg_pipeline_overlap__fir4_hot/pipeline/soc_dev/c32t16 against ecg_pipeline_overlap__fir4: -0.13% to +0.15% over 8 layouts
+  stacked not distinguishable  ecg/ecg_pipeline_overlap__fir4_hot/pipeline/soc_dev/c32t8 against ecg_pipeline_overlap__fir4: -0.05% to +0.07% over 8 layouts
+  stacked not distinguishable  ecg/ecg_pipeline_overlap__fir4_hot/pipeline/soc_dev/c64t32 against ecg_pipeline_overlap__fir4: -0.32% to +0.08% over 8 layouts
+  stacked not distinguishable  ecg/ecg_pipeline_overlap__fir4_hot/pipeline/soc_dev/c64t8 against ecg_pipeline_overlap__fir4: -0.05% to +0.12% over 8 layouts
+  stacked wins                 ecg/ecg_pipeline_overlap__fir4_split/pipeline/soc_dev against ecg_pipeline_overlap__fir4: -11.77% to -0.51% over 8 layouts
+  stacked not distinguishable  ecg/ecg_pipeline_overlap__fir4_split/pipeline/soc_dev/c128t16 against ecg_pipeline_overlap__fir4: -6.93% to +0.42% over 8 layouts
+  stacked loses                ecg/ecg_pipeline_overlap__fir4_split/pipeline/soc_dev/c128t32 against ecg_pipeline_overlap__fir4: +0.92% to +4.81% over 8 layouts
+  stacked not distinguishable  ecg/ecg_pipeline_overlap__fir4_split/pipeline/soc_dev/c128t8 against ecg_pipeline_overlap__fir4: -5.09% to +0.39% over 8 layouts
+  stacked wins                 ecg/ecg_pipeline_overlap__fir4_split/pipeline/soc_dev/c16t8 against ecg_pipeline_overlap__fir4: -21.18% to -2.29% over 8 layouts
+  stacked wins                 ecg/ecg_pipeline_overlap__fir4_split/pipeline/soc_dev/c32t16 against ecg_pipeline_overlap__fir4: -19.32% to -1.52% over 8 layouts
+  stacked wins                 ecg/ecg_pipeline_overlap__fir4_split/pipeline/soc_dev/c32t8 against ecg_pipeline_overlap__fir4: -13.91% to -1.05% over 8 layouts
+  stacked loses                ecg/ecg_pipeline_overlap__fir4_split/pipeline/soc_dev/c64t32 against ecg_pipeline_overlap__fir4: +1.79% to +4.88% over 8 layouts
+  stacked wins                 ecg/ecg_pipeline_overlap__fir4_split/pipeline/soc_dev/c64t8 against ecg_pipeline_overlap__fir4: -9.04% to -0.34% over 8 layouts
+  stacked not distinguishable  ecg/ecg_pipeline_overlap__fir4_split_hot/pipeline/soc_dev against ecg_pipeline_overlap__fir4_split: -0.11% to +0.19% over 8 layouts
+  stacked not distinguishable  ecg/ecg_pipeline_overlap__fir4_split_hot/pipeline/soc_dev/c16t8 against ecg_pipeline_overlap__fir4_split: -0.06% to +0.04% over 8 layouts
+  stacked not distinguishable  ecg/ecg_pipeline_overlap__fir4_split_hot/pipeline/soc_dev/c32t16 against ecg_pipeline_overlap__fir4_split: -0.14% to +0.23% over 8 layouts
+  stacked not distinguishable  ecg/ecg_pipeline_overlap__fir4_split_hot/pipeline/soc_dev/c32t8 against ecg_pipeline_overlap__fir4_split: -0.08% to +0.05% over 8 layouts
+  stacked not distinguishable  ecg/ecg_pipeline_overlap__fir4_split_hot/pipeline/soc_dev/c64t8 against ecg_pipeline_overlap__fir4_split: -0.05% to +0.06% over 8 layouts
+  stacked not distinguishable  ecg/ecg_pipeline_overlap_f8__fir4_copy/pipeline/soc_dev against ecg_pipeline_overlap_f8__fir4: -0.43% to +4.47% over 8 layouts
+  stacked not distinguishable  ecg/ecg_pipeline_overlap_f8__fir4_copy/pipeline/soc_dev/c128t16 against ecg_pipeline_overlap_f8__fir4: -0.06% to +5.96% over 8 layouts
+  stacked not distinguishable  ecg/ecg_pipeline_overlap_f8__fir4_copy/pipeline/soc_dev/c128t32 against ecg_pipeline_overlap_f8__fir4: -0.24% to +4.75% over 8 layouts
+  stacked not distinguishable  ecg/ecg_pipeline_overlap_f8__fir4_copy/pipeline/soc_dev/c128t8 against ecg_pipeline_overlap_f8__fir4: -0.14% to +4.53% over 8 layouts
+  stacked not distinguishable  ecg/ecg_pipeline_overlap_f8__fir4_copy/pipeline/soc_dev/c16t8 against ecg_pipeline_overlap_f8__fir4: -3.45% to +0.34% over 8 layouts
+  stacked not distinguishable  ecg/ecg_pipeline_overlap_f8__fir4_copy/pipeline/soc_dev/c32t16 against ecg_pipeline_overlap_f8__fir4: -0.70% to +2.78% over 8 layouts
+  stacked not distinguishable  ecg/ecg_pipeline_overlap_f8__fir4_copy/pipeline/soc_dev/c32t8 against ecg_pipeline_overlap_f8__fir4: -0.49% to +1.50% over 8 layouts
+  stacked not distinguishable  ecg/ecg_pipeline_overlap_f8__fir4_copy/pipeline/soc_dev/c64t32 against ecg_pipeline_overlap_f8__fir4: -0.97% to +3.47% over 8 layouts
+  stacked not distinguishable  ecg/ecg_pipeline_overlap_f8__fir4_copy/pipeline/soc_dev/c64t8 against ecg_pipeline_overlap_f8__fir4: -1.25% to +2.86% over 8 layouts
+  stacked not distinguishable  ecg/ecg_pipeline_overlap_f8__fir4_copy_hot/pipeline/soc_dev/c16t8 against ecg_pipeline_overlap_f8__fir4_copy: -1.66% to +0.08% over 8 layouts
+  stacked not distinguishable  ecg/ecg_pipeline_overlap_f8__fir4_hot/pipeline/soc_dev against ecg_pipeline_overlap_f8__fir4: -0.50% to +0.11% over 8 layouts
+  stacked not distinguishable  ecg/ecg_pipeline_overlap_f8__fir4_hot/pipeline/soc_dev/c128t16 against ecg_pipeline_overlap_f8__fir4: -0.30% to +0.09% over 8 layouts
+  stacked not distinguishable  ecg/ecg_pipeline_overlap_f8__fir4_hot/pipeline/soc_dev/c128t32 against ecg_pipeline_overlap_f8__fir4: -0.50% to +0.01% over 8 layouts
+  stacked not distinguishable  ecg/ecg_pipeline_overlap_f8__fir4_hot/pipeline/soc_dev/c128t8 against ecg_pipeline_overlap_f8__fir4: -0.07% to +0.13% over 8 layouts
+  stacked not distinguishable  ecg/ecg_pipeline_overlap_f8__fir4_hot/pipeline/soc_dev/c16t8 against ecg_pipeline_overlap_f8__fir4: -0.03% to +0.10% over 8 layouts
+  stacked not distinguishable  ecg/ecg_pipeline_overlap_f8__fir4_hot/pipeline/soc_dev/c32t16 against ecg_pipeline_overlap_f8__fir4: -1.58% to +0.08% over 8 layouts
+  stacked not distinguishable  ecg/ecg_pipeline_overlap_f8__fir4_hot/pipeline/soc_dev/c32t8 against ecg_pipeline_overlap_f8__fir4: -0.04% to +0.12% over 8 layouts
+  stacked not distinguishable  ecg/ecg_pipeline_overlap_f8__fir4_hot/pipeline/soc_dev/c64t32 against ecg_pipeline_overlap_f8__fir4: -1.56% to +0.02% over 8 layouts
+  stacked not distinguishable  ecg/ecg_pipeline_overlap_f8__fir4_hot/pipeline/soc_dev/c64t8 against ecg_pipeline_overlap_f8__fir4: -0.05% to +0.13% over 8 layouts
+  stacked not distinguishable  ecg/ecg_pipeline_overlap_f8__fir4_split/pipeline/soc_dev against ecg_pipeline_overlap_f8__fir4: -10.68% to +5.33% over 8 layouts
+  stacked not distinguishable  ecg/ecg_pipeline_overlap_f8__fir4_split/pipeline/soc_dev/c128t16 against ecg_pipeline_overlap_f8__fir4: -6.63% to +3.49% over 8 layouts
+  stacked loses                ecg/ecg_pipeline_overlap_f8__fir4_split/pipeline/soc_dev/c128t32 against ecg_pipeline_overlap_f8__fir4: +0.58% to +5.56% over 8 layouts
+  stacked not distinguishable  ecg/ecg_pipeline_overlap_f8__fir4_split/pipeline/soc_dev/c128t8 against ecg_pipeline_overlap_f8__fir4: -5.16% to +0.68% over 8 layouts
+  stacked wins                 ecg/ecg_pipeline_overlap_f8__fir4_split/pipeline/soc_dev/c16t8 against ecg_pipeline_overlap_f8__fir4: -18.53% to -0.77% over 8 layouts
+  stacked not distinguishable  ecg/ecg_pipeline_overlap_f8__fir4_split/pipeline/soc_dev/c32t16 against ecg_pipeline_overlap_f8__fir4: -16.25% to +7.76% over 8 layouts
+  stacked wins                 ecg/ecg_pipeline_overlap_f8__fir4_split/pipeline/soc_dev/c32t8 against ecg_pipeline_overlap_f8__fir4: -12.13% to -0.90% over 8 layouts
+  stacked loses                ecg/ecg_pipeline_overlap_f8__fir4_split/pipeline/soc_dev/c64t32 against ecg_pipeline_overlap_f8__fir4: +0.75% to +6.39% over 8 layouts
+  stacked not distinguishable  ecg/ecg_pipeline_overlap_f8__fir4_split/pipeline/soc_dev/c64t8 against ecg_pipeline_overlap_f8__fir4: -8.49% to +0.03% over 8 layouts
+  stacked not distinguishable  ecg/ecg_pipeline_overlap_f8__fir4_split_hot/pipeline/soc_dev/c16t8 against ecg_pipeline_overlap_f8__fir4_split: -0.94% to +0.03% over 8 layouts
+  stacked not distinguishable  ecg/ecg_pipeline_overlap_f8__fir4_split_hot/pipeline/soc_dev/c32t8 against ecg_pipeline_overlap_f8__fir4_split: -0.08% to +0.10% over 8 layouts
+  stacked not distinguishable  ecg/ecg_pipeline_v1__fir4_copy/pipeline/soc_dev against ecg_pipeline_v1__fir4: -0.69% to +2.10% over 8 layouts
+  stacked not distinguishable  ecg/ecg_pipeline_v1__fir4_copy/pipeline/soc_dev/c128t16 against ecg_pipeline_v1__fir4: -0.29% to +3.94% over 8 layouts
+  stacked not distinguishable  ecg/ecg_pipeline_v1__fir4_copy/pipeline/soc_dev/c128t32 against ecg_pipeline_v1__fir4: -0.26% to +3.33% over 8 layouts
+  stacked not distinguishable  ecg/ecg_pipeline_v1__fir4_copy/pipeline/soc_dev/c128t8 against ecg_pipeline_v1__fir4: -0.06% to +3.29% over 8 layouts
+  stacked not distinguishable  ecg/ecg_pipeline_v1__fir4_copy/pipeline/soc_dev/c16t8 against ecg_pipeline_v1__fir4: -2.65% to +0.13% over 8 layouts
+  stacked not distinguishable  ecg/ecg_pipeline_v1__fir4_copy/pipeline/soc_dev/c32t16 against ecg_pipeline_v1__fir4: -0.62% to +1.41% over 8 layouts
+  stacked not distinguishable  ecg/ecg_pipeline_v1__fir4_copy/pipeline/soc_dev/c32t8 against ecg_pipeline_v1__fir4: -0.43% to +1.04% over 8 layouts
+  stacked not distinguishable  ecg/ecg_pipeline_v1__fir4_copy/pipeline/soc_dev/c64t32 against ecg_pipeline_v1__fir4: -0.31% to +2.16% over 8 layouts
+  stacked not distinguishable  ecg/ecg_pipeline_v1__fir4_copy/pipeline/soc_dev/c64t8 against ecg_pipeline_v1__fir4: -0.62% to +1.78% over 8 layouts
+  stacked not distinguishable  ecg/ecg_pipeline_v1__fir4_hot/pipeline/soc_dev against ecg_pipeline_v1__fir4: -0.17% to +0.11% over 8 layouts
+  stacked not distinguishable  ecg/ecg_pipeline_v1__fir4_hot/pipeline/soc_dev/c128t16 against ecg_pipeline_v1__fir4: -0.05% to +0.07% over 8 layouts
+  stacked not distinguishable  ecg/ecg_pipeline_v1__fir4_hot/pipeline/soc_dev/c128t32 against ecg_pipeline_v1__fir4: -2.38% to +0.07% over 8 layouts
+  stacked not distinguishable  ecg/ecg_pipeline_v1__fir4_hot/pipeline/soc_dev/c128t8 against ecg_pipeline_v1__fir4: -0.05% to +0.21% over 8 layouts
+  stacked not distinguishable  ecg/ecg_pipeline_v1__fir4_hot/pipeline/soc_dev/c16t8 against ecg_pipeline_v1__fir4: -0.12% to +0.13% over 8 layouts
+  stacked not distinguishable  ecg/ecg_pipeline_v1__fir4_hot/pipeline/soc_dev/c32t16 against ecg_pipeline_v1__fir4: -0.26% to +0.16% over 8 layouts
+  stacked not distinguishable  ecg/ecg_pipeline_v1__fir4_hot/pipeline/soc_dev/c32t8 against ecg_pipeline_v1__fir4: -0.12% to +0.16% over 8 layouts
+  stacked not distinguishable  ecg/ecg_pipeline_v1__fir4_hot/pipeline/soc_dev/c64t32 against ecg_pipeline_v1__fir4: -4.44% to +0.10% over 8 layouts
+  stacked not distinguishable  ecg/ecg_pipeline_v1__fir4_hot/pipeline/soc_dev/c64t8 against ecg_pipeline_v1__fir4: -0.06% to +0.11% over 8 layouts
+  stacked not distinguishable  ecg/ecg_pipeline_v1_f8__fir4_copy/pipeline/soc_dev against ecg_pipeline_v1_f8__fir4: -0.24% to +2.46% over 8 layouts
+  stacked not distinguishable  ecg/ecg_pipeline_v1_f8__fir4_copy/pipeline/soc_dev/c128t16 against ecg_pipeline_v1_f8__fir4: -0.40% to +3.82% over 8 layouts
+  stacked not distinguishable  ecg/ecg_pipeline_v1_f8__fir4_copy/pipeline/soc_dev/c128t32 against ecg_pipeline_v1_f8__fir4: -0.27% to +3.15% over 8 layouts
+  stacked not distinguishable  ecg/ecg_pipeline_v1_f8__fir4_copy/pipeline/soc_dev/c128t8 against ecg_pipeline_v1_f8__fir4: -0.24% to +3.38% over 8 layouts
+  stacked not distinguishable  ecg/ecg_pipeline_v1_f8__fir4_copy/pipeline/soc_dev/c16t8 against ecg_pipeline_v1_f8__fir4: -2.11% to +1.09% over 8 layouts
+  stacked not distinguishable  ecg/ecg_pipeline_v1_f8__fir4_copy/pipeline/soc_dev/c32t16 against ecg_pipeline_v1_f8__fir4: -1.54% to +1.22% over 8 layouts
+  stacked not distinguishable  ecg/ecg_pipeline_v1_f8__fir4_copy/pipeline/soc_dev/c32t8 against ecg_pipeline_v1_f8__fir4: -0.30% to +1.06% over 8 layouts
+  stacked not distinguishable  ecg/ecg_pipeline_v1_f8__fir4_copy/pipeline/soc_dev/c64t32 against ecg_pipeline_v1_f8__fir4: -1.43% to +1.89% over 8 layouts
+  stacked not distinguishable  ecg/ecg_pipeline_v1_f8__fir4_copy/pipeline/soc_dev/c64t8 against ecg_pipeline_v1_f8__fir4: -0.50% to +1.75% over 8 layouts
+  stacked not distinguishable  ecg/ecg_pipeline_v1_f8__fir4_hot/pipeline/soc_dev against ecg_pipeline_v1_f8__fir4: -0.05% to +0.10% over 8 layouts
+  stacked not distinguishable  ecg/ecg_pipeline_v1_f8__fir4_hot/pipeline/soc_dev/c128t16 against ecg_pipeline_v1_f8__fir4: -0.14% to +0.07% over 8 layouts
+  stacked not distinguishable  ecg/ecg_pipeline_v1_f8__fir4_hot/pipeline/soc_dev/c128t32 against ecg_pipeline_v1_f8__fir4: -2.40% to +0.11% over 8 layouts
+  stacked not distinguishable  ecg/ecg_pipeline_v1_f8__fir4_hot/pipeline/soc_dev/c128t8 against ecg_pipeline_v1_f8__fir4: -0.10% to +0.10% over 8 layouts
+  stacked not distinguishable  ecg/ecg_pipeline_v1_f8__fir4_hot/pipeline/soc_dev/c16t8 against ecg_pipeline_v1_f8__fir4: -0.03% to +0.07% over 8 layouts
+  stacked not distinguishable  ecg/ecg_pipeline_v1_f8__fir4_hot/pipeline/soc_dev/c32t16 against ecg_pipeline_v1_f8__fir4: -0.06% to +0.10% over 8 layouts
+  stacked not distinguishable  ecg/ecg_pipeline_v1_f8__fir4_hot/pipeline/soc_dev/c32t8 against ecg_pipeline_v1_f8__fir4: -0.06% to +0.10% over 8 layouts
+  stacked not distinguishable  ecg/ecg_pipeline_v1_f8__fir4_hot/pipeline/soc_dev/c64t32 against ecg_pipeline_v1_f8__fir4: -6.14% to +0.06% over 8 layouts
+  stacked not distinguishable  ecg/ecg_pipeline_v1_f8__fir4_hot/pipeline/soc_dev/c64t8 against ecg_pipeline_v1_f8__fir4: -0.07% to +0.11% over 8 layouts
+  stacked not distinguishable  coherence/false_shared__split_hot/multicore/soc_dev/n2 against false_shared__split: +0.00% to +24.39% over 8 layouts
+  stacked not distinguishable  coherence/lock_sum__split_hot/multicore/soc_dev/n1024 against lock_sum__split: -0.03% to +0.05% over 8 layouts
+  stacked not distinguishable  coherence/lock_sum__split_hot/multicore/soc_dev/n129 against lock_sum__split: +0.00% to +0.23% over 8 layouts
+  stacked not distinguishable  coherence/lock_sum__split_hot/multicore/soc_dev/n2 against lock_sum__split: +0.00% to +9.52% over 8 layouts
+  stacked not distinguishable  coherence/lrsc_counter__split_hot/multicore/soc_dev/n2 against lrsc_counter__split: +0.00% to +13.89% over 8 layouts
+  stacked not distinguishable  ml/mnist_mlp_npu__2h_hot/npu/soc_dev against mnist_mlp_npu__2h: -0.87% to +0.00% over 8 layouts
+  stacked not distinguishable  ml/mnist_mlp_npu_batched__2h_hot32/npu/soc_dev against mnist_mlp_npu_batched__2h: -0.19% to +0.00% over 8 layouts
+  stacked not distinguishable  ml/mnist_mlp_npu_batched__2h_hot4/npu/soc_dev against mnist_mlp_npu_batched__2h: -0.88% to +0.00% over 8 layouts
+  stacked wins                 ml/mnist_mlp_npu_batched__2h_hot8/npu/soc_dev against mnist_mlp_npu_batched__2h: -0.56% to -0.01% over 8 layouts
+  stacked not distinguishable  coherence/padded__split_hot/multicore/soc_dev/n2 against padded__split: +0.00% to +23.96% over 8 layouts
+  stacked not distinguishable  coherence/reduce_fill__loop_hot/multicore/soc_dev against reduce_fill__loop: -0.23% to +0.01% over 8 layouts
+  stacked not distinguishable  coherence/reduce_fill__place/multicore/soc_dev against reduce_fill__loop: -0.85% to +0.52% over 8 layouts
+  stacked not distinguishable  coherence/reduce_v1__loop_hot/multicore/soc_dev against reduce_v1__loop: -0.14% to +0.03% over 8 layouts
+  stacked not distinguishable  coherence/reduce_v1__place/multicore/soc_dev against reduce_v1__loop: -0.21% to +0.32% over 8 layouts
+  stacked not distinguishable  coherence/shared_mix__split_hot/multicore/soc_dev/n2 against shared_mix__split: +0.00% to +5.08% over 8 layouts
+the adopted set: PASS; of the adopted variants' configurations that do not win, 54 are R's points where they are not adopted, 0 other configurations at points where they are (reported beside the win)
+  beside the win: coherence/atomic_add__hot/multicore/soc_dev/n1024: loses (+0.33% to +0.54%) (not adopted at this point)
+  beside the win: coherence/atomic_add__hot/multicore/soc_dev/n129: not distinguishable (-0.49% to +3.32%) (not adopted at this point)
+  beside the win: coherence/atomic_add__hot/scalar/soc_dev/n1024: not distinguishable (+0.00% to +0.09%) (not adopted at this point)
+  beside the win: coherence/atomic_add__hot/scalar/soc_dev/n129: not distinguishable (+0.00% to +1.68%) (not adopted at this point)
+  beside the win: coherence/atomic_add__hot/scalar/soc_dev/n2: not distinguishable (+0.00% to +21.74%) (not adopted at this point)
+  beside the win: coherence/atomic_add__split/multicore/soc_dev/n129: not distinguishable (+0.00% to +1.35%) (not adopted at this point)
+  beside the win: coherence/cas_counter__split/multicore/soc_dev/n1024: not distinguishable (-0.33% to +43.46%) (not adopted at this point)
+  beside the win: coherence/cas_counter__split/multicore/soc_dev/n129: not distinguishable (-28.25% to +34.07%) (not adopted at this point)
+  beside the win: dsp/dot__split/multicore/soc_dev/k1024: not distinguishable (-0.07% to +0.07%) (not adopted at this point)
+  beside the win: dsp/dot__split/multicore/soc_dev/k1024/seed2468ace0: not distinguishable (-0.07% to +0.10%) (not adopted at this point)
+  beside the win: dsp/dot__split/multicore/soc_dev/k1024/seed9e3779b9: not distinguishable (-0.07% to +0.10%) (not adopted at this point)
+  beside the win: dsp/dot__split/multicore/soc_dev/k256: not distinguishable (-0.23% to +0.23%) (not adopted at this point)
+  beside the win: dsp/dot__split/multicore/soc_dev/k256/seed2468ace0: not distinguishable (-0.23% to +0.58%) (not adopted at this point)
+  beside the win: dsp/dot__split/multicore/soc_dev/k256/seed9e3779b9: not distinguishable (-0.23% to +0.58%) (not adopted at this point)
+  beside the win: dsp/dot__split/multicore/soc_dev/k4096: not distinguishable (-0.00% to +0.04%) (not adopted at this point)
+  beside the win: dsp/dot__split/multicore/soc_dev/k4096/seed2468ace0: not distinguishable (-0.04% to +0.01%) (not adopted at this point)
+  beside the win: dsp/dot__split/multicore/soc_dev/k4096/seed9e3779b9: not distinguishable (-0.03% to +0.02%) (not adopted at this point)
+  beside the win: dsp/dot__split/multicore/soc_dev/k64: not distinguishable (-0.29% to +0.60%) (not adopted at this point)
+  beside the win: dsp/dot__split/multicore/soc_dev/k64/seed2468ace0: not distinguishable (-0.43% to +1.49%) (not adopted at this point)
+  beside the win: dsp/dot__split/multicore/soc_dev/k64/seed9e3779b9: not distinguishable (-0.59% to +0.89%) (not adopted at this point)
+  beside the win: ecg/ecg_pipeline_overlap__fir4_split/pipeline/soc_dev/c128t16: wins (-83.65% to -82.44%); against ecg_pipeline_overlap__fir4 not distinguishable (-6.93% to +0.42%) (not adopted at this point)
+  beside the win: ecg/ecg_pipeline_overlap__fir4_split/pipeline/soc_dev/c128t32: wins (-84.83% to -82.52%); against ecg_pipeline_overlap__fir4 loses (+0.92% to +4.81%) (not adopted at this point)
+  beside the win: ecg/ecg_pipeline_overlap__fir4_split/pipeline/soc_dev/c128t8: wins (-71.37% to -70.38%); against ecg_pipeline_overlap__fir4 not distinguishable (-5.09% to +0.39%) (not adopted at this point)
+  beside the win: ecg/ecg_pipeline_overlap__fir4_split/pipeline/soc_dev/c64t32: wins (-83.94% to -80.35%); against ecg_pipeline_overlap__fir4 loses (+1.79% to +4.88%) (not adopted at this point)
+  beside the win: ecg/ecg_pipeline_overlap__hot/pipeline/soc_dev: not distinguishable (-0.56% to +0.00%) (not adopted at this point)
+  beside the win: ecg/ecg_pipeline_overlap__hot/pipeline/soc_dev/c128t16: not distinguishable (-0.23% to +0.00%) (not adopted at this point)
+  beside the win: ecg/ecg_pipeline_overlap__hot/pipeline/soc_dev/c128t32: not distinguishable (-0.18% to +0.00%) (not adopted at this point)
+  beside the win: ecg/ecg_pipeline_overlap__hot/pipeline/soc_dev/c16t8: not distinguishable (-3.67% to +0.00%) (not adopted at this point)
+  beside the win: ecg/ecg_pipeline_overlap__hot/pipeline/soc_dev/c32t16: not distinguishable (-1.31% to +0.01%) (not adopted at this point)
+  beside the win: ecg/ecg_pipeline_overlap__hot/pipeline/soc_dev/c64t32: not distinguishable (-0.53% to +0.00%) (not adopted at this point)
+  beside the win: ecg/ecg_pipeline_overlap__hot/pipeline/soc_dev/c64t8: not distinguishable (-0.62% to +0.00%) (not adopted at this point)
+  beside the win: ecg/ecg_pipeline_overlap_f8__fir4_split/pipeline/soc_dev: wins (-80.05% to -77.85%); against ecg_pipeline_overlap_f8__fir4 not distinguishable (-10.68% to +5.33%) (not adopted at this point)
+  beside the win: ecg/ecg_pipeline_overlap_f8__fir4_split/pipeline/soc_dev/c128t16: wins (-82.68% to -81.06%); against ecg_pipeline_overlap_f8__fir4 not distinguishable (-6.63% to +3.49%) (not adopted at this point)
+  beside the win: ecg/ecg_pipeline_overlap_f8__fir4_split/pipeline/soc_dev/c128t32: wins (-84.70% to -82.38%); against ecg_pipeline_overlap_f8__fir4 loses (+0.58% to +5.56%) (not adopted at this point)
+  beside the win: ecg/ecg_pipeline_overlap_f8__fir4_split/pipeline/soc_dev/c128t8: wins (-70.19% to -68.96%); against ecg_pipeline_overlap_f8__fir4 not distinguishable (-5.16% to +0.68%) (not adopted at this point)
+  beside the win: ecg/ecg_pipeline_overlap_f8__fir4_split/pipeline/soc_dev/c32t16: wins (-71.03% to -65.45%); against ecg_pipeline_overlap_f8__fir4 not distinguishable (-16.25% to +7.76%) (not adopted at this point)
+  beside the win: ecg/ecg_pipeline_overlap_f8__fir4_split/pipeline/soc_dev/c64t32: wins (-83.94% to -79.99%); against ecg_pipeline_overlap_f8__fir4 loses (+0.75% to +6.39%) (not adopted at this point)
+  beside the win: ecg/ecg_pipeline_overlap_f8__fir4_split/pipeline/soc_dev/c64t8: wins (-67.48% to -66.14%); against ecg_pipeline_overlap_f8__fir4 not distinguishable (-8.49% to +0.03%) (not adopted at this point)
+  beside the win: coherence/false_shared__split/multicore/soc_dev/n1024: not distinguishable (-0.26% to +0.42%) (not adopted at this point)
+  beside the win: coherence/false_shared__split/multicore/soc_dev/n129: not distinguishable (-1.98% to +1.44%) (not adopted at this point)
+  beside the win: coherence/lrsc_counter__split/multicore/soc_dev/n1024: not distinguishable (-36.18% to +59.31%) (not adopted at this point)
+  beside the win: coherence/lrsc_counter__split/multicore/soc_dev/n129: not distinguishable (-33.45% to +34.51%) (not adopted at this point)
+  beside the win: ml/mnist_mlp_npu_batched__2h_hot32/npu/soc_dev: wins (-32.75% to -31.75%); against mnist_mlp_npu_batched__2h not distinguishable (-0.19% to +0.00%) (not adopted at this point)
+  beside the win: ml/mnist_mlp_npu_batched__2h_hot4/npu/soc_dev: wins (-17.93% to -17.24%); against mnist_mlp_npu_batched__2h not distinguishable (-0.88% to +0.00%) (not adopted at this point)
+  beside the win: coherence/padded__hot/multicore/soc_dev/n1024: loses (+0.19% to +0.58%) (not adopted at this point)
+  beside the win: coherence/padded__hot/multicore/soc_dev/n129: not distinguishable (-0.80% to +3.10%) (not adopted at this point)
+  beside the win: coherence/padded__hot/scalar/soc_dev/n1024: not distinguishable (+0.00% to +0.12%) (not adopted at this point)
+  beside the win: coherence/padded__hot/scalar/soc_dev/n129: not distinguishable (+0.00% to +1.76%) (not adopted at this point)
+  beside the win: coherence/padded__hot/scalar/soc_dev/n2: not distinguishable (+0.00% to +23.96%) (not adopted at this point)
+  beside the win: coherence/padded__split/multicore/soc_dev/n1024: not distinguishable (-0.32% to +0.26%) (not adopted at this point)
+  beside the win: coherence/padded__split/multicore/soc_dev/n129: not distinguishable (-1.98% to +1.48%) (not adopted at this point)
+  beside the win: coherence/reduce_fill__hot/scalar/soc_dev: not distinguishable (+0.00% to +0.00%) (not adopted at this point)
+  beside the win: coherence/shared_mix__split/multicore/soc_dev/n1024: not distinguishable (-0.05% to +0.00%) (not adopted at this point)
+  beside the win: coherence/shared_mix__split/multicore/soc_dev/n129: not distinguishable (-0.07% to +0.25%) (not adopted at this point)

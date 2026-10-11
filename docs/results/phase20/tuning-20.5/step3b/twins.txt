@@ -1,0 +1,263 @@
+The code-placement twins (tuning.md §4.4; __hot an original's, _hot an adopted variant's) against their bases, at R on the eight layouts, warm and cold, every window (t3b-judge, 6bc46c2): 262 configurations, {'loses': 3, 'not distinguishable': 253, 'wins': 6}
+loses                coherence/atomic_add__hot/multicore/soc_dev/n1024 against its original: +0.33% to +0.54% over 8 layouts
+not distinguishable  coherence/atomic_add__hot/multicore/soc_dev/n129 against its original: -0.49% to +3.32% over 8 layouts
+wins                 coherence/atomic_add__hot/multicore/soc_dev/n2 against its original: -6.20% to -3.43% over 8 layouts
+not distinguishable  coherence/atomic_add__hot/scalar/soc_dev/n1024 against its original: +0.00% to +0.09% over 8 layouts
+not distinguishable  coherence/atomic_add__hot/scalar/soc_dev/n129 against its original: +0.00% to +1.68% over 8 layouts
+not distinguishable  coherence/atomic_add__hot/scalar/soc_dev/n2 against its original: +0.00% to +21.74% over 8 layouts
+loses                coherence/atomic_add__split_hot/multicore/soc_dev/n1024 against atomic_add__split: +0.19% to +0.70% over 8 layouts
+not distinguishable  coherence/atomic_add__split_hot/multicore/soc_dev/n2 against atomic_add__split: +0.00% to +21.74% over 8 layouts
+not distinguishable  coherence/cas_counter__hot/multicore/soc_dev/n1024 against its original: -0.25% to +42.28% over 8 layouts
+not distinguishable  coherence/cas_counter__hot/multicore/soc_dev/n129 against its original: -27.19% to +34.62% over 8 layouts
+not distinguishable  coherence/cas_counter__hot/multicore/soc_dev/n2 against its original: -1.35% to +8.95% over 8 layouts
+not distinguishable  coherence/cas_counter__hot/scalar/soc_dev/n1024 against its original: +0.00% to +0.02% over 8 layouts
+not distinguishable  coherence/cas_counter__hot/scalar/soc_dev/n129 against its original: +0.00% to +0.41% over 8 layouts
+not distinguishable  coherence/cas_counter__hot/scalar/soc_dev/n2 against its original: +0.00% to +10.67% over 8 layouts
+not distinguishable  coherence/cas_counter__split_hot/multicore/soc_dev/n2 against cas_counter__split: +0.00% to +10.67% over 8 layouts
+not distinguishable  coherence/false_shared__hot/multicore/soc_dev/n1024 against its original: -0.51% to +0.67% over 8 layouts
+not distinguishable  coherence/false_shared__hot/multicore/soc_dev/n129 against its original: -4.25% to +2.37% over 8 layouts
+not distinguishable  coherence/false_shared__hot/multicore/soc_dev/n2 against its original: -4.81% to +5.19% over 8 layouts
+not distinguishable  coherence/false_shared__hot/scalar/soc_dev/n1024 against its original: +0.00% to +0.13% over 8 layouts
+not distinguishable  coherence/false_shared__hot/scalar/soc_dev/n129 against its original: +0.00% to +1.96% over 8 layouts
+not distinguishable  coherence/false_shared__hot/scalar/soc_dev/n2 against its original: +0.00% to +24.39% over 8 layouts
+not distinguishable  coherence/false_shared__split_hot/multicore/soc_dev/n2 against false_shared__split: +0.00% to +24.39% over 8 layouts
+not distinguishable  coherence/gemm_dot8_128x64x128__hot/dot8/soc_dev against its original: +0.00% to +0.00% over 7 layouts
+not distinguishable  coherence/gemm_dot8_128x64x128__hot/multicore/soc_dev against its original: -0.04% to +0.03% over 5 layouts
+not distinguishable  coherence/gemm_dot8_64x64x64__hot/dot8/soc_dev against its original: +0.00% to +0.01% over 8 layouts
+not distinguishable  coherence/gemm_dot8_64x64x64__hot/multicore/soc_dev against its original: -0.10% to +0.02% over 8 layouts
+not distinguishable  coherence/gemm_dot8_96x96x96__hot/dot8/soc_dev against its original: +0.00% to +0.00% over 8 layouts
+not distinguishable  coherence/gemm_dot8_96x96x96__hot/multicore/soc_dev against its original: -0.06% to +0.02% over 8 layouts
+not distinguishable  coherence/lock_sum__hot/multicore/soc_dev/n1024 against its original: -0.03% to +0.16% over 8 layouts
+not distinguishable  coherence/lock_sum__hot/multicore/soc_dev/n129 against its original: -0.71% to +0.97% over 8 layouts
+not distinguishable  coherence/lock_sum__hot/multicore/soc_dev/n2 against its original: -3.38% to +0.00% over 8 layouts
+not distinguishable  coherence/lock_sum__hot/scalar/soc_dev/n1024 against its original: -0.03% to +0.05% over 8 layouts
+not distinguishable  coherence/lock_sum__hot/scalar/soc_dev/n129 against its original: +0.00% to +0.23% over 8 layouts
+not distinguishable  coherence/lock_sum__hot/scalar/soc_dev/n2 against its original: +0.00% to +9.52% over 8 layouts
+not distinguishable  coherence/lock_sum__split_hot/multicore/soc_dev/n1024 against lock_sum__split: -0.03% to +0.05% over 8 layouts
+not distinguishable  coherence/lock_sum__split_hot/multicore/soc_dev/n129 against lock_sum__split: +0.00% to +0.23% over 8 layouts
+not distinguishable  coherence/lock_sum__split_hot/multicore/soc_dev/n2 against lock_sum__split: +0.00% to +9.52% over 8 layouts
+not distinguishable  coherence/lrsc_counter__hot/multicore/soc_dev/n1024 against its original: -37.13% to +55.99% over 8 layouts
+not distinguishable  coherence/lrsc_counter__hot/multicore/soc_dev/n129 against its original: -32.98% to +35.92% over 8 layouts
+not distinguishable  coherence/lrsc_counter__hot/multicore/soc_dev/n2 against its original: -1.52% to +2.07% over 8 layouts
+not distinguishable  coherence/lrsc_counter__hot/scalar/soc_dev/n1024 against its original: +0.00% to +0.05% over 8 layouts
+not distinguishable  coherence/lrsc_counter__hot/scalar/soc_dev/n129 against its original: +0.00% to +0.69% over 8 layouts
+not distinguishable  coherence/lrsc_counter__hot/scalar/soc_dev/n2 against its original: +0.00% to +13.89% over 8 layouts
+not distinguishable  coherence/lrsc_counter__split_hot/multicore/soc_dev/n2 against lrsc_counter__split: +0.00% to +13.89% over 8 layouts
+loses                coherence/padded__hot/multicore/soc_dev/n1024 against its original: +0.19% to +0.58% over 8 layouts
+not distinguishable  coherence/padded__hot/multicore/soc_dev/n129 against its original: -0.80% to +3.10% over 8 layouts
+wins                 coherence/padded__hot/multicore/soc_dev/n2 against its original: -8.20% to -2.95% over 8 layouts
+not distinguishable  coherence/padded__hot/scalar/soc_dev/n1024 against its original: +0.00% to +0.12% over 8 layouts
+not distinguishable  coherence/padded__hot/scalar/soc_dev/n129 against its original: +0.00% to +1.76% over 8 layouts
+not distinguishable  coherence/padded__hot/scalar/soc_dev/n2 against its original: +0.00% to +23.96% over 8 layouts
+not distinguishable  coherence/padded__split_hot/multicore/soc_dev/n2 against padded__split: +0.00% to +23.96% over 8 layouts
+wins                 coherence/reduce_fill__hot/multicore/soc_dev against its original: -0.42% to -0.01% over 8 layouts
+not distinguishable  coherence/reduce_fill__hot/scalar/soc_dev against its original: +0.00% to +0.00% over 8 layouts
+not distinguishable  coherence/reduce_fill__loop_hot/multicore/soc_dev against reduce_fill__loop: -0.23% to +0.01% over 8 layouts
+not distinguishable  coherence/reduce_v1__hot/multicore/soc_dev against its original: -0.07% to +0.00% over 8 layouts
+not distinguishable  coherence/reduce_v1__hot/scalar/soc_dev against its original: -0.00% to +0.00% over 8 layouts
+not distinguishable  coherence/reduce_v1__loop_hot/multicore/soc_dev against reduce_v1__loop: -0.14% to +0.03% over 8 layouts
+not distinguishable  coherence/shared_mix__hot/multicore/soc_dev/n1024 against its original: -0.01% to +0.05% over 8 layouts
+not distinguishable  coherence/shared_mix__hot/multicore/soc_dev/n129 against its original: +0.00% to +0.29% over 8 layouts
+not distinguishable  coherence/shared_mix__hot/multicore/soc_dev/n2 against its original: -2.08% to +5.85% over 8 layouts
+not distinguishable  coherence/shared_mix__hot/scalar/soc_dev/n1024 against its original: +0.00% to +0.02% over 8 layouts
+not distinguishable  coherence/shared_mix__hot/scalar/soc_dev/n129 against its original: +0.00% to +0.08% over 8 layouts
+not distinguishable  coherence/shared_mix__hot/scalar/soc_dev/n2 against its original: +0.00% to +5.08% over 8 layouts
+not distinguishable  coherence/shared_mix__split_hot/multicore/soc_dev/n2 against shared_mix__split: +0.00% to +5.08% over 8 layouts
+not distinguishable  dsp/conv2d_direct_npu__2h_hot/npu_direct/soc_dev against conv2d_direct_npu__2h: -0.06% to +0.02% over 8 layouts
+not distinguishable  dsp/conv2d_direct_npu__2h_hot/npu_direct/soc_dev/seed2468ace0 against conv2d_direct_npu__2h: -0.10% to +0.02% over 8 layouts
+not distinguishable  dsp/conv2d_direct_npu__2h_hot/npu_direct/soc_dev/seed9e3779b9 against conv2d_direct_npu__2h: -0.10% to +0.02% over 8 layouts
+not distinguishable  dsp/conv2d_direct_npu__hot/npu_direct/soc_dev against its original: -0.01% to +0.01% over 8 layouts
+not distinguishable  dsp/conv2d_direct_npu__hot/npu_direct/soc_dev/seed2468ace0 against its original: +0.00% to +0.00% over 8 layouts
+not distinguishable  dsp/conv2d_direct_npu__hot/npu_direct/soc_dev/seed9e3779b9 against its original: +0.00% to +0.00% over 8 layouts
+not distinguishable  dsp/conv2d_im2col_npu__2h_hot/npu_im2col/soc_dev against conv2d_im2col_npu__2h: -0.02% to +0.01% over 8 layouts
+not distinguishable  dsp/conv2d_im2col_npu__2h_hot/npu_im2col/soc_dev/seed2468ace0 against conv2d_im2col_npu__2h: -0.00% to +0.00% over 8 layouts
+not distinguishable  dsp/conv2d_im2col_npu__2h_hot/npu_im2col/soc_dev/seed9e3779b9 against conv2d_im2col_npu__2h: -0.00% to +0.00% over 8 layouts
+not distinguishable  dsp/conv2d_im2col_npu__hot/npu_im2col/soc_dev against its original: -0.00% to +0.00% over 8 layouts
+not distinguishable  dsp/conv2d_im2col_npu__hot/npu_im2col/soc_dev/seed2468ace0 against its original: +0.00% to +0.00% over 8 layouts
+not distinguishable  dsp/conv2d_im2col_npu__hot/npu_im2col/soc_dev/seed9e3779b9 against its original: +0.00% to +0.00% over 8 layouts
+not distinguishable  dsp/dot__hot/multicore/soc_dev/k0 against its original: -8.84% to +1.29% over 8 layouts
+not distinguishable  dsp/dot__hot/multicore/soc_dev/k0/seed2468ace0 against its original: -3.85% to +1.29% over 8 layouts
+not distinguishable  dsp/dot__hot/multicore/soc_dev/k0/seed9e3779b9 against its original: -3.85% to +1.29% over 8 layouts
+not distinguishable  dsp/dot__hot/multicore/soc_dev/k1 against its original: -9.59% to +1.21% over 8 layouts
+not distinguishable  dsp/dot__hot/multicore/soc_dev/k1/seed2468ace0 against its original: -2.26% to +1.21% over 8 layouts
+not distinguishable  dsp/dot__hot/multicore/soc_dev/k1/seed9e3779b9 against its original: -2.26% to +1.21% over 8 layouts
+not distinguishable  dsp/dot__hot/multicore/soc_dev/k1024 against its original: -0.66% to +0.08% over 8 layouts
+not distinguishable  dsp/dot__hot/multicore/soc_dev/k1024/seed2468ace0 against its original: -0.22% to +0.18% over 8 layouts
+not distinguishable  dsp/dot__hot/multicore/soc_dev/k1024/seed9e3779b9 against its original: -0.22% to +0.18% over 8 layouts
+not distinguishable  dsp/dot__hot/multicore/soc_dev/k256 against its original: -2.51% to +0.52% over 8 layouts
+not distinguishable  dsp/dot__hot/multicore/soc_dev/k256/seed2468ace0 against its original: -0.23% to +0.63% over 8 layouts
+not distinguishable  dsp/dot__hot/multicore/soc_dev/k256/seed9e3779b9 against its original: -0.23% to +0.63% over 8 layouts
+not distinguishable  dsp/dot__hot/multicore/soc_dev/k4096 against its original: -0.16% to +0.04% over 8 layouts
+not distinguishable  dsp/dot__hot/multicore/soc_dev/k4096/seed2468ace0 against its original: -0.00% to +0.02% over 8 layouts
+not distinguishable  dsp/dot__hot/multicore/soc_dev/k4096/seed9e3779b9 against its original: -0.00% to +0.02% over 8 layouts
+not distinguishable  dsp/dot__hot/multicore/soc_dev/k64 against its original: -4.17% to +1.31% over 8 layouts
+not distinguishable  dsp/dot__hot/multicore/soc_dev/k64/seed2468ace0 against its original: -2.28% to +0.87% over 8 layouts
+not distinguishable  dsp/dot__hot/multicore/soc_dev/k64/seed9e3779b9 against its original: -2.28% to +0.87% over 8 layouts
+not distinguishable  dsp/dot__hot/multicore/soc_dev/k7 against its original: -6.32% to +2.12% over 8 layouts
+not distinguishable  dsp/dot__hot/multicore/soc_dev/k7/seed2468ace0 against its original: -4.91% to +2.65% over 8 layouts
+not distinguishable  dsp/dot__hot/multicore/soc_dev/k7/seed9e3779b9 against its original: -4.91% to +2.65% over 8 layouts
+not distinguishable  dsp/dot__hot/multicore/soc_dev/k8 against its original: -5.89% to +2.93% over 8 layouts
+not distinguishable  dsp/dot__hot/multicore/soc_dev/k8/seed2468ace0 against its original: -4.05% to +2.65% over 8 layouts
+not distinguishable  dsp/dot__hot/multicore/soc_dev/k8/seed9e3779b9 against its original: -4.05% to +2.65% over 8 layouts
+not distinguishable  dsp/dot__split_hot/multicore/soc_dev/k0 against dot__split: +0.00% to +8.00% over 8 layouts
+not distinguishable  dsp/dot__split_hot/multicore/soc_dev/k0/seed2468ace0 against dot__split: +0.00% to +0.00% over 8 layouts
+not distinguishable  dsp/dot__split_hot/multicore/soc_dev/k0/seed9e3779b9 against dot__split: +0.00% to +0.00% over 8 layouts
+not distinguishable  dsp/dot__split_hot/multicore/soc_dev/k1 against dot__split: +0.00% to +6.54% over 8 layouts
+not distinguishable  dsp/dot__split_hot/multicore/soc_dev/k1/seed2468ace0 against dot__split: +0.00% to +0.00% over 8 layouts
+not distinguishable  dsp/dot__split_hot/multicore/soc_dev/k1/seed9e3779b9 against dot__split: +0.00% to +0.00% over 8 layouts
+not distinguishable  dsp/dot__split_hot/multicore/soc_dev/k7 against dot__split: +0.00% to +4.57% over 8 layouts
+not distinguishable  dsp/dot__split_hot/multicore/soc_dev/k7/seed2468ace0 against dot__split: +0.00% to +0.00% over 8 layouts
+not distinguishable  dsp/dot__split_hot/multicore/soc_dev/k7/seed9e3779b9 against dot__split: +0.00% to +0.00% over 8 layouts
+not distinguishable  dsp/dot__split_hot/multicore/soc_dev/k8 against dot__split: +0.00% to +4.35% over 8 layouts
+not distinguishable  dsp/dot__split_hot/multicore/soc_dev/k8/seed2468ace0 against dot__split: +0.00% to +0.00% over 8 layouts
+not distinguishable  dsp/dot__split_hot/multicore/soc_dev/k8/seed9e3779b9 against dot__split: +0.00% to +0.00% over 8 layouts
+not distinguishable  ecg/ecg_dot8__fir4_hot/dot8/soc_dev against ecg_dot8__fir4: -0.06% to +0.00% over 8 layouts
+not distinguishable  ecg/ecg_dot8__fir4_hot/dot8/soc_dev/c128t16 against ecg_dot8__fir4: -0.06% to +0.01% over 8 layouts
+not distinguishable  ecg/ecg_dot8__fir4_hot/dot8/soc_dev/c128t32 against ecg_dot8__fir4: -0.02% to +0.00% over 8 layouts
+not distinguishable  ecg/ecg_dot8__fir4_hot/dot8/soc_dev/c128t8 against ecg_dot8__fir4: -0.04% to +0.00% over 8 layouts
+not distinguishable  ecg/ecg_dot8__fir4_hot/dot8/soc_dev/c16t8 against ecg_dot8__fir4: -0.05% to +0.00% over 8 layouts
+not distinguishable  ecg/ecg_dot8__fir4_hot/dot8/soc_dev/c32t16 against ecg_dot8__fir4: -0.06% to +0.00% over 8 layouts
+not distinguishable  ecg/ecg_dot8__fir4_hot/dot8/soc_dev/c32t8 against ecg_dot8__fir4: -0.06% to +0.00% over 8 layouts
+not distinguishable  ecg/ecg_dot8__fir4_hot/dot8/soc_dev/c64t32 against ecg_dot8__fir4: -0.04% to +0.02% over 8 layouts
+not distinguishable  ecg/ecg_dot8__fir4_hot/dot8/soc_dev/c64t8 against ecg_dot8__fir4: -0.04% to +0.00% over 8 layouts
+not distinguishable  ecg/ecg_dot8__hot/dot8/soc_dev against its original: -0.02% to +0.00% over 8 layouts
+not distinguishable  ecg/ecg_dot8__hot/dot8/soc_dev/c128t16 against its original: -0.02% to +0.00% over 8 layouts
+not distinguishable  ecg/ecg_dot8__hot/dot8/soc_dev/c128t32 against its original: -0.02% to +0.00% over 8 layouts
+not distinguishable  ecg/ecg_dot8__hot/dot8/soc_dev/c128t8 against its original: -0.03% to +0.00% over 8 layouts
+not distinguishable  ecg/ecg_dot8__hot/dot8/soc_dev/c16t8 against its original: -0.02% to +0.00% over 8 layouts
+not distinguishable  ecg/ecg_dot8__hot/dot8/soc_dev/c32t16 against its original: -0.02% to +0.00% over 8 layouts
+not distinguishable  ecg/ecg_dot8__hot/dot8/soc_dev/c32t8 against its original: -0.03% to +0.00% over 8 layouts
+not distinguishable  ecg/ecg_dot8__hot/dot8/soc_dev/c64t32 against its original: -0.02% to +0.00% over 8 layouts
+not distinguishable  ecg/ecg_dot8__hot/dot8/soc_dev/c64t8 against its original: -0.02% to +0.00% over 8 layouts
+not distinguishable  ecg/ecg_dot8_f8__fir4_hot/dot8/soc_dev against ecg_dot8_f8__fir4: -0.05% to +0.00% over 8 layouts
+not distinguishable  ecg/ecg_dot8_f8__fir4_hot/dot8/soc_dev/c128t16 against ecg_dot8_f8__fir4: -0.08% to +0.00% over 8 layouts
+not distinguishable  ecg/ecg_dot8_f8__fir4_hot/dot8/soc_dev/c128t32 against ecg_dot8_f8__fir4: -0.03% to +0.02% over 8 layouts
+not distinguishable  ecg/ecg_dot8_f8__fir4_hot/dot8/soc_dev/c128t8 against ecg_dot8_f8__fir4: -0.05% to +0.00% over 8 layouts
+not distinguishable  ecg/ecg_dot8_f8__fir4_hot/dot8/soc_dev/c16t8 against ecg_dot8_f8__fir4: -0.04% to +0.00% over 8 layouts
+not distinguishable  ecg/ecg_dot8_f8__fir4_hot/dot8/soc_dev/c32t16 against ecg_dot8_f8__fir4: -0.05% to +0.00% over 8 layouts
+not distinguishable  ecg/ecg_dot8_f8__fir4_hot/dot8/soc_dev/c32t8 against ecg_dot8_f8__fir4: -0.04% to +0.01% over 8 layouts
+not distinguishable  ecg/ecg_dot8_f8__fir4_hot/dot8/soc_dev/c64t32 against ecg_dot8_f8__fir4: -0.06% to +0.01% over 8 layouts
+not distinguishable  ecg/ecg_dot8_f8__fir4_hot/dot8/soc_dev/c64t8 against ecg_dot8_f8__fir4: -0.06% to +0.01% over 8 layouts
+not distinguishable  ecg/ecg_dot8_f8__hot/dot8/soc_dev against its original: -0.02% to +0.00% over 8 layouts
+not distinguishable  ecg/ecg_dot8_f8__hot/dot8/soc_dev/c128t16 against its original: -0.01% to +0.00% over 8 layouts
+not distinguishable  ecg/ecg_dot8_f8__hot/dot8/soc_dev/c128t32 against its original: -0.01% to +0.00% over 8 layouts
+not distinguishable  ecg/ecg_dot8_f8__hot/dot8/soc_dev/c128t8 against its original: -0.02% to +0.00% over 8 layouts
+not distinguishable  ecg/ecg_dot8_f8__hot/dot8/soc_dev/c16t8 against its original: -0.02% to +0.00% over 8 layouts
+not distinguishable  ecg/ecg_dot8_f8__hot/dot8/soc_dev/c32t16 against its original: -0.02% to +0.00% over 8 layouts
+not distinguishable  ecg/ecg_dot8_f8__hot/dot8/soc_dev/c32t8 against its original: -0.02% to +0.00% over 8 layouts
+not distinguishable  ecg/ecg_dot8_f8__hot/dot8/soc_dev/c64t32 against its original: -0.02% to +0.00% over 8 layouts
+not distinguishable  ecg/ecg_dot8_f8__hot/dot8/soc_dev/c64t8 against its original: -0.02% to +0.00% over 8 layouts
+not distinguishable  ecg/ecg_pipeline_overlap__fir4_copy_hot/pipeline/soc_dev/c16t8 against ecg_pipeline_overlap__fir4_copy: -2.14% to +0.01% over 8 layouts
+not distinguishable  ecg/ecg_pipeline_overlap__fir4_hot/pipeline/soc_dev against ecg_pipeline_overlap__fir4: -0.14% to +0.14% over 8 layouts
+not distinguishable  ecg/ecg_pipeline_overlap__fir4_hot/pipeline/soc_dev/c128t16 against ecg_pipeline_overlap__fir4: -0.17% to +0.01% over 8 layouts
+not distinguishable  ecg/ecg_pipeline_overlap__fir4_hot/pipeline/soc_dev/c128t32 against ecg_pipeline_overlap__fir4: -0.25% to +0.01% over 8 layouts
+not distinguishable  ecg/ecg_pipeline_overlap__fir4_hot/pipeline/soc_dev/c128t8 against ecg_pipeline_overlap__fir4: -0.05% to +0.13% over 8 layouts
+not distinguishable  ecg/ecg_pipeline_overlap__fir4_hot/pipeline/soc_dev/c16t8 against ecg_pipeline_overlap__fir4: -0.03% to +0.08% over 8 layouts
+not distinguishable  ecg/ecg_pipeline_overlap__fir4_hot/pipeline/soc_dev/c32t16 against ecg_pipeline_overlap__fir4: -0.13% to +0.15% over 8 layouts
+not distinguishable  ecg/ecg_pipeline_overlap__fir4_hot/pipeline/soc_dev/c32t8 against ecg_pipeline_overlap__fir4: -0.05% to +0.07% over 8 layouts
+not distinguishable  ecg/ecg_pipeline_overlap__fir4_hot/pipeline/soc_dev/c64t32 against ecg_pipeline_overlap__fir4: -0.32% to +0.08% over 8 layouts
+not distinguishable  ecg/ecg_pipeline_overlap__fir4_hot/pipeline/soc_dev/c64t8 against ecg_pipeline_overlap__fir4: -0.05% to +0.12% over 8 layouts
+not distinguishable  ecg/ecg_pipeline_overlap__fir4_split_hot/pipeline/soc_dev against ecg_pipeline_overlap__fir4_split: -0.11% to +0.19% over 8 layouts
+not distinguishable  ecg/ecg_pipeline_overlap__fir4_split_hot/pipeline/soc_dev/c16t8 against ecg_pipeline_overlap__fir4_split: -0.06% to +0.04% over 8 layouts
+not distinguishable  ecg/ecg_pipeline_overlap__fir4_split_hot/pipeline/soc_dev/c32t16 against ecg_pipeline_overlap__fir4_split: -0.14% to +0.23% over 8 layouts
+not distinguishable  ecg/ecg_pipeline_overlap__fir4_split_hot/pipeline/soc_dev/c32t8 against ecg_pipeline_overlap__fir4_split: -0.08% to +0.05% over 8 layouts
+not distinguishable  ecg/ecg_pipeline_overlap__fir4_split_hot/pipeline/soc_dev/c64t8 against ecg_pipeline_overlap__fir4_split: -0.05% to +0.06% over 8 layouts
+not distinguishable  ecg/ecg_pipeline_overlap__hot/pipeline/soc_dev against its original: -0.56% to +0.00% over 8 layouts
+not distinguishable  ecg/ecg_pipeline_overlap__hot/pipeline/soc_dev/c128t16 against its original: -0.23% to +0.00% over 8 layouts
+not distinguishable  ecg/ecg_pipeline_overlap__hot/pipeline/soc_dev/c128t32 against its original: -0.18% to +0.00% over 8 layouts
+wins                 ecg/ecg_pipeline_overlap__hot/pipeline/soc_dev/c128t8 against its original: -0.27% to -0.00% over 8 layouts
+not distinguishable  ecg/ecg_pipeline_overlap__hot/pipeline/soc_dev/c16t8 against its original: -3.67% to +0.00% over 8 layouts
+not distinguishable  ecg/ecg_pipeline_overlap__hot/pipeline/soc_dev/c32t16 against its original: -1.31% to +0.01% over 8 layouts
+wins                 ecg/ecg_pipeline_overlap__hot/pipeline/soc_dev/c32t8 against its original: -1.27% to -0.00% over 8 layouts
+not distinguishable  ecg/ecg_pipeline_overlap__hot/pipeline/soc_dev/c64t32 against its original: -0.53% to +0.00% over 8 layouts
+not distinguishable  ecg/ecg_pipeline_overlap__hot/pipeline/soc_dev/c64t8 against its original: -0.62% to +0.00% over 8 layouts
+not distinguishable  ecg/ecg_pipeline_overlap_f8__fir4_copy_hot/pipeline/soc_dev/c16t8 against ecg_pipeline_overlap_f8__fir4_copy: -1.66% to +0.08% over 8 layouts
+not distinguishable  ecg/ecg_pipeline_overlap_f8__fir4_hot/pipeline/soc_dev against ecg_pipeline_overlap_f8__fir4: -0.50% to +0.11% over 8 layouts
+not distinguishable  ecg/ecg_pipeline_overlap_f8__fir4_hot/pipeline/soc_dev/c128t16 against ecg_pipeline_overlap_f8__fir4: -0.30% to +0.09% over 8 layouts
+not distinguishable  ecg/ecg_pipeline_overlap_f8__fir4_hot/pipeline/soc_dev/c128t32 against ecg_pipeline_overlap_f8__fir4: -0.50% to +0.01% over 8 layouts
+not distinguishable  ecg/ecg_pipeline_overlap_f8__fir4_hot/pipeline/soc_dev/c128t8 against ecg_pipeline_overlap_f8__fir4: -0.07% to +0.13% over 8 layouts
+not distinguishable  ecg/ecg_pipeline_overlap_f8__fir4_hot/pipeline/soc_dev/c16t8 against ecg_pipeline_overlap_f8__fir4: -0.03% to +0.10% over 8 layouts
+not distinguishable  ecg/ecg_pipeline_overlap_f8__fir4_hot/pipeline/soc_dev/c32t16 against ecg_pipeline_overlap_f8__fir4: -1.58% to +0.08% over 8 layouts
+not distinguishable  ecg/ecg_pipeline_overlap_f8__fir4_hot/pipeline/soc_dev/c32t8 against ecg_pipeline_overlap_f8__fir4: -0.04% to +0.12% over 8 layouts
+not distinguishable  ecg/ecg_pipeline_overlap_f8__fir4_hot/pipeline/soc_dev/c64t32 against ecg_pipeline_overlap_f8__fir4: -1.56% to +0.02% over 8 layouts
+not distinguishable  ecg/ecg_pipeline_overlap_f8__fir4_hot/pipeline/soc_dev/c64t8 against ecg_pipeline_overlap_f8__fir4: -0.05% to +0.13% over 8 layouts
+not distinguishable  ecg/ecg_pipeline_overlap_f8__fir4_split_hot/pipeline/soc_dev/c16t8 against ecg_pipeline_overlap_f8__fir4_split: -0.94% to +0.03% over 8 layouts
+not distinguishable  ecg/ecg_pipeline_overlap_f8__fir4_split_hot/pipeline/soc_dev/c32t8 against ecg_pipeline_overlap_f8__fir4_split: -0.08% to +0.10% over 8 layouts
+not distinguishable  ecg/ecg_pipeline_overlap_f8__hot/pipeline/soc_dev against its original: -0.57% to +0.00% over 8 layouts
+not distinguishable  ecg/ecg_pipeline_overlap_f8__hot/pipeline/soc_dev/c128t16 against its original: -0.24% to +0.00% over 8 layouts
+not distinguishable  ecg/ecg_pipeline_overlap_f8__hot/pipeline/soc_dev/c128t32 against its original: -0.17% to +0.00% over 8 layouts
+not distinguishable  ecg/ecg_pipeline_overlap_f8__hot/pipeline/soc_dev/c128t8 against its original: -0.35% to +0.00% over 8 layouts
+not distinguishable  ecg/ecg_pipeline_overlap_f8__hot/pipeline/soc_dev/c16t8 against its original: -3.34% to +0.00% over 8 layouts
+not distinguishable  ecg/ecg_pipeline_overlap_f8__hot/pipeline/soc_dev/c32t16 against its original: -1.56% to +0.00% over 8 layouts
+not distinguishable  ecg/ecg_pipeline_overlap_f8__hot/pipeline/soc_dev/c32t8 against its original: -1.37% to +0.02% over 8 layouts
+not distinguishable  ecg/ecg_pipeline_overlap_f8__hot/pipeline/soc_dev/c64t32 against its original: -0.49% to +0.00% over 8 layouts
+not distinguishable  ecg/ecg_pipeline_overlap_f8__hot/pipeline/soc_dev/c64t8 against its original: -0.64% to +0.00% over 8 layouts
+not distinguishable  ecg/ecg_pipeline_v1__fir4_hot/pipeline/soc_dev against ecg_pipeline_v1__fir4: -0.17% to +0.11% over 8 layouts
+not distinguishable  ecg/ecg_pipeline_v1__fir4_hot/pipeline/soc_dev/c128t16 against ecg_pipeline_v1__fir4: -0.05% to +0.07% over 8 layouts
+not distinguishable  ecg/ecg_pipeline_v1__fir4_hot/pipeline/soc_dev/c128t32 against ecg_pipeline_v1__fir4: -2.38% to +0.07% over 8 layouts
+not distinguishable  ecg/ecg_pipeline_v1__fir4_hot/pipeline/soc_dev/c128t8 against ecg_pipeline_v1__fir4: -0.05% to +0.21% over 8 layouts
+not distinguishable  ecg/ecg_pipeline_v1__fir4_hot/pipeline/soc_dev/c16t8 against ecg_pipeline_v1__fir4: -0.12% to +0.13% over 8 layouts
+not distinguishable  ecg/ecg_pipeline_v1__fir4_hot/pipeline/soc_dev/c32t16 against ecg_pipeline_v1__fir4: -0.26% to +0.16% over 8 layouts
+not distinguishable  ecg/ecg_pipeline_v1__fir4_hot/pipeline/soc_dev/c32t8 against ecg_pipeline_v1__fir4: -0.12% to +0.16% over 8 layouts
+not distinguishable  ecg/ecg_pipeline_v1__fir4_hot/pipeline/soc_dev/c64t32 against ecg_pipeline_v1__fir4: -4.44% to +0.10% over 8 layouts
+not distinguishable  ecg/ecg_pipeline_v1__fir4_hot/pipeline/soc_dev/c64t8 against ecg_pipeline_v1__fir4: -0.06% to +0.11% over 8 layouts
+not distinguishable  ecg/ecg_pipeline_v1__hot/pipeline/soc_dev against its original: -0.03% to +0.03% over 8 layouts
+not distinguishable  ecg/ecg_pipeline_v1__hot/pipeline/soc_dev/c128t16 against its original: -0.02% to +0.03% over 8 layouts
+not distinguishable  ecg/ecg_pipeline_v1__hot/pipeline/soc_dev/c128t32 against its original: -0.01% to +0.02% over 8 layouts
+not distinguishable  ecg/ecg_pipeline_v1__hot/pipeline/soc_dev/c128t8 against its original: -0.02% to +0.03% over 8 layouts
+not distinguishable  ecg/ecg_pipeline_v1__hot/pipeline/soc_dev/c16t8 against its original: -0.05% to +0.06% over 8 layouts
+not distinguishable  ecg/ecg_pipeline_v1__hot/pipeline/soc_dev/c32t16 against its original: -0.02% to +0.06% over 8 layouts
+not distinguishable  ecg/ecg_pipeline_v1__hot/pipeline/soc_dev/c32t8 against its original: -0.04% to +0.07% over 8 layouts
+not distinguishable  ecg/ecg_pipeline_v1__hot/pipeline/soc_dev/c64t32 against its original: -0.01% to +0.03% over 8 layouts
+not distinguishable  ecg/ecg_pipeline_v1__hot/pipeline/soc_dev/c64t8 against its original: -0.02% to +0.03% over 8 layouts
+not distinguishable  ecg/ecg_pipeline_v1_f8__fir4_hot/pipeline/soc_dev against ecg_pipeline_v1_f8__fir4: -0.05% to +0.10% over 8 layouts
+not distinguishable  ecg/ecg_pipeline_v1_f8__fir4_hot/pipeline/soc_dev/c128t16 against ecg_pipeline_v1_f8__fir4: -0.14% to +0.07% over 8 layouts
+not distinguishable  ecg/ecg_pipeline_v1_f8__fir4_hot/pipeline/soc_dev/c128t32 against ecg_pipeline_v1_f8__fir4: -2.40% to +0.11% over 8 layouts
+not distinguishable  ecg/ecg_pipeline_v1_f8__fir4_hot/pipeline/soc_dev/c128t8 against ecg_pipeline_v1_f8__fir4: -0.10% to +0.10% over 8 layouts
+not distinguishable  ecg/ecg_pipeline_v1_f8__fir4_hot/pipeline/soc_dev/c16t8 against ecg_pipeline_v1_f8__fir4: -0.03% to +0.07% over 8 layouts
+not distinguishable  ecg/ecg_pipeline_v1_f8__fir4_hot/pipeline/soc_dev/c32t16 against ecg_pipeline_v1_f8__fir4: -0.06% to +0.10% over 8 layouts
+not distinguishable  ecg/ecg_pipeline_v1_f8__fir4_hot/pipeline/soc_dev/c32t8 against ecg_pipeline_v1_f8__fir4: -0.06% to +0.10% over 8 layouts
+not distinguishable  ecg/ecg_pipeline_v1_f8__fir4_hot/pipeline/soc_dev/c64t32 against ecg_pipeline_v1_f8__fir4: -6.14% to +0.06% over 8 layouts
+not distinguishable  ecg/ecg_pipeline_v1_f8__fir4_hot/pipeline/soc_dev/c64t8 against ecg_pipeline_v1_f8__fir4: -0.07% to +0.11% over 8 layouts
+not distinguishable  ecg/ecg_pipeline_v1_f8__hot/pipeline/soc_dev against its original: -0.04% to +0.04% over 8 layouts
+not distinguishable  ecg/ecg_pipeline_v1_f8__hot/pipeline/soc_dev/c128t16 against its original: -0.02% to +0.02% over 8 layouts
+not distinguishable  ecg/ecg_pipeline_v1_f8__hot/pipeline/soc_dev/c128t32 against its original: -0.01% to +0.02% over 8 layouts
+not distinguishable  ecg/ecg_pipeline_v1_f8__hot/pipeline/soc_dev/c128t8 against its original: -0.02% to +0.04% over 8 layouts
+not distinguishable  ecg/ecg_pipeline_v1_f8__hot/pipeline/soc_dev/c16t8 against its original: -0.02% to +0.04% over 8 layouts
+not distinguishable  ecg/ecg_pipeline_v1_f8__hot/pipeline/soc_dev/c32t16 against its original: -0.04% to +0.05% over 8 layouts
+not distinguishable  ecg/ecg_pipeline_v1_f8__hot/pipeline/soc_dev/c32t8 against its original: -0.03% to +0.04% over 8 layouts
+not distinguishable  ecg/ecg_pipeline_v1_f8__hot/pipeline/soc_dev/c64t32 against its original: -0.02% to +0.05% over 8 layouts
+not distinguishable  ecg/ecg_pipeline_v1_f8__hot/pipeline/soc_dev/c64t8 against its original: -0.02% to +0.04% over 8 layouts
+not distinguishable  ecg/ecg_scalar__hot/scalar/soc_dev against its original: -0.01% to +0.01% over 8 layouts
+not distinguishable  ecg/ecg_scalar__hot/scalar/soc_dev/c128t16 against its original: -0.00% to +0.01% over 8 layouts
+not distinguishable  ecg/ecg_scalar__hot/scalar/soc_dev/c128t32 against its original: -0.00% to +0.00% over 8 layouts
+not distinguishable  ecg/ecg_scalar__hot/scalar/soc_dev/c128t8 against its original: -0.01% to +0.01% over 8 layouts
+not distinguishable  ecg/ecg_scalar__hot/scalar/soc_dev/c16t8 against its original: -0.02% to +0.01% over 8 layouts
+not distinguishable  ecg/ecg_scalar__hot/scalar/soc_dev/c32t16 against its original: -0.02% to +0.01% over 8 layouts
+not distinguishable  ecg/ecg_scalar__hot/scalar/soc_dev/c32t8 against its original: -0.01% to +0.01% over 8 layouts
+not distinguishable  ecg/ecg_scalar__hot/scalar/soc_dev/c64t32 against its original: -0.00% to +0.01% over 8 layouts
+not distinguishable  ecg/ecg_scalar__hot/scalar/soc_dev/c64t8 against its original: -0.01% to +0.00% over 8 layouts
+not distinguishable  ecg/ecg_scalar_f8__hot/scalar/soc_dev against its original: -0.01% to +0.01% over 8 layouts
+not distinguishable  ecg/ecg_scalar_f8__hot/scalar/soc_dev/c128t16 against its original: -0.01% to +0.01% over 8 layouts
+not distinguishable  ecg/ecg_scalar_f8__hot/scalar/soc_dev/c128t32 against its original: -0.01% to +0.01% over 8 layouts
+not distinguishable  ecg/ecg_scalar_f8__hot/scalar/soc_dev/c128t8 against its original: -0.01% to +0.01% over 8 layouts
+not distinguishable  ecg/ecg_scalar_f8__hot/scalar/soc_dev/c16t8 against its original: -0.01% to +0.01% over 8 layouts
+not distinguishable  ecg/ecg_scalar_f8__hot/scalar/soc_dev/c32t16 against its original: -0.01% to +0.01% over 8 layouts
+not distinguishable  ecg/ecg_scalar_f8__hot/scalar/soc_dev/c32t8 against its original: -0.01% to +0.01% over 8 layouts
+not distinguishable  ecg/ecg_scalar_f8__hot/scalar/soc_dev/c64t32 against its original: -0.00% to +0.00% over 8 layouts
+not distinguishable  ecg/ecg_scalar_f8__hot/scalar/soc_dev/c64t8 against its original: -0.01% to +0.02% over 8 layouts
+not distinguishable  ml/cifar_cnn_npu_direct__2h_copy_hot/npu_direct/soc_dev against cifar_cnn_npu_direct__2h_copy: -0.02% to +0.00% over 8 layouts
+not distinguishable  ml/cifar_cnn_npu_direct__2h_hot/npu_direct/soc_dev against cifar_cnn_npu_direct__2h: -0.00% to +0.00% over 8 layouts
+not distinguishable  ml/cifar_cnn_npu_direct__hot/npu_direct/soc_dev against its original: -0.00% to +0.00% over 8 layouts
+not distinguishable  ml/cifar_cnn_npu_im2col__2h_copy_hot/npu_im2col/soc_dev against cifar_cnn_npu_im2col__2h_copy: -0.01% to +0.00% over 8 layouts
+not distinguishable  ml/cifar_cnn_npu_im2col__2h_hot/npu_im2col/soc_dev against cifar_cnn_npu_im2col__2h: -0.01% to +0.00% over 8 layouts
+not distinguishable  ml/cifar_cnn_npu_im2col__hot/npu_im2col/soc_dev against its original: +0.00% to +0.00% over 8 layouts
+not distinguishable  ml/mnist_mlp_npu__2h_hot/npu/soc_dev against mnist_mlp_npu__2h: -0.87% to +0.00% over 8 layouts
+not distinguishable  ml/mnist_mlp_npu__hot/npu/soc_dev against its original: +0.00% to +0.01% over 8 layouts
+not distinguishable  ml/mnist_mlp_npu_batched__2h_hot32/npu/soc_dev against mnist_mlp_npu_batched__2h: -0.19% to +0.00% over 8 layouts
+not distinguishable  ml/mnist_mlp_npu_batched__2h_hot4/npu/soc_dev against mnist_mlp_npu_batched__2h: -0.88% to +0.00% over 8 layouts
+wins                 ml/mnist_mlp_npu_batched__2h_hot8/npu/soc_dev against mnist_mlp_npu_batched__2h: -0.56% to -0.01% over 8 layouts
+not distinguishable  ml/mnist_mlp_npu_batched__hot1/npu/soc_dev against its original: +0.00% to +0.01% over 8 layouts
+not distinguishable  ml/mnist_mlp_npu_batched__hot32/npu/soc_dev against its original: -0.01% to +0.00% over 8 layouts
+not distinguishable  ml/mnist_mlp_npu_batched__hot4/npu/soc_dev against its original: -0.00% to +0.01% over 8 layouts
+not distinguishable  ml/mnist_mlp_npu_batched__hot8/npu/soc_dev against its original: -0.01% to +0.03% over 8 layouts

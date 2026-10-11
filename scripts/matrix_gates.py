@@ -35,19 +35,20 @@ R_SIMS = ("soc_dev", "soc_l1_2k", "soc_l1_4k", "soc_l1_8k")  # (R at each cache 
 # another variant (STACKED_ON) faster than that variant there too; a variant that wins only at some of R's sweep points
 # is adopted at those alone (ADOPTED_POINTS). matrix_judge.py --check-adopted checks all of it against a judgment. Only
 # these compete with their originals in the v1 gate. Not adopted though faster than their originals: __fir4_copy (the
-# copy policy not distinguishable from __fir4 alone but at 16 x 8 in the overlap pipelines, where it is adopted),
-# __place (placement not distinguishable from its control, __loop: the gain is the loops' code), and CIFAR's
-# __2h_next (the next image's copy begun early not faster than __2h_copy).
+# copy policy not distinguishable from __fir4 alone: step 3b), __place (placement not distinguishable from its control,
+# __loop: the gain is the loops' code), and CIFAR's __2h_next (the next image's copy begun early not faster than
+# __2h_copy). Step 3b's code-placement twins (__hot, _hot; tuning.md §4.4) at the points where they win alone: 6 of
+# the 262 twin configurations judged (t3b-judge, 6bc46c2).
 ADOPTED: frozenset = frozenset({
     "ecg_dot8__fir4", "ecg_dot8_f8__fir4", "ecg_pipeline_v1__fir4", "ecg_pipeline_v1_f8__fir4",
     "ecg_pipeline_overlap__fir4", "ecg_pipeline_overlap_f8__fir4",
     "ecg_pipeline_overlap__fir4_split", "ecg_pipeline_overlap_f8__fir4_split",
-    "ecg_pipeline_overlap__fir4_copy", "ecg_pipeline_overlap_f8__fir4_copy",
     "cifar_cnn_npu_direct__2h", "cifar_cnn_npu_im2col__2h", "cifar_cnn_npu_direct__2h_copy",
     "cifar_cnn_npu_im2col__2h_copy", "conv2d_direct_npu__2h", "conv2d_im2col_npu__2h",
     "mnist_mlp_npu__2h", "mnist_mlp_npu_batched__2h", "reduce_fill__loop", "reduce_v1__loop", "lock_sum__split",
     "dot__split", "atomic_add__split", "cas_counter__split", "false_shared__split", "lrsc_counter__split",
     "padded__split", "shared_mix__split",
+    "atomic_add__hot", "padded__hot", "reduce_fill__hot", "ecg_pipeline_overlap__hot", "mnist_mlp_npu_batched__2h_hot",
 })
 # the variants adopted only at some of R's sweep points (the sweep's axes, and the points): at these alone. ECG's
 # split and copy where they beat __fir4; the split policy's variants at the sizes where they win, below its bands
@@ -55,8 +56,12 @@ ADOPTED: frozenset = frozenset({
 ADOPTED_POINTS: dict = {
     "ecg_pipeline_overlap__fir4_split": (("chunk", "taps"), frozenset({(16, 8), (32, 8), (32, 16), (64, 8), (64, 16)})),
     "ecg_pipeline_overlap_f8__fir4_split": (("chunk", "taps"), frozenset({(16, 8), (32, 8)})),
-    "ecg_pipeline_overlap__fir4_copy": (("chunk", "taps"), frozenset({(16, 8)})),
-    "ecg_pipeline_overlap_f8__fir4_copy": (("chunk", "taps"), frozenset({(16, 8)})),
+    # (step 3b's code-placement twins: two workers only where a case has both)
+    "atomic_add__hot": (("items", "workers"), frozenset({(2, 2)})),
+    "padded__hot": (("items", "workers"), frozenset({(2, 2)})),
+    "reduce_fill__hot": (("workers",), frozenset({(2,)})),
+    "ecg_pipeline_overlap__hot": (("chunk", "taps", "features"), frozenset({(32, 8, 4), (128, 8, 4)})),
+    "mnist_mlp_npu_batched__2h_hot": (("batch",), frozenset({(8,)})),
     "dot__split": (("k",), frozenset({(0,), (1,), (7,), (8,)})),
     "atomic_add__split": (("items",), frozenset({(2,), (1024,)})),
     **{f"{kind}__split": (("items",), frozenset({(2,)}))
