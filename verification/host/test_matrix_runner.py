@@ -368,6 +368,16 @@ class TunedVariants(unittest.TestCase):
         rows, alone = matrix_judge.stacked(allrec, "x__fir4_split", "x__none")
         self.assertEqual((rows, len(alone)), ({}, 3))
 
+    def test_records_paired_by_window_and_place(self):
+        # (smp_overhead: a round trip and a handoff, both e2e; each paired with its own, not the last e2e record)
+        def entry(case, cycles):
+            e = dict(id=f"coherence/{case}/multicore/soc_dev/warm", case=case, axes=dict(cache_state="warm"))
+            return e["id"], (e, [dict(window="e2e", h0_cycles=str(c)) for c in cycles])
+        allrec = dict([entry("smp_overhead", (5252, 169)), entry("smp_overhead__hot", (5252, 180))])
+        rows, _, _ = matrix_judge.pairs(allrec)
+        self.assertEqual(sorted((o, v) for *_, o, v in rows["coherence/smp_overhead__hot/multicore/soc_dev"]),
+                         [(169, 180), (5252, 5252)])
+
     def test_the_adopted_set_checked(self):
         def config(case, verdict, chunk=64, taps=16, sim="soc_dev", layouts=8):
             suffix = "" if (chunk, taps) == (64, 16) else f"/c{chunk}t{taps}"

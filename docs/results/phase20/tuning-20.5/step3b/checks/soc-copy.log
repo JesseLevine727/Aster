@@ -1,0 +1,4 @@
+# scripts/soc_tests.py --only copy --sims soc_dev,soc_dev_w3, at 6e219a0 (the copy helper's code as at 6bc46c2: unchanged)
+PASS: the copy helper on soc_dev: copies=1264 dma=264 hart1_copies=224 PASS, every byte, guard and choice checked
+PASS: the copy helper on soc_dev_w3: copies=1264 dma=264 hart1_copies=224 PASS, every byte, guard and choice checked
+PASS: the Phase 20 SoC's two-hart programs

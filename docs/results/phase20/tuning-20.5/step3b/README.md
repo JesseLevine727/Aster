@@ -7,7 +7,10 @@ which this step's supersedes where they differ, is in [`../step3/`](../step3/).
 `SHA256SUMS` covers every file here.
 
 **The captures** (`scripts/matrix.py run ... --out build/matrix/NAME`), all
-from the clean commit 6bc46c2. Each has an xz-compressed copy of its
+from the clean commit 6bc46c2 but one, `t3b-judge-more`, from the clean commit
+6e219a0. That run's firmware at L0 is byte-identical to the families' at
+6bc46c2 (322 builds); between the two commits only the runner's plan and the
+adopted set changed. Each run has an xz-compressed copy of its
 `manifest.json`, and a raw archive of its records and consoles.
 - **`t3b-dma-fine`:** the copy helper's sweep on the eight layouts. It has
   v1's fair copy, the DMA, and at different offsets the shift copy
@@ -29,6 +32,14 @@ from the clean commit 6bc46c2. Each has an xz-compressed copy of its
   | `t3b-ml` | 446 | 22 | 15 of 15 |
 
   Each unsupported entry carries its reason. `--family F --repeat-every 30`.
+- **`t3b-judge-more`:** the other 19 twinned cases and their originals at R on
+  the eight layouts, warm and cold: the CPU methods of CIFAR, MNIST and
+  Conv2D, the FIR, the FFT, ping_pong, producer_consumer, smp_overhead,
+  spsc_queue and stamp_cost (step 3b's layout judgment had left them out).
+  2,576 entries, all captured, determinism 26 of 26. `--family ml --family
+  dsp --family coherence --sims soc_dev --no-stamped --layouts L1,...,L7
+  --repeat-every 100`, with
+  `--match '^(ml/(cifar_cnn|mnist_mlp)_(dot8|multicore|scalar)(__hot)?/|dsp/(conv2d_(direct|im2col)_(dot8|multicore|scalar)|fft|fir)(__hot)?/|coherence/(ping_pong|producer_consumer|smp_overhead|spsc_queue|stamp_cost)(__hot)?/)'`.
 - **`t3b-judge`:** the tuned variants, the twins and their originals at R on
   the eight layouts, warm and cold: 9,272 captured, 24 unsupported (GEMM
   128×64×128 at the layouts that do not fit main memory), none failed,
@@ -54,7 +65,8 @@ depend on them):
   against the variant it extends. `matrix_judge.py t3b-judge
   --check-adopted` checks the adopted set (`matrix_gates.ADOPTED`,
   `ADOPTED_POINTS`): PASS.
-- **`twins.txt`:** the twins' own verdicts, drawn from `judge.json`.
+- **`judge-more.txt`, `judge-more.json`:** the same for `t3b-judge-more`.
+- **`twins.txt`:** the twins' own verdicts, drawn from both judgments.
 - **`others.txt`, `others.json`:** the same over the families' full
   captures, at L0, in every configuration. It lists the adopted variants'
   configurations that do not win, reported beside the win. PASS.
@@ -65,6 +77,10 @@ depend on them):
   `mnist-batching.txt`, `ecg-stages.txt`, `ecg-outputs.txt`,
   `dma-freed.txt`, `bank-conflicts.txt`, `icache.txt` (step 3's figures,
   from step 3b's captures, the twins counted).
+
+**`checks/soc-copy.log`:** the copy helper's SoC self-test,
+`scripts/soc_tests.py --only copy` on soc_dev and soc_dev_w3, at 6e219a0
+(the helper's and the test's code as at 6bc46c2).
 
 Every figure in phase20.md's step 3b record comes from these files or from
 step 3's, with two exceptions the record marks:

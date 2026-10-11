@@ -50,12 +50,23 @@ def pairs(allrec: dict, new: str | None = None, base: str | None = None) -> tupl
             continue
         config = config_of(ident)
         axes[config] = {k: v for k, v in e["axes"].items() if k not in ("layout", "cache_state")} | {"case": e["case"]}
-        theirs = {r["window"]: int(r["h0_cycles"]) for r in twin[1]}
-        for r in recs:
-            if r["window"] in theirs:
-                out[config].append((e["axes"].get("layout", "L0"), e["axes"]["cache_state"], r["window"],
-                                    theirs[r["window"]], int(r["h0_cycles"])))
+        # (each record by its window and its place among the window's records: a program may emit several in one
+        # window, smp_overhead's round trip and handoff, stamp_cost's)
+        theirs = dict(zip(record_keys(twin[1]), (int(r["h0_cycles"]) for r in twin[1])))
+        for key, r in zip(record_keys(recs), recs):
+            if key in theirs:
+                out[config].append((e["axes"].get("layout", "L0"), e["axes"]["cache_state"], key[0],
+                                    theirs[key], int(r["h0_cycles"])))
     return out, alone, axes
+
+
+def record_keys(recs: list[dict]) -> list[tuple]:
+    """Each record's window and its place among that window's records, in order."""
+    seen, out = defaultdict(int), []
+    for r in recs:
+        out.append((r["window"], seen[r["window"]]))
+        seen[r["window"]] += 1
+    return out
 
 
 def verdict(rows: list[tuple]) -> str:

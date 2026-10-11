@@ -1,4 +1,4 @@
-The DMA's busy cycles in the copies the variants make, e2e, at R; t3-ml and t3-ecg, 6bc46c2. A copy the CPU waits on (polling) frees no time (matrix.md §4.3); __2h_next's run during the image's layers
+The DMA's busy cycles in the copies the variants make, e2e, at R; t3b-ml and t3b-ecg, 6bc46c2. A copy the CPU waits on (polling) frees no time (matrix.md §4.3); __2h_next's run during the image's layers
 cifar_cnn_npu_direct__2h_copy cold: 20 jobs, busy 2,064 cycles (103 a job), 0.09% of the window's 2,242,065
 cifar_cnn_npu_direct__2h_copy warm: 20 jobs, busy 2,063 cycles (103 a job), 0.09% of the window's 2,240,030
 cifar_cnn_npu_direct__2h_next cold: 20 jobs, busy 2,102 cycles (105 a job), 0.09% of the window's 2,241,597

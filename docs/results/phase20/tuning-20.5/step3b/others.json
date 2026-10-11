@@ -22033,7 +22033,7 @@
    "spread_mine": null
   },
   "coherence/smp_overhead__hot/multicore/soc_dc0": {
-   "verdict": "loses",
+   "verdict": "not distinguishable",
    "points": 2,
    "layouts": 1,
    "states": [
@@ -22042,8 +22042,8 @@
    "windows": [
     "e2e"
    ],
-   "low": 6.83,
-   "high": 2761.49,
+   "low": -0.26,
+   "high": 6.83,
    "l0": {
     "warm e2e": [
      161,
@@ -22058,7 +22058,7 @@
     "cache_kib": 8,
     "case": "smp_overhead__hot"
    },
-   "spread_theirs": 0.0,
+   "spread_theirs": 2768.94,
    "spread_mine": 2578.49
   },
   "coherence/smp_overhead__hot/multicore/soc_dev": {
@@ -22073,7 +22073,7 @@
     "e2e"
    ],
    "low": -2.25,
-   "high": 3007.69,
+   "high": 6.51,
    "l0": {
     "cold e2e": [
      5286,
@@ -22092,11 +22092,11 @@
     "cache_kib": 8,
     "case": "smp_overhead__hot"
    },
-   "spread_theirs": 0.0,
+   "spread_theirs": 3007.69,
    "spread_mine": 2817.78
   },
   "coherence/smp_overhead__hot/multicore/soc_w1": {
-   "verdict": "loses",
+   "verdict": "not distinguishable",
    "points": 2,
    "layouts": 1,
    "states": [
@@ -22105,8 +22105,8 @@
    "windows": [
     "e2e"
    ],
-   "low": 7.14,
-   "high": 2963.74,
+   "low": 0.0,
+   "high": 7.14,
    "l0": {
     "warm e2e": [
      182,
@@ -22121,11 +22121,11 @@
     "cache_kib": 8,
     "case": "smp_overhead__hot"
    },
-   "spread_theirs": 0.0,
+   "spread_theirs": 2963.74,
    "spread_mine": 2759.49
   },
   "coherence/smp_overhead__hot/multicore/soc_w2": {
-   "verdict": "loses",
+   "verdict": "not distinguishable",
    "points": 2,
    "layouts": 1,
    "states": [
@@ -22134,8 +22134,8 @@
    "windows": [
     "e2e"
    ],
-   "low": 9.74,
-   "high": 3056.92,
+   "low": 0.0,
+   "high": 9.74,
    "l0": {
     "warm e2e": [
      195,
@@ -22150,11 +22150,11 @@
     "cache_kib": 8,
     "case": "smp_overhead__hot"
    },
-   "spread_theirs": 0.0,
+   "spread_theirs": 3056.92,
    "spread_mine": 2776.64
   },
   "coherence/smp_overhead__hot/multicore/soc_w4": {
-   "verdict": "loses",
+   "verdict": "not distinguishable",
    "points": 2,
    "layouts": 1,
    "states": [
@@ -22163,8 +22163,8 @@
    "windows": [
     "e2e"
    ],
-   "low": 8.6,
-   "high": 3090.95,
+   "low": 0.0,
+   "high": 8.6,
    "l0": {
     "warm e2e": [
      221,
@@ -22179,7 +22179,7 @@
     "cache_kib": 8,
     "case": "smp_overhead__hot"
    },
-   "spread_theirs": 0.0,
+   "spread_theirs": 3090.95,
    "spread_mine": 2838.33
   },
   "coherence/spsc_queue__hot/multicore/soc_dc0/n1024": {
@@ -22747,7 +22747,7 @@
    "windows": [
     "kernel"
    ],
-   "low": -60.36,
+   "low": 0.0,
    "high": 0.0,
    "l0": {
     "warm kernel": [
@@ -22764,7 +22764,7 @@
     "cache_kib": 8,
     "case": "stamp_cost__hot"
    },
-   "spread_theirs": 0.0,
+   "spread_theirs": 152.29,
    "spread_mine": 152.29
   },
   "coherence/stamp_cost__hot/scalar/soc_w4": {
@@ -22777,7 +22777,7 @@
    "windows": [
     "kernel"
    ],
-   "low": -65.13,
+   "low": 0.0,
    "high": 0.0,
    "l0": {
     "warm kernel": [
@@ -22794,7 +22794,7 @@
     "cache_kib": 8,
     "case": "stamp_cost__hot"
    },
-   "spread_theirs": 0.0,
+   "spread_theirs": 186.76,
    "spread_mine": 186.76
   },
   "dsp/conv2d_direct_dot8__hot/dot8/soc_dc0": {

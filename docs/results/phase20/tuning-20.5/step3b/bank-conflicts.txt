@@ -1,4 +1,4 @@
-The fabric's bank conflicts (all four banks) in the placement cases' windows, two workers: at L0, their range over the layouts, and the largest share of the window's cycles; t3-judge, 6bc46c2
+The fabric's bank conflicts (all four banks) in the placement cases' windows, two workers: at L0, their range over the layouts, and the largest share of the window's cycles; t3b-judge, 6bc46c2
 coherence/gemm_dot8_128x64x128/multicore/soc_dev cold e2e: L0 1968, layouts 1225 to 1977, at most 0.490% of the cycles
 coherence/gemm_dot8_128x64x128/multicore/soc_dev warm e2e: L0 870, layouts 641 to 1405, at most 0.350% of the cycles
 coherence/gemm_dot8_128x64x128/multicore/soc_dev warm kernel: L0 603, layouts 603 to 857, at most 0.221% of the cycles

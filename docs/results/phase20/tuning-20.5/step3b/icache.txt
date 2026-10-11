@@ -1,4 +1,4 @@
-The warm windows' instruction-cache misses (both harts) at L0, and the fewest over the layouts with that layout's cycles against L0's, for the originals and the adopted variants at their adopted points: each window with 32 misses or more at L0; t3-judge, 6bc46c2. A layout that removes them shows conflict misses (the code pad moves the program's code against the runtime's); misses no layout moves are not
+The warm windows' instruction-cache misses (both harts) at L0, and the fewest over the layouts with that layout's cycles against L0's, for the originals, the adopted variants at their adopted points and the code-placement twins of both (__hot, _hot): each window with 32 misses or more at L0; t3b-judge, 6bc46c2. A layout that removes them shows conflict misses (the code pad moves the program's code against the runtime's); misses no layout moves are not
 ecg/ecg_pipeline_overlap/pipeline/soc_dev/c16t8 e2e: L0 640 misses, 117,615 cycles; fewest 0 at L4, 114,310 cycles (-2.8%)
 ecg/ecg_pipeline_overlap/pipeline/soc_dev/c16t8 kernel: L0 640 misses, 103,729 cycles; fewest 0 at L4, 100,678 cycles (-2.9%)
 ecg/ecg_pipeline_overlap_f8/pipeline/soc_dev/c16t8 e2e: L0 512 misses, 118,507 cycles; fewest 0 at L4, 114,011 cycles (-3.8%)
@@ -12,6 +12,7 @@ ecg/ecg_pipeline_overlap/pipeline/soc_dev/c32t16 kernel: L0 256 misses, 123,679 
 ecg/ecg_pipeline_overlap/pipeline/soc_dev/c32t8 e2e: L0 256 misses, 135,835 cycles; fewest 1 at L4, 134,679 cycles (-0.9%)
 ecg/ecg_pipeline_overlap/pipeline/soc_dev/c32t8 kernel: L0 256 misses, 127,909 cycles; fewest 0 at L4, 126,657 cycles (-1.0%)
 ecg/ecg_pipeline_overlap_f8/pipeline/soc_dev/c32t16 kernel: L0 256 misses, 124,932 cycles; fewest 0 at L4, 123,738 cycles (-1.0%)
+ml/cifar_cnn_npu_im2col__2h_next/npu_im2col/soc_dev e2e: L0 252 misses, 3,441,227 cycles; fewest 200 at L4, 3,443,097 cycles (+0.1%)
 ml/cifar_cnn_npu_im2col__2h_copy/npu_im2col/soc_dev e2e: L0 251 misses, 3,446,379 cycles; fewest 0 at L4, 3,443,749 cycles (-0.1%)
 ecg/ecg_pipeline_overlap/pipeline/soc_dev/c64t32 e2e: L0 160 misses, 187,418 cycles; fewest 0 at L4, 186,794 cycles (-0.3%)
 ecg/ecg_pipeline_overlap/pipeline/soc_dev/c64t32 kernel: L0 160 misses, 182,443 cycles; fewest 0 at L4, 181,668 cycles (-0.4%)
@@ -83,4 +84,4 @@ coherence/padded__hot/multicore/soc_dev/n2 e2e: L0 33 misses, 517 cycles; fewest
 coherence/atomic_add/multicore/soc_dev/n129 e2e: L0 32 misses, 1,082 cycles; fewest 32 at L0, 1,082 cycles (+0.0%)
 coherence/atomic_add/multicore/soc_dev/n2 e2e: L0 32 misses, 508 cycles; fewest 32 at L0, 508 cycles (+0.0%)
 coherence/atomic_add__split/multicore/soc_dev/n1024 e2e: L0 32 misses, 5,119 cycles; fewest 32 at L0, 5,119 cycles (+0.0%)
-84 of 1012 warm windows have 32 misses or more at L0
+85 of 1013 warm windows have 32 misses or more at L0

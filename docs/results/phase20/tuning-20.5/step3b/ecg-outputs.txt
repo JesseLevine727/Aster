@@ -1,4 +1,4 @@
-ECG at R, v1's case (16 chunks of 64 samples, 16 taps), e2e: samples a second at 100 MHz, and each chunk's latency (cycles: worst, mean) against its deadline, the chunk's period at 360 Hz; t3-ecg, 6bc46c2
+ECG at R, v1's case (16 chunks of 64 samples, 16 taps), e2e: samples a second at 100 MHz, and each chunk's latency (cycles: worst, mean) against its deadline, the chunk's period at 360 Hz; t3b-ecg, 6bc46c2
 ecg_pipeline_v1 cold: 507,438 samples/s; latency worst 13681, mean 12594, deadline 17,777,777
 ecg_pipeline_v1 warm: 510,879 samples/s; latency worst 12575, mean 12515, deadline 17,777,777
 ecg_pipeline_v1__fir4 cold: 1,822,810 samples/s; latency worst 4561, mean 3492, deadline 17,777,777

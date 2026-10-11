@@ -197,10 +197,11 @@ As in 20.4:
       fixed cost on small chunks.
   - **The ML staging:** only CIFAR stages inside a window. MNIST copies
     each image before its interval, or reads its images in place.
-    - CIFAR's staging by the helper on `__2h` (`__2h_copy`) wins, −0.8%
-      to −1.3% on every layout, warm and cold, and is adopted.
+    - CIFAR's staging by the helper on `__2h` (`__2h_copy`) wins on every
+      layout, warm and cold, and is adopted: −0.66% to −1.30% in step 3b.
     - Beginning the next image's copy during the current image's layers
-      (`__2h_next`) is not faster than that, so it is not adopted.
+      (`__2h_next`) is not faster in the direct method. In im2col it is, from
+      step 3b: −0.02% to −0.21% against `__2h_copy`, and it is adopted.
 
 ### 4.2 Cache geometry
 
@@ -291,10 +292,10 @@ Where code and data sit:
     - **The twin:** the code its windows run is placed first, from a
       profile, contiguous within the cache. The instructions and the data
       are the base's.
-    - **It removes the conflict misses,** but moving code also moves loops
-      within the instruction lines. So it wins on every layout, warm and
-      cold, at 6 of 262 configurations, and is adopted there.
-    - **It loses at 3,** and 253 are not distinguishable (phase20.md, 20.5
+    - **It removes the conflict misses,** but moving code also changes
+      which code shares a line. So it wins on every layout, warm and cold,
+      at only 6 of 375 configurations, and is adopted there.
+    - **It loses at 3,** and 366 are not distinguishable (phase20.md, 20.5
       step 3b).
 
 ## 5. ECG

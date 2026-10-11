@@ -1,0 +1,4384 @@
+{
+ "revisions": [
+  "6e219a0632da28b8074ae66d3631e7e8e7a9a6de"
+ ],
+ "dirty": false,
+ "without_original": [],
+ "original_unsupported": [],
+ "configs": {
+  "coherence/ping_pong__hot/multicore/soc_dev/n1024": {
+   "verdict": "not distinguishable",
+   "points": 24,
+   "layouts": 8,
+   "states": [
+    "cold",
+    "warm"
+   ],
+   "windows": [
+    "e2e",
+    "kernel"
+   ],
+   "low": -0.02,
+   "high": 0.01,
+   "l0": {
+    "cold e2e": [
+     116371,
+     116359
+    ],
+    "warm e2e": [
+     116258,
+     116269
+    ],
+    "warm kernel": [
+     115927,
+     115921
+    ]
+   },
+   "axes": {
+    "memory_wait": 0,
+    "dcache": 1,
+    "harts": 2,
+    "workers": 2,
+    "items": 1024,
+    "kind": 6,
+    "cache_kib": 8,
+    "case": "ping_pong__hot"
+   },
+   "spread_theirs": 0.01,
+   "spread_mine": 0.01
+  },
+  "coherence/ping_pong__hot/multicore/soc_dev/n129": {
+   "verdict": "not distinguishable",
+   "points": 24,
+   "layouts": 8,
+   "states": [
+    "cold",
+    "warm"
+   ],
+   "windows": [
+    "e2e",
+    "kernel"
+   ],
+   "low": -1.85,
+   "high": 1.84,
+   "l0": {
+    "cold e2e": [
+     14176,
+     14202
+    ],
+    "warm e2e": [
+     14345,
+     14106
+    ],
+    "warm kernel": [
+     14008,
+     14009
+    ]
+   },
+   "axes": {
+    "memory_wait": 0,
+    "dcache": 1,
+    "harts": 2,
+    "workers": 2,
+    "items": 129,
+    "kind": 6,
+    "cache_kib": 8,
+    "case": "ping_pong__hot"
+   },
+   "spread_theirs": 1.88,
+   "spread_mine": 1.88
+  },
+  "coherence/ping_pong__hot/multicore/soc_dev/n2": {
+   "verdict": "not distinguishable",
+   "points": 24,
+   "layouts": 8,
+   "states": [
+    "cold",
+    "warm"
+   ],
+   "windows": [
+    "e2e",
+    "kernel"
+   ],
+   "low": -4.04,
+   "high": 1.99,
+   "l0": {
+    "cold e2e": [
+     864,
+     831
+    ],
+    "warm e2e": [
+     736,
+     711
+    ],
+    "warm kernel": [
+     437,
+     425
+    ]
+   },
+   "axes": {
+    "memory_wait": 0,
+    "dcache": 1,
+    "harts": 2,
+    "workers": 2,
+    "items": 2,
+    "kind": 6,
+    "cache_kib": 8,
+    "case": "ping_pong__hot"
+   },
+   "spread_theirs": 1.37,
+   "spread_mine": 5.49
+  },
+  "coherence/producer_consumer__hot/multicore/soc_dev/n1024": {
+   "verdict": "not distinguishable",
+   "points": 24,
+   "layouts": 8,
+   "states": [
+    "cold",
+    "warm"
+   ],
+   "windows": [
+    "e2e",
+    "kernel"
+   ],
+   "low": -0.01,
+   "high": 0.04,
+   "l0": {
+    "cold e2e": [
+     97766,
+     97801
+    ],
+    "warm e2e": [
+     97670,
+     97688
+    ],
+    "warm kernel": [
+     97594,
+     97583
+    ]
+   },
+   "axes": {
+    "memory_wait": 0,
+    "dcache": 1,
+    "harts": 2,
+    "workers": 2,
+    "items": 1024,
+    "kind": 9,
+    "cache_kib": 8,
+    "case": "producer_consumer__hot"
+   },
+   "spread_theirs": 0.0,
+   "spread_mine": 0.01
+  },
+  "coherence/producer_consumer__hot/multicore/soc_dev/n129": {
+   "verdict": "not distinguishable",
+   "points": 24,
+   "layouts": 8,
+   "states": [
+    "cold",
+    "warm"
+   ],
+   "windows": [
+    "e2e",
+    "kernel"
+   ],
+   "low": -0.06,
+   "high": 0.39,
+   "l0": {
+    "cold e2e": [
+     12753,
+     12793
+    ],
+    "warm e2e": [
+     12659,
+     12691
+    ],
+    "warm kernel": [
+     12584,
+     12578
+    ]
+   },
+   "axes": {
+    "memory_wait": 0,
+    "dcache": 1,
+    "harts": 2,
+    "workers": 2,
+    "items": 129,
+    "kind": 9,
+    "cache_kib": 8,
+    "case": "producer_consumer__hot"
+   },
+   "spread_theirs": 0.08,
+   "spread_mine": 0.11
+  },
+  "coherence/producer_consumer__hot/multicore/soc_dev/n2": {
+   "verdict": "not distinguishable",
+   "points": 24,
+   "layouts": 8,
+   "states": [
+    "cold",
+    "warm"
+   ],
+   "windows": [
+    "e2e",
+    "kernel"
+   ],
+   "low": -7.39,
+   "high": 5.04,
+   "l0": {
+    "cold e2e": [
+     872,
+     864
+    ],
+    "warm e2e": [
+     846,
+     852
+    ],
+    "warm kernel": [
+     496,
+     476
+    ]
+   },
+   "axes": {
+    "memory_wait": 0,
+    "dcache": 1,
+    "harts": 2,
+    "workers": 2,
+    "items": 2,
+    "kind": 9,
+    "cache_kib": 8,
+    "case": "producer_consumer__hot"
+   },
+   "spread_theirs": 3.63,
+   "spread_mine": 4.41
+  },
+  "coherence/smp_overhead__hot/multicore/soc_dev": {
+   "verdict": "not distinguishable",
+   "points": 24,
+   "layouts": 8,
+   "states": [
+    "cold",
+    "warm"
+   ],
+   "windows": [
+    "e2e"
+   ],
+   "low": -2.25,
+   "high": 6.51,
+   "l0": {
+    "cold e2e": [
+     5286,
+     5167
+    ],
+    "warm e2e": [
+     169,
+     180
+    ]
+   },
+   "axes": {
+    "memory_wait": 0,
+    "dcache": 1,
+    "harts": 2,
+    "workers": 2,
+    "cache_kib": 8,
+    "case": "smp_overhead__hot"
+   },
+   "spread_theirs": 3007.69,
+   "spread_mine": 2817.78
+  },
+  "coherence/spsc_queue__hot/multicore/soc_dev/n1024": {
+   "verdict": "not distinguishable",
+   "points": 24,
+   "layouts": 8,
+   "states": [
+    "cold",
+    "warm"
+   ],
+   "windows": [
+    "e2e",
+    "kernel"
+   ],
+   "low": -0.05,
+   "high": 0.02,
+   "l0": {
+    "cold e2e": [
+     62961,
+     62963
+    ],
+    "warm e2e": [
+     62948,
+     62959
+    ],
+    "warm kernel": [
+     62531,
+     62527
+    ]
+   },
+   "axes": {
+    "memory_wait": 0,
+    "dcache": 1,
+    "harts": 2,
+    "workers": 2,
+    "items": 1024,
+    "kind": 7,
+    "cache_kib": 8,
+    "case": "spsc_queue__hot"
+   },
+   "spread_theirs": 0.44,
+   "spread_mine": 0.43
+  },
+  "coherence/spsc_queue__hot/multicore/soc_dev/n129": {
+   "verdict": "not distinguishable",
+   "points": 24,
+   "layouts": 8,
+   "states": [
+    "cold",
+    "warm"
+   ],
+   "windows": [
+    "e2e",
+    "kernel"
+   ],
+   "low": -1.63,
+   "high": 0.58,
+   "l0": {
+    "cold e2e": [
+     8005,
+     8035
+    ],
+    "warm e2e": [
+     7989,
+     8026
+    ],
+    "warm kernel": [
+     7642,
+     7606
+    ]
+   },
+   "axes": {
+    "memory_wait": 0,
+    "dcache": 1,
+    "harts": 2,
+    "workers": 2,
+    "items": 129,
+    "kind": 7,
+    "cache_kib": 8,
+    "case": "spsc_queue__hot"
+   },
+   "spread_theirs": 1.99,
+   "spread_mine": 2.12
+  },
+  "coherence/spsc_queue__hot/multicore/soc_dev/n2": {
+   "verdict": "not distinguishable",
+   "points": 24,
+   "layouts": 8,
+   "states": [
+    "cold",
+    "warm"
+   ],
+   "windows": [
+    "e2e",
+    "kernel"
+   ],
+   "low": -3.66,
+   "high": 3.7,
+   "l0": {
+    "cold e2e": [
+     681,
+     661
+    ],
+    "warm e2e": [
+     669,
+     650
+    ],
+    "warm kernel": [
+     324,
+     316
+    ]
+   },
+   "axes": {
+    "memory_wait": 0,
+    "dcache": 1,
+    "harts": 2,
+    "workers": 2,
+    "items": 2,
+    "kind": 7,
+    "cache_kib": 8,
+    "case": "spsc_queue__hot"
+   },
+   "spread_theirs": 2.54,
+   "spread_mine": 6.33
+  },
+  "coherence/stamp_cost__hot/scalar/soc_dev": {
+   "verdict": "not distinguishable",
+   "points": 16,
+   "layouts": 8,
+   "states": [
+    "warm"
+   ],
+   "windows": [
+    "kernel"
+   ],
+   "low": 0.0,
+   "high": 0.0,
+   "l0": {
+    "warm kernel": [
+     1819,
+     1819
+    ]
+   },
+   "axes": {
+    "memory_wait": 0,
+    "dcache": 1,
+    "harts": 2,
+    "workers": 1,
+    "npu": "8x8/64b/2s",
+    "cache_kib": 8,
+    "case": "stamp_cost__hot"
+   },
+   "spread_theirs": 152.29,
+   "spread_mine": 152.29
+  },
+  "dsp/conv2d_direct_dot8__hot/dot8/soc_dev": {
+   "verdict": "not distinguishable",
+   "points": 24,
+   "layouts": 8,
+   "states": [
+    "cold",
+    "warm"
+   ],
+   "windows": [
+    "e2e",
+    "kernel"
+   ],
+   "low": -0.0,
+   "high": 0.0,
+   "l0": {
+    "cold e2e": [
+     672053,
+     672050
+    ],
+    "warm e2e": [
+     670000,
+     670000
+    ],
+    "warm kernel": [
+     619464,
+     619464
+    ]
+   },
+   "axes": {
+    "memory_wait": 0,
+    "dcache": 1,
+    "harts": 2,
+    "workers": 1,
+    "npu": "8x8/64b/2s",
+    "seed": 324468736,
+    "cache_kib": 8,
+    "case": "conv2d_direct_dot8__hot"
+   },
+   "spread_theirs": 0.01,
+   "spread_mine": 0.01
+  },
+  "dsp/conv2d_direct_dot8__hot/dot8/soc_dev/seed2468ace0": {
+   "verdict": "not distinguishable",
+   "points": 16,
+   "layouts": 8,
+   "states": [
+    "warm"
+   ],
+   "windows": [
+    "e2e",
+    "kernel"
+   ],
+   "low": 0.0,
+   "high": 0.0,
+   "l0": {
+    "warm e2e": [
+     674196,
+     674196
+    ],
+    "warm kernel": [
+     619464,
+     619464
+    ]
+   },
+   "axes": {
+    "memory_wait": 0,
+    "dcache": 1,
+    "harts": 2,
+    "workers": 1,
+    "npu": "8x8/64b/2s",
+    "seed": 610839776,
+    "cache_kib": 8,
+    "case": "conv2d_direct_dot8__hot"
+   },
+   "spread_theirs": 0.01,
+   "spread_mine": 0.01
+  },
+  "dsp/conv2d_direct_dot8__hot/dot8/soc_dev/seed9e3779b9": {
+   "verdict": "not distinguishable",
+   "points": 16,
+   "layouts": 8,
+   "states": [
+    "warm"
+   ],
+   "windows": [
+    "e2e",
+    "kernel"
+   ],
+   "low": 0.0,
+   "high": 0.0,
+   "l0": {
+    "warm e2e": [
+     674196,
+     674196
+    ],
+    "warm kernel": [
+     619464,
+     619464
+    ]
+   },
+   "axes": {
+    "memory_wait": 0,
+    "dcache": 1,
+    "harts": 2,
+    "workers": 1,
+    "npu": "8x8/64b/2s",
+    "seed": 2654435769,
+    "cache_kib": 8,
+    "case": "conv2d_direct_dot8__hot"
+   },
+   "spread_theirs": 0.01,
+   "spread_mine": 0.01
+  },
+  "dsp/conv2d_direct_multicore__hot/multicore/soc_dev": {
+   "verdict": "not distinguishable",
+   "points": 24,
+   "layouts": 8,
+   "states": [
+    "cold",
+    "warm"
+   ],
+   "windows": [
+    "e2e",
+    "kernel"
+   ],
+   "low": -0.01,
+   "high": 0.0,
+   "l0": {
+    "cold e2e": [
+     597334,
+     597287
+    ],
+    "warm e2e": [
+     596227,
+     596227
+    ],
+    "warm kernel": [
+     542888,
+     542888
+    ]
+   },
+   "axes": {
+    "memory_wait": 0,
+    "dcache": 1,
+    "harts": 2,
+    "workers": 2,
+    "npu": "8x8/64b/2s",
+    "seed": 324468736,
+    "cache_kib": 8,
+    "case": "conv2d_direct_multicore__hot"
+   },
+   "spread_theirs": 1.76,
+   "spread_mine": 1.76
+  },
+  "dsp/conv2d_direct_multicore__hot/multicore/soc_dev/seed2468ace0": {
+   "verdict": "not distinguishable",
+   "points": 16,
+   "layouts": 8,
+   "states": [
+    "warm"
+   ],
+   "windows": [
+    "e2e",
+    "kernel"
+   ],
+   "low": -0.0,
+   "high": 0.0,
+   "l0": {
+    "warm e2e": [
+     600431,
+     600419
+    ],
+    "warm kernel": [
+     542899,
+     542899
+    ]
+   },
+   "axes": {
+    "memory_wait": 0,
+    "dcache": 1,
+    "harts": 2,
+    "workers": 2,
+    "npu": "8x8/64b/2s",
+    "seed": 610839776,
+    "cache_kib": 8,
+    "case": "conv2d_direct_multicore__hot"
+   },
+   "spread_theirs": 1.76,
+   "spread_mine": 1.76
+  },
+  "dsp/conv2d_direct_multicore__hot/multicore/soc_dev/seed9e3779b9": {
+   "verdict": "not distinguishable",
+   "points": 16,
+   "layouts": 8,
+   "states": [
+    "warm"
+   ],
+   "windows": [
+    "e2e",
+    "kernel"
+   ],
+   "low": -0.0,
+   "high": 0.0,
+   "l0": {
+    "warm e2e": [
+     600431,
+     600419
+    ],
+    "warm kernel": [
+     542899,
+     542899
+    ]
+   },
+   "axes": {
+    "memory_wait": 0,
+    "dcache": 1,
+    "harts": 2,
+    "workers": 2,
+    "npu": "8x8/64b/2s",
+    "seed": 2654435769,
+    "cache_kib": 8,
+    "case": "conv2d_direct_multicore__hot"
+   },
+   "spread_theirs": 1.76,
+   "spread_mine": 1.76
+  },
+  "dsp/conv2d_direct_scalar__hot/scalar/soc_dev": {
+   "verdict": "not distinguishable",
+   "points": 24,
+   "layouts": 8,
+   "states": [
+    "cold",
+    "warm"
+   ],
+   "windows": [
+    "e2e",
+    "kernel"
+   ],
+   "low": -0.0,
+   "high": 0.0,
+   "l0": {
+    "cold e2e": [
+     1134738,
+     1134733
+    ],
+    "warm e2e": [
+     1132560,
+     1132560
+    ],
+    "warm kernel": [
+     1082024,
+     1082024
+    ]
+   },
+   "axes": {
+    "memory_wait": 0,
+    "dcache": 1,
+    "harts": 2,
+    "workers": 1,
+    "npu": "8x8/64b/2s",
+    "seed": 324468736,
+    "cache_kib": 8,
+    "case": "conv2d_direct_scalar__hot"
+   },
+   "spread_theirs": 1.77,
+   "spread_mine": 1.77
+  },
+  "dsp/conv2d_direct_scalar__hot/scalar/soc_dev/seed2468ace0": {
+   "verdict": "not distinguishable",
+   "points": 16,
+   "layouts": 8,
+   "states": [
+    "warm"
+   ],
+   "windows": [
+    "e2e",
+    "kernel"
+   ],
+   "low": 0.0,
+   "high": 0.0,
+   "l0": {
+    "warm e2e": [
+     1136756,
+     1136756
+    ],
+    "warm kernel": [
+     1082024,
+     1082024
+    ]
+   },
+   "axes": {
+    "memory_wait": 0,
+    "dcache": 1,
+    "harts": 2,
+    "workers": 1,
+    "npu": "8x8/64b/2s",
+    "seed": 610839776,
+    "cache_kib": 8,
+    "case": "conv2d_direct_scalar__hot"
+   },
+   "spread_theirs": 1.77,
+   "spread_mine": 1.77
+  },
+  "dsp/conv2d_direct_scalar__hot/scalar/soc_dev/seed9e3779b9": {
+   "verdict": "not distinguishable",
+   "points": 16,
+   "layouts": 8,
+   "states": [
+    "warm"
+   ],
+   "windows": [
+    "e2e",
+    "kernel"
+   ],
+   "low": 0.0,
+   "high": 0.0,
+   "l0": {
+    "warm e2e": [
+     1136756,
+     1136756
+    ],
+    "warm kernel": [
+     1082024,
+     1082024
+    ]
+   },
+   "axes": {
+    "memory_wait": 0,
+    "dcache": 1,
+    "harts": 2,
+    "workers": 1,
+    "npu": "8x8/64b/2s",
+    "seed": 2654435769,
+    "cache_kib": 8,
+    "case": "conv2d_direct_scalar__hot"
+   },
+   "spread_theirs": 1.77,
+   "spread_mine": 1.77
+  },
+  "dsp/conv2d_im2col_dot8__hot/dot8/soc_dev": {
+   "verdict": "not distinguishable",
+   "points": 24,
+   "layouts": 8,
+   "states": [
+    "cold",
+    "warm"
+   ],
+   "windows": [
+    "e2e",
+    "kernel"
+   ],
+   "low": -0.0,
+   "high": 0.0,
+   "l0": {
+    "cold e2e": [
+     1510564,
+     1510557
+    ],
+    "warm e2e": [
+     1510015,
+     1510015
+    ],
+    "warm kernel": [
+     953388,
+     953388
+    ]
+   },
+   "axes": {
+    "memory_wait": 0,
+    "dcache": 1,
+    "harts": 2,
+    "workers": 1,
+    "npu": "8x8/64b/2s",
+    "seed": 324468736,
+    "cache_kib": 8,
+    "case": "conv2d_im2col_dot8__hot"
+   },
+   "spread_theirs": 0.06,
+   "spread_mine": 0.06
+  },
+  "dsp/conv2d_im2col_dot8__hot/dot8/soc_dev/seed2468ace0": {
+   "verdict": "not distinguishable",
+   "points": 16,
+   "layouts": 8,
+   "states": [
+    "warm"
+   ],
+   "windows": [
+    "e2e",
+    "kernel"
+   ],
+   "low": 0.0,
+   "high": 0.0,
+   "l0": {
+    "warm e2e": [
+     1514211,
+     1514211
+    ],
+    "warm kernel": [
+     953388,
+     953388
+    ]
+   },
+   "axes": {
+    "memory_wait": 0,
+    "dcache": 1,
+    "harts": 2,
+    "workers": 1,
+    "npu": "8x8/64b/2s",
+    "seed": 610839776,
+    "cache_kib": 8,
+    "case": "conv2d_im2col_dot8__hot"
+   },
+   "spread_theirs": 0.06,
+   "spread_mine": 0.06
+  },
+  "dsp/conv2d_im2col_dot8__hot/dot8/soc_dev/seed9e3779b9": {
+   "verdict": "not distinguishable",
+   "points": 16,
+   "layouts": 8,
+   "states": [
+    "warm"
+   ],
+   "windows": [
+    "e2e",
+    "kernel"
+   ],
+   "low": 0.0,
+   "high": 0.0,
+   "l0": {
+    "warm e2e": [
+     1514211,
+     1514211
+    ],
+    "warm kernel": [
+     953388,
+     953388
+    ]
+   },
+   "axes": {
+    "memory_wait": 0,
+    "dcache": 1,
+    "harts": 2,
+    "workers": 1,
+    "npu": "8x8/64b/2s",
+    "seed": 2654435769,
+    "cache_kib": 8,
+    "case": "conv2d_im2col_dot8__hot"
+   },
+   "spread_theirs": 0.06,
+   "spread_mine": 0.06
+  },
+  "dsp/conv2d_im2col_multicore__hot/multicore/soc_dev": {
+   "verdict": "not distinguishable",
+   "points": 24,
+   "layouts": 8,
+   "states": [
+    "cold",
+    "warm"
+   ],
+   "windows": [
+    "e2e",
+    "kernel"
+   ],
+   "low": -0.01,
+   "high": 0.02,
+   "l0": {
+    "cold e2e": [
+     774637,
+     774647
+    ],
+    "warm e2e": [
+     772922,
+     772922
+    ],
+    "warm kernel": [
+     472112,
+     472126
+    ]
+   },
+   "axes": {
+    "memory_wait": 0,
+    "dcache": 1,
+    "harts": 2,
+    "workers": 2,
+    "npu": "8x8/64b/2s",
+    "seed": 324468736,
+    "cache_kib": 8,
+    "case": "conv2d_im2col_multicore__hot"
+   },
+   "spread_theirs": 0.3,
+   "spread_mine": 0.31
+  },
+  "dsp/conv2d_im2col_multicore__hot/multicore/soc_dev/seed2468ace0": {
+   "verdict": "not distinguishable",
+   "points": 16,
+   "layouts": 8,
+   "states": [
+    "warm"
+   ],
+   "windows": [
+    "e2e",
+    "kernel"
+   ],
+   "low": -0.0,
+   "high": 0.01,
+   "l0": {
+    "warm e2e": [
+     777117,
+     777115
+    ],
+    "warm kernel": [
+     472127,
+     472127
+    ]
+   },
+   "axes": {
+    "memory_wait": 0,
+    "dcache": 1,
+    "harts": 2,
+    "workers": 2,
+    "npu": "8x8/64b/2s",
+    "seed": 610839776,
+    "cache_kib": 8,
+    "case": "conv2d_im2col_multicore__hot"
+   },
+   "spread_theirs": 0.3,
+   "spread_mine": 0.3
+  },
+  "dsp/conv2d_im2col_multicore__hot/multicore/soc_dev/seed9e3779b9": {
+   "verdict": "not distinguishable",
+   "points": 16,
+   "layouts": 8,
+   "states": [
+    "warm"
+   ],
+   "windows": [
+    "e2e",
+    "kernel"
+   ],
+   "low": -0.0,
+   "high": 0.01,
+   "l0": {
+    "warm e2e": [
+     777117,
+     777115
+    ],
+    "warm kernel": [
+     472127,
+     472127
+    ]
+   },
+   "axes": {
+    "memory_wait": 0,
+    "dcache": 1,
+    "harts": 2,
+    "workers": 2,
+    "npu": "8x8/64b/2s",
+    "seed": 2654435769,
+    "cache_kib": 8,
+    "case": "conv2d_im2col_multicore__hot"
+   },
+   "spread_theirs": 0.3,
+   "spread_mine": 0.3
+  },
+  "dsp/conv2d_im2col_scalar__hot/scalar/soc_dev": {
+   "verdict": "not distinguishable",
+   "points": 24,
+   "layouts": 8,
+   "states": [
+    "cold",
+    "warm"
+   ],
+   "windows": [
+    "e2e",
+    "kernel"
+   ],
+   "low": 0.0,
+   "high": 0.0,
+   "l0": {
+    "cold e2e": [
+     1506442,
+     1506445
+    ],
+    "warm e2e": [
+     1506161,
+     1506161
+    ],
+    "warm kernel": [
+     949384,
+     949384
+    ]
+   },
+   "axes": {
+    "memory_wait": 0,
+    "dcache": 1,
+    "harts": 2,
+    "workers": 1,
+    "npu": "8x8/64b/2s",
+    "seed": 324468736,
+    "cache_kib": 8,
+    "case": "conv2d_im2col_scalar__hot"
+   },
+   "spread_theirs": 0.74,
+   "spread_mine": 0.74
+  },
+  "dsp/conv2d_im2col_scalar__hot/scalar/soc_dev/seed2468ace0": {
+   "verdict": "not distinguishable",
+   "points": 16,
+   "layouts": 8,
+   "states": [
+    "warm"
+   ],
+   "windows": [
+    "e2e",
+    "kernel"
+   ],
+   "low": 0.0,
+   "high": 0.0,
+   "l0": {
+    "warm e2e": [
+     1510357,
+     1510357
+    ],
+    "warm kernel": [
+     949384,
+     949384
+    ]
+   },
+   "axes": {
+    "memory_wait": 0,
+    "dcache": 1,
+    "harts": 2,
+    "workers": 1,
+    "npu": "8x8/64b/2s",
+    "seed": 610839776,
+    "cache_kib": 8,
+    "case": "conv2d_im2col_scalar__hot"
+   },
+   "spread_theirs": 0.74,
+   "spread_mine": 0.74
+  },
+  "dsp/conv2d_im2col_scalar__hot/scalar/soc_dev/seed9e3779b9": {
+   "verdict": "not distinguishable",
+   "points": 16,
+   "layouts": 8,
+   "states": [
+    "warm"
+   ],
+   "windows": [
+    "e2e",
+    "kernel"
+   ],
+   "low": 0.0,
+   "high": 0.0,
+   "l0": {
+    "warm e2e": [
+     1510357,
+     1510357
+    ],
+    "warm kernel": [
+     949384,
+     949384
+    ]
+   },
+   "axes": {
+    "memory_wait": 0,
+    "dcache": 1,
+    "harts": 2,
+    "workers": 1,
+    "npu": "8x8/64b/2s",
+    "seed": 2654435769,
+    "cache_kib": 8,
+    "case": "conv2d_im2col_scalar__hot"
+   },
+   "spread_theirs": 0.74,
+   "spread_mine": 0.74
+  },
+  "dsp/fft__hot/multicore/soc_dev": {
+   "verdict": "not distinguishable",
+   "points": 24,
+   "layouts": 8,
+   "states": [
+    "cold",
+    "warm"
+   ],
+   "windows": [
+    "e2e",
+    "kernel"
+   ],
+   "low": -0.02,
+   "high": 0.01,
+   "l0": {
+    "cold e2e": [
+     199570,
+     199546
+    ],
+    "warm e2e": [
+     197585,
+     197585
+    ],
+    "warm kernel": [
+     165873,
+     165887
+    ]
+   },
+   "axes": {
+    "memory_wait": 0,
+    "dcache": 1,
+    "harts": 2,
+    "workers": 2,
+    "npu": "8x8/64b/2s",
+    "k": 256,
+    "seed": 324468736,
+    "cache_kib": 8,
+    "case": "fft__hot"
+   },
+   "spread_theirs": 2.2,
+   "spread_mine": 2.2
+  },
+  "dsp/fft__hot/multicore/soc_dev/seed2468ace0": {
+   "verdict": "not distinguishable",
+   "points": 16,
+   "layouts": 8,
+   "states": [
+    "warm"
+   ],
+   "windows": [
+    "e2e",
+    "kernel"
+   ],
+   "low": -0.0,
+   "high": 0.0,
+   "l0": {
+    "warm e2e": [
+     198581,
+     198581
+    ],
+    "warm kernel": [
+     165852,
+     165845
+    ]
+   },
+   "axes": {
+    "memory_wait": 0,
+    "dcache": 1,
+    "harts": 2,
+    "workers": 2,
+    "npu": "8x8/64b/2s",
+    "k": 256,
+    "seed": 610839776,
+    "cache_kib": 8,
+    "case": "fft__hot"
+   },
+   "spread_theirs": 5.18,
+   "spread_mine": 5.18
+  },
+  "dsp/fft__hot/multicore/soc_dev/seed9e3779b9": {
+   "verdict": "not distinguishable",
+   "points": 16,
+   "layouts": 8,
+   "states": [
+    "warm"
+   ],
+   "windows": [
+    "e2e",
+    "kernel"
+   ],
+   "low": -0.0,
+   "high": 0.0,
+   "l0": {
+    "warm e2e": [
+     198581,
+     198581
+    ],
+    "warm kernel": [
+     165852,
+     165845
+    ]
+   },
+   "axes": {
+    "memory_wait": 0,
+    "dcache": 1,
+    "harts": 2,
+    "workers": 2,
+    "npu": "8x8/64b/2s",
+    "k": 256,
+    "seed": 2654435769,
+    "cache_kib": 8,
+    "case": "fft__hot"
+   },
+   "spread_theirs": 5.18,
+   "spread_mine": 5.18
+  },
+  "dsp/fft__hot/scalar/soc_dev": {
+   "verdict": "not distinguishable",
+   "points": 24,
+   "layouts": 8,
+   "states": [
+    "cold",
+    "warm"
+   ],
+   "windows": [
+    "e2e",
+    "kernel"
+   ],
+   "low": 0.0,
+   "high": 0.01,
+   "l0": {
+    "cold e2e": [
+     316297,
+     316323
+    ],
+    "warm e2e": [
+     314610,
+     314610
+    ],
+    "warm kernel": [
+     284535,
+     284535
+    ]
+   },
+   "axes": {
+    "memory_wait": 0,
+    "dcache": 1,
+    "harts": 2,
+    "workers": 1,
+    "npu": "8x8/64b/2s",
+    "k": 256,
+    "seed": 324468736,
+    "cache_kib": 8,
+    "case": "fft__hot"
+   },
+   "spread_theirs": 0.37,
+   "spread_mine": 0.37
+  },
+  "dsp/fft__hot/scalar/soc_dev/seed2468ace0": {
+   "verdict": "not distinguishable",
+   "points": 16,
+   "layouts": 8,
+   "states": [
+    "warm"
+   ],
+   "windows": [
+    "e2e",
+    "kernel"
+   ],
+   "low": 0.0,
+   "high": 0.0,
+   "l0": {
+    "warm e2e": [
+     315620,
+     315620
+    ],
+    "warm kernel": [
+     284528,
+     284528
+    ]
+   },
+   "axes": {
+    "memory_wait": 0,
+    "dcache": 1,
+    "harts": 2,
+    "workers": 1,
+    "npu": "8x8/64b/2s",
+    "k": 256,
+    "seed": 610839776,
+    "cache_kib": 8,
+    "case": "fft__hot"
+   },
+   "spread_theirs": 1.03,
+   "spread_mine": 1.03
+  },
+  "dsp/fft__hot/scalar/soc_dev/seed9e3779b9": {
+   "verdict": "not distinguishable",
+   "points": 16,
+   "layouts": 8,
+   "states": [
+    "warm"
+   ],
+   "windows": [
+    "e2e",
+    "kernel"
+   ],
+   "low": 0.0,
+   "high": 0.0,
+   "l0": {
+    "warm e2e": [
+     315620,
+     315620
+    ],
+    "warm kernel": [
+     284528,
+     284528
+    ]
+   },
+   "axes": {
+    "memory_wait": 0,
+    "dcache": 1,
+    "harts": 2,
+    "workers": 1,
+    "npu": "8x8/64b/2s",
+    "k": 256,
+    "seed": 2654435769,
+    "cache_kib": 8,
+    "case": "fft__hot"
+   },
+   "spread_theirs": 1.03,
+   "spread_mine": 1.03
+  },
+  "dsp/fir__hot/dot8/soc_dev/k16": {
+   "verdict": "not distinguishable",
+   "points": 24,
+   "layouts": 8,
+   "states": [
+    "cold",
+    "warm"
+   ],
+   "windows": [
+    "e2e",
+    "kernel"
+   ],
+   "low": -0.0,
+   "high": 0.03,
+   "l0": {
+    "cold e2e": [
+     54015,
+     54013
+    ],
+    "warm e2e": [
+     53709,
+     53709
+    ],
+    "warm kernel": [
+     53695,
+     53695
+    ]
+   },
+   "axes": {
+    "memory_wait": 0,
+    "dcache": 1,
+    "harts": 2,
+    "workers": 1,
+    "npu": "8x8/64b/2s",
+    "k": 16,
+    "seed": 324468736,
+    "cache_kib": 8,
+    "case": "fir__hot"
+   },
+   "spread_theirs": 0.04,
+   "spread_mine": 0.0
+  },
+  "dsp/fir__hot/dot8/soc_dev/k16/seed2468ace0": {
+   "verdict": "not distinguishable",
+   "points": 16,
+   "layouts": 8,
+   "states": [
+    "warm"
+   ],
+   "windows": [
+    "e2e",
+    "kernel"
+   ],
+   "low": -0.0,
+   "high": 0.0,
+   "l0": {
+    "warm e2e": [
+     53709,
+     53709
+    ],
+    "warm kernel": [
+     53695,
+     53695
+    ]
+   },
+   "axes": {
+    "memory_wait": 0,
+    "dcache": 1,
+    "harts": 2,
+    "workers": 1,
+    "npu": "8x8/64b/2s",
+    "k": 16,
+    "seed": 610839776,
+    "cache_kib": 8,
+    "case": "fir__hot"
+   },
+   "spread_theirs": 0.01,
+   "spread_mine": 0.01
+  },
+  "dsp/fir__hot/dot8/soc_dev/k16/seed9e3779b9": {
+   "verdict": "not distinguishable",
+   "points": 16,
+   "layouts": 8,
+   "states": [
+    "warm"
+   ],
+   "windows": [
+    "e2e",
+    "kernel"
+   ],
+   "low": -0.0,
+   "high": 0.0,
+   "l0": {
+    "warm e2e": [
+     53709,
+     53709
+    ],
+    "warm kernel": [
+     53695,
+     53695
+    ]
+   },
+   "axes": {
+    "memory_wait": 0,
+    "dcache": 1,
+    "harts": 2,
+    "workers": 1,
+    "npu": "8x8/64b/2s",
+    "k": 16,
+    "seed": 2654435769,
+    "cache_kib": 8,
+    "case": "fir__hot"
+   },
+   "spread_theirs": 0.01,
+   "spread_mine": 0.01
+  },
+  "dsp/fir__hot/dot8/soc_dev/k256": {
+   "verdict": "not distinguishable",
+   "points": 24,
+   "layouts": 8,
+   "states": [
+    "cold",
+    "warm"
+   ],
+   "windows": [
+    "e2e",
+    "kernel"
+   ],
+   "low": -0.0,
+   "high": 0.0,
+   "l0": {
+    "cold e2e": [
+     533997,
+     534013
+    ],
+    "warm e2e": [
+     533711,
+     533709
+    ],
+    "warm kernel": [
+     533695,
+     533695
+    ]
+   },
+   "axes": {
+    "memory_wait": 0,
+    "dcache": 1,
+    "harts": 2,
+    "workers": 1,
+    "npu": "8x8/64b/2s",
+    "k": 256,
+    "seed": 324468736,
+    "cache_kib": 8,
+    "case": "fir__hot"
+   },
+   "spread_theirs": 0.0,
+   "spread_mine": 0.0
+  },
+  "dsp/fir__hot/dot8/soc_dev/k256/seed2468ace0": {
+   "verdict": "not distinguishable",
+   "points": 16,
+   "layouts": 8,
+   "states": [
+    "warm"
+   ],
+   "windows": [
+    "e2e",
+    "kernel"
+   ],
+   "low": 0.0,
+   "high": 0.0,
+   "l0": {
+    "warm e2e": [
+     533709,
+     533709
+    ],
+    "warm kernel": [
+     533695,
+     533695
+    ]
+   },
+   "axes": {
+    "memory_wait": 0,
+    "dcache": 1,
+    "harts": 2,
+    "workers": 1,
+    "npu": "8x8/64b/2s",
+    "k": 256,
+    "seed": 610839776,
+    "cache_kib": 8,
+    "case": "fir__hot"
+   },
+   "spread_theirs": 0.0,
+   "spread_mine": 0.0
+  },
+  "dsp/fir__hot/dot8/soc_dev/k256/seed9e3779b9": {
+   "verdict": "not distinguishable",
+   "points": 16,
+   "layouts": 8,
+   "states": [
+    "warm"
+   ],
+   "windows": [
+    "e2e",
+    "kernel"
+   ],
+   "low": 0.0,
+   "high": 0.0,
+   "l0": {
+    "warm e2e": [
+     533709,
+     533709
+    ],
+    "warm kernel": [
+     533695,
+     533695
+    ]
+   },
+   "axes": {
+    "memory_wait": 0,
+    "dcache": 1,
+    "harts": 2,
+    "workers": 1,
+    "npu": "8x8/64b/2s",
+    "k": 256,
+    "seed": 2654435769,
+    "cache_kib": 8,
+    "case": "fir__hot"
+   },
+   "spread_theirs": 0.0,
+   "spread_mine": 0.0
+  },
+  "dsp/fir__hot/dot8/soc_dev/k32": {
+   "verdict": "not distinguishable",
+   "points": 24,
+   "layouts": 8,
+   "states": [
+    "cold",
+    "warm"
+   ],
+   "windows": [
+    "e2e",
+    "kernel"
+   ],
+   "low": -0.0,
+   "high": 0.02,
+   "l0": {
+    "cold e2e": [
+     86015,
+     86013
+    ],
+    "warm e2e": [
+     85709,
+     85709
+    ],
+    "warm kernel": [
+     85695,
+     85695
+    ]
+   },
+   "axes": {
+    "memory_wait": 0,
+    "dcache": 1,
+    "harts": 2,
+    "workers": 1,
+    "npu": "8x8/64b/2s",
+    "k": 32,
+    "seed": 324468736,
+    "cache_kib": 8,
+    "case": "fir__hot"
+   },
+   "spread_theirs": 0.02,
+   "spread_mine": 0.0
+  },
+  "dsp/fir__hot/dot8/soc_dev/k32/seed2468ace0": {
+   "verdict": "not distinguishable",
+   "points": 16,
+   "layouts": 8,
+   "states": [
+    "warm"
+   ],
+   "windows": [
+    "e2e",
+    "kernel"
+   ],
+   "low": -0.0,
+   "high": 0.0,
+   "l0": {
+    "warm e2e": [
+     85709,
+     85709
+    ],
+    "warm kernel": [
+     85695,
+     85695
+    ]
+   },
+   "axes": {
+    "memory_wait": 0,
+    "dcache": 1,
+    "harts": 2,
+    "workers": 1,
+    "npu": "8x8/64b/2s",
+    "k": 32,
+    "seed": 610839776,
+    "cache_kib": 8,
+    "case": "fir__hot"
+   },
+   "spread_theirs": 0.01,
+   "spread_mine": 0.01
+  },
+  "dsp/fir__hot/dot8/soc_dev/k32/seed9e3779b9": {
+   "verdict": "not distinguishable",
+   "points": 16,
+   "layouts": 8,
+   "states": [
+    "warm"
+   ],
+   "windows": [
+    "e2e",
+    "kernel"
+   ],
+   "low": -0.0,
+   "high": 0.0,
+   "l0": {
+    "warm e2e": [
+     85709,
+     85709
+    ],
+    "warm kernel": [
+     85695,
+     85695
+    ]
+   },
+   "axes": {
+    "memory_wait": 0,
+    "dcache": 1,
+    "harts": 2,
+    "workers": 1,
+    "npu": "8x8/64b/2s",
+    "k": 32,
+    "seed": 2654435769,
+    "cache_kib": 8,
+    "case": "fir__hot"
+   },
+   "spread_theirs": 0.01,
+   "spread_mine": 0.01
+  },
+  "dsp/fir__hot/dot8/soc_dev/k4": {
+   "verdict": "not distinguishable",
+   "points": 24,
+   "layouts": 8,
+   "states": [
+    "cold",
+    "warm"
+   ],
+   "windows": [
+    "e2e",
+    "kernel"
+   ],
+   "low": -0.01,
+   "high": 0.05,
+   "l0": {
+    "cold e2e": [
+     30015,
+     30011
+    ],
+    "warm e2e": [
+     29709,
+     29709
+    ],
+    "warm kernel": [
+     29695,
+     29695
+    ]
+   },
+   "axes": {
+    "memory_wait": 0,
+    "dcache": 1,
+    "harts": 2,
+    "workers": 1,
+    "npu": "8x8/64b/2s",
+    "k": 4,
+    "seed": 324468736,
+    "cache_kib": 8,
+    "case": "fir__hot"
+   },
+   "spread_theirs": 0.07,
+   "spread_mine": 0.02
+  },
+  "dsp/fir__hot/dot8/soc_dev/k4/seed2468ace0": {
+   "verdict": "not distinguishable",
+   "points": 16,
+   "layouts": 8,
+   "states": [
+    "warm"
+   ],
+   "windows": [
+    "e2e",
+    "kernel"
+   ],
+   "low": -0.01,
+   "high": 0.0,
+   "l0": {
+    "warm e2e": [
+     29711,
+     29709
+    ],
+    "warm kernel": [
+     29695,
+     29695
+    ]
+   },
+   "axes": {
+    "memory_wait": 0,
+    "dcache": 1,
+    "harts": 2,
+    "workers": 1,
+    "npu": "8x8/64b/2s",
+    "k": 4,
+    "seed": 610839776,
+    "cache_kib": 8,
+    "case": "fir__hot"
+   },
+   "spread_theirs": 0.03,
+   "spread_mine": 0.02
+  },
+  "dsp/fir__hot/dot8/soc_dev/k4/seed9e3779b9": {
+   "verdict": "not distinguishable",
+   "points": 16,
+   "layouts": 8,
+   "states": [
+    "warm"
+   ],
+   "windows": [
+    "e2e",
+    "kernel"
+   ],
+   "low": -0.01,
+   "high": 0.0,
+   "l0": {
+    "warm e2e": [
+     29711,
+     29709
+    ],
+    "warm kernel": [
+     29695,
+     29695
+    ]
+   },
+   "axes": {
+    "memory_wait": 0,
+    "dcache": 1,
+    "harts": 2,
+    "workers": 1,
+    "npu": "8x8/64b/2s",
+    "k": 4,
+    "seed": 2654435769,
+    "cache_kib": 8,
+    "case": "fir__hot"
+   },
+   "spread_theirs": 0.03,
+   "spread_mine": 0.02
+  },
+  "dsp/fir__hot/dot8/soc_dev/k64": {
+   "verdict": "not distinguishable",
+   "points": 24,
+   "layouts": 8,
+   "states": [
+    "cold",
+    "warm"
+   ],
+   "windows": [
+    "e2e",
+    "kernel"
+   ],
+   "low": -0.0,
+   "high": 0.01,
+   "l0": {
+    "cold e2e": [
+     150015,
+     150013
+    ],
+    "warm e2e": [
+     149709,
+     149709
+    ],
+    "warm kernel": [
+     149695,
+     149695
+    ]
+   },
+   "axes": {
+    "memory_wait": 0,
+    "dcache": 1,
+    "harts": 2,
+    "workers": 1,
+    "npu": "8x8/64b/2s",
+    "k": 64,
+    "seed": 324468736,
+    "cache_kib": 8,
+    "case": "fir__hot"
+   },
+   "spread_theirs": 0.01,
+   "spread_mine": 0.0
+  },
+  "dsp/fir__hot/dot8/soc_dev/k64/seed2468ace0": {
+   "verdict": "not distinguishable",
+   "points": 16,
+   "layouts": 8,
+   "states": [
+    "warm"
+   ],
+   "windows": [
+    "e2e",
+    "kernel"
+   ],
+   "low": -0.0,
+   "high": 0.0,
+   "l0": {
+    "warm e2e": [
+     149709,
+     149709
+    ],
+    "warm kernel": [
+     149695,
+     149695
+    ]
+   },
+   "axes": {
+    "memory_wait": 0,
+    "dcache": 1,
+    "harts": 2,
+    "workers": 1,
+    "npu": "8x8/64b/2s",
+    "k": 64,
+    "seed": 610839776,
+    "cache_kib": 8,
+    "case": "fir__hot"
+   },
+   "spread_theirs": 0.0,
+   "spread_mine": 0.0
+  },
+  "dsp/fir__hot/dot8/soc_dev/k64/seed9e3779b9": {
+   "verdict": "not distinguishable",
+   "points": 16,
+   "layouts": 8,
+   "states": [
+    "warm"
+   ],
+   "windows": [
+    "e2e",
+    "kernel"
+   ],
+   "low": -0.0,
+   "high": 0.0,
+   "l0": {
+    "warm e2e": [
+     149709,
+     149709
+    ],
+    "warm kernel": [
+     149695,
+     149695
+    ]
+   },
+   "axes": {
+    "memory_wait": 0,
+    "dcache": 1,
+    "harts": 2,
+    "workers": 1,
+    "npu": "8x8/64b/2s",
+    "k": 64,
+    "seed": 2654435769,
+    "cache_kib": 8,
+    "case": "fir__hot"
+   },
+   "spread_theirs": 0.0,
+   "spread_mine": 0.0
+  },
+  "dsp/fir__hot/dot8/soc_dev/k8": {
+   "verdict": "not distinguishable",
+   "points": 24,
+   "layouts": 8,
+   "states": [
+    "cold",
+    "warm"
+   ],
+   "windows": [
+    "e2e",
+    "kernel"
+   ],
+   "low": -0.01,
+   "high": 0.05,
+   "l0": {
+    "cold e2e": [
+     38015,
+     38013
+    ],
+    "warm e2e": [
+     37709,
+     37709
+    ],
+    "warm kernel": [
+     37695,
+     37695
+    ]
+   },
+   "axes": {
+    "memory_wait": 0,
+    "dcache": 1,
+    "harts": 2,
+    "workers": 1,
+    "npu": "8x8/64b/2s",
+    "k": 8,
+    "seed": 324468736,
+    "cache_kib": 8,
+    "case": "fir__hot"
+   },
+   "spread_theirs": 0.05,
+   "spread_mine": 0.0
+  },
+  "dsp/fir__hot/dot8/soc_dev/k8/seed2468ace0": {
+   "verdict": "not distinguishable",
+   "points": 16,
+   "layouts": 8,
+   "states": [
+    "warm"
+   ],
+   "windows": [
+    "e2e",
+    "kernel"
+   ],
+   "low": -0.01,
+   "high": 0.0,
+   "l0": {
+    "warm e2e": [
+     37709,
+     37709
+    ],
+    "warm kernel": [
+     37695,
+     37695
+    ]
+   },
+   "axes": {
+    "memory_wait": 0,
+    "dcache": 1,
+    "harts": 2,
+    "workers": 1,
+    "npu": "8x8/64b/2s",
+    "k": 8,
+    "seed": 610839776,
+    "cache_kib": 8,
+    "case": "fir__hot"
+   },
+   "spread_theirs": 0.02,
+   "spread_mine": 0.02
+  },
+  "dsp/fir__hot/dot8/soc_dev/k8/seed9e3779b9": {
+   "verdict": "not distinguishable",
+   "points": 16,
+   "layouts": 8,
+   "states": [
+    "warm"
+   ],
+   "windows": [
+    "e2e",
+    "kernel"
+   ],
+   "low": -0.01,
+   "high": 0.0,
+   "l0": {
+    "warm e2e": [
+     37709,
+     37709
+    ],
+    "warm kernel": [
+     37695,
+     37695
+    ]
+   },
+   "axes": {
+    "memory_wait": 0,
+    "dcache": 1,
+    "harts": 2,
+    "workers": 1,
+    "npu": "8x8/64b/2s",
+    "k": 8,
+    "seed": 2654435769,
+    "cache_kib": 8,
+    "case": "fir__hot"
+   },
+   "spread_theirs": 0.02,
+   "spread_mine": 0.02
+  },
+  "dsp/fir__hot/multicore/soc_dev/k16": {
+   "verdict": "not distinguishable",
+   "points": 24,
+   "layouts": 8,
+   "states": [
+    "cold",
+    "warm"
+   ],
+   "windows": [
+    "e2e",
+    "kernel"
+   ],
+   "low": -0.16,
+   "high": 0.05,
+   "l0": {
+    "cold e2e": [
+     32192,
+     32150
+    ],
+    "warm e2e": [
+     31753,
+     31745
+    ],
+    "warm kernel": [
+     31732,
+     31736
+    ]
+   },
+   "axes": {
+    "memory_wait": 0,
+    "dcache": 1,
+    "harts": 2,
+    "workers": 2,
+    "npu": "8x8/64b/2s",
+    "k": 16,
+    "seed": 324468736,
+    "cache_kib": 8,
+    "case": "fir__hot"
+   },
+   "spread_theirs": 0.04,
+   "spread_mine": 0.05
+  },
+  "dsp/fir__hot/multicore/soc_dev/k16/seed2468ace0": {
+   "verdict": "not distinguishable",
+   "points": 16,
+   "layouts": 8,
+   "states": [
+    "warm"
+   ],
+   "windows": [
+    "e2e",
+    "kernel"
+   ],
+   "low": -0.03,
+   "high": 0.03,
+   "l0": {
+    "warm e2e": [
+     31745,
+     31745
+    ],
+    "warm kernel": [
+     31732,
+     31736
+    ]
+   },
+   "axes": {
+    "memory_wait": 0,
+    "dcache": 1,
+    "harts": 2,
+    "workers": 2,
+    "npu": "8x8/64b/2s",
+    "k": 16,
+    "seed": 610839776,
+    "cache_kib": 8,
+    "case": "fir__hot"
+   },
+   "spread_theirs": 0.04,
+   "spread_mine": 0.03
+  },
+  "dsp/fir__hot/multicore/soc_dev/k16/seed9e3779b9": {
+   "verdict": "not distinguishable",
+   "points": 16,
+   "layouts": 8,
+   "states": [
+    "warm"
+   ],
+   "windows": [
+    "e2e",
+    "kernel"
+   ],
+   "low": -0.03,
+   "high": 0.03,
+   "l0": {
+    "warm e2e": [
+     31745,
+     31745
+    ],
+    "warm kernel": [
+     31732,
+     31732
+    ]
+   },
+   "axes": {
+    "memory_wait": 0,
+    "dcache": 1,
+    "harts": 2,
+    "workers": 2,
+    "npu": "8x8/64b/2s",
+    "k": 16,
+    "seed": 2654435769,
+    "cache_kib": 8,
+    "case": "fir__hot"
+   },
+   "spread_theirs": 0.04,
+   "spread_mine": 0.03
+  },
+  "dsp/fir__hot/multicore/soc_dev/k256": {
+   "verdict": "not distinguishable",
+   "points": 24,
+   "layouts": 8,
+   "states": [
+    "cold",
+    "warm"
+   ],
+   "windows": [
+    "e2e",
+    "kernel"
+   ],
+   "low": -0.02,
+   "high": 0.0,
+   "l0": {
+    "cold e2e": [
+     370338,
+     370281
+    ],
+    "warm e2e": [
+     369676,
+     369665
+    ],
+    "warm kernel": [
+     369656,
+     369652
+    ]
+   },
+   "axes": {
+    "memory_wait": 0,
+    "dcache": 1,
+    "harts": 2,
+    "workers": 2,
+    "npu": "8x8/64b/2s",
+    "k": 256,
+    "seed": 324468736,
+    "cache_kib": 8,
+    "case": "fir__hot"
+   },
+   "spread_theirs": 1.74,
+   "spread_mine": 1.74
+  },
+  "dsp/fir__hot/multicore/soc_dev/k256/seed2468ace0": {
+   "verdict": "not distinguishable",
+   "points": 16,
+   "layouts": 8,
+   "states": [
+    "warm"
+   ],
+   "windows": [
+    "e2e",
+    "kernel"
+   ],
+   "low": -0.0,
+   "high": 0.0,
+   "l0": {
+    "warm e2e": [
+     369665,
+     369661
+    ],
+    "warm kernel": [
+     369652,
+     369656
+    ]
+   },
+   "axes": {
+    "memory_wait": 0,
+    "dcache": 1,
+    "harts": 2,
+    "workers": 2,
+    "npu": "8x8/64b/2s",
+    "k": 256,
+    "seed": 610839776,
+    "cache_kib": 8,
+    "case": "fir__hot"
+   },
+   "spread_theirs": 1.74,
+   "spread_mine": 1.74
+  },
+  "dsp/fir__hot/multicore/soc_dev/k256/seed9e3779b9": {
+   "verdict": "not distinguishable",
+   "points": 16,
+   "layouts": 8,
+   "states": [
+    "warm"
+   ],
+   "windows": [
+    "e2e",
+    "kernel"
+   ],
+   "low": -0.0,
+   "high": 0.0,
+   "l0": {
+    "warm e2e": [
+     369665,
+     369661
+    ],
+    "warm kernel": [
+     369652,
+     369656
+    ]
+   },
+   "axes": {
+    "memory_wait": 0,
+    "dcache": 1,
+    "harts": 2,
+    "workers": 2,
+    "npu": "8x8/64b/2s",
+    "k": 256,
+    "seed": 2654435769,
+    "cache_kib": 8,
+    "case": "fir__hot"
+   },
+   "spread_theirs": 1.74,
+   "spread_mine": 1.74
+  },
+  "dsp/fir__hot/multicore/soc_dev/k32": {
+   "verdict": "not distinguishable",
+   "points": 24,
+   "layouts": 8,
+   "states": [
+    "cold",
+    "warm"
+   ],
+   "windows": [
+    "e2e",
+    "kernel"
+   ],
+   "low": -0.09,
+   "high": 0.02,
+   "l0": {
+    "cold e2e": [
+     54733,
+     54694
+    ],
+    "warm e2e": [
+     54277,
+     54269
+    ],
+    "warm kernel": [
+     54260,
+     54260
+    ]
+   },
+   "axes": {
+    "memory_wait": 0,
+    "dcache": 1,
+    "harts": 2,
+    "workers": 2,
+    "npu": "8x8/64b/2s",
+    "k": 32,
+    "seed": 324468736,
+    "cache_kib": 8,
+    "case": "fir__hot"
+   },
+   "spread_theirs": 3.79,
+   "spread_mine": 3.79
+  },
+  "dsp/fir__hot/multicore/soc_dev/k32/seed2468ace0": {
+   "verdict": "not distinguishable",
+   "points": 16,
+   "layouts": 8,
+   "states": [
+    "warm"
+   ],
+   "windows": [
+    "e2e",
+    "kernel"
+   ],
+   "low": -0.03,
+   "high": 0.02,
+   "l0": {
+    "warm e2e": [
+     54273,
+     54269
+    ],
+    "warm kernel": [
+     54260,
+     54264
+    ]
+   },
+   "axes": {
+    "memory_wait": 0,
+    "dcache": 1,
+    "harts": 2,
+    "workers": 2,
+    "npu": "8x8/64b/2s",
+    "k": 32,
+    "seed": 610839776,
+    "cache_kib": 8,
+    "case": "fir__hot"
+   },
+   "spread_theirs": 3.79,
+   "spread_mine": 3.78
+  },
+  "dsp/fir__hot/multicore/soc_dev/k32/seed9e3779b9": {
+   "verdict": "not distinguishable",
+   "points": 16,
+   "layouts": 8,
+   "states": [
+    "warm"
+   ],
+   "windows": [
+    "e2e",
+    "kernel"
+   ],
+   "low": -0.03,
+   "high": 0.02,
+   "l0": {
+    "warm e2e": [
+     54273,
+     54269
+    ],
+    "warm kernel": [
+     54264,
+     54260
+    ]
+   },
+   "axes": {
+    "memory_wait": 0,
+    "dcache": 1,
+    "harts": 2,
+    "workers": 2,
+    "npu": "8x8/64b/2s",
+    "k": 32,
+    "seed": 2654435769,
+    "cache_kib": 8,
+    "case": "fir__hot"
+   },
+   "spread_theirs": 3.79,
+   "spread_mine": 3.78
+  },
+  "dsp/fir__hot/multicore/soc_dev/k4": {
+   "verdict": "not distinguishable",
+   "points": 24,
+   "layouts": 8,
+   "states": [
+    "cold",
+    "warm"
+   ],
+   "windows": [
+    "e2e",
+    "kernel"
+   ],
+   "low": -0.41,
+   "high": 0.1,
+   "l0": {
+    "cold e2e": [
+     15297,
+     15256
+    ],
+    "warm e2e": [
+     14857,
+     14849
+    ],
+    "warm kernel": [
+     14836,
+     14836
+    ]
+   },
+   "axes": {
+    "memory_wait": 0,
+    "dcache": 1,
+    "harts": 2,
+    "workers": 2,
+    "npu": "8x8/64b/2s",
+    "k": 4,
+    "seed": 324468736,
+    "cache_kib": 8,
+    "case": "fir__hot"
+   },
+   "spread_theirs": 0.1,
+   "spread_mine": 0.11
+  },
+  "dsp/fir__hot/multicore/soc_dev/k4/seed2468ace0": {
+   "verdict": "not distinguishable",
+   "points": 16,
+   "layouts": 8,
+   "states": [
+    "warm"
+   ],
+   "windows": [
+    "e2e",
+    "kernel"
+   ],
+   "low": -0.07,
+   "high": 0.03,
+   "l0": {
+    "warm e2e": [
+     14856,
+     14845
+    ],
+    "warm kernel": [
+     14836,
+     14836
+    ]
+   },
+   "axes": {
+    "memory_wait": 0,
+    "dcache": 1,
+    "harts": 2,
+    "workers": 2,
+    "npu": "8x8/64b/2s",
+    "k": 4,
+    "seed": 610839776,
+    "cache_kib": 8,
+    "case": "fir__hot"
+   },
+   "spread_theirs": 0.15,
+   "spread_mine": 0.1
+  },
+  "dsp/fir__hot/multicore/soc_dev/k4/seed9e3779b9": {
+   "verdict": "not distinguishable",
+   "points": 16,
+   "layouts": 8,
+   "states": [
+    "warm"
+   ],
+   "windows": [
+    "e2e",
+    "kernel"
+   ],
+   "low": -0.07,
+   "high": 0.03,
+   "l0": {
+    "warm e2e": [
+     14856,
+     14845
+    ],
+    "warm kernel": [
+     14836,
+     14836
+    ]
+   },
+   "axes": {
+    "memory_wait": 0,
+    "dcache": 1,
+    "harts": 2,
+    "workers": 2,
+    "npu": "8x8/64b/2s",
+    "k": 4,
+    "seed": 2654435769,
+    "cache_kib": 8,
+    "case": "fir__hot"
+   },
+   "spread_theirs": 0.15,
+   "spread_mine": 0.1
+  },
+  "dsp/fir__hot/multicore/soc_dev/k64": {
+   "verdict": "not distinguishable",
+   "points": 24,
+   "layouts": 8,
+   "states": [
+    "cold",
+    "warm"
+   ],
+   "windows": [
+    "e2e",
+    "kernel"
+   ],
+   "low": -0.05,
+   "high": 0.01,
+   "l0": {
+    "cold e2e": [
+     99816,
+     99778
+    ],
+    "warm e2e": [
+     99333,
+     99325
+    ],
+    "warm kernel": [
+     99320,
+     99320
+    ]
+   },
+   "axes": {
+    "memory_wait": 0,
+    "dcache": 1,
+    "harts": 2,
+    "workers": 2,
+    "npu": "8x8/64b/2s",
+    "k": 64,
+    "seed": 324468736,
+    "cache_kib": 8,
+    "case": "fir__hot"
+   },
+   "spread_theirs": 5.68,
+   "spread_mine": 5.68
+  },
+  "dsp/fir__hot/multicore/soc_dev/k64/seed2468ace0": {
+   "verdict": "not distinguishable",
+   "points": 16,
+   "layouts": 8,
+   "states": [
+    "warm"
+   ],
+   "windows": [
+    "e2e",
+    "kernel"
+   ],
+   "low": -0.02,
+   "high": 0.01,
+   "l0": {
+    "warm e2e": [
+     99325,
+     99325
+    ],
+    "warm kernel": [
+     99320,
+     99320
+    ]
+   },
+   "axes": {
+    "memory_wait": 0,
+    "dcache": 1,
+    "harts": 2,
+    "workers": 2,
+    "npu": "8x8/64b/2s",
+    "k": 64,
+    "seed": 610839776,
+    "cache_kib": 8,
+    "case": "fir__hot"
+   },
+   "spread_theirs": 5.68,
+   "spread_mine": 5.68
+  },
+  "dsp/fir__hot/multicore/soc_dev/k64/seed9e3779b9": {
+   "verdict": "not distinguishable",
+   "points": 16,
+   "layouts": 8,
+   "states": [
+    "warm"
+   ],
+   "windows": [
+    "e2e",
+    "kernel"
+   ],
+   "low": -0.02,
+   "high": 0.01,
+   "l0": {
+    "warm e2e": [
+     99325,
+     99325
+    ],
+    "warm kernel": [
+     99316,
+     99316
+    ]
+   },
+   "axes": {
+    "memory_wait": 0,
+    "dcache": 1,
+    "harts": 2,
+    "workers": 2,
+    "npu": "8x8/64b/2s",
+    "k": 64,
+    "seed": 2654435769,
+    "cache_kib": 8,
+    "case": "fir__hot"
+   },
+   "spread_theirs": 5.68,
+   "spread_mine": 5.68
+  },
+  "dsp/fir__hot/multicore/soc_dev/k8": {
+   "verdict": "not distinguishable",
+   "points": 24,
+   "layouts": 8,
+   "states": [
+    "cold",
+    "warm"
+   ],
+   "windows": [
+    "e2e",
+    "kernel"
+   ],
+   "low": -0.24,
+   "high": 0.07,
+   "l0": {
+    "cold e2e": [
+     20928,
+     20886
+    ],
+    "warm e2e": [
+     20489,
+     20481
+    ],
+    "warm kernel": [
+     20468,
+     20468
+    ]
+   },
+   "axes": {
+    "memory_wait": 0,
+    "dcache": 1,
+    "harts": 2,
+    "workers": 2,
+    "npu": "8x8/64b/2s",
+    "k": 8,
+    "seed": 324468736,
+    "cache_kib": 8,
+    "case": "fir__hot"
+   },
+   "spread_theirs": 0.06,
+   "spread_mine": 0.08
+  },
+  "dsp/fir__hot/multicore/soc_dev/k8/seed2468ace0": {
+   "verdict": "not distinguishable",
+   "points": 16,
+   "layouts": 8,
+   "states": [
+    "warm"
+   ],
+   "windows": [
+    "e2e",
+    "kernel"
+   ],
+   "low": -0.07,
+   "high": 0.05,
+   "l0": {
+    "warm e2e": [
+     20481,
+     20477
+    ],
+    "warm kernel": [
+     20468,
+     20468
+    ]
+   },
+   "axes": {
+    "memory_wait": 0,
+    "dcache": 1,
+    "harts": 2,
+    "workers": 2,
+    "npu": "8x8/64b/2s",
+    "k": 8,
+    "seed": 610839776,
+    "cache_kib": 8,
+    "case": "fir__hot"
+   },
+   "spread_theirs": 0.06,
+   "spread_mine": 0.07
+  },
+  "dsp/fir__hot/multicore/soc_dev/k8/seed9e3779b9": {
+   "verdict": "not distinguishable",
+   "points": 16,
+   "layouts": 8,
+   "states": [
+    "warm"
+   ],
+   "windows": [
+    "e2e",
+    "kernel"
+   ],
+   "low": -0.07,
+   "high": 0.05,
+   "l0": {
+    "warm e2e": [
+     20481,
+     20477
+    ],
+    "warm kernel": [
+     20472,
+     20468
+    ]
+   },
+   "axes": {
+    "memory_wait": 0,
+    "dcache": 1,
+    "harts": 2,
+    "workers": 2,
+    "npu": "8x8/64b/2s",
+    "k": 8,
+    "seed": 2654435769,
+    "cache_kib": 8,
+    "case": "fir__hot"
+   },
+   "spread_theirs": 0.06,
+   "spread_mine": 0.07
+  },
+  "dsp/fir__hot/npu/soc_dev/k16": {
+   "verdict": "not distinguishable",
+   "points": 24,
+   "layouts": 8,
+   "states": [
+    "cold",
+    "warm"
+   ],
+   "windows": [
+    "e2e",
+    "kernel"
+   ],
+   "low": -0.61,
+   "high": 0.61,
+   "l0": {
+    "cold e2e": [
+     1309,
+     1317
+    ],
+    "warm e2e": [
+     1277,
+     1277
+    ],
+    "warm kernel": [
+     1213,
+     1213
+    ]
+   },
+   "axes": {
+    "memory_wait": 0,
+    "dcache": 1,
+    "harts": 2,
+    "workers": 1,
+    "npu": "8x8/64b/2s",
+    "k": 16,
+    "seed": 324468736,
+    "cache_kib": 8,
+    "case": "fir__hot"
+   },
+   "spread_theirs": 1.31,
+   "spread_mine": 0.92
+  },
+  "dsp/fir__hot/npu/soc_dev/k16/seed2468ace0": {
+   "verdict": "not distinguishable",
+   "points": 16,
+   "layouts": 8,
+   "states": [
+    "warm"
+   ],
+   "windows": [
+    "e2e",
+    "kernel"
+   ],
+   "low": 0.0,
+   "high": 0.0,
+   "l0": {
+    "warm e2e": [
+     1277,
+     1277
+    ],
+    "warm kernel": [
+     1213,
+     1213
+    ]
+   },
+   "axes": {
+    "memory_wait": 0,
+    "dcache": 1,
+    "harts": 2,
+    "workers": 1,
+    "npu": "8x8/64b/2s",
+    "k": 16,
+    "seed": 610839776,
+    "cache_kib": 8,
+    "case": "fir__hot"
+   },
+   "spread_theirs": 0.08,
+   "spread_mine": 0.08
+  },
+  "dsp/fir__hot/npu/soc_dev/k16/seed9e3779b9": {
+   "verdict": "not distinguishable",
+   "points": 16,
+   "layouts": 8,
+   "states": [
+    "warm"
+   ],
+   "windows": [
+    "e2e",
+    "kernel"
+   ],
+   "low": 0.0,
+   "high": 0.0,
+   "l0": {
+    "warm e2e": [
+     1277,
+     1277
+    ],
+    "warm kernel": [
+     1213,
+     1213
+    ]
+   },
+   "axes": {
+    "memory_wait": 0,
+    "dcache": 1,
+    "harts": 2,
+    "workers": 1,
+    "npu": "8x8/64b/2s",
+    "k": 16,
+    "seed": 2654435769,
+    "cache_kib": 8,
+    "case": "fir__hot"
+   },
+   "spread_theirs": 0.08,
+   "spread_mine": 0.08
+  },
+  "dsp/fir__hot/npu/soc_dev/k256": {
+   "verdict": "not distinguishable",
+   "points": 24,
+   "layouts": 8,
+   "states": [
+    "cold",
+    "warm"
+   ],
+   "windows": [
+    "e2e",
+    "kernel"
+   ],
+   "low": -0.11,
+   "high": 0.15,
+   "l0": {
+    "cold e2e": [
+     9042,
+     9039
+    ],
+    "warm e2e": [
+     9018,
+     9018
+    ],
+    "warm kernel": [
+     8949,
+     8949
+    ]
+   },
+   "axes": {
+    "memory_wait": 0,
+    "dcache": 1,
+    "harts": 2,
+    "workers": 1,
+    "npu": "8x8/64b/2s",
+    "k": 256,
+    "seed": 324468736,
+    "cache_kib": 8,
+    "case": "fir__hot"
+   },
+   "spread_theirs": 0.15,
+   "spread_mine": 0.2
+  },
+  "dsp/fir__hot/npu/soc_dev/k256/seed2468ace0": {
+   "verdict": "not distinguishable",
+   "points": 16,
+   "layouts": 8,
+   "states": [
+    "warm"
+   ],
+   "windows": [
+    "e2e",
+    "kernel"
+   ],
+   "low": 0.0,
+   "high": 0.0,
+   "l0": {
+    "warm e2e": [
+     9018,
+     9018
+    ],
+    "warm kernel": [
+     8949,
+     8949
+    ]
+   },
+   "axes": {
+    "memory_wait": 0,
+    "dcache": 1,
+    "harts": 2,
+    "workers": 1,
+    "npu": "8x8/64b/2s",
+    "k": 256,
+    "seed": 610839776,
+    "cache_kib": 8,
+    "case": "fir__hot"
+   },
+   "spread_theirs": 0.01,
+   "spread_mine": 0.01
+  },
+  "dsp/fir__hot/npu/soc_dev/k256/seed9e3779b9": {
+   "verdict": "not distinguishable",
+   "points": 16,
+   "layouts": 8,
+   "states": [
+    "warm"
+   ],
+   "windows": [
+    "e2e",
+    "kernel"
+   ],
+   "low": 0.0,
+   "high": 0.0,
+   "l0": {
+    "warm e2e": [
+     9018,
+     9018
+    ],
+    "warm kernel": [
+     8949,
+     8949
+    ]
+   },
+   "axes": {
+    "memory_wait": 0,
+    "dcache": 1,
+    "harts": 2,
+    "workers": 1,
+    "npu": "8x8/64b/2s",
+    "k": 256,
+    "seed": 2654435769,
+    "cache_kib": 8,
+    "case": "fir__hot"
+   },
+   "spread_theirs": 0.01,
+   "spread_mine": 0.01
+  },
+  "dsp/fir__hot/npu/soc_dev/k32": {
+   "verdict": "not distinguishable",
+   "points": 24,
+   "layouts": 8,
+   "states": [
+    "cold",
+    "warm"
+   ],
+   "windows": [
+    "e2e",
+    "kernel"
+   ],
+   "low": -0.44,
+   "high": 0.61,
+   "l0": {
+    "cold e2e": [
+     1829,
+     1829
+    ],
+    "warm e2e": [
+     1797,
+     1797
+    ],
+    "warm kernel": [
+     1725,
+     1725
+    ]
+   },
+   "axes": {
+    "memory_wait": 0,
+    "dcache": 1,
+    "harts": 2,
+    "workers": 1,
+    "npu": "8x8/64b/2s",
+    "k": 32,
+    "seed": 324468736,
+    "cache_kib": 8,
+    "case": "fir__hot"
+   },
+   "spread_theirs": 0.83,
+   "spread_mine": 0.44
+  },
+  "dsp/fir__hot/npu/soc_dev/k32/seed2468ace0": {
+   "verdict": "not distinguishable",
+   "points": 16,
+   "layouts": 8,
+   "states": [
+    "warm"
+   ],
+   "windows": [
+    "e2e",
+    "kernel"
+   ],
+   "low": 0.0,
+   "high": 0.0,
+   "l0": {
+    "warm e2e": [
+     1797,
+     1797
+    ],
+    "warm kernel": [
+     1725,
+     1725
+    ]
+   },
+   "axes": {
+    "memory_wait": 0,
+    "dcache": 1,
+    "harts": 2,
+    "workers": 1,
+    "npu": "8x8/64b/2s",
+    "k": 32,
+    "seed": 610839776,
+    "cache_kib": 8,
+    "case": "fir__hot"
+   },
+   "spread_theirs": 0.06,
+   "spread_mine": 0.06
+  },
+  "dsp/fir__hot/npu/soc_dev/k32/seed9e3779b9": {
+   "verdict": "not distinguishable",
+   "points": 16,
+   "layouts": 8,
+   "states": [
+    "warm"
+   ],
+   "windows": [
+    "e2e",
+    "kernel"
+   ],
+   "low": 0.0,
+   "high": 0.0,
+   "l0": {
+    "warm e2e": [
+     1797,
+     1797
+    ],
+    "warm kernel": [
+     1725,
+     1725
+    ]
+   },
+   "axes": {
+    "memory_wait": 0,
+    "dcache": 1,
+    "harts": 2,
+    "workers": 1,
+    "npu": "8x8/64b/2s",
+    "k": 32,
+    "seed": 2654435769,
+    "cache_kib": 8,
+    "case": "fir__hot"
+   },
+   "spread_theirs": 0.06,
+   "spread_mine": 0.06
+  },
+  "dsp/fir__hot/npu/soc_dev/k4": {
+   "verdict": "not distinguishable",
+   "points": 24,
+   "layouts": 8,
+   "states": [
+    "cold",
+    "warm"
+   ],
+   "windows": [
+    "e2e",
+    "kernel"
+   ],
+   "low": -0.86,
+   "high": 1.66,
+   "l0": {
+    "cold e2e": [
+     925,
+     925
+    ],
+    "warm e2e": [
+     893,
+     893
+    ],
+    "warm kernel": [
+     829,
+     829
+    ]
+   },
+   "axes": {
+    "memory_wait": 0,
+    "dcache": 1,
+    "harts": 2,
+    "workers": 1,
+    "npu": "8x8/64b/2s",
+    "k": 4,
+    "seed": 324468736,
+    "cache_kib": 8,
+    "case": "fir__hot"
+   },
+   "spread_theirs": 2.21,
+   "spread_mine": 0.87
+  },
+  "dsp/fir__hot/npu/soc_dev/k4/seed2468ace0": {
+   "verdict": "not distinguishable",
+   "points": 16,
+   "layouts": 8,
+   "states": [
+    "warm"
+   ],
+   "windows": [
+    "e2e",
+    "kernel"
+   ],
+   "low": 0.0,
+   "high": 0.0,
+   "l0": {
+    "warm e2e": [
+     893,
+     893
+    ],
+    "warm kernel": [
+     829,
+     829
+    ]
+   },
+   "axes": {
+    "memory_wait": 0,
+    "dcache": 1,
+    "harts": 2,
+    "workers": 1,
+    "npu": "8x8/64b/2s",
+    "k": 4,
+    "seed": 610839776,
+    "cache_kib": 8,
+    "case": "fir__hot"
+   },
+   "spread_theirs": 0.22,
+   "spread_mine": 0.22
+  },
+  "dsp/fir__hot/npu/soc_dev/k4/seed9e3779b9": {
+   "verdict": "not distinguishable",
+   "points": 16,
+   "layouts": 8,
+   "states": [
+    "warm"
+   ],
+   "windows": [
+    "e2e",
+    "kernel"
+   ],
+   "low": 0.0,
+   "high": 0.0,
+   "l0": {
+    "warm e2e": [
+     893,
+     893
+    ],
+    "warm kernel": [
+     829,
+     829
+    ]
+   },
+   "axes": {
+    "memory_wait": 0,
+    "dcache": 1,
+    "harts": 2,
+    "workers": 1,
+    "npu": "8x8/64b/2s",
+    "k": 4,
+    "seed": 2654435769,
+    "cache_kib": 8,
+    "case": "fir__hot"
+   },
+   "spread_theirs": 0.22,
+   "spread_mine": 0.22
+  },
+  "dsp/fir__hot/npu/soc_dev/k64": {
+   "verdict": "not distinguishable",
+   "points": 24,
+   "layouts": 8,
+   "states": [
+    "cold",
+    "warm"
+   ],
+   "windows": [
+    "e2e",
+    "kernel"
+   ],
+   "low": -0.28,
+   "high": 0.56,
+   "l0": {
+    "cold e2e": [
+     2855,
+     2871
+    ],
+    "warm e2e": [
+     2831,
+     2831
+    ],
+    "warm kernel": [
+     2757,
+     2757
+    ]
+   },
+   "axes": {
+    "memory_wait": 0,
+    "dcache": 1,
+    "harts": 2,
+    "workers": 1,
+    "npu": "8x8/64b/2s",
+    "k": 64,
+    "seed": 324468736,
+    "cache_kib": 8,
+    "case": "fir__hot"
+   },
+   "spread_theirs": 0.67,
+   "spread_mine": 0.42
+  },
+  "dsp/fir__hot/npu/soc_dev/k64/seed2468ace0": {
+   "verdict": "not distinguishable",
+   "points": 16,
+   "layouts": 8,
+   "states": [
+    "warm"
+   ],
+   "windows": [
+    "e2e",
+    "kernel"
+   ],
+   "low": 0.0,
+   "high": 0.0,
+   "l0": {
+    "warm e2e": [
+     2831,
+     2831
+    ],
+    "warm kernel": [
+     2757,
+     2757
+    ]
+   },
+   "axes": {
+    "memory_wait": 0,
+    "dcache": 1,
+    "harts": 2,
+    "workers": 1,
+    "npu": "8x8/64b/2s",
+    "k": 64,
+    "seed": 610839776,
+    "cache_kib": 8,
+    "case": "fir__hot"
+   },
+   "spread_theirs": 0.04,
+   "spread_mine": 0.04
+  },
+  "dsp/fir__hot/npu/soc_dev/k64/seed9e3779b9": {
+   "verdict": "not distinguishable",
+   "points": 16,
+   "layouts": 8,
+   "states": [
+    "warm"
+   ],
+   "windows": [
+    "e2e",
+    "kernel"
+   ],
+   "low": 0.0,
+   "high": 0.0,
+   "l0": {
+    "warm e2e": [
+     2831,
+     2831
+    ],
+    "warm kernel": [
+     2757,
+     2757
+    ]
+   },
+   "axes": {
+    "memory_wait": 0,
+    "dcache": 1,
+    "harts": 2,
+    "workers": 1,
+    "npu": "8x8/64b/2s",
+    "k": 64,
+    "seed": 2654435769,
+    "cache_kib": 8,
+    "case": "fir__hot"
+   },
+   "spread_theirs": 0.04,
+   "spread_mine": 0.04
+  },
+  "dsp/fir__hot/npu/soc_dev/k8": {
+   "verdict": "not distinguishable",
+   "points": 24,
+   "layouts": 8,
+   "states": [
+    "cold",
+    "warm"
+   ],
+   "windows": [
+    "e2e",
+    "kernel"
+   ],
+   "low": -0.76,
+   "high": 1.25,
+   "l0": {
+    "cold e2e": [
+     1053,
+     1053
+    ],
+    "warm e2e": [
+     1021,
+     1021
+    ],
+    "warm kernel": [
+     957,
+     957
+    ]
+   },
+   "axes": {
+    "memory_wait": 0,
+    "dcache": 1,
+    "harts": 2,
+    "workers": 1,
+    "npu": "8x8/64b/2s",
+    "k": 8,
+    "seed": 324468736,
+    "cache_kib": 8,
+    "case": "fir__hot"
+   },
+   "spread_theirs": 1.64,
+   "spread_mine": 0.77
+  },
+  "dsp/fir__hot/npu/soc_dev/k8/seed2468ace0": {
+   "verdict": "not distinguishable",
+   "points": 16,
+   "layouts": 8,
+   "states": [
+    "warm"
+   ],
+   "windows": [
+    "e2e",
+    "kernel"
+   ],
+   "low": 0.0,
+   "high": 0.0,
+   "l0": {
+    "warm e2e": [
+     1021,
+     1021
+    ],
+    "warm kernel": [
+     957,
+     957
+    ]
+   },
+   "axes": {
+    "memory_wait": 0,
+    "dcache": 1,
+    "harts": 2,
+    "workers": 1,
+    "npu": "8x8/64b/2s",
+    "k": 8,
+    "seed": 610839776,
+    "cache_kib": 8,
+    "case": "fir__hot"
+   },
+   "spread_theirs": 0.1,
+   "spread_mine": 0.1
+  },
+  "dsp/fir__hot/npu/soc_dev/k8/seed9e3779b9": {
+   "verdict": "not distinguishable",
+   "points": 16,
+   "layouts": 8,
+   "states": [
+    "warm"
+   ],
+   "windows": [
+    "e2e",
+    "kernel"
+   ],
+   "low": 0.0,
+   "high": 0.0,
+   "l0": {
+    "warm e2e": [
+     1021,
+     1021
+    ],
+    "warm kernel": [
+     957,
+     957
+    ]
+   },
+   "axes": {
+    "memory_wait": 0,
+    "dcache": 1,
+    "harts": 2,
+    "workers": 1,
+    "npu": "8x8/64b/2s",
+    "k": 8,
+    "seed": 2654435769,
+    "cache_kib": 8,
+    "case": "fir__hot"
+   },
+   "spread_theirs": 0.1,
+   "spread_mine": 0.1
+  },
+  "dsp/fir__hot/scalar/soc_dev/k16": {
+   "verdict": "not distinguishable",
+   "points": 24,
+   "layouts": 8,
+   "states": [
+    "cold",
+    "warm"
+   ],
+   "windows": [
+    "e2e",
+    "kernel"
+   ],
+   "low": 0.0,
+   "high": 0.02,
+   "l0": {
+    "cold e2e": [
+     63048,
+     63058
+    ],
+    "warm e2e": [
+     63023,
+     63023
+    ],
+    "warm kernel": [
+     63005,
+     63005
+    ]
+   },
+   "axes": {
+    "memory_wait": 0,
+    "dcache": 1,
+    "harts": 2,
+    "workers": 1,
+    "npu": "8x8/64b/2s",
+    "k": 16,
+    "seed": 324468736,
+    "cache_kib": 8,
+    "case": "fir__hot"
+   },
+   "spread_theirs": 0.0,
+   "spread_mine": 0.0
+  },
+  "dsp/fir__hot/scalar/soc_dev/k16/seed2468ace0": {
+   "verdict": "not distinguishable",
+   "points": 16,
+   "layouts": 8,
+   "states": [
+    "warm"
+   ],
+   "windows": [
+    "e2e",
+    "kernel"
+   ],
+   "low": 0.0,
+   "high": 0.0,
+   "l0": {
+    "warm e2e": [
+     63023,
+     63023
+    ],
+    "warm kernel": [
+     63005,
+     63005
+    ]
+   },
+   "axes": {
+    "memory_wait": 0,
+    "dcache": 1,
+    "harts": 2,
+    "workers": 1,
+    "npu": "8x8/64b/2s",
+    "k": 16,
+    "seed": 610839776,
+    "cache_kib": 8,
+    "case": "fir__hot"
+   },
+   "spread_theirs": 0.0,
+   "spread_mine": 0.0
+  },
+  "dsp/fir__hot/scalar/soc_dev/k16/seed9e3779b9": {
+   "verdict": "not distinguishable",
+   "points": 16,
+   "layouts": 8,
+   "states": [
+    "warm"
+   ],
+   "windows": [
+    "e2e",
+    "kernel"
+   ],
+   "low": 0.0,
+   "high": 0.0,
+   "l0": {
+    "warm e2e": [
+     63023,
+     63023
+    ],
+    "warm kernel": [
+     63005,
+     63005
+    ]
+   },
+   "axes": {
+    "memory_wait": 0,
+    "dcache": 1,
+    "harts": 2,
+    "workers": 1,
+    "npu": "8x8/64b/2s",
+    "k": 16,
+    "seed": 2654435769,
+    "cache_kib": 8,
+    "case": "fir__hot"
+   },
+   "spread_theirs": 0.0,
+   "spread_mine": 0.0
+  },
+  "dsp/fir__hot/scalar/soc_dev/k256": {
+   "verdict": "not distinguishable",
+   "points": 24,
+   "layouts": 8,
+   "states": [
+    "cold",
+    "warm"
+   ],
+   "windows": [
+    "e2e",
+    "kernel"
+   ],
+   "low": 0.0,
+   "high": 0.0,
+   "l0": {
+    "cold e2e": [
+     738888,
+     738898
+    ],
+    "warm e2e": [
+     738863,
+     738863
+    ],
+    "warm kernel": [
+     738845,
+     738845
+    ]
+   },
+   "axes": {
+    "memory_wait": 0,
+    "dcache": 1,
+    "harts": 2,
+    "workers": 1,
+    "npu": "8x8/64b/2s",
+    "k": 256,
+    "seed": 324468736,
+    "cache_kib": 8,
+    "case": "fir__hot"
+   },
+   "spread_theirs": 0.0,
+   "spread_mine": 0.0
+  },
+  "dsp/fir__hot/scalar/soc_dev/k256/seed2468ace0": {
+   "verdict": "not distinguishable",
+   "points": 16,
+   "layouts": 8,
+   "states": [
+    "warm"
+   ],
+   "windows": [
+    "e2e",
+    "kernel"
+   ],
+   "low": 0.0,
+   "high": 0.0,
+   "l0": {
+    "warm e2e": [
+     738863,
+     738863
+    ],
+    "warm kernel": [
+     738845,
+     738845
+    ]
+   },
+   "axes": {
+    "memory_wait": 0,
+    "dcache": 1,
+    "harts": 2,
+    "workers": 1,
+    "npu": "8x8/64b/2s",
+    "k": 256,
+    "seed": 610839776,
+    "cache_kib": 8,
+    "case": "fir__hot"
+   },
+   "spread_theirs": 0.0,
+   "spread_mine": 0.0
+  },
+  "dsp/fir__hot/scalar/soc_dev/k256/seed9e3779b9": {
+   "verdict": "not distinguishable",
+   "points": 16,
+   "layouts": 8,
+   "states": [
+    "warm"
+   ],
+   "windows": [
+    "e2e",
+    "kernel"
+   ],
+   "low": 0.0,
+   "high": 0.0,
+   "l0": {
+    "warm e2e": [
+     738863,
+     738863
+    ],
+    "warm kernel": [
+     738845,
+     738845
+    ]
+   },
+   "axes": {
+    "memory_wait": 0,
+    "dcache": 1,
+    "harts": 2,
+    "workers": 1,
+    "npu": "8x8/64b/2s",
+    "k": 256,
+    "seed": 2654435769,
+    "cache_kib": 8,
+    "case": "fir__hot"
+   },
+   "spread_theirs": 0.0,
+   "spread_mine": 0.0
+  },
+  "dsp/fir__hot/scalar/soc_dev/k32": {
+   "verdict": "not distinguishable",
+   "points": 24,
+   "layouts": 8,
+   "states": [
+    "cold",
+    "warm"
+   ],
+   "windows": [
+    "e2e",
+    "kernel"
+   ],
+   "low": 0.0,
+   "high": 0.01,
+   "l0": {
+    "cold e2e": [
+     108104,
+     108114
+    ],
+    "warm e2e": [
+     108079,
+     108079
+    ],
+    "warm kernel": [
+     108061,
+     108061
+    ]
+   },
+   "axes": {
+    "memory_wait": 0,
+    "dcache": 1,
+    "harts": 2,
+    "workers": 1,
+    "npu": "8x8/64b/2s",
+    "k": 32,
+    "seed": 324468736,
+    "cache_kib": 8,
+    "case": "fir__hot"
+   },
+   "spread_theirs": 0.0,
+   "spread_mine": 0.0
+  },
+  "dsp/fir__hot/scalar/soc_dev/k32/seed2468ace0": {
+   "verdict": "not distinguishable",
+   "points": 16,
+   "layouts": 8,
+   "states": [
+    "warm"
+   ],
+   "windows": [
+    "e2e",
+    "kernel"
+   ],
+   "low": 0.0,
+   "high": 0.0,
+   "l0": {
+    "warm e2e": [
+     108079,
+     108079
+    ],
+    "warm kernel": [
+     108061,
+     108061
+    ]
+   },
+   "axes": {
+    "memory_wait": 0,
+    "dcache": 1,
+    "harts": 2,
+    "workers": 1,
+    "npu": "8x8/64b/2s",
+    "k": 32,
+    "seed": 610839776,
+    "cache_kib": 8,
+    "case": "fir__hot"
+   },
+   "spread_theirs": 0.0,
+   "spread_mine": 0.0
+  },
+  "dsp/fir__hot/scalar/soc_dev/k32/seed9e3779b9": {
+   "verdict": "not distinguishable",
+   "points": 16,
+   "layouts": 8,
+   "states": [
+    "warm"
+   ],
+   "windows": [
+    "e2e",
+    "kernel"
+   ],
+   "low": 0.0,
+   "high": 0.0,
+   "l0": {
+    "warm e2e": [
+     108079,
+     108079
+    ],
+    "warm kernel": [
+     108061,
+     108061
+    ]
+   },
+   "axes": {
+    "memory_wait": 0,
+    "dcache": 1,
+    "harts": 2,
+    "workers": 1,
+    "npu": "8x8/64b/2s",
+    "k": 32,
+    "seed": 2654435769,
+    "cache_kib": 8,
+    "case": "fir__hot"
+   },
+   "spread_theirs": 0.0,
+   "spread_mine": 0.0
+  },
+  "dsp/fir__hot/scalar/soc_dev/k4": {
+   "verdict": "not distinguishable",
+   "points": 24,
+   "layouts": 8,
+   "states": [
+    "cold",
+    "warm"
+   ],
+   "windows": [
+    "e2e",
+    "kernel"
+   ],
+   "low": 0.0,
+   "high": 0.03,
+   "l0": {
+    "cold e2e": [
+     29256,
+     29266
+    ],
+    "warm e2e": [
+     29231,
+     29231
+    ],
+    "warm kernel": [
+     29213,
+     29213
+    ]
+   },
+   "axes": {
+    "memory_wait": 0,
+    "dcache": 1,
+    "harts": 2,
+    "workers": 1,
+    "npu": "8x8/64b/2s",
+    "k": 4,
+    "seed": 324468736,
+    "cache_kib": 8,
+    "case": "fir__hot"
+   },
+   "spread_theirs": 0.03,
+   "spread_mine": 0.03
+  },
+  "dsp/fir__hot/scalar/soc_dev/k4/seed2468ace0": {
+   "verdict": "not distinguishable",
+   "points": 16,
+   "layouts": 8,
+   "states": [
+    "warm"
+   ],
+   "windows": [
+    "e2e",
+    "kernel"
+   ],
+   "low": 0.0,
+   "high": 0.0,
+   "l0": {
+    "warm e2e": [
+     29231,
+     29231
+    ],
+    "warm kernel": [
+     29213,
+     29213
+    ]
+   },
+   "axes": {
+    "memory_wait": 0,
+    "dcache": 1,
+    "harts": 2,
+    "workers": 1,
+    "npu": "8x8/64b/2s",
+    "k": 4,
+    "seed": 610839776,
+    "cache_kib": 8,
+    "case": "fir__hot"
+   },
+   "spread_theirs": 0.03,
+   "spread_mine": 0.03
+  },
+  "dsp/fir__hot/scalar/soc_dev/k4/seed9e3779b9": {
+   "verdict": "not distinguishable",
+   "points": 16,
+   "layouts": 8,
+   "states": [
+    "warm"
+   ],
+   "windows": [
+    "e2e",
+    "kernel"
+   ],
+   "low": 0.0,
+   "high": 0.0,
+   "l0": {
+    "warm e2e": [
+     29231,
+     29231
+    ],
+    "warm kernel": [
+     29213,
+     29213
+    ]
+   },
+   "axes": {
+    "memory_wait": 0,
+    "dcache": 1,
+    "harts": 2,
+    "workers": 1,
+    "npu": "8x8/64b/2s",
+    "k": 4,
+    "seed": 2654435769,
+    "cache_kib": 8,
+    "case": "fir__hot"
+   },
+   "spread_theirs": 0.03,
+   "spread_mine": 0.03
+  },
+  "dsp/fir__hot/scalar/soc_dev/k64": {
+   "verdict": "not distinguishable",
+   "points": 24,
+   "layouts": 8,
+   "states": [
+    "cold",
+    "warm"
+   ],
+   "windows": [
+    "e2e",
+    "kernel"
+   ],
+   "low": 0.0,
+   "high": 0.01,
+   "l0": {
+    "cold e2e": [
+     198216,
+     198226
+    ],
+    "warm e2e": [
+     198191,
+     198191
+    ],
+    "warm kernel": [
+     198173,
+     198173
+    ]
+   },
+   "axes": {
+    "memory_wait": 0,
+    "dcache": 1,
+    "harts": 2,
+    "workers": 1,
+    "npu": "8x8/64b/2s",
+    "k": 64,
+    "seed": 324468736,
+    "cache_kib": 8,
+    "case": "fir__hot"
+   },
+   "spread_theirs": 0.0,
+   "spread_mine": 0.0
+  },
+  "dsp/fir__hot/scalar/soc_dev/k64/seed2468ace0": {
+   "verdict": "not distinguishable",
+   "points": 16,
+   "layouts": 8,
+   "states": [
+    "warm"
+   ],
+   "windows": [
+    "e2e",
+    "kernel"
+   ],
+   "low": 0.0,
+   "high": 0.0,
+   "l0": {
+    "warm e2e": [
+     198191,
+     198191
+    ],
+    "warm kernel": [
+     198173,
+     198173
+    ]
+   },
+   "axes": {
+    "memory_wait": 0,
+    "dcache": 1,
+    "harts": 2,
+    "workers": 1,
+    "npu": "8x8/64b/2s",
+    "k": 64,
+    "seed": 610839776,
+    "cache_kib": 8,
+    "case": "fir__hot"
+   },
+   "spread_theirs": 0.0,
+   "spread_mine": 0.0
+  },
+  "dsp/fir__hot/scalar/soc_dev/k64/seed9e3779b9": {
+   "verdict": "not distinguishable",
+   "points": 16,
+   "layouts": 8,
+   "states": [
+    "warm"
+   ],
+   "windows": [
+    "e2e",
+    "kernel"
+   ],
+   "low": 0.0,
+   "high": 0.0,
+   "l0": {
+    "warm e2e": [
+     198191,
+     198191
+    ],
+    "warm kernel": [
+     198173,
+     198173
+    ]
+   },
+   "axes": {
+    "memory_wait": 0,
+    "dcache": 1,
+    "harts": 2,
+    "workers": 1,
+    "npu": "8x8/64b/2s",
+    "k": 64,
+    "seed": 2654435769,
+    "cache_kib": 8,
+    "case": "fir__hot"
+   },
+   "spread_theirs": 0.0,
+   "spread_mine": 0.0
+  },
+  "dsp/fir__hot/scalar/soc_dev/k8": {
+   "verdict": "not distinguishable",
+   "points": 24,
+   "layouts": 8,
+   "states": [
+    "cold",
+    "warm"
+   ],
+   "windows": [
+    "e2e",
+    "kernel"
+   ],
+   "low": 0.0,
+   "high": 0.02,
+   "l0": {
+    "cold e2e": [
+     40520,
+     40530
+    ],
+    "warm e2e": [
+     40495,
+     40495
+    ],
+    "warm kernel": [
+     40477,
+     40477
+    ]
+   },
+   "axes": {
+    "memory_wait": 0,
+    "dcache": 1,
+    "harts": 2,
+    "workers": 1,
+    "npu": "8x8/64b/2s",
+    "k": 8,
+    "seed": 324468736,
+    "cache_kib": 8,
+    "case": "fir__hot"
+   },
+   "spread_theirs": 0.0,
+   "spread_mine": 0.0
+  },
+  "dsp/fir__hot/scalar/soc_dev/k8/seed2468ace0": {
+   "verdict": "not distinguishable",
+   "points": 16,
+   "layouts": 8,
+   "states": [
+    "warm"
+   ],
+   "windows": [
+    "e2e",
+    "kernel"
+   ],
+   "low": 0.0,
+   "high": 0.0,
+   "l0": {
+    "warm e2e": [
+     40495,
+     40495
+    ],
+    "warm kernel": [
+     40477,
+     40477
+    ]
+   },
+   "axes": {
+    "memory_wait": 0,
+    "dcache": 1,
+    "harts": 2,
+    "workers": 1,
+    "npu": "8x8/64b/2s",
+    "k": 8,
+    "seed": 610839776,
+    "cache_kib": 8,
+    "case": "fir__hot"
+   },
+   "spread_theirs": 0.0,
+   "spread_mine": 0.0
+  },
+  "dsp/fir__hot/scalar/soc_dev/k8/seed9e3779b9": {
+   "verdict": "not distinguishable",
+   "points": 16,
+   "layouts": 8,
+   "states": [
+    "warm"
+   ],
+   "windows": [
+    "e2e",
+    "kernel"
+   ],
+   "low": 0.0,
+   "high": 0.0,
+   "l0": {
+    "warm e2e": [
+     40495,
+     40495
+    ],
+    "warm kernel": [
+     40477,
+     40477
+    ]
+   },
+   "axes": {
+    "memory_wait": 0,
+    "dcache": 1,
+    "harts": 2,
+    "workers": 1,
+    "npu": "8x8/64b/2s",
+    "k": 8,
+    "seed": 2654435769,
+    "cache_kib": 8,
+    "case": "fir__hot"
+   },
+   "spread_theirs": 0.0,
+   "spread_mine": 0.0
+  },
+  "ml/cifar_cnn_dot8__hot/dot8/soc_dev": {
+   "verdict": "not distinguishable",
+   "points": 24,
+   "layouts": 8,
+   "states": [
+    "cold",
+    "warm"
+   ],
+   "windows": [
+    "e2e",
+    "kernel"
+   ],
+   "low": -0.0,
+   "high": 0.0,
+   "l0": {
+    "cold e2e": [
+     44624843,
+     44624836
+    ],
+    "warm e2e": [
+     44623274,
+     44623274
+    ],
+    "warm kernel": [
+     38371438,
+     38371438
+    ]
+   },
+   "axes": {
+    "memory_wait": 0,
+    "dcache": 1,
+    "harts": 2,
+    "workers": 1,
+    "npu": "8x8/64b/2s",
+    "cache_kib": 8,
+    "case": "cifar_cnn_dot8__hot"
+   },
+   "spread_theirs": 2.02,
+   "spread_mine": 2.02
+  },
+  "ml/cifar_cnn_multicore__hot/multicore/soc_dev": {
+   "verdict": "not distinguishable",
+   "points": 24,
+   "layouts": 8,
+   "states": [
+    "cold",
+    "warm"
+   ],
+   "windows": [
+    "e2e",
+    "kernel"
+   ],
+   "low": -0.0,
+   "high": 0.0,
+   "l0": {
+    "cold e2e": [
+     31049132,
+     31049142
+    ],
+    "warm e2e": [
+     31046419,
+     31046425
+    ],
+    "warm kernel": [
+     25949296,
+     25949296
+    ]
+   },
+   "axes": {
+    "memory_wait": 0,
+    "dcache": 1,
+    "harts": 2,
+    "workers": 2,
+    "npu": "8x8/64b/2s",
+    "cache_kib": 8,
+    "case": "cifar_cnn_multicore__hot"
+   },
+   "spread_theirs": 3.25,
+   "spread_mine": 3.25
+  },
+  "ml/cifar_cnn_scalar__hot/scalar/soc_dev": {
+   "verdict": "not distinguishable",
+   "points": 24,
+   "layouts": 8,
+   "states": [
+    "cold",
+    "warm"
+   ],
+   "windows": [
+    "e2e",
+    "kernel"
+   ],
+   "low": -0.0,
+   "high": 0.0,
+   "l0": {
+    "cold e2e": [
+     56640878,
+     56640843
+    ],
+    "warm e2e": [
+     56639463,
+     56639463
+    ],
+    "warm kernel": [
+     50388455,
+     50388455
+    ]
+   },
+   "axes": {
+    "memory_wait": 0,
+    "dcache": 1,
+    "harts": 2,
+    "workers": 1,
+    "npu": "8x8/64b/2s",
+    "cache_kib": 8,
+    "case": "cifar_cnn_scalar__hot"
+   },
+   "spread_theirs": 1.58,
+   "spread_mine": 1.58
+  },
+  "ml/mnist_mlp_dot8__hot/dot8/soc_dev": {
+   "verdict": "not distinguishable",
+   "points": 24,
+   "layouts": 8,
+   "states": [
+    "cold",
+    "warm"
+   ],
+   "windows": [
+    "e2e",
+    "kernel"
+   ],
+   "low": -0.0,
+   "high": 0.0,
+   "l0": {
+    "cold e2e": [
+     6482458,
+     6482466
+    ],
+    "warm e2e": [
+     6481451,
+     6481451
+    ],
+    "warm kernel": [
+     6417029,
+     6417029
+    ]
+   },
+   "axes": {
+    "memory_wait": 0,
+    "dcache": 1,
+    "harts": 2,
+    "workers": 1,
+    "npu": "8x8/64b/2s",
+    "batch": 1,
+    "cache_kib": 8,
+    "case": "mnist_mlp_dot8__hot"
+   },
+   "spread_theirs": 0.01,
+   "spread_mine": 0.01
+  },
+  "ml/mnist_mlp_multicore__hot/multicore/soc_dev": {
+   "verdict": "not distinguishable",
+   "points": 24,
+   "layouts": 8,
+   "states": [
+    "cold",
+    "warm"
+   ],
+   "windows": [
+    "e2e",
+    "kernel"
+   ],
+   "low": -0.0,
+   "high": 0.0,
+   "l0": {
+    "cold e2e": [
+     4803740,
+     4803721
+    ],
+    "warm e2e": [
+     4801167,
+     4801154
+    ],
+    "warm kernel": [
+     4736348,
+     4736369
+    ]
+   },
+   "axes": {
+    "memory_wait": 0,
+    "dcache": 1,
+    "harts": 2,
+    "workers": 2,
+    "npu": "8x8/64b/2s",
+    "batch": 1,
+    "cache_kib": 8,
+    "case": "mnist_mlp_multicore__hot"
+   },
+   "spread_theirs": 3.39,
+   "spread_mine": 3.39
+  },
+  "ml/mnist_mlp_scalar__hot/scalar/soc_dev": {
+   "verdict": "not distinguishable",
+   "points": 24,
+   "layouts": 8,
+   "states": [
+    "cold",
+    "warm"
+   ],
+   "windows": [
+    "e2e",
+    "kernel"
+   ],
+   "low": -0.0,
+   "high": 0.0,
+   "l0": {
+    "cold e2e": [
+     9602917,
+     9602917
+    ],
+    "warm e2e": [
+     9602117,
+     9602117
+    ],
+    "warm kernel": [
+     9537817,
+     9537817
+    ]
+   },
+   "axes": {
+    "memory_wait": 0,
+    "dcache": 1,
+    "harts": 2,
+    "workers": 1,
+    "npu": "8x8/64b/2s",
+    "batch": 1,
+    "cache_kib": 8,
+    "case": "mnist_mlp_scalar__hot"
+   },
+   "spread_theirs": 0.0,
+   "spread_mine": 0.0
+  }
+ },
+ "stacked": {},
+ "stacked_without_base": [],
+ "adopted_problems": [],
+ "adopted_beside": []
+}

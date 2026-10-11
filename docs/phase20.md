@@ -2071,7 +2071,8 @@ is judged at 8 KiB, on L0–L7.
     buffer costs.
 - **v1's fair copy** (a question for the owner). *Corrected in step 3b:* this said v1's fair copy was slow on Aster,
   its stores queuing, about 245 cycles more for a 64-byte chunk than the compiler's word loop. That was wrong. At the
-  same offset in a word no loop beats it on Aster; it is slow only at different offsets, a byte at a time. The 245
+  same offset in a word no loop tried beat it at both alignments; it is slow only at different offsets, a byte at a
+  time. The 245
   cycles were `__fir4_copy`'s losses at L0, which are instruction-cache conflicts and the helper's fixed cost
   (below, and step 3b).
 
@@ -2249,7 +2250,8 @@ the last clarified when asked):
 3. the copy policy keeps the worst case (no hint of the destination's cache state);
 4. §4.4's code against the instruction cache built now.
 
-**How it was judged** (tuning.md §3), every capture from the clean commit 6bc46c2; the evidence is in
+**How it was judged** (tuning.md §3), every capture from the clean commit 6bc46c2 but `t3b-judge-more` (the
+remaining twins on the layouts, from 6e219a0, its firmware identical to 6bc46c2's); the evidence is in
 `results/phase20/tuning-20.5/step3b/`, which supersedes step 3's where they differ:
 - **The layout judgment** (`t3b-judge`): 9,272 entries, the tuned variants, the twins below and their originals at R
   on the eight layouts, warm and cold. 456 variant configurations: 273 win, 178 are not distinguishable, 5 lose.
@@ -2268,24 +2270,27 @@ the last clarified when asked):
   None won both, so the helper keeps v1's fair copy there, as its own function.
 - **At different offsets v1's copy goes a byte at a time.** The helper now uses the shift copy there: aligned
   words loaded and merged by shifts, one aligned store a word.
-  - Its correctness: the watchdog's host check (not in the evidence) ran every source and destination offset from
-    0 to 7 and every size from 0 to 200 bytes against memcpy, with the address sanitizer and guard pages. 38,592
-    cases, no failure.
+  - Its correctness: the watchdog's host check (not in the evidence) ran three copies (the shift copy, the helper's
+    CPU copy and v1's), every source and destination offset from 0 to 7 and every size from 0 to 200 bytes, against
+    memcpy, with the address sanitizer and guard pages. 38,592 cases, no failure.
   - In the sweep (`t3b-dma-fine`, 85,632 entries on the eight layouts, six offset pairs, so every shift and every
     destination offset) it wins in all 1,356 configurations from 15 bytes: −3.8% to −73.5% (`copy-judge.txt`).
-  - Below 15 bytes it is not distinguishable, since its larger code costs cold misses. There the helper keeps v1's.
+  - At 8 to 14 bytes it wins in 35 of 84 configurations and is not distinguishable in 49, its larger code costing
+    cold misses. So the helper keeps v1's below 15. Below 8 bytes nothing was measured.
 - **The thresholds** (`crossover.txt`, re-derived and checked: PASS):
   - the DMA from 113 bytes aligned and 89 at the same offset, unchanged;
   - from 61 at different offsets: the crossovers are 37 to 61 against the shift copy, where step 3's 21 was
     against v1's byte path;
   - the shift copy from 15 bytes.
 - **soc_copy** checks every byte, guard and choice: 1,264 copies on hart 0 and 224 on hart 1, now at all 16 offset
-  pairs. PASS on soc_dev and soc_dev_w3.
+  pairs. PASS on soc_dev and soc_dev_w3 (`checks/soc-copy.log`).
 - **What it changed for the adopted variants:**
   - `__fir4_copy` no longer wins anywhere and is not adopted.
   - The ECG split's hart 1 moves each 64-byte chunk through the helper's CPU path, now behind the offset test: v1's
     case is 32,882 → 33,023 cycles cold, and the v1 gate's ECG 46.5× → 46.3×.
   - CIFAR's `__2h_copy` stages by the DMA as before: 29.2×.
+  - CIFAR im2col's `__2h_next` now beats `__2h_copy` on all eight layouts, warm and cold, −0.02% to −0.21%, and is
+    adopted. Direct's is not distinguishable (−0.40% to +0.04%).
 
 **2. The split policy** (`aster_split.h`): one worker only where it beats two at that size and every smaller one of
 the sweep, on every layout, warm and cold. From the next size up, and in the bands, the original's two workers.
@@ -2313,14 +2318,21 @@ windows run placed first.
 - **The same placement for every layout and cache state:** one profile per program and configuration, at L0 and
   warm. So the layouts' code pad moves only the cold code.
 
-**The result** (`twins.txt`): of 262 twin configurations, 6 win, 3 lose and 253 are not distinguishable.
+**The result** (`twins.txt`): 375 twin configurations were judged on the layouts, 262 in `t3b-judge` and 113 in
+`t3b-judge-more`. That second run covers the 19 twinned cases the first one's selection had left out: the CPU
+methods of CIFAR, MNIST and Conv2D, the FIR, the FFT and five coherence programs. Of the 375, 6 win, 3 lose and 366
+are not distinguishable.
 - **Where a base has conflict misses, the twin removes them.** ECG's original overlap pipeline at 16 × 8: 640 misses
-  on hart 1 → 0, and −2.7% at L0.
+  on hart 1 → 0 at L0, its e2e window −2.7% and its kernel window −3.1%.
 - **Where the base has none, the twin is the same or differs by alignment alone.**
   - At L4 the same pipeline's base has no misses, and the twin's cycles are identical: so it is not
     distinguishable (−3.7% to +0.0%).
-  - Moving code also moves loops within the 16-byte instruction lines. Scalar atomic_add's kernel moved from 8 bytes
-    into its line to 4: 46 → 56 cycles warm, on every layout, in a program whose code fits the cache.
+  - Moving code also changes which code shares an instruction line, so a window may need lines its warm-up did not
+    fetch. These programs' code fits the cache, so none of this is a conflict:
+    - scalar atomic_add at 2 items takes one miss more in its e2e window: 46 → 56 cycles warm, on every layout
+      (its kernel window is 46 in both);
+    - its two-worker run at 1,024 items takes two more on hart 1: +18 to +26 cycles.
+  - The dot's split at K = 0, cold, takes the same misses and 10 cycles more. That cause is not established.
 - **Adopted at the 6 points where they win** (`ADOPTED_POINTS`):
 
   | Twin | Point | Against | Change |
@@ -2334,11 +2346,21 @@ windows run placed first.
   Where the split variants and `__fir4` are adopted, they are faster than these twins. No twin changes a gate.
 - **Losses:** at 1,024 items, `atomic_add__hot` (+0.33% to +0.54%), `padded__hot` (+0.19% to +0.58%) and
   `atomic_add__split_hot` (+0.19% to +0.70%).
+- **The 19 other cases' twins** are all not distinguishable on the layouts, though some won at L0:
+  - the FIR −0.86% to +1.66%;
+  - the coherence programs from −7.39% to +6.51% (producer_consumer's and smp_overhead's extremes);
+  - the FFT and the CPU methods of CIFAR, MNIST and Conv2D within ±0.02%.
+- **The judge's pairing:** smp_overhead and stamp_cost each emit two records in one window, and the judge first
+  paired them wrongly. smp_overhead's twin showed +3,008%, its 64-trip round trip against its base's single
+  handoff. The judge now pairs each record by its window and its place among that window's records. No earlier
+  judgment had such a program.
+- **Twins of a variant no longer adopted:** `__fir4_copy`'s twins at 16 × 8 were planned when it was adopted. They
+  are 2 of the 262 configurations, both not distinguishable. The plan of twins is frozen at step 3b's
+  (`matrix_gates.TWINNED`), so a capture plans what this evidence holds.
 - **Beside the wins** (`others.txt`): `reduce_fill__hot` at 2 and 4 waits is not distinguishable (−0.06% to +0.00%,
   −0.10% to +0.01%).
-- **A further step, not taken:** keeping each moved function at its base's offset within its line would remove
-  the alignment effect. It needs padding the base's slack (44 bytes in the reduction) cannot hold, so the data
-  would move too.
+- **Not tested:** a placement that keeps each function's offset within its line, and so the base's line sharing.
+  It needs padding the base's slack (44 bytes in the reduction) cannot hold, so the data would move too.
 
 **The adopted set now** (`matrix_gates.ADOPTED`):
 - step 3's, less `__fir4_copy`;
@@ -2349,7 +2371,7 @@ Every other step 3 result stands, re-measured here:
 - the losses beside the wins: `lock_sum__split` with the cache off, +4.9% to +14.3%; the ECG split at 4 waits,
   64 × 8;
 - placement of data (`__place`): no win;
-- CIFAR's `__2h_next`: no win.
+- CIFAR direct's `__2h_next`: no win (im2col's now wins, above).
 
 **The gates at R** (8 KiB):
 - **Scaling,** in all eleven configurations: 1.911× to 2.016×.
