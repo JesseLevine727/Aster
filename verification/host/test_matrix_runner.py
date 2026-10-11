@@ -14,6 +14,7 @@ import asterbench_v12  # noqa: E402
 import matrix  # noqa: E402
 import matrix_bundle  # noqa: E402
 import matrix_compare  # noqa: E402
+import matrix_crossover  # noqa: E402
 import matrix_gates  # noqa: E402
 import matrix_geometry  # noqa: E402
 import matrix_golden  # noqa: E402
@@ -299,6 +300,17 @@ class DmaInvalidations(unittest.TestCase):
 
 
 STEP2_SIM = {4: "soc_dev", 2: "soc_l1_2k", 8: "soc_l1_8k"}       # (a capture of step 2's: R's caches at 4 KiB)
+
+
+class Crossover(unittest.TestCase):
+    """20.5 step 3: the copy helper's threshold, the size from which the DMA wins at every larger size."""
+    def test_from_which_the_dma_wins(self):
+        by = {s: {(0, 0): dict(dma=100, cpu_copy=c)} for s, c in ((60, 90), (61, 101), (62, 99), (63, 120), (64, 130))}
+        self.assertEqual(matrix_crossover.crossover(by), (63, [61]))      # (61's win is isolated: not taken)
+        by[64][(1, 0)] = dict(dma=200, cpu_copy=150)                     # (every offset pair must win)
+        self.assertEqual(matrix_crossover.crossover(by), (None, [61, 63]))
+        self.assertEqual([matrix_crossover.klass(*o) for o in ((0, 0), (1, 1), (3, 6))],
+                         ["aligned", "same_offset", "different_offsets"])
 
 
 class Geometry(unittest.TestCase):

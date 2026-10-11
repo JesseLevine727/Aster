@@ -3,7 +3,10 @@
 
 #include <stdint.h>
 
-struct aster_copy_policy aster_copy_policy = {127u, 63u, 15u};   // 20.4's crossovers at R (tuned in step 3)
+// 20.5 step 3's thresholds (docs/tuning.md §4.1): the finer sweep at R (8 KiB caches) on every layout, warm and cold,
+// the destination cached or not, the DMA where it wins on all of them (scripts/matrix_crossover.py; 20.4's crossovers
+// were 127, 63 and 15)
+struct aster_copy_policy aster_copy_policy = {113u, 89u, 21u};
 
 static enum aster_dma_result pending = ASTER_DMA_OK;              // (a started DMA copy's, until finished)
 
@@ -29,7 +32,9 @@ __attribute__((noipa)) void aster_fair_copy(void *destination_, const void *sour
     while (size) { *dst++ = *src++; --size; }
 }
 
-static uint32_t hart_id(void) { return *(volatile uint32_t *)0x20002000u; }   // (the SoC's, as v1's driver reads it)
+// the hart's number: its mhartid, which is the SoC's 0x2000_2000 (v1's driver's) without a device read on every copy
+// (20.5 step 3: the device read cost a copy about 95 cycles with the call)
+static uint32_t hart_id(void) { uint32_t id; __asm__ volatile ("csrr %0, mhartid" : "=r"(id)); return id; }
 
 enum aster_copy_engine aster_copy_choice(void *destination, const void *source, uint32_t bytes) {
     if (hart_id() != 0u) return ASTER_COPY_CPU;

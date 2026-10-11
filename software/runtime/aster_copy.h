@@ -1,8 +1,7 @@
 // 20.5's copy policy (docs/tuning.md §4.1): a copy by the DMA (v1's driver, software/drivers/aster_dma.c,
 // unchanged) or by the CPU's fair copy (v1's, software/benchmarks/dma.c, verbatim), chosen by size and alignment.
-// The thresholds (the bytes from which the DMA copies) start at 20.4's crossovers at R (docs/phase20.md, step 3:
-// from 127 bytes aligned, 63 at the same offset, 15 at different offsets) and are tuned in 20.5's step 3; a
-// program may set its own. Only hart 0 programs the DMA (v1's driver checks it), so hart 1 always copies itself.
+// The thresholds (the bytes from which the DMA copies) are 20.5 step 3's (aster_copy.c: 113 bytes aligned, 89 at the
+// same offset, 21 at different offsets; 20.4's crossovers were 127, 63 and 15); a program may set its own. Only hart 0 programs the DMA (v1's driver checks it), so hart 1 always copies itself.
 #ifndef ASTER_COPY_H
 #define ASTER_COPY_H
 

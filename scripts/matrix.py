@@ -30,6 +30,7 @@ import dataclasses
 import hashlib
 import json
 import os
+import re
 import shutil
 import subprocess
 import sys
@@ -348,21 +349,31 @@ def ecg_entries() -> list[Entry]:
     entries = []
     sources = ["software/matrix/ecg.c", "software/benchmarks/xe_kernels.c", "software/drivers/aster_dma.c",
                "software/drivers/aster_npu.c", "software/runtime/asterbench_v12.c", "software/runtime/aster_smp.c"]
-    for number, name, method, workers in ECG_METHODS:
+    # 20.5's tuned variants (tuning.md §5; software/matrix/ecg.c), each crossed as its original: __fir4, the FIR on
+    # DOT8 directly; __fir4_copy, and the chunks moved by the copy policy; __fir4_split (the two-hart pipeline), and
+    # hart 1 staging and moving the next chunk
+    variants = [(number, name, method, workers, "", []) for number, name, method, workers in ECG_METHODS]
+    for tag, tuning in (("__fir4", ["-DECG_FIR=1"]), ("__fir4_copy", ["-DECG_FIR=1", "-DECG_COPY=1"])):
+        variants += [(number, name, method, workers, tag, tuning) for number, name, method, workers in ECG_METHODS
+                     if number != 1]
+    variants += [(number, name, method, workers, "__fir4_split", ["-DECG_FIR=1", "-DECG_COPY=1", "-DECG_SPLIT=1"])
+                 for number, name, method, workers in ECG_METHODS if number == 3]
+    for number, name, method, workers, tag, tuning in variants:
         configs = [(sim, cold, "the pipeline needs two harts" if workers == 2 and sim == "soc_h1" else reason,
                     chunk, taps, features)
                    for chunk in (16, 32, 64, 128) for taps in (8, 16, 32) for features in (4, 8) if chunk > taps
                    for sim, cold, reason in axis_configs(number in (0, 3), workers)]
         for sim, cold, reason, chunk, taps, features in configs:
-            case = name + ("_f8" if features == 8 else "")
+            case = name + ("_f8" if features == 8 else "") + tag
             ident = f"ecg/{case}/{method}/{sim}/{'cold' if cold else 'warm'}" + \
                     ("" if (chunk, taps) == (64, 16) else f"/c{chunk}t{taps}")
             axes = make_axes(sim, cold, workers)
             axes.update(chunk=chunk, taps=taps, features=features)
-            e = Entry(ident, "ecg", case, method, sim, cold, [], "LITMUS_CFLAGS", [], [], "", sources,
+            copy = ["software/runtime/aster_copy.c"] if "-DECG_COPY=1" in tuning else []
+            e = Entry(ident, "ecg", case, method, sim, cold, [], "LITMUS_CFLAGS", [], [], "", sources + copy,
                       soc_variants.v12_defines(sim) + [f"-DECG_METHOD={number}", f"-DECG_CHUNK={chunk}u",
                                                        f"-DECG_COEF={taps}u", f"-DECG_FEATURES={features}u",
-                                                       "-Isoftware/benchmarks"]
+                                                       "-Isoftware/benchmarks"] + tuning
                       + (["-DMATRIX_COLD"] if cold else []), axes, "ecg")
             if reason:
                 e.status, e.reason = "unsupported", reason
@@ -832,6 +843,25 @@ def ecg_model(chunk: int, taps: int, features: int, seed: int = 0x13570000) -> i
     return checksum
 
 
+def copy_policy() -> dict:
+    """The copy helper's thresholds (software/runtime/aster_copy.c's aster_copy_policy: the bytes from which the DMA
+    copies), read from the source the firmware is built from."""
+    text = (ROOT / "software/runtime/aster_copy.c").read_text()
+    m = re.search(r"struct aster_copy_policy aster_copy_policy = \{(\d+)u, (\d+)u, (\d+)u\}", text)
+    return dict(zip(("aligned", "same_offset", "different_offsets"), map(int, m.groups())))
+
+
+def ecg_dma_moves(entry: Entry, chunk: int) -> bool:
+    """Whether ECG's chunks are moved by the DMA (each one, in the e2e window): the pipelines' DMA move, or the copy
+    policy's choice (__fir4_copy; aligned buffers, on hart 0), or none (one hart; __fir4_split, whose hart 1 copies)."""
+    tag = entry.case.split("__")[1].removesuffix("_stages") if "__" in entry.case else ""
+    if tag == "fir4_split":
+        return False
+    if tag == "fir4_copy":
+        return chunk >= copy_policy()["aligned"]
+    return entry.case.startswith("ecg_pipeline")
+
+
 def oracle_ecg(entry: Entry, records: list[dict], extras: list[str]) -> str:
     chunk, taps, features = (entry.axes[k] for k in ("chunk", "taps", "features"))
     chunks, fout = 1024 // chunk, chunk - taps + 1
@@ -849,7 +879,7 @@ def oracle_ecg(entry: Entry, records: list[dict], extras: list[str]) -> str:
         method_evidence(entry, r, dot8=dot8, npu_jobs=chunks if pipeline else 0)
         if pipeline and r["npu_macs"] != chunks * 3 * features:
             raise asterbench_v12.ValidationError(f"{r['npu_macs']} NPU MACs, not {chunks * 3 * features}")
-        moved = pipeline and r["window"] == "e2e"
+        moved = ecg_dma_moves(entry, chunk) and r["window"] == "e2e"
         if (r["dma_jobs"], r["dma_bytes"]) != ((chunks, 1024) if moved else (0, 0)):
             raise asterbench_v12.ValidationError(f"DMA jobs {r['dma_jobs']}, bytes {r['dma_bytes']}")
     if want != records[0]["checksum"]:
@@ -866,7 +896,8 @@ def oracle_ecg(entry: Entry, records: list[dict], extras: list[str]) -> str:
             for s in stages:
                 for kind in ("bring", "fir", "classify", "dma", "npu"):
                     begin, end = map(int, s[kind].split("-"))
-                    wanted = kind in ("fir", "classify", "npu") or r["window"] == "e2e"
+                    wanted = kind in ("fir", "classify", "npu") or (r["window"] == "e2e" and
+                                                                    (kind == "bring" or ecg_dma_moves(entry, chunk)))
                     if end < begin or wanted != (end > 0):
                         raise asterbench_v12.ValidationError(f"{r['window']} chunk {s['chunk']}: its {kind} {begin}-{end}")
     worst = int(latency[0]["latency_max"])
@@ -1448,6 +1479,7 @@ def main() -> int:
     parser.add_argument("--jobs", type=int, default=max(1, (os.cpu_count() or 2) - 4))
     parser.add_argument("--only", help="entries whose id starts with this (applied before --caches and --layouts)")
     parser.add_argument("--gate-workloads", action="store_true", help="only the scaling and v1 gates' cases")
+    parser.add_argument("--sims", help="only entries on these builds, e.g. soc_dev (tuning.md §3's judging at R)")
     parser.add_argument("--r-only", action="store_true", help="only the R entries on the default seed (warm; cold "
                                                                   "for the gate workloads): the cache geometry's")
     parser.add_argument("--caches", help="also each of those (tuning.md §4.2) among the selected entries with the L1 "
@@ -1461,6 +1493,8 @@ def main() -> int:
         entries = [e for e in entries if e.id.startswith(args.only)]
     if args.gate_workloads:
         entries = [e for e in entries if gate_workload(e)]
+    if args.sims:
+        entries = [e for e in entries if e.sim in args.sims.split(",")]
     if args.r_only:
         entries = [e for e in entries if geometry_base(e)]
     if args.caches:

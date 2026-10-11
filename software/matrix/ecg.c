@@ -32,6 +32,8 @@
 #include "matrix_window.h"
 #include "workload_ecg_data.h"
 #include "xe_kernels.h"
+#include "aster_dot8.h"
+#include "aster_copy.h"
 
 #ifndef ECG_METHOD
 #define ECG_METHOD 0
@@ -45,6 +47,26 @@
 #ifndef ECG_FEATURES
 #define ECG_FEATURES 4u
 #endif
+// 20.5's tuned variants (tuning.md §5), each a case of its own ("<original>__<tag>", tuning.md §3):
+//   ECG_FIR 1    "__fir4": the FIR on DOT8 directly (below), in place of v1's xe_dot8_gemm (the DOT8 methods)
+//   ECG_COPY 1   "_copy": each chunk moved by the copy policy (aster_copy: the DMA or the fair copy, by size and
+//                alignment, tuning.md §4.1), in place of the DMA's move (the pipelines) or a byte loop (one hart)
+//   ECG_SPLIT 1  "_split" (the two-hart pipeline, with both): the stages balanced from the stamps. With the FIR
+//                fast, hart 0's staging and classifier bound the period, so hart 1 stages and moves the next chunk
+//                after each FIR (on the CPU: only hart 0 programs the DMA), and hart 0 only classifies
+#ifndef ECG_FIR
+#define ECG_FIR 0
+#endif
+#ifndef ECG_COPY
+#define ECG_COPY 0
+#endif
+#ifndef ECG_SPLIT
+#define ECG_SPLIT 0
+#endif
+_Static_assert(!ECG_FIR || ECG_METHOD != 1, "the direct DOT8 FIR replaces the DOT8 methods' FIR");
+_Static_assert(!ECG_COPY || ECG_FIR, "the copy policy's variant is the direct FIR's too");
+_Static_assert(!ECG_SPLIT || (ECG_COPY && ECG_METHOD == 3), "the split is the tuned two-hart pipeline's");
+#define ECG_TAG (ECG_SPLIT ? "__fir4_split" : ECG_COPY ? "__fir4_copy" : "__fir4")
 #define ECG_SEED 0x13570000u
 #define ECG_CHUNKS (ECG_DATA_COUNT / ECG_CHUNK)
 #define ECG_FOUT (ECG_CHUNK - ECG_COEF + 1u)
@@ -110,9 +132,39 @@ static int8_t clamp8(int32_t value) {
 }
 
 // (the computation's functions out of line, noinline, so that their code is the same in every caller and build)
-// the FIR, C(r) = sum_k x(r + k) coef(k): on the method's engine
+// the FIR, C(r) = sum_k x(r + k) coef(k): on the method's engine. ECG_FIR's: each product of four taps one word of
+// the chunk shifted in registers (the chunk is word-aligned) against a word of taps packed once; v1's xe_dot8_gemm
+// gathers every operand byte by byte (the FIR's rows overlap at stride 1). The same products and sums: the same
+// outputs and DOT8 count.
 static __attribute__((noinline)) void fir(const int8_t *x, int32_t *out) {
-#if ECG_METHOD == 1
+#if ECG_FIR
+    _Static_assert(ECG_COEF % 4u == 0 && ECG_CHUNK % 4u == 0, "the chunk and the taps in whole words");
+    enum { WORDS = ECG_CHUNK / 4u, TAP_WORDS = ECG_COEF / 4u };
+    if (((uintptr_t)x & 3u) != 0) {                   // (every chunk buffer is word-aligned)
+        engine_failed = 1;
+        return;
+    }
+    const uint32_t *w = (const uint32_t *)(const void *)x;
+    uint32_t taps[TAP_WORDS];
+#pragma GCC unroll 8
+    for (uint32_t j = 0; j < TAP_WORDS; ++j) taps[j] = aster_dot8_pack4((const uint8_t *)coef + 4u * j);
+    // outputs 4q .. 4q + 3 from the chunk's words q .. q + TAP_WORDS, held in registers: output 4q + s takes each
+    // word shifted by s bytes, (w[q + j] >> 8s) | (w[q + j + 1] << (32 - 8s)), against tap word j
+    for (uint32_t q = 0; 4u * q < ECG_FOUT; ++q) {
+        uint32_t xw[TAP_WORDS + 1u];
+#pragma GCC unroll 9
+        for (uint32_t j = 0; j <= TAP_WORDS; ++j) xw[j] = q + j < WORDS ? w[q + j] : 0u;   // (past the end: unused)
+#pragma GCC unroll 4
+        for (uint32_t s = 0; s < 4u; ++s) {
+            if (4u * q + s >= ECG_FOUT) break;
+            uint32_t sum = 0;
+#pragma GCC unroll 8
+            for (uint32_t j = 0; j < TAP_WORDS; ++j)
+                sum += aster_dot8_packed(s ? (xw[j] >> (8u * s)) | (xw[j + 1u] << (32u - 8u * s)) : xw[j], taps[j]);
+            out[4u * q + s] = (int32_t)sum;
+        }
+    }
+#elif ECG_METHOD == 1
     for (uint32_t r = 0; r < ECG_FOUT; ++r) {
         int32_t sum = 0;
         for (uint32_t k = 0; k < ECG_COEF; ++k) sum += (int32_t)x[r + k] * (int32_t)coef[k];
@@ -194,7 +246,19 @@ static __attribute__((noinline)) const int8_t *bring(uint32_t chunk, uint32_t sl
     STAGE_BEGIN(chunk, ST_BRING);
     for (uint32_t i = 0; i < ECG_CHUNK; ++i) raw[i] = ecg_samples[chunk * ECG_CHUNK + i];      // the staging
     __asm__ volatile ("fence rw,rw" ::: "memory");
-#if PIPELINE
+#if ECG_COPY
+    {                                                  // (the copy policy; on hart 1 always the CPU's fair copy)
+        enum aster_copy_engine used;
+#if ECG_STAGES
+        const uint32_t submitted = aster_window_now();
+#endif
+        if (aster_copy(moved[slot], raw, ECG_CHUNK, &used) != ASTER_DMA_OK) engine_failed = 1;
+        if (used == ASTER_COPY_DMA) {
+            STAGE_JOB(chunk, ST_DMA, submitted, aster_dma_job_cycles());
+            v12_note_dma_job();
+        }
+    }
+#elif PIPELINE
 #if ECG_STAGES
     const uint32_t submitted = aster_window_now();
 #endif
@@ -256,6 +320,28 @@ static uint32_t run(int mode) {
 static const int8_t *volatile fir_in;
 static int32_t *volatile fir_out;
 
+#if ECG_SPLIT
+// hart 1 stages and moves the next chunk after each FIR; each chunk's latency, from its staging (on hart 1) to its
+// class (on hart 0), on the window's clock, which both harts read
+static volatile uint32_t next_chunk, next_mode;
+static const int8_t *volatile next_in;
+
+static void fir_job(void *arg) {
+    (void)arg;
+    matrix_stamp_start(1);
+    if (fir_in) {                                      // (the first job only brings chunk 0)
+        STAGE_BEGIN(fir_chunk, ST_FIR);
+        fir(fir_in, fir_out);
+        STAGE_END(fir_chunk, ST_FIR);
+    }
+    const uint32_t chunk = next_chunk;
+    if (chunk < ECG_CHUNKS) {
+        chunk_start[chunk] = aster_window_now();
+        next_in = bring(chunk, chunk & 1u, (int)next_mode);
+    }
+    matrix_stamp_end(1);
+}
+#else
 static void fir_job(void *arg) {
     (void)arg;
     matrix_stamp_start(1);
@@ -264,13 +350,26 @@ static void fir_job(void *arg) {
     STAGE_END(fir_chunk, ST_FIR);
     matrix_stamp_end(1);
 }
+#endif
 
 static uint32_t run(int mode) {
     uint32_t checksum = 0;
+#if ECG_SPLIT
+    next_mode = (uint32_t)mode;                         // hart 1 brings chunk 0 first
+    next_chunk = 0;
+    fir_in = 0;
+    aster_smp_dispatch(fir_job, 0);
+    aster_smp_join();
+#endif
     for (uint32_t chunk = 0; chunk <= ECG_CHUNKS; ++chunk) {
         if (chunk < ECG_CHUNKS) {
+#if ECG_SPLIT
+            fir_in = next_in;                           // (brought by hart 1's last job)
+            next_chunk = chunk + 1u;
+#else
             chunk_start[chunk] = now();
             fir_in = bring(chunk, chunk & 1u, mode);
+#endif
             fir_out = filtered[chunk & 1u];
 #if ECG_STAGES
             fir_chunk = chunk;
@@ -280,7 +379,11 @@ static uint32_t run(int mode) {
         }
         if (chunk > 0) {
             checksum = classify(chunk - 1u, filtered[(chunk - 1u) & 1u], checksum);
+#if ECG_SPLIT
+            chunk_latency[chunk - 1u] = aster_window_now() - chunk_start[chunk - 1u];
+#else
             chunk_latency[chunk - 1u] = now() - chunk_start[chunk - 1u];
+#endif
         }
         if (chunk < ECG_CHUNKS) aster_smp_join();
     }
@@ -326,7 +429,17 @@ static int timed_pass(struct v12_record *record, int mode) {
                                              "ecg_pipeline_overlap_f8"}};
     static const char *const methods[] = {"pipeline", "scalar", "dot8", "pipeline"};
     record->name = names[ECG_FEATURES == 8u][ECG_METHOD]; record->family = "ecg"; record->method = methods[ECG_METHOD];
-#if ECG_STAGES
+#if ECG_FIR
+    // a tuned variant's case: its original's name, "__" and its tag (tuning.md §3), then a stamped twin's "_stages"
+    static char named[64];
+    if (!named[0]) {
+        int n = 0;
+        for (const char *c = record->name; *c; ++c) named[n++] = *c;
+        for (const char *c = ECG_TAG; *c; ++c) named[n++] = *c;
+        for (const char *c = ECG_STAGES ? "_stages" : ""; *c; ++c) named[n++] = *c;
+    }
+    record->name = named;
+#elif ECG_STAGES
     static char stamped[48];                           // (the stamped entry's case: the name and "_stages")
     if (!stamped[0]) {
         int n = 0;
