@@ -1,7 +1,7 @@
 # Phase 21: 100 MHz closure and energy per operation
 
-Status: **draft for the owner's approval.** No work starts before it is approved. Its decisions are D1 to D11
-(§10). Two of them amend earlier decisions:
+Status: **approved by the owner on 12 October 2026, every decision as recommended** ("I agree with all!! lets get
+this wrapped up"). Step 1 is under way. The decisions are D1 to D11 (§10). Two of them amend earlier decisions:
 - **D10:** phase17-plus.md §6's Phase 21 exit gains energy, and tuning.md's decision 9 (a short Phase 21) is
   superseded.
 - **D11:** whether CIFAR's CPU paths are in the energy set. Leaving them out would amend phase17-plus.md §4's ML

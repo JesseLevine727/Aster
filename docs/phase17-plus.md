@@ -501,6 +501,11 @@ the workload acceptance subset (including a valid CoreMark run) executes
 physically at that clock on repeated boots. A lower-frequency functional image
 is not reported as 100 MHz success.
 
+**Amended 12 October 2026 (owner approval of [`phase21.md`](phase21.md), D10):**
+Phase 21 also closes §2's energy target. Its exit gains energy per operation for
+each engine, from a SAIF dynamic-power estimate of the final image (phase21.md
+§9), and its repeated boots include three with the board powered off and on.
+
 ### Phase 22 — SKY130 implementation and PPA closure
 
 **Dropped 1 October 2026 (owner decision; the FPGA is the only implementation

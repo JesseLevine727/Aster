@@ -515,7 +515,9 @@ Each was approved as recommended, the first option of each.
      soc.md §10.6's "each program".
 8. **The two-hart NPU variants' windows (§6):** the e2e window alone
    (recommended); or a kernel window redefined for them.
-9. **Phase 21's scope.** 20.5's board run covers most of Phase 21's exit
+9. **Phase 21's scope** (superseded on 12 October 2026 by [`phase21.md`](phase21.md)'s D10, approved by the
+   owner: Phase 21 also closes the energy target; this decision's acceptance subset is kept for its cold boots).
+   20.5's board run covers most of Phase 21's exit
    (phase17-plus.md: the all-engine image at 100 MHz with no failing
    endpoints and clean routing and methodology checks; the acceptance
    subset, CoreMark included, on repeated boots).

@@ -32,7 +32,9 @@ at a time:**
   - The owner authorized closing 20.5 and the phase on 11 October.
   - Every one of the final image's 5,254 workload programs ends on the
     board exactly as simulated, cycle for cycle, on two loads.
-  - Next is Phase 21.
+- **Phase 21 (in progress, plan approved 12 October):** the formal 100 MHz
+  closure with cold boots, and energy per operation for each engine from a
+  SAIF dynamic-power estimate of the final image ([`docs/phase21.md`](docs/phase21.md)).
 
 Measured at 100 MHz on the final SoC (8 KiB caches). Every figure is an
 R program that also ran on the board, cycle for cycle. The figures are end to
