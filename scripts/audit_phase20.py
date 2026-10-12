@@ -9,7 +9,8 @@ reason):
               ancestor of HEAD, or made from a dirty tree;
   - manifest: missing required workloads: an entry the families' planners (scripts/matrix.py, with the bundle's
               2 and 4 KiB caches) give that the bundle lacks, or a captured entry they do not give; a failed or
-              planned entry; an unsupported entry without its reason; determinism or cold/warm pairs that differ;
+              planned entry; a planned entry unsupported where its planner runs it (but for a layout that does not
+              fit main memory), or not with the planner's reason; determinism or cold/warm pairs that differ;
   - records:  a captured entry whose raw records or console are missing from its archive, or a record that fails
               AsterBench v12's validator or is not PASS (every one re-validated from the archives);
   - totals:   wrong counter attribution: the NPU's bytes against the fabric's and the engines' cycle bounds
@@ -19,17 +20,19 @@ reason):
               equal to the bundle's gates.json;
   - ecg:      soc.md §11's ECG gate re-derived from the stamped twins' raw consoles (scripts/matrix_ecg_overlap.py),
               every window of each: the two-hart pipelines overlapped, v1's sequential per chunk;
-  - timing:   the final build's own reports: a clock other than clk_fpga_0 at 10 ns, a check_timing finding,
+  - timing:   the final build's own reports: the final image's configuration-data hash not timing.txt's; a clock
+              other than clk_fpga_0 at 10 ns, a check_timing finding,
               negative slack or failing endpoints (setup, hold, pulse width), unrouted nets or routing errors, DRC
               errors or critical warnings, methodology violations, LUTs, block RAM or DSPs over 80%;
   - board:    any R program of the bundle that does not end on the board as simulated, on each of two loads of
-              the final image: its bitstream (the bundle's final-build hash), its identity, FCLK0 measured at
-              100 MHz; status, tohost's cycle, the console byte for byte (against the bundle's raw console), the
+              the final image: its bitstream (the bundle's final-build hash), its identity (the R entries'
+              configuration words), FCLK0 measured at 100 MHz; status, tohost's cycle, the console byte for byte (against the bundle's raw console), the
               console's lag, and hart 0's instructions retired at tohost and the window's cycles and instructions
               (against the reference: each program simulated as the board runs it, on the capture's simulation);
-  - coremark: CoreMark's official run: its capture not from a clean ancestor commit or on another simulation, its
-              record or report not validated by its oracle (re-run here), or not matched on two loads of the final
-              image as the board check matches.
+  - coremark: CoreMark's official run, its performance run (the score) and its validation run (CoreMark's run
+              rules ask both to validate): its capture not from a clean ancestor commit or on another simulation,
+              either run's record or report not validated by its oracle (re-run here), or either not matched on two
+              loads of the final image as the board check matches.
 It says PASS only if every check passes; otherwise "incomplete", with each failure.
 
   audit_phase20.py [--bundle DIR] [--board DIR] [--self-test]
@@ -47,6 +50,7 @@ import subprocess
 import sys
 import tarfile
 from pathlib import Path
+from types import SimpleNamespace
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "scripts"))
@@ -64,7 +68,7 @@ AREA_LIMIT = 80.0
 CLOCKS = {"clk_fpga_0": 10.0}
 LAG_LIMIT = 8192
 REFERENCED = ("tohost_retired", "window_cycles", "window_retired")
-COREMARK_ID = "cpu/coremark_official/scalar/soc_dev/cold"
+COREMARK_IDS = ("cpu/coremark_official/scalar/soc_dev/cold", "cpu/coremark_validation/scalar/soc_dev/cold")
 
 
 class Failure(Exception):
@@ -156,21 +160,32 @@ def check_source(manifest: dict) -> str:
     return f"the capture is {rev[:7]}'s, a clean tree, an ancestor of HEAD"
 
 
-def planned_ids() -> set:
+def planned_ids() -> dict:
+    """Every entry the families' planners give, with the reason of those they mark unsupported (None: run)."""
     entries = [e for f in FAMILIES for e in matrix.FAMILIES[f]()]
     entries += matrix.with_caches(entries, list(CACHES))
-    return {e.id for e in entries}
+    return {e.id: (e.reason if e.status == "unsupported" else None) for e in entries}
 
 
-def check_manifest(manifest: dict, planned: set) -> str:
+def check_manifest(manifest: dict, planned: dict) -> str:
     require(set(manifest["families"]) == set(FAMILIES), f"families {sorted(manifest['families'])}")
     counts = {}
     for e in manifest["entries"]:
         counts[e["status"]] = counts.get(e["status"], 0) + 1
     require(counts.get("failed", 0) == 0 and counts.get("planned", 0) == 0, f"entries {counts}")
     ids = {e["id"] for e in manifest["entries"]}
-    missing = sorted(planned - ids)
+    missing = sorted(set(planned) - ids)
     require(not missing, f"{len(missing)} planned entries missing: {missing[:3]}")
+    for e in manifest["entries"]:
+        if e["id"] not in planned:
+            continue
+        reason = planned[e["id"]]
+        if reason is not None:
+            require(e["status"] == "unsupported" and e.get("reason") == reason,
+                    f"{e['id']}: {e['status']}, its planner marks it unsupported ({reason})")
+        elif e["status"] == "unsupported":
+            require(e.get("reason") == f"layout {e['axes'].get('layout')} does not fit main memory",
+                    f"{e['id']}: unsupported ({e.get('reason')}), its planner runs it")
     stray = sorted(e["id"] for e in manifest["entries"] if e["status"] == "captured" and e["id"] not in planned)
     require(not stray, f"{len(stray)} captured entries no planner gives: {stray[:3]}")
     require(all(e.get("reason") for e in manifest["entries"] if e["status"] == "unsupported"),
@@ -178,7 +193,8 @@ def check_manifest(manifest: dict, planned: set) -> str:
     for key in ("determinism", "cold_warm_pairs"):
         d = manifest[key]
         require(d["checked"] > 0 and d["identical"] == d["checked"] and not d["differ"], f"{key}: {d}")
-    return (f"all {len(planned)} planned entries present ({counts}); determinism "
+    return (f"all {len(planned)} planned entries present, each as its planner marks it; the manifest {counts}; "
+            f"determinism "
             f"{manifest['determinism']['identical']}/{manifest['determinism']['checked']}, cold/warm pairs "
             f"{manifest['cold_warm_pairs']['identical']}/{manifest['cold_warm_pairs']['checked']}")
 
@@ -288,7 +304,7 @@ def check_ecg(manifest: dict, archives: dict) -> str:
 def timing_findings(directory: Path) -> list[str]:
     problems = []
     summary = (directory / "timing_summary.rpt").read_text()
-    clocks = dict(re.findall(r"^(\S+)\s+\{[\d. ]+\}\s+([\d.]+)\s+[\d.]+\s*$",
+    clocks = dict(re.findall(r"^\s*(\S+)\s+\{[\d. ]+\}\s+([\d.]+)\s+[\d.]+\s*$",
                              summary.split("| Clock Summary", 1)[-1].split("| Intra Clock Table", 1)[0], re.M))
     if {k: float(v) for k, v in clocks.items()} != CLOCKS:
         problems.append(f"clocks {clocks}, not {CLOCKS}")
@@ -335,7 +351,17 @@ def timing_findings(directory: Path) -> list[str]:
     return problems
 
 
+def config_hashes(bundle: Path) -> tuple[list[str], list[str]]:
+    """The final image's configuration-data hash as bitstream.sha256 records it, and as timing.txt does."""
+    pattern = r"configuration data[^\n]*?sha256 ([0-9a-f]{64})"
+    return (re.findall(pattern, (bundle / "timing/final-build/bitstream.sha256").read_text()),
+            re.findall(pattern, (bundle / "timing/timing.txt").read_text()))
+
+
 def check_timing(bundle: Path) -> str:
+    recorded, timing = config_hashes(bundle)
+    require(len(recorded) == 1 and recorded[0] in timing,
+            f"the final image's configuration data {recorded} is not timing.txt's {timing}")
     problems = timing_findings(bundle / "timing/final-build")
     require(not problems, "; ".join(problems))
     return "clk_fpga_0 at 10 ns, no check_timing finding; setup, hold and pulse width met with no failing " \
@@ -370,6 +396,9 @@ def load_problems(report: dict, entries: dict, consoles: dict, reference: dict, 
     if identity.get("clk_hz") != 100_000_000 or any(identity.get(k) != design.get(k)
                                                    for k in ("magic", "main_bytes", "npu_config", "soc_config")):
         problems.append(f"the identity {identity} against the design {design}")
+    words = {(e["soc"].get("npu_config"), e["soc"].get("soc_config")) for e in entries.values()}
+    if words != {(identity.get("npu_config"), identity.get("soc_config"))}:
+        problems.append(f"the identity's configuration words {identity} are not the simulations' {sorted(words)}")
     got = {p["name"]: p for p in report.get("programs", [])}
     if set(got) != set(entries):
         problems.append(f"{len(set(entries) - set(got))} programs not run, {len(set(got) - set(entries))} others")
@@ -405,6 +434,7 @@ def check_loads(loads: list[dict], entries: dict, consoles: dict, reference: dic
 def check_board(manifest: dict, archives: dict, board: Path, final_sha: str) -> str:
     require(board.exists(), f"no board evidence ({board})")
     entries = r_entries(manifest)
+    require(entries, "no R entry in the bundle")
     consoles = {}
     for ident, e in entries.items():
         _, console = entry_texts(e, archives)
@@ -418,41 +448,48 @@ def check_board(manifest: dict, archives: dict, board: Path, final_sha: str) -> 
             f"simulated on each: status, tohost's cycle and hart 0's retired count, the window, the console")
 
 
-def coremark_inputs(board: Path) -> tuple[dict, str, str, dict, list[dict]]:
-    """CoreMark's capture (its manifest, console and records), its reference and its loads, as the board's evidence
-    holds them."""
+def coremark_inputs(board: Path) -> tuple[dict, dict, dict, dict, list[dict]]:
+    """CoreMark's capture (its manifest, and each run's console and records), its reference and its loads, as the
+    board's evidence holds them."""
     capture = board / "coremark/capture"
     manifest = json.loads((capture / "manifest.json").read_text())
-    entry = next((e for e in manifest["entries"] if e["id"] == COREMARK_ID), {})
-    console = (capture / console_name(COREMARK_ID)).read_text()
-    records = (capture / entry["records"]).read_text() if entry.get("records") else ""
+    consoles, records = {}, {}
+    for e in manifest["entries"]:
+        if (capture / console_name(e["id"])).exists():
+            consoles[e["id"]] = (capture / console_name(e["id"])).read_text()
+        if e.get("records") and (capture / e["records"]).exists():
+            records[e["id"]] = (capture / e["records"]).read_text()
     loads = [read_json(p) for p in sorted(board.glob("coremark/boot*/report.json.xz"))]
-    return manifest, console, records, read_json(board / "coremark/reference.json"), loads
+    return manifest, consoles, records, read_json(board / "coremark/reference.json"), loads
 
 
 def check_coremark(board: Path, bundle_manifest: dict, final_sha: str) -> str:
     return coremark_verdict(*coremark_inputs(board), bundle_manifest, final_sha)
 
 
-def coremark_verdict(manifest: dict, console: str, records_text: str, reference: dict, loads: list[dict],
+def coremark_verdict(manifest: dict, consoles: dict, records_text: dict, reference: dict, loads: list[dict],
                      bundle_manifest: dict, final_sha: str) -> str:
     clean_ancestor(manifest["source"], "CoreMark's capture")
     entries = {e["id"]: e for e in manifest["entries"]}
-    require(set(entries) == {COREMARK_ID}, f"CoreMark's capture holds {sorted(entries)[:3]}")
-    e = entries[COREMARK_ID]
-    require(e["status"] == "captured", f"the official run's simulation is {e['status']}")
+    require(set(entries) == set(COREMARK_IDS), f"CoreMark's capture holds {sorted(entries)[:3]}, not both runs")
     r_sims = {x["sim_sha256"] for x in r_entries(bundle_manifest).values()}
-    require({e["sim_sha256"]} == r_sims, "CoreMark's simulation is not the bundle's R simulation")
-    lines = [l for l in records_text.splitlines() if l.startswith("ASTERBENCH,")]
-    try:
-        records = [asterbench_v12.validate_line(line + "\n") for line in lines]
-        verdict = matrix.oracle_coremark_official(None, records, console)
-    except Exception as error:
-        raise Failure(f"the official run: {error}") from None
-    require(all(r["status"] == "PASS" for r in records), "the official run's record is not PASS")
+    verdicts = []
+    for ident in COREMARK_IDS:
+        e = entries[ident]
+        require(e["status"] == "captured", f"{ident}: its simulation is {e['status']}")
+        require({e["sim_sha256"]} == r_sims, f"{ident}: CoreMark's simulation is not the bundle's R simulation")
+        require(ident in consoles and ident in records_text, f"{ident}: its console or records are missing")
+        lines = [l for l in records_text[ident].splitlines() if l.startswith("ASTERBENCH,")]
+        try:
+            records = [asterbench_v12.validate_line(line + "\n") for line in lines]
+            verdicts.append(matrix.oracle_coremark_official(SimpleNamespace(case=e["case"]), records,
+                                                            consoles[ident]))
+        except Exception as error:
+            raise Failure(f"{ident}: {error}") from None
+        require(all(r["status"] == "PASS" for r in records), f"{ident}: its record is not PASS")
     reference = reference_rows(reference, entries)
-    n = check_loads(loads, entries, {COREMARK_ID: console}, reference, final_sha, "CoreMark")
-    return f"{verdict.split(';')[0]}; as simulated on {n} loads of the final image"
+    n = check_loads(loads, entries, consoles, reference, final_sha, "CoreMark")
+    return f"{verdicts[0].split(';')[0]}; the validation run validated; both as simulated on {n} loads of the final image"
 
 
 # ---- the audit, and its planted faults ----
@@ -512,9 +549,10 @@ def synthetic_loads(entries: dict, consoles: dict, sha: str) -> tuple[dict, list
     """A reference and two loads made to match the bundle: the self-test's sound board evidence."""
     rows = {i: dict(id=i, status=e["soc"]["status"], tohost_cycles=e["soc"]["cycles"], tohost_retired=n + 7,
                     window_cycles=n + 11, window_retired=n + 5) for n, (i, e) in enumerate(sorted(entries.items()))}
-    design = dict(magic=0x41535432, main_bytes=0x18000, npu_config=1, soc_config=2)
+    words = sorted({(e["soc"].get("npu_config"), e["soc"].get("soc_config")) for e in entries.values()})[0]
+    design = dict(magic=0x41535432, main_bytes=0x18000, npu_config=words[0], soc_config=words[1])
     loads = [dict(status="complete", bitstream_sha256=sha, clock=dict(mhz=100.0, measured_mhz=99.998),
-                  identity=dict(design, clk_hz=100_000_000), design=design,
+                  identity=dict(design, clk_hz=100_000_000), design=dict(design),
                   programs=[dict(name=i, status=r["status"], tohost_cycles=r["tohost_cycles"], console=consoles[i],
                                  max_lag=100, load_seconds=0.2 + boot / 100,
                                  **{k: r[k] for k in REFERENCED}) for i, r in rows.items()])
@@ -561,6 +599,11 @@ def self_test(bundle: Path, board: Path) -> list[tuple[str, bool, str]]:
     m["entries"].append(dict(captured[0], id="cpu/planted/scalar/soc_dev/warm"))
     out.append(planted("manifest: a captured entry no planner gives", lambda: check_manifest(m, planned),
                        "no planner gives"))
+    m = copy.deepcopy(manifest)
+    run = next(e for e in m["entries"] if e["status"] == "captured" and planned.get(e["id"], 0) is None)
+    run.update(status="unsupported", reason="planted")
+    out.append(planted("manifest: an entry its planner runs recorded unsupported", lambda: check_manifest(m, planned),
+                       "its planner runs it"))
     m = copy.deepcopy(manifest)
     m["determinism"] = dict(m["determinism"], identical=m["determinism"]["checked"] - 1, differ=["planted"])
     out.append(planted("manifest: a determinism repeat differs", lambda: check_manifest(m, planned), "determinism"))
@@ -642,6 +685,7 @@ def self_test(bundle: Path, board: Path) -> list[tuple[str, bool, str]]:
         with tempfile.TemporaryDirectory() as tmp:
             copied = Path(tmp) / "timing/final-build"
             shutil.copytree(final, copied)
+            shutil.copyfile(bundle / "timing/timing.txt", Path(tmp) / "timing/timing.txt")
             changed = 0
             for path in copied.iterdir():
                 text = path.read_text()
@@ -653,6 +697,16 @@ def self_test(bundle: Path, board: Path) -> list[tuple[str, bool, str]]:
                 path.write_text(edited)
             result = planted(label, lambda: check_timing(Path(tmp)), reason)
             out.append(result if changed else (label, False, "the fault was not planted"))
+    with tempfile.TemporaryDirectory() as tmp:
+        copied = Path(tmp) / "bundle"
+        (copied / "timing/final-build").mkdir(parents=True)
+        shutil.copytree(bundle / "timing/final-build", copied / "timing/final-build", dirs_exist_ok=True)
+        shutil.copyfile(bundle / "timing/timing.txt", copied / "timing/timing.txt")
+        out.append(sound("timing: (the final build's reports, copied)", lambda: check_timing(copied)))
+        path = copied / "timing/final-build/bitstream.sha256"
+        path.write_text(re.sub(r"(configuration data[^\n]*?sha256 )[0-9a-f]", r"\g<1>x", path.read_text()))
+        out.append(planted("timing: the image's configuration data not timing.txt's", lambda: check_timing(copied),
+                           "is not timing.txt's"))
     entries = r_entries(manifest)
     consoles = {i: entry_texts(e, archives)[1] for i, e in entries.items()}
     rows, loads = synthetic_loads(entries, consoles, "b")
@@ -672,7 +726,9 @@ def self_test(bundle: Path, board: Path) -> list[tuple[str, bool, str]]:
             ("board: a program not run", lambda r, p: r["programs"].remove(p), "not run"),
             ("board: another bitstream", lambda r, p: r.update(bitstream_sha256="c"), "another bitstream"),
             ("board: FCLK0 not 100 MHz", lambda r, p: r["clock"].update(measured_mhz=95.0), "FCLK0"),
-            ("board: the run not complete", lambda r, p: r.update(status="failed"), "the run is failed")):
+            ("board: the run not complete", lambda r, p: r.update(status="failed"), "the run is failed"),
+            ("board: another configuration's identity",
+             lambda r, p: (r["identity"].update(soc_config=3), r["design"].update(soc_config=3)), "configuration words")):
         bad = mutated(change)
         out.append(planted(label, lambda: check_loads(bad, entries, consoles, rows, "b", "B"), reason))
     out.append(planted("board: one load only", lambda: check_loads(loads[:1], entries, consoles, rows, "b", "B"),
@@ -691,15 +747,16 @@ def self_test(bundle: Path, board: Path) -> list[tuple[str, bool, str]]:
     out.append(planted("board: the reference not as captured", lambda: reference_rows(bad, entries), "captured"))
     # CoreMark's: its capture as the board's evidence holds it, with loads made to match it
     try:
-        cm, console, records, cm_reference, _ = coremark_inputs(board)
+        cm, consoles, records, cm_reference, _ = coremark_inputs(board)
     except Exception as error:
         return out + [("coremark: (its capture, from the board's evidence)", False, f"unreadable: {error}")]
     cm_entries = {e["id"]: e for e in cm["entries"]}
-    cm_rows, cm_loads = synthetic_loads(cm_entries, {COREMARK_ID: console}, "b")
+    cm_rows, cm_loads = synthetic_loads(cm_entries, consoles, "b")
     cm_ref = dict(cm_reference, rows=list(cm_rows.values()))
+    performance, validation = COREMARK_IDS
 
-    def verdict(manifest=cm, console=console, records=records, reference=cm_ref, loads=cm_loads):
-        return lambda: coremark_verdict(manifest, console, records, reference, loads, bundle_manifest, "b")
+    def verdict(manifest=cm, consoles=consoles, records=records, reference=cm_ref, loads=cm_loads):
+        return lambda: coremark_verdict(manifest, consoles, records, reference, loads, bundle_manifest, "b")
     bundle_manifest = manifest
     out.append(sound("coremark: (its capture, with planted loads, sound)", verdict()))
     bad = copy.deepcopy(cm)
@@ -710,14 +767,19 @@ def self_test(bundle: Path, board: Path) -> list[tuple[str, bool, str]]:
     out.append(planted("coremark: its capture on another simulation", verdict(manifest=bad),
                        "not the bundle's R simulation"))
     bad = copy.deepcopy(cm)
-    bad["entries"][0]["id"] = "cpu/coremark/scalar/soc_dev/cold"
-    out.append(planted("coremark: another program", verdict(manifest=bad), "holds"))
-    tampered = re.sub(r"(\[0\]crclist\s*: 0x)[0-9a-f]+", r"\g<1>1234", console)
-    out.append(planted("coremark: not CoreMark's known CRCs", verdict(console=tampered), "known")
-               if tampered != console else ("coremark: not CoreMark's known CRCs", False, "not planted"))
-    tampered = console.replace("Correct operation validated.", "Errors detected.")
-    out.append(planted("coremark: CoreMark's own verdict not valid", verdict(console=tampered), "not a validated")
-               if tampered != console else ("coremark: CoreMark's own verdict not valid", False, "not planted"))
+    bad["entries"] = [e for e in bad["entries"] if e["id"] != validation]
+    out.append(planted("coremark: the validation run missing", verdict(manifest=bad), "not both runs"))
+    for ident, run in ((performance, "performance"), (validation, "validation")):
+        tampered = dict(consoles, **{ident: re.sub(r"(\[0\]crclist\s*: 0x)[0-9a-f]+", r"\g<1>1234", consoles[ident])})
+        out.append(planted(f"coremark: the {run} run not CoreMark's known CRCs", verdict(consoles=tampered), "known")
+                   if tampered[ident] != consoles[ident] else (f"coremark: the {run} run's CRCs", False, "not planted"))
+        tampered = dict(consoles, **{ident: consoles[ident].replace("Correct operation validated.", "Errors detected.")})
+        out.append(planted(f"coremark: the {run} run's own verdict not valid", verdict(consoles=tampered),
+                           "not a validated")
+                   if tampered[ident] != consoles[ident] else (f"coremark: the {run} run's verdict", False, "not planted"))
+    swapped = dict(consoles, **{performance: consoles[validation]})
+    out.append(planted("coremark: the validation run's report as the performance run's", verdict(consoles=swapped),
+                       "not a validated 2K performance run"))
     out.append(planted("coremark: one load only", verdict(loads=cm_loads[:1]), "not two"))
     return out
 

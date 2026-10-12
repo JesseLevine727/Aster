@@ -1,0 +1,2 @@
+PASS: program cpu/coremark_official/scalar/soc_dev/cold cycles=1098597691 window_cycles=1097203931
+PASS: program cpu/coremark_validation/scalar/soc_dev/cold cycles=1104210034 window_cycles=1102903791

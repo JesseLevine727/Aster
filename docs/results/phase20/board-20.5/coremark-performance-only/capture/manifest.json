@@ -1,0 +1,95 @@
+{
+ "schema": "aster.phase20.matrix.v1",
+ "created": "2026-10-11T22:16:51-0400",
+ "source": {
+  "revision": "7cee16e0f2a7d7601008033d3a4035778d459233",
+  "dirty": false,
+  "changed": []
+ },
+ "toolchain": {
+  "gcc": [
+   "riscv32-unknown-elf-gcc (g6afcc4f6d) 16.1.0"
+  ],
+  "verilator": [
+   "Verilator 5.020 2024-01-01 rev (Debian 5.020-1)"
+  ],
+  "python": "3.12.3"
+ },
+ "families": [
+  "coremark"
+ ],
+ "counts": {
+  "captured": 1,
+  "failed": 0,
+  "unsupported": 0,
+  "planned": 0
+ },
+ "determinism": null,
+ "cold_warm_pairs": {
+  "checked": 0,
+  "identical": 0,
+  "differ": []
+ },
+ "seconds": 2782,
+ "entries": [
+  {
+   "id": "cpu/coremark_official/scalar/soc_dev/cold",
+   "family": "cpu",
+   "case": "coremark_official",
+   "method": "scalar",
+   "sim": "soc_dev",
+   "axes": {
+    "memory_wait": 0,
+    "dcache": 1,
+    "cache_state": "cold",
+    "harts": 2,
+    "cache_kib": 8
+   },
+   "firmware_sha256": "f058d36be7869cf446b83f6b218ba6d0083bfac0f58cc0646c464b13f1ac1a1c",
+   "firmware_bin": "firmware/coremark_official-72faf70780156ccb/coremark_official.bin",
+   "cold_word": 20996,
+   "footprint": {
+    "text": 18524,
+    "rodata": 3468,
+    "data": 24,
+    "bss": 3184,
+    "private0": 28,
+    "private1": 0
+   },
+   "layout_addresses": {
+    "__matrix_pad_code": [
+     2147484860,
+     60,
+     1212
+    ],
+    "aster_smp_worker": [
+     2147489836,
+     44,
+     6188
+    ],
+    "v12_emit": [
+     2147487016,
+     40,
+     3368
+    ]
+   },
+   "sim_sha256": "a8154f2444c6be55565aa5aa73b7d0991e8baa8bae2b0d80654cd92922b8d5e7",
+   "soc": {
+    "status": "PASS",
+    "cycles": 1097325610,
+    "npu_config": 526338,
+    "soc_config": 2
+   },
+   "records": "records/cpu__coremark_official__scalar__soc_dev__cold.record",
+   "oracle": "CoreMark 1.0: 218.738 (2.1874 CoreMark/MHz), 2400 iterations in 10.972 s; CoreMark's 2K performance CRCs and its verdict",
+   "totals": {
+    "npu_fabric": 1,
+    "fabric_bounds": 1,
+    "npu_one_job": 0,
+    "dma_one_job": 0
+   },
+   "status": "captured",
+   "seconds": 2781.6
+  }
+ ]
+}

@@ -1,0 +1,59 @@
+ok: sums: a file changed: 1 files: ["gates.json: its hash is not SHA256SUMS'"]
+ok: sums: a file not listed: 1 files: ['extra.txt: not in SHA256SUMS']
+ok: source: a dirty tree: the bundle: the capture's tree was dirty ([])
+ok: source: not a commit: the bundle: 0000000000000000000000000000000000000000 is not a commit of this repository
+ok: manifest: (the bundle as it is, against the planners): passed
+ok: manifest: a failed entry: entries {'captured': 23932, 'unsupported': 2254, 'failed': 1}
+ok: manifest: one sweep point missing: 1 planned entries missing: ['dsp/fir/npu/soc_dev/warm/k64']
+ok: manifest: a captured entry no planner gives: 1 captured entries no planner gives: ['cpu/planted/scalar/soc_dev/warm']
+ok: manifest: an entry its planner runs recorded unsupported: cpu/conv2d/scalar/soc_dc0/cold: unsupported (planted), its planner runs it
+ok: manifest: a determinism repeat differs: determinism: {'checked': 801, 'identical': 800, 'differ': ['planted']}
+ok: records: a raw record missing: cpu/conv2d/scalar/soc_dc0/cold: its raw records are not in raw-cpu.tar.xz
+ok: records: a record FAIL: cpu/conv2d/scalar/soc_dc0/cold: record status is not PASS
+ok: totals: the NPU's requests misattributed: npu_gemm/gemm_128x64x128/npu/soc_dc0/warm: e2e: the NPU read 24576 and wrote 32768 bytes, the fabric accepted 11265 of its requests
+ok: totals: the manifest's totals not the records': totals {'npu_fabric': 32918, 'fabric_bounds': 32918, 'npu_one_job': 2108, 'dma_one_job': 6480}, the manifest says {'npu_fabric': 32918, 'fabric_bounds': 32918, 
+ok: gates: gates.json not the records': the v1 gate differs from gates.json
+ok: gates: two workers under 1.8x (gates.json re-derived alike): scaling under 1.8x: ['reduce_fill']
+ok: ecg: a two-hart pipeline sequential: a two-hart pipeline's window not overlapped: ['overlapped', 'sequential per chunk']
+ok: ecg: a window's stage lines missing: ecg/ecg_pipeline_overlap_stages/pipeline/soc_dev/warm: stage lines in ['e2e'], records in ['e2e', 'kernel']
+ok: timing: negative slack: setup: WNS -0.120 ns, 12 failing endpoints
+ok: timing: a hold violation: hold: WHS -0.010 ns, 2 failing endpoints
+ok: timing: a pulse-width violation: pulse width: WPWS -0.100 ns, 1 failing endpoints
+ok: timing: another clock period: clocks {'clk_fpga_0': '11.000'}, not {'clk_fpga_0': 10.0}
+ok: timing: an unconstrained endpoint: check_timing: 4 pins that are not constrained for maximum delay.
+ok: timing: an unrouted net: routing: 61608 of 61609 nets routed, 0 with errors
+ok: timing: a routing error: routing: 61609 of 61609 nets routed, 2 with errors
+ok: timing: a DRC error: DRC: [('DPIP-1', 'Error')]
+ok: timing: a DRC critical warning: DRC: [('DPIP-1', 'Critical Warning')]
+ok: timing: a methodology violation: methodology: 3 checks found
+ok: timing: LUTs over 80%: utilization: Slice LUTs at 81.20%, over 80.0%
+ok: timing: block RAM over 80%: utilization: Block RAM Tile at 85.00%, over 80.0%
+ok: timing: DSPs over 80%: utilization: DSPs at 90.00%, over 80.0%
+ok: timing: (the final build's reports, copied): passed
+ok: timing: the image's configuration data not timing.txt's: the final image's configuration data [] is not timing.txt's ['0bf4b4c3e021b79d77eba70f81df430fac2b63a017bf4cf52f32de99afbd248b']
+ok: board: (the planted loads, sound): passed
+ok: board: a console byte differs: B, load 2: 1 problems: ['coherence/atomic_add/multicore/soc_dev/cold/n1024: the console differs']
+ok: board: tohost at another cycle: B, load 2: 1 problems: ['coherence/atomic_add/multicore/soc_dev/cold/n1024: PASS at 94457, simulated PASS at 94456']
+ok: board: hart 0's retired count differs: B, load 2: 1 problems: ['coherence/atomic_add/multicore/soc_dev/cold/n1024: tohost_retired 8, simulated 7']
+ok: board: the console lagged too far: B, load 2: 1 problems: ['coherence/atomic_add/multicore/soc_dev/cold/n1024: console lag 8193']
+ok: board: a program not run: B, load 2: 1 problems: ['1 programs not run, 0 others']
+ok: board: another bitstream: B, load 2: 1 problems: ['another bitstream (c)']
+ok: board: FCLK0 not 100 MHz: B, load 2: 1 problems: ["FCLK0: {'mhz': 100.0, 'measured_mhz': 95.0}"]
+ok: board: the run not complete: B, load 2: 1 problems: ['the run is failed: None']
+ok: board: another configuration's identity: B, load 2: 1 problems: ["the identity's configuration words {'magic': 1095980082, 'main_bytes': 98304, 'npu_config': 526338, 'soc_config': 3, 'clk_hz': 10000000
+ok: board: one load only: B: 1 complete loads of the final image, not two
+ok: board: one load's report twice: B: two loads' reports have the same load times: not separate loads
+ok: board: (the planted reference, sound): passed
+ok: board: the reference on another simulation: cpu/conv2d/scalar/soc_dev/cold: captured on another simulation
+ok: board: the reference not as captured: coherence/atomic_add/multicore/soc_dev/cold/n1024: the reference ends PASS at 94457, captured PASS at 94456
+ok: coremark: (its capture, with planted loads, sound): passed
+ok: coremark: its capture from a dirty tree: CoreMark's capture: the capture's tree was dirty ([])
+ok: coremark: its capture on another simulation: cpu/coremark_official/scalar/soc_dev/cold: CoreMark's simulation is not the bundle's R simulation
+ok: coremark: the validation run missing: CoreMark's capture holds ['cpu/coremark_official/scalar/soc_dev/cold'], not both runs
+ok: coremark: the performance run not CoreMark's known CRCs: cpu/coremark_official/scalar/soc_dev/cold: [0]crclist 0x1234, CoreMark's known 0xe714
+ok: coremark: the performance run's own verdict not valid: cpu/coremark_official/scalar/soc_dev/cold: CoreMark's report: not a validated 2K performance run
+ok: coremark: the validation run not CoreMark's known CRCs: cpu/coremark_validation/scalar/soc_dev/cold: [0]crclist 0x1234, CoreMark's known 0xe3c1
+ok: coremark: the validation run's own verdict not valid: cpu/coremark_validation/scalar/soc_dev/cold: CoreMark's report: not a validated 2K validation run
+ok: coremark: the validation run's report as the performance run's: cpu/coremark_official/scalar/soc_dev/cold: CoreMark's report: not a validated 2K performance run
+ok: coremark: one load only: CoreMark: 1 complete loads of the final image, not two
+PASS: the audit's self-test, 58 of 58 (each planted fault caught for its reason; each sound input passed)

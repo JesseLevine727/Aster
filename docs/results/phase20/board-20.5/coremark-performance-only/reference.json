@@ -1,0 +1,21 @@
+{
+ "sim": "soc_dev",
+ "sim_sha256": "a8154f2444c6be55565aa5aa73b7d0991e8baa8bae2b0d80654cd92922b8d5e7",
+ "revision": "5b9574f2e8d3794cf1615d64361872ab95417cd1",
+ "captures": [
+  "7cee16e0f2a7d7601008033d3a4035778d459233"
+ ],
+ "programs": 1,
+ "problems": [],
+ "rows": [
+  {
+   "id": "cpu/coremark_official/scalar/soc_dev/cold",
+   "status": "PASS",
+   "window_cycles": 1097203931,
+   "window_retired": 683638421,
+   "tohost_cycles": 1097325610,
+   "tohost_retired": 683703153,
+   "console_bytes": 2990
+  }
+ ]
+}

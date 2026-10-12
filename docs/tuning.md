@@ -1,7 +1,9 @@
 # The Phase 20 tuning and board run (milestone 20.5)
 
 Status: **approved by the owner, 10 October 2026,** with every decision
-in §10 as recommended ("approve all 9").
+in §10 as recommended ("approve all 9"). **Carried out: 20.5 and Phase 20
+are complete, 12 October 2026** ([`phase20.md`](phase20.md); the
+[report](phase20-report.md)).
 
 20.5 closes Phase 20 (soc.md §12):
 - **Scope:** tuning from 20.4's captured data (DMA thresholds, cache

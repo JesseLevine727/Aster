@@ -92,8 +92,8 @@ def compare(program: dict, got: dict, reference: dict | None = None) -> list[str
     want = program["console"].read_text(errors="replace")
     if got.get("console") != want:
         problems.append(f"the console differs ({len(got.get('console', ''))} bytes against {len(want)})")
-    if got.get("max_lag", 0) > LAG_LIMIT:
-        problems.append(f"the console lagged {got['max_lag']} bytes, over {LAG_LIMIT}")
+    if got.get("max_lag") is None or got["max_lag"] > LAG_LIMIT:
+        problems.append(f"the console lagged {got.get('max_lag')} bytes, over {LAG_LIMIT}")
     if reference is not None:
         for key in REFERENCED:
             if got.get(key) is None or got.get(key) != reference.get(key):

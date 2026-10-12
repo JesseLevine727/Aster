@@ -1,0 +1,41 @@
+{
+ "programs": 1,
+ "matched": 1,
+ "max_lag": 2150,
+ "load_seconds": 0.3,
+ "run_seconds": 11.0,
+ "clock": {
+  "mhz": 100.0,
+  "fpga0_clk_ctrl_before": 2098432,
+  "fpga0_clk_ctrl": 2098432,
+  "io_pll_ctrl": 81920,
+  "measured_mhz": 99.99938726093838
+ },
+ "identity": {
+  "magic": 1095980082,
+  "clk_hz": 100000000,
+  "main_bytes": 98304,
+  "npu_config": 526338,
+  "soc_config": 2
+ },
+ "bitstream_sha256": "24a41d8190fcddef10fb8f124c356a3fca54f2a71ca41435d18ef87ab57daab5",
+ "referenced": [
+  "tohost_retired",
+  "window_cycles",
+  "window_retired"
+ ],
+ "problems": [],
+ "rows": [
+  {
+   "id": "cpu/coremark_official/scalar/soc_dev/cold",
+   "ok": true,
+   "issues": [],
+   "max_lag": 2150,
+   "tohost_retired": 683703153,
+   "load_seconds": 0.28130715200677514,
+   "seconds": 10.985894049052149,
+   "console_bytes": 2990,
+   "tohost_cycles": 1097325610
+  }
+ ]
+}

@@ -1,7 +1,15 @@
 # Phase 20: whole-SoC workload placement and concurrency
 
-Status: **milestone 20.5 (the tuning and the board run) in progress;** its plan, tuning.md, was approved by the
-owner on 10 October 2026. **Milestone 20.4 (the workload matrix) was signed off by the owner on 9 October 2026,** with matrix.md
+Status: **Phase 20 is complete (12 October 2026).**
+- **Milestone 20.5** (the tuning and the board run) was completed under the owner's instruction of 11 October 2026,
+  which authorized closing 20.5 and the phase on my judgement ("get 20.5 complete and phase 20 as whole
+  complete").
+- **The board:** every one of the final image's 5,254 R programs ends on the board exactly as simulated, on two
+  loads.
+- **The closeout audit** (`scripts/audit_phase20.py`) says PASS.
+- **The report** is [`phase20-report.md`](phase20-report.md).
+
+20.5's plan, tuning.md, was approved by the owner on 10 October 2026. **Milestone 20.4 (the workload matrix) was signed off by the owner on 9 October 2026,** with matrix.md
 §10.10–14 and its timing on the m4-o5asm-mgi build (+0.333 ns, reproducible). 20.5 began after 03:00 on
 10 October 2026, at the owner's word. 20.3 (the DMA) was signed off by the
 owner on 8 October 2026, its timing on the g2-o5end build (+0.375 ns, reproducible; one placement: the
@@ -1806,7 +1814,7 @@ print less.
 matrix.md §10.10–14, and its timing on m4-o5asm-mgi (soc.md §13). 20.5 begins after 03:00 on 10 October
 2026.
 
-## Milestone 20.5: the tuning and the board run (in progress, 10 October 2026)
+## Milestone 20.5: the tuning and the board run (complete, 12 October 2026)
 
 **The plan:** [`tuning.md`](tuning.md), **approved by the owner on 10 October
 2026** with its nine decisions as recommended (soc.md §13). The steps
@@ -2446,6 +2454,135 @@ evidence is in [`results/phase20/matrix-20.5/`](results/phase20/matrix-20.5/READ
 
 **Step 4 is complete.** The final configuration meets every soc.md §11 gate, bound to one clean commit.
 
+### Step 5: the board run (done)
+
+**Carried out under the owner's instruction of 11 October 2026**, as step 4. The evidence is in
+[`results/phase20/board-20.5/`](results/phase20/board-20.5/README.md).
+
+**The image** is step 4's final build: o5asm-mgi, +0.306 ns.
+- `aster_soc.bit`'s sha256 is 24a41d81…. Its configuration data is 0bf4b4c3…, as step 4's `timing.txt`. The hash is
+  now in the bundle, `timing/final-build/bitstream.sha256`.
+- On each load it is programmed through the PYNQ's FPGA manager, with FCLK0 set to 100 MHz and measured.
+- The SoC's identity registers are read and checked against the design.
+
+**The reference.** tuning.md §7.2 asks for hart 0's instructions retired at tohost, which the capture's status
+line does not carry. The watchdog found that the comparison lacked it. So:
+- `scripts/matrix_board_reference.py` simulates every R program as the board runs it. It uses tb_soc's `+board`
+  mode, which reads the board's own registers, on the capture's own simulation, its hash checked against every
+  entry's.
+- All 5,254 programs end as captured.
+
+**Each program must end as simulated** (`matrix_board.py --reference`):
+- the same status;
+- tohost written at the same cycle;
+- the same instructions retired by hart 0 at tohost;
+- the window's cycles and instructions;
+- the console byte for byte, so every record and counter in it;
+- the console's lag at most 8 KiB.
+
+**The loads.** Each is a separate programming of the FPGA. The run is detached on the board (`setsid`), with the
+runner polling it.
+
+| Load | R programs as simulated | Largest console lag | FCLK0 measured | Loading, running |
+| --- | ---: | ---: | ---: | ---: |
+| 1 | 5,254 of 5,254 | 4,890 bytes | 100.0001 MHz | 1,254 s, 109 s |
+| 2 | 5,254 of 5,254 | 4,843 bytes | 99.9991 MHz | 1,260 s, 110 s |
+
+**An earlier load** ran from the runner's first form, which held its ssh session open. It was cut off at 3,666
+programs when that session ended.
+- All 3,666 ended as simulated, the retired counts included (compared again with the reference afterwards).
+- It is kept in the evidence (`load0-partial`) but not counted.
+- The runner was then made to detach the run on the board and poll it (`--resume` picks a running one up).
+
+**CoreMark's official run** (tuning.md §7.3) is CoreMark's two runs, as its run rules ask: the performance run,
+seeds 0, 0, 0x66, which gives the score, and the validation run, seeds 0x3415, 0x3415, 0x66.
+- **The validation run** was added after the watchdog's second round (1222fd3).
+- **Both runs** are captured from that clean commit (`build/matrix/f6-coremark`), each of 2,400 iterations, on the
+  bundle's simulation. The performance run is byte for byte the earlier capture's (7cee16e): the same firmware,
+  records and console.
+- **On two further loads**, each ran both programs as simulated: the same cycle, retired count and console.
+- **CoreMark's own reports:**
+  - the performance run gives the 2K performance run's known CRCs, "Correct operation validated", 2,400 iterations
+    in 1,097,203,904 cycles, and "CoreMark 1.0 : 218.737829": 2.19 CoreMark/MHz. At FCLK0 as measured it is
+    218.735 and 218.736;
+  - the validation run gives its known CRCs (0x18f2, 0xe3c1, 0x0747, 0x8d84) and "Correct operation validated",
+    in 11.03 s.
+
+| Load | As simulated | Largest console lag | FCLK0 measured | Running |
+| --- | --- | ---: | ---: | ---: |
+| 1 | 2 of 2 | 2,546 bytes | 99.9986 MHz | 22.0 s |
+| 2 | 2 of 2 | 2,765 bytes | 99.9993 MHz | 22.0 s |
+
+The two earlier loads of the performance run alone matched too. They ran before the validation run was added, and
+are kept in the evidence (`coremark-performance-only`).
+
+### Step 6: the report and the closeout audit (done)
+
+**The report** is [`phase20-report.md`](phase20-report.md). It answers the README's research questions 1 to 6 from
+the bundles, publishes the losses, uses phase17-plus.md §3's definitions, and says what is out of scope. Its
+tables are generated by `scripts/phase20_report_data.py` (`results/phase20/report-20.5/tables.md`).
+
+**The closeout audit** is `scripts/audit_phase20.py`. It is read-only and re-derives every check from the raw
+evidence:
+- the SHA256SUMS;
+- the bundle's commit, a clean ancestor of HEAD;
+- every entry the families' planners give;
+- every record re-validated, and the totals and gates re-derived;
+- every stamped ECG window;
+- the final build's own timing, routing, DRC, methodology and utilization reports;
+- both loads against the bundle's raw consoles and the reference;
+- CoreMark's capture, oracle and loads.
+
+Its self-test plants a fault for each check, and each is caught for its own reason. It also runs four of the
+checks (the manifest, timing, board and CoreMark checks) on a sound input it makes, which must pass. The audit says PASS
+only if every check passes.
+- **On the final evidence it says PASS**, every check (`results/phase20/report-20.5/audit.txt`).
+- **Its self-test** passes 58 of 58 (`audit-self-test.txt`): 53 planted faults each caught for its own reason, and
+  5 sound inputs each passed.
+
+**The watchdog's findings on the first drafts,** all fixed before this record:
+- the missing retired-count comparison (above);
+- a self-test fault caught for the wrong reason;
+- the board loads not tied to the final image;
+- the timing check not reading the clock or check_timing;
+- the workloads checked only by family;
+- the cache-capacity table's key, which dropped configurations;
+- the report's figures for memory latency by method, the CPUs' GOPS, the coherence slow-downs and the resources;
+- losses left out.
+
+**Its second round's findings,** all fixed before this record:
+- **Research question 1 compared the NPU only with v1's unpacked CPU kernels.** It now includes 19.4's packed DOT8
+  GEMM, with the same inputs and checksum: the NPU leads by 19.7× to 22.6× at the three sizes, not 210× to 242×,
+  and the CPUs reach 0.52 GOPS.
+- **The scaling range** is now quoted at R (1.95× to 2.01×, and 1.93× with cold caches), beside the range over
+  every configuration.
+- **The measured clock's figures** are the loads of record's.
+- **"Every R figure" is on the board,** not every figure: the axes' builds are simulation-only.
+- **CoreMark's validation run** was added (step 5).
+- **The audit's latent gaps:**
+  - an entry its planner runs recorded unsupported;
+  - the board's identity against the simulations' configuration words;
+  - the configuration-data hash against timing.txt;
+  - indented clocks.
+
+**The decisions taken under the owner's instruction** ("if anything comes up, use your best judgement"):
+1. **The board comparison gained the plan's retired count.** It is tuning.md §7.2's own requirement, so both loads
+   were compared with it.
+2. **The partial load is not counted.** The two loads of record each ran every program.
+3. **CoreMark's validation run was added,** as its run rules ask, so that the score is reportable by them. The
+   watchdog raised this; tuning.md §7.3 promised CoreMark's own run rules.
+4. **CoreMark's score is the exact one,** 218.737829. CoreMark's integer path prints "Iterations/Sec : 240",
+   truncating the seconds; the report says so.
+5. **The slices' 92.3% occupancy is reported** beside the gated resources. soc.md's 80% limit is on LUTs, block RAM
+   and DSPs, all under it.
+
+**Milestone 20.5 is complete, and with it Phase 20.**
+- Every soc.md §11 gate is met.
+- The final image runs every R program on the PYNQ-Z1 at 100 MHz exactly as simulated, on two loads.
+- The report and its closeout audit are done: PASS.
+- The owner's instruction of 11 October 2026 authorized closing without a further sign-off. Each decision taken
+  under it is recorded above, in steps 3b to 6.
+
 ## Milestones and gates
 
 | Milestone | Scope | Exit |
@@ -2466,7 +2603,8 @@ evidence is in [`results/phase20/matrix-20.5/`](results/phase20/matrix-20.5/READ
 - [x] 20.2 as in the table above — signed off by the owner (8 October 2026); its timing signed off on r19's build (7 October 2026)
 - [x] 20.3 as in the table above — signed off by the owner (8 October 2026); its timing signed off on g2-o5end (8 October 2026)
 - [x] 20.4 as in the table above — signed off by the owner (9 October 2026), with matrix.md §10.10–14; its timing signed off on m4-o5asm-mgi (9 October 2026)
-- [ ] 20.5 as in the table above
+- [x] 20.5 as in the table above — completed 12 October 2026 under the owner's instruction of 11 October 2026 (closing 20.5 and Phase 20 on my judgement); the closeout audit PASS, the board 5,254 of 5,254 on two loads
+- [x] Phase 20 complete (12 October 2026)
 
 ## Risks
 

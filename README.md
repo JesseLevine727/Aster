@@ -10,7 +10,7 @@ Aster is inspired by heterogeneous-compute systems, not an attempt to reproduce
 an Apple A-series processor. Its research contribution is the architecture and,
 equally, a fair and reproducible method for deciding where work should execute.
 
-## Current status — 9 October 2026
+## Current status — 12 October 2026
 
 **Aster v2 is being built on the PYNQ-Z1 at 100 MHz, one verified subsystem
 at a time:**
@@ -22,29 +22,32 @@ at a time:**
   the CPU set, and runs at 100 MHz on the board.
 - **Phase 19 (complete, 6 October):** the NPU v2, an 8×8 INT8 array with a
   64-bit port and two A strips, at 100 MHz on the board.
-- **Phase 20 (in progress):** two Aster cores, a four-bank shared memory,
-  the new DMA and the NPU in one SoC.
-  - **20.0–20.4 are signed off.** The last of them, on 9 October, is the
-    full workload matrix in
-    [AsterBench v12](docs/asterbench-v12.md) records
-    ([evidence](docs/results/phase20/matrix-20.4/README.md)).
-  - **20.5 (tuning and the board run) is in progress,** its plan
-    ([`docs/tuning.md`](docs/tuning.md)) approved on 10 October. Its step 2
-    grew the caches to 8 KiB, adopted by the owner. Then Phase 21.
+- **Phase 20 (complete, 12 October):** two Aster cores, a four-bank shared
+  memory, the new DMA and the NPU in one SoC
+  ([`docs/phase20.md`](docs/phase20.md); the
+  [report](docs/phase20-report.md)).
+  - 20.0–20.4 were signed off by the owner.
+  - 20.5 (tuning and the board run, [`docs/tuning.md`](docs/tuning.md)) grew
+    the caches to 8 KiB and tuned the software's placement on the engines.
+  - The owner authorized closing 20.5 and the phase on 11 October.
+  - Every one of the final image's 5,254 workload programs ends on the
+    board exactly as simulated, cycle for cycle, on two loads.
+  - Next is Phase 21.
 
-Measured at 100 MHz in the SoC's simulation (20.4's matrix; the board run
-is 20.5's). The NPU and two-core rows are kernel windows (the computation
-alone); the others are end to end:
+Measured at 100 MHz on the final SoC (8 KiB caches). Every figure is an
+R program that also ran on the board, cycle for cycle. The figures are end to
+end unless marked as a kernel window (the computation alone):
 
 | Engine or workload | Figure |
 | --- | --- |
-| NPU, 8×8 (peak 12.8 GOPS) | 11.9 GOPS on GEMM 128×64×128 (92.7% of peak), 10.0 on 64×64×64 |
-| NPU, 4×4 builds (the frozen target: 3.2 GOPS peak, ≥50% of it) | 2.8–3.1 GOPS, 87–98% of peak |
-| Two cores, DOT8 GEMM | 0.51–0.52 GOPS (2.6 MACs a cycle), 1.98–1.99× one core |
-| One core | 57–79 MIPS (IPC 0.57–0.79) on the CPU set |
-| DMA | 771 MB/s (7.7 bytes a cycle), 14× a core's copy |
-| MNIST MLP on the NPU | 16,600 images/s one at a time; 44,600/s in batches of 32 |
-| Against v1 | 3.1× to 9.6× on the CPU set; 16× to 72× on Conv2D, MNIST and CIFAR |
+| NPU, 8×8 (peak 12.8 GOPS) | 11.8 GOPS end to end on GEMM 128×64×128; 59.3 MACs a cycle in the kernel window (93% of peak) |
+| Two cores, packed DOT8 GEMM | 0.52 GOPS at 128×64×128; 1.95–2.01× one core |
+| One core | CoreMark 218.7 (2.19 CoreMark/MHz; the 2K performance and validation runs, both validated on the board) |
+| DMA | 771 MB/s end to end on a 32 KiB copy (7.99 bytes a busy cycle), 14× a core's copy |
+| MNIST MLP on the NPU, both harts | 18,560 images/s one at a time; 65,200/s in batches of 32 |
+| CIFAR-10 CNN on the NPU, both harts | 890 images/s |
+| Streaming ECG, both harts | 3.1 million samples/s; worst chunk latency 53 µs |
+| Against v1 | 3.1× to 9.6× on the CPU set; 29× to 107× on Conv2D, MNIST, ECG and CIFAR |
 
 ## Aster v1 and the Phase 16 attempt (status of 29 September 2026)
 
@@ -138,7 +141,7 @@ about the current design.
 | Physical quality | FPGA timing closure, resource limits met, and workload-specific energy evidence. (The ASIC signoff targets — foundry DRC, LVS, antenna, electrical — were dropped with SKY130 on 1 October 2026.) |
 
 The figures measured against these targets so far are in
-[Current status](#current-status--9-october-2026) above.
+[Current status](#current-status--12-october-2026) above.
 
 *SKY130 was dropped on 1 October 2026 ([`docs/phase17-plus.md`](docs/phase17-plus.md)):
 the two paragraphs below are history.*
@@ -218,12 +221,13 @@ PicoRV32 on the CPU set, with coherent L1 caches, running at 100 MHz on the
 PYNQ-Z1. **Phase 19 — the high-utilization NPU — is complete**
 ([`docs/phase19.md`](docs/phase19.md), 6 October 2026; the
 [NPU specification](docs/npu.md)): an 8×8 array, 41–48× DOT8 on GEMM, at
-100 MHz on the PYNQ-Z1. **Phase 20 — the two-core SoC — is in progress**
-([`docs/phase20.md`](docs/phase20.md); the [SoC specification](docs/soc.md)).
-20.0–20.4 are signed off, the last with the full workload matrix in
-[AsterBench v12](docs/asterbench-v12.md) records
-([evidence](docs/results/phase20/matrix-20.4/README.md)). 20.5 is in progress
-([`docs/tuning.md`](docs/tuning.md)).
+100 MHz on the PYNQ-Z1. **Phase 20 — the two-core SoC — is complete**
+([`docs/phase20.md`](docs/phase20.md), 12 October 2026; the
+[SoC specification](docs/soc.md); the [report](docs/phase20-report.md)).
+Its full workload matrix is in [AsterBench v12](docs/asterbench-v12.md)
+records ([the final bundle](docs/results/phase20/matrix-20.5/README.md)), and
+every R program of it was matched on the board on two loads
+([evidence](docs/results/phase20/board-20.5/README.md)).
 
 ## Historical phase links
 
