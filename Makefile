@@ -1577,7 +1577,9 @@ COREMARK_ELF := $(COREMARK_FW_DIR)/coremark.elf
 COREMARK_HEX := $(COREMARK_FW_DIR)/coremark.hex
 COREMARK_CFLAGS = $(filter-out -march=% -mabi=%,$(HELLO_CFLAGS)) -march=rv32im -mabi=ilp32 \
 	-Isoftware/benchmarks/coremark_port -Ivendor/coremark -Isoftware/runtime -Isoftware/benchmarks \
-	-DFLAGS_STR=\"aster-rv32im-o2\" -DITERATIONS=$(COREMARK_ITERATIONS)
+	-DFLAGS_STR=\"aster-rv32im-o2\" -DITERATIONS=$(COREMARK_ITERATIONS) $(COREMARK_EXTRA)
+# (20.5's official run, tuning.md §7.3: COREMARK_EXTRA=-DASTER_COREMARK_OFFICIAL=1; empty otherwise)
+COREMARK_EXTRA ?=
 
 .PHONY: coremark coremark-firmware
 $(COREMARK_ELF): vendor/coremark/core_main.c vendor/coremark/core_list_join.c vendor/coremark/core_matrix.c \

@@ -686,8 +686,26 @@ FAMILIES = {"cpu": cpu_entries, "coherence": lambda: with_hot(coherence_entries(
             "dsp": lambda: with_hot(dsp_family()), "ml": lambda: with_hot(ml_family()),
             "ecg": lambda: with_hot(ecg_entries()), "memory": memory_entries, "dma": dma_entries,
             "npu_gemm": npu_gemm_entries}
-# 20.5's tuning measurements (docs/tuning.md §4): run when named (--family), not part of the full matrix
-TUNING = {"dma_fine": lambda: dma_fine_entries(), "split_fine": lambda: split_fine_entries()}
+# 20.5's tuning measurements (docs/tuning.md §4) and CoreMark's official run (§7.3): run when named (--family), not
+# part of the full matrix
+TUNING = {"dma_fine": lambda: dma_fine_entries(), "split_fine": lambda: split_fine_entries(),
+          "coremark": lambda: coremark_official_entries()}
+# CoreMark's official run: the 2K performance run (seeds 0, 0, 0x66) for at least ten seconds at 100 MHz
+COREMARK_ITERATIONS = 2400
+# CoreMark's own known CRCs for that run (vendor/coremark/core_main.c: known_id 3)
+COREMARK_2K_PERFORMANCE = dict(seedcrc=0xE9F5, crclist=0xE714, crcmatrix=0x1FD7, crcstate=0x8E3A)
+
+
+def coremark_official_entries() -> list[Entry]:
+    """tuning.md §7.3: CoreMark's official run on hart 0 at R, cold (CoreMark's own window, its seconds from ABI 4's
+    clock, its report printed whole), for the board and its simulation in full."""
+    sources, flags, _, _ = run_core_tests.KERNELS["coremark"]
+    sim, axes = "soc_dev", dict(memory_wait=0, dcache=1, cache_state="cold", harts=2)
+    return [Entry("cpu/coremark_official/scalar/soc_dev/cold", "cpu", "coremark_official", "scalar", sim, True,
+                  list(sources), flags, [f"COREMARK_ITERATIONS={COREMARK_ITERATIONS}",
+                                         "COREMARK_EXTRA=-DASTER_COREMARK_OFFICIAL=1"], [], "",
+                  ["software/matrix/matrix_v1.c", "software/runtime/asterbench_v12.c", "software/runtime/aster_smp.c"],
+                  soc_variants.v12_defines(sim) + ["-DMATRIX_COLD"], axes, "coremark_official")]
 
 # v1's baseline records (Phase 17, sync1), the cases' identity the v12 record must keep
 BASELINE = run_core_tests.BASELINE
@@ -1374,7 +1392,47 @@ def reconcile_totals(records: list[dict], extras: list[str]) -> dict:
     return dict(npu_fabric=len(records), fabric_bounds=len(records), npu_one_job=one_npu, dma_one_job=one_dma)
 
 
-ORACLES = {"cpu": oracle_cpu, "reduce": oracle_reduce, "gemm": oracle_gemm, "conv2d": oracle_conv2d,
+def oracle_coremark_official(entry: Entry, records: list[dict], console: str) -> str:
+    """CoreMark's official run (tuning.md §7.3), by CoreMark's own rules: the 2K performance run's parameters and
+    its known CRCs, its own verdict, at least ten seconds, the iterations asked for; its report's figures
+    re-derived from its ticks (one a cycle at ABI 4's clock), and its ticks against the record's window."""
+    if len(records) != 1 or records[0]["window"] != "e2e":
+        raise asterbench_v12.ValidationError(f"{len(records)} records, not one e2e window")
+    r = records[0]
+    if (r["name"], r["size"], r["iterations"], r["workers"]) != ("coremark", 2000, COREMARK_ITERATIONS, 1):
+        raise asterbench_v12.ValidationError("the record's identity is not the official run's")
+    report = {}
+    for line in console.splitlines():
+        key, sep, value = line.partition(":")
+        if sep:
+            report[key.strip()] = value.strip()
+    if "2K performance run parameters for coremark." not in console or "ERROR" in console \
+            or "Correct operation validated." not in console:
+        raise asterbench_v12.ValidationError("CoreMark's report: not a validated 2K performance run")
+    for key, want in COREMARK_2K_PERFORMANCE.items():
+        label = key if key == "seedcrc" else f"[0]{key}"
+        if int(report.get(label, "-1"), 16) != want:
+            raise asterbench_v12.ValidationError(f"{label} {report.get(label)}, CoreMark's known {want:#06x}")
+    ticks, clock = int(report["Total ticks"]), r["clock_hz"]
+    if int(report["Iterations"]) != COREMARK_ITERATIONS or ticks < 10 * clock:
+        raise asterbench_v12.ValidationError(f"{report['Iterations']} iterations in {ticks} ticks: under ten seconds")
+    if int(report["[0]crcfinal"], 16) != r["checksum"]:
+        raise asterbench_v12.ValidationError("the record's checksum is not CoreMark's crcfinal")
+    if not 0 <= int(r["h0_cycles"]) - ticks <= 64:                  # (the window: START, then CoreMark's own reads)
+        raise asterbench_v12.ValidationError(f"{ticks} ticks against the window's {r['h0_cycles']} cycles")
+    score = COREMARK_ITERATIONS * clock / ticks
+    printed = float(report["CoreMark 1.0"].split("/")[0])         # (the port's line, six decimals, from the ticks)
+    whole_secs = ticks // clock                                      # (core_main.c's integer path: whole seconds)
+    if abs(printed - score) > 1e-6 or int(report["Total time (secs)"]) != whole_secs \
+            or int(report["Iterations/Sec"]) != COREMARK_ITERATIONS // whole_secs:
+        raise asterbench_v12.ValidationError(f"the report's score {printed} against {score} from its ticks")
+    return (f"CoreMark 1.0: {score:.3f} ({score / (clock / 1e6):.4f} CoreMark/MHz), {COREMARK_ITERATIONS} iterations "
+            f"in {ticks / clock:.3f} s; CoreMark's 2K performance CRCs and its verdict")
+
+
+oracle_coremark_official.wants_console = True
+
+ORACLES = {"cpu": oracle_cpu, "coremark_official": oracle_coremark_official, "reduce": oracle_reduce, "gemm": oracle_gemm, "conv2d": oracle_conv2d,
            "mnist": oracle_mnist, "smp": oracle_smp, "cifar": oracle_cifar, "stamps": oracle_stamps,
            "ecg": oracle_ecg, "memory": oracle_memory, "dma": oracle_dma, "coherent": oracle_coherent,
            "dsp": oracle_dsp, "npu_gemm": oracle_npu_gemm}
@@ -1792,7 +1850,8 @@ def do_entry(entry: Entry, out: Path, prefix: str, soc_flags: list[str]) -> dict
         oracle = ORACLES[entry.oracle]
         # (a code-placement twin is its base's program, linked otherwise: its records are the base's, by name too)
         program = dataclasses.replace(entry, case=program_case(entry.case)) if entry.hot else entry
-        result["oracle"] = oracle(program, records, extras) if getattr(oracle, "wants_extras", False) \
+        result["oracle"] = oracle(program, records, console) if getattr(oracle, "wants_console", False) \
+            else oracle(program, records, extras) if getattr(oracle, "wants_extras", False) \
             else oracle(program, records, symbols=symbols) if getattr(oracle, "wants_symbols", False) \
             else oracle(program, records)
         result["totals"] = reconcile_totals(records, extras)
