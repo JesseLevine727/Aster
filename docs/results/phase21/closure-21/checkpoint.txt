@@ -1,0 +1,9 @@
+rebuilt.bit (write_bitstream from build/fpga/pynq_z1/aster_soc-c8k-default-o5asm-mgi/aster_soc_routed.dcp, Vivado 2025.1):
+  file sha256 3a5e6fed878b4f02be01beb276c197226c6ec076188c51c9ac42ab32d509723a 4045699 bytes
+  configuration data from the sync word: 4045516 bytes, sha256 0bf4b4c3e021b79d77eba70f81df430fac2b63a017bf4cf52f32de99afbd248b
+the signed-off image (timing/timing.txt of results/phase20/matrix-20.5): 4045516 bytes, sha256 0bf4b4c3e021b79d77eba70f81df430fac2b63a017bf4cf52f32de99afbd248b
+checkpoint sha256 b742dcccdc7bdef938c8addc9bc50060a7f3de6e30b96c07514a68f662b89517
+Command: write_bitstream -force /home/elfo/Documents/Aster/build/energy/step1/rebuilt.bit
+Running DRC as a precondition to command write_bitstream
+INFO: [Designutils 20-2272] Running write_bitstream with 8 threads.
+Creating bitstream...

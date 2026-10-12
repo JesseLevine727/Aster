@@ -2645,5 +2645,6 @@ audit's layout exemption now matches the entry's own layout. The fourth round cl
 More than two harts; an L2 (owner decision); write-back caches or directory
 coherence; privilege modes other than machine mode; a CLINT or PLIC; changes
 to the NPU, whose options are only matrix axes; floating point. Energy per
-workload is not part of Phase 20's exit; the frozen target stands.
+workload is not part of Phase 20's exit; the frozen target stood until the owner
+dropped it on 12 October 2026 (phase21.md §1).
 

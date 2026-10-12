@@ -12,8 +12,8 @@ equally, a fair and reproducible method for deciding where work should execute.
 
 ## Current status — 12 October 2026
 
-**Aster v2 is being built on the PYNQ-Z1 at 100 MHz, one verified subsystem
-at a time:**
+**Aster v2 is built on the PYNQ-Z1 at 100 MHz, one verified subsystem at a
+time, and its roadmap is complete:**
 - **Phase 17 (complete):** v1's measurements corrected
   ([AsterBench v11](docs/asterbench-v11.md)), its retained baseline, and the
   frozen v2 targets.
@@ -32,9 +32,10 @@ at a time:**
   - The owner authorized closing 20.5 and the phase on 11 October.
   - Every one of the final image's 5,254 workload programs ends on the
     board exactly as simulated, cycle for cycle, on two loads.
-- **Phase 21 (in progress, plan approved 12 October):** the formal 100 MHz
-  closure with cold boots, and energy per operation for each engine from a
-  SAIF dynamic-power estimate of the final image ([`docs/phase21.md`](docs/phase21.md)).
+- **Phase 21 (complete, 12 October):** the formal 100 MHz closure of Phase
+  20's final image ([`docs/phase21.md`](docs/phase21.md)). The owner dropped
+  the energy estimate and power-cycled boots. Phases 22 and 23 were dropped with
+  SKY130, so the v2 roadmap is complete.
 
 Measured at 100 MHz on the final SoC (8 KiB caches). Every figure is an
 R program that also ran on the board, cycle for cycle. The figures are end to
@@ -140,7 +141,7 @@ about the current design.
 | CPU | **Aster's own in-order RV32IMA core** (seven-stage pipeline, designed and verified in Phase 18) with at least **2× fewer cycles** than v1 PicoRV32 on the fixed CPU-bound test set at the same clock and memory configuration. PicoRV32 remains the v1 reference point. |
 | INT8 NPU | 4×4 array: **3.2 GOPS theoretical peak at 100 MHz** when one MAC counts as two operations; at least 50% peak on predeclared dense GEMM shapes. Report MAC/s, utilization, and end-to-end time as well as GOPS. |
 | Multicore / offload | Measure scaling and crossovers end-to-end. Large GEMM and the selected MLP should benefit from the NPU; small jobs are allowed to lose and must remain in the results. |
-| Physical quality | FPGA timing closure, resource limits met, and workload-specific energy evidence. (The ASIC signoff targets — foundry DRC, LVS, antenna, electrical — were dropped with SKY130 on 1 October 2026.) |
+| Physical quality | FPGA timing closure and resource limits met. (Workload-specific energy evidence was dropped on 12 October 2026; the ASIC signoff targets — foundry DRC, LVS, antenna, electrical — were dropped with SKY130 on 1 October 2026.) |
 
 The figures measured against these targets so far are in
 [Current status](#current-status--12-october-2026) above.
@@ -229,7 +230,9 @@ PYNQ-Z1. **Phase 19 — the high-utilization NPU — is complete**
 Its full workload matrix is in [AsterBench v12](docs/asterbench-v12.md)
 records ([the final bundle](docs/results/phase20/matrix-20.5/README.md)), and
 every R program of it was matched on the board on two loads
-([evidence](docs/results/phase20/board-20.5/README.md)).
+([evidence](docs/results/phase20/board-20.5/README.md)). **Phase 21 — the 100
+MHz closure — is complete** ([`docs/phase21.md`](docs/phase21.md), 12 October
+2026).
 
 ## Historical phase links
 

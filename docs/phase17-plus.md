@@ -1,9 +1,11 @@
 # Aster v2 performance roadmap: Phase 17 and beyond
 
-Status: **Phase 17 complete (29 September 2026); Phase 18 — the Aster core —
-complete (5 October 2026, [`phase18.md`](phase18.md)); Phase 19 — the NPU —
-complete (6 October 2026, [`phase19.md`](phase19.md), [`npu.md`](npu.md)); Phase
-20 — whole-SoC workload placement and concurrency — starting.** See [`phase17-todo.md`](phase17-todo.md).
+Status: **the roadmap is complete (12 October 2026).** Phase 17 complete (29 September 2026); Phase 18 — the
+Aster core — complete (5 October 2026, [`phase18.md`](phase18.md)); Phase 19 — the NPU — complete (6 October 2026,
+[`phase19.md`](phase19.md), [`npu.md`](npu.md)); Phase 20 — whole-SoC workload placement and concurrency —
+complete (12 October 2026, [`phase20.md`](phase20.md), [the report](phase20-report.md)); Phase 21 — the 100 MHz
+closure — complete (12 October 2026, [`phase21.md`](phase21.md)). Phases 22 and 23 were dropped with SKY130
+(1 October 2026).
 Revised 29 September 2026; [section 7](#7-plan-revision--29-september-2026)
 records what changed from the first draft and why. This plan defines the
 performance-oriented successor to the functionally verified v1 system. It does
@@ -89,7 +91,7 @@ claim that the current RTL already meets it.
 | Accelerator speedup | At least **5×** over the optimized scalar implementation for large dense GEMM; at least **2×** end-to-end on the selected batch-one MLP. **Made stricter by the owner, 5 October 2026:** the baseline is the best CPU code on the Aster core, DOT8 included; the GEMM cases (64×64×64, 96×96×96, 128×64×128) and the MLP (MNIST 784 → 32 → 10) are declared in [`npu.md`](npu.md) §7 | All methods run on the same SoC configuration and input. Include setup, transfer, and completion in end-to-end results; publish kernel-only results separately. Small workloads may be slower and remain in the report. |
 | FPGA resource margin | ≤80% of each PYNQ-Z1 LUT, BRAM, and DSP resource | Post-route utilization report for the exact tested bitstream. Timing closure takes priority over fitting one more feature. |
 | ASIC physical signoff | **Dropped 1 October 2026** (owner decision) | — |
-| Energy | Measured or vector-based energy per workload, not one global power number divided among workloads | Workload-specific post-route activity, or a clearly labeled board measurement. Separate FPGA PL from PS. State the corner of every power number. (SRAM-macro and ASIC energy evidence was dropped with SKY130 on 1 October 2026.) |
+| Energy | **Dropped 12 October 2026** (owner decision; [`phase21.md`](phase21.md) §1). As frozen: measured or vector-based energy per workload, not one global power number divided among workloads | — (As frozen: workload-specific post-route activity, or a clearly labeled board measurement; PL separated from PS; the corner of every power number stated. SRAM-macro and ASIC energy evidence was dropped with SKY130 on 1 October 2026.) |
 
 These targets were frozen at the Phase 17 review on 29 September 2026, together
 with the memory point (a 96 KiB host-loaded unified SRAM;
@@ -97,7 +99,17 @@ with the memory point (a 96 KiB host-loaded unified SRAM;
 ([`cpu.md`](cpu.md)). The workload definitions and sizes are those of the
 [retained Phase 17 baseline](results/phase17/baseline-56067a15815a/README.md); compiler flags follow the
 current Makefile. Any target change must be recorded with the evidence and
-trade-off that motivated it. How the CPU target aggregates across the kernel
+trade-off that motivated it.
+
+**Target change, 12 October 2026 (owner decision): the energy target is
+dropped** ([`phase21.md`](phase21.md) §1).
+- **The evidence:** a SAIF dynamic-power estimate of the final image worked
+  (the routed design's simulation matched the board, and Vivado read its
+  activity at high confidence). But it simulates at about 120 cycles a second,
+  so the energy set would have taken about a day, and CIFAR's CPU paths days
+  each.
+- **The trade-off:** v2 reports no energy or power figures; its results are
+  cycles, time and throughput at 100 MHz. How the CPU target aggregates across the kernel
 set was declared on 29 September 2026, before any measurement: the geometric
 mean of the per-kernel speedups must be at least 2.0×, with no kernel below
 1.5× ([`cpu.md`](cpu.md) §7).
@@ -277,7 +289,7 @@ results are not collapsed into one average speedup.
 | Multicore/coherence | Scalar versus 1/2 workers; reduction, GEMM, producer/consumer, SPSC queue, ping-pong, atomic counters, false-sharing and padded controls | Speedup, dispatch/join overhead, per-hart cycles, real overlap, coherence traffic, retries, and scaling as working sets grow. |
 | DSP / custom ISA | Dot product, FIR, FFT, direct Conv2D and im2col Conv2D through scalar, multicore, DOT8, and NPU where supported | Crossover by K/M/N, packing/materialization cost, alignment, cycles/MAC, active units, and all retained slowdowns. |
 | NPU GEMM | M/N/K sweep including partial tiles and N=1, 2, 4, 8, 16, 32, 64+ dimensions | PE utilization, tile count, operand reuse, bytes/cycle, setup cost, kernel-only and end-to-end throughput. Use dense shapes that fill the array as well as awkward shapes. |
-| Quantized ML | Frozen MNIST MLP and tiny CIFAR-10 CNN, all supported execution paths | Latency/image, images/s, batch-size crossover, accuracy versus the frozen model, NPU work/idle time, and energy/inference. Keep model and quantization fixed across engines. |
+| Quantized ML | Frozen MNIST MLP and tiny CIFAR-10 CNN, all supported execution paths | Latency/image, images/s, batch-size crossover, accuracy versus the frozen model, NPU work/idle time, and energy/inference (dropped 12 October 2026, §2). Keep model and quantization fixed across engines. |
 | Streaming ECG | Frozen MIT-BIH segment, chunk-size/filter/model sweeps, CPU+DMA+DOT8+NPU | Sustained samples/s and per-chunk latency; report hard deadlines separately. If calling it a pipeline, prove stage overlap rather than serially waiting between stages. |
 
 The fixed survey matrix crosses:
@@ -501,10 +513,12 @@ the workload acceptance subset (including a valid CoreMark run) executes
 physically at that clock on repeated boots. A lower-frequency functional image
 is not reported as 100 MHz success.
 
-**Amended 12 October 2026 (owner approval of [`phase21.md`](phase21.md), D10):**
-Phase 21 also closes §2's energy target. Its exit gains energy per operation for
-each engine, from a SAIF dynamic-power estimate of the final image (phase21.md
-§9), and its repeated boots include three with the board powered off and on.
+**12 October 2026 (owner decisions, [`phase21.md`](phase21.md) §1):** a plan
+adding energy per operation (a SAIF dynamic-power estimate) and power-cycled
+boots was approved, then both were dropped the same day. The energy estimate
+would have taken about a day of gate-level simulation, and §2's energy target is
+dropped. The repeated boots are separate programmings of the FPGA with the board
+on. **Met on 12 October 2026** by Phase 20's final image (phase21.md §2).
 
 ### Phase 22 — SKY130 implementation and PPA closure
 

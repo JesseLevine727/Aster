@@ -1,0 +1,11 @@
+PASS sums: every file of the bundle and the board's evidence matches its SHA256SUMS
+PASS source: the capture is b96e48b's, a clean tree, an ancestor of HEAD
+PASS manifest: all 24645 planned entries present, each as its planner marks it; the manifest {'captured': 23932, 'unsupported': 2254}; determinism 801/801, cold/warm pairs 6626/6626
+PASS records: all 32918 records re-validated from the raw archives, every one PASS
+PASS totals: the NPU's and the DMA's totals and bounds hold in every record: {'npu_fabric': 32918, 'fabric_bounds': 32918, 'npu_one_job': 2108, 'dma_one_job': 6480}
+PASS gates: re-derived from the raw records, as gates.json: scaling 1.9112x to 2.0163x in 4 workloads, every configuration; 11 v1 workloads beaten (3.13x to 106.8x)
+PASS ecg: from the raw consoles, every window of every stamped twin: 504 two-hart pipeline windows overlapped; v1's pipeline ['sequential per chunk'] in its 378
+PASS timing: clk_fpga_0 at 10 ns, no check_timing finding; setup, hold and pulse width met with no failing endpoint; every net routed; no DRC error; no methodology violation; LUTs, block RAM and DSPs under 80%
+PASS board: 2 loads of the final image (FCLK0 measured [100.0, 99.999] MHz): all 5254 R programs end as simulated on each: status, tohost's cycle and hart 0's retired count, the window, the console
+PASS coremark: CoreMark 1.0: 218.738 (2.1874 CoreMark/MHz), 2400 iterations in 10.972 s; the validation run validated; both as simulated on 2 loads of the final image
+PASS: Phase 20's closeout audit
