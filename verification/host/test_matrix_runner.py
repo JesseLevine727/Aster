@@ -18,6 +18,7 @@ import matrix_crossover  # noqa: E402
 import matrix_gates  # noqa: E402
 import matrix_geometry  # noqa: E402
 import matrix_judge  # noqa: E402
+import matrix_ecg_overlap  # noqa: E402
 import matrix_golden  # noqa: E402
 import matrix_overlap  # noqa: E402
 
@@ -483,6 +484,26 @@ class CodePlacement(unittest.TestCase):
             self.assertNotIn("ALIGN(256)", text)                               # (no padding before the rest)
             self.assertIn(".rodata 0x80001c00 : ALIGN(4)", text)              # (the data where the base's is)
             self.assertIn("ASSERT(__hot_end - __hot_start <= 33", text)
+
+
+class EcgOverlap(unittest.TestCase):
+    """soc.md §11's ECG gate: overlap between chunks' stages, or the pipeline sequential per chunk."""
+    def test_overlapped_and_sequential(self):
+        lines = ["MATRIX_STAGE,window=e2e,chunk=0,bring=0-100,fir=100-1000,classify=1000-1500,dma=10-20,npu=1400-1450",
+                 "MATRIX_STAGE,window=e2e,chunk=1,bring=1000-1100,fir=1100-2000,classify=2000-2500,dma=0-0,npu=0-0"]
+        chunks = matrix_ecg_overlap.stages(lines, "e2e")
+        r = matrix_ecg_overlap.overlap(chunks)    # (chunk 1's bring and FIR beside chunk 0's classifier, 100 + 400,
+        # and chunk 0's NPU job beside chunk 1's FIR, 50)
+        self.assertEqual((r["label"], r["overlap_cycles"], r["overlapping_chunks"]), ("overlapped", 550, 1))
+        serial = ["MATRIX_STAGE,window=e2e,chunk=0,bring=0-100,fir=100-1000,classify=1000-1500",
+                  "MATRIX_STAGE,window=e2e,chunk=1,bring=1500-1600,fir=1600-2500,classify=2500-3000"]
+        r = matrix_ecg_overlap.overlap(matrix_ecg_overlap.stages(serial, "e2e"))
+        self.assertEqual((r["label"], r["overlap_cycles"]), ("sequential per chunk", 0))
+        # (a chunk's own engine jobs inside its own stages are not overlap; nor a meeting within the stamps' cost)
+        tiny = ["MATRIX_STAGE,window=e2e,chunk=0,bring=0-100,classify=100-500",
+                "MATRIX_STAGE,window=e2e,chunk=1,bring=480-600,classify=600-900"]
+        self.assertEqual(matrix_ecg_overlap.overlap(matrix_ecg_overlap.stages(tiny, "e2e"))["label"],
+                         "sequential per chunk")
 
 
 class Crossover(unittest.TestCase):

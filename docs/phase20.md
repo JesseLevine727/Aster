@@ -2389,6 +2389,63 @@ Every other step 3 result stands, re-measured here:
   - CIFAR 29.2×;
   - the CPU kernels 3.13× to 9.63× (step 2's).
 
+### Step 4: the final configuration (done)
+
+**Carried out under the owner's instruction of 11 October 2026** ("get 20.5 complete and phase 20 as whole
+complete. if naything comes up, use your best judgemnet based off of what the project is measnt to accomplish"). The
+evidence is in [`results/phase20/matrix-20.5/`](results/phase20/matrix-20.5/README.md).
+
+**The final RTL is step 2's.** Since e86b47e, the RTL step 2 measured, only `CACHE_BYTES`' default changed, from
+4,096 to 8,192 (8cba838, the owner's adoption).
+- **The 4 KiB behaviour is unchanged.** Step 2's golden replay holds for it: all 3,885 of 20.4's R images end the
+  same on e86b47e's SoC, whose RTL at 4 KiB is the final RTL.
+- **The default build at 8 KiB** is byte-identical to step 2's 8 KiB build.
+
+**soc.md §10's checks on the final RTL**, all PASS (`checks/`):
+- soc-tests in full: the two-hart programs, the devices, Phase 19's gate programs, and 18.7's board programs on the
+  4 and 8 KiB regression builds;
+- the DMA's shell, 96 runs;
+- the two-hart programs on every matrix simulation;
+- the CPU shell against 20.4's signed-off RTL, 879 of 879 runs the same, cycle for cycle;
+- the L1 caches' tests at each size, the unit tests (200 seeds), and the tag mutants, 45 of 45 caught;
+- the fabric's shell, unchanged since 20.1, re-checked.
+
+**The final capture:** every family from one clean commit, b96e48b, each R entry also at 2 and 4 KiB.
+- 23,932 entries captured, with 32,918 records; 2,254 unsupported, each with its reason. None failed and none is
+  planned, so the manifest is complete.
+- Determinism 801 of 801 in the samples, and the cold/warm pairs 6,626 of 6,626.
+- **A second full capture** (7cee16e, clean) matches all 23,932 entries byte for byte: firmware, simulation and
+  records.
+
+**Every soc.md §11 gate, required now, is met:**
+
+| Gate | Result |
+| --- | --- |
+| Correctness | Every record passes both validators and its family's oracle; §10's checks pass |
+| Records | Every supported method has its records; the manifest is complete (26,186 entries) |
+| Overlap and totals | Overlap from stamps wherever two harts share work (`overlap.json`; no stamping faults); the NPU's and the DMA's bytes and cycles reconciled in all 32,918 records |
+| Wins and losses | Published: steps 3 and 3b, with the losses beside the wins |
+| Scaling (≥ 1.8×) | Met in all 11 configurations: the reductions and the three DOT8 GEMMs, 1.911× to 2.016× |
+| Against v1 | Every v1 workload has a faster v2 method: Conv2D 106.8×, MNIST 80.5×, ECG 46.3×, CIFAR 29.2×, the reduction 4.94×, the CPU kernels 3.13× to 9.63× (CoreMark's CRC run 4.15×) |
+| ECG | Overlap shown in every stamped window of the two-hart pipelines (504); v1's pipeline labelled sequential per chunk (378) |
+| Timing and area | 10 ns in context, +0.306 ns setup and +0.040 ns hold on o5asm-mgi, reproducible; 72.75% of LUTs, 60.0% of block RAM, 27 DSPs |
+
+- **Overlap: where it is not shown.** These are the windows where the work does not split:
+  - **the dot product at its smallest sizes:** at K = 0 and 1 hart 1 has no work, and cold at K = 7 and 8 the shares
+    overlap by under the 40-cycle minimum;
+  - **dispatch and join alone;**
+  - **the coherence cases at 2 items:** the hand-over outlasts the work, a loss published as such.
+
+  ECG's pipelines are shown by their stages instead, the ECG gate.
+
+**The timing, signed off by the owner's rule on the final RTL:**
+- step 2's ten 8 KiB strategies all meet 10 ns, +0.021 to +0.306 ns;
+- the best, o5asm-mgi, rebuilt identically;
+- the default built with no parameters gives the same configuration data, hashed again here;
+- this is the final image for the board.
+
+**Step 4 is complete.** The final configuration meets every soc.md §11 gate, bound to one clean commit.
+
 ## Milestones and gates
 
 | Milestone | Scope | Exit |

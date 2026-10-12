@@ -24,6 +24,7 @@ import shutil
 import subprocess
 import sys
 import tempfile
+import time
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -98,6 +99,9 @@ def main() -> int:
     group.add_argument("--all", action="store_true")
     group.add_argument("--only", nargs="+")
     parser.add_argument("--timeout", type=int, default=6 * 3600, help="seconds for the board's run")
+    parser.add_argument("--resume", action="store_true",
+                        help="the board's run of these programs already started (by an earlier call): wait for it, "
+                             "then fetch and compare its report")
     args = parser.parse_args()
     password = os.environ.get("ASTER_BOARD_SUDO")
     if not password:
@@ -114,7 +118,7 @@ def main() -> int:
         raise SystemExit(f"the programs' simulations have several configurations: {configs}")
     npu_config, soc_config = configs.pop()
     output = args.output.resolve()
-    output.mkdir(parents=True, exist_ok=False)
+    output.mkdir(parents=True, exist_ok=args.resume)
     stage = Path(tempfile.mkdtemp(prefix="matrix_board_"))
     manifest = []
     for n, p in enumerate(programs):
@@ -130,16 +134,31 @@ def main() -> int:
     shutil.copyfile(args.bitstream, stage / "aster_core.bit")
     shutil.copyfile(ROOT / "scripts/aster_board_remote.py", stage / "aster_board_remote.py")
     remote = "/home/xilinx/aster_matrix_board"
-    subprocess.run(["ssh", args.host, f"rm -rf {remote} && mkdir -p {remote}"], check=True)
-    subprocess.run(["scp", "-q", "-r", *(str(path) for path in stage.iterdir()), f"{args.host}:{remote}/"], check=True)
-    # (the password to sudo on stdin only: never in argv, a file or a log; no tty, so nothing echoes it)
-    try:
-        run = subprocess.run(["ssh", args.host, f"cd {remote} && sudo -S -p '' python3 aster_board_remote.py"],
-                             input=password + "\n", capture_output=True, text=True, timeout=args.timeout)
-        returncode, log = run.returncode, run.stdout + run.stderr
-    except subprocess.TimeoutExpired as expired:        # (the partial report is still fetched, below)
-        returncode, log = "timeout", f"{expired.stdout or ''}{expired.stderr or ''}"
-    (output / "remote.log").write_text(log if isinstance(log, str) else log.decode(errors="replace"))
+    if args.resume:                                      # (the board's run must be of these very programs)
+        listed = subprocess.run(["ssh", args.host, f"cat {remote}/manifest.json"], capture_output=True, text=True,
+                                check=True).stdout
+        if [(m["name"], m["image"]) for m in json.loads(listed)] != [(m["name"], m["image"]) for m in manifest]:
+            raise SystemExit("--resume: the board's run is not of these programs")
+    else:
+        subprocess.run(["ssh", args.host, f"rm -rf {remote} && mkdir -p {remote}"], check=True)
+        subprocess.run(["scp", "-q", "-r", *(str(path) for path in stage.iterdir()), f"{args.host}:{remote}/"],
+                       check=True)
+    # (the password to sudo on stdin only: never in argv, a file or a log; no tty, so nothing echoes it.) The run is
+    # detached on the board, in a session of its own with its output to the board's remote.log, so a dropped ssh
+    # session cannot end it (20.5's full board run outlasts one); this script polls the report until the run is
+    # complete or failed, or the timeout passes (the partial report is still fetched, below).
+    if not args.resume:
+        subprocess.run(["ssh", args.host, f"cd {remote} && sudo -S -p '' sh -c 'setsid nohup python3 "
+                        f"aster_board_remote.py > remote.log 2>&1 < /dev/null &'"],
+                       input=password + "\n", capture_output=True, text=True, check=True, timeout=120)
+    deadline, status = time.time() + args.timeout, "running"
+    probe = f"cd {remote} && python3 -c \"import json; print(json.load(open('report.json'))['status'])\""
+    while status == "running" and time.time() < deadline:
+        time.sleep(60)
+        seen = subprocess.run(["ssh", args.host, probe], capture_output=True, text=True).stdout.strip()
+        status = seen or status                          # (a report not yet written, or mid-write: polled again)
+    returncode = 0 if status == "complete" else status
+    subprocess.run(["scp", "-q", f"{args.host}:{remote}/remote.log", str(output / "remote.log")], check=False)
     subprocess.run(["scp", "-q", f"{args.host}:{remote}/report.json", str(output / "report.json")], check=True)
     shutil.rmtree(stage, ignore_errors=True)
     report = json.loads((output / "report.json").read_text())

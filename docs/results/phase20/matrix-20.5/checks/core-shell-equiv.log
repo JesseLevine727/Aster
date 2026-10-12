@@ -1,0 +1,4 @@
+rm -rf /home/elfo/Documents/Aster/build/golden/87c6b0a && mkdir -p /home/elfo/Documents/Aster/build/golden/87c6b0a
+git archive 87c6b0a | tar -x -C /home/elfo/Documents/Aster/build/golden/87c6b0a
+make -s -C /home/elfo/Documents/Aster/build/golden/87c6b0a /home/elfo/Documents/Aster/build/golden/87c6b0a/build/aster_core/core_ports_aster_l1 > /home/elfo/Documents/Aster/build/golden/87c6b0a.log 2>&1
+PASS: 879/879 runs end the same in both shells (7 modes x the kernels and every suite, 4 random modes x 40 programs), cycle for cycle and RVFI record for record

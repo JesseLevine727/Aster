@@ -1,0 +1,15 @@
+20.5 step 4's timing (tuning.md §8, the owner's rule: several strategies, the best reproducible build signed off, the spread recorded).
+
+The final RTL is step 2's: since e86b47e (step 2's builds' RTL) only CACHE_BYTES' default changed (4096 -> 8192, in 8cba838):
+rtl/soc/aster_soc.sv   | 5 +++--
+ rtl/soc/aster_soc_ip.v | 2 +-
+ 2 files changed, 4 insertions(+), 3 deletions(-)
+
+Step 2's 8 KiB builds (builds-8k.csv, from ../../tuning-20.5/geometry/timing/builds.csv): ten strategies at 10 ns in context, all met:
+worst setup slack +0.021 to +0.306 ns. The best, o5asm-mgi (+0.306 ns, hold +0.040 ns), rebuilt from the same sources identically
+(../../tuning-20.5/geometry/timing/reproducibility.txt), and the adopted default built with no parameters gives the same
+configuration data (../../tuning-20.5/geometry/adoption/bitstream.txt). Area: 38,704 LUTs (72.75%), 84 block RAM tiles (60.0%), 27 DSPs.
+
+The final image, the default on o5asm-mgi (build/fpga/pynq_z1/aster_soc-c8k-default-o5asm-mgi/aster_soc.bit), checked again here:
+configuration data from the sync word: 4045516 bytes, sha256 0bf4b4c3e021b79d77eba70f81df430fac2b63a017bf4cf52f32de99afbd248b
+(step 2's c8k-default-o5asm-mgi: 4045516 bytes, sha256 0bf4b4c3e021b79d77eba70f81df430fac2b63a017bf4cf52f32de99afbd248b)

@@ -1,0 +1,16 @@
+ECG's stage overlap (b96e48b): 882 stamped windows; problems 0
+  ecg_pipeline_overlap__fir4_copy_stages: {'overlapped': 63}
+  ecg_pipeline_overlap__fir4_split_stages: {'overlapped': 63}
+  ecg_pipeline_overlap__fir4_stages: {'overlapped': 63}
+  ecg_pipeline_overlap_f8__fir4_copy_stages: {'overlapped': 63}
+  ecg_pipeline_overlap_f8__fir4_split_stages: {'overlapped': 63}
+  ecg_pipeline_overlap_f8__fir4_stages: {'overlapped': 63}
+  ecg_pipeline_overlap_f8_stages: {'overlapped': 63}
+  ecg_pipeline_overlap_stages: {'overlapped': 63}
+  ecg_pipeline_v1__fir4_copy_stages: {'sequential per chunk': 63}
+  ecg_pipeline_v1__fir4_stages: {'sequential per chunk': 63}
+  ecg_pipeline_v1_f8__fir4_copy_stages: {'sequential per chunk': 63}
+  ecg_pipeline_v1_f8__fir4_stages: {'sequential per chunk': 63}
+  ecg_pipeline_v1_f8_stages: {'sequential per chunk': 63}
+  ecg_pipeline_v1_stages: {'sequential per chunk': 63}
+  v1's case, the two-hart pipeline, warm e2e: 26448 cycles of overlap, 15 of 15 later chunks

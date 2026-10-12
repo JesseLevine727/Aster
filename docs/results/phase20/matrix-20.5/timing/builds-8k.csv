@@ -1,0 +1,13 @@
+build,cache_bytes,strategy,directives,wns_ns,whs_ns,luts,luts_pct,bram_tiles,bram_pct,dsps,payload_sha256,rtl,timing
+c8k-def,8192,def,,0.046,0.009,38453,72.28,84,60.00,27,03ea20790a556a34,e86b47e (f246a11's RTL),met 10 ns
+c8k-o3end,8192,o3end,over=0.3;place=ExtraNetDelay_high,0.202,0.030,38567,72.49,84,60.00,27,5b1d8cc9ad50893f,e86b47e (f246a11's RTL),met 10 ns
+c8k-o4end,8192,o4end,over=0.4;place=ExtraNetDelay_high,0.302,0.034,38572,72.50,84,60.00,27,2fbbbc838bf938fb,e86b47e (f246a11's RTL),met 10 ns
+c8k-o5,8192,o5,over=0.5,0.197,0.027,38618,72.59,84,60.00,27,b533dc96344673e3,e86b47e (f246a11's RTL),met 10 ns
+c8k-o5asm,8192,o5asm,over=0.5;place=AltSpreadLogic_medium,0.221,0.035,38704,72.75,84,60.00,27,2e742e5004306842,e86b47e (f246a11's RTL),met 10 ns
+c8k-o5asm-mgi,8192,o5asm-mgi,over=0.5;place=AltSpreadLogic_medium;route=MoreGlobalIterations,0.306,0.040,38704,72.75,84,60.00,27,0bf4b4c3e021b79d,e86b47e (f246a11's RTL),met 10 ns
+c8k-o5end,8192,o5end,over=0.5;place=ExtraNetDelay_high,0.046,0.051,38580,72.52,84,60.00,27,b6b9b6c7251b934d,e86b47e (f246a11's RTL),met 10 ns
+c8k-o5enl,8192,o5enl,over=0.5;place=ExtraNetDelay_low,0.117,0.034,38700,72.74,84,60.00,27,7ff543fcd80e5e90,e86b47e (f246a11's RTL),met 10 ns
+c8k-o5epo,8192,o5epo,over=0.5;place=ExtraPostPlacementOpt,0.021,0.029,38615,72.58,84,60.00,27,60653f3997f3e89e,e86b47e (f246a11's RTL),met 10 ns
+c8k-o5eto,8192,o5eto,over=0.5;place=ExtraTimingOpt,0.023,0.034,38931,73.18,84,60.00,27,e33226d74f9eb08a,e86b47e (f246a11's RTL),met 10 ns
+c8k-o5asm-mgi-repeat,8192,o5asm-mgi,over=0.5;place=AltSpreadLogic_medium;route=MoreGlobalIterations,0.306,0.040,38704,72.75,84,60.00,27,0bf4b4c3e021b79d,e86b47e (f246a11's RTL),met 10 ns
+c8k-default-o5asm-mgi,8192,o5asm-mgi,over=0.5;place=AltSpreadLogic_medium;route=MoreGlobalIterations,0.306,0.040,38704,72.75,84,60.00,27,0bf4b4c3e021b79d,"the adopted default (8 KiB), no parameters",met 10 ns

@@ -1,0 +1,8 @@
+PASS: f5-cpu and f5b-cpu: 132 captured entries, 0 differ in firmware, simulation or records
+PASS: f5-coherence and f5b-coherence: 1674 captured entries, 0 differ in firmware, simulation or records
+PASS: f5-dsp and f5b-dsp: 1786 captured entries, 0 differ in firmware, simulation or records
+PASS: f5-ml and f5b-ml: 564 captured entries, 0 differ in firmware, simulation or records
+PASS: f5-ecg and f5b-ecg: 4345 captured entries, 0 differ in firmware, simulation or records
+PASS: f5-memory and f5b-memory: 1150 captured entries, 0 differ in firmware, simulation or records
+PASS: f5-npu_gemm and f5b-npu_gemm: 1801 captured entries, 0 differ in firmware, simulation or records
+PASS: f5-dma and f5b-dma: 12480 captured entries, 0 differ in firmware, simulation or records

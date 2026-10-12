@@ -1,0 +1,559 @@
+{
+ "scaling": {
+  "reduce_fill": {
+   "pairs": 11,
+   "e2e_min": 1.9436,
+   "e2e_max": 1.9653,
+   "r_warm": {
+    "e2e": [
+     73918,
+     37656,
+     1.963
+    ],
+    "kernel": [
+     36958,
+     19077,
+     1.9373
+    ]
+   },
+   "meets": true,
+   "rows": [
+    {
+     "config": "soc_dc0 {\"cache_kib\": 8, \"cache_state\": \"warm\", \"dcache\": 0, \"harts\": 2, \"memory_wait\": 0}",
+     "window": "e2e",
+     "sim": "soc_dc0",
+     "cache_state": "warm",
+     "one": 78016,
+     "two": 39696,
+     "speedup": 1.9653
+    },
+    {
+     "config": "soc_dc0 {\"cache_kib\": 8, \"cache_state\": \"warm\", \"dcache\": 0, \"harts\": 2, \"memory_wait\": 0}",
+     "window": "kernel",
+     "sim": "soc_dc0",
+     "cache_state": "warm",
+     "one": 41052,
+     "two": 21116,
+     "speedup": 1.9441
+    },
+    {
+     "config": "soc_dev {\"cache_kib\": 8, \"cache_state\": \"cold\", \"dcache\": 1, \"harts\": 2, \"memory_wait\": 0}",
+     "window": "e2e",
+     "sim": "soc_dev",
+     "cache_state": "cold",
+     "one": 75303,
+     "two": 38744,
+     "speedup": 1.9436
+    },
+    {
+     "config": "soc_dev {\"cache_kib\": 8, \"cache_state\": \"warm\", \"dcache\": 1, \"harts\": 2, \"memory_wait\": 0}",
+     "window": "e2e",
+     "sim": "soc_dev",
+     "cache_state": "warm",
+     "one": 73918,
+     "two": 37656,
+     "speedup": 1.963
+    },
+    {
+     "config": "soc_dev {\"cache_kib\": 8, \"cache_state\": \"warm\", \"dcache\": 1, \"harts\": 2, \"memory_wait\": 0}",
+     "window": "kernel",
+     "sim": "soc_dev",
+     "cache_state": "warm",
+     "one": 36958,
+     "two": 19077,
+     "speedup": 1.9373
+    },
+    {
+     "config": "soc_w1 {\"cache_kib\": 8, \"cache_state\": \"warm\", \"dcache\": 1, \"harts\": 2, \"memory_wait\": 1}",
+     "window": "e2e",
+     "sim": "soc_w1",
+     "cache_state": "warm",
+     "one": 73923,
+     "two": 37713,
+     "speedup": 1.9601
+    },
+    {
+     "config": "soc_w1 {\"cache_kib\": 8, \"cache_state\": \"warm\", \"dcache\": 1, \"harts\": 2, \"memory_wait\": 1}",
+     "window": "kernel",
+     "sim": "soc_w1",
+     "cache_state": "warm",
+     "one": 36966,
+     "two": 19135,
+     "speedup": 1.9319
+    },
+    {
+     "config": "soc_w2 {\"cache_kib\": 8, \"cache_state\": \"warm\", \"dcache\": 1, \"harts\": 2, \"memory_wait\": 2}",
+     "window": "e2e",
+     "sim": "soc_w2",
+     "cache_state": "warm",
+     "one": 73928,
+     "two": 37770,
+     "speedup": 1.9573
+    },
+    {
+     "config": "soc_w2 {\"cache_kib\": 8, \"cache_state\": \"warm\", \"dcache\": 1, \"harts\": 2, \"memory_wait\": 2}",
+     "window": "kernel",
+     "sim": "soc_w2",
+     "cache_state": "warm",
+     "one": 36974,
+     "two": 19185,
+     "speedup": 1.9272
+    },
+    {
+     "config": "soc_w4 {\"cache_kib\": 8, \"cache_state\": \"warm\", \"dcache\": 1, \"harts\": 2, \"memory_wait\": 4}",
+     "window": "e2e",
+     "sim": "soc_w4",
+     "cache_state": "warm",
+     "one": 73938,
+     "two": 37884,
+     "speedup": 1.9517
+    },
+    {
+     "config": "soc_w4 {\"cache_kib\": 8, \"cache_state\": \"warm\", \"dcache\": 1, \"harts\": 2, \"memory_wait\": 4}",
+     "window": "kernel",
+     "sim": "soc_w4",
+     "cache_state": "warm",
+     "one": 36990,
+     "two": 19309,
+     "speedup": 1.9157
+    }
+   ]
+  },
+  "gemm_dot8_64x64x64": {
+   "pairs": 11,
+   "e2e_min": 1.9112,
+   "e2e_max": 1.9947,
+   "r_warm": {
+    "e2e": [
+     204636,
+     105010,
+     1.9487
+    ],
+    "kernel": [
+     190906,
+     98113,
+     1.9458
+    ]
+   },
+   "meets": true,
+   "rows": [
+    {
+     "config": "soc_dc0 {\"cache_kib\": 8, \"cache_state\": \"warm\", \"dcache\": 0, \"harts\": 2, \"k\": 64, \"m\": 64, \"memory_wait\": 0, \"n\": 64}",
+     "window": "e2e",
+     "sim": "soc_dc0",
+     "cache_state": "warm",
+     "one": 306896,
+     "two": 153858,
+     "speedup": 1.9947
+    },
+    {
+     "config": "soc_dc0 {\"cache_kib\": 8, \"cache_state\": \"warm\", \"dcache\": 0, \"harts\": 2, \"k\": 64, \"m\": 64, \"memory_wait\": 0, \"n\": 64}",
+     "window": "kernel",
+     "sim": "soc_dc0",
+     "cache_state": "warm",
+     "one": 291656,
+     "two": 146278,
+     "speedup": 1.9938
+    },
+    {
+     "config": "soc_dev {\"cache_kib\": 8, \"cache_state\": \"cold\", \"dcache\": 1, \"harts\": 2, \"k\": 64, \"m\": 64, \"memory_wait\": 0, \"n\": 64}",
+     "window": "e2e",
+     "sim": "soc_dev",
+     "cache_state": "cold",
+     "one": 207242,
+     "two": 107493,
+     "speedup": 1.928
+    },
+    {
+     "config": "soc_dev {\"cache_kib\": 8, \"cache_state\": \"warm\", \"dcache\": 1, \"harts\": 2, \"k\": 64, \"m\": 64, \"memory_wait\": 0, \"n\": 64}",
+     "window": "e2e",
+     "sim": "soc_dev",
+     "cache_state": "warm",
+     "one": 204636,
+     "two": 105010,
+     "speedup": 1.9487
+    },
+    {
+     "config": "soc_dev {\"cache_kib\": 8, \"cache_state\": \"warm\", \"dcache\": 1, \"harts\": 2, \"k\": 64, \"m\": 64, \"memory_wait\": 0, \"n\": 64}",
+     "window": "kernel",
+     "sim": "soc_dev",
+     "cache_state": "warm",
+     "one": 190906,
+     "two": 98113,
+     "speedup": 1.9458
+    },
+    {
+     "config": "soc_w1 {\"cache_kib\": 8, \"cache_state\": \"warm\", \"dcache\": 1, \"harts\": 2, \"k\": 64, \"m\": 64, \"memory_wait\": 1, \"n\": 64}",
+     "window": "e2e",
+     "sim": "soc_w1",
+     "cache_state": "warm",
+     "one": 206079,
+     "two": 106313,
+     "speedup": 1.9384
+    },
+    {
+     "config": "soc_w1 {\"cache_kib\": 8, \"cache_state\": \"warm\", \"dcache\": 1, \"harts\": 2, \"k\": 64, \"m\": 64, \"memory_wait\": 1, \"n\": 64}",
+     "window": "kernel",
+     "sim": "soc_w1",
+     "cache_state": "warm",
+     "one": 191896,
+     "two": 99220,
+     "speedup": 1.934
+    },
+    {
+     "config": "soc_w2 {\"cache_kib\": 8, \"cache_state\": \"warm\", \"dcache\": 1, \"harts\": 2, \"k\": 64, \"m\": 64, \"memory_wait\": 2, \"n\": 64}",
+     "window": "e2e",
+     "sim": "soc_w2",
+     "cache_state": "warm",
+     "one": 209640,
+     "two": 108691,
+     "speedup": 1.9288
+    },
+    {
+     "config": "soc_w2 {\"cache_kib\": 8, \"cache_state\": \"warm\", \"dcache\": 1, \"harts\": 2, \"k\": 64, \"m\": 64, \"memory_wait\": 2, \"n\": 64}",
+     "window": "kernel",
+     "sim": "soc_w2",
+     "cache_state": "warm",
+     "one": 194747,
+     "two": 101251,
+     "speedup": 1.9234
+    },
+    {
+     "config": "soc_w4 {\"cache_kib\": 8, \"cache_state\": \"warm\", \"dcache\": 1, \"harts\": 2, \"k\": 64, \"m\": 64, \"memory_wait\": 4, \"n\": 64}",
+     "window": "e2e",
+     "sim": "soc_w4",
+     "cache_state": "warm",
+     "one": 217306,
+     "two": 113701,
+     "speedup": 1.9112
+    },
+    {
+     "config": "soc_w4 {\"cache_kib\": 8, \"cache_state\": \"warm\", \"dcache\": 1, \"harts\": 2, \"k\": 64, \"m\": 64, \"memory_wait\": 4, \"n\": 64}",
+     "window": "kernel",
+     "sim": "soc_w4",
+     "cache_state": "warm",
+     "one": 200993,
+     "two": 105566,
+     "speedup": 1.904
+    }
+   ]
+  },
+  "gemm_dot8_96x96x96": {
+   "pairs": 11,
+   "e2e_min": 1.9763,
+   "e2e_max": 1.9979,
+   "r_warm": {
+    "e2e": [
+     680971,
+     342610,
+     1.9876
+    ],
+    "kernel": [
+     649883,
+     326976,
+     1.9876
+    ]
+   },
+   "meets": true,
+   "rows": [
+    {
+     "config": "soc_dc0 {\"cache_kib\": 8, \"cache_state\": \"warm\", \"dcache\": 0, \"harts\": 2, \"k\": 96, \"m\": 96, \"memory_wait\": 0, \"n\": 96}",
+     "window": "e2e",
+     "sim": "soc_dc0",
+     "cache_state": "warm",
+     "one": 995556,
+     "two": 498296,
+     "speedup": 1.9979
+    },
+    {
+     "config": "soc_dc0 {\"cache_kib\": 8, \"cache_state\": \"warm\", \"dcache\": 0, \"harts\": 2, \"k\": 96, \"m\": 96, \"memory_wait\": 0, \"n\": 96}",
+     "window": "kernel",
+     "sim": "soc_dc0",
+     "cache_state": "warm",
+     "one": 961586,
+     "two": 481409,
+     "speedup": 1.9974
+    },
+    {
+     "config": "soc_dev {\"cache_kib\": 8, \"cache_state\": \"cold\", \"dcache\": 1, \"harts\": 2, \"k\": 96, \"m\": 96, \"memory_wait\": 0, \"n\": 96}",
+     "window": "e2e",
+     "sim": "soc_dev",
+     "cache_state": "cold",
+     "one": 681705,
+     "two": 344943,
+     "speedup": 1.9763
+    },
+    {
+     "config": "soc_dev {\"cache_kib\": 8, \"cache_state\": \"warm\", \"dcache\": 1, \"harts\": 2, \"k\": 96, \"m\": 96, \"memory_wait\": 0, \"n\": 96}",
+     "window": "e2e",
+     "sim": "soc_dev",
+     "cache_state": "warm",
+     "one": 680971,
+     "two": 342610,
+     "speedup": 1.9876
+    },
+    {
+     "config": "soc_dev {\"cache_kib\": 8, \"cache_state\": \"warm\", \"dcache\": 1, \"harts\": 2, \"k\": 96, \"m\": 96, \"memory_wait\": 0, \"n\": 96}",
+     "window": "kernel",
+     "sim": "soc_dev",
+     "cache_state": "warm",
+     "one": 649883,
+     "two": 326976,
+     "speedup": 1.9876
+    },
+    {
+     "config": "soc_w1 {\"cache_kib\": 8, \"cache_state\": \"warm\", \"dcache\": 1, \"harts\": 2, \"k\": 96, \"m\": 96, \"memory_wait\": 1, \"n\": 96}",
+     "window": "e2e",
+     "sim": "soc_w1",
+     "cache_state": "warm",
+     "one": 690852,
+     "two": 347871,
+     "speedup": 1.9859
+    },
+    {
+     "config": "soc_w1 {\"cache_kib\": 8, \"cache_state\": \"warm\", \"dcache\": 1, \"harts\": 2, \"k\": 96, \"m\": 96, \"memory_wait\": 1, \"n\": 96}",
+     "window": "kernel",
+     "sim": "soc_w1",
+     "cache_state": "warm",
+     "one": 658608,
+     "two": 331652,
+     "speedup": 1.9858
+    },
+    {
+     "config": "soc_w2 {\"cache_kib\": 8, \"cache_state\": \"warm\", \"dcache\": 1, \"harts\": 2, \"k\": 96, \"m\": 96, \"memory_wait\": 2, \"n\": 96}",
+     "window": "e2e",
+     "sim": "soc_w2",
+     "cache_state": "warm",
+     "one": 705497,
+     "two": 355532,
+     "speedup": 1.9843
+    },
+    {
+     "config": "soc_w2 {\"cache_kib\": 8, \"cache_state\": \"warm\", \"dcache\": 1, \"harts\": 2, \"k\": 96, \"m\": 96, \"memory_wait\": 2, \"n\": 96}",
+     "window": "kernel",
+     "sim": "soc_w2",
+     "cache_state": "warm",
+     "one": 671520,
+     "two": 338493,
+     "speedup": 1.9839
+    },
+    {
+     "config": "soc_w4 {\"cache_kib\": 8, \"cache_state\": \"warm\", \"dcache\": 1, \"harts\": 2, \"k\": 96, \"m\": 96, \"memory_wait\": 4, \"n\": 96}",
+     "window": "e2e",
+     "sim": "soc_w4",
+     "cache_state": "warm",
+     "one": 736011,
+     "two": 371397,
+     "speedup": 1.9817
+    },
+    {
+     "config": "soc_w4 {\"cache_kib\": 8, \"cache_state\": \"warm\", \"dcache\": 1, \"harts\": 2, \"k\": 96, \"m\": 96, \"memory_wait\": 4, \"n\": 96}",
+     "window": "kernel",
+     "sim": "soc_w4",
+     "cache_state": "warm",
+     "one": 698568,
+     "two": 352703,
+     "speedup": 1.9806
+    }
+   ]
+  },
+  "gemm_dot8_128x64x128": {
+   "pairs": 11,
+   "e2e_min": 1.9962,
+   "e2e_max": 2.0163,
+   "r_warm": {
+    "e2e": [
+     805300,
+     401471,
+     2.0059
+    ],
+    "kernel": [
+     777822,
+     387534,
+     2.0071
+    ]
+   },
+   "meets": true,
+   "rows": [
+    {
+     "config": "soc_dc0 {\"cache_kib\": 8, \"cache_state\": \"warm\", \"dcache\": 0, \"harts\": 2, \"k\": 128, \"m\": 128, \"memory_wait\": 0, \"n\": 64}",
+     "window": "e2e",
+     "sim": "soc_dc0",
+     "cache_state": "warm",
+     "one": 1159052,
+     "two": 580039,
+     "speedup": 1.9982
+    },
+    {
+     "config": "soc_dc0 {\"cache_kib\": 8, \"cache_state\": \"warm\", \"dcache\": 0, \"harts\": 2, \"k\": 128, \"m\": 128, \"memory_wait\": 0, \"n\": 64}",
+     "window": "kernel",
+     "sim": "soc_dc0",
+     "cache_state": "warm",
+     "one": 1129012,
+     "two": 565745,
+     "speedup": 1.9956
+    },
+    {
+     "config": "soc_dev {\"cache_kib\": 8, \"cache_state\": \"cold\", \"dcache\": 1, \"harts\": 2, \"k\": 128, \"m\": 128, \"memory_wait\": 0, \"n\": 64}",
+     "window": "e2e",
+     "sim": "soc_dev",
+     "cache_state": "cold",
+     "one": 806002,
+     "two": 403764,
+     "speedup": 1.9962
+    },
+    {
+     "config": "soc_dev {\"cache_kib\": 8, \"cache_state\": \"warm\", \"dcache\": 1, \"harts\": 2, \"k\": 128, \"m\": 128, \"memory_wait\": 0, \"n\": 64}",
+     "window": "e2e",
+     "sim": "soc_dev",
+     "cache_state": "warm",
+     "one": 805300,
+     "two": 401471,
+     "speedup": 2.0059
+    },
+    {
+     "config": "soc_dev {\"cache_kib\": 8, \"cache_state\": \"warm\", \"dcache\": 1, \"harts\": 2, \"k\": 128, \"m\": 128, \"memory_wait\": 0, \"n\": 64}",
+     "window": "kernel",
+     "sim": "soc_dev",
+     "cache_state": "warm",
+     "one": 777822,
+     "two": 387534,
+     "speedup": 2.0071
+    },
+    {
+     "config": "soc_w1 {\"cache_kib\": 8, \"cache_state\": \"warm\", \"dcache\": 1, \"harts\": 2, \"k\": 128, \"m\": 128, \"memory_wait\": 1, \"n\": 64}",
+     "window": "e2e",
+     "sim": "soc_w1",
+     "cache_state": "warm",
+     "one": 820221,
+     "two": 408289,
+     "speedup": 2.0089
+    },
+    {
+     "config": "soc_w1 {\"cache_kib\": 8, \"cache_state\": \"warm\", \"dcache\": 1, \"harts\": 2, \"k\": 128, \"m\": 128, \"memory_wait\": 1, \"n\": 64}",
+     "window": "kernel",
+     "sim": "soc_w1",
+     "cache_state": "warm",
+     "one": 791715,
+     "two": 393973,
+     "speedup": 2.0096
+    },
+    {
+     "config": "soc_w2 {\"cache_kib\": 8, \"cache_state\": \"warm\", \"dcache\": 1, \"harts\": 2, \"k\": 128, \"m\": 128, \"memory_wait\": 2, \"n\": 64}",
+     "window": "e2e",
+     "sim": "soc_w2",
+     "cache_state": "warm",
+     "one": 839439,
+     "two": 417379,
+     "speedup": 2.0112
+    },
+    {
+     "config": "soc_w2 {\"cache_kib\": 8, \"cache_state\": \"warm\", \"dcache\": 1, \"harts\": 2, \"k\": 128, \"m\": 128, \"memory_wait\": 2, \"n\": 64}",
+     "window": "kernel",
+     "sim": "soc_w2",
+     "cache_state": "warm",
+     "one": 809392,
+     "two": 402153,
+     "speedup": 2.0126
+    },
+    {
+     "config": "soc_w4 {\"cache_kib\": 8, \"cache_state\": \"warm\", \"dcache\": 1, \"harts\": 2, \"k\": 128, \"m\": 128, \"memory_wait\": 4, \"n\": 64}",
+     "window": "e2e",
+     "sim": "soc_w4",
+     "cache_state": "warm",
+     "one": 878996,
+     "two": 435947,
+     "speedup": 2.0163
+    },
+    {
+     "config": "soc_w4 {\"cache_kib\": 8, \"cache_state\": \"warm\", \"dcache\": 1, \"harts\": 2, \"k\": 128, \"m\": 128, \"memory_wait\": 4, \"n\": 64}",
+     "window": "kernel",
+     "sim": "soc_w4",
+     "cache_state": "warm",
+     "one": 845867,
+     "two": 419247,
+     "speedup": 2.0176
+    }
+   ]
+  }
+ },
+ "against_v1": {
+  "Conv2D 32x32 K=5, x4": {
+   "v1": 4837408,
+   "v2": 45292.0,
+   "method": "dsp/conv2d_direct_npu__2h/npu_direct/soc_dev/cold",
+   "ratio": 106.8,
+   "faster": true
+  },
+  "reduction, 1,024 words x4 (v1's)": {
+   "v1": 233112,
+   "v2": 47150.0,
+   "method": "coherence/reduce_v1__loop/multicore/soc_dev/cold",
+   "ratio": 4.94,
+   "faster": true
+  },
+  "MNIST MLP, per image": {
+   "v1": 433903,
+   "v2": 5388.59,
+   "method": "ml/mnist_mlp_npu__2h/npu/soc_dev/cold",
+   "ratio": 80.52,
+   "faster": true
+  },
+  "streaming ECG, 16 x 64": {
+   "v1": 1528505,
+   "v2": 33023.0,
+   "method": "ecg/ecg_pipeline_overlap__fir4_split/pipeline/soc_dev/cold",
+   "ratio": 46.29,
+   "faster": true
+  },
+  "CIFAR-10, 20 images": {
+   "v1": 65568218,
+   "v2": 2242065.0,
+   "method": "ml/cifar_cnn_npu_direct__2h_copy/npu_direct/soc_dev/cold",
+   "ratio": 29.24,
+   "faster": true
+  },
+  "CoreMark (aster_minimal)": {
+   "v1": 1922272,
+   "v2": 462851.0,
+   "method": "cpu/coremark/scalar/soc_dev/cold",
+   "ratio": 4.15,
+   "faster": true
+  },
+  "Dhrystone (aster_minimal)": {
+   "v1": 3128553,
+   "v2": 859400.0,
+   "method": "cpu/dhrystone/scalar/soc_dev/cold",
+   "ratio": 3.64,
+   "faster": true
+  },
+  "sort/search (aster_minimal)": {
+   "v1": 2183301,
+   "v2": 696883.0,
+   "method": "cpu/sort_search/scalar/soc_dev/cold",
+   "ratio": 3.13,
+   "faster": true
+  },
+  "FFT (aster_minimal)": {
+   "v1": 3057473,
+   "v2": 317346.0,
+   "method": "cpu/fft/scalar/soc_dev/cold",
+   "ratio": 9.63,
+   "faster": true
+  },
+  "strided (aster_minimal)": {
+   "v1": 9087,
+   "v2": 2732.0,
+   "method": "cpu/strided/scalar/soc_dev/cold",
+   "ratio": 3.33,
+   "faster": true
+  },
+  "Conv2D (aster_minimal)": {
+   "v1": 5820652,
+   "v2": 1110786.0,
+   "method": "cpu/conv2d/scalar/soc_dev/cold",
+   "ratio": 5.24,
+   "faster": true
+  }
+ }
+}
