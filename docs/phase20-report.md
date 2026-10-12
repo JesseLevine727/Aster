@@ -122,7 +122,7 @@ Each method gets the same inputs and must give the same checksum.
 
 - **Packing matters as much as the engine on the CPUs.** The packed kernel is 10.6× to 10.9× faster than v1's at the
   three sizes (two cores: 4,265,365 → 401,471 cycles at 128×64×128). At the other shapes only v1's kernels were
-  measured, so the NPU's lead there (1.4× to 225×) is over unpacked CPU code, and would be smaller over a packed
+  measured, so the NPU's lead there (1.4× at 1×1×1 to 225× at 64×128×64) is over unpacked CPU code, and would be smaller over a packed
   one.
 - **The CPUs reach 0.52 GOPS on a GEMM:** two cores with the packed kernel at 128×64×128. v1's unpacked kernels
   stay under 0.052. The NPU reaches 11.8.

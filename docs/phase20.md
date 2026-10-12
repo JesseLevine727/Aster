@@ -2565,6 +2565,10 @@ only if every check passes.
   - the configuration-data hash against timing.txt;
   - indented clocks.
 
+**Its third and fourth rounds** found only wording: the NPU's lead at the other shapes (1.4× to 225×), the scaling
+at R warm (1.95× to 2.01×), which checks the self-test runs on sound inputs, and which figures the board covers. The
+audit's layout exemption now matches the entry's own layout. The fourth round cleared the push.
+
 **The decisions taken under the owner's instruction** ("if anything comes up, use your best judgement"):
 1. **The board comparison gained the plan's retired count.** It is tuning.md §7.2's own requirement, so both loads
    were compared with it.
