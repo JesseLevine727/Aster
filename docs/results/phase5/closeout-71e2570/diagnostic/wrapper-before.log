@@ -1,2 +1,0 @@
-FAIL: faulting data access escaped the core wrapper
-make: *** [Makefile:462: retirement] Error 1

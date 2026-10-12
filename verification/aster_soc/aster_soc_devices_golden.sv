@@ -10,7 +10,7 @@
 //
 // - 0x2000_0000 UART: a store to the TX word appends its low byte to the
 //   console (console_we/console_byte); reads 0.
-// - 0x2000_1000 timer, v1's ABI 1 (docs/timer.md): TIME, a free-running cycle
+// - 0x2000_1000 timer, v1's ABI 1 (docs/soc.md §14.1): TIME, a free-running cycle
 //   count, also the cores' mtime; COMPARE; CONTROL (bit 0 enable, bit 1 clear
 //   pending); STATUS; ABI; CLOCK_HZ; its interrupt is source 0.
 // - 0x2000_2000 hart control, v1's layout: ID (the requesting hart),
@@ -19,7 +19,7 @@
 //   writes it) and TO_HART0 (hart 1 writes it), both cleared when hart 0
 //   holds hart 1 (v1 cleared them at hart 1's stop); v1's warm-stop and
 //   fault words read 0.
-// - 0x2000_3000 and 0x2000_3100: each hart's counters, v1's ABI 4 (docs/phase6.md):
+// - 0x2000_3000 and 0x2000_3100: each hart's counters, v1's ABI 4 (docs/soc.md §14.4):
 //   fourteen counters at 0x00-0x6C (cycles, retired, memory transactions, I$
 //   accesses, I$ misses, D$ data accesses, D$ data misses, backing
 //   transactions, completed A instructions, successful sc, failed sc, dirty
@@ -138,7 +138,7 @@ module aster_soc_devices_golden #(
         end
     end
 
-    // ---- the interrupt controller (v1's ABI 1, docs/interrupts.md) ----
+    // ---- the interrupt controller (v1's ABI 1, docs/soc.md §14.2) ----
     // Sources latched on their rising edges; ENABLE0/1 (0x00, 0x04), PENDING
     // (0x08, write 1 to clear), ACTIVE0/1 (0x0C, 0x10), RAISE (0x14, the
     // software source), ABI (0x18) and SOURCES (0x1C).

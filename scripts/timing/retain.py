@@ -1,47 +1,29 @@
 #!/usr/bin/env python3
-"""Copy a timing result into a retained, checksummed evidence folder (Phase 18
-and on; --phase picks the results folder, phase18 by default).
+"""Copy a timing result into a retained, checksummed evidence folder (--phase picks the results folder, phase18 by
+default).
 
-Vivado out-of-context results (scripts/timing/vivado_ooc.tcl) and LibreLane
-runs (scripts/run_asic.py) live in git-ignored directories. This copies the
-files a timing claim rests on into docs/results/<phase>/<name>/ and writes
-SHA256SUMS over the folder:
+Vivado out-of-context results (scripts/timing/vivado_ooc.tcl) live in git-ignored directories. This copies the files
+a timing claim rests on into docs/results/<phase>/<name>/fpga/NAME/ and writes SHA256SUMS over the folder: from each
+Vivado directory (--fpga NAME=DIR), summary.txt, timing_summary.rpt, utilization.rpt, clock.xdc, and named_paths.rpt
+when the run named paths.
 
-- from each Vivado directory (--fpga NAME=DIR): summary.txt, timing_summary.rpt,
-  utilization.rpt, clock.xdc, and named_paths.rpt when the run named paths,
-  under fpga/NAME/;
-- from each LibreLane run (--asic NAME=RUN): resolved.json, final/metrics.json,
-  the post-route STA summary.rpt, each corner's worst register-to-register
-  setup path verbatim (flip-flop to flip-flop; port paths, such as a reset
-  input, are skipped; the full max.rpt files are several MB and their SHA-256
-  goes in asic/NAME/max_rpt.sha256), the NAMED-PATH blocks of each corner's
-  sta.log when the design names paths (asic/sky130/sta_named_paths.tcl), and
-  the sky130_summary.py JSON, under asic/NAME/.
+A README.md already in the folder is kept (and checksummed); write it after retaining, then re-run with --rehash.
 
-A README.md already in the folder is kept (and checksummed); write it after
-retaining, then re-run with --rehash.
-
-    retain.py picorv32-baseline-v2 --fpga core=build/timing/fpga/picorv32 \\
-        --asic core=asic/sky130/runs/p18-sdc-picorv32-delay-1
+    retain.py aster-core-timing --fpga core=build/timing/fpga/aster
 """
 
 from __future__ import annotations
 
 import argparse
 import hashlib
-import json
 import shutil
-import sys
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]
-sys.path.insert(0, str(ROOT / "scripts" / "timing"))
-import sky130_summary  # noqa: E402
 
 RESULTS = ROOT / "docs/results/phase18"
 FPGA_FILES = ("summary.txt", "timing_summary.rpt", "utilization.rpt", "clock.xdc")
 FPGA_OPTIONAL = ("named_paths.rpt",)         # when the run named paths (OOC_NAMED_PATHS)
-WORST_PATH_CORNERS = ("nom_tt_025C_1v80", "max_tt_025C_1v80", "nom_ss_100C_1v60", "max_ss_100C_1v60")
 
 
 def sha256(path: Path) -> str:
@@ -67,59 +49,6 @@ def retain_fpga(source: Path, target: Path) -> None:
             shutil.copy2(source / name, target / name)
 
 
-def retain_asic(run: Path, target: Path) -> None:
-    sta = sorted(run.glob("*-openroad-stapostpnr"), key=lambda p: int(p.name.split("-")[0]))
-    if not sta:
-        raise SystemExit(f"{run}: no post-route STA step")
-    sta = sta[-1]
-    (target / "final").mkdir(parents=True, exist_ok=True)
-    (target / sta.name).mkdir(parents=True, exist_ok=True)
-    shutil.copy2(run / "resolved.json", target / "resolved.json")
-    shutil.copy2(run / "final/metrics.json", target / "final/metrics.json")
-    shutil.copy2(sta / "summary.rpt", target / sta.name / "summary.rpt")
-    worst = ["# Worst register-to-register setup path per corner, copied verbatim from each",
-             "# corner's max.rpt (the first path from a flip-flop to a flip-flop).", ""]
-    hashes = []
-    for corner in WORST_PATH_CORNERS:
-        report = sta / corner / "max.rpt"
-        text = report.read_text()
-        start, block = 0, None
-        while (start := text.find("Startpoint:", start)) != -1:
-            end = text.index("\n", text.index("slack (", start))
-            candidate = text[start:end]
-            header = candidate[:candidate.index("Path Group")]    # start- and endpoint descriptions
-            if header.count("flip-flop") == 2:
-                block = candidate
-                break
-            start = end
-        # A report can list only port paths when every register-to-register
-        # path is comfortably met; summary.json still has the worst slack.
-        worst += [f"===== {corner} =====",
-                  block or "(no flip-flop-to-flip-flop path among this report's paths)", ""]
-        hashes.append(f"{sha256(report)}  {sta.name}/{corner}/max.rpt")
-    (target / sta.name / "worst_paths.txt").write_text("\n".join(worst))
-    # Paths the design names for its report (asic/sky130/sta_named_paths.tcl):
-    # their NAMED-PATH blocks from each corner's sta.log, verbatim.
-    for corner in sky130_summary.CORNERS:
-        log = sta / corner / "sta.log"
-        if not log.is_file():
-            continue
-        blocks, keep = [], False
-        for line in log.read_text(errors="replace").splitlines():
-            if line.startswith("NAMED-PATH-BEGIN "):
-                keep = True
-            if keep:
-                blocks.append(line)
-            if line.startswith("NAMED-PATH-END"):
-                keep = False
-        if blocks:
-            (target / sta.name / corner).mkdir(parents=True, exist_ok=True)
-            (target / sta.name / corner / "named_paths.rpt").write_text("\n".join(blocks) + "\n")
-    (target / "max_rpt.sha256").write_text("\n".join(hashes) + "\n")
-    summary = sky130_summary.summarize(target)
-    (target / "summary.json").write_text(json.dumps(summary, indent=2) + "\n")
-
-
 def rehash(folder: Path) -> None:
     files = sorted(p for p in folder.rglob("*") if p.is_file() and p.name != "SHA256SUMS")
     (folder / "SHA256SUMS").write_text(
@@ -131,15 +60,12 @@ def main() -> int:
     parser.add_argument("name", help="folder under docs/results/<phase>/")
     parser.add_argument("--phase", default="phase18", help="the results folder's phase (default phase18)")
     parser.add_argument("--fpga", action="append", default=[], metavar="NAME=DIR")
-    parser.add_argument("--asic", action="append", default=[], metavar="NAME=RUN")
     parser.add_argument("--rehash", action="store_true", help="only rewrite SHA256SUMS")
     args = parser.parse_args()
     folder = RESULTS.parent / args.phase / args.name
     if not args.rehash:
         for name, source in pairs(args.fpga):
             retain_fpga(source, folder / "fpga" / name)
-        for name, run in pairs(args.asic):
-            retain_asic(run, folder / "asic" / name)
     rehash(folder)
     print(f"retained {folder.relative_to(ROOT)}: "
           f"{sum(1 for p in folder.rglob('*') if p.is_file())} files, SHA256SUMS written")

@@ -689,21 +689,7 @@ FAMILIES = {"cpu": cpu_entries, "coherence": lambda: with_hot(coherence_entries(
 # 20.5's tuning measurements (docs/tuning.md §4) and CoreMark's official run (§7.3): run when named (--family), not
 # part of the full matrix
 TUNING = {"dma_fine": lambda: dma_fine_entries(), "split_fine": lambda: split_fine_entries(),
-          "coremark": lambda: coremark_official_entries(), "energy_idle": lambda: energy_idle_entries()}
-# Phase 21's idle SoC (docs/phase21.md §4, D4): one e2e window of IDLE_CYCLES, hart 0 spinning
-IDLE_CYCLES = 100000
-
-
-def energy_idle_entries() -> list[Entry]:
-    """phase21.md D4: the idle SoC's two programs (software/matrix/idle.c), hart 1 held in reset or waiting in its
-    cache, at R, cold, as every energy run is."""
-    sim = "soc_dev"
-    return [Entry(f"cpu/idle_hart1_{state}/scalar/{sim}/cold", "cpu", f"idle_hart1_{state}", "scalar", sim, True, [],
-                  "LITMUS_CFLAGS", [], [], "", ["software/matrix/idle.c", "software/runtime/asterbench_v12.c",
-                                                "software/runtime/aster_smp.c"],
-                  soc_variants.v12_defines(sim) + [f"-DIDLE_HART1={hart1}", f"-DIDLE_CYCLES={IDLE_CYCLES}u",
-                                                   "-DMATRIX_COLD"], make_axes(sim, True, 1), "idle")
-            for state, hart1 in (("reset", 0), ("spinning", 1))]
+          "coremark": lambda: coremark_official_entries()}
 # CoreMark's official run: the 2K performance run (seeds 0, 0, 0x66) for at least ten seconds at 100 MHz
 COREMARK_ITERATIONS = 2400
 # CoreMark's own known CRCs (vendor/coremark/core_main.c): the 2K performance run (known_id 3, seeds 0, 0, 0x66) and
@@ -1461,26 +1447,7 @@ def oracle_coremark_official(entry: Entry, records: list[dict], console: str) ->
 
 oracle_coremark_official.wants_console = True
 
-def oracle_idle(entry: Entry, records: list[dict]) -> str:
-    """software/matrix/idle.c: one e2e window of IDLE_CYCLES (and the window's few cycles of opening and closing),
-    hart 0 spinning on its cycle CSR, the engines idle; hart 1 in reset or waiting, as the case says."""
-    if len(records) != 1 or records[0]["window"] != "e2e":
-        raise asterbench_v12.ValidationError(f"{len(records)} records, not one e2e window")
-    r = records[0]
-    spinning = entry.case.endswith("spinning")
-    if r["name"] != entry.case or r["param"] != int(spinning) or r["checksum"] <= 0:
-        raise asterbench_v12.ValidationError("the record is not the idle program's")
-    if not IDLE_CYCLES <= r["h0_cycles"] <= IDLE_CYCLES + 200:
-        raise asterbench_v12.ValidationError(f"the window is {r['h0_cycles']} cycles, not about {IDLE_CYCLES}")
-    if r["npu_jobs"] or r["dma_jobs"] or r["h0_dcache_accesses"] > 16:
-        raise asterbench_v12.ValidationError("the engines or hart 0's data accesses were not idle")
-    if (r["h1_retired"] > 0) != spinning:
-        raise asterbench_v12.ValidationError(f"hart 1 retired {r['h1_retired']}: not {'waiting' if spinning else 'in reset'}")
-    return (f"{r['h0_cycles']} cycles idle, {r['checksum']} spins; hart 1 "
-            + (f"waiting ({r['h1_retired']} instructions)" if spinning else "in reset"))
-
-
-ORACLES = {"idle": oracle_idle, "cpu": oracle_cpu, "coremark_official": oracle_coremark_official, "reduce": oracle_reduce, "gemm": oracle_gemm, "conv2d": oracle_conv2d,
+ORACLES = {"cpu": oracle_cpu, "coremark_official": oracle_coremark_official, "reduce": oracle_reduce, "gemm": oracle_gemm, "conv2d": oracle_conv2d,
            "mnist": oracle_mnist, "smp": oracle_smp, "cifar": oracle_cifar, "stamps": oracle_stamps,
            "ecg": oracle_ecg, "memory": oracle_memory, "dma": oracle_dma, "coherent": oracle_coherent,
            "dsp": oracle_dsp, "npu_gemm": oracle_npu_gemm}

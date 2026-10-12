@@ -2,329 +2,75 @@
 
 ## Required tools
 
-The Phase 0 build is intentionally based on command-line tools:
+- **GNU Make and Python 3** (3.12 used).
+- **A 32-bit RISC-V bare-metal GCC**, `riscv32-unknown-elf-gcc` with its binutils. The evidence records GCC 16.1.0.
+  If it is not on `PATH`, pass `RISCV_PREFIX=/path/to/riscv32-unknown-elf-`.
+- **Verilator 5.x.** The evidence records 5.020. To use another binary, pass `VERILATOR=/path/to/verilator`.
+- **Vivado 2025.1**, for the PYNQ-Z1 bitstreams and the out-of-context timing runs only. To use another binary, pass
+  `VIVADO=/path/to/vivado`.
+- **Spike and its plugins,** for the CPU lockstep (below).
 
-- GNU Make;
-- Verilator 5.x or newer;
-- Python 3;
-- `riscv32-unknown-elf-gcc`, `objcopy` and `objdump`.
+`make tools` checks the compilers, Verilator and Spike (`scripts/check_tools.sh`); Vivado, the ACT4 tools and matplotlib (for `scripts/make_figures.py`) are found when used.
 
-The simulator targets do not require a vendor FPGA/ASIC installation. Vivado
-2025.1 (or a compatible release) is required only for the PYNQ-Z1 bitstream
-targets. PYNQ Python/XRT is needed on the board for Linux loading; in
-practice the board flows load overlays through the Linux FPGA manager and
-`/dev/mem` because PYNQ 3.1.1 cannot enumerate the Zynq (see the board runners
-in `scripts/run_*_mem.py`).
-The Linux FPGA build also uses Vivado's `xvlog`, `xelab` and `xsim` to test the
-generated reset netlist; it finds them through `XILINX_VIVADO` or `PATH`.
-
-The accepted Phase 7 captures record GCC 16.1.0, binutils 2.47.20260726,
-Verilator 5.020 and Vivado 2025.1. These are recorded tool identities, not a
-claim that an arbitrary different release reproduces their exact binaries or
-timing. Each accepted capture binds the actual compiler/linker/assembler and
-simulator paths, versions and hashes. Physical collection uses PYNQ on ARM;
-saved-record audits require only Python 3 and the repository's full Git history.
-
-Run the repository check with:
-
-```sh
-make tools
-```
-
-The current development environment uses a 32-bit RISC-V bare-metal GCC
-toolchain and Verilator. The Makefile accepts overrides when tools are in a
-non-standard location:
-
-```sh
-make RISCV_PREFIX=/path/to/riscv32-unknown-elf- hello
-make VERILATOR=/path/to/verilator smoke
-make VIVADO=/path/to/vivado fpga
-```
-
-If the RISC-V toolchain is not on `PATH`, prepend its `bin` directory before
-running the build. Do not commit generated toolchains or build output.
+The evidence bundles record each tool's identity: its path, version and hash. That is what their builds were made
+with. It is not a claim that another release reproduces their exact binaries or timing.
 
 ## CPU reference model (Phase 18)
 
-Phase 18 checks every CPU in lockstep with **Spike** (`riscv-isa-sim`), built
-from upstream commit `0bff12123b1fd510e19e19634dd997dbade70e54` (2026-09-28)
-into `~/tools/spike` (`../configure --prefix=$HOME/tools/spike && make && make
-install`, then `git rev-parse HEAD > ~/tools/spike/SPIKE_COMMIT`); override its
-path with `SPIKE`. Spike runs the device-tree compiler `dtc` at start-up; this
-host uses the DTC 1.6.1 shipped with Vivado on `PATH`. `make tools` checks both,
-and that `SPIKE_COMMIT` names the pinned commit. The CPU shell, the lockstep
-comparator and the test runners are described in [`phase18.md`](phase18.md).
+**Spike.** Phase 18 checks the Aster core in lockstep with **Spike** (`riscv-isa-sim`).
+- **Version:** built from upstream commit `0bff12123b1fd510e19e19634dd997dbade70e54` (2026-09-28).
+- **Build:** into `~/tools/spike` (`../configure --prefix=$HOME/tools/spike && make && make install`, then
+  `git rev-parse HEAD > ~/tools/spike/SPIKE_COMMIT`). Override its path with `SPIKE`.
+- **dtc:** Spike runs the device-tree compiler `dtc` at start-up; this host uses the DTC 1.6.1 shipped with Vivado
+  on `PATH`.
+- **Checked by `make tools`:** both are present, and `SPIKE_COMMIT` names the pinned commit.
 
-The CPU kernels run in Spike with an MMIO plugin, `aster_clock`
-(`verification/core/spike/aster_clock.cc`), which `make core-kernels` builds
-against the installed Spike headers (`SPIKE_ROOT`, default `~/tools/spike`).
+The CPU shell, the lockstep comparator and the test runners are described in [`phase18.md`](phase18.md).
 
-The conformance programs are vendored with checksums: `riscv-tests` at
-`2ebecad` (`vendor/riscv-tests`) and `riscv-arch-test` 3.10.0
-(`vendor/riscv-arch-test`). The arch-test programs are built with `-mno-relax`
-(see `scripts/run_core_tests.py`).
+**Plugins.** The CPU kernels run in Spike with an MMIO plugin, `aster_clock` (`verification/core/spike/aster_clock.cc`),
+and DOT8 with `aster_dot8`. Both build against the installed Spike headers (`SPIKE_ROOT`, default `~/tools/spike`).
 
-**ACT4** (riscv-arch-test 4.x, adopted 2 October 2026; `make core-aster-act4`,
-in `make check`) builds self-checking programs for the Aster core's
-configuration (`verification/core/act4/aster-rv32ima`) with expected results
-from the **Sail** model. Like Spike's source it lives outside the repository,
-under `~/tools` (override with the variables named):
+**Conformance programs.** They are vendored with checksums:
+- `riscv-tests` at `2ebecad` (`vendor/riscv-tests`);
+- `riscv-arch-test` 3.10.0 (`vendor/riscv-arch-test`). These programs are built with `-mno-relax` (see
+  `scripts/run_core_tests.py`).
 
-- `ACT4_ROOT`: `riscv-arch-test` tag `4.1.0`, commit
-  `6e8a45123f14cebfb3df151a0e7b849b4389b33b`, cloned into
-  `~/tools/src/riscv-arch-test-4.1.0` (`git clone --depth 1 --branch 4.1.0`);
-  the build leaves the checkout unmodified.
-- `SAIL_RISCV`: the Sail RISC-V model **0.13.1**, the release binary
-  `sail-riscv-Linux-x86_64.tar.gz` (SHA-256 `ee052f64…2f9e9469`) unpacked into
-  `~/tools/sail-riscv-0.13.1`.
-- `ACT4_VENV`: a Python 3.12 virtual environment at `~/tools/act4-venv` with
-  the checkout's packages (`pip install -e ./framework -e ./generators/testgen
-  -e ./generators/coverage`: act 0.3.0, testgen 0.5.0, covergroupgen 0.2.0).
-- `ACT4_BIN`: the UDB tools, Ruby 3.3 gems installed by Bundler from the
-  framework's own `Gemfile.lock` (udb 0.1.16, udb-gen 0.1.15, udb_helpers
-  0.1.3, idlc 0.1.7), with Bundler binstubs for `udb` and `udb-gen` in
-  `~/tools/act4-bin` (`BUNDLE_GEMFILE=<checkout>/framework/src/act/data/Gemfile
-  BUNDLE_BIN=~/tools/act4-bin bundle binstubs udb udb-gen`; the gems install
-  no `udb` executable of their own).
+**ACT4** (riscv-arch-test 4.x; `make core-aster-act4`, in `make check`) builds self-checking programs for the Aster
+core's configuration (`verification/core/act4/aster-rv32ima`), with expected results from the **Sail** model. Like
+Spike's source, it lives outside the repository under `~/tools`; override each location with the variable named:
+- **`ACT4_ROOT`:** `riscv-arch-test` tag `4.1.0`, commit `6e8a45123f14cebfb3df151a0e7b849b4389b33b`, cloned into
+  `~/tools/src/riscv-arch-test-4.1.0` (`git clone --depth 1 --branch 4.1.0`). The build leaves the checkout
+  unmodified.
+- **`SAIL_RISCV`:** the Sail RISC-V model **0.13.1**, the release binary `sail-riscv-Linux-x86_64.tar.gz`
+  (SHA-256 `ee052f64…2f9e9469`), unpacked into `~/tools/sail-riscv-0.13.1`.
+- **`ACT4_VENV`:** a Python 3.12 virtual environment at `~/tools/act4-venv` with the checkout's packages:
+  - installed by `pip install -e ./framework -e ./generators/testgen -e ./generators/coverage`;
+  - giving act 0.3.0, testgen 0.5.0 and covergroupgen 0.2.0.
+- **`ACT4_BIN`:** the UDB tools.
+  - They are Ruby 3.3 gems installed by Bundler from the framework's own `Gemfile.lock`: udb 0.1.16, udb-gen 0.1.15,
+    udb_helpers 0.1.3, idlc 0.1.7.
+  - Bundler binstubs for `udb` and `udb-gen` go in `~/tools/act4-bin`
+    (`BUNDLE_GEMFILE=<checkout>/framework/src/act/data/Gemfile BUNDLE_BIN=~/tools/act4-bin bundle binstubs udb udb-gen`).
+    The gems install no `udb` executable of their own.
 
-The framework's builds go to `build/act4` (about 130 MB; it rebuilds only what
-changed). The compiler is the toolchain above (`riscv32-unknown-elf-gcc`).
+The framework's builds go to `build/act4` (about 130 MB; it rebuilds only what changed).
 
-Timing baselines (`make timing-fpga-picorv32`, `make timing-asic-picorv32`)
-use Vivado 2025.1 and the LibreLane/SKY130 setup below; `scripts/timing/retain.py`
-copies a result into a checksummed folder under `docs/results/phase18/`.
+## The board
 
-For SRAM characterization (Phase 18.6), **ngspice 47** is built from the
-upstream release tarball (SHA-256 `894e6496…fdef675f`) into `~/tools/ngspice-47`
-with `--enable-klu --enable-openmp --with-x=no`; runs use the PDK's
-`libs.tech/ngspice/spinit` as `.spiceinit`.
+The PYNQ-Z1 runs PYNQ Linux on its ARM cores. The board scripts (`scripts/aster_board.py`,
+`scripts/matrix_board.py` with `scripts/aster_board_remote.py`) work as follows:
+- they copy the programs and the bitstream over ssh;
+- they program the FPGA through the Linux FPGA manager;
+- they run each program through `/dev/mem`.
 
-## ASIC tools (Phases 15–16)
+The board's sudo password is read from the environment variable `ASTER_BOARD_SUDO` and given to sudo on stdin only.
+It is never stored or logged.
 
-The SKY130 flow is driven by `scripts/run_asic.py` and is separate from the
-portable checks:
+## Firmware conventions
 
-- **LibreLane 3.0.14**, installed as a Python venv at `~/tools/librelane-venv` and
-  run `--dockerized` with the `ghcr.io/librelane/librelane:3.0.14` image (Yosys,
-  OpenROAD, Magic, KLayout, and Netgen live inside the container);
-- **SKY130 PDK** through `ciel` under `~/.ciel`; the flows used PDK version
-  `8afc8346a57fe1ab7934ba5a6056ea8b43078e71`, including the OpenRAM
-  `sky130_sram_2kbyte_1rw1r_32x512_8` macro views;
-- **sv2v 0.0.13** at `~/tools/sv2v/sv2v-Linux/sv2v` (Yosys cannot parse several
-  SystemVerilog constructs Aster uses); override with `SV2V`;
-- **Icarus Verilog 12.0** at `~/tools/iverilog` for SDF gate-level simulation
-  (`-gspecify`, with `-DFUNCTIONAL` for the SKY130 cell models).
-
-Heavy flow steps can exceed the host's memory. `run_asic.py` therefore runs
-LibreLane under `scripts/memguard.sh` (a global lock plus a cgroup memory cap);
-see [`memory.md`](memory.md) for the limits, the environment overrides, and the
-steps that can be skipped safely.
-
-## Build targets
-
-```text
-make tools       Verify host and RISC-V tools
-make structure   Print the tracked project layout
-make firmware    Build software/boot/hello.c and runtime into build/software/
-make smoke       Build and run the first Verilator unit smoke test
-make directed    Run directed RV32IM instruction tests
-make phase1      Run directed ISA, runtime, memory-map, trap and host tests
-make phase1-matrix  Cross ENABLE_L1=0/1 with SYNC_MEMORY=0/1
-make hello       Build firmware, compile the minimal SoC and run its UART test
-make bench       Run AsterBench memcpy or a sequential/random pointer walk
-make cache       Run directed and seeded reference-model L1 tests
-make cache-matrix  Run 24 geometries, three seeds each
-make cache-boundaries  Run 12 larger/boundary geometries, three seeds each
-make phase4-soc-matrix  Run 24 cache/geometry/memory-latency configurations
-make fpga-sim    Decode the board-facing 115200-baud UART in simulation
-make fpga        Run the Vivado PYNQ-Z1 synthesis/place/route/bitstream flow
-make linux-sim   Test AXI boot loading, host pauses and FPGA UART serial capture
-make fpga-linux  Build the PYNQ Linux PCAP/AXI overlay (no JTAG)
-make uart        Test TX backpressure/reset and RX framing/glitch handling
-make retirement  Check an exact RVFI retirement sequence and trap exclusion
-make counters    Test common counter windows, event semantics and rollover
-make arbiter     Run directed/seeded two-requester arbitration scoreboards
-make fabric-matrix  Test shared decode/control for 1/2 harts and four memory timings
-make multicore-runtime  Run the Phase 5 C runtime with real per-hart retirement
-make multicore-adversarial-matrix  Test real-core faults and reset during transfers
-make linux-dual-sim  Check the dual-hart AXI loader and actual serial backpressure
-make fpga-linux-dual  Build the Phase 5 PCAP overlay, retaining all safety gates
-make multicore-runtime-matrix  Cross 1/2 harts, caches off/on and four memory timings
-make parallel    Run split-array AsterBench v3 and independent RTL scoreboards
-make parallel-matrix  Cross 1/2 cores/workers, caches and four memory timings
-make parallel-workloads  Test odd/boundary sizes, seeds and round counts
-make atomic-runtime-matrix  Run real RV32IMA C with caches disabled
-make coherent-runtime-matrix  Run full-A C with coherent caches enabled
-make coherent-cache-matrix  Check independent coherence state/backing histories
-make coherent-soc-matrix  Check real-core coherence and RAM-preserving lifecycle
-make coherent-bench-matrix  Run AsterBench v4 configuration/workload combinations
-make riscv-reference-matrix  Execute pinned upstream RV32UA test bodies
-make coherent-litmus-matrix  Test ordering/publication/LRSC outcomes and progress
-make linux-coherent-matrix  Test the Phase 6 AXI/serial runtime and lifecycle
-make fpga-linux-coherent  Build a two-hart coherent RV32IMA PCAP overlay
-make dma-engine dma-arbiter  Check autonomous copy/descriptor and CPU-group ordering
-make dma-cache-matrix dma-cache-boundaries  Check coherent DMA and extreme geometry
-make dma-counters dma-warm-stop  Check DMA event windows and safe stop escalation
-make dma-runtime-matrix  Cross actual DMA C with harts, caches and memory timing
-make dma-bench-cases dma-bench-sensitivity  Run paired v5 size/configuration checks
-make linux-dma-matrix  Check actual DMA runtime and RAM-code publication over AXI
-make linux-dma-bench-cases linux-dma-bench-baud  Check paired serial/physical-baud cases
-make fpga-linux-dma  Build the explicitly DMA-enabled coherent PCAP overlay
-make dot8-unit dot8-probe-matrix  Exhaust signed arithmetic/decode and real-core ISA cases
-make dot8-counters  Check instruction ABI 1 / counter ABI 6 events and wrap
-make dot8-runtime dot8-stops  Run real C and admitted-compute lifecycle scoreboards
-make linux-dot8-sim  Check full AXI map/RO offsets, actual serial and warm boots
-make dot8-firmware dot8-bench  Build/run paired scalar/custom AsterBench v6
-make dot8-bench-build dot8-config  Build-only and exact capture configuration hooks
-make fpga-linux-dot8  Build the explicitly DOT8/DMA/coherent Linux overlay
-make xe-bench-validate  Run one AsterBench v8 cross-engine capture on the all-engine SoC
-make xe-matrix      Run the 3 kernels x 4 methods cross-engine matrix
-make check       Run tool checks, directed tests and simulations
-make clean       Remove generated files under build/
-```
-
-Both Verilator and Vivado define `RISCV_FORMAL` to expose the pinned core's
-synthesizable RVFI observation ports. They do not define `FORMAL`.
-RVFI itself changes measurement, not the ISA. Legacy firmware remains
-RV32IM/ilp32; the explicit coherent/atomic/DMA targets build RV32IMA/ilp32.
-
-Phase 5 simulation uses `HART_COUNT=1|2` (default 2) and the existing cache and
-memory knobs. Legacy single-core targets ignore `HART_COUNT`; they retain their
-original map. The multicore linker/runtime and simulation top are separate.
-The [Phase 5 closeout](results/phase5/closeout-71e2570/README.md) documents its
-actual dual-core FPGA/physical acceptance; Phase 6 and Phase 7 use separately
-versioned coherent and DMA overlays.
-
-The [current runtime guide](runtime.md) and [Phase 7 contract](phase7.md)
-describe DMA-capable RV32IMA builds. Legacy targets do not enable DMA.
-`make fpga-linux-dma LINUX_CACHE=0` and `LINUX_CACHE=1` retain 31.25 MHz and
-the strict reset/HWH/routed signoff gates. They build images only; programming
-requires the explicit [guarded PYNQ workflow](phase7-physical.md).
-
-Use these separate clean-source runners for full acceptance, each with a new
-output directory and isolated build tree:
-
-```sh
-python3 scripts/run_phase6_regressions.py --output /new/path/legacy-regressions
-python3 scripts/run_phase7_regressions.py --output /new/path/dma-regressions
-python3 scripts/audit_phase6_regressions.py /new/path/legacy-regressions/manifest.json
-python3 scripts/audit_phase7_regressions.py /new/path/dma-regressions/manifest.json
-```
-
-They record all 22 legacy and 14 DMA targets respectively, complete logs and
-exact source/tool identities. `run_phase6_regressions.py --check-only` is for
-a fresh `make check`, not a replacement for either full run. Never rebuild
-different configurations concurrently into the same `BUILD_DIR`. Failed or
-partial evidence is retained; accepted captures refuse existing output paths.
-
-Phase 8 adds a separate 56-case supplement; it does not replace either earlier
-plan. Its eight concurrent cases each own an isolated model and firmware tree.
-Two Linux cases use `DOT8_LINUX_BAUD=115200`; that selector is part of the model
-directory name to prevent reuse of a faster-baud build.
-
-```sh
-python3 scripts/run_phase8_regressions.py --output /new/path/dot8-regressions
-python3 scripts/audit_phase8_regressions.py /new/path/dot8-regressions/manifest.json
-python3 scripts/dot8_study.py plan
-python3 scripts/dot8_study.py capture --output /new/path/dot8-study
-python3 scripts/dot8_study.py audit /new/path/dot8-study/study.json
-```
-
-The custom helper uses GNU `.insn r`, with ordinary `-march=rv32ima -mabi=ilp32`
-and the same frozen O2 recipe for scalar/custom kernels. No compiler fork, LTO,
-auto-vectorization claim or automatic lowering is required. Captures bind all
-12 compiler/assembler/linker/Verilator/host-build identities and system headers,
-actual ELF/ROM/map/disassembly, model/build/run arguments and complete source
-hashes. [AsterBench v6](phase8-bench.md) retains all packing/tail/load/store costs.
-`fpga-linux-dot8 LINUX_CACHE=0|1` still uses 31.25 MHz. Only the
-[explicit guarded physical collector](phase8-physical.md) programs the board.
-
-`PARALLEL_WORDS=2..1024`, `PARALLEL_ROUNDS=1..64`, `PARALLEL_JOBS=1..16`,
-`PARALLEL_WORKERS=1|2` and `PARALLEL_SEED` configure the new workload. The default
-is 64 words, four rounds, three jobs and one worker per instantiated hart.
-For an apples-to-apples same-hardware comparison use `HART_COUNT=2` in both
-runs and vary `PARALLEL_WORKERS` only. One-worker firmware holds hart 1 reset.
-Legacy `BENCH_*` flags continue to apply only to v2 workloads.
-
-```sh
-python3 scripts/parallel_results.py capture --workers 1 --output build/parallel/one.json
-python3 scripts/parallel_results.py capture --workers 2 --output build/parallel/two.json
-python3 scripts/parallel_results.py compare build/parallel/one.json build/parallel/two.json
-python3 scripts/parallel_results.py audit build/parallel/two.json
-```
-
-Captures contain both warm boots, every raw job record, independent per-hart
-kernel observations, the hash-bound raw build/run log and source/toolchain/
-firmware/model provenance. Default capture builds are fresh temporary roots;
-existing outputs/logs are rejected. `parallel-config` exposes actual build
-paths and flags. `parallel-firmware` builds only the ELF/hex for deployment.
-
-Save and compare real benchmark runs with complete source/toolchain hashes:
-
-```sh
-python3 scripts/bench_results.py capture --l1 0 --output build/results/no-cache.json
-python3 scripts/bench_results.py capture --l1 1 --output build/results/cache.json
-python3 scripts/bench_results.py compare build/results/no-cache.json build/results/cache.json
-```
-
-Each capture uses a fresh temporary build directory to avoid stale flags or
-images, validates the record and requested RTL settings, and retains a build
-log alongside the JSON. Existing output paths are never silently overwritten.
-See [`software/benchmarks/README.md`](../software/benchmarks/README.md).
-
-The firmware pipeline is:
-
-```text
-start.S + hello.c + link.ld
-        ↓ riscv32-unknown-elf-gcc
-      hello.elf
-        ↓ scripts/elf_to_hex.py (ELF load segments)
-      hello.hex
-        ↓ $readmemh
-      aster_rom
-```
-
-AsterBench uses the same startup/runtime and linker contract as the Hello
-image, but emits a fixed-width CSV-like record containing comparable counter
-fields. `make -s bench-config` prints the exact artifact paths. The default
-image is `build/software/bench_memcpy_w64_r4_s0x13570000/benchmark.hex`.
-Firmware paths encode workload/size/repetitions/seed, and generic model paths
-encode cache enable, synchronous memory, wait cycles and cache geometry.
-The generic model loads each firmware with `+rom=...`, allowing an isolated
-experiment batch to reuse a model without embedding the wrong ROM.
-
-```sh
-make ENABLE_L1=1 SYNC_MEMORY=1 MEMORY_WAIT_CYCLES=4 \
-  L1_LINE_WORDS=8 L1_LINE_COUNT=32 \
-  BENCH_WORKLOAD=walk_random BENCH_WORDS=1024 BENCH_REPETITIONS=8 BENCH_SEED=0 bench
-python3 scripts/cache_experiments.py --output-dir build/results/cache-study
-python3 scripts/cache_experiments.py --output-dir build/results/cache-study --audit-only
-```
-
-Wait cycles are **total added backing-memory waits**, not extra waits on top
-of the synchronous default. Defaults are 0 (async) and 1 (sync). These knobs
-configure the generic `bench`/`phase1` simulators; FPGA shells retain their
-documented default geometry and synchronous timing. Use fresh `BUILD_DIR`
-paths or the capture tool when changing compiler/toolchain flags.
-
-The generated hex contains no address directives: line `N` is the little-endian
-32-bit word at ROM address `4*N`. ELF load segments use their physical/load
-address, so initialized `.data` can be copied from ROM into RAM by startup code
-without creating a 256 MiB sparse ROM image.
-
-## Toolchain policy
-
-The legacy architecture target is RV32IM. The PicoRV32 wrapper enables its
-internal multiply/divide implementations, and the
-directed ISA image tests all eight RV32M operations and integer corner cases.
-Compressed instructions remain disabled so the ROM format and fetch path stay
-32-bit word aligned. Coherent and DMA configurations additionally implement
-full word RV32A through Aster-owned PCPI/memory integration; the pinned vendor
-core is unchanged. This is a bare-metal ISA configuration, not privileged-mode
-Linux support on the RISC-V harts.
-
-Firmware uses `-nostdlib -nostartfiles -nodefaultlibs -ffreestanding`; every
-runtime service is therefore explicit and reviewable. `start.S` establishes a
-RAM stack, copies initialized data, clears `.bss`, and calls `main`. The first C
-image writes directly to the UART MMIO register so the CPU/ROM/bus/RAM/
-peripheral path is verified without depending on libc.
+The harts implement RV32IMA with Zicsr, Zifencei and the DOT8 custom instruction. Compressed instructions are not
+supported. The firmware is built freestanding:
+- the flags are `-nostdlib -nostartfiles -nodefaultlibs -ffreestanding`;
+- every runtime service is explicit, in `software/runtime`;
+- the start-up code (`start_aster.S`, and `start_multicore_aster.S` for two harts) sets up the stacks, copies the
+  initialized data, clears `.bss` and calls `main`.

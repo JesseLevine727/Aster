@@ -265,7 +265,7 @@ struct Timer {
 // v1's SoC devices (+v1_devices, with +io_page; 18.6's firmware regression),
 // for v1 firmware built with the ported runtime, modelled on
 // rtl/peripherals/aster_timer.sv, rtl/peripherals/aster_interrupt_controller.sv
-// and the hart-control page (docs/phase5.md):
+// and v1's hart-control page:
 // - the timer at 0x2000_1000: TIME counts every cycle from reset; COMPARE;
 //   CONTROL (lane 0: bit 0 enables, bit 1 clears the pending flag); STATUS
 //   {enabled, pending}; ABI 1; CLOCK_HZ 31,250,000. Pending is set at the edge

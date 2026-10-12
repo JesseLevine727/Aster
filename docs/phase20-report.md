@@ -222,7 +222,7 @@ So the v1 gate's best methods are the NPU with two harts: Conv2D 45,292 cycles, 
   - With write-through data caches, a store goes to memory either way and a snoop invalidates the other hart's
     copy. So the penalty is the other hart's re-read, which this kernel hides.
   - Its speed-up is lower (1.78× against 2.00×) only because its one-worker run is 11% faster.
-- **An L2:** none. The owner set it aside. v1.1's shared L2 study is [`l2.md`](l2.md).
+- **An L2:** none. The owner set it aside. v1.1's shared L2 study is [`l2.md`](https://github.com/JesseLevine727/Aster/blob/v2.0-full/docs/l2.md).
 
 ## 4. At what size and alignment does the DMA beat the CPU's copy, and is CPU time freed?
 
@@ -358,7 +358,7 @@ Where a method or option loses, from the final capture and step 3b:
 ## Out of scope
 
 - **Energy and power:** nothing was measured.
-- **An L2:** set aside by the owner (v1.1's study is [`l2.md`](l2.md)).
+- **An L2:** set aside by the owner (v1.1's study is [`l2.md`](https://github.com/JesseLevine727/Aster/blob/v2.0-full/docs/l2.md)).
 - **SKY130 and research question 7:** dropped on 1 October 2026.
 - **Floating point:** CoreMark runs its integer path.
 - **More than two harts, and external memory:** every workload fits the 96 KiB of block RAM.

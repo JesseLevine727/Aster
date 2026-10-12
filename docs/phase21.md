@@ -89,8 +89,10 @@ The logs are in build/energy, not retained. The tooling's comments cite the plan
   - xsim garbles 55 escaped net names to "(null)", and Vivado reads escaped names only in another form, so the
     merge rewrites them (scripts/energy_saif.py);
   - a recursive object listing takes about 13 minutes per run.
-- **The tooling stays in the repository, unused:** verification/energy/, scripts/energy_run.py,
-  scripts/energy_saif.py, and the idle programs (software/matrix/idle.c, the energy_idle family).
+- **The tooling was removed when the repository was cleaned to v2** (12 October 2026). It is in the `v2.0-full` tag:
+  - verification/energy/;
+  - scripts/energy_run.py and scripts/energy_saif.py;
+  - the idle programs (software/matrix/idle.c, the energy_idle family).
 - **Its known faults, not fixed:**
   - parallel runs of energy_run.py share xsim's snapshot directory, so they must not run at once;
   - the testbench's console reads are not gated inside a window;

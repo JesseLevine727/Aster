@@ -71,7 +71,7 @@ read as 64, as 2⁴⁸ cycles is 32 days at 100 MHz.
 | Hart control | `0x2000_2000` | `0x2000_3000` | v1's layout (§7.3) |
 | Performance, hart 0 / hart 1 | `0x2000_3000` | `0x2000_3200` | v1's ABI 4 (§8) |
 | DOT8 counters | `0x2000_3200` | `0x2000_3300` | v1's ABI 6 layout |
-| Fabric counters | `0x2000_3300` | `0x2000_3400` | New (§8) |
+| Fabric counters | `0x2000_3300` | `0x2000_3500` | New (§8) |
 | Interrupt controller | `0x2000_4000` | `0x2000_5000` | v1, ABI 1 (§7.2) |
 | DMA | `0x3000_0000` | `0x3000_0200` | v1's DMA ABI 1 and its counters, counter ABI 5 (§6) |
 | NPU | `0x4000_0000` | `0x4000_1000` | NPU ABI 2 (npu.md §3), word accesses only |
@@ -292,14 +292,14 @@ write-back caches.
 ### 7.1 Timer
 
 v1's timer, ABI 1, at `0x2000_1000`: a free-running 64-bit count of clock
-cycles, a 64-bit compare and a level interrupt (docs/timer.md). Its count
+cycles, a 64-bit compare and a level interrupt (§14.1). Its count
 drives both cores' `mtime` input, so `time`/`timeh` read it (cpu.md §3, which
 leaves the timer's source to Phase 20). Its interrupt is source 0 of the
 interrupt controller.
 
 ### 7.2 Interrupt controller
 
-v1's controller, ABI 1, at `0x2000_4000` (docs/interrupts.md). Its sources
+v1's controller, ABI 1, at `0x2000_4000` (§14.2). Its sources
 are 0 the timer, 1 the DMA's completion, 2 the NPU's completion and 3
 software (RAISE). ENABLE0 and ENABLE1 drive hart 0's and hart 1's MEIP.
 MTIP and MSIP are tied low: there is no CLINT, and cpu.md §3 allows this
@@ -307,7 +307,7 @@ choice. A hart signals the other through source 3, or through memory.
 
 ### 7.3 Hart control
 
-v1's page at `0x2000_2000`:
+v1's page at `0x2000_2000` (§14.3):
 - ID: the requesting hart;
 - SECONDARY_RUN: hart 0's word stores only, as in v1;
 - HART_COUNT: 2, or 1 when the SoC is built with one hart;
@@ -342,7 +342,7 @@ stall it imposed while its FIFO was full, are not kept.
 ## 8. Performance counters and records
 
 - **Per hart: v1's ABI 4** (`0x2000_3000`, `0x2000_3100`), with ABI 4's
-  fourteen 64-bit counters, command word and metadata (docs/phase6.md), the
+  fourteen 64-bit counters, command word and metadata (§14.4), the
   ABI word reading 4, and each event as ABI 4 defines it:
   - invalidations count, for the requesting hart, the lines its writes
     invalidate in the other cache;
@@ -1107,3 +1107,115 @@ Milestone 20.3):
 - **Eight layouts** (L0–L7) in place of decision 2's five: tuning is judged on all eight, each workload on the
   layouts it fits.
 
+## 14. Device register reference
+
+The device pages the harts see, as the SoC implements them (rtl/soc/aster_soc_devices.sv). Every device page takes
+word loads and word stores only (§3): the data cache faults a byte or halfword access or an atomic, and each store
+replaces the whole register. Unknown offsets read 0 and ignore writes.
+
+### 14.1 Timer (`0x2000_1000`, ABI 1)
+
+| Offset | Name | Access | Meaning |
+| ---: | --- | --- | --- |
+| `0x00/04` | `TIME_LO/HI` | R | Free-running 64-bit count of clock cycles |
+| `0x08/0c` | `COMPARE_LO/HI` | RW | 64-bit compare value |
+| `0x10` | `CONTROL` | W | Bit 0 enable (the store sets or clears it), bit 1 clear pending |
+| `0x14` | `STATUS` | R | Bit 0 pending, bit 1 enabled |
+| `0x18` | `ABI` | R | Timer ABI = 1 |
+| `0x1c` | `CLOCK_HZ` | R | The clock's nominal frequency |
+
+- `TIME` increments every cycle and wraps modulo 2^64. Both cores' `mtime` reads it.
+- When enabled, pending is set on the cycle `TIME` becomes equal to `COMPARE`, and the timer's interrupt (source 0)
+  asserts as a level. The test is equality: a `COMPARE` already reached, or an enable that lands on the matching
+  cycle, does not fire until `TIME` wraps.
+- A `CONTROL` clear in the same cycle as the match wins. Disabling does not clear pending.
+- Reset clears `TIME`, `COMPARE`, enabled and pending.
+
+### 14.2 Interrupt controller (`0x2000_4000`, ABI 1)
+
+| Offset | Name | Access | Meaning |
+| ---: | --- | --- | --- |
+| `0x00` | `ENABLE0` | RW | Hart 0's source enable mask (bits 3:0) |
+| `0x04` | `ENABLE1` | RW | Hart 1's source enable mask (bits 3:0) |
+| `0x08` | `PENDING` | R, W1C | Latched source bits; a store clears the bits written as 1 |
+| `0x0c` | `ACTIVE0` | R | `PENDING & ENABLE0` |
+| `0x10` | `ACTIVE1` | R | `PENDING & ENABLE1` |
+| `0x14` | `RAISE` | W | Any store sets bit 3, the software source; the data is ignored |
+| `0x18` | `ABI` | R | Controller ABI = 1 |
+| `0x1c` | `SOURCES` | R | Number of sources = 4 |
+
+| Bit | Source | Set by | Cleared by |
+| ---: | --- | --- | --- |
+| 0 | Timer | The rising edge of the timer's pending | Software clears the timer's pending, then this bit |
+| 1 | DMA | A DMA job's completion | `PENDING` W1C |
+| 2 | NPU | An NPU job's completion | `PENDING` W1C |
+| 3 | Software | A `RAISE` store | `PENDING` W1C |
+
+- Each source sets its `PENDING` bit on a rising edge.
+- A `PENDING` clear in the same cycle as a new edge wins, and that edge is lost: the source stays high, so it makes no
+  new edge. A handler that clears a bit re-checks its source.
+- Hart N's MEIP is the level `|(PENDING & ENABLEN)`. MTIP and MSIP are tied low (§7.2).
+- Reset clears both enables and `PENDING`.
+
+### 14.3 Hart control (`0x2000_2000`)
+
+| Offset | Name | Meaning |
+| --- | --- | --- |
+| `0x00` | `ID` | The requesting hart's ID (read only) |
+| `0x04` | `SECONDARY_RUN` | Hart 0's stores only: bit 0 holds hart 1 in reset (0) or releases it (1); reads the effective run |
+| `0x08` | `HART_COUNT` | The number of harts built: 2, or 1 (read only) |
+| `0x0c` | `STATUS` | Bits 0 and 1: harts running. Bits 8 and 9 read 0 (§7.3) |
+| `0x10` | `TO_HART1` | Mailbox: hart 0 writes, both read |
+| `0x14` | `TO_HART0` | Mailbox: hart 1 writes, both read |
+
+- A hart 0 store to `SECONDARY_RUN` with bit 0 clear also clears both mailboxes, even when hart 1 is already held.
+- A mailbox store by the other hart is ignored.
+- Reads have no side effects. The start-up sequence is in §7.3.
+
+### 14.4 Per-hart performance counters (`0x2000_3000`, `0x2000_3100`; ABI 4)
+
+Each hart has a 256-byte bank.
+
+**The counters.** Fourteen counters occupy offsets `0x00` to `0x6c`, in this order. Each reads as a little-endian
+64-bit value (low word first) but counts in 48 bits: the upper 16 bits read 0, and it wraps at 2^48.
+1. cycles;
+2. retired instructions;
+3. architectural memory transactions;
+4. I$ accesses;
+5. I$ misses;
+6. D$ data accesses;
+7. D$ data misses;
+8. backing transactions;
+9. completed A instructions;
+10. successful SCs;
+11. failed SCs;
+12. dirty interventions (0: the data caches are write-through);
+13. invalidations;
+14. write-back words (0).
+
+**The command word** at `0x2000_3080`.
+- A command is a hart 0 store whose low byte is exactly 1 (START), 2 (FREEZE) or 4 (RESUME). Any other value, hart 1's
+  stores and stores to `0x2000_3180` are ignored.
+- Each command is broadcast as a common edge to both banks, and to the DOT8, DMA and fabric counters.
+- START clears without counting its edge.
+- The event counters exclude FREEZE's edge. Counter 0 (cycles) counts it, and a RESUME's edge while already counting,
+  so it reads one cycle more than the events' window for each.
+- Reads after FREEZE are stable.
+- A load from `0x80` reads 1 while the counters are counting.
+
+**The metadata:**
+
+| Offset | Meaning |
+| --- | --- |
+| `0x84` | ABI = 4 |
+| `0x88` | Clock Hz |
+| `0x8c` | Flags: reads 3 (bit 0 caches, bit 1 synchronous memory) in every build |
+| `0x90` | Line words = 4 |
+| `0x94` | Lines in each L1 cache: the build's cache bytes / 16 (512 at 8 KiB) |
+| `0x98` | Memory wait cycles: 1 + the added waits (1 at the reference configuration) |
+| `0x9c` | Counter count = 14 |
+
+**Attribution.**
+- Cycles measure the common window for both harts.
+- The other events are each hart's own.
+- Invalidations count, for the requesting hart, the lines its writes invalidate in the other cache.

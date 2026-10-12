@@ -9,7 +9,7 @@
 
 #define ASTER_REG32(address) (*(volatile uint32_t *)(uintptr_t)(address))
 
-// Per hart: ABI 4 (docs/phase6.md), fourteen 64-bit counters at 0x00-0x6C of each page
+// Per hart: ABI 4 (docs/soc.md §14.4), fourteen 64-bit counters at 0x00-0x6C of each page
 #define ASTER_ABI4_BASE(hart)   (0x20003000u + 0x100u * (hart))
 enum aster_abi4_counter {
     ASTER_C_CYCLES, ASTER_C_RETIRED, ASTER_C_MEMORY_TXNS, ASTER_C_I_ACCESSES, ASTER_C_I_MISSES,

@@ -1,5 +1,5 @@
     # start_multicore.S for the Aster core (milestone 18.6: the runtime port):
-    # the same start-up and contract (software/runtime/README.md, docs/phase5.md)
+    # the same start-up and contract (docs/soc.md §7.3 and §14.3)
     # with the hart's identity read from mhartid (the core's HART_ID) instead of
     # the hart-control page, and traps taken at mtvec (aster_trap.S) instead of
     # PicoRV32's fixed IRQ vector. A returning main passes its status to
