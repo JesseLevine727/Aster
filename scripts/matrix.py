@@ -692,20 +692,27 @@ TUNING = {"dma_fine": lambda: dma_fine_entries(), "split_fine": lambda: split_fi
           "coremark": lambda: coremark_official_entries()}
 # CoreMark's official run: the 2K performance run (seeds 0, 0, 0x66) for at least ten seconds at 100 MHz
 COREMARK_ITERATIONS = 2400
-# CoreMark's own known CRCs for that run (vendor/coremark/core_main.c: known_id 3)
+# CoreMark's own known CRCs (vendor/coremark/core_main.c): the 2K performance run (known_id 3, seeds 0, 0, 0x66) and
+# the 2K validation run (known_id 4, seeds 0x3415, 0x3415, 0x66). CoreMark's run rules ask both to validate; the
+# score is the performance run's.
 COREMARK_2K_PERFORMANCE = dict(seedcrc=0xE9F5, crclist=0xE714, crcmatrix=0x1FD7, crcstate=0x8E3A)
+COREMARK_2K_VALIDATION = dict(seedcrc=0x18F2, crclist=0xE3C1, crcmatrix=0x0747, crcstate=0x8D84)
+COREMARK_RUNS = {"coremark_official": ("performance", COREMARK_2K_PERFORMANCE, ""),
+                 "coremark_validation": ("validation", COREMARK_2K_VALIDATION, " -DVALIDATION_RUN=1")}
 
 
 def coremark_official_entries() -> list[Entry]:
     """tuning.md §7.3: CoreMark's official run on hart 0 at R, cold (CoreMark's own window, its seconds from ABI 4's
-    clock, its report printed whole), for the board and its simulation in full."""
+    clock, its report printed whole), for the board and its simulation in full: the performance run (the score) and,
+    as CoreMark's run rules ask, the validation run, each of the same iterations (as upstream's run1 and run2)."""
     sources, flags, _, _ = run_core_tests.KERNELS["coremark"]
     sim, axes = "soc_dev", dict(memory_wait=0, dcache=1, cache_state="cold", harts=2)
-    return [Entry("cpu/coremark_official/scalar/soc_dev/cold", "cpu", "coremark_official", "scalar", sim, True,
+    return [Entry(f"cpu/{case}/scalar/soc_dev/cold", "cpu", case, "scalar", sim, True,
                   list(sources), flags, [f"COREMARK_ITERATIONS={COREMARK_ITERATIONS}",
-                                         "COREMARK_EXTRA=-DASTER_COREMARK_OFFICIAL=1"], [], "",
+                                         f"COREMARK_EXTRA=-DASTER_COREMARK_OFFICIAL=1{extra}"], [], "",
                   ["software/matrix/matrix_v1.c", "software/runtime/asterbench_v12.c", "software/runtime/aster_smp.c"],
-                  soc_variants.v12_defines(sim) + ["-DMATRIX_COLD"], axes, "coremark_official")]
+                  soc_variants.v12_defines(sim) + ["-DMATRIX_COLD"], axes, "coremark_official")
+            for case, (_, _, extra) in COREMARK_RUNS.items()]
 
 # v1's baseline records (Phase 17, sync1), the cases' identity the v12 record must keep
 BASELINE = run_core_tests.BASELINE
@@ -1393,9 +1400,11 @@ def reconcile_totals(records: list[dict], extras: list[str]) -> dict:
 
 
 def oracle_coremark_official(entry: Entry, records: list[dict], console: str) -> str:
-    """CoreMark's official run (tuning.md §7.3), by CoreMark's own rules: the 2K performance run's parameters and
-    its known CRCs, its own verdict, at least ten seconds, the iterations asked for; its report's figures
-    re-derived from its ticks (one a cycle at ABI 4's clock), and its ticks against the record's window."""
+    """CoreMark's official run (tuning.md §7.3), by CoreMark's own rules: the run's parameters (the entry's case: the
+    2K performance or validation run) and its known CRCs, its own verdict, at least ten seconds, the iterations asked
+    for; its report's figures re-derived from its ticks (one a cycle at ABI 4's clock), and its ticks against the
+    record's window. The performance run's score line is the port's, from the ticks; the validation run has none."""
+    run, known, _ = COREMARK_RUNS[entry.case]
     if len(records) != 1 or records[0]["window"] != "e2e":
         raise asterbench_v12.ValidationError(f"{len(records)} records, not one e2e window")
     r = records[0]
@@ -1406,10 +1415,10 @@ def oracle_coremark_official(entry: Entry, records: list[dict], console: str) ->
         key, sep, value = line.partition(":")
         if sep:
             report[key.strip()] = value.strip()
-    if "2K performance run parameters for coremark." not in console or "ERROR" in console \
+    if f"2K {run} run parameters for coremark." not in console or "ERROR" in console \
             or "Correct operation validated." not in console:
-        raise asterbench_v12.ValidationError("CoreMark's report: not a validated 2K performance run")
-    for key, want in COREMARK_2K_PERFORMANCE.items():
+        raise asterbench_v12.ValidationError(f"CoreMark's report: not a validated 2K {run} run")
+    for key, want in known.items():
         label = key if key == "seedcrc" else f"[0]{key}"
         if int(report.get(label, "-1"), 16) != want:
             raise asterbench_v12.ValidationError(f"{label} {report.get(label)}, CoreMark's known {want:#06x}")
@@ -1421,10 +1430,16 @@ def oracle_coremark_official(entry: Entry, records: list[dict], console: str) ->
     if not 0 <= int(r["h0_cycles"]) - ticks <= 64:                  # (the window: START, then CoreMark's own reads)
         raise asterbench_v12.ValidationError(f"{ticks} ticks against the window's {r['h0_cycles']} cycles")
     score = COREMARK_ITERATIONS * clock / ticks
-    printed = float(report["CoreMark 1.0"].split("/")[0])         # (the port's line, six decimals, from the ticks)
     whole_secs = ticks // clock                                      # (core_main.c's integer path: whole seconds)
-    if abs(printed - score) > 1e-6 or int(report["Total time (secs)"]) != whole_secs \
-            or int(report["Iterations/Sec"]) != COREMARK_ITERATIONS // whole_secs:
+    if int(report["Total time (secs)"]) != whole_secs or int(report["Iterations/Sec"]) != COREMARK_ITERATIONS // whole_secs:
+        raise asterbench_v12.ValidationError(f"the report's seconds against its {ticks} ticks")
+    if run == "validation":
+        if "CoreMark 1.0" in report:
+            raise asterbench_v12.ValidationError("a score line on the validation run")
+        return (f"CoreMark's 2K validation run: {COREMARK_ITERATIONS} iterations in {ticks / clock:.3f} s; CoreMark's "
+                f"2K validation CRCs and its verdict")
+    printed = float(report["CoreMark 1.0"].split("/")[0])         # (the port's line, six decimals, from the ticks)
+    if abs(printed - score) > 1e-6:
         raise asterbench_v12.ValidationError(f"the report's score {printed} against {score} from its ticks")
     return (f"CoreMark 1.0: {score:.3f} ({score / (clock / 1e6):.4f} CoreMark/MHz), {COREMARK_ITERATIONS} iterations "
             f"in {ticks / clock:.3f} s; CoreMark's 2K performance CRCs and its verdict")
